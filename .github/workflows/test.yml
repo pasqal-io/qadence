@@ -32,4 +32,4 @@ jobs:
         pip install hatch
     - name: Run tests
       run: |
-        hatch -v run tests
+        hatch -v run test
