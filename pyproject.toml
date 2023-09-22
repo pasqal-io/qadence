@@ -56,8 +56,6 @@ all = [
   "scipy<1.11"
 ]
 
-[tool.hatch.envs.default.env-vars]
-PIP_EXTRA_INDEX_URL = "https://{env:PYPI_USERNAME}:{env:PYPI_PASSWORD}@gitlab.pasqal.com/api/v4/projects/190/packages/pypi/simple"
 
 [tool.hatch.envs.default]
 dependencies = [
