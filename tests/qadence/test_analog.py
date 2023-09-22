@@ -1,0 +1,99 @@
+from __future__ import annotations
+
+import pytest
+import torch
+
+from qadence.blocks import CompositeBlock
+from qadence.blocks.analog import (
+    AnalogBlock,
+    ConstantAnalogRotation,
+    QubitSupport,
+    chain,
+    kron,
+)
+from qadence.operations import AnalogRX, X, wait
+from qadence.parameters import ParamMap
+
+
+def test_qubit_support() -> None:
+    assert QubitSupport("global").is_global
+    assert not QubitSupport(2, 3).is_global
+
+    assert QubitSupport("global") + QubitSupport("global") == QubitSupport("global")
+    assert QubitSupport("global") + QubitSupport(1, 2) == QubitSupport(0, 1, 2)
+    assert QubitSupport(2, 3) + QubitSupport(1, 2) == QubitSupport(1, 2, 3)
+
+    # local QubitSupport / mixing QubitSupport & tuple
+    assert QubitSupport(0, 1) + (2, 4) == QubitSupport(0, 1, 2, 4)
+    assert (0, 4) + QubitSupport(1, 2) == QubitSupport(0, 1, 2, 4)
+    assert (0, 4) + QubitSupport("global") == QubitSupport(0, 1, 2, 3, 4)
+    assert QubitSupport("global") + (0, 4) == QubitSupport(0, 1, 2, 3, 4)
+    assert QubitSupport("global") + () == QubitSupport("global")
+    assert () + QubitSupport("global") == QubitSupport("global")
+    assert () + QubitSupport(1, 2) == QubitSupport(1, 2)
+    assert QubitSupport() == ()
+
+
+def test_analog_block() -> None:
+    b: AnalogBlock
+    b = wait(duration=3, qubit_support=(1, 2))
+    assert b.__repr__() == "WaitBlock(t=3.0, support=(1, 2))"
+
+    c1 = chain(
+        ConstantAnalogRotation(parameters=ParamMap(duration=2000, omega=1, delta=0, phase=0)),
+        ConstantAnalogRotation(parameters=ParamMap(duration=3000, omega=1, delta=0, phase=0)),
+    )
+    assert c1.duration == 5000
+    assert c1.qubit_support == QubitSupport("global")
+
+    c2 = kron(
+        AnalogRX(torch.pi, qubit_support=(0, 1)),
+        wait(duration=1000, qubit_support=(2, 3)),
+    )
+    assert c2.duration == 1000
+    assert c2.qubit_support == QubitSupport(0, 1, 2, 3)
+
+    c3 = chain(
+        kron(
+            AnalogRX(torch.pi, qubit_support=(0, 1)),
+            wait(duration=1000, qubit_support=(2, 3)),
+        ),
+        kron(
+            wait(duration=1000, qubit_support=(0, 1)),
+            AnalogRX(torch.pi, qubit_support=(2, 3)),
+        ),
+    )
+    assert c3.duration == 2000
+
+    with pytest.raises(ValueError, match="Only KronBlocks or global blocks can be chain'ed."):
+        chain(c3, wait(duration=10))
+
+    with pytest.raises(ValueError, match="Blocks with global support cannot be kron'ed."):
+        kron(AnalogRX(torch.pi, qubit_support=(0, 1)), wait(duration=1000))
+
+    with pytest.raises(ValueError, match="Make sure blocks act on distinct qubits!"):
+        kron(
+            AnalogRX(torch.pi, qubit_support=(0, 1)),
+            wait(duration=1000, qubit_support=(1, 2)),
+        )
+
+    with pytest.raises(ValueError, match="Kron'ed blocks have to have same duration."):
+        kron(
+            AnalogRX(1, qubit_support=(0, 1)),
+            wait(duration=10, qubit_support=(2, 3)),
+        )
+
+
+@pytest.mark.xfail
+def test_mix_digital_analog() -> None:
+    from qadence import chain
+
+    b = chain(X(0), AnalogRX(2.0))
+    assert b.qubit_support == (0,)
+
+    b = chain(X(0), wait(2.0), X(2))
+    assert b.qubit_support == (0, 1, 2)
+
+    b = chain(chain(X(0), wait(2.0, qubit_support="global"), X(2)), X(3))
+    assert all([not isinstance(b, CompositeBlock) for b in b.blocks])
+    assert b.qubit_support == (0, 1, 2, 3)

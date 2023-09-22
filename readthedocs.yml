@@ -1,0 +1,13 @@
+version: 2
+build:
+  os: "ubuntu-22.04"
+  tools:
+    python: "3.10"
+  commands:
+    - pip install hatch
+    - hatch -v run docs:build
+    - mkdir _readthedocs/
+    - mv site _readthedocs/html
+
+mkdocs:
+ configuration: mkdocs.yml

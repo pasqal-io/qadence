@@ -1,0 +1,2 @@
+include qadence/gpsr/dfdx_expressions.pkl
+include qadence/gpsr/dfdx_variance_expressions.pkl
