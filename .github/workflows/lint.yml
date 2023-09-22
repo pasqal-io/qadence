@@ -1,4 +1,4 @@
-name: Lint and type check Python projects
+name: Lint and type check Qadence.
 
 on:
   pull_request: {}
