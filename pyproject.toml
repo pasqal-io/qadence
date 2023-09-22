@@ -1,0 +1,200 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "qadence"
+description = "Pasqal interface for circuit-based quantum computing SDKs"
+readme = "README.md"
+authors = [
+    { name = "Aleksander Wennersteen", email = "aleksander.wennersteen@pasqal.com" },
+    { name = "Gert-Jan Both", email = "gert-jan.both@pasqal.com" },
+    { name = "Niklas Heim", email = "niklas.heim@pasqal.com" },
+    { name = "Mario Dagrada", email = "mario.dagrada@pasqal.com" },
+    { name = "Vincent Elfving", email = "vincent.elfving@pasqal.com" },
+    { name = "Dominik Seitz", email = "dominik.seitz@pasqal.com" },
+    { name = "Roland Guichard", email = "roland.guichard@pasqal.com" },
+]
+requires-python = ">=3.9,<3.11"
+license = {text = "Proprietary"}
+version = "0.9.1"
+classifiers=[
+    "License :: Other/Proprietary License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = [
+    "openfermion",
+    "torch",
+    "sympytorch>=0.1.2",
+    "rich",
+    "tensorboard>=2.12.0",
+    "deepdiff",
+    "jsonschema",
+    "nevergrad",
+    "scipy<1.11",
+    "pyqtorch==0.5.0"
+]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+allow-ambiguous-features = true
+
+[project.optional-dependencies]
+pulser = ["pulser>=v0.12.0"]
+braket = ["amazon-braket-sdk"]
+visualization = ["pycairo"]
+scipy = ["scipy<1.11"]
+all = [
+  "pulser>=0.12.0",
+  "amazon-braket-sdk",
+  "pycairo",
+  "scipy<1.11"
+]
+
+[tool.hatch.envs.default.env-vars]
+PIP_EXTRA_INDEX_URL = "https://{env:PYPI_USERNAME}:{env:PYPI_PASSWORD}@gitlab.pasqal.com/api/v4/projects/190/packages/pypi/simple"
+
+[tool.hatch.envs.default]
+dependencies = [
+  "flaky",
+  "hypothesis",
+  "pytest",
+  "pytest-cov",
+  "pytest-mypy",
+  "pytest-xdist",
+  "nbconvert",
+  "ipykernel",
+  "jupyter_contrib_nbextensions",
+  "pre-commit",
+  "black",
+  "isort",
+  "ruff",
+  "notebook<7.0",
+  "dill",
+]
+features = ["all"]
+
+[tool.hatch.envs.default.scripts]
+test = "pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=qadence --cov=tests --ignore=./tests/test_examples.py --ignore=./tests/test_notebooks.py {args}"
+test-examples = "pytest ./tests/test_examples.py {args}"
+test-notebooks = "pytest ./tests/test_notebooks.py {args}"
+no-cov = "cov --no-cov {args}"
+test-docs = "mkdocs build --clean --strict"
+test-all = "pytest {args}  && mkdocs build --clean --strict"
+
+[tool.pytest.ini_options]
+markers = [
+  "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
+testpaths = ["tests"]
+addopts = """-vvv"""
+xfail_strict = true
+filterwarnings = [
+  "ignore:Call to deprecated create function FieldDescriptor",
+  "ignore:Call to deprecated create function Descriptor",
+  "ignore:Call to deprecated create function EnumDescriptor",
+  "ignore:Call to deprecated create function EnumValueDescriptor",
+  "ignore:Call to deprecated create function FileDescriptor",
+  "ignore:Call to deprecated create function OneofDescriptor",
+  "ignore:distutils Version classes are deprecated.",
+  "ignore::DeprecationWarning"
+]
+
+
+[tool.hatch.envs.docs]
+dependencies = [
+  "mkdocs==1.5.2",
+  "mkdocs-material",
+  "mkdocstrings",
+  "mkdocstrings-python",
+  "mkdocs-section-index==0.3.6",
+  "mkdocs-jupyter",
+  "mkdocs-exclude",
+  "markdown-exec",
+  "notebook<7",
+  "jupyter_contrib_nbextensions",
+  "dill",
+]
+features = ["pulser", "braket", "visualization"]
+
+[tool.hatch.envs.docs.scripts]
+build = "mkdocs build --clean --strict"
+serve = "mkdocs serve --dev-addr localhost:8000"
+
+[[tool.hatch.envs.test.matrix]]
+python = ["39", "310"]
+
+[tool.hatch.envs.tests]
+features = ["all"]
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+  "/.gitignore",
+  "/.gitlab-ci-yml",
+  "/.pre-commit-config.yml",
+  "/tests",
+  "/docs",
+  "/examples",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["qadence"]
+
+[tool.coverage.run]
+branch = true
+parallel = true
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
+
+[tool.ruff]
+select = ["E", "F", "I", "Q"]
+extend-ignore = ["F841","F403"]
+line-length = 100
+
+[tool.ruff.isort]
+required-imports = ["from __future__ import annotations"]
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]
+"operations.py" = ["E742"]  # Avoid ambiguous class name warning for identity.
+
+[tool.ruff.mccabe]
+max-complexity = 15
+
+[tool.ruff.flake8-quotes]
+docstring-quotes = "double"
+
+[tool.black]
+line-length = 100
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+no_implicit_optional = false
+ignore_missing_imports = true
