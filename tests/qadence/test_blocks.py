@@ -41,6 +41,11 @@ from qadence.transpile import invert_endianness, reassign, set_trainable
 from qadence.types import TNumber
 
 
+def test_nonnegative_qubit_support_error() -> None:
+    with pytest.raises(ValueError):
+        x_gate = X(-1)
+
+
 def test_1qubit_blocks() -> None:
     for B in [X, Y, Z]:
         b1 = B(1)  # type: ignore [abstract]
