@@ -32,8 +32,13 @@ class QuantumCircuit:
                 constructed with `Register.all_to_all(x)`
             *blocks: (Possibly multiple) blocks to construct the circuit from.
         """
+        if isinstance(support, int):
+            if support < 0:
+                raise ValueError("Only non-negative qubit indices are supported.")
+            self.register = Register(support)
+        else:
+            self.register = support
         self.block = chain(*blocks) if len(blocks) != 1 else blocks[0]
-        self.register = Register(support) if isinstance(support, int) else support
 
         global_block = isinstance(self.block, AnalogBlock) and self.block.qubit_support.is_global
         if not global_block and len(self.block) and self.block.n_qubits > self.register.n_qubits:

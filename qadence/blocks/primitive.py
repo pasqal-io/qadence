@@ -32,6 +32,8 @@ class PrimitiveBlock(AbstractBlock):
     name = "PrimitiveBlock"
 
     def __init__(self, qubit_support: tuple[int, ...]):
+        if any(index < 0 for index in qubit_support):
+            raise ValueError("Only non-negative qubit indices are supported.")
         self._qubit_support = qubit_support
 
     @property

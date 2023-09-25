@@ -15,6 +15,11 @@ from qadence.parameters import FeatureParameter, Parameter
 from qadence.transpile import invert_endianness
 
 
+def test_nonnegative_qubit_support_error() -> None:
+    with pytest.raises(ValueError):
+        circuit = QuantumCircuit(-2, X(0) @ X(1))
+
+
 def build_circuit(n_qubits: int, depth: int = 2) -> QuantumCircuit:
     param = FeatureParameter("x")
     block = kron(*[RX(qubit, (qubit + 1) * param) for qubit in range(n_qubits)])
