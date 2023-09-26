@@ -28,6 +28,6 @@ jobs:
     - name: Install Hatch
       run: |
         pip install hatch
-    - name: Run fast tests
+    - name: Run notebooks tests
       run: |
         hatch -v run test-notebooks
