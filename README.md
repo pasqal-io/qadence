@@ -6,7 +6,7 @@ Qadence is a Python package that provides a simple interface to build _**digital
 programs**_ with tunable interaction defined on _**arbitrary qubit register layouts**_.
 
 [![pre-commit](https://github.com/pasqal-io/qadence/actions/workflows/lint.yml/badge.svg)](https://github.com/pasqal-io/qadence/actions/workflows/lint.yml)
-[![test](https://github.com/pasqal-io/qadence/actions/workflows/test_fast.yml/badge.svg)](https://github.com/pasqal-io/qadence/actions/workflows/test_fast.yml)
+[![tests](https://github.com/pasqal-io/qadence/actions/workflows/test_fast.yml/badge.svg)](https://github.com/pasqal-io/qadence/actions/workflows/test_fast.yml)
 
 ## Feature highlights
 
