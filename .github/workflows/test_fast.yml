@@ -1,6 +1,7 @@
 name: Run Qadence fast tests.
 
-on: [push]
+on:
+  push
   pull_request:
     branches:
       - main
