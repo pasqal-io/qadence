@@ -26,6 +26,8 @@ jobs:
     - name: Install Hatch
       run: |
         pip install hatch
-    - name: Run tests
+    - name: Run fast tests
       run: |
         hatch -v run test -m "not slow"
+    - name: Publish coverage
+      uses: codecov/codecov-action@v3
