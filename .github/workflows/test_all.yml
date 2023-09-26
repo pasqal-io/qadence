@@ -1,13 +1,6 @@
-name: Test Qadence.
+name: Run all Qadence tests on schedule.
 
 on:
-  pull_request:
-    branches:
-      - main
-      - develop
-  push:
-    branches:
-      - develop
   schedule:
     # 03:00 every Saturday morning
     - cron: '0 3 * * 6'
@@ -32,4 +25,4 @@ jobs:
         pip install hatch
     - name: Run tests
       run: |
-        hatch -v run test -m "not slow"
+        hatch -v run test
