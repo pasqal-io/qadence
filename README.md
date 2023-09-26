@@ -6,6 +6,15 @@
 Qadence is a Python package that provides a simple interface to build _**digital-analog quantum
 programs**_ with tunable interaction defined on _**arbitrary qubit register layouts**_.
 
+
+[![Run Qadence fast tests.](https://github.com/pasqal-io/qadence/actions/workflows/test_fast.yml/badge.svg)](https://github.com/pasqal-io/qadence/actions/workflows/test_fast.yml)
+<!-- .. image:: https://github.com/jacobtomlinson/is-number/workflows/pre-commit/badge.svg -->
+<!--    :target: https://github.com/jacobtomlinson/is-number/actions?query=workflow%3Apre-commit -->
+<!--    :alt: GitHub Actions - pre-commit -->
+<!-- .. image:: https://img.shields.io/codecov/c/gh/jacobtomlinson/is-number -->
+<!--    :target: https://app.codecov.io/gh/jacobtomlinson/is-number -->
+<!--    :alt: Codecov -->
+
 ## Feature highlights
 
 * A [block-based system](tutorials/getting_started.md) for composing _**complex digital-analog
