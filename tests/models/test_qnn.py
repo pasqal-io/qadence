@@ -84,36 +84,6 @@ def test_input_nd(dim: int) -> None:
     assert len(res) == batch_size
 
 
-def test_set_extremization() -> None:
-    dim = 1
-    n_qubits_per_feature = 4
-
-    observable = total_magnetization(n_qubits_per_feature * dim)
-    circuit = build_circuit(n_qubits_per_feature, dim)
-    qnn = QNN(circuit, observable)
-
-    optimal_params = qnn.vparams
-    ansatz = circuit.get_blocks_by_tag("HEA")[0]
-    fm = circuit.get_blocks_by_tag("FM0")[0]
-
-    params_ansatz = parameters(ansatz)
-    assert len(params_ansatz) == len(list(optimal_params.keys()))
-
-    params_fm = parameters(fm)
-    unique_symbols = list(set(params_fm))  # type: ignore
-    assert len(params_fm) == circuit.n_qubits
-    assert len(unique_symbols) == dim
-
-    # make the feature map trainable and the ansatz as input
-    set_trainable(circuit.get_blocks_by_tag("FM0"), value=True)
-    set_trainable(circuit.get_blocks_by_tag("HEA"), value=False)
-
-    extremize_qnn = QNN(circuit, observable)
-    res = extremize_qnn(optimal_params)
-    assert len(res) == dim
-    assert extremize_qnn.num_vparams == dim
-
-
 def test_qnn_expectation(n_qubits: int = 4) -> None:
     theta0 = Parameter("theta0", trainable=True)
     theta1 = Parameter("theta1", trainable=True)

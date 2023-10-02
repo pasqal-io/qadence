@@ -110,7 +110,7 @@ def exp_fourier_feature_map(
     feature_range: tuple[float, float] = None,
 ) -> AbstractBlock:
     """
-    Exponential fourier feature map, compatible with the DQGM algorithm.
+    Exponential fourier feature map.
 
     Args:
         n_qubits: number of qubits in the feature
