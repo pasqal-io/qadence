@@ -1,5 +1,5 @@
 # import torch
-# from qadence import * 
+# from qadence import *
 # from itertools import product
 # from qadence.blocks.block_to_tensor import _fill_identities
 # from qadence.states import zero_state
@@ -27,12 +27,12 @@
 # def find_indices_of_bitstrings_with_zero_at_i(N:int, i:int, bit:str ='0'):
 #     if i >= N or i < 0:
 #         raise ValueError("Index i must be in the range [0, N-1]")
-    
+
 #     indices = []
 #     for idx, p in enumerate(product('01', repeat=N)):
 #         if p[i] == bit:
 #             indices.append(idx)
-            
+
 #     return indices
 
 # def basis_state_indices(n_qubits: int, target: int) -> torch.LongTensor:
@@ -70,7 +70,6 @@
 #                 state = apply_kjd_gate(state, rxmat * rymat * rzmat, qubit, N_QUBITS)
 
 #     assert len(state) == 2 ** N_QUBITS
-
 
 
 # @profile
