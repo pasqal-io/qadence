@@ -1,11 +1,29 @@
 from __future__ import annotations
 
-from qadence.draw.base import FigFormat, Padding, display, html_string, savefig
-from qadence.draw.box import IDENTITY_BOX, Box, MultiWireBox, TagBox
-from qadence.draw.composite import Column, Row
-from qadence.draw.grid import GridColumn
-from qadence.draw.operations import Control, ControlBox, IconBox, SWAPBox, Target
-from qadence.draw.text import Text
+import io
+from typing import Any
 
-# Modules to be automatically added to the qadence namespace
-__all__ = ["display", "savefig", "html_string"]
+from graphviz import Graph
+
+from .themes import Dark, Light
+from .utils import make_diagram
+from .vizbackend import QuantumCircuitDiagram
+
+
+def display(x: Any, *args: Any, **kwargs: Any) -> Graph:
+    return make_diagram(x, *args, **kwargs).show()
+
+
+def savefig(x: Any, filename: str, *args: Any, **kwargs: Any) -> None:
+    make_diagram(x, *args, **kwargs).savefig(filename)
+
+
+def html_string(x: Any, *args: Any, **kwargs: Any) -> str:
+    buffer = io.StringIO()
+
+    qcd = make_diagram(x, *args, **kwargs)
+    qcd._build()
+
+    buffer.write(qcd.graph.pipe(format="svg").decode("utf-8"))
+    buffer.seek(0)
+    return buffer.read()
