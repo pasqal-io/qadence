@@ -28,10 +28,8 @@ from sympy.physics.quantum.gate import Y as SympyY
 from sympy.physics.quantum.gate import Z as SympyZ
 from torch import Tensor
 
-from qucint.operations import OpEnum
-
-# from qucint.parameters import Parameter
-from qucint.types import TNumber
+from qadence.operations import OpEnum
+from qadence.types import TNumber
 
 
 def rebase(args: Iterable) -> Generator:

@@ -8,10 +8,10 @@ from sympy import I, Matrix, Mul, Symbol, cos, sin, sqrt
 from sympy.matrices import matrix2numpy
 from sympytorch.sympy_module import torch
 
-from qucint import Parameter as QParameter
-from qucint import QuantumCircuit
-from qucint.backends.api import backend_factory
-from qucint.blocks.block import (
+from qadence import Parameter as QParameter
+from qadence import QuantumCircuit
+from qadence.backends.api import backend_factory
+from qadence.blocks.sympy_block import (
     RX,
     AddBlock,
     ChainBlock,
@@ -25,10 +25,10 @@ from qucint.blocks.block import (
     evaluate,
     kron,
 )
-from qucint.operations import RX as QRX
-from qucint.operations import X as QX
-from qucint.operations import Y as QY
-from qucint.operations import Z as QZ
+from qadence.operations import RX as QRX
+from qadence.operations import X as QX
+from qadence.operations import Y as QY
+from qadence.operations import Z as QZ
 
 TO_QUCINT_OPS = {"X": QX, "Y": QY, "Z": QZ, "RX": QRX}
 
