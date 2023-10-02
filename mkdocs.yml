@@ -1,0 +1,145 @@
+site_name: Qadence
+repo_url: "https://gitlab.pasqal.com/pqs/qadence"
+repo_name: "qadence"
+
+nav:
+
+  - Qadence:
+    - index.md
+    - Getting Started: tutorials/getting_started.md
+    - Quantum Models: tutorials/quantummodels.md
+    - Parametric Programs: tutorials/parameters.md
+    - Quantum Registers: tutorials/register.md
+    - Arbitrary Hamiltonians: tutorials/hamiltonians.md
+    - Wavefunction Overlaps: tutorials/overlap.md
+    - Program Constructors, States & Serialization: tutorials/serializ_and_prep.md
+    - Backends: tutorials/backends.md
+    - State Conventions: tutorials/state_conventions.md
+
+  - Digital-Analog:
+    - digital_analog_qc/daqc-basics.md
+    - Digital-Analog Emulation:
+      - Basics: digital_analog_qc/analog-basics.md
+      - Solve a QUBO Problem: digital_analog_qc/analog-qubo.md
+      - Pulse-level Programming with Pulser: digital_analog_qc/pulser-basic.md
+    - DAQC Transform:
+      - CNOT with Interacting Qubits: digital_analog_qc/daqc-cnot.md
+      - Digital-analog QFT: digital_analog_qc/daqc-qft.md
+
+  - Variational Quantum Algorithms:
+    - qml/index.md
+    - Quantum Circuit Learning: qml/qcl.md
+    - QAOA for Solving MaxCut: qml/qaoa.md
+
+  - Advanced Tutorials:
+    - Quantum circuits differentiation: advanced_tutorials/differentiability.md
+    - Custom QuantumModels: advanced_tutorials/custom-models.md
+    - Ground-state VQE: advanced_tutorials/vqe.md
+
+  - API:
+    - Block system: qadence/blocks.md
+    - Operations: qadence/operations.md
+    - Register: qadence/register.md
+    - QuantumCircuit: qadence/quantumcircuit.md
+    - Parameters: qadence/parameters.md
+    - State Preparation: qadence/states.md
+    - Constructors: qadence/constructors.md
+    - Transpilation: qadence/transpile.md
+    - Execution: qadence/execution.md
+    - Quantum Models: models.md
+    - Machine Learning Tools: qadence/ml_tools.md
+    - Serialization: qadence/serialization.md
+    - Types: qadence/types.md
+
+    - Backends:
+      - Abstract Backend: backends/backend.md
+      - PyQTorch: backends/pyqtorch.md
+      - Amazon Braket: backends/braket.md
+      - Pulser: backends/pulser.md
+      - DifferentiableBackend: backends/differentiable.md
+
+  - Development:
+    - Architecture and Sharp Bits: development/architecture.md
+    - Contributing: development/contributing.md
+
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  features:
+  - content.code.annotate
+  - content.action.view
+  - content.action.edit
+  - navigation.tabs
+  - navigation.indexes
+  - navigation.sections
+  - content.code.copy
+  - content.code.annotate
+
+  palette:
+  - media: "(prefers-color-scheme: light)"
+    scheme: default
+    primary: custom
+    accent: custom
+    toggle:
+      icon: material/weather-sunny
+      name: Switch to dark mode
+  - media: "(prefers-color-scheme: dark)"
+    scheme: slate
+    primary: custom
+    accent: custom
+    toggle:
+      icon: material/weather-night
+      name: Switch to light mode
+
+markdown_extensions:
+- admonition  # for notes
+- footnotes
+- pymdownx.arithmatex: # for mathjax
+    generic: true
+- pymdownx.highlight:
+    anchor_linenums: true
+- pymdownx.inlinehilite
+- pymdownx.snippets
+- pymdownx.details
+- pymdownx.superfences:
+    custom_fences:
+    - name: python
+      class: python
+      validator: "!!python/name:markdown_exec.validator"
+      format: "!!python/name:markdown_exec.formatter"
+
+plugins:
+- search
+- section-index
+- mkdocstrings:
+    default_handler: python
+    handlers:
+      python:
+        selection:
+          filters:
+            - "!^_"  # exlude all members starting with _
+            - "^__init__$"  # but always include __init__ modules and methods
+            - "^__new__$"  # but always include __init__ modules and methods
+        options:
+          show_root_toc_entry: false
+          heading_level: 3
+          merge_init_into_class: true
+          docstring_section_style: spacy
+
+- mkdocs-jupyter:
+    theme: light
+- markdown-exec
+
+# To get nice tabs
+extra_css:
+- css/mkdocstrings.css
+
+# For mathjax
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+
+watch:
+- qadence
