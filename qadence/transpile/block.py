@@ -6,13 +6,14 @@ from typing import Callable, Generator, Iterable, Type
 
 import sympy
 
-from qadence import operations
+from qadence import SWAP, I
 from qadence.blocks import (
     AbstractBlock,
     AddBlock,
     AnalogBlock,
     ChainBlock,
     CompositeBlock,
+    ControlBlock,
     KronBlock,
     PrimitiveBlock,
     PutBlock,
@@ -160,7 +161,7 @@ def validate(block: AbstractBlock) -> AbstractBlock:
     vblock: AbstractBlock
     from qadence.transpile import reassign
 
-    if isinstance(block, operations.ControlBlock):
+    if isinstance(block, ControlBlock):
         vblock = deepcopy(block)
         b: AbstractBlock
         (b,) = block.blocks
@@ -291,6 +292,83 @@ def scale_only_first_block(
         return blk
     else:
         return block
+
+
+@singledispatch
+def fill_identities(block: AbstractBlock, start: int, stop: int) -> AbstractBlock:
+    return block
+
+
+@fill_identities.register
+def _(block: PrimitiveBlock, start: int, stop: int) -> AbstractBlock:
+    if (start == min(block.qubit_support)) and (stop == max(block.qubit_support) + 1):
+        return block
+    tag = block.tag
+    block.tag = None
+    bs = [block] + [I(i) for i in (set(range(start, stop)) - set(block.qubit_support))]
+    b = kron(*sorted(bs, key=lambda x: x.qubit_support))
+    b.tag = tag
+    return b
+
+
+@fill_identities.register
+def _(block: SWAP, start: int, stop: int) -> AbstractBlock:
+    if (start == min(block.qubit_support)) and (stop == max(block.qubit_support) + 1):
+        return block
+    tag = block.tag
+    block.tag = None
+    bs = [block] + [chain(I(i), I(i)) for i in (set(range(start, stop)) - set(block.qubit_support))]
+    b = kron(*sorted(bs, key=lambda x: x.qubit_support))
+    b.tag = tag
+    return b
+
+
+@fill_identities.register
+def _(block: ChainBlock, start: int, stop: int) -> AbstractBlock:
+    b = chain(fill_identities(b, start, stop) for b in block)
+    b.tag = block.tag
+    return b
+
+
+def _fill_kron(block: KronBlock, start: int, stop: int) -> list[AbstractBlock]:
+    def length(b: AbstractBlock | list) -> int:
+        if isinstance(b, list):
+            return max(map(length, b))
+        elif isinstance(b, ChainBlock):
+            return len(b)
+        elif isinstance(b, SWAP):
+            return 2
+        else:
+            return 1
+
+    def append_ids(block: AbstractBlock, total: int) -> AbstractBlock:
+        qs = block.qubit_support
+        ids = [I(i) for i in range(min(qs), max(qs) + 1) for _ in range(length(block), total)]
+        bs = [block] + ids
+        return chain(*bs)
+
+    def id_chain(i: int, max_len: int) -> AbstractBlock:
+        return chain(I(i) for _ in range(max_len))
+
+    bs = [fill_identities(b, min(b.qubit_support), max(b.qubit_support) + 1) for b in block]
+    max_len = length(bs)
+    bs = [append_ids(b, max_len) for b in bs]
+    bs += [id_chain(i, max_len) for i in (set(range(start, stop)) - set(block.qubit_support))]
+    return sorted(bs, key=lambda x: x.qubit_support)
+
+
+@fill_identities.register
+def _(block: KronBlock, start: int, stop: int) -> AbstractBlock:
+    b = kron(*_fill_kron(block, start, stop))  # type: ignore[misc]
+    b.tag = block.tag
+    return b
+
+
+@fill_identities.register
+def _(block: AddBlock, start: int, stop: int) -> AbstractBlock:
+    b = add(fill_identities(b, start, stop) for b in block)
+    b.tag = block.tag
+    return b
 
 
 def is_kron_of_primitives(block: AbstractBlock) -> bool:
