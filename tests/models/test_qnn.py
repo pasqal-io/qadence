@@ -10,7 +10,6 @@ from qadence import BackendName, DiffMode, FeatureParameter, QuantumCircuit
 from qadence.blocks import (
     chain,
     kron,
-    parameters,
     tag,
 )
 from qadence.constructors import hea, ising_hamiltonian, total_magnetization
@@ -18,7 +17,6 @@ from qadence.models import QNN
 from qadence.operations import RX, RY
 from qadence.parameters import Parameter
 from qadence.states import uniform_state
-from qadence.transpile import set_trainable
 
 
 def build_circuit(n_qubits_per_feature: int, n_features: int, depth: int = 2) -> QuantumCircuit:
