@@ -3,7 +3,6 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import Any, Iterable, Tuple
 
-import numpy as np
 import sympy
 import torch
 from rich.console import Console, RenderableType
@@ -57,15 +56,6 @@ class PrimitiveBlock(AbstractBlock):
     @property
     def depth(self) -> int:
         return 1
-
-    def __grid__(self, depth: int) -> Tuple[Tuple[int, ...], Any]:
-        from qadence.draw import Box, MultiWireBox, Text
-
-        wires = self.qubit_support
-        box = (
-            Box(Text(self.name)) if len(wires) == 1 else MultiWireBox(Text(self.name), wires=wires)
-        )
-        return self.qubit_support, box
 
     def __ascii__(self, console: Console) -> RenderableType:
         return Panel(self._block_title, expand=False)
@@ -137,22 +127,6 @@ class ParametricBlock(PrimitiveBlock):
                 params_str.append(stringify(p))
 
         return s + rf" \[params: {params_str}]"
-
-    def __grid__(self, depth: int) -> Tuple[Tuple[int, ...], Any]:
-        from qadence.draw import Box, Text
-
-        (p,) = self.parameters.expressions()
-        if self.trainable:
-            fill = (0.89, 0.91, 0.82, 1.0)
-            border = (0.49, 0.64, 0.15, 1.0)
-        else:
-            fill = (0.8, 0.8, 0.8, 1.0)
-            border = (0.3, 0.3, 0.3, 1.0)
-
-        s = format_parameter(p)
-
-        box = Box(Text(f"{self.name}({s})"), border_color=border, fill_color=fill)
-        return self.qubit_support, box
 
     @property
     def trainable(self) -> bool:
@@ -291,24 +265,6 @@ class ScaleBlock(ParametricBlock):
         (scale,) = self.parameters.expressions()
         return scale
 
-    def __grid__(self, depth: int) -> Tuple[Tuple[int, ...], Any]:
-        from qadence.draw import Box, TagBox, Text
-
-        _, box = self.block.__grid__(depth)
-
-        p = self.parameters.parameter
-
-        # don't render scaling if its equal to one
-        if p.is_number and np.isclose(evaluate(p), 1):
-            return self.qubit_support, box
-
-        s = format_parameter(p)
-        if isinstance(box, Box) and isinstance(box.renderable, Text):
-            box.renderable.text += f" * {s}"
-        else:
-            box = TagBox(box, Text(f"* {s}"))
-        return self.qubit_support, box
-
     def __rich_tree__(self, tree: Tree = None) -> Tree:
         if tree is None:
             tree = Tree(self._block_title)
@@ -406,25 +362,6 @@ class ControlBlock(PrimitiveBlock):
         s = f"{self.name}({c},{t})"
         return s if self.tag is None else (s + rf" \[tag: {self.tag}]")
 
-    def __grid__(self, depth: int) -> Tuple[Tuple[int, ...], Any]:
-        from qadence.draw import Control, ControlBox, IconBox
-
-        (control, target) = self.qubit_support
-        support = tuple(range(min(self.qubit_support), max(self.qubit_support) + 1))
-
-        c = Control()
-        t = self.blocks[0].__grid__(depth)[1]
-        t.border_color = c.border_color
-        t.fill_color = (0.98, 0.93, 0.86, 1.0)
-        if control < target:
-            top = IconBox(c)
-            bottom = IconBox(t)
-        else:
-            bottom = IconBox(c)
-            top = IconBox(t)
-        box = ControlBox(abs(control - target) + 1, top, bottom)
-        return (support, box)
-
     def __ascii__(self, console: Console) -> RenderableType:
         raise NotImplementedError
 
@@ -467,26 +404,6 @@ class ParametricControlBlock(ParametricBlock):
     @property
     def eigenvalues_generator(self) -> torch.Tensor:
         return torch.empty(0)
-
-    def __grid__(self, depth: int) -> Tuple[Tuple[int, ...], Any]:
-        from qadence.draw import Control, ControlBox, IconBox
-
-        (*control, target) = self.qubit_support
-        support = tuple(range(min(self.qubit_support), max(self.qubit_support) + 1))
-
-        c = Control()
-        t = self.blocks[0].__grid__(depth)[1]
-        t.border_color = c.border_color
-        t.fill_color = (0.98, 0.93, 0.86, 1.0)
-        # TODO; Multiple qubit
-        if control[0] < target:
-            top = IconBox(c)
-            bottom = IconBox(t)
-        else:
-            bottom = IconBox(c)
-            top = IconBox(t)
-        box = ControlBox(abs(control[0] - target) + 1, top, bottom)
-        return (support, box)
 
     def __ascii__(self, console: Console) -> RenderableType:
         raise NotImplementedError

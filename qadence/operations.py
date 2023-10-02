@@ -48,7 +48,7 @@ from qadence.parameters import (
     extract_original_param_entry,
 )
 from qadence.types import LTSOrder, OpName, TGenerator, TNumber, TParameter
-from qadence.utils import eigenvalues, format_parameter
+from qadence.utils import eigenvalues
 
 logger = get_logger(__name__)
 
@@ -293,11 +293,6 @@ class I(PrimitiveBlock):
     def eigenvalues(self) -> Tensor:
         return torch.ones(2, dtype=cdouble)
 
-    def __grid__(self, depth: int) -> Tuple[Tuple[int, ...], Any]:
-        from qadence.draw import IDENTITY_BOX
-
-        return self.qubit_support, IDENTITY_BOX
-
     def __ascii__(self, console: Console) -> Padding:
         return Padding("──────", (1, 1, 1, 1))
 
@@ -527,6 +522,7 @@ class HamEvo(TimeEvolutionBlock):
     """
 
     name = OpName.HAMEVO
+    draw_generator: bool = False
 
     def __init__(
         self,
@@ -595,14 +591,6 @@ class HamEvo(TimeEvolutionBlock):
             n_qubits = self.generator.n_qubits  # type: ignore [union-attr]
 
         return n_qubits
-
-    def __grid__(self, depth: int) -> Tuple[Tuple[int, ...], Any]:
-        from qadence.draw import MultiWireBox, Text
-
-        text = Text(f"{self.name}(t={format_parameter(self.parameters.parameter)})")
-        wires = tuple(range(min(self.qubit_support), max(self.qubit_support) + 1))
-        box = MultiWireBox(text, wires)
-        return (self.qubit_support, box)
 
     def dagger(self) -> Any:
         p = list(self.parameters.expressions())[0]
@@ -688,21 +676,6 @@ class CNOT(ControlBlock):
     @property
     def eigenvalues(self) -> Tensor:
         return torch.tensor([-1, 1, 1, 1], dtype=cdouble)
-
-    def __grid__(self, depth: int) -> Tuple[Tuple[int, ...], Any]:
-        from qadence.draw import Control, ControlBox, IconBox, Target
-
-        (control, target) = self.qubit_support
-        support = tuple(range(min(self.qubit_support), max(self.qubit_support) + 1))
-
-        if control < target:
-            t = IconBox(Control())
-            b = IconBox(Target())
-        else:
-            b = IconBox(Control())
-            t = IconBox(Target())
-        box = ControlBox(abs(control - target) + 1, t, b)
-        return (support, box)
 
     def __ascii__(self, console: Console) -> RenderableType:
         (target, control) = self.qubit_support
@@ -934,18 +907,6 @@ class CSWAP(ControlBlock):
     def dagger(self) -> CSWAP:
         return CSWAP(*self.qubit_support)
 
-    def __grid__(self, depth: int) -> Tuple[Tuple[int, ...], Any]:
-        from qadence.draw import Control, ControlBox, IconBox, Target
-
-        c, t1, t2 = self.qubit_support
-        control = IconBox(Control())
-        # TODO: finish rendering SWAP as target box
-        swap_target = IconBox(Target())
-        CSWAPBox = ControlBox(self.nqubits, control, swap_target)
-
-        (c, t) = self.qubit_support
-        return self.qubit_support, CSWAPBox
-
 
 class T(PrimitiveBlock):
     """The T gate"""
@@ -1033,12 +994,6 @@ class SWAP(PrimitiveBlock):
 
     def dagger(self) -> SWAP:
         return SWAP(*self.qubit_support)
-
-    def __grid__(self, depth: int) -> Tuple[Tuple[int, ...], Any]:
-        from qadence.draw import SWAPBox
-
-        (c, t) = self.qubit_support
-        return self.qubit_support, SWAPBox(control=c, target=t)
 
 
 class AnalogSWAP(HamEvo):

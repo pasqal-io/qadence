@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod, abstractproperty
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
-from typing import Any, ClassVar, Iterable, Tuple, Union, get_args
+from typing import ClassVar, Iterable, Tuple, Union, get_args
 
 import sympy
 import torch
@@ -239,10 +239,6 @@ class AbstractBlock(ABC):
 
     @abstractproperty
     def depth(self) -> int:
-        pass
-
-    @abstractmethod
-    def __grid__(self, depth: int) -> tuple[tuple[int, ...], Any]:
         pass
 
     @abstractmethod

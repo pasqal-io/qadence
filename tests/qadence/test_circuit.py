@@ -9,7 +9,7 @@ import pytest
 from qadence.blocks import chain, kron, primitive_blocks, tag
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import hea
-from qadence.draw import FigFormat, savefig
+from qadence.draw import savefig
 from qadence.operations import CNOT, RX, X, Y
 from qadence.parameters import FeatureParameter, Parameter
 from qadence.transpile import invert_endianness
@@ -138,13 +138,10 @@ def test_hea_operators() -> None:
     assert param in mychain
 
 
-@pytest.mark.parametrize(
-    "fig_format", [FigFormat.PDF, FigFormat.PNG, FigFormat.SVG, "PDF", "PNG", "SVG"]
-)
+@pytest.mark.parametrize("fname", ["circuit.png", "circuit.pdf", "circuit.png"])
 @pytest.mark.skip
-def test_savefig_circuit(fig_format: str) -> None:
+def test_savefig_circuit(fname: str) -> None:
     circuit = build_circuit(4, depth=2)
-    fname = f"circuit.{fig_format.lower()}"
-    savefig(circuit, fname, fig_format=fig_format)
+    savefig(circuit, fname)
     assert os.path.isfile(fname)
     Path.unlink(Path(fname))
