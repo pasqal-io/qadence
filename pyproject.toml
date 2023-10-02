@@ -47,12 +47,20 @@ allow-ambiguous-features = true
 [project.optional-dependencies]
 pulser = ["pulser>=v0.12.0"]
 braket = ["amazon-braket-sdk"]
-visualization = ["pycairo"]
+visualization = [
+  "graphviz",
+  # FIXME: will be needed once we support latex labels
+  # "latex2svg @ git+https://github.com/Moonbase59/latex2svg.git#egg=latex2svg",
+  # "scour",
+]
 scipy = ["scipy<1.11"]
 all = [
   "pulser>=0.12.0",
   "amazon-braket-sdk",
-  "pycairo",
+  "graphviz",
+  # FIXME: will be needed once we support latex labels
+  # "latex2svg @ git+https://github.com/Moonbase59/latex2svg.git#egg=latex2svg",
+  # "scour",
   "scipy<1.11"
 ]
 
