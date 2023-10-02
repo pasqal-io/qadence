@@ -1,6 +1,9 @@
 name: Lint and type check Qadence.
 
 on:
+  push:
+    branches:
+      - main
   pull_request: {}
   workflow_dispatch: {}
 
