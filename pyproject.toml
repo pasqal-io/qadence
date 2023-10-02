@@ -19,7 +19,7 @@ authors = [
 ]
 requires-python = ">=3.9,<3.11"
 license = {text = "Proprietary"}
-version = "0.9.1"
+version = "1.0.0"
 classifiers=[
     "License :: Other/Proprietary License",
     "Programming Language :: Python",
