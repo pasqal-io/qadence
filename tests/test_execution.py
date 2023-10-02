@@ -1,0 +1,103 @@
+from __future__ import annotations
+
+from collections import Counter
+
+import pytest
+import strategies as st  # type: ignore
+from hypothesis import given, settings
+from metrics import JS_ACCEPTANCE  # type: ignore
+from torch import Tensor, allclose, rand
+
+from qadence import RX, QuantumCircuit, Z, expectation, run, sample, total_magnetization
+from qadence.backend import BackendName
+from qadence.blocks import AbstractBlock
+from qadence.divergences import js_divergence
+from qadence.register import Register
+from qadence.states import equivalent_state
+from qadence.types import DiffMode
+
+BACKENDS = [BackendName.PYQTORCH, BackendName.BRAKET]
+
+
+@pytest.mark.parametrize("backend", list(BACKENDS))
+@given(st.restricted_batched_circuits())
+@settings(deadline=None)
+def test_run(backend: BackendName, circ_and_vals: tuple[QuantumCircuit, dict[str, Tensor]]) -> None:
+    circ, inputs = circ_and_vals
+    reg = Register(circ.n_qubits)
+    wf = run(circ, values=inputs, backend=backend)  # type: ignore[arg-type]
+    wf = run(reg, circ.block, values=inputs, backend=backend)  # type: ignore[arg-type]
+    wf = run(circ.block, values=inputs, backend=backend)  # type: ignore[arg-type]
+    assert isinstance(wf, Tensor)
+
+
+@pytest.mark.parametrize("backend", list(BACKENDS))
+@given(st.restricted_batched_circuits())
+@settings(deadline=None)
+def test_sample(
+    backend: BackendName, circ_and_vals: tuple[QuantumCircuit, dict[str, Tensor]]
+) -> None:
+    circ, inputs = circ_and_vals
+    reg = Register(circ.n_qubits)
+    samples = sample(circ, values=inputs, backend=backend)
+    samples = sample(reg, circ.block, values=inputs, backend=backend)
+    samples = sample(circ.block, values=inputs, backend=backend)
+    assert all([isinstance(s, Counter) for s in samples])
+
+
+@pytest.mark.parametrize("diff_mode", list(DiffMode) + [None])
+@pytest.mark.parametrize("backend", list(BACKENDS))
+@given(st.restricted_batched_circuits())
+@settings(deadline=None)
+def test_expectation(
+    diff_mode: DiffMode,
+    backend: BackendName,
+    circ_and_vals: tuple[QuantumCircuit, dict[str, Tensor]],
+) -> None:
+    if diff_mode == "ad" and backend != "pyqtorch":
+        pytest.skip(f"Backend {backend} doesnt support diff_mode={diff_mode}.")
+    circ, inputs = circ_and_vals
+    reg = Register(circ.n_qubits)
+    obs = total_magnetization(reg.n_qubits)
+    x = expectation(
+        circ, obs, values=inputs, backend=backend, diff_mode=diff_mode
+    )  # type: ignore[call-arg]
+    x = expectation(
+        reg, circ.block, obs, values=inputs, backend=backend, diff_mode=diff_mode  # type: ignore
+    )
+    x = expectation(
+        circ.block, obs, values=inputs, backend=backend, diff_mode=diff_mode
+    )  # type: ignore[call-arg]
+    if inputs:
+        assert x.size(0) == len(inputs[list(inputs.keys())[0]])
+    else:
+        assert x.size(0) == 1
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_single_qubit_block(
+    backend: BackendName, block: AbstractBlock = RX(2, rand(1).item())
+) -> None:
+    run(block, values={}, backend=backend)  # type: ignore[arg-type]
+    sample(block, values={}, backend=backend)  # type: ignore[arg-type]
+    expectation(block, Z(0), values={}, backend=backend)  # type: ignore[arg-type]
+
+
+@given(st.batched_digital_circuits())
+def test_singlequbit_comp(circ_and_vals: tuple[QuantumCircuit, dict[str, Tensor]]) -> None:
+    circ, inputs = circ_and_vals
+    wf_0 = run(circ, values=inputs)  # type: ignore[arg-type]
+    samples_0 = sample(circ, values=inputs)  # type: ignore[arg-type]
+    expectation_0 = expectation(circ, Z(0), values=inputs)  # type: ignore[arg-type]
+
+    # diffmode = "ad" makes pyq compose single qubit ops if possible
+
+    wf_1 = run(circ, values=inputs)  # type: ignore[arg-type]
+    samples_1 = sample(circ, values=inputs)  # type: ignore[arg-type]
+    expectation_1 = expectation(circ, Z(0), values=inputs, diff_mode="ad")  # type: ignore[arg-type]
+
+    assert equivalent_state(wf_0, wf_1)
+    assert allclose(expectation_0, expectation_1)
+
+    for sample0, sample1 in zip(samples_0, samples_1):
+        assert js_divergence(sample0, sample1) < JS_ACCEPTANCE
