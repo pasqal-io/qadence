@@ -2,5 +2,5 @@
 
 from .daqc import daqc_transform
 
-# Modules to be automatically added to the qucint namespace
+# Modules to be automatically added to the qadence namespace
 __all__ = []  # type: ignore
