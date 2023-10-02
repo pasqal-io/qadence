@@ -22,6 +22,7 @@ from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.logger import get_logger
 from qadence.measurements import Measurements
+from qadence.noise import ErrorModel, ReadoutError
 from qadence.utils import Endianness
 
 logger = get_logger(__name__)
@@ -49,6 +50,7 @@ class QuantumModel(nn.Module):
         diff_mode: DiffMode = DiffMode.AD,
         protocol: Measurements | None = None,
         configuration: BackendConfiguration | dict | None = None,
+        noise_model: ErrorModel | None = None,
     ):
         """Initialize a generic QuantumModel instance.
 
@@ -62,6 +64,7 @@ class QuantumModel(nn.Module):
             protocol: Optional measurement protocol. If None, use
                 exact expectation value with a statevector simulator.
             configuration: Configuration for the backend.
+            noise_model: Whether or not and which noise model to use.
 
         Raises:
             ValueError: if the `diff_mode` argument is set to None
@@ -75,12 +78,11 @@ class QuantumModel(nn.Module):
 
         self.inputs = [p for p in circuit.unique_parameters if not p.trainable and not p.is_number]
         if diff_mode is None:
-            raise ValueError("`diff_mode` cannot be `None` in a `QuantumModel`.")
+            raise ValueError("`diff_mode` cannot be `None` in a `QuantumModel`")
 
         self.backend = backend_factory(
             backend=backend, diff_mode=diff_mode, configuration=configuration
         )
-
         if isinstance(observable, list) or observable is None:
             observable = observable
         else:
@@ -93,6 +95,8 @@ class QuantumModel(nn.Module):
         self._backend_name = backend
         self._diff_mode = diff_mode
         self._protocol = protocol
+        self._noise_model = noise_model
+        self._n_qubits = circuit.n_qubits
 
         self._params = nn.ParameterDict(
             {
@@ -165,9 +169,17 @@ class QuantumModel(nn.Module):
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         params = self.embedding_fn(self._params, values)
-        return self.backend.sample(
+        output = self.backend.sample(
             self._circuit, params, n_shots=n_shots, state=state, endianness=endianness
         )
+        if self._noise_model is None:
+            return output
+        # corrupt bitstrings with simple readout noise
+        elif self._noise_model.name == "ReadoutError":
+            errmodel = ReadoutError(n_qubits=self._n_qubits)
+            return errmodel(output[0])
+        else:
+            raise NotImplementedError
 
     def expectation(
         self,
