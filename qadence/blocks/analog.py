@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import abstractproperty
 from dataclasses import dataclass
-from typing import Any, Tuple
+from typing import Tuple
 
 import numpy as np
 import torch
@@ -31,9 +31,6 @@ class AnalogBlock(AbstractBlock):
         raise NotImplementedError
 
     def __eq__(self, other: object) -> bool:
-        raise NotImplementedError
-
-    def __grid__(self, depth: int) -> tuple[tuple[int, ...], Any]:
         raise NotImplementedError
 
     @classmethod

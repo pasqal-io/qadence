@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Tuple
+from typing import Tuple
 
 import torch
 from rich.columns import Columns
@@ -170,10 +170,6 @@ class PutBlock(CompositeBlock):
         support = ",".join(str(i) for i in self.qubit_support)
         return f"put on ({support})"
 
-    def __grid__(self, depth: int) -> Tuple[Tuple[int, ...], Any]:
-        _, box = self.blocks[0].__grid__(depth)
-        return self.qubit_support, box
-
     def __ascii__(self, console: Console) -> RenderableType:
         return self.blocks[0].__ascii__(console)
 
@@ -207,32 +203,6 @@ class ChainBlock(CompositeBlock):
 
         return Panel(Columns(cols), title=self.tag, width=w)
 
-    def __grid__(self, depth: int) -> Tuple[Tuple[int, ...], Any]:
-        from qadence.draw import GridColumn, MultiWireBox, Row, TagBox, Text
-        from qadence.draw import Padding as Pad
-        from qadence.draw.base import Renderable
-
-        box: Renderable
-        depth -= 1
-        if depth == 0:
-            box = MultiWireBox(
-                Text(self.name if self.tag is None else self.tag), wires=tuple(range(self.n_qubits))
-            )
-        else:
-            from qadence.operations import I
-
-            boxes = []
-            blks: tuple[AbstractBlock, ...]
-            for b in self.blocks:
-                blks = tuple(I(i) for i in range(min(b.qubit_support)) if i not in b.qubit_support)
-                blks += (b,)
-                blks += tuple(I(i) for i in range(max(b.qubit_support) + 1, self.n_qubits))
-                boxes.append(GridColumn(self.n_qubits, [x.__grid__(depth) for x in blks]))
-            box = Row(boxes, pad=Pad(0, 0, 0, 0, 0))
-            box = box if self.tag is None else TagBox(box, Text(self.tag))
-
-        return self.qubit_support, box
-
 
 class KronBlock(CompositeBlock):
     """Stacks blocks horizontally. Constructed via [`kron`][qadence.blocks.utils.kron]."""
@@ -259,27 +229,6 @@ class KronBlock(CompositeBlock):
         ps = [b.__ascii__(console) for b in self.blocks]
         return Panel(Group(*ps), title=self.tag, expand=False)
 
-    def __grid__(self, depth: int) -> Tuple[Tuple[int, ...], Any]:
-        from qadence.draw import GridColumn, MultiWireBox, TagBox, Text
-        from qadence.draw.base import Renderable
-        from qadence.operations import I
-
-        box: Renderable
-        if depth == 0:
-            box = MultiWireBox(
-                Text(self.name if self.tag is None else self.tag), wires=self.qubit_support
-            )
-        else:
-            grid_renderables = [b.__grid__(depth) for b in self.blocks]
-            all_qubits = set(range(max(self.qubit_support) + 1))
-            identity_renderables = [
-                I(i).__grid__(depth) for i in all_qubits - set(self.qubit_support)
-            ]
-            all_renderables = sorted(grid_renderables + identity_renderables, key=lambda x: x[0])
-            box = GridColumn(self.n_qubits, all_renderables)
-            box = box if self.tag is None else TagBox(box, Text(self.tag))
-        return self.qubit_support, box
-
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, AbstractBlock):
             raise TypeError(f"Cant compare {type(self)} to {type(other)}")
@@ -301,9 +250,6 @@ class AddBlock(CompositeBlock):
     def __ascii__(self, console: Console) -> RenderableType:
         ps = [b.__ascii__(console) for b in self.blocks]
         return Panel(Group(*ps), title=self.tag, expand=False)
-
-    def __grid__(self, depth: int) -> Tuple[Tuple[int, ...], Any]:
-        return ChainBlock.__grid__(self, depth)  # type: ignore [arg-type]
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, AbstractBlock):
