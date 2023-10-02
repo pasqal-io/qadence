@@ -9,8 +9,10 @@ on:
       - main
   paths:
     - examples
-  paths-ignore:
-    - examples/notebooks
+    - notebooks
+  schedule:
+    # 03:00 every Saturday morning
+    - cron: '0 3 * * 6'
   workflow_dispatch: {}
 
 concurrency:
