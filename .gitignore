@@ -1,0 +1,60 @@
+*.DS_Store
+test.png
+*.swp
+
+# Default ignored files
+/.idea/
+/__pycache__/
+.vscode/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+.coverage-journal
+.mypy_cache/
+
+# Distribution / packaging
+.Python
+*.egg-info/
+.installed.cfg
+*.egg
+build/
+dist/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# specific
+.*.db
+*.db
+*.eggs
+*.env
+Pipfile
+runs/
+*venv
+
+# Mkdocs
+site/
+
+# converted notebooks
+docs/**/*.py
+
+# pt files
+*.pt
+
+# event files
+events.out.tfevents.*
+/examples/notebooks/onboarding_sandbox.ipynb
