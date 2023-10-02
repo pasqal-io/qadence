@@ -1,8 +1,6 @@
-<h1 style="display: none;">noheading</h1>
-
 # Qadence
 
-Qadence is a Python package that provides a simple interface to build _**digital-analog quantum
+*Qadence* is a Python package that provides a simple interface to build _**digital-analog quantum
 programs**_ with tunable interaction defined on _**arbitrary qubit register layouts**_.
 
 [![pre-commit](https://github.com/pasqal-io/qadence/actions/workflows/lint.yml/badge.svg)](https://github.com/pasqal-io/qadence/actions/workflows/lint.yml)
