@@ -37,6 +37,45 @@ supported_gates = list(set(OpName.list()) - set([OpName.TDAGGER]))
 """The set of supported gates. Tdagger is currently not supported."""
 
 
+def basis_state_indices(n_qubits: int, target: int) -> tuple[torch.LongTensor, torch.LongTensor]:
+    n_target = 1
+    target = torch.tensor(target)
+    index_base = torch.arange(0, 2 ** (n_qubits - n_target))
+    t = n_qubits - 1 - target
+    zero_index = index_base + ((index_base >> t) << t)
+    one_index = index_base + (((index_base >> t) + 1) << t)
+    return (zero_index.long(), one_index.long())
+
+
+def apply_kjd_gate(
+    state: torch.Tensor, mat: torch.Tensor, qubit: int, n_qubits: int, batch_size: int
+) -> torch.Tensor:
+    batch_size = state.size(-1)
+    state = state.flatten()
+    indices = basis_state_indices(n_qubits, qubit)
+    _, sorted_indices = torch.sort(indices)
+    return (
+        (mat @ state[indices].view(2, 2**n_qubits // 2))
+        .flatten()[sorted_indices]
+        .reshape([2] * n_qubits + [batch_size])
+    )
+
+
+class PyQX(Module):
+    def __init__(self, target: int, n_qubits: int):
+        super().__init__()
+        self.target = target
+        self.n_qubits = n_qubits
+
+    def forward(self, state: torch.Tensor, values: dict) -> torch.Tensor:
+        batch_size = state.size(-1)
+        state = state.flatten()
+        zero_indices, one_indices = basis_state_indices(self.n_qubits, self.target)
+        return state[torch.cat([one_indices, zero_indices])].reshape(
+            [2] * self.n_qubits + [batch_size]
+        )
+
+
 def is_single_qubit_chain(block: AbstractBlock) -> bool:
     return (
         isinstance(block, (ChainBlock))
@@ -89,7 +128,11 @@ def convert_block(
     elif isinstance(block, MatrixBlock):
         return [PyQMatrixBlock(block, n_qubits, config)]
     elif isinstance(block, PrimitiveBlock):
-        return [PyQOperation(n_qubits, block)]
+        if block.name == "X":
+            return [PyQX(block.qubit_support[0], n_qubits)]
+        else:
+            return [PyQOperation(n_qubits, block)]
+
     elif isinstance(block, CompositeBlock):
         ops = list(flatten(*(convert_block(b, n_qubits, config) for b in block.blocks)))
         if is_single_qubit_chain(block) and config.use_single_qubit_composition:
@@ -426,10 +469,6 @@ class ScalePyQOperation(Module):
                 return _fwd(state, values)
 
         self._forward = _forward
-
-    def matrices(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
-        thetas = values[self.param_name]
-        return (thetas * self.operation.matrices()).unsqueeze(2)
 
     def forward(self, state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
         return self._forward(state, values)
