@@ -1,8 +1,7 @@
-<h1 style="display: none;">noheading</h1>
 
 # Qadence
 
-Qadence is a Python package that provides a simple interface to build _**digital-analog quantum
+*Qadence* is a Python package that provides a simple interface to build _**digital-analog quantum
 programs**_ with tunable interaction defined on _**arbitrary qubit register layouts**_.
 
 [![pre-commit](https://github.com/pasqal-io/qadence/actions/workflows/lint.yml/badge.svg)](https://github.com/pasqal-io/qadence/actions/workflows/lint.yml)
@@ -147,20 +146,20 @@ You can install one or all of the following additional backends and the circuit 
 * `braket`: install the Amazon Braket quantum backend
 * `emu-c`: install the Pasqal circuit tensor network emulator EMU-C
 * `pulser`: install the Pulser backend. Pulser is a framework for composing, simulating and executing pulse sequences for neutral-atom quantum devices.
-* `visualization`: install the library necessary to visualize the quantum circuits in SVG.
+* `visualization`: install the library necessary to visualize quantum circuits.
 
 !!! warning
-    In order to correctly install the "visualization" extra, you need to have Cairo installed in your system. This
-    depends on the operating system you are using:
+    In order to correctly install the "visualization" extra, you need to have `graphviz` installed
+    in your system. This depends on the operating system you are using:
 
     ```bash
     # on Ubuntu
-    sudo apt install pkg-config libcairo2-dev
+    sudo apt install graphviz
 
     # on MacOS
-    brew install pkg-config cairo
+    brew install graphviz
 
-    # or with conda
-    conda install pycairo
+    # via conda
+    conda install python-graphviz
     ```
 ---
