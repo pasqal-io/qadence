@@ -140,18 +140,18 @@ def circuit_analog_rotation_gpsr(n_qubits: int) -> QuantumCircuit:
 
 
 @pytest.mark.parametrize(
-    ["n_qubits", "batch_size", "circuit_fn"],
+    ["n_qubits", "batch_size", "n_obs", "circuit_fn"],
     [
-        (2, 5, circuit_psr),
-        (5, 10, circuit_psr),
-        (3, 5, circuit_gpsr),
-        (5, 10, circuit_gpsr),
-        (3, 1, circuit_hamevo_tensor_gpsr),
-        (3, 1, circuit_hamevo_block_gpsr),
-        (3, 1, circuit_analog_rotation_gpsr),
+        (2, 1, 2, circuit_psr),
+        (5, 10, 1, circuit_psr),
+        (3, 1, 4, circuit_gpsr),
+        (5, 10, 1, circuit_gpsr),
+        (3, 1, 1, circuit_hamevo_tensor_gpsr),
+        (3, 1, 1, circuit_hamevo_block_gpsr),
+        (3, 1, 1, circuit_analog_rotation_gpsr),
     ],
 )
-def test_expectation_psr(n_qubits: int, batch_size: int, circuit_fn: Callable) -> None:
+def test_expectation_psr(n_qubits: int, batch_size: int, n_obs: int, circuit_fn: Callable) -> None:
     torch.manual_seed(42)
     np.random.seed(42)
 
@@ -159,7 +159,7 @@ def test_expectation_psr(n_qubits: int, batch_size: int, circuit_fn: Callable) -
     circ = circuit_fn(n_qubits)
     obs = total_magnetization(n_qubits)
     quantum_backend = PyQBackend()
-    conv = quantum_backend.convert(circ, obs)
+    conv = quantum_backend.convert(circ, [obs for _ in range(n_obs)])
     pyq_circ, pyq_obs, embedding_fn, params = conv
     diff_backend = DifferentiableBackend(quantum_backend, diff_mode=DiffMode.AD)
 
@@ -169,6 +169,7 @@ def test_expectation_psr(n_qubits: int, batch_size: int, circuit_fn: Callable) -
     dexpval_x = torch.autograd.grad(
         expval, values["x"], torch.ones_like(expval), create_graph=True
     )[0]
+
     dexpval_xx = torch.autograd.grad(
         dexpval_x, values["x"], torch.ones_like(dexpval_x), create_graph=True
     )[0]
@@ -189,7 +190,7 @@ def test_expectation_psr(n_qubits: int, batch_size: int, circuit_fn: Callable) -
 
     # Now running stuff for (G)PSR
     quantum_backend.config._use_gate_params = True
-    conv = quantum_backend.convert(circ, obs)
+    conv = quantum_backend.convert(circ, [obs for _ in range(n_obs)])
     pyq_circ, pyq_obs, embedding_fn, params = conv
     if circuit_fn == circuit_analog_rotation_gpsr:
         diff_backend = DifferentiableBackend(
@@ -203,6 +204,7 @@ def test_expectation_psr(n_qubits: int, batch_size: int, circuit_fn: Callable) -
     dexpval_psr_x = torch.autograd.grad(
         expval, values["x"], torch.ones_like(expval), create_graph=True
     )[0]
+
     dexpval_psr_xx = torch.autograd.grad(
         dexpval_psr_x, values["x"], torch.ones_like(dexpval_psr_x), create_graph=True
     )[0]

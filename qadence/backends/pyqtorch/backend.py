@@ -139,11 +139,10 @@ class Backend(BackendInterface):
             unpyqify_state=False,
         )
         observable = observable if isinstance(observable, list) else [observable]
-        res_list = [obs.native(state, param_values) for obs in observable]
-
-        # return a tensor of shape `n_batches * n_obs`
-        res = torch.transpose(torch.stack(res_list), 0, 1).squeeze()
-        return res if len(res.shape) > 0 else res.reshape(1)
+        _expectation = torch.hstack(
+            [obs.native(state, param_values).reshape(-1, 1) for obs in observable]
+        )
+        return _expectation
 
     def _looped_expectation(
         self,
@@ -168,8 +167,7 @@ class Backend(BackendInterface):
             exs = torch.cat([obs.native(wf, vals) for obs in observables], 0)
             list_expvals.append(exs)
 
-        # return a tensor of shape `n_batches * n_obs`
-        batch_expvals = torch.stack(list_expvals).squeeze()
+        batch_expvals = torch.vstack(list_expvals)
         return batch_expvals if len(batch_expvals.shape) > 0 else batch_expvals.reshape(1)
 
     def expectation(

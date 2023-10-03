@@ -130,14 +130,11 @@ def test_list_observables_with_batches(n_obs: int, loop_expectation: bool) -> No
     model = QuantumModel(circuit, observables, configuration={"loop_expectation": loop_expectation})
     expval = model.expectation(values)
 
-    if n_obs == 1:
-        assert len(expval.shape) == 1 and expval.shape[0] == batch_size
-    else:
-        assert len(expval.shape) == 2 and expval.shape[0] == batch_size and expval.shape[1] == n_obs
-        factors = torch.linspace(1, n_obs, n_obs)
-        for i, e in enumerate(expval):
-            tmp = torch.div(e, factors * e[0])
-            assert torch.allclose(tmp, torch.ones(n_obs))
+    assert len(expval.shape) == 2 and expval.shape[0] == batch_size and expval.shape[1] == n_obs
+    factors = torch.linspace(1, n_obs, n_obs)
+    for i, e in enumerate(expval):
+        tmp = torch.div(e, factors * e[0])
+        assert torch.allclose(tmp, torch.ones(n_obs))
 
 
 @pytest.mark.parametrize("n_shots", [5, 10, 100, 1000, 10000])
