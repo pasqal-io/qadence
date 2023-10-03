@@ -58,8 +58,7 @@ def test_expectation_value_list_of_obs(parametric_circuit: QuantumCircuit) -> No
     expval = bkd.expectation(bra_circ, bra_obs, embed(params, values))
 
     assert isinstance(expval, torch.Tensor)
-    assert np.prod(expval.shape) == batch_size * n_obs
-    assert torch.unique(expval).size(0) == expval.size(0)
+    assert expval.shape == (batch_size, n_obs)
 
 
 @pytest.mark.parametrize(

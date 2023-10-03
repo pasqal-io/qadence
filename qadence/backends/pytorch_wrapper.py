@@ -60,7 +60,11 @@ class PSRExpectation(Function):
             )
 
         def vjp(psr: Callable, name: str) -> Tensor:
-            return grad_out * psr(expectation_fn, params, name)
+            """
+            !!! warn
+                Sums over gradients corresponding to different observables.
+            """
+            return (grad_out * psr(expectation_fn, params, name)).sum(dim=1)
 
         grads = [
             vjp(psr, name) if needs_grad else None

@@ -129,7 +129,7 @@ def compute_expectation(
     state: Tensor | None = None,
     backend_name: BackendName = BackendName.PYQTORCH,
     endianness: Endianness = Endianness.BIG,
-) -> list[Tensor]:
+) -> Tensor:
     """Basic tomography protocol with rotations
 
     Given a circuit and a list of observables, apply basic tomography protocol to estimate
@@ -158,4 +158,4 @@ def compute_expectation(
                 endianness=endianness,
             )
         )
-    return estimated_values
+    return torch.transpose(torch.vstack(estimated_values), 1, 0)
