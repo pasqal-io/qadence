@@ -78,8 +78,8 @@ def test_input_nd(dim: int) -> None:
 
     res: torch.Tensor = qnn(a)
     assert qnn.out_features is not None and qnn.out_features == 1
-    assert len(res.size()) == qnn.out_features
-    assert len(res) == batch_size
+    assert res.size()[1] == qnn.out_features
+    assert res.size()[0] == batch_size
 
 
 def test_qnn_expectation(n_qubits: int = 4) -> None:

@@ -229,7 +229,7 @@ class Backend(BackendInterface):
         support = sorted(list(circuit.abstract.register.support))
         res_list = [obs.native(state, param_values, qubit_support=support) for obs in observables]
 
-        res = torch.transpose(torch.stack(res_list), 0, 1).squeeze()
+        res = torch.transpose(torch.stack(res_list), 0, 1)
         res = res if len(res.shape) > 0 else res.reshape(1)
         return res.real
 
