@@ -163,7 +163,8 @@ class Backend(BackendInterface):
         res = []
         observable = observable if isinstance(observable, list) else [observable]
         for wf in wfs:
-            res.extend([torch.vdot(wf, obs.native @ wf).real for obs in observable])
+            res.append([torch.vdot(wf, obs.native @ wf).real for obs in observable])
+
         return torch.tensor(res)
 
     def assign_parameters(
