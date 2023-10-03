@@ -74,15 +74,11 @@ dependencies = [
   "pytest-cov",
   "pytest-mypy",
   "pytest-xdist",
-  "nbconvert",
   "ipykernel",
-  "jupyter_contrib_nbextensions",
   "pre-commit",
   "black",
   "isort",
   "ruff",
-  "notebook<7.0",
-  "dill",
 ]
 features = ["all"]
 
@@ -123,9 +119,6 @@ dependencies = [
   "mkdocs-jupyter",
   "mkdocs-exclude",
   "markdown-exec",
-  "notebook<7",
-  "jupyter_contrib_nbextensions",
-  "dill",
 ]
 features = ["pulser", "braket", "visualization"]
 
