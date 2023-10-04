@@ -67,8 +67,8 @@ To run the pulse sequence we have to provide values for the parametrized block w
 import torch
 
 params = {
-    "wait": torch.tensor([383]),  # ns
-    "y": torch.tensor([torch.pi/2]),
+    "t": torch.tensor([383]),  # ns
+    "y": torch.tensor([3*torch.pi/2]),
 }
 
 # Visualise the final state vector
@@ -163,9 +163,12 @@ In those cases, global pulses are preferred to generate entanglement to avoid
 changing the addressing pattern on the fly.
 
 ```python exec="on" source="material-block" html="1" session="pulser-basic"
+from qadence.backends.pulser import Device
+from qadence import AnalogRot
+
 protocol = chain(
     entangle("t"),
-    AnalogRY(torch.pi / 2),
+    AnalogRot(duration=300, omega=5*torch.pi),
 )
 
 register = Register.square(qubits_side=2)
@@ -174,7 +177,7 @@ model = QuantumModel(circuit, backend="pulser", diff_mode='gpsr')
 model.backend.backend.config.with_modulation = True
 
 params = {
-    "t": torch.tensor([1956]),  # ns
+    "t": torch.tensor([2488]),  # ns
 }
 
 sample = model.sample(params, n_shots=500)[0]
@@ -197,51 +200,43 @@ print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
 
 ## Working with observables
 
-The current backend version does not support Qadence `Observables`. However, it's
-still possible to use the regular Pulser simulations to calculate expected
-values.
-
-To do so, we use the `assign_parameters` property to recover the Pulser sequence.
-
-```python exec="on" source="material-block" session="pulser-basic"
-params = {
-    "t": torch.tensor([383]),  # ns
-}
-
-built_sequence = model.assign_parameters(params)
-```
-
-
-Next, we create the desired observables using `Qutip` [^2].
+You can calculate expectation value of `Observables` in the Pulser backend the same way as in other backends by using the `expectation` method.
+First we create the desired observables using Qadence blocks.
 
 
 ```python exec="on" source="material-block" session="pulser-basic"
-import qutip
+from qadence.operations import I, X, Y, Z, kron
 
-zz = qutip.tensor([qutip.qeye(2), qutip.sigmaz(), qutip.qeye(2), qutip.sigmaz()])
-xy = qutip.tensor([qutip.qeye(2), qutip.sigmax(), qutip.qeye(2), qutip.sigmay()])
-yx = qutip.tensor([qutip.qeye(2), qutip.sigmay(), qutip.qeye(2), qutip.sigmax()])
+zz = kron(I(0), Z(1), I(2), Z(3))
+xy = kron(I(0), X(1), I(2), Y(3))
+yx = kron(I(0), Y(1), I(2), X(3))
+
+obs = [zz, xy + yx]
+
 ```
 
-
-We use the Pulser `Simulation` class to run the sequence and call the method `expect` over our observables.
+Now we define the `QuantumModel` in and pass the observable list to it.
 
 ```python exec="on" source="material-block" result="json" session="pulser-basic"
-from pulser_simulation import Simulation
+protocol = chain(
+    entangle("t"),
+    AnalogRot(duration=300, omega=5*torch.pi)
+)
 
-sim = Simulation(built_sequence)
-result = sim.run()
+register = Register.square(qubits_side=2)
+circuit = QuantumCircuit(register, protocol)
+model = QuantumModel(circuit, observable=obs, backend="pulser", diff_mode="gpsr", configuration={"device_type": Device.REALISTIC})
+model.backend.backend.config.with_modulation = True
 
-final_result = result.expect([zz, xy + yx])
-print(final_result[0][-1], final_result[1][-1])
+params = {
+    "t": torch.tensor([2488]),  # ns
+}
+
+final_result = model.expectation(values=params)
 ```
 
-We use the Pulser `Simulation` class to run the sequence and call the method
-`expect` over our observables.
-
-Here the `final_result` contains the expected values during the evolution (one
-point per nanosecond). In this case, looking only at the final values, we see
-the qubits `q0` and `q2` are on the *Bell-diagonal* state $\Big(|00\rangle -i |11\rangle\Big)/\sqrt{2}$.
+We use the `expectation` method of the `QuantumModel` instance to calculate the expectation values.
+Here the `final_result` contains the expected values of observables in `obs` list.
 
 ```python exec="on" source="material-block" html="1" session="pulser-basic"
 from qadence import fourier_feature_map, RX, RY
@@ -272,4 +267,3 @@ print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
 ## References
 
 [^1]: [Pulser: An open-source package for the design of pulse sequences in programmable neutral-atom arrays](https://pulser.readthedocs.io/en/stable/)
-[^2]: [Qutip](https://qutip.org)
