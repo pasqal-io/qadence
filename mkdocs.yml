@@ -5,7 +5,7 @@ repo_name: "qadence"
 nav:
 
   - Qadence:
-    - index.md
+    - Qadence: index.md
     - Getting Started: tutorials/getting_started.md
     - Quantum Models: tutorials/quantummodels.md
     - Parametric Programs: tutorials/parameters.md
