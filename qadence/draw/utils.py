@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import shutil
 import warnings
 from copy import deepcopy
@@ -20,6 +21,7 @@ from qadence.blocks import (
     ScaleBlock,
     chain,
 )
+from qadence.blocks.analog import WaitBlock, ConstantAnalogRotation
 from qadence.circuit import QuantumCircuit
 from qadence.models import QuantumModel
 from qadence.operations import RX, RY, RZ, SWAP, HamEvo, I
@@ -30,6 +32,7 @@ from .vizbackend import Cluster, QuantumCircuitDiagram
 
 # FIXME: move this to a config/theme?
 USE_LATEX_LABELS = False
+USE_SUBSCRIPTS = True
 
 
 def fixed(expr: sympy.Basic) -> bool:
@@ -91,6 +94,25 @@ def _get_latex_label(block: AbstractBlock, color: str = "red", fontsize: int = 3
     return fi.name
 
 
+def _is_number(s: str) -> bool:
+    # match numbers with an optional minus sign and optional decimal part.
+    pattern = re.compile(r"^-?\d+(\.\d+)?$")
+    return bool(pattern.match(s))
+
+
+def _subscript(x: str):
+    offset = ord("₁") - ord("1")
+    return chr(ord(x)+offset) if _is_number(x) else x
+
+
+def _index_to_subscripts(x: str) -> str:
+    return re.sub(r"_\d+", lambda match: "".join(map(_subscript, match.group()[1:])), x)
+
+
+def _expr_string(expr):
+    return _index_to_subscripts(format_parameter(expr))
+
+
 def _get_label(block: AbstractBlock) -> str:
     name = sympy.Function(type(block).__name__)
     if isinstance(block, ParametricBlock):
@@ -98,7 +120,7 @@ def _get_label(block: AbstractBlock) -> str:
         expr = name(p)
     else:
         expr = name
-    return format_parameter(expr)
+    return _expr_string(expr) if USE_SUBSCRIPTS else format_parameter(expr)
 
 
 @singledispatch
@@ -183,27 +205,38 @@ def _(
         )
 
     elif isinstance(block, HamEvo):
-        show = block.draw_generator
-        label = f"{block.name}(t={format_parameter(block.parameters.parameter)})"
-        cluster_ham_evo = qcd.create_cluster(
-            label if show else "",
-            show=show,
-            **qcd.theme.get_hamevo_cluster_attr(),  # type: ignore[arg-type]
-        )
+        labels = [block.name, f"t = {_expr_string(block.parameters.parameter)}"]
         start, stop = min(block.qubit_support), block.n_qubits
-        for i in range(start, stop):  # type: ignore[arg-type]
-            if not show and i == (stop - start) // 2:  # type: ignore
-                cluster_ham_evo.show = True
-                attrs = deepcopy(qcd.theme.get_node_attr())
-                attrs["shape"] = "none"
-                attrs["style"] = "rounded"
-                cluster_ham_evo.create_node(i, label=label, **attrs)
-                cluster_ham_evo.show = False
-            else:
-                cluster_ham_evo.create_node(i, label="I", **qcd.theme.get_node_attr())
+        _make_cluster(qcd, labels, start, stop, qcd.theme.get_hamevo_cluster_attr())
+
+    elif isinstance(block, AddBlock):
+        labels = ["AddBlock"]
+        start, stop = min(block.qubit_support), block.n_qubits
+        _make_cluster(qcd, labels, start, stop, qcd.theme.get_add_cluster_attr())
+
+    elif isinstance(block, WaitBlock):
+        labels = ["wait", f"t = {_expr_string(block.parameters.duration)}"]
+        is_global = block.qubit_support.is_global
+        start = 0 if is_global else min(block.qubit_support)
+        stop = qcd.nb_wires if is_global else block.n_qubits
+        _make_cluster(qcd, labels, start, stop, qcd.theme.get_add_cluster_attr())
+
+    elif isinstance(block, ConstantAnalogRotation):
+        labels = [
+            "AnalogRot",
+            f"α = {_expr_string(block.parameters.alpha)}",
+            f"t = {_expr_string(block.parameters.duration)}",
+            f"Ω = {_expr_string(block.parameters.omega)}",
+            f"δ = {_expr_string(block.parameters.delta)}",
+            f"φ = {_expr_string(block.parameters.phase)}",
+        ]
+        is_global = block.qubit_support.is_global
+        start = 0 if is_global else min(block.qubit_support)
+        stop = qcd.nb_wires if is_global else block.n_qubits
+        _make_cluster(qcd, labels, start, stop, qcd.theme.get_add_cluster_attr())
 
     elif isinstance(block, ScaleBlock):
-        s = f"[* {format_parameter(block.scale)}]"
+        s = f"[* {_expr_string(block.scale)}]"
         label = s if block.tag is None else f"{block.tag}: {s}"
         cluster = qcd.create_cluster(label, **qcd.theme.get_scale_cluster_attr())  # type: ignore
         make_diagram(block.block, cluster)
@@ -249,21 +282,6 @@ def _(
                 )
             qcd.create_node(wire, label=_get_label(block), **attrs)  # type: ignore[arg-type]
 
-    elif isinstance(block, AddBlock):
-        cluster = qcd.create_cluster(
-            "", show=False, **qcd.theme.get_add_cluster_attr()  # type: ignore[arg-type]
-        )
-        for i in range(block.n_qubits):
-            if i == len(block) // 2:
-                attrs = deepcopy(qcd.theme.get_node_attr())
-                attrs["shape"] = "none"
-                attrs["style"] = "rounded"
-                cluster.show = True
-                cluster.create_node(i, label="AddBlock", **attrs)
-                cluster.show = False
-            else:
-                cluster.create_node(i, label="I", **qcd.theme.get_node_attr())
-
     elif isinstance(block, CompositeBlock):
         for inner_block in block:
             if inner_block.tag is not None:
@@ -273,7 +291,40 @@ def _(
                 make_diagram(inner_block, cluster, fill=False)
             else:
                 make_diagram(inner_block, qcd, fill=False)
+
     else:
-        raise
+        raise ValueError(f"Don't know how to draw block of type {type(block)}.")
 
     return qcd
+
+
+def _make_cluster(qcd, labels, start, stop, attrs):
+    N = stop - start
+    if N > len(labels):
+        cluster = qcd.create_cluster("", show=False, **attrs)
+        before = (N - len(labels))//2
+        after = N - len(labels) - before
+        lines = ["" for _ in range(before)] + labels + ["" for _ in range(after)]
+        lines = zip(range(start, stop), lines)
+        for (i, label) in lines:
+            _attrs = deepcopy(qcd.theme.get_node_attr())
+            _attrs["shape"] = "none"
+            _attrs["style"] = "rounded"
+            cluster.show=True
+            cluster.create_node(i, label=label, **_attrs)
+            cluster.show=False
+    else:
+        cluster = qcd.create_cluster("", show=False, **attrs)
+        label = f"{labels[0]}({', '.join(s.replace(' ', '') for s in labels[1:])})"
+        for i in range(start, stop):
+            if i == ((stop - start)//2 + start):
+                _attrs = deepcopy(qcd.theme.get_node_attr())
+                _attrs["shape"] = "none"
+                _attrs["style"] = "rounded"
+                cluster.show = True
+                cluster.create_node(i, label=label, **_attrs)
+                cluster.show = False
+            else:
+                cluster.create_node(i, label="I", **qcd.theme.get_node_attr())
+
+

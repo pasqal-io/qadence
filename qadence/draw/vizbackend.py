@@ -22,6 +22,7 @@ class QuantumCircuitDiagram:
         "splines": "false",  # This helps edges perpendicular to wires to occur on the same axis
     }
 
+
     def __init__(
         self,
         layout: str = "LR",

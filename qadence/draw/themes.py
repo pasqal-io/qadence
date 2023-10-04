@@ -9,7 +9,7 @@ class BaseTheme:
     name = ""
     background_color = ""
     color = ""
-    fontname = "Charter"
+    fontname = "JetBrains Mono"
     fontsize = "20"
     primitive_node: dict[str, str] = {}
     fixed_parametric_node: dict[str, str] = {}
@@ -38,7 +38,7 @@ class BaseTheme:
             "style": "filled,rounded",
             "shape": "box",
             "penwidth": "2.7",
-            "margin": "0.1,0.1",
+            "margin": "0.3,0.1",
         }
 
     @classmethod
