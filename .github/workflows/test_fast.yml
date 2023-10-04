@@ -16,7 +16,7 @@ concurrency:
 jobs:
   test_qadence_ubuntu:
     name: Test Qadence
-    runs-on: http://nvcr.io/nvidia/pytorch:23.05-py3
+    runs-on: docker.io/seitzdom/qadence:latest
     strategy:
       matrix:
         python-version: ["3.9", "3.10"]
