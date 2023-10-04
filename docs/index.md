@@ -31,7 +31,7 @@ programs**_ with tunable interaction defined on _**arbitrary qubit register topo
 Documentation can be found here: [https://pasqal-qadence.readthedocs-hosted.com/en/latest](https://pasqal-qadence.readthedocs-hosted.com/en/latest).
 
 ## Remarks
-Quadence uses `torch.float64` as the default datatype for tensors (`torch.complex128` for complex tensors).
+Qadence uses `torch.float64` as the default datatype for tensors (`torch.complex128` for complex tensors).
 
 Here are some examples of **Qadence** possibilites in both the digital and digital-analog paradigms.
 
