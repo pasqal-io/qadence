@@ -93,8 +93,9 @@ def multi_gap_psr(
 
     # calculate F vector and M matrix
     # (see: https://arxiv.org/pdf/2108.01218.pdf on p. 4 for definitions)
-    F = torch.empty(n_eqs, batch_size)
+    F = []
     M = torch.empty((n_eqs, n_eqs))
+    n_obs = 1
     for i in range(n_eqs):
         # + shift
         shifted_params = param_dict.copy()
@@ -106,16 +107,23 @@ def multi_gap_psr(
         shifted_params[param_name] = shifted_params[param_name] - shifts[i]
         f_minus = expectation_fn(shifted_params)
 
-        F[i] = f_plus - f_minus
+        F.append((f_plus - f_minus))
 
         # calculate M matrix
         for j in range(n_eqs):
             M[i, j] = 4 * torch.sin(shifts[i] * spectral_gaps[j] / 2)
 
+    # get number of observables from expectation value tensor
+    if f_plus.numel() > 1:
+        n_obs = F[0].shape[1]
+
+    # reshape F vector
+    F = torch.stack(F).reshape(n_eqs, -1)
+
     # calculate R vector
     R = torch.linalg.solve(M, F)
 
     # calculate df/dx
-    dfdx = torch.sum(spectral_gaps[:, None] * R, dim=0)
+    dfdx = torch.sum(spectral_gaps[:, None] * R, dim=0).reshape(batch_size, n_obs)
 
     return dfdx

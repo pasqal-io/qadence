@@ -377,16 +377,13 @@ def test_basic_list_observables_tomography_for_quantum_model(circuit: QuantumCir
     estimated_values = model.expectation(
         inputs,
         protocol=Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs),
-    )[0]
+    )
     pyqtorch_backend = backend_factory(BackendName.PYQTORCH, diff_mode=DiffMode.GPSR)
-    pyqtorch_bkd_res = []
-    for obs in observable:
-        (conv_circ, conv_obs, embed, params) = pyqtorch_backend.convert(circuit, obs)
-        pyqtorch_expectation = pyqtorch_backend.expectation(
-            conv_circ, conv_obs, embed(params, inputs)
-        )
-        pyqtorch_bkd_res.extend(pyqtorch_expectation)
-    assert torch.allclose(estimated_values, pyqtorch_bkd_res[0], atol=LOW_ACCEPTANCE)
+    (conv_circ, conv_obs, embed, params) = pyqtorch_backend.convert(
+        circuit, observable  # type: ignore [arg-type]
+    )
+    pyqtorch_expectation = pyqtorch_backend.expectation(conv_circ, conv_obs, embed(params, inputs))
+    assert torch.allclose(estimated_values, pyqtorch_expectation, atol=LOW_ACCEPTANCE)
 
 
 theta1 = Parameter("theta1", trainable=False)

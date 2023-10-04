@@ -298,7 +298,7 @@ def estimations(
             # current batch.
             batch_estimations.append(sum(pauli_term_estimations))
         estimations.append(batch_estimations)
-    return torch.tensor(estimations, dtype=torch.get_default_dtype())
+    return torch.transpose(torch.tensor(estimations, dtype=torch.get_default_dtype()), 1, 0)
 
 
 def compute_expectation(
