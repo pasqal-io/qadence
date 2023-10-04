@@ -49,7 +49,6 @@ b = chain(
     HamEvo(kron(*map(Z, range(constants.n_qubits))), 10),
     AnalogRX("x"),
     AnalogRX("x", qubit_support=(3,4,5)),
-    wait("x", qubit_support=(1,)),
     wait("x"),
     vari,
     add(*map(X, range(constants.n_qubits))),
