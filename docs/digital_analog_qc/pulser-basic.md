@@ -2,7 +2,7 @@ Qadence offers a direct interface with Pulser[^1], a pulse-level programming int
 specifically designed for neutral atom quantum computers.
 
 When simulating pulse sequences written using Pulser, the underlying Hamiltonian it
-constructs is equivalent to a DAQC computing paradigm with the following interaction
+constructs is equivalent to a digital-analog quantum computing program with the following interaction
 Hamiltonian (see [digital-analog emulation](analog-basics.md) for more details):
 
 $$
@@ -21,25 +21,31 @@ to directly manipulate them if required.
 Let's see it in action.
 
 !!! note
-    The Pulser backend is still under heavy development and the interface might change in the future.
+    The Pulser backend is still experimental and the interface might change in the future.
 
 ## Generate pulses with Qadence
-The current backend has the following operations:
+
+Currently, the backend supports the following operations:
 
 | gate        | description                                                                                      | trainable parameter |
 |-------------|--------------------------------------------------------------------------------------------------|---------------------|
-| `Rot`       | Single qubit rotations.                                                                          | rotation angle      |
-| `AnalogRot` | Span a single qubit rotation among the entire register.                                          | rotation angle      |
+| `RX`, `RY`, `RZ`     | Single qubit rotations. Notice that the interaction is on and this affects the resulting gate fidelity.                                                                        | rotation angle      |
+| `AnalogRX`, `AnalogRY`, `AnalogRZ` | Span a single qubit rotation among the entire register.                                          | rotation angle      |
 | `entangle`  | Fully entangle the register.                                                                     | interaction time    |
 | `wait`      | An idle block to wait for the system to evolve for a specific time according to the interaction. | free evolution time |
 
+## Devices
+
+TODO
+
+Pulser has the concept of `Device` which encapsulates 
 
 ## Two qubits register
 Using the `chain` block makes it easy to create a gate sequence. Here is an
 example of how to create a Bell state.
-The `entangle` operation uses `CZ` interactions to entangle states on the `X`
-basis. We move the qubits back to the `Z` basis for the readout using a `Y`
-rotation.
+The `entangle` operation uses `CZ` interactions (according to the interaction Hamiltonian introduced in the first paragraph of this section) 
+to entangle states on the `X` basis. We move the qubits back to 
+the `Z` basis for the readout using a `Y` rotation.
 
 ```python exec="on" source="material-block" session="pulser-basic"
 from qadence import chain, entangle, RY
@@ -59,7 +65,7 @@ from qadence import Register, QuantumCircuit, QuantumModel
 
 register = Register(2)
 circuit = QuantumCircuit(register, bell_state)
-model = QuantumModel(circuit, backend="pulser", diff_mode='gpsr')
+model = QuantumModel(circuit, backend="pulser", diff_mode="gpsr")
 ```
 
 To run the pulse sequence we have to provide values for the parametrized block we defined.
@@ -103,7 +109,8 @@ operations from simple ones. Take the entanglement operation as an example.
 
 The operation consists of moving _all_ the qubits to the `X` basis having the
 atoms' interaction perform a controlled-Z operation during the free evolution.
-And we can easily recreate this pattern using the `AnFreeEvo` and `AnRY` blocks.
+And we can easily recreate this pattern using the `wait` (corresponding to free
+evolution) and `AnalogRY` blocks with appropriate parameters.
 
 ```python exec="on" source="material-block" session="pulser-basic"
 from qadence import AnalogRY, chain, wait
@@ -170,7 +177,7 @@ protocol = chain(
 
 register = Register.square(qubits_side=2)
 circuit = QuantumCircuit(register, protocol)
-model = QuantumModel(circuit, backend="pulser", diff_mode='gpsr')
+model = QuantumModel(circuit, backend="pulser", diff_mode="gpsr")
 model.backend.backend.config.with_modulation = True
 
 params = {
@@ -197,7 +204,10 @@ print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
 
 ## Working with observables
 
-The current backend version does not support Qadence `Observables`. However, it's
+TODO 
+
+## Hardware efficient ansatz
+<!-- The current backend version does not support Qadence `Observables`. However, it's
 still possible to use the regular Pulser simulations to calculate expected
 values.
 
@@ -241,8 +251,10 @@ We use the Pulser `Simulation` class to run the sequence and call the method
 
 Here the `final_result` contains the expected values during the evolution (one
 point per nanosecond). In this case, looking only at the final values, we see
-the qubits `q0` and `q2` are on the *Bell-diagonal* state $\Big(|00\rangle -i |11\rangle\Big)/\sqrt{2}$.
+the qubits `q0` and `q2` are on the *Bell-diagonal* state $\Big(|00\rangle -i |11\rangle\Big)/\sqrt{2}$. -->
 
+Finally, let's put all together by constructing a digital-analog version of a hardware
+efficient ansatz.
 ```python exec="on" source="material-block" html="1" session="pulser-basic"
 from qadence import fourier_feature_map, RX, RY
 

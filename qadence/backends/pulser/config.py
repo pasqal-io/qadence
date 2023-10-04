@@ -14,7 +14,7 @@ from .devices import Device
 @dataclass
 class Configuration(BackendConfiguration):
     # device type
-    device_type: Device = Device.IDEALIZED
+    device_type: Device = Device.REALISTIC
 
     # atomic spacing
     spacing: Optional[float] = None

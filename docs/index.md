@@ -28,6 +28,9 @@ programs**_ with tunable interaction defined on _**arbitrary qubit register layo
 
 Documentation can be found here: [https://pasqal-qadence.readthedocs-hosted.com/en/latest](https://pasqal-qadence.readthedocs-hosted.com/en/latest).
 
+The library name is from music terminology: Qadence allows to compose blocks into complex quantum programs in such
+a seamless way that they flow like music.
+
 ## Remarks
 Quadence uses torch.float64 as the default datatype for tensors (torch.complex128 for complex tensors).
 
