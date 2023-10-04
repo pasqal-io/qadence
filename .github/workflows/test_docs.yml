@@ -7,8 +7,6 @@ on:
   pull_request:
     branches:
       - main
-  paths:
-    - docs
   workflow_dispatch: {}
 
 concurrency:
@@ -20,8 +18,10 @@ jobs:
     name: Test Qadence (ubuntu)
     runs-on: ubuntu-22.04
     steps:
+    - name: Install Graphviz
+      run: sudo apt-get install -y graphviz
     - uses: actions/checkout@v4
-    - name: Select Python 3.10
+    - name: Set up Python 3.10
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
