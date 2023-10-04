@@ -21,7 +21,7 @@ from qadence.blocks import (
     ScaleBlock,
     chain,
 )
-from qadence.blocks.analog import WaitBlock, ConstantAnalogRotation
+from qadence.blocks.analog import ConstantAnalogRotation, WaitBlock
 from qadence.circuit import QuantumCircuit
 from qadence.models import QuantumModel
 from qadence.operations import RX, RY, RZ, SWAP, HamEvo, I
@@ -100,16 +100,16 @@ def _is_number(s: str) -> bool:
     return bool(pattern.match(s))
 
 
-def _subscript(x: str):
+def _subscript(x: str) -> str:
     offset = ord("₁") - ord("1")
-    return chr(ord(x)+offset) if _is_number(x) else x
+    return chr(ord(x) + offset) if _is_number(x) else x
 
 
 def _index_to_subscripts(x: str) -> str:
     return re.sub(r"_\d+", lambda match: "".join(map(_subscript, match.group()[1:])), x)
 
 
-def _expr_string(expr):
+def _expr_string(expr: sympy.Basic) -> str:
     return _index_to_subscripts(format_parameter(expr))
 
 
@@ -298,26 +298,30 @@ def _(
     return qcd
 
 
-def _make_cluster(qcd, labels, start, stop, attrs):
+def _make_cluster(
+    qcd: QuantumCircuitDiagram, labels: list[str], start: int, stop: int, attrs: dict
+) -> None:
+    """Construct a cluster with the list of labels centered vertically (in terms of wires).
+    If there are fewer wires than labels, plot all lables in one line, assuming that the first
+    element in `labels` is the block type."""
     N = stop - start
     if N > len(labels):
         cluster = qcd.create_cluster("", show=False, **attrs)
-        before = (N - len(labels))//2
+        before = (N - len(labels)) // 2
         after = N - len(labels) - before
         lines = ["" for _ in range(before)] + labels + ["" for _ in range(after)]
-        lines = zip(range(start, stop), lines)
-        for (i, label) in lines:
+        for i, label in zip(range(start, stop), lines):
             _attrs = deepcopy(qcd.theme.get_node_attr())
             _attrs["shape"] = "none"
             _attrs["style"] = "rounded"
-            cluster.show=True
+            cluster.show = True
             cluster.create_node(i, label=label, **_attrs)
-            cluster.show=False
+            cluster.show = False
     else:
         cluster = qcd.create_cluster("", show=False, **attrs)
         label = f"{labels[0]}({', '.join(s.replace(' ', '') for s in labels[1:])})"
         for i in range(start, stop):
-            if i == ((stop - start)//2 + start):
+            if i == ((stop - start) // 2 + start):
                 _attrs = deepcopy(qcd.theme.get_node_attr())
                 _attrs["shape"] = "none"
                 _attrs["style"] = "rounded"
@@ -326,5 +330,3 @@ def _make_cluster(qcd, labels, start, stop, attrs):
                 cluster.show = False
             else:
                 cluster.create_node(i, label="I", **qcd.theme.get_node_attr())
-
-
