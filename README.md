@@ -60,18 +60,16 @@ backends and the circuit visualization library using the following extras:
   for composing, simulating and executing pulse sequences for neutral-atom quantum devices.
 * `visualization`: install the library necessary to visualize quantum circuits.
 
-!!! warning
-    In order to correctly install the "visualization" extra, you need to have `graphviz` installed
-    in your system. This depends on the operating system you are using:
+**NOTE**: In order to correctly install the "visualization" extra, you need to have `graphviz` installed
+in your system. This depends on the operating system you are using:
 
-    ```bash
-    # on Ubuntu
-    sudo apt install graphviz
+```bash
+# on Ubuntu
+sudo apt install graphviz
 
-    # on MacOS
-    brew install graphviz
+# on MacOS
+brew install graphviz
 
-    # via conda
-    conda install python-graphviz
-    ```
----
+# via conda
+conda install python-graphviz
+```
