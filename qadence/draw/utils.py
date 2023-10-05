@@ -305,6 +305,8 @@ def _make_cluster(
     If there are fewer wires than labels, plot all lables in one line, assuming that the first
     element in `labels` is the block type."""
     N = stop - start
+
+    # draw labels line by line
     if N > len(labels):
         cluster = qcd.create_cluster("", show=False, **attrs)
         before = (N - len(labels)) // 2
@@ -317,6 +319,8 @@ def _make_cluster(
             cluster.show = True
             cluster.create_node(i, label=label, **_attrs)
             cluster.show = False
+
+    # draw all labels in one line if there are too few wires
     else:
         cluster = qcd.create_cluster("", show=False, **attrs)
         label = f"{labels[0]}({', '.join(s.replace(' ', '') for s in labels[1:])})"
