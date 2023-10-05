@@ -113,6 +113,9 @@ markdown_extensions:
       validator: "!!python/name:markdown_exec.validator"
       format: "!!python/name:markdown_exec.formatter"
 
+exclude_docs: |
+  /docsutils.py
+
 plugins:
 - search
 - section-index
