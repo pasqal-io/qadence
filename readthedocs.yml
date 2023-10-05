@@ -1,9 +1,12 @@
 version: 2
 
 build:
-  os: "ubuntu-22.04"
-  tools:
-    python: "mambaforge-22.9"
+  image: "niklasheim/qadence-rtd:v0.1"
+  commands:
+    - pip3 install hatch
+    - hatch -v run docs:build
+    - mkdir _readthedocs/
+    - mv site _readthedocs/html
 
 conda:
   environment: docs/environment.yml
