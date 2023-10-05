@@ -8,7 +8,9 @@ which follow a more object-oriented way to construct circuits and express progra
 
 	```python exec="on" source="material-block" html="1"
 	from qadence import X, Y, kron
-	print(kron(X(0), Y(1)))
+
+	kron_block = kron(X(0), Y(1))
+	print(kron_block)
 	```
 
 	Or using the visualization package which opens an interactive window:
@@ -17,8 +19,9 @@ which follow a more object-oriented way to construct circuits and express progra
 	from qadence import X, Y, kron
 	from visualisation import display
 
-	display(kron(X(0), Y(1)))
-	
+	kron_block = kron(X(0), Y(1))
+	display(kron_block)
+
 	from qadence.draw import html_string # markdown-exec: hide
 	from qadence import chain # markdown-exec: hide
 	print(html_string(kron(X(0), Y(1))), size="2,2")) # markdown-exec: hide
@@ -99,7 +102,7 @@ Please note that `AddBlock` can give rise to non-unitary computations that might
 ??? note "Get the matrix of a block"
     It is always possible to retrieve the matrix representation of a block. Please note that the returned tensor
     contains a batch dimension for the purposes of block parametrization.
-	
+
     ```python exec="on" source="material-block" result="json" session="i-xx"
     print("X(0) * X(0)")
     print(chain_x.tensor())
@@ -140,7 +143,7 @@ example shows an execution workflow with the natively available `PyQTorch` backe
 
 ```python exec="on" source="material-block" result="json" session="index"
 from qadence import chain, add, H, Z, run, sample, expectation
-	
+
 n_qubits = 2
 block = chain(H(0), H(1))
 
@@ -247,6 +250,6 @@ display(state_prep_b)
 state_prep_b = product_block("1000")
 tag(state_prep_b, "prep")
 qc_with_state_prep = QuantumCircuit(4, state_prep_b, fourier_b, hea_b)
-	
+
 print(html_string(qc_with_state_prep), size="4,4")) # markdown-exec: hide
 ```
