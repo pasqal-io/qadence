@@ -18,22 +18,11 @@ programs**_ with tunable qubit interaction defined on _**arbitrary register topo
 
 * _**Efficient execution**_ on a variety of different purpose backends: from state vector simulators to tensor network emulators and real devices.
 
-In following are some rudimentary examples of Qadence possibilites in both the digital and digital-analog paradigms.
+In following are some rudimentary examples of Qadence possibilites in the digital, analog and digital-analog paradigms.
 
 ## Sampling the canonical Bell state
 
-<<<<<<< HEAD
-## Remarks
-Qadence uses `torch.float64` as the default datatype for tensors (`torch.complex128` for complex tensors).
-
-Here are some examples of **Qadence** possibilites in both the digital and digital-analog paradigms.
-
-### Bell state
-
-Sample from the canonical [Bell state](https://en.wikipedia.org/wiki/Bell_state).
-=======
-Preparing a [Bell state](https://en.wikipedia.org/wiki/Bell_state) using digital gates and sampling from the outcome bitstring distribution is made simple:
->>>>>>> 9001025 (More docs improvements.)
+This example illustrates how to prepare a [Bell state](https://en.wikipedia.org/wiki/Bell_state) using digital gates and sampling from the outcome bitstring distribution:
 
 ```python exec="on" source="material-block" result="json"
 import torch # markdown-exec: hide
@@ -52,10 +41,10 @@ js = js_divergence(samples[0], Counter({"00":50, "11":50})) # markdown-exec: hid
 assert js < 0.005 # markdown-exec: hide
 ```
 
-## Digital-analog emulation of a perfect state transfer
+## Analog emulation of a perfect state transfer
 
-Construct and sample a system that admits a perfect state transfer between the two edge qubits of a three qubit register laid out in a
-line. This relies on solving a Hamiltonian time evolution for a custom qubit interation until $t=\frac{\pi}{\sqrt 2}$.
+This next example showcases the construction and sampling of a system that admits a perfect state transfer between the two edge qubits of a three qubit register laid out in a
+line. This relies on time-evolving a Hamiltonian for a custom defined qubit interation until $t=\frac{\pi}{\sqrt 2}$.
 
 ```python exec="on" source="material-block" result="json"
 from torch import pi
@@ -68,15 +57,15 @@ def interaction(i, j):
 # Initial state with left-most qubit in the 1 state.
 init_state = product_state("100")
 
-# Define a register of qubits laid out in a line.
+# Define a register of 3 qubits laid out in a line.
 register = Register.line(n_qubits=3)
 
 # Define an interaction Hamiltonian by summing interactions on indexed qubits.
 # hamiltonian = interaction(0, 1) + interaction(1, 2)
 hamiltonian = add(interaction(*edge) for edge in register.edges)
 
-# Define and evolve a time-dependent Hamiltonian until t=pi/sqrt(2).
-t = pi/(2**0.5)
+# Define and time-evolve the Hamiltonian until t=pi/sqrt(2).
+t = pi/(2**0.5)  # Dimensionless.
 evolution = HamEvo(hamiltonian, t)
 
 # Sample with 100 shots.
@@ -86,9 +75,9 @@ from collections import Counter # markdown-exec: hide
 assert samples[0] == Counter({"001": 100}) # markdown-exec: hide
 ```
 
-## <Nice example title>
+## Digital-analog example
 
-Construct and sample an Ising Hamiltonian that includes a distance-based interaction between qubits and a global analog block of RX. Here, global has to be understood as applied to the whole register. <Specify the distance unit.>
+This final example deals with the construction and sampling of an Ising Hamiltonian that includes a distance-based interaction between qubits and a global analog block of rotations around the X-axis. Here, global has to be understood as applied to the whole register. <Specify the distance unit.>
 
 ```python exec="on" source="material-block" result="json"
 from torch import pi
@@ -98,7 +87,7 @@ from qadence import Register, AnalogRX, sample
 block = AnalogRX(pi)
 
 # Almost non-interacting qubits as too far apart.
-register = Register.from_coordinates([(0,0), (0,15)])
+register = Register.from_coordinates([(0,0), (0,15)])  # Dimensionless.
 samples = sample(register, block)
 print(f"distance = 15: {samples = }") # markdown-exec: hide
 from collections import Counter # markdown-exec: hide
@@ -127,28 +116,27 @@ For a more comprehensive introduction and advanced topics, please have a look at
 
 ## Installation guide
 
-Qadence can be install with `pip` as follows:
+Qadence can be install with `pip` from PyPI as follows:
 
 ```bash
-export TOKEN_USERNAME=MYUSERNAME
-export TOKEN_PASSWORD=THEPASSWORD
-
-pip install --extra-index-url "https://${TOKEN_USERNAME}:${TOKEN_PASSWORD}@gitlab.pasqal.com/api/v4/projects/190/packages/pypi/simple" qadence[pulser,visualization]
+pip install qadence
 ```
 
-where the token username and password can be generated on the
-[Gitlab UI](https://gitlab.pasqal.com/-/profile/personal_access_tokens). Remember to give registry read/write permissions to the generated token.
+The default backend for Qadence is [PyQTorch](https://github.com/pasqal-io/pyqtorch), a differentiable state vector simulator for digital-analog simulation. It is possible to install additional backends and the circuit visualization library using the following extras:
 
-The default backend for qadence is pyqtorch (a differentiable state vector simulator).
-You can install one or all of the following additional backends and the circuit visualization library using the following extras:
+* `braket`: the [Braket](https://github.com/amazon-braket/amazon-braket-sdk-python) backend.
+* `pulser`: the [Pulser](https://github.com/pasqal-io/Pulser) backend for composing, simulating and executing pulse sequences for neutral-atom quantum devices.
+* `visualization`: to display diagrammatically quantum circuits.
 
-* `braket`: install the Amazon Braket quantum backend
-* `pulser`: install the Pulser backend. Pulser is a framework for composing, simulating and executing pulse sequences for neutral-atom quantum devices.
-* `visualization`: install the library necessary to visualize quantum circuits.
+by running:
+
+```bash
+pip install qadence[braket, pulser, visualization]
+```
 
 !!! warning
-    In order to correctly install the "visualization" extra, you need to have `graphviz` installed
-    in your system. This depends on the operating system you are using:
+    In order to correctly install the `visualization` extra, the `graphviz` package needs to be installed
+    in your system:
 
     ```bash
     # on Ubuntu
