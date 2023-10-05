@@ -28,7 +28,7 @@ The current backend has the following operations:
 
 | gate        | description                                                                                      | trainable parameter |
 |-------------|--------------------------------------------------------------------------------------------------|---------------------|
-| `Rot`       | Single qubit rotations.                                                                          | rotation angle      |
+| `RX`, `RY`       | Single qubit rotations.                                                                          | rotation angle      |
 | `AnalogRot` | Span a single qubit rotation among the entire register.                                          | rotation angle      |
 | `entangle`  | Fully entangle the register.                                                                     | interaction time    |
 | `wait`      | An idle block to wait for the system to evolve for a specific time according to the interaction. | free evolution time |
@@ -97,57 +97,6 @@ print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
 ```
 
 
-## Large qubits registers
-The constructor `Register(n_qubits)` generates a linear register that works fine
-with two or three qubits. But for the blocks we have so far, large registers
-work better with a square loop layout like the following.
-
-```python exec="on" source="material-block" html="1" session="pulser-basic"
-register = Register.square(qubits_side=4)
-register.draw(show=False)
-from docs import docsutils # markdown-exec: hide
-print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
-```
-
-In those cases, global pulses are preferred to generate entanglement to avoid
-changing the addressing pattern on the fly.
-
-```python exec="on" source="material-block" html="1" session="pulser-basic"
-from qadence.backends.pulser import Device
-from qadence import AnalogRot
-
-protocol = chain(
-    entangle("t"),
-    AnalogRot(duration=300, omega=5*torch.pi),
-)
-
-register = Register.square(qubits_side=2)
-circuit = QuantumCircuit(register, protocol)
-model = QuantumModel(circuit, backend="pulser", diff_mode='gpsr')
-model.backend.backend.config.with_modulation = True
-
-params = {
-    "t": torch.tensor([2488]),  # ns
-}
-
-sample = model.sample(params, n_shots=500)[0]
-
-fig, ax = plt.subplots()
-ax.bar(sample.keys(), sample.values())
-plt.xticks(rotation='vertical')
-from docs import docsutils # markdown-exec: hide
-print(docsutils.fig_to_html(fig)) # markdown-exec: hide
-```
-```python exec="on" source="material-block" html="1" session="pulser-basic"
-model.assign_parameters(params).draw(draw_phase_area=True, show=False)
-from docs import docsutils # markdown-exec: hide
-print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
-```
-
-!!! note
-    The gates shown here don't work with arbitrary registers since they rely on
-    the registered geometry to work properly.
-
 ## Working with observables
 
 You can calculate expectation value of `Observables` in the Pulser backend the same way as in other backends by using the `expectation` method.
@@ -165,21 +114,23 @@ obs = [zz, xy + yx]
 
 ```
 
-Now we define the `QuantumModel` in and pass the observable list to it.
+Now we define the `QuantumModel` and pass the observable list to it together with the constructed circuit.
 
 ```python exec="on" source="material-block" result="json" session="pulser-basic"
-protocol = chain(
-    entangle("t"),
+from qadence import RX, AnalogRot
+
+blocks = chain(
+    RX(0, "x"),
+    RX(2, "x"),
     AnalogRot(duration=300, omega=5*torch.pi)
 )
 
 register = Register.square(qubits_side=2)
-circuit = QuantumCircuit(register, protocol)
-model = QuantumModel(circuit, observable=obs, backend="pulser", diff_mode="gpsr", configuration={"device_type": Device.REALISTIC})
-model.backend.backend.config.with_modulation = True
+circuit = QuantumCircuit(register, blocks)
+model = QuantumModel(circuit, observable=obs, backend="pulser", diff_mode="gpsr")
 
 params = {
-    "t": torch.tensor([2488]),  # ns
+    "x": torch.tensor([3*torch.pi/2]),  # ns
 }
 
 final_result = model.expectation(values=params)
