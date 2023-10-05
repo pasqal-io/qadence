@@ -1,5 +1,14 @@
-Qadence offers a direct interface with Pulser[^1], a pulse-level programming interface
-specifically designed for neutral atom quantum computers.
+Qadence offers a direct interface with Pulser[^1], a pulse-level interface specifically designed for programming neutral atom quantum computers.
+
+Using directly Pulser requires deep knowledge on pulse-level programming and on how neutral atom devices work. Qadence abstracts out this complexity by using the familiar block-based interface for building pulse sequences in Pulser while leaving the possibility
+to directly manipulate them if required.
+
+!!! note
+    The Pulser backend is still experimental and the interface might change in the future.
+
+Let's see it in action.
+
+## Default qubit interaction
 
 When simulating pulse sequences written using Pulser, the underlying Hamiltonian it
 constructs is equivalent to a digital-analog quantum computing program with the following interaction
@@ -13,17 +22,9 @@ where $C_6$ is an interaction coefficient which depends on the principal quantum
 the neutral atom system, $R_i$ are the atomic position in Cartesian coordinates
 and $\hat{n} = \frac{1-\sigma^z_i}{2}$ is the number operator.
 
-Using directly Pulser requires deep knowledge on pulse-level programming and on how
-neutral atom devices work. Qadence abstracts out this complexity by using the familiar
-block-based interface for building pulse sequences in Pulser while leaving the possibility
-to directly manipulate them if required.
+Notice that this interaction is **always-on** for any computation performed with the Pulser backend and cannot be switched off.
 
-Let's see it in action.
-
-!!! note
-    The Pulser backend is still experimental and the interface might change in the future.
-
-## Generate pulses with Qadence
+## Pulse sequences with Qadence
 
 Currently, the backend supports the following operations:
 
@@ -34,17 +35,11 @@ Currently, the backend supports the following operations:
 | `entangle`  | Fully entangle the register.                                                                     | interaction time    |
 | `wait`      | An idle block to wait for the system to evolve for a specific time according to the interaction. | free evolution time |
 
-## Devices
+## Two qubits register: Bell state
 
-TODO
-
-Pulser has the concept of `Device` which encapsulates 
-
-## Two qubits register
-Using the `chain` block makes it easy to create a gate sequence. Here is an
-example of how to create a Bell state.
-The `entangle` operation uses `CZ` interactions (according to the interaction Hamiltonian introduced in the first paragraph of this section) 
-to entangle states on the `X` basis. We move the qubits back to 
+Using the `chain` block makes it easy to create a gate sequence. Here is an example of how to create a Bell state.
+The `entangle` operation uses `CZ` interactions (according to the interaction Hamiltonian introduced in the first paragraph of this section)
+to entangle states on the `X` basis. We move the qubits back to
 the `Z` basis for the readout using a `Y` rotation.
 
 ```python exec="on" source="material-block" session="pulser-basic"
@@ -56,36 +51,30 @@ bell_state = chain(
 )
 ```
 
-To convert the chain block into a pulse sequence, we define a `Register` with
-two qubits and combine it to create a circuit as usual. Then we construct a `QuantumModel`
-with a Pulser backend to convert it into a proper pulse sequence.
+To convert the chain block into a pulse sequence, we define a `Register` with two qubits and combine it to create a circuit as usual. Then we construct a `QuantumModel` with a Pulser backend to convert it into a proper parametrized pulse sequence. Supplying the
+parameter values allows to sample from the pulse sequence result.
 
 ```python exec="on" source="material-block" session="pulser-basic"
+import torch
+import matplotlib.pyplot as plt
 from qadence import Register, QuantumCircuit, QuantumModel
 
 register = Register(2)
 circuit = QuantumCircuit(register, bell_state)
 model = QuantumModel(circuit, backend="pulser", diff_mode="gpsr")
-```
-
-To run the pulse sequence we have to provide values for the parametrized block we defined.
-```python exec="on" source="material-block" result="json" session="pulser-basic"
-import torch
 
 params = {
     "wait": torch.tensor([383]),  # ns
     "y": torch.tensor([torch.pi/2]),
 }
 
-# Visualise the final state vector
+# return the final state vector
 final_vector = model.run(params)
 print(final_vector)
 
+# sample from the result state vector and plot the distribution
 sample = model.sample(params, n_shots=50)[0]
 print(sample)
-```
-```python exec="on" source="material-block" html="1" session="pulser-basic"
-import matplotlib.pyplot as plt
 
 fig, ax = plt.subplots()
 ax.bar(sample.keys(), sample.values())
@@ -93,8 +82,7 @@ from docs import docsutils # markdown-exec: hide
 print(docsutils.fig_to_html(fig)) # markdown-exec: hide
 ```
 
-
-One can visualise the pulse sequence using the `assign_paramters` method.
+One can visualise the pulse sequence with different parameters using the `assign_paramters` method.
 
 ```python exec="on" source="material-block" html="1" session="pulser-basic"
 model.assign_parameters(params).draw(show=False)
@@ -102,6 +90,43 @@ from docs import docsutils # markdown-exec: hide
 print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
 ```
 
+## Change device specifications
+
+At variance with other backends, the Pulser one provides the concept of `Device`, borrowed from the [`pulser`](https://pulser.readthedocs.io/en/stable/) library.
+
+A `Device` instance encapsulate all the properties defining a real neutral atoms processor, including but not limited to the maximum laser amplitude for the pulses, the maximum distance between two qubits and the maximum duration of the pulse.
+
+`qadence` offers a simplified interface with only two devices which can be found [here][qadence.backends.pulser.devices]
+
+* `REALISTIC` (default): device specification very similar to a real neutral atom quantum processor.
+* `IDEALIZED`: ideal device which should be used only for testing purposes. It does not have any limitation in what can be run with it.
+
+One can use the `Configuration` of the Pulser backend to select the appropriate device:
+
+```python exec="on" source="material-block" session="pulser-basic"
+from qadence.backends.pulser.devices import Device
+
+register = Register(2)
+circuit = QuantumCircuit(register, bell_state)
+
+model = QuantumModel(
+    circuit,
+    backend="pulser",
+    diff_mode="gpsr",
+    configuration={"device_type": Device.IDEALIZED}
+)
+
+# alternatively directly one of the devices available in Pulser
+# can also be supplied in the same way
+from pulser.devices import AnalogDevice
+
+model = QuantumModel(
+    circuit,
+    backend="pulser",
+    diff_mode="gpsr",
+    configuration={"device_type": AnalogDevice}
+)
+```
 
 ## Create your own gate
 A big advantage of the `chain` block is it makes it easy to create complex
@@ -204,7 +229,7 @@ print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
 
 ## Working with observables
 
-TODO 
+TODO
 
 ## Hardware efficient ansatz
 <!-- The current backend version does not support Qadence `Observables`. However, it's
