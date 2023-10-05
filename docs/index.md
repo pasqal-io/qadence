@@ -1,10 +1,12 @@
 <h1 style="display: none;">noheading</h1>
 
-!!! warning "Large Logo"
-    Put a large verion of the logo herec.
+# Qadence
 
-Qadence is a Python package that provides a simple interface to build _**digital-analog quantum
+*Qadence* is a Python package that provides a simple interface to build _**digital-analog quantum
 programs**_ with tunable interaction defined on _**arbitrary qubit register layouts**_.
+
+[![pre-commit](https://github.com/pasqal-io/qadence/actions/workflows/lint.yml/badge.svg)](https://github.com/pasqal-io/qadence/actions/workflows/lint.yml)
+[![tests](https://github.com/pasqal-io/qadence/actions/workflows/test_fast.yml/badge.svg)](https://github.com/pasqal-io/qadence/actions/workflows/test_fast.yml)
 
 ## Feature highlights
 
@@ -27,6 +29,19 @@ programs**_ with tunable interaction defined on _**arbitrary qubit register layo
   backends like state vector simulators, tensor network emulators and real devices.
 
 Documentation can be found here: [https://pasqal-qadence.readthedocs-hosted.com/en/latest](https://pasqal-qadence.readthedocs-hosted.com/en/latest).
+
+
+## Citation
+
+If you use Qadence for a publication, we kindly ask you to cite our work using the bibtex citation:
+
+```
+@misc{qadence2023pasqal,
+  url = {https://github.com/pasqal-io/qadence},
+  title = {Qadence: {A} {D}igital-analog quantum programming interface.},
+  year = {2023}
+}
+```
 
 ## Remarks
 Quadence uses torch.float64 as the default datatype for tensors (torch.complex128 for complex tensors).
@@ -130,21 +145,17 @@ look at the following tutorials:
 Qadence can be install with `pip` as follows:
 
 ```bash
-export TOKEN_USERNAME=MYUSERNAME
-export TOKEN_PASSWORD=THEPASSWORD
-
-pip install --extra-index-url "https://${TOKEN_USERNAME}:${TOKEN_PASSWORD}@gitlab.pasqal.com/api/v4/projects/190/packages/pypi/simple" qadence[pulser,visualization]
+pip install qadence[pulser,visualization]
 ```
 
-where the token username and password can be generated on the
-[Gitlab UI](https://gitlab.pasqal.com/-/profile/personal_access_tokens). Remember to give registry read/write permissions to the generated token.
-
-The default backend for qadence is pyqtorch (a differentiable state vector simulator).
-You can install one or all of the following additional backends and the circuit visualization library using the following extras:
+The default backend for qadence is [`pyqtorch`](https://github.com/pasqal-io/pyqtorch) (a
+differentiable state vector simulator).  You can install one or all of the following additional
+backends and the circuit visualization library using the following extras:
 
 * `braket`: install the Amazon Braket quantum backend
 * `emu-c`: install the Pasqal circuit tensor network emulator EMU-C
-* `pulser`: install the Pulser backend. Pulser is a framework for composing, simulating and executing pulse sequences for neutral-atom quantum devices.
+* `pulser`: install the [Pulser](https://github.com/pasqal-io/Pulser) backend. Pulser is a framework
+  for composing, simulating and executing pulse sequences for neutral-atom quantum devices.
 * `visualization`: install the library necessary to visualize quantum circuits.
 
 !!! warning
@@ -162,3 +173,4 @@ You can install one or all of the following additional backends and the circuit 
     conda install python-graphviz
     ```
 ---
+
