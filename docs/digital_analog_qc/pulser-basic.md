@@ -75,7 +75,7 @@ params = {
 final_vector = model.run(params)
 print(final_vector)
 
-sample = model.sample(params, n_shots=50)[0]
+sample = model.sample(params, n_shots=500)[0]
 print(sample)
 ```
 ```python exec="on" source="material-block" html="1" session="pulser-basic"
@@ -92,56 +92,6 @@ One can visualise the pulse sequence using the `assign_paramters` method.
 
 ```python exec="on" source="material-block" html="1" session="pulser-basic"
 model.assign_parameters(params).draw(show=False)
-from docs import docsutils # markdown-exec: hide
-print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
-```
-
-
-## Create your own gate
-A big advantage of the `chain` block is it makes it easy to create complex
-operations from simple ones. Take the entanglement operation as an example.
-
-The operation consists of moving _all_ the qubits to the `X` basis having the
-atoms' interaction perform a controlled-Z operation during the free evolution.
-And we can easily recreate this pattern using the `AnFreeEvo` and `AnRY` blocks.
-
-```python exec="on" source="material-block" session="pulser-basic"
-from qadence import AnalogRY, chain, wait
-
-def my_entanglement(duration):
-    return chain(
-        AnalogRY(-torch.pi / 2),
-        wait(duration)
-    )
-```
-
-Then we proceed as before.
-
-```python exec="on" source="material-block" session="pulser-basic" html="1"
-protocol = chain(
-   my_entanglement("t"),
-   RY(0, "y"),
-)
-
-register = Register(2)
-circuit = QuantumCircuit(register, protocol)
-model = QuantumModel(circuit, backend="pulser", diff_mode='gpsr')
-
-params = {
-    "t": torch.tensor([383]),  # ns
-    "y": torch.tensor([torch.pi / 2]),
-}
-
-sample = model.sample(params, n_shots=50)[0]
-
-fig, ax = plt.subplots()
-plt.bar(sample.keys(), sample.values())
-from docs import docsutils # markdown-exec: hide
-print(docsutils.fig_to_html(fig)) # markdown-exec: hide
-```
-
-```python exec="on" source="material-block" html="1" session="pulser-basic"
-model.assign_parameters(params).draw(draw_phase_area=True, show=False)
 from docs import docsutils # markdown-exec: hide
 print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
 ```
