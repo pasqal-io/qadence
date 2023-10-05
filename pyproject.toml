@@ -116,7 +116,6 @@ dependencies = [
   "mkdocstrings",
   "mkdocstrings-python",
   "mkdocs-section-index==0.3.6",
-  "mkdocs-jupyter",
   "mkdocs-exclude",
   "markdown-exec",
 ]

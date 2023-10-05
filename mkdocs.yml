@@ -113,9 +113,6 @@ markdown_extensions:
       validator: "!!python/name:markdown_exec.validator"
       format: "!!python/name:markdown_exec.formatter"
 
-exclude_docs: |
-  /docsutils.py
-
 plugins:
 - search
 - section-index
@@ -134,8 +131,6 @@ plugins:
           merge_init_into_class: true
           docstring_section_style: spacy
 
-- mkdocs-jupyter:
-    theme: light
 - markdown-exec
 
 # To get nice tabs
