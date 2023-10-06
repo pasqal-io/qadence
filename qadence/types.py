@@ -337,6 +337,8 @@ class OpName(StrEnum):
     """The analog RX operation."""
     ANALOGRY = "AnalogRY"
     """The analog RY operation."""
+    ANALOGRZ = "AnalogRZ"
+    """The analog RZ operation."""
     ANALOGSWAP = "AnalogSWAP"
     """The analog SWAP operation."""
     ENTANG = "entangle"

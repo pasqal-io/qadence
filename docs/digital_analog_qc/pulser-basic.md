@@ -30,7 +30,7 @@ Currently, the backend supports the following operations:
 
 | gate        | description                                                                                      | trainable parameter |
 |-------------|--------------------------------------------------------------------------------------------------|---------------------|
-| `RX`, `RY`, `RZ`     | Single qubit rotations. Notice that the interaction is on and this affects the resulting gate fidelity.                                                                        | rotation angle      |
+| `RX`, `RY`     | Single qubit rotations. Notice that the interaction is on and this affects the resulting gate fidelity.                                                                        | rotation angle      |
 | `AnalogRX`, `AnalogRY`, `AnalogRZ` | Span a single qubit rotation among the entire register.                                          | rotation angle      |
 | `entangle`  | Fully entangle the register.                                                                     | interaction time    |
 | `wait`      | An idle block to wait for the system to evolve for a specific time according to the interaction. | free evolution time |
