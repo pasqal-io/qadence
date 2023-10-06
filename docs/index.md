@@ -36,6 +36,9 @@ If you use Qadence for a publication, we kindly ask you to cite our work using t
 }
 ```
 
+The library name is from music terminology: Qadence allows to compose blocks into complex quantum programs in such
+a seamless way that they flow like music.
+
 ## Remarks
 Quadence uses torch.float64 as the default datatype for tensors (torch.complex128 for complex tensors).
 
