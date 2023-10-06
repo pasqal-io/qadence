@@ -1,6 +1,9 @@
 **Qadence** is a Python package that provides a simple interface to build _**digital-analog quantum
 programs**_ with tunable qubit interaction defined on _**arbitrary register topologies**_ realizable on neutral atom devices.
 
+[![pre-commit](https://github.com/pasqal-io/qadence/actions/workflows/lint.yml/badge.svg)](https://github.com/pasqal-io/qadence/actions/workflows/lint.yml)
+[![tests](https://github.com/pasqal-io/qadence/actions/workflows/test_fast.yml/badge.svg)](https://github.com/pasqal-io/qadence/actions/workflows/test_fast.yml)
+
 ## Feature highlights
 
 * A [block-based system](tutorials/getting_started.md) for composing _**complex digital-analog
@@ -19,6 +22,22 @@ programs**_ with tunable qubit interaction defined on _**arbitrary register topo
 * _**Efficient execution**_ on a variety of different purpose backends: from state vector simulators to tensor network emulators and real devices.
 
 In following are some rudimentary examples of Qadence possibilites in the digital, analog and digital-analog paradigms.
+
+
+## Citation
+
+If you use Qadence for a publication, we kindly ask you to cite our work using the bibtex citation:
+
+```
+@misc{qadence2023pasqal,
+  url = {https://github.com/pasqal-io/qadence},
+  title = {Qadence: {A} {D}igital-analog quantum programming interface.},
+  year = {2023}
+}
+```
+
+## Remarks
+Quadence uses torch.float64 as the default datatype for tensors (torch.complex128 for complex tensors).
 
 ## Sampling the canonical Bell state
 
