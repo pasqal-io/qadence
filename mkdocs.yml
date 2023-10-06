@@ -10,13 +10,20 @@ nav:
     - Quantum Models: tutorials/quantummodels.md
     - Parametric Programs: tutorials/parameters.md
     - Quantum Registers: tutorials/register.md
+<<<<<<< HEAD
     - State Conventions: tutorials/state_conventions.md
+=======
+>>>>>>> main
     - State Initialization: tutorials/state_init.md
     - Arbitrary Hamiltonians: tutorials/hamiltonians.md
     - QML Constructors: tutorials/qml_constructors.md
     - Wavefunction Overlaps: tutorials/overlap.md
     - Program Constructors, States & Serialization: tutorials/serializ_and_prep.md
     - Backends: tutorials/backends.md
+<<<<<<< HEAD
+=======
+    - State Conventions: tutorials/state_conventions.md
+>>>>>>> main
     - Quantum Machine Learning: tutorials/ml_tools.md
 
   - Digital-Analog Quantum Computing:

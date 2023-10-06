@@ -56,7 +56,7 @@ from qadence import uniform_state, zero_state, one_state
 n_qubits = 3
 batch_size = 2
 
-uniform_state = uniform_state(n_qubits, batch_size)
+niform_state = uniform_state(n_qubits, batch_size)
 zero_state = zero_state(n_qubits, batch_size)
 one_state = one_state(n_qubits, batch_size)
 print(f"Uniform state = {uniform_state}") # markdown-exec: hide
