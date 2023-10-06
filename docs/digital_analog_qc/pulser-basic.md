@@ -28,7 +28,7 @@ The current backend has the following operations:
 
 | gate        | description                                                                                      | trainable parameter |
 |-------------|--------------------------------------------------------------------------------------------------|---------------------|
-| `Rot`       | Single qubit rotations.                                                                          | rotation angle      |
+| `RX`, `RY`       | Single qubit rotations.                                                                          | rotation angle      |
 | `AnalogRot` | Span a single qubit rotation among the entire register.                                          | rotation angle      |
 | `entangle`  | Fully entangle the register.                                                                     | interaction time    |
 | `wait`      | An idle block to wait for the system to evolve for a specific time according to the interaction. | free evolution time |
@@ -67,15 +67,15 @@ To run the pulse sequence we have to provide values for the parametrized block w
 import torch
 
 params = {
-    "wait": torch.tensor([383]),  # ns
-    "y": torch.tensor([torch.pi/2]),
+    "t": torch.tensor([383]),  # ns
+    "y": torch.tensor([3*torch.pi/2]),
 }
 
 # Visualise the final state vector
 final_vector = model.run(params)
 print(final_vector)
 
-sample = model.sample(params, n_shots=50)[0]
+sample = model.sample(params, n_shots=500)[0]
 print(sample)
 ```
 ```python exec="on" source="material-block" html="1" session="pulser-basic"
@@ -97,151 +97,47 @@ print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
 ```
 
 
-## Create your own gate
-A big advantage of the `chain` block is it makes it easy to create complex
-operations from simple ones. Take the entanglement operation as an example.
+## Working with observables
 
-The operation consists of moving _all_ the qubits to the `X` basis having the
-atoms' interaction perform a controlled-Z operation during the free evolution.
-And we can easily recreate this pattern using the `AnFreeEvo` and `AnRY` blocks.
+You can calculate expectation value of `Observables` in the Pulser backend the same way as in other backends by using the `expectation` method.
+First we create the desired observables using Qadence blocks.
+
 
 ```python exec="on" source="material-block" session="pulser-basic"
-from qadence import AnalogRY, chain, wait
+from qadence.operations import I, X, Y, Z, kron
 
-def my_entanglement(duration):
-    return chain(
-        AnalogRY(-torch.pi / 2),
-        wait(duration)
-    )
+zz = kron(I(0), Z(1), I(2), Z(3))
+xy = kron(I(0), X(1), I(2), Y(3))
+yx = kron(I(0), Y(1), I(2), X(3))
+
+obs = [zz, xy + yx]
+
 ```
 
-Then we proceed as before.
+Now we define the `QuantumModel` and pass the observable list to it together with the constructed circuit.
 
-```python exec="on" source="material-block" session="pulser-basic" html="1"
-protocol = chain(
-   my_entanglement("t"),
-   RY(0, "y"),
-)
+```python exec="on" source="material-block" result="json" session="pulser-basic"
+from qadence import RX, AnalogRot
 
-register = Register(2)
-circuit = QuantumCircuit(register, protocol)
-model = QuantumModel(circuit, backend="pulser", diff_mode='gpsr')
-
-params = {
-    "t": torch.tensor([383]),  # ns
-    "y": torch.tensor([torch.pi / 2]),
-}
-
-sample = model.sample(params, n_shots=50)[0]
-
-fig, ax = plt.subplots()
-plt.bar(sample.keys(), sample.values())
-from docs import docsutils # markdown-exec: hide
-print(docsutils.fig_to_html(fig)) # markdown-exec: hide
-```
-
-```python exec="on" source="material-block" html="1" session="pulser-basic"
-model.assign_parameters(params).draw(draw_phase_area=True, show=False)
-from docs import docsutils # markdown-exec: hide
-print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
-```
-
-
-## Large qubits registers
-The constructor `Register(n_qubits)` generates a linear register that works fine
-with two or three qubits. But for the blocks we have so far, large registers
-work better with a square loop layout like the following.
-
-```python exec="on" source="material-block" html="1" session="pulser-basic"
-register = Register.square(qubits_side=4)
-register.draw(show=False)
-from docs import docsutils # markdown-exec: hide
-print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
-```
-
-In those cases, global pulses are preferred to generate entanglement to avoid
-changing the addressing pattern on the fly.
-
-```python exec="on" source="material-block" html="1" session="pulser-basic"
-protocol = chain(
-    entangle("t"),
-    AnalogRY(torch.pi / 2),
+blocks = chain(
+    RX(0, "x"),
+    RX(2, "x"),
+    AnalogRot(duration=300, omega=5*torch.pi)
 )
 
 register = Register.square(qubits_side=2)
-circuit = QuantumCircuit(register, protocol)
-model = QuantumModel(circuit, backend="pulser", diff_mode='gpsr')
-model.backend.backend.config.with_modulation = True
+circuit = QuantumCircuit(register, blocks)
+model = QuantumModel(circuit, observable=obs, backend="pulser", diff_mode="gpsr")
 
 params = {
-    "t": torch.tensor([1956]),  # ns
+    "x": torch.tensor([3*torch.pi/2]),  # ns
 }
 
-sample = model.sample(params, n_shots=500)[0]
-
-fig, ax = plt.subplots()
-ax.bar(sample.keys(), sample.values())
-plt.xticks(rotation='vertical')
-from docs import docsutils # markdown-exec: hide
-print(docsutils.fig_to_html(fig)) # markdown-exec: hide
-```
-```python exec="on" source="material-block" html="1" session="pulser-basic"
-model.assign_parameters(params).draw(draw_phase_area=True, show=False)
-from docs import docsutils # markdown-exec: hide
-print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
+final_result = model.expectation(values=params)
 ```
 
-!!! note
-    The gates shown here don't work with arbitrary registers since they rely on
-    the registered geometry to work properly.
-
-## Working with observables
-
-The current backend version does not support Qadence `Observables`. However, it's
-still possible to use the regular Pulser simulations to calculate expected
-values.
-
-To do so, we use the `assign_parameters` property to recover the Pulser sequence.
-
-```python exec="on" source="material-block" session="pulser-basic"
-params = {
-    "t": torch.tensor([383]),  # ns
-}
-
-built_sequence = model.assign_parameters(params)
-```
-
-
-Next, we create the desired observables using `Qutip` [^2].
-
-
-```python exec="on" source="material-block" session="pulser-basic"
-import qutip
-
-zz = qutip.tensor([qutip.qeye(2), qutip.sigmaz(), qutip.qeye(2), qutip.sigmaz()])
-xy = qutip.tensor([qutip.qeye(2), qutip.sigmax(), qutip.qeye(2), qutip.sigmay()])
-yx = qutip.tensor([qutip.qeye(2), qutip.sigmay(), qutip.qeye(2), qutip.sigmax()])
-```
-
-
-We use the Pulser `Simulation` class to run the sequence and call the method `expect` over our observables.
-
-```python exec="on" source="material-block" result="json" session="pulser-basic"
-from pulser_simulation import Simulation
-
-sim = Simulation(built_sequence)
-result = sim.run()
-
-final_result = result.expect([zz, xy + yx])
-print(final_result[0][-1], final_result[1][-1])
-```
-
-We use the Pulser `Simulation` class to run the sequence and call the method
-`expect` over our observables.
-
-Here the `final_result` contains the expected values during the evolution (one
-point per nanosecond). In this case, looking only at the final values, we see
-the qubits `q0` and `q2` are on the *Bell-diagonal* state $\Big(|00\rangle -i |11\rangle\Big)/\sqrt{2}$.
+We use the `expectation` method of the `QuantumModel` instance to calculate the expectation values.
+Here the `final_result` contains the expected values of observables in `obs` list.
 
 ```python exec="on" source="material-block" html="1" session="pulser-basic"
 from qadence import fourier_feature_map, RX, RY
@@ -272,4 +168,3 @@ print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
 ## References
 
 [^1]: [Pulser: An open-source package for the design of pulse sequences in programmable neutral-atom arrays](https://pulser.readthedocs.io/en/stable/)
-[^2]: [Qutip](https://qutip.org)
