@@ -1,6 +1,50 @@
 # State initialization
 
-Several standard quantum states can be quickly initialized in `qadence`, both in statevector form as well as in block form.
+Qadence offers convenience routines for preparing initial quantum states.
+These routines are divided into two approaches:
+
+- As a dense matrix.
+- From a suitable quantum circuit. This is available for every backend and it should be added
+in front of the desired quantum circuit to simulate.
+
+Let's illustrate the usage of the state preparation routine.
+
+```python exec="on" source="material-block" result="json" session="seralize"
+from qadence import random_state, product_state, is_normalized, StateGeneratorType
+
+# Random initial state.
+# the default `type` is StateGeneratorType.HaarMeasureFast
+state = random_state(n_qubits=2, type=StateGeneratorType.RANDOM_ROTATIONS)
+print("Random initial state generated with rotations:") # markdown-exec: hide
+print(f"state = {state.detach().numpy().flatten()}") # markdown-exec: hide
+
+# Check the normalization.
+assert is_normalized(state)
+
+# Product state from a given bitstring.
+# NB: Qadence follows the big endian convention.
+state = product_state("01")
+print("Product state corresponding to bitstring '01':") # markdown-exec: hide
+print(f"state = {state.detach().numpy().flatten()}") # markdown-exec: hide
+```
+
+Now we see how to generate the product state corresponding to the one above with
+a suitable quantum circuit.
+
+```python
+from qadence import product_block, tag, QuantumCircuit
+
+state_prep_b = product_block("10")
+display(state_prep_b)
+
+# let's now prepare a circuit
+state_prep_b = product_block("1000")
+tag(state_prep_b, "prep")
+qc_with_state_prep = QuantumCircuit(4, state_prep_b, fourier_b, hea_b)
+
+print(html_string(qc_with_state_prep), size="4,4")) # markdown-exec: hide
+```
+Several standard quantum states can be conveniently initialized in Qadence, both in statevector form as well as in block form.
 
 ## Statevector initialization
 
@@ -12,9 +56,12 @@ from qadence import uniform_state, zero_state, one_state
 n_qubits = 3
 batch_size = 2
 
-print(uniform_state(n_qubits, batch_size))
-print(zero_state(n_qubits, batch_size))
-print(one_state(n_qubits, batch_size))
+uniform_state = uniform_state(n_qubits, batch_size)
+zero_state = zero_state(n_qubits, batch_size)
+one_state = one_state(n_qubits, batch_size)
+print(f"Uniform state = {uniform_state}") # markdown-exec: hide
+print(f"Zero state = {zero_state}") # markdown-exec: hide
+print(f"One state = {one_state}") # markdown-exec: hide
 ```
 
 Creating product states:
