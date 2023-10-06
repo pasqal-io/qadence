@@ -64,8 +64,8 @@ circuit = QuantumCircuit(register, bell_state)
 model = QuantumModel(circuit, backend="pulser", diff_mode="gpsr")
 
 params = {
-    "wait": torch.tensor([383]),  # ns
-    "y": torch.tensor([torch.pi/2]),
+    "t": torch.tensor([383]),  # ns
+    "y": torch.tensor([3*torch.pi/2]),
 }
 
 # return the final state vector
@@ -144,22 +144,20 @@ The operation consists of moving _all_ the qubits to the `X` basis having the at
 during the free evolution. And we can easily recreate this pattern using the `wait` (corresponding to free evolution) and `AnalogRY` blocks with appropriate parameters.
 
 ```python exec="on" source="material-block" session="pulser-basic"
-from qadence import AnalogRY, chain, wait
+from qadence.operations import I, X, Y, Z, kron
 
-def my_entanglement(duration):
-    return chain(
-        AnalogRY(-torch.pi / 2),
-        wait(duration)
-    )
+zz = kron(I(0), Z(1), I(2), Z(3))
+xy = kron(I(0), X(1), I(2), Y(3))
+yx = kron(I(0), Y(1), I(2), X(3))
+
+obs = [zz, xy + yx]
+
 ```
 
-Then we proceed as before.
+Now we define the `QuantumModel` and pass the observable list to it together with the constructed circuit.
 
-```python exec="on" source="material-block" session="pulser-basic" html="1"
-protocol = chain(
-   my_entanglement("t"),
-   RY(0, "y"),
-)
+```python exec="on" source="material-block" result="json" session="pulser-basic"
+from qadence import RX, AnalogRot
 
 register = Register(2)
 circuit = QuantumCircuit(register, protocol)
@@ -217,7 +215,7 @@ model = QuantumModel(circuit, backend="pulser", diff_mode="gpsr")
 model.backend.backend.config.with_modulation = True
 
 params = {
-    "t": torch.tensor([1956]),  # ns
+    "x": torch.tensor([3*torch.pi/2]),  # ns
 }
 
 sample = model.sample(params, n_shots=500)[0]

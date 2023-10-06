@@ -158,3 +158,36 @@ def test_modules_save_load(BasicQNN: QNN, BasicTransformedModule: TransformedMod
         model, optimizer = train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
         x = torch.rand(1)
         assert torch.allclose(torch.sin(x), model(x), rtol=1e-1, atol=1e-1)
+
+
+@pytest.mark.flaky(max_runs=10)
+def test_train_tensor_tuple(tmp_path: Path, Basic: torch.nn.Module) -> None:
+    model = Basic
+    batch_size = 25
+    x = torch.linspace(0, 1, batch_size).reshape(-1, 1)
+    y = torch.sin(x)
+
+    cnt = count()
+    criterion = torch.nn.MSELoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
+
+    def loss_fn(model: torch.nn.Module, data: torch.Tensor) -> tuple[torch.Tensor, dict]:
+        next(cnt)
+        x, y = data[0], data[1]
+        out = model(x)
+        loss = criterion(out, y)
+        return loss, {}
+
+    n_epochs = 100
+    config = TrainConfig(
+        folder=tmp_path,
+        max_iter=n_epochs,
+        checkpoint_every=100,
+        write_every=100,
+        batch_size=batch_size,
+    )
+    train_with_grad(model, (x, y), optimizer, config, loss_fn=loss_fn)
+    assert next(cnt) == n_epochs
+
+    x = torch.rand(5, 1)
+    assert torch.allclose(torch.sin(x), model(x), rtol=1e-1, atol=1e-1)

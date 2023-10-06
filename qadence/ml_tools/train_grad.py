@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Callable
 
 from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, TimeRemainingColumn
+from torch import Tensor
 from torch.nn import Module
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
@@ -20,7 +21,7 @@ logger = get_logger(__name__)
 
 def train(
     model: Module,
-    dataloader: DictDataLoader | DataLoader | None,
+    dataloader: DictDataLoader | DataLoader | list[Tensor] | tuple[Tensor, Tensor] | None,
     optimizer: Optimizer,
     config: TrainConfig,
     loss_fn: Callable,
@@ -57,6 +58,54 @@ def train(
             called every `config.write_every` iterations. The function must have
             the signature `write_tensorboard(writer, loss, metrics, iteration)`
             (see the example below).
+
+    Example:
+    ```python exec="on" source="material-block"
+    from pathlib import Path
+    import torch
+    from itertools import count
+    from qadence.constructors import total_magnetization, hea, feature_map
+    from qadence import chain, Parameter, QuantumCircuit
+    from qadence.models import QNN
+    from qadence.ml_tools import train_with_grad, TrainConfig
+
+    n_qubits = 2
+    fm = feature_map(n_qubits)
+    ansatz = hea(n_qubits=n_qubits, depth=3)
+    observable = total_magnetization(n_qubits)
+    circuit = QuantumCircuit(n_qubits, fm, ansatz)
+
+    model = QNN(circuit, observable, backend="pyqtorch", diff_mode="ad")
+    batch_size = 1
+    input_values = {"phi": torch.rand(batch_size, requires_grad=True)}
+    pred = model(input_values)
+
+    ## lets prepare the train routine
+
+    cnt = count()
+    criterion = torch.nn.MSELoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
+
+    def loss_fn(model: torch.nn.Module, data: torch.Tensor) -> tuple[torch.Tensor, dict]:
+        next(cnt)
+        x, y = data[0], data[1]
+        out = model(x)
+        loss = criterion(out, y)
+        return loss, {}
+    tmp_path = Path("/tmp")
+    n_epochs = 5
+    config = TrainConfig(
+        folder=tmp_path,
+        max_iter=n_epochs,
+        checkpoint_every=100,
+        write_every=100,
+        batch_size=batch_size,
+    )
+    batch_size = 25
+    x = torch.linspace(0, 1, batch_size).reshape(-1, 1)
+    y = torch.sin(x)
+    train_with_grad(model, (x, y), optimizer, config, loss_fn=loss_fn)
+    ```
     """
 
     assert loss_fn is not None, "Provide a valid loss function"
@@ -79,6 +128,12 @@ def train(
         TaskProgressColumn(),
         TimeRemainingColumn(elapsed_when_finished=True),
     )
+    if isinstance(dataloader, (list, tuple)):
+        from qadence.ml_tools.data import to_dataloader
+
+        assert len(dataloader) == 2, "Please provide exactly two torch tensors."
+        x, y = dataloader
+        dataloader = to_dataloader(x=x, y=y, batch_size=config.batch_size)
     with progress:
         dl_iter = iter(dataloader) if isinstance(dataloader, DictDataLoader) else None
 
