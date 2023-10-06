@@ -14,9 +14,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test_qadence_ubuntu:
-    name: Test Qadence
-    runs-on: docker.io/seitzdom/qadence:latest
+  test_qadence:
+    name: Unit Test
+    runs-on: ubuntu-latest
+    container:
+      image: seitzdom/qadence:latest
     strategy:
       matrix:
         python-version: ["3.9", "3.10"]
