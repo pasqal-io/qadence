@@ -15,23 +15,24 @@ concurrency:
 
 jobs:
   test_qadence:
-    name: Unit Test
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     container:
-      image: pytorch/pytorch:latest
+      image: seitzdom/qadence:latest
     strategy:
       matrix:
+        os: [macos-latest]
         python-version: ["3.9", "3.10"]
     steps:
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Checkout code
-      uses: actions/checkout@v2
-    - name: Install Hatch
-      run: |
-        pip install hatch
-    - name: Run fast tests
-      run: |
-        hatch -e tests run test -m "not slow"
+      - name: Checkout Qadence
+        uses: actions/checkout@v3
+      - name: Set up Qadence and pytest
+        uses: ./.github/workflows/qadence-setup
+        with:
+          python-version: ${{ matrix.python-version }}
+          extra-packages: pytest
+      - name: Install Hatch
+        run: |
+          pip install hatch
+      - name: Run fast tests
+        run: |
+          hatch -e tests run test -m "not slow"
