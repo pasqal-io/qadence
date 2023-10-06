@@ -98,8 +98,12 @@ A `Device` instance encapsulate all the properties defining a real neutral atoms
 
 `qadence` offers a simplified interface with only two devices which can be found [here][qadence.backends.pulser.devices]
 
-* `REALISTIC` (default): device specification very similar to a real neutral atom quantum processor.
-* `IDEALIZED`: ideal device which should be used only for testing purposes. It does not have any limitation in what can be run with it.
+* `IDEALIZED` (default): ideal device which should be used only for testing purposes. It does not have any limitation in what can be run with it.
+* `REALISTIC`: device specification very similar to a real neutral atom quantum processor.
+
+!!! note
+    If you want to perform simulations closer to the specifications of real neutral atom machines,
+    always choose the `REALISTIC` device.
 
 One can use the `Configuration` of the Pulser backend to select the appropriate device:
 
@@ -109,11 +113,12 @@ from qadence.backends.pulser.devices import Device
 register = Register(2)
 circuit = QuantumCircuit(register, bell_state)
 
+# choose a realistic device
 model = QuantumModel(
     circuit,
     backend="pulser",
     diff_mode="gpsr",
-    configuration={"device_type": Device.IDEALIZED}
+    configuration={"device_type": Device.REALISTIC}
 )
 
 # alternatively directly one of the devices available in Pulser
