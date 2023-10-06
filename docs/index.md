@@ -22,7 +22,6 @@ programs**_ with tunable qubit interaction defined on _**arbitrary register topo
 * _**Efficient execution**_ on a variety of different purpose backends: from state vector simulators to tensor network emulators and real devices.
 
 
-
 ## Citation
 
 If you use Qadence for a publication, we kindly ask you to cite our work using the bibtex citation:
@@ -34,9 +33,6 @@ If you use Qadence for a publication, we kindly ask you to cite our work using t
   year = {2023}
 }
 ```
-
-The library name is from music terminology: Qadence allows to compose blocks into complex quantum programs in such
-a seamless way that they flow like music.
 
 In following are some rudimentary examples of Qadence possibilites in the digital, analog and digital-analog paradigms.
 
@@ -54,7 +50,7 @@ bell_state = chain(H(0), CNOT(0,1))
 
 # Sample with 100 shots.
 samples = sample(bell_state, n_shots=100)
-print(samples) # markdown-exec: hide
+print(f"samples = {samples}") # markdown-exec: hide
 from qadence.divergences import js_divergence # markdown-exec: hide
 from collections import Counter # markdown-exec: hide
 js = js_divergence(samples[0], Counter({"00":50, "11":50})) # markdown-exec: hide

@@ -15,8 +15,8 @@ from qadence import random_state, product_state, is_normalized, StateGeneratorTy
 # Random initial state.
 # the default `type` is StateGeneratorType.HaarMeasureFast
 state = random_state(n_qubits=2, type=StateGeneratorType.RANDOM_ROTATIONS)
-print("Random initial state generated with rotations:") # markdown-exec: hide
-print(f"state = {state.detach().numpy().flatten()}") # markdown-exec: hide
+print("Random initial state generated with rotations:\n") # markdown-exec: hide
+print(f"state = {state.detach().numpy().flatten()}\n") # markdown-exec: hide
 
 # Check the normalization.
 assert is_normalized(state)
@@ -24,31 +24,31 @@ assert is_normalized(state)
 # Product state from a given bitstring.
 # NB: Qadence follows the big endian convention.
 state = product_state("01")
-print("Product state corresponding to bitstring '01':") # markdown-exec: hide
+print("Product state corresponding to bitstring '01':\n") # markdown-exec: hide
 print(f"state = {state.detach().numpy().flatten()}") # markdown-exec: hide
 ```
 
 Now we see how to generate the product state corresponding to the one above with
 a suitable quantum circuit.
 
-```python
+```python  exec="on" source="material-block" html="1"
 from qadence import product_block, tag, QuantumCircuit
 
-state_prep_b = product_block("10")
-display(state_prep_b)
+state_prep_block = product_block("10")
+display(state_prep_block)
 
-# let's now prepare a circuit
-state_prep_b = product_block("1000")
-tag(state_prep_b, "prep")
-qc_with_state_prep = QuantumCircuit(4, state_prep_b, fourier_b, hea_b)
+# Let's now prepare a circuit.
+state_prep_block = product_block("1000")
+tag(state_prep_block, "Prep block")
+qc_with_state_prep = QuantumCircuit(4, state_prep_block, fourier_b, hea_b)
 
-print(html_string(qc_with_state_prep), size="4,4")) # markdown-exec: hide
+print(html_string(qc_with_state_prep), size="4,4") # markdown-exec: hide
 ```
-Several standard quantum states can be conveniently initialized in Qadence, both in statevector form as well as in block form.
+Several standard quantum states can be conveniently initialized in Qadence, both in statevector form as well as in block form as shown in following.
 
-## Statevector initialization
+## State vector initialization
 
-Creating uniform, all-zero or all-one:
+Qadence offers a number of constructor functions for state vector preparation.
 
 ```python exec="on" source="material-block" result="json" session="states"
 from qadence import uniform_state, zero_state, one_state
@@ -56,24 +56,31 @@ from qadence import uniform_state, zero_state, one_state
 n_qubits = 3
 batch_size = 2
 
-niform_state = uniform_state(n_qubits, batch_size)
+uniform_state = uniform_state(n_qubits, batch_size)
 zero_state = zero_state(n_qubits, batch_size)
 one_state = one_state(n_qubits, batch_size)
-print(f"Uniform state = {uniform_state}") # markdown-exec: hide
-print(f"Zero state = {zero_state}") # markdown-exec: hide
-print(f"One state = {one_state}") # markdown-exec: hide
+print("Uniform state = \n") # markdown-exec: hide
+print(f"{uniform_state}") # markdown-exec: hide
+print("Zero state = \n") # markdown-exec: hide
+print(f"{zero_state}") # markdown-exec: hide
+print("One state = \n" # markdown-exec: hide
+print(f"{one_state}") # markdown-exec: hide
 ```
 
-Creating product states:
+As already seen, product states can be easily created, even in batches:
 
 ```python exec="on" source="material-block" result="json" session="states"
 from qadence import product_state, rand_product_state
 
 # From a bitsring "100"
-print(product_state("100", batch_size))
+prod_state = product_state("100", batch_size)
+print("Product state = \n") # markdown-exec: hide
+print(f"{prod_state}\n") # markdown-exec: hide
 
 # Or a random product state
-print(rand_product_state(n_qubits, batch_size))
+rand_state = rand_product_state(n_qubits, batch_size)
+print("Random state = \n") # markdown-exec: hide
+print(f"{rand_state}") # markdown-exec: hide
 ```
 
 Creating a GHZ state:
@@ -81,7 +88,10 @@ Creating a GHZ state:
 ```python exec="on" source="material-block" result="json" session="states"
 from qadence import ghz_state
 
-print(ghz_state(n_qubits, batch_size))
+ghz = ghz_state(n_qubits, batch_size)
+
+print("GHZ state = \n") # markdown-exec: hide
+print(f"{ghz}") # markdown-exec: hide
 ```
 
 Creating a random state uniformly sampled from a Haar measure:
@@ -89,30 +99,37 @@ Creating a random state uniformly sampled from a Haar measure:
 ```python exec="on" source="material-block" result="json" session="states"
 from qadence import random_state
 
-print(random_state(n_qubits, batch_size))
+rand_haar_state = random_state(n_qubits, batch_size)
+
+print("Random state from Haar = \n") # markdown-exec: hide
+print(f"{rand_haar_state}") # markdown-exec: hide
 ```
 
-Custom initial states can then be passed to `run`, `sample` and `expectation` by passing the `state` argument
+Custom initial states can then be passed to either `run`, `sample` and `expectation` through the `state` argument
 
 ```python exec="on" source="material-block" result="json" session="states"
 from qadence import random_state, product_state, CNOT, run
 
 init_state = product_state("10")
-final_state = run(CNOT(0, 1), state = init_state)
-print(final_state)
+final_state = run(CNOT(0, 1), state=init_state)
+
+print(f"Final state = {final_state}") # markdown-exec: hide
 ```
 
 ## Block initialization
 
-Not all backends support custom statevector initialization, however there are also utility functions to initialize the respective blocks:
+Not all backends support custom statevector initialization, however previous utility functions have their counterparts to initialize the respective blocks:
 
 ```python exec="on" source="material-block" result="json" session="states"
 from qadence import uniform_block, one_block
 
 n_qubits = 3
 
-print(uniform_block(n_qubits))
-print(one_block(n_qubits))
+uniform_block = uniform_block(n_qubits)
+print(uniform_block) # markdown-exec: hide
+
+one_block = one_block(n_qubits)
+print(one_block) # markdown-exec: hide
 ```
 
 Similarly, for product states:
@@ -120,8 +137,11 @@ Similarly, for product states:
 ```python exec="on" source="material-block" result="json" session="states"
 from qadence import product_block, rand_product_block
 
-print(product_block("100"))
-print(rand_product_block(n_qubits))
+product_block = product_block("100")
+print(product_block) # markdown-exec: hide
+
+rand_product_block = rand_product_block(n_qubits)
+print(rand_product_block) # markdown-exec: hide
 ```
 
 And GHZ states:
@@ -129,14 +149,15 @@ And GHZ states:
 ```python exec="on" source="material-block" result="json" session="states"
 from qadence import ghz_block
 
-print(ghz_block(n_qubits))
+ghz_block = ghz_block(n_qubits)
+print(ghz_block) # markdown-exec: hide
 ```
 
 Initial state blocks can simply be chained at the start of a given circuit.
 
 ## Utility functions
 
-Some statevector utility functions are also available. We can easily create the probability mass function of a given statevector using `torch.distributions.Categorical`
+Some state vector utility functions are also available. We can easily create the probability mass function of a given statevector using `torch.distributions.Categorical`
 
 ```python exec="on" source="material-block" result="json" session="states"
 from qadence import random_state, pmf
