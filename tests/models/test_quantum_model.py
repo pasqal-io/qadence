@@ -12,7 +12,7 @@ from hypothesis import given, settings
 from metrics import ATOL_DICT, JS_ACCEPTANCE  # type: ignore
 
 from qadence import BackendName, DiffMode, FeatureParameter, QuantumCircuit, VariationalParameter
-from qadence.blocks import chain, kron
+from qadence.blocks import AbstractBlock, chain, kron
 from qadence.constructors import hea, total_magnetization
 from qadence.divergences import js_divergence
 from qadence.ml_tools.utils import rand_featureparameters
@@ -193,15 +193,19 @@ def test_correct_order(backend: BackendName) -> None:
 
     circ = QuantumCircuit(3, X(0))
     obs = [Z(0) for _ in range(np.random.randint(1, 5))]
+    n_obs = len(obs)
     pyq_model = QuantumModel(
         circ, observable=obs, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD  # type: ignore
     )
     other_model = QuantumModel(
         circ, observable=obs, backend=backend, diff_mode=DiffMode.GPSR  # type: ignore
     )
-    assert other_model.expectation({})[0].item() == -1
-    for pyq_res, other_res in zip(pyq_model.expectation({}), other_model.expectation({})):
-        assert pyq_res.item() == other_res.item()
+
+    pyq_exp = pyq_model.expectation({})
+    other_exp = other_model.expectation({})
+
+    assert pyq_exp.size() == other_exp.size()
+    assert torch.all(torch.isclose(pyq_exp, other_exp, atol=ATOL_DICT[BackendName.BRAKET]))
 
 
 def test_qc_obs_different_support_0() -> None:
@@ -313,13 +317,20 @@ def test_qm_obs_single_feature_param() -> None:
     assert torch.all(torch.isclose(model_f.expectation({"x": torch.tensor([2.7])}), model_v_exp))
 
 
-@pytest.mark.parametrize("batch_size", [i for i in range(1, 11)])
-def test_qm_obs_batch_feature_param(batch_size: int) -> None:
+@pytest.mark.parametrize("batch_size", [1, 2])
+@pytest.mark.parametrize(
+    "observables",
+    [[FeatureParameter("x") * Z(0)], [FeatureParameter("x") * Z(0) for i in range(2)]],
+)
+def test_qm_obs_batch_feature_param(batch_size: int, observables: list[AbstractBlock]) -> None:
+    n_obs = len(observables)
     random_batch = torch.rand(batch_size)
     batch_query_dict = {"x": random_batch}
-    cost_f = FeatureParameter("x") * Z(0)
+    expected_output = random_batch.unsqueeze(1).repeat(1, n_obs)
+    assert expected_output.shape == (batch_size, n_obs)
     model_f = QuantumModel(
-        QuantumCircuit(1, I(0)), cost_f, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD
+        QuantumCircuit(1, I(0)), observables, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD
     )
     model_f_exp = model_f.expectation(batch_query_dict)
-    assert torch.all(torch.isclose(model_f_exp, random_batch))
+
+    assert torch.all(torch.isclose(model_f_exp, expected_output))
