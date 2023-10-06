@@ -71,7 +71,7 @@ class MatrixBlock(PrimitiveBlock):
         if not self.is_square(matrix):
             raise TypeError("Please provide a square matrix.")
         if not self.is_hermitian(matrix):
-            logger.warning("Provided matrix is not hermetian.")
+            logger.warning("Provided matrix is not hermitian.")
         if not self.is_unitary(matrix):
             logger.warning("Provided matrix is not unitary.")
         self.matrix = matrix.clone()

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, TensorDataset
 
 
 @dataclass
@@ -25,3 +25,8 @@ class DictDataLoader:
 
     def __next__(self) -> dict[str, torch.Tensor]:
         return {key: next(it) for key, it in self.iters.items()}
+
+
+def to_dataloader(x: torch.Tensor, y: torch.Tensor, batch_size: int = 1) -> DataLoader:
+    """Convert two torch tensors x and y to a Dataloader."""
+    return DataLoader(TensorDataset(x, y), batch_size=batch_size)
