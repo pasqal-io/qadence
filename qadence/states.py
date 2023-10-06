@@ -310,7 +310,7 @@ def random_state(
 
 
     n_qubits = 2
-    # The default is StateGeneratorType.HAARMEASUREFAST
+    # The default is StateGeneratorType.HAAR_MEASURE_FAST
     state = random_state(n_qubits=n_qubits)
     print(state)
 
@@ -322,7 +322,7 @@ def random_state(
 
     if type == StateGeneratorType.HAAR_MEASURE_FAST:
         state = concat(tuple(_rand_haar_fast(n_qubits) for _ in range(batch_size)), dim=0)
-    elif type == StateGeneratorType.HAAR_MEASURE_FAST:
+    elif type == StateGeneratorType.HAAR_MEASURE_SLOW:
         state = concat(tuple(_rand_haar_slow(n_qubits) for _ in range(batch_size)), dim=0)
     elif type == StateGeneratorType.RANDOM_ROTATIONS:
         state = _run_state(_abstract_random_state(n_qubits, batch_size), backend)  # type: ignore
