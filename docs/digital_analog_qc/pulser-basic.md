@@ -1,4 +1,4 @@
-Qadence offers a direct interface with Pulser[^1], a pulse-level interface specifically designed for programming neutral atom quantum computers.
+Qadence offers a direct interface with Pulser[^1], an open-source pulse-level interface written in Python and specifically designed for programming neutral atom quantum computers.
 
 Using directly Pulser requires deep knowledge on pulse-level programming and on how neutral atom devices work. Qadence abstracts out this complexity by using the familiar block-based interface for building pulse sequences in Pulser while leaving the possibility
 to directly manipulate them if required.
@@ -129,13 +129,14 @@ model = QuantumModel(
 ```
 
 ## Create your own gate
-A big advantage of the `chain` block is it makes it easy to create complex
-operations from simple ones. Take the entanglement operation as an example.
 
-The operation consists of moving _all_ the qubits to the `X` basis having the
-atoms' interaction perform a controlled-Z operation during the free evolution.
-And we can easily recreate this pattern using the `wait` (corresponding to free
-evolution) and `AnalogRY` blocks with appropriate parameters.
+A big advantage of using the block-based interface
+if `qadence` is that it makes it easy to create complex
+operations from simple ones as a block composition.
+Take the entanglement operation as an example.
+
+The operation consists of moving _all_ the qubits to the `X` basis having the atoms' interaction perform a controlled-Z operation
+during the free evolution. And we can easily recreate this pattern using the `wait` (corresponding to free evolution) and `AnalogRY` blocks with appropriate parameters.
 
 ```python exec="on" source="material-block" session="pulser-basic"
 from qadence import AnalogRY, chain, wait
@@ -172,14 +173,16 @@ from docs import docsutils # markdown-exec: hide
 print(docsutils.fig_to_html(fig)) # markdown-exec: hide
 ```
 
+One can also easily access and manipulate the underlying pulse sequence.
+
 ```python exec="on" source="material-block" html="1" session="pulser-basic"
 model.assign_parameters(params).draw(draw_phase_area=True, show=False)
 from docs import docsutils # markdown-exec: hide
 print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
 ```
 
-
 ## Large qubits registers
+
 The constructor `Register(n_qubits)` generates a linear register that works fine
 with two or three qubits. But for the blocks we have so far, large registers
 work better with a square loop layout like the following.
@@ -203,6 +206,9 @@ protocol = chain(
 register = Register.square(qubits_side=2)
 circuit = QuantumCircuit(register, protocol)
 model = QuantumModel(circuit, backend="pulser", diff_mode="gpsr")
+
+# add modulation to the pulse sequence by modifying the
+# backend configuration
 model.backend.backend.config.with_modulation = True
 
 params = {
@@ -217,6 +223,9 @@ plt.xticks(rotation='vertical')
 from docs import docsutils # markdown-exec: hide
 print(docsutils.fig_to_html(fig)) # markdown-exec: hide
 ```
+
+Again, let's plot the corresponding pulse sequence.
+
 ```python exec="on" source="material-block" html="1" session="pulser-basic"
 model.assign_parameters(params).draw(draw_phase_area=True, show=False)
 from docs import docsutils # markdown-exec: hide
@@ -227,81 +236,46 @@ print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
     The gates shown here don't work with arbitrary registers since they rely on
     the registered geometry to work properly.
 
-## Working with observables
 
-TODO
+## Digital-analog QNN circuit
 
-## Hardware efficient ansatz
-<!-- The current backend version does not support Qadence `Observables`. However, it's
-still possible to use the regular Pulser simulations to calculate expected
-values.
+Finally, let's put all together by constructing a digital-analog
+version of a quantum neural network circuit with feature map and variational
+ansatz.
 
-To do so, we use the `assign_parameters` property to recover the Pulser sequence.
-
-```python exec="on" source="material-block" session="pulser-basic"
-params = {
-    "t": torch.tensor([383]),  # ns
-}
-
-built_sequence = model.assign_parameters(params)
-```
-
-
-Next, we create the desired observables using `Qutip` [^2].
-
-
-```python exec="on" source="material-block" session="pulser-basic"
-import qutip
-
-zz = qutip.tensor([qutip.qeye(2), qutip.sigmaz(), qutip.qeye(2), qutip.sigmaz()])
-xy = qutip.tensor([qutip.qeye(2), qutip.sigmax(), qutip.qeye(2), qutip.sigmay()])
-yx = qutip.tensor([qutip.qeye(2), qutip.sigmay(), qutip.qeye(2), qutip.sigmax()])
-```
-
-
-We use the Pulser `Simulation` class to run the sequence and call the method `expect` over our observables.
-
-```python exec="on" source="material-block" result="json" session="pulser-basic"
-from pulser_simulation import Simulation
-
-sim = Simulation(built_sequence)
-result = sim.run()
-
-final_result = result.expect([zz, xy + yx])
-print(final_result[0][-1], final_result[1][-1])
-```
-
-We use the Pulser `Simulation` class to run the sequence and call the method
-`expect` over our observables.
-
-Here the `final_result` contains the expected values during the evolution (one
-point per nanosecond). In this case, looking only at the final values, we see
-the qubits `q0` and `q2` are on the *Bell-diagonal* state $\Big(|00\rangle -i |11\rangle\Big)/\sqrt{2}$. -->
-
-Finally, let's put all together by constructing a digital-analog version of a hardware
-efficient ansatz.
 ```python exec="on" source="material-block" html="1" session="pulser-basic"
-from qadence import fourier_feature_map, RX, RY
+from qadence import kron, fourier_feature_map
+from qadence.operations import RX, RY, AnalogRX
+
+hea_one_layer = chain(
+    kron(RY(0, "th00"), RY(1, "th01")),
+    kron(RX(0, "th10"), RX(1, "th11")),
+    kron(RY(0, "th20"), RY(1, "th21")),
+    entangle("t", qubit_support=(0,1)),
+)
 
 protocol = chain(
     fourier_feature_map(1, param="x"),
-    entangle("t", qubit_support=(0,1)),
-    RY(0, "th1"),
-    RX(0, "th2"),
+    hea_one_layer,
+    AnalogRX(torch.pi/4)
 )
 
 register = Register(2)
 circuit = QuantumCircuit(register, protocol)
-model = QuantumModel(circuit, backend="pulser", diff_mode='gpsr')
+model = QuantumModel(circuit, backend="pulser", diff_mode="gpsr")
 
 params = {
-    "x": torch.tensor([0.8]),
+    "x": torch.tensor([0.8]), # rad
     "t": torch.tensor([900]), # ns
-    "th1":  torch.tensor([1.5]),
-    "th2":  torch.tensor([0.9])
+    "th00":  torch.rand(1), # rad
+    "th01":  torch.rand(1), # rad
+    "th10":  torch.rand(1), # rad
+    "th11":  torch.rand(1), # rad
+    "th20":  torch.rand(1), # rad
+    "th21":  torch.rand(1), # rad
 }
 
-model.assign_parameters(params).draw(draw_phase_area=True, show=False)
+model.assign_parameters(params).draw(draw_phase_area=True, show=True)
 from docs import docsutils # markdown-exec: hide
 print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
 ```
@@ -309,4 +283,3 @@ print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
 ## References
 
 [^1]: [Pulser: An open-source package for the design of pulse sequences in programmable neutral-atom arrays](https://pulser.readthedocs.io/en/stable/)
-[^2]: [Qutip](https://qutip.org)
