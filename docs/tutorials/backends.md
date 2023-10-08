@@ -1,8 +1,8 @@
 Backends allow execution of Qadence abstract quantum circuits. They could be chosen from a variety of simulators, emulators and hardware
 and can enable circuit [differentiability](https://en.wikipedia.org/wiki/Automatic_differentiation). The primary way to interact and configure
-a backcend is via the high-level API `QuantumModel`.
+a backend is via the high-level API `QuantumModel`.
 
-!!! note: "Not all backends are equivalent"
+!!! note "Not all backends are equivalent"
 	Not all backends support the same set of operations, especially while executing analog blocks.
 	Qadence will throw descriptive errors in such cases.
 
@@ -33,7 +33,7 @@ for the given backend. This can be chosen from two types:
 
 In practice, only a `diff_mode` should be provided in the `QuantumModel`. Please note that `diff_mode` defaults to `None`:
 
-```python exec="on" source="material-block" session="diff-backend"
+```python exec="on" source="material-block" result="json" session="diff-backend"
 import sympy
 import torch
 from qadence import Parameter, RX, RZ, Z, CNOT, QuantumCircuit, QuantumModel, chain, BackendName, DiffMode
@@ -72,7 +72,7 @@ print(f"{dexp_dx = }") # markdown-exec: hide
 
 ## Low-level `backend_factory` interface
 
-Every backend in `qadence` inherits from the abstract `Backend` class:
+Every backend in Qadence inherits from the abstract `Backend` class:
 [`Backend`](../backends/backend.md) and implement the following methods:
 
 - [`run`][qadence.backend.Backend.run]: propagate the initial state according to the quantum circuit and return the final wavefunction object.
@@ -107,11 +107,11 @@ from qadence import backend_factory
 # Use only Braket in non-differentiable mode:
 backend = backend_factory("braket")
 
-# the `Converted` object
+# The `Converted` object
 # (contains a `ConvertedCircuit` with the original and native representation)
 conv = backend.convert(circuit)
-print(f"{conv.circuit.original = }")
-print(f"{conv.circuit.native = }")
+print(f"{conv.circuit.original = }") # markdown-exec: hide
+print(f"{conv.circuit.native = }") # markdown-exec: hide
 ```
 
 Additionally, `Converted` contains all fixed and variational parameters, as well as an embedding
@@ -140,7 +140,8 @@ Note that above the parameters keys have changed as they now address the keys on
 Braket device. A more readable embedding is provided by the PyQTorch backend:
 
 ```python exec="on" source="material-block" result="json" session="low-level-braket"
-pyq_backend = backend_factory("pyqtorch", diff_mode="ad")
+from qadence import BackendName, DiffMode
+pyq_backend = backend_factory(backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD)
 
 # the `Converted` object
 # (contains a `ConvertedCircuit` wiht the original and native representation)

@@ -12,18 +12,16 @@ from qadence import feature_map
 n_qubits = 3
 
 fm = feature_map(n_qubits, fm_type="fourier")
-print(f"{fm = }")
+print(f"Fourier = {fm}") # markdown-exec: hide
 
 fm = feature_map(n_qubits, fm_type="chebyshev")
-print(f"{fm = }")
+print(f"Chebyshev {fm}") # markdown-exec: hide
 
 fm = feature_map(n_qubits, fm_type="tower")
-print(f"{fm = }")
+print(f"Tower {fm}") # markdown-exec: hide
 ```
 
 ## Hardware-Efficient Ansatz
-
-### Digital HEA
 
 Ansatze blocks for quantum machine-learning are typically built following the Hardware-Efficient Ansatz formalism (HEA). Both fully digital and digital-analog HEAs can easily be built with the `hea` function. By default, the digital version is returned:
 
@@ -36,7 +34,7 @@ depth = 2
 
 ansatz = hea(n_qubits, depth)
 from qadence.draw import html_string # markdown-exec: hide
-print(html_string(ansatz, size="2,2")) # markdown-exec: hide
+print(html_string(ansatz, size="4,4")) # markdown-exec: hide
 ```
 
 As seen above, the rotation layers are automatically parameterized, and the prefix `"theta"` can be changed with the `param_prefix` argument.
@@ -47,17 +45,15 @@ Furthermore, both the single-qubit rotations and the two-qubit entangler can be 
 from qadence import RX, RY, CPHASE
 
 ansatz = hea(
-    n_qubits = n_qubits,
-    depth = depth,
-    param_prefix = "phi",
-    operations = [RX, RY, RX],
-    entangler = CPHASE
-    )
+    n_qubits=n_qubits,
+    depth=depth,
+    param_prefix="phi",
+    operations=[RX, RY, RX],
+    entangler=CPHASE
+)
 from qadence.draw import html_string # markdown-exec: hide
-print(html_string(ansatz, size="2,2")) # markdown-exec: hide
+print(html_string(ansatz, size="4,4")) # markdown-exec: hide
 ```
-
-### Digital-Analog HEA
 
 Having a truly *hardware-efficient* ansatz means that the entangling operation can be chosen according to each device's native interactions. Besides digital operations, in Qadence it is also possible to build digital-analog HEAs with the entanglement produced by the natural evolution of a set of interacting qubits, as is natural in neutral atom devices. As with other digital-analog functions, this can be controlled with the `strategy` argument which can be chosen from the [`Strategy`](../qadence/types.md) enum type. Currently, only `Strategy.DIGITAL` and `Strategy.SDAQC` are available. By default, calling `strategy = Strategy.SDAQC` will use a global entangling Hamiltonian with Ising-like NN interactions and constant interaction strength inside a `HamEvo` operation,
 
@@ -65,12 +61,12 @@ Having a truly *hardware-efficient* ansatz means that the entangling operation c
 from qadence import Strategy
 
 ansatz = hea(
-    n_qubits = n_qubits,
-    depth = depth,
-    strategy = Strategy.SDAQC
-    )
+    n_qubits n_qubits,
+    depth=depth,
+    strategy=Strategy.SDAQC
+)
 from qadence.draw import html_string # markdown-exec: hide
-print(html_string(ansatz, size="2,2")) # markdown-exec: hide
+print(html_string(ansatz, size="4,4")) # markdown-exec: hide
 ```
 
 Note that, by default, only the time-parameter is automatically parameterized when building a digital-analog HEA. However, as described in the [Hamiltonians tutorial](hamiltonians.md), arbitrary interaction Hamiltonians can be easily built with the `hamiltonian_factory` function, with both customized or fully parameterized interactions, and these can be directly passed as the `entangler` for a customizable digital-analog HEA.
@@ -83,10 +79,10 @@ register = Register.honeycomb_lattice(1, 1)
 
 entangler = hamiltonian_factory(
     register,
-    interaction = Interaction.NN,
-    detuning = N,
-    interaction_strength = "e",
-    detuning_strength = "n"
+    interaction=Interaction.NN,
+    detuning=N,
+    interaction_strength="e",
+    detuning_strength="n"
 )
 
 # Build a fully parameterized Digital-Analog HEA:
@@ -94,30 +90,26 @@ n_qubits = register.n_qubits
 depth = 2
 
 ansatz = hea(
-    n_qubits = register.n_qubits,
-    depth = depth,
-    operations = [RX, RY, RX],
-    entangler = entangler,
-    strategy = Strategy.SDAQC
-    )
+    n_qubits=register.n_qubits,
+    depth=depth,
+    operations=[RX, RY, RX],
+    entangler=entangler,
+    strategy=Strategy.SDAQC
+)
 from qadence.draw import html_string # markdown-exec: hide
-print(html_string(ansatz, size="2,2")) # markdown-exec: hide
+print(html_string(ansatz, size="4,4")) # markdown-exec: hide
 ```
-
-
-
-
-`qadence` also offers a out-of-the-box training routine called `train_with_grad`
+Qadence also offers a out-of-the-box training routine called `train_with_grad`
 for optimizing fully-differentiable models like `QNN`s and `QuantumModel`s containing either *trainable* and/or *non-trainable* parameters (i.e., inputs). Feel free to [refresh your memory about different parameter types](/tutorials/parameters).
 
-## ML tools Basics
+## Machine Learning Tools
 
 `train_with_grad` performs training, logging/printing loss metrics and storing intermediate checkpoints of models.
 
 As every other training routine commonly used in Machine Learning, it requires
 `model`, `data` and an `optimizer` as input arguments.
 However, in addition, it requires a `loss_fn` and a `TrainConfig`.
-A `loss_fn` is required to be a function which expects both a model and data and returns a tuple of (loss, metrics: dict), where `metrics` is a dict of scalars which can be customized too.
+A `loss_fn` is required to be a function which expects both a model and data and returns a tuple of (loss, metrics: `<dict>`), where `metrics` is a dict of scalars which can be customized too.
 
 ```python exec="on" source="material-block" result="json"
 import torch
@@ -149,9 +141,8 @@ config = TrainConfig(
     write_every=100,
     batch_size=batch_size,
 )
-
 ```
-## Fitting a funtion with a QNN using ml_tools
+## Fitting a funtion with a QNN using `ml_tools`
 
 Let's look at a complete example of how to use `train_with_grad` now.
 
