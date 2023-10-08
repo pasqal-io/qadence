@@ -13,11 +13,10 @@ nav:
     - State Conventions: tutorials/state_conventions.md
     - State Initialization: tutorials/state_init.md
     - Arbitrary Hamiltonians: tutorials/hamiltonians.md
-    - QML Constructors: tutorials/qml_constructors.md
     - Wavefunction Overlaps: tutorials/overlap.md
-    - Program Constructors, States & Serialization: tutorials/serializ_and_prep.md
+    - Serialization: tutorials/serializ_and_prep.md
     - Backends: tutorials/backends.md
-    - Quantum Machine Learning: tutorials/ml_tools.md
+    - Quantum and Classical Machine Learning: tutorials/qml_tools.md
 
   - Digital-Analog Quantum Computing:
     - digital_analog_qc/daqc-basics.md
