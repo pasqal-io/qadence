@@ -83,7 +83,7 @@ block = HamEvo(generator, x)
 circuit = QuantumCircuit(n_qubits, block)
 
 # create total magnetization cost operator
-obs = hamiltonian_factory(n_qubits, detuning = Z)
+obs = hamiltonian_factory(n_qubits, detuning=Z)
 
 # create models with AD and GPSR differentiation engines
 model_ad = QuantumModel(circuit, obs,
