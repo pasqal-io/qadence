@@ -4,7 +4,7 @@ from functools import singledispatch
 from typing import overload
 
 from qadence import QuantumCircuit
-from qadence.blocks import AbstractBlock, ChainBlock, chain
+from qadence.blocks import AbstractBlock, ChainBlock, chain, tag
 
 
 @overload
@@ -27,7 +27,8 @@ def reverse(x: QuantumCircuit | AbstractBlock) -> QuantumCircuit | AbstractBlock
 def _(block: AbstractBlock) -> AbstractBlock:
     """Reverses a block if its a ChainBlock."""
     if isinstance(block, ChainBlock):
-        return chain(*(reverse(b) for b in reversed(block.blocks)))
+        blk = chain(*(reverse(b) for b in reversed(block.blocks)))
+        return tag(blk, block.tag) if block.tag is not None else blk
     else:
         return block
 
