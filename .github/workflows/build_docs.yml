@@ -27,7 +27,7 @@ jobs:
         mkdir site # this will be replaces by build docs
         touch site/index.html # this too
         mv site/ /tmp/
-        git checkout rtd-build
+        git fetch && git checkout rtd-build
         rm -r _readthedocs
         mv /tmp/site _readthedocs
         ls
