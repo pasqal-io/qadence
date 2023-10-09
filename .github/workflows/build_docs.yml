@@ -20,7 +20,7 @@ jobs:
     steps:
 
     - uses: actions/checkout@v4
-      
+
     - name: Install JetBrains Mono font
       run: |
         sudo apt install -y wget unzip fontconfig

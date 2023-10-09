@@ -34,7 +34,7 @@ depth = 2
 
 ansatz = hea(n_qubits, depth)
 from qadence.draw import html_string # markdown-exec: hide
-print(html_string(ansatz, size="4,4")) # markdown-exec: hide
+print(html_string(ansatz)) # markdown-exec: hide
 ```
 
 As seen above, the rotation layers are automatically parameterized, and the prefix `"theta"` can be changed with the `param_prefix` argument.
@@ -52,7 +52,7 @@ ansatz = hea(
     entangler=CPHASE
 )
 from qadence.draw import html_string # markdown-exec: hide
-print(html_string(ansatz, size="4,4")) # markdown-exec: hide
+print(html_string(ansatz)) # markdown-exec: hide
 ```
 
 Having a truly *hardware-efficient* ansatz means that the entangling operation can be chosen according to each device's native interactions. Besides digital operations, in Qadence it is also possible to build digital-analog HEAs with the entanglement produced by the natural evolution of a set of interacting qubits, as is natural in neutral atom devices. As with other digital-analog functions, this can be controlled with the `strategy` argument which can be chosen from the [`Strategy`](../qadence/types.md) enum type. Currently, only `Strategy.DIGITAL` and `Strategy.SDAQC` are available. By default, calling `strategy = Strategy.SDAQC` will use a global entangling Hamiltonian with Ising-like NN interactions and constant interaction strength inside a `HamEvo` operation,
@@ -66,7 +66,7 @@ ansatz = hea(
     strategy=Strategy.SDAQC
 )
 from qadence.draw import html_string # markdown-exec: hide
-print(html_string(ansatz, size="4,4")) # markdown-exec: hide
+print(html_string(ansatz)) # markdown-exec: hide
 ```
 
 Note that, by default, only the time-parameter is automatically parameterized when building a digital-analog HEA. However, as described in the [Hamiltonians tutorial](hamiltonians.md), arbitrary interaction Hamiltonians can be easily built with the `hamiltonian_factory` function, with both customized or fully parameterized interactions, and these can be directly passed as the `entangler` for a customizable digital-analog HEA.
@@ -97,7 +97,7 @@ ansatz = hea(
     strategy=Strategy.SDAQC
 )
 from qadence.draw import html_string # markdown-exec: hide
-print(html_string(ansatz, size="4,4")) # markdown-exec: hide
+print(html_string(ansatz)) # markdown-exec: hide
 ```
 Qadence also offers a out-of-the-box training routine called `train_with_grad`
 for optimizing fully-differentiable models like `QNN`s and `QuantumModel`s containing either *trainable* and/or *non-trainable* parameters (i.e., inputs). Feel free to [refresh your memory about different parameter types](/tutorials/parameters).
