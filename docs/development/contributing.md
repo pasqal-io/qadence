@@ -1,65 +1,92 @@
-If you want to contribute to Qadence, feel free to branch out from `main` and send a merge request to the Qadence repository.
-This will be reviewed, commented and eventually integrated in the codebase.
+# How to contribute
 
-## Install from source
+We're grateful for your interest in participating in Qadence. Please follow our guidelines to ensure a smooth contribution process.
 
-Before installing `qadence` from source, make sure you have Python >=3.9. For development, the preferred method to
-install `qadence` is to use [hatch](https://hatch.pypa.io/latest/). Clone this repository and run:
+## Reporting an issue or proposing a feature
 
-```bash
-python -m pip install hatch
+Your course of action will depend on your objective, but generally, you should start by creating an issue. If you've discovered a bug or have a feature you'd like to see added to **qadence**, feel free to create an issue on [qadence's GitHub issue tracker](https://github.com/pasqal-io/qadence/issues). Here are some steps to take:
 
-# to enter into a shell with all dependencies
-python -m hatch -v shell
+1. Quickly search the existing issues using relevant keywords to ensure your issue hasn't been addressed already.
+2. If your issue is not listed, create a new one. Try to be as detailed and clear as possible in your description.
 
-# to run a script into the shell
-python -m hatch -v run my_script_with_qadence.py
+- If you're merely suggesting an improvement or reporting a bug, that's already excellent! We thank you for it. Your issue will be listed and, hopefully, addressed at some point.
+- However, if you're willing to be the one solving the issue, that would be even better! In such instances, you would proceed by preparing a [Pull Request](#submitting-a-pull-request).
+
+## Submitting a pull request
+
+We're excited that you're eager to contribute to Qadence. To contribute, fork the `main` branch of qadence repository and once you are satisfied with your feature and all the tests pass create a [Pull Request](https://github.com/pasqal-io/qadence/pulls).
+
+Here's the process for making a contribution:
+
+Click the "Fork" button at the upper right corner of the [repo page](https://github.com/pasqal-io/qadence) to create a new GitHub repo at `https://github.com/USERNAME/qadence`, where `USERNAME` is your GitHub ID. Then, `cd` into the directory where you want to place your new fork and clone it:
+
+```shell
+git clone https://github.com/USERNAME/qadence.git
 ```
 
-If you after some time you have issues with your development environment, you can rebuild it by running:
+Next, navigate to your new qadence fork directory and mark the main qadence repository as the `upstream`:
 
-```bash
-python -m hatch env prune
-python -m hatch -v shell
+```shell
+git remote add upstream https://github.com/pasqal-io/qadence.git
 ```
 
-You also have the following (non recommended) installation methods:
+## Setting up your development environment
 
-* install with `pip` in development mode by simply running `pip install -e .`. Notice that in this way
-  you will install all the dependencies, including extras.
-* install it with `conda` by simply using `pip` within a clean Conda environment.
+We recommended to use `hatch` for managing environments:
 
-## Before developing
-
-Before starting to develop code, please keep in mind the following:
-
-1. Use `pre-commit` hooks to make sure that the code is properly linted before pushing a new commit. To do so, execute the following commands in the virtual environment where you installed Qadence:
-
-```bash
-python -m pip install pre-commit  # this will be already available if you installed the package with Poetry
-pre-commit install  # this will install the pre-commit hook
-pre-commit run --all-files
+To develop within qadence, use:
+```shell
+pip install hatch
+hatch -v shell
 ```
 
-2. Make sure that the unit tests and type checks are passing since the merge request will not be accepted if the automatic CI/CD pipeline do not pass. To do so, execute the following commands in the virtual environment where you installed Qadence:
+To run qadence tests, use:
 
-```bash
-# if you used Hatch for installing these dependencies will be already available
-python -m pip install pytest pytest-cov mypy
-
-# run the full test suite without some longer running tests
-# remove the `-m` option to run the full test suite
-python -m hatch -v run test -m "not slow" # with Hatch outside the shell
-pytest -m "not slow"  # with pytest directly
+```shell
+hatch -e tests run test
 ```
 
-## Build documentation
+If you don't want to use `hatch`, you can use the environment manager of your
+choice (e.g. Conda) and execute the following:
 
-For building the documentation locally, we recommend to use `hatch` as follows:
-
-```bash
-python -m hatch -v run docs:build
-python -m hatch -v run docs:serve
+```shell
+pip install pytest
+pip install -e .
+pytest
 ```
 
-Notice that this will build the documentation in strict mode, thus it will fail if even just one warning is detected.
+### Useful things for your workflow: linting and testing
+
+Use `pre-commit` hooks to make sure that the code is properly linted before pushing a new commit. Make sure that the unit tests and type checks are passing since the merge request will not be accepted if the automatic CI/CD pipeline do not pass.
+
+Using `hatch`, simply:
+
+```shell
+hatch -e tests run pre-commit run --all-files
+hatch -e tests run test
+```
+
+Make sure your docs build too!
+
+With `hatch`:
+
+```shell
+hatch -e docs run mkdocs build --clean --strict
+```
+
+Without `hatch`, `pip` install those libraries first:
+"mkdocs",
+"mkdocs-material",
+"mkdocstrings",
+"mkdocstrings-python",
+"mkdocs-section-index",
+"mkdocs-jupyter",
+"mkdocs-exclude",
+"markdown-exec"
+
+
+And then:
+
+```shell
+ mkdocs build --clean --strict
+```
