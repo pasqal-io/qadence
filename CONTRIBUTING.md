@@ -14,7 +14,7 @@ Your course of action will depend on your objective, but generally, you should s
 
 ## Submitting a Pull Request
 
-We're excited that you're eager to contribute to qadence! To contribute, fork the `main` branch of pyqtorch repository and once you are satisfied with your feature and all the tests pass create a [Pull Request](https://github.com/pasqal-io/qadence/pulls).
+We're excited that you're eager to contribute to qadence! To contribute, fork the `main` branch of qadence repository and once you are satisfied with your feature and all the tests pass create a [Pull Request](https://github.com/pasqal-io/qadence/pulls).
 
 Here's the process for making a contribution:
 
@@ -34,7 +34,7 @@ git remote add upstream https://github.com/pasqal-io/qadence.git
 
 We recommended to use `hatch` for managing environments:
 
-To develop within pyqtorch, use:
+To develop within qadence, use:
 ```shell
 pip install hatch
 hatch -v shell
