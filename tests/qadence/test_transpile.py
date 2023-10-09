@@ -55,8 +55,8 @@ def test_reverse() -> None:
     x = chain(X(0), Y(0), Z(0))
     qc = QuantumCircuit(1, x)
     rev_expected = chain(Z(0), Y(0), X(0))
-    assert reverse(qc, False) == QuantumCircuit(1, rev_expected)
-    assert reverse(qc.block, False) == rev_expected
+    assert reverse(qc) == QuantumCircuit(1, rev_expected)
+    assert reverse(qc.block) == rev_expected
 
     x = chain(chain(X(0), Y(0), Z(0)), chain(I(0), H(0), S(0)))
-    assert reverse(reverse(x, False), False) == x
+    assert reverse(reverse(x)) == x
