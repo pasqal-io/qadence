@@ -19,10 +19,10 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
 
+    - uses: actions/checkout@v4
+
     - name: Install graphviz
       run: sudo apt-get install -y graphviz
-
-    - uses: actions/checkout@v4
 
     - name: Commit built docs to branch: rtd-pages
       run: |
