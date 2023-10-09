@@ -42,9 +42,10 @@ jobs:
         mv site/ /tmp/
         git fetch && git checkout rtd-build
         rm -r _readthedocs
-        mv /tmp/site _readthedocs
+        mkdir _readthedocs
+        mv /tmp/site _readthedocs/html
         git config user.name "GitHub Actions"
         git config user.email "actions@github.com"
         git add _readthedocs
-        git commit -m "Update built docs."
+        git commit -m "Update documentation."
         git push
