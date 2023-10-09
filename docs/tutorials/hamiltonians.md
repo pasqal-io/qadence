@@ -14,7 +14,7 @@ from qadence import Interaction
 
 n_qubits = 3
 
-hamilt = hamiltonian_factory(n_qubits, interaction = Interaction.ZZ)
+hamilt = hamiltonian_factory(n_qubits, interaction=Interaction.ZZ)
 
 print(hamilt) # markdown-exec: hide
 ```
@@ -33,14 +33,13 @@ n_qubits = 3
 
 hamilt = hamiltonian_factory(
     n_qubits,
-    interaction = Interaction.ZZ,
-    detuning = Z,
-    interaction_strength = [0.5, 0.2, 0.1],
-    detuning_strength = [0.1, 0.5, -0.3]
-    )
+    interaction=Interaction.ZZ,
+    detuning=Z,
+    interaction_strength=[0.5, 0.2, 0.1],
+    detuning_strength=[0.1, 0.5, -0.3]
+)
 print(hamilt) # markdown-exec: hide
 ```
-
 
 !!! warning "Ordering interaction strengths matters"
 
@@ -55,7 +54,7 @@ print(hamilt) # markdown-exec: hide
 
 For one more example, let's create a transverse-field Ising model,
 
-```python exec="on" source="material-block" session="hamiltonians"
+```python exec="on" source="material-block" result="json" session="hamiltonians"
 n_qubits = 4
 n_edges = int(0.5 * n_qubits * (n_qubits - 1))
 
@@ -64,16 +63,18 @@ zz_terms = [2.0] * n_edges
 
 zz_ham = hamiltonian_factory(
     n_qubits,
-    interaction = Interaction.ZZ,
-    detuning = Z,
-    interaction_strength = zz_terms,
-    detuning_strength = z_terms
-    )
+    interaction=Interaction.ZZ,
+    detuning=Z,
+    interaction_strength=zz_terms,
+    detuning_strength=z_terms
+)
 
 x_terms = [-1.0] * n_qubits
 x_ham = hamiltonian_factory(n_qubits, detuning = X, detuning_strength = x_terms)
 
 transverse_ising = zz_ham + x_ham
+
+print(transverse_ising) # markdown-exec: hide
 ```
 
 !!! note "Random interaction coefficients"
@@ -89,9 +90,9 @@ Simply pass the register with the desired topology as the first argument to the 
 ```python exec="on" source="material-block" result="json" session="hamiltonians"
 from qadence import Register
 
-reg = Register.square(qubits_side = 2)
+reg = Register.square(qubits_side=2)
 
-square_hamilt = hamiltonian_factory(reg, interaction = Interaction.NN)
+square_hamilt = hamiltonian_factory(reg, interaction=Interaction.NN)
 print(square_hamilt) # markdown-exec: hide
 ```
 
@@ -104,7 +105,7 @@ reg = Register.square(qubits_side = 2)
 for i, edge in enumerate(reg.edges):
     reg.edges[edge]["strength"] = (0.5 * i) ** 2
 
-square_hamilt = hamiltonian_factory(reg, interaction = Interaction.NN)
+square_hamilt = hamiltonian_factory(reg, interaction=Interaction.NN)
 print(square_hamilt) # markdown-exec: hide
 ```
 
@@ -121,11 +122,11 @@ n_qubits = 3
 
 nn_ham = hamiltonian_factory(
     n_qubits,
-    interaction = Interaction.NN,
-    detuning = N,
-    interaction_strength = "c",
-    detuning_strength = "d"
-    )
+    interaction=Interaction.NN,
+    detuning=N,
+    interaction_strength="c",
+    detuning_strength="d"
+)
 
 print(nn_ham) # markdown-exec: hide
 ```

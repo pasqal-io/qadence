@@ -20,14 +20,14 @@ class QNN(QuantumModel):
     ```python exec="on" source="material-block" result="json"
     import torch
     from qadence import QuantumCircuit, QNN
-    from qadence import hea, feature_map, total_magnetization
+    from qadence import hea, feature_map, hamiltonian_factory, Z
 
     # create the circuit
     n_qubits, depth = 2, 4
     fm = feature_map(n_qubits)
     ansatz = hea(n_qubits=n_qubits, depth=depth)
     circuit = QuantumCircuit(n_qubits, fm, ansatz)
-    obs_base = total_magnetization(n_qubits)
+    obs_base = hamiltonian_factory(n_qubits, detuning = Z)
 
     # the QNN will yield two outputs
     obs = [2.0 * obs_base, 4.0 * obs_base]

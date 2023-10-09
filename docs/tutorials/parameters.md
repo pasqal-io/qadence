@@ -1,13 +1,14 @@
+Qadence base `Parameter` type is a subtype of `sympy.Symbol`. There are three kinds of parameter subtypes used:
 
-There are three kinds of parameters in `qadence`:
-[_**Fixed Parameter**_]: A constant with a fixed, non-trainable value (e.g. pi/2).
-[_**Variational Parameter**_]: A trainable parameter which can be be optimized.
-[_**Feature Parameter**_]: A non-trainable parameter which can be used to encode classical data into a quantum state.
+- _**Fixed Parameter**_: A constant with a fixed, non-trainable value (_e.g._ $\dfrac{\pi}{2}$).
+- _**Variational Parameter**_: A trainable parameter which can be be optimized.
+- _**Feature Parameter**_: A non-trainable parameter which can be used to encode classical data into a quantum state.
 
-## Parametrized Blocks
-### Fixed Parameters
-To pass a fixed parameter to a gate, we can simply use either python numeric types by themselves or wrapped in
-a torch.tensor.
+## Fixed Parameters
+
+To pass a fixed parameter to a gate (or any parametrizable block), one can simply use either Python numeric types or wrapped in
+a `torch.Tensor`.
+
 ```python exec="on" source="material-block" result="json"
 from torch import pi
 from qadence import RX, run
@@ -15,14 +16,17 @@ from qadence import RX, run
 # Let's use a torch type.
 block = RX(0, pi)
 wf = run(block)
-print(wf)
+print(f"{wf = }") # markdown-exec: hide
 
-# Lets pass a simple float.
-print(run(RX(0, 1.)))
+# Let's pass a simple float.
+block = RX(0, 1.)
+wf = run(block)
+print(f"{wf = }") # markdown-exec: hide
 ```
 
-### Variational Parameters
-To parametrize a block by an angle `theta`, you can pass either a string or an instance of  `VariationalParameter` instead of a numeric type to the gate constructor:
+## Variational Parameters
+
+To parametrize a block by an angle `theta`, either a Python `string` or an instance of  `VariationalParameter` can be passed instead of a numeric type to the gate constructor:
 
 ```python exec="on" source="material-block" result="json"
 from qadence import RX, run, VariationalParameter
@@ -32,13 +36,14 @@ block = RX(0, "theta")
 block = RX(0, VariationalParameter("theta"))
 
 wf = run(block)
-print(wf)
+print(f"{wf = }") # markdown-exec: hide
 ```
-In the first case in the above example, `theta` is automatically inferred as a `VariationalParameter` (i.e., a trainable one), hence we do not have to pass a value for `theta` to the `run` method since its stored within the underlying model!
 
-### Feature Parameters
+In the first case in the above example, `theta` is automatically inferred as a `VariationalParameter` (_i.e._ trainable). It is initialized to a random value for the purposes of execution. In the context of a `QuantumModel`, there is no need to pass a value for `theta` to the `run` method since it is stored within the underlying model parameter dictionary.
 
-However, for `FeatureParameter`s (i.e, inputs), we always have to provide a value. And, in contrast to `VariationalParameter`s, we can also provide a batch of values.
+## Feature Parameters
+
+`FeatureParameter` types (_i.e._ inputs), always need to be provided with a value or a batch of values as a dictionary:
 
 ```python exec="on" source="material-block" result="json"
 from torch import tensor
@@ -47,15 +52,16 @@ from qadence import RX, run, FeatureParameter
 block = RX(0, FeatureParameter("phi"))
 
 wf = run(block, values={"phi": tensor([1., 2.])})
-print(wf)
+print(f"{wf = }") # markdown-exec: hide
 ```
 
-Now, we see that `run` returns a batch of states, one for every provided angle.
-In the above case, the angle of the `RX` gate coincides with the value of the particular `FeatureParameter`.
+Now, `run` returns a batch of states, one for every provided angle which coincides with the value of the particular `FeatureParameter`.
 
-### Multiparameter Expressions
-However, an angle can itself also be a function of `Parameter`- types (fixed, trainable and non-trainable).
-We can pass any sympy expression `expr: sympy.Basic` consisting of a combination of free symbols (`sympy` types) and qadence `Parameter`s to a block. This also includes, e.g., trigonometric functions!
+## Multiparameter Expressions
+
+However, an angle can itself be an expression `Parameter` types of any kind.
+As such, any sympy expression `expr: sympy.Basic` consisting of a combination of free symbols (_i.e._ `sympy` types) and Qadence `Parameter` can
+be passed to a block, including trigonometric functions.
 
 ```python exec="on" source="material-block" result="json"
 from torch import tensor
@@ -65,16 +71,17 @@ from sympy import sin
 theta, phi = Parameter("theta"), FeatureParameter("phi")
 block = RX(0, sin(theta+phi))
 
-# Remember, to run the block, only the FeatureParameters have to be provided:
+# Remember, to run the block, only FeatureParameter values have to be provided:
 values = {"phi": tensor([1.0, 2.0])}
 wf = run(block, values=values)
-print(wf)
+print(f"{wf = }") # markdown-exec: hide
 ```
 
-### Re-using Parameters
+## Parameters Redundancy
 
-Parameters are uniquely defined by their name, so you can repeat a parameter in a composite block to
-assign the same parameter to different blocks.
+Parameters are uniquely defined by their name and redundancy is allowed in composite blocks to
+assign the same value to different blocks.
+
 ```python exec="on" source="material-block" result="json"
 import torch
 from qadence import RX, RY, run, chain, kron
@@ -84,15 +91,15 @@ block = chain(
     kron(RX(0, "phi"), RY(1, "theta")),
 )
 
-wf = run(block)
-print(wf)
+wf = run(block)  # Same random initialization for all instances of phi and theta.
+print(f"{wf = }") # markdown-exec: hide
 ```
 
 ## Parametrized Circuits
 
-Now, let's have a look at a variational ansatz in `qadence`.
+Now, let's have a look at the construction of a variational ansatz which composes `FeatureParameter` and `VariationalParameter` types:
 
-```python exec="on" html="1"
+```python exec="on" source="material-block" html="1"
 import sympy
 from qadence import RX, RY, RZ, CNOT, Z, run, chain, kron, FeatureParameter, VariationalParameter
 
@@ -122,24 +129,22 @@ block = chain(
     ),
     chain(CNOT(0,1), CNOT(1,2))
 )
-block.tag = "rotations"
+block.tag = "Rotations"
 
 obs = 2*kron(*map(Z, range(3)))
 block = chain(block, obs)
 
 from qadence.draw import html_string # markdown-exec: hide
-print(html_string(block)) # markdown-exec: hide
+print(html_string(block, size="4,4")) # markdown-exec: hide
 ```
+
+Please note the different colors for the parametrization with different types. The default palette assigns light blue for `VariationalParameter`, light green for `FeatureParameter` and shaded red for observables.
 
 ## Parametrized QuantumModels
 
-Recap:
-* _**Feature**_ parameters are used for data input and encode data into a quantum state.
-* _**Variational**_ parameters are trainable parameters in a variational ansatz.
-* [`QuantumModel`][qadence.models.quantum_model.QuantumModel] takes an
-abstract quantum circuit and makes it differentiable with respect to variational and feature
-parameters.
-* Both `VariationalParameter`s and `FeatureParameter`s are uniquely identified by their name.
+As a quick reminder: `FeatureParameter` are used for data input and data encoding into a quantum state.
+`VariationalParameter` are trainable parameters in a variational ansatz. When used within a [`QuantumModel`][qadence.models.quantum_model.QuantumModel], an abstract quantum circuit is made differentiable with respect to both variational and feature
+parameters which are uniquely identified by their name.
 
 ```python exec="on" source="material-block" session="parametrized-models"
 from qadence import FeatureParameter, Parameter, VariationalParameter
@@ -169,8 +174,9 @@ block = chain(
 )
 
 circuit = QuantumCircuit(2, block)
+unique_params = circuit.unique_parameters
 
-print("Unique parameters in the circuit: ", circuit.unique_parameters)
+print(f"{unique_params = }") # markdown-exec: hide
 ```
 
 In the circuit above, four parameters are defined but only two unique names. Therefore, there will be only one
@@ -182,9 +188,11 @@ The `QuantumModel` class also provides convenience methods to manipulate paramet
 from qadence import QuantumModel, BackendName, DiffMode
 
 model = QuantumModel(circuit, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD)
+num_vparams = model.num_vparams
+vparams_values = model.vparams
 
-print(f"Number of variational parameters: {model.num_vparams}")
-print(f"Current values of the variational parameters: {model.vparams}")
+print(f"{num_vparams = }") # markdown-exec: hide
+print(f"{vparams_values = }") # markdown-exec: hide
 ```
 
 !!! note "Only provide feature parameter values to the quantum model"
@@ -197,7 +205,7 @@ print(f"Current values of the variational parameters: {model.vparams}")
 
     values = {"phi": torch.rand(3)} # theta does not appear here
     wf = model.run(values)
-    print(wf)
+    print(f"{wf = }") # markdown-exec: hide
     ```
 
 ## Standard constructors
@@ -214,7 +222,8 @@ depth = 2
 
 hea1 = hea(n_qubits=n_qubits, depth=depth)
 circuit = QuantumCircuit(n_qubits, hea1)
-print(f"Unique parameters with a single HEA: {circuit.num_unique_parameters}")
+num_unique_parameters = circuit.num_unique_parameters
+print(f"Unique parameters with a single HEA: {num_unique_parameters}") # markdown-exec: hide
 ```
 ```python exec="on" html="1" session="parametrized-constructors"
 from qadence.draw import html_string
@@ -228,8 +237,8 @@ is the same.
 hea2 = hea(n_qubits=n_qubits, depth=depth)
 
 circuit = QuantumCircuit(n_qubits, hea1, hea2)
-n_params_two_heas = circuit.num_unique_parameters
-print(f"Unique parameters with two stacked HEAs: {n_params_two_heas}")
+num_unique_params_two_heas = circuit.num_unique_parameters
+print(f"Unique parameters with two stacked HEAs: {num_unique_params_two_heas}") # markdown-exec: hide
 ```
 ```python exec="on" html="1" session="parametrized-constructors"
 from qadence.draw import html_string # markdown-exec: hide
@@ -245,14 +254,14 @@ print(html_string(circuit)) # markdown-exec: hide
 
     circuit = QuantumCircuit(n_qubits, hea1, hea2)
     n_params_two_heas = circuit.num_unique_parameters
-    print(f"Unique parameters with two stacked HEAs: {n_params_two_heas}")
+    print(f"Unique parameters with two stacked HEAs: {n_params_two_heas}") # markdown-exec: hide
     ```
     ```python exec="on" html="1" session="parametrized-constructors"
     from qadence.draw import html_string # markdown-exec: hide
     print(html_string(circuit)) # markdown-exec: hide
     ```
 
-The `hea` function will be further explored in the [QML Constructors tutorial](qml_constructors.md).
+The `hea` function will be further explored in the [QML Constructors tutorial](qml_tools.md).
 
 ## Parametric observables
 
@@ -273,12 +282,12 @@ The observable variational parameters are included among the model ones.
 from qadence import QuantumModel, QuantumCircuit
 
 circuit = QuantumCircuit(n_qubits, hea(n_qubits, depth))
-model = QuantumModel(circuit, observable=observable, backend="pyqtorch", diff_mode="ad")
-print(model.vparams)
+model = QuantumModel(circuit, observable=observable)
+print(f"Variational parameters = {model.vparams}") # markdown-exec: hide
 ```
 
-One optimization step (forward and backeward pass) can be performed and variational parameters
-have been updated accordingly:
+One optimization step (forward and backward pass) can be performed using built-in `torch` functionalities. Variational parameters
+can be checked to have been updated accordingly:
 
 ```python exec="on" source="material-block" result="json" session="parametrized-constructors"
 import torch
@@ -286,36 +295,31 @@ import torch
 mse_loss = torch.nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters())
 
-# compute forward & backward pass
+# Compute forward & backward pass
 optimizer.zero_grad()
 loss = mse_loss(model.expectation({}), torch.zeros(1))
 loss.backward()
 
-# update the parameters
+# Update the parameters and check the parameters.
 optimizer.step()
-print(model.vparams)
+print(f"Variational parameters = {model.vparams}") # markdown-exec: hide
 ```
 
 ## Non-unitary circuits
 
-Qadence allows to compose with possibly non-unitary blocks.
-Here is an exampl of a non-unitary block as a sum of Pauli operators with complex coefficients.
+Qadence allows to compose with non-unitary blocks.
+Here is an example of a non-unitary block as a sum of Pauli operators with complex coefficients.
 
-Backends which support the execution on non-unitary circuits can execute the
-circuit below.
+!!! warning "Currently, only the `PyQTorch` backend fully supports execution with non-unitary circuits."
 
-!!! warning "Currently, only the PyQTorch backend fully supports execution with non-unitary circuits."
-
-```python exec="on" source="material-block" html="1" session="non-unitary"
+```python exec="on" source="material-block" result="json" session="non-unitary"
 from qadence import QuantumModel, QuantumCircuit, Z, X
 c1 = 2.0
 c2 = 2.0 + 2.0j
 
 block = c1 * Z(0) + c2 * X(1) + c1 * c2 * (Z(2) + X(3))
 circuit = QuantumCircuit(4, block)
-from qadence.draw import html_string # markdown-exec: hide
-print(html_string(circuit)) # markdown-exec: hide
 
-model = QuantumModel(circuit, backend='pyqtorch', diff_mode='ad')
-print(model.run({}))
+model = QuantumModel(circuit)  # BackendName.PYQTORCH and DiffMode.AD by default.
+print(f"wf = {model.run({})}") # markdown-exec: hide
 ```

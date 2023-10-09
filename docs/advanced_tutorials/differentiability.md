@@ -66,7 +66,7 @@ In Qadence, the GPSR differentiation engine can be selected by passing `diff_mod
 
 ```python exec="on" source="material-block" session="differentiability"
 from qadence import (FeatureParameter, HamEvo, X, I, Z,
-                    total_magnetization, QuantumCircuit,
+                    hamiltonian_factory, QuantumCircuit,
                     QuantumModel, BackendName, DiffMode)
 import torch
 
@@ -83,7 +83,7 @@ block = HamEvo(generator, x)
 circuit = QuantumCircuit(n_qubits, block)
 
 # create total magnetization cost operator
-obs = total_magnetization(n_qubits)
+obs = hamiltonian_factory(n_qubits, detuning=Z)
 
 # create models with AD and GPSR differentiation engines
 model_ad = QuantumModel(circuit, obs,

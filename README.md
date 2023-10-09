@@ -55,7 +55,6 @@ differentiable state vector simulator).  You can install one or all of the follo
 backends and the circuit visualization library using the following extras:
 
 * `braket`: install the Amazon Braket quantum backend
-* `emu-c`: install the Pasqal circuit tensor network emulator EMU-C
 * `pulser`: install the [Pulser](https://github.com/pasqal-io/Pulser) backend. Pulser is a framework
   for composing, simulating and executing pulse sequences for neutral-atom quantum devices.
 * `visualization`: install the library necessary to visualize quantum circuits.
