@@ -1,8 +1,8 @@
-# How to Contribute
+# How to contribute
 
-We're grateful for your interest in participating in qadence! Please follow our guidelines to ensure a smooth contribution process.
+We're grateful for your interest in participating in Qadence. Please follow our guidelines to ensure a smooth contribution process.
 
-## Reporting an Issue or Proposing a Feature
+## Reporting an issue or proposing a feature
 
 Your course of action will depend on your objective, but generally, you should start by creating an issue. If you've discovered a bug or have a feature you'd like to see added to **qadence**, feel free to create an issue on [qadence's GitHub issue tracker](https://github.com/pasqal-io/qadence/issues). Here are some steps to take:
 
@@ -12,9 +12,9 @@ Your course of action will depend on your objective, but generally, you should s
 - If you're merely suggesting an improvement or reporting a bug, that's already excellent! We thank you for it. Your issue will be listed and, hopefully, addressed at some point.
 - However, if you're willing to be the one solving the issue, that would be even better! In such instances, you would proceed by preparing a [Pull Request](#submitting-a-pull-request).
 
-## Submitting a Pull Request
+## Submitting a pull request
 
-We're excited that you're eager to contribute to qadence! To contribute, fork the `main` branch of qadence repository and once you are satisfied with your feature and all the tests pass create a [Pull Request](https://github.com/pasqal-io/qadence/pulls).
+We're excited that you're eager to contribute to Qadence. To contribute, fork the `main` branch of qadence repository and once you are satisfied with your feature and all the tests pass create a [Pull Request](https://github.com/pasqal-io/qadence/pulls).
 
 Here's the process for making a contribution:
 
@@ -51,12 +51,11 @@ choice (e.g. Conda) and execute the following:
 
 ```shell
 pip install pytest
-pip install qiskit
 pip install -e .
 pytest
 ```
 
-### Useful Things for your workflow: Linting and Testing
+### Useful things for your workflow: linting and testing
 
 Use `pre-commit` hooks to make sure that the code is properly linted before pushing a new commit. Make sure that the unit tests and type checks are passing since the merge request will not be accepted if the automatic CI/CD pipeline do not pass.
 
