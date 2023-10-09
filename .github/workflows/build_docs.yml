@@ -18,6 +18,10 @@ jobs:
     name: Test Qadence docs (ubuntu)
     runs-on: ubuntu-22.04
     steps:
+
+    - name: Install graphviz
+      run: sudo apt-get install -y graphviz
+
     - uses: actions/checkout@v4
 
     - name: Commit built docs to branch: rtd-pages
