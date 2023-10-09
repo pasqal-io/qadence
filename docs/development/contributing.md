@@ -57,18 +57,16 @@ pytest
 
 ### Useful things for your workflow: linting and testing
 
-Use `pre-commit` hooks to make sure that the code is properly linted before pushing a new commit. Make sure that the unit tests and type checks are passing since the merge request will not be accepted if the automatic CI/CD pipeline do not pass.
+Use `pre-commit` to lint your code and run the unit tests before pushing a new commit.
 
-Using `hatch`, simply:
+Using `hatch`, it's simply:
 
 ```shell
 hatch -e tests run pre-commit run --all-files
 hatch -e tests run test
 ```
 
-Make sure your docs build too!
-
-With `hatch`:
+Our CI/CD pipeline will also test if the documentation can be built correctly. To test it locally, please run:
 
 ```shell
 hatch -e docs run mkdocs build --clean --strict
