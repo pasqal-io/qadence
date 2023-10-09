@@ -60,7 +60,7 @@ def test_reverse() -> None:
     assert reverse(qc.block) == rev_expected
 
     x = chain(chain(X(0), Y(0), Z(0)), chain(I(0), H(0), S(0)))
-    assert reverse(reverse(x)) == x
+    assert chain(chain(S(0), H(0), I(0)), chain(Z(0), Y(0), X(0))) == reverse(x)
 
     x = hea(2, 2)  # type: ignore[assignment]
     assert reverse(reverse(x)) == x
