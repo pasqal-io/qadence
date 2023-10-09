@@ -47,7 +47,7 @@ jobs:
         hatch -v run docs:build
 
     - name: Commit built docs to rtd-pages branch
-      # if: startsWith(githuf.ref, 'ref/tags/v')
+      if: startsWith(githuf.ref, 'ref/tags/v')
       run: |
         mv site/ /tmp/
         git fetch && git checkout rtd-build
