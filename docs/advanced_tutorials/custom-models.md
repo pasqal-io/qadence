@@ -64,7 +64,7 @@ def quantum_circuit(n_qubits):
 n_qubits = 4
 batch_size = 10
 circuit = quantum_circuit(n_qubits)
-observable = hamiltonian_factory(n_qubits, detuning = Z)  # Total magnetization
+observable = hamiltonian_factory(n_qubits, detuning=Z)  # Total magnetization
 
 model = CustomQuantumModel(circuit, observable, backend="pyqtorch")
 
