@@ -21,7 +21,7 @@ from qadence.serialization import serialize, deserialize
 n_qubits = 4
 
 my_block = chain(feature_map(n_qubits, param="x"), hea(n_qubits, depth=2))
-obs = hamiltonian_factory(n_qubits, detuning = Z)
+obs = hamiltonian_factory(n_qubits, detuning=Z)
 
 # Use the block defined above to create a quantum circuit
 # serialize/deserialize it
