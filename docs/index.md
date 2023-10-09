@@ -10,7 +10,7 @@ programs**_ with tunable qubit interaction defined on _**arbitrary register topo
   programs**_ in a flexible and scalable manner, inspired by the Julia quantum SDK
   [Yao.jl](https://github.com/QuantumBFS/Yao.jl) and functional programming concepts.
 
-* A [simple interface](digital_analog_qc/analog-basics.md) to work with _**interacting qubit systems**_
+* A [simple interface](digital_analog_qc/analog-basics.md) to work with _**interacting neutral-atom qubit systems**_
   using [arbitrary registers topologies](tutorials/register.md).
 
 * An intuitive [expression-based system](tutorials/parameters.md) developed on top of the symbolic library [Sympy](https://www.sympy.org/en/index.html) to construct _**parametric quantum programs**_ easily.

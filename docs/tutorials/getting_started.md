@@ -164,7 +164,7 @@ More fine-grained control and better performance is provided via the high-level 
 Quantum programs in Qadence are constructed in two steps:
 
 1. Build a [`QuantumCircuit`][qadence.circuit.QuantumCircuit] which ties together a composite block and a register.
-2. Define a [`QuantumModel`](/tutorials/quantumodels) which differentiates, compiles and executes the circuit.
+2. Define a [`QuantumModel`](/tutorials/quantummodels) which differentiates, compiles and executes the circuit.
 
 `QuantumCircuit` is a central class in Qadence and circuits are abstract
 objects from the actual hardware/simulator that they are expected to be executed on.
