@@ -12,7 +12,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.constructors import ising_hamiltonian, total_magnetization
 from qadence.divergences import js_divergence
 from qadence.models import QuantumModel
-from qadence.operations import CNOT, RX, RY, AnalogRX, AnalogRY, H, X, Z, entangle, wait
+from qadence.operations import CNOT, RX, RY, AnalogRX, AnalogRY, H, X, Z, entangle
 from qadence.parameters import FeatureParameter
 from qadence.types import DiffMode
 

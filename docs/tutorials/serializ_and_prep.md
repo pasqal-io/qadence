@@ -15,7 +15,7 @@ Let's start with serialization into a dictionary.
 ```python exec="on" source="material-block" session="seralize_2"
 import torch
 from qadence import QuantumCircuit, QuantumModel, DiffMode
-from qadence import chain, hamiltonina_factory, feature_map, hea, Z
+from qadence import chain, hamiltonian_factory, feature_map, hea, Z
 from qadence.serialization import serialize, deserialize
 
 n_qubits = 4

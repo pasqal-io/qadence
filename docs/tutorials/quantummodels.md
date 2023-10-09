@@ -87,4 +87,4 @@ print(f"{ex = }") # markdown-exec: hide
 
 The `QNN` is a subclass of the `QuantumModel` geared towards quantum machine learning and parameter optimisation. See the [ML
 Tools](/tutorials/ml_tools) section or the [`QNN` API reference][qadence.models.QNN] for more detailed
-information, and the [parametric program tutorial](tutorials.parameters.parametrized-models) for parametrization.
+information, and the [parametric program tutorial](parameters.md) for parameterization.

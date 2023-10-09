@@ -32,17 +32,22 @@ Now we see how to generate the product state corresponding to the one above with
 a suitable quantum circuit.
 
 ```python  exec="on" source="material-block" html="1"
-from qadence import product_block, tag, QuantumCircuit
+from qadence import product_block, tag, hea, QuantumCircuit
 from qadence.draw import display
 
-state_prep_block = product_block("10")
+state_prep_block = product_block("01")
 display(state_prep_block)
 
 # Let's now prepare a circuit.
-state_prep_block = product_block("1000")
-tag(state_prep_block, "Prep block")
-qc_with_state_prep = QuantumCircuit(4, state_prep_block, fourier_b, hea_b)
+n_qubits = 4
 
+state_prep_block = product_block("0001")
+tag(state_prep_block, "Prep block")
+
+circuit_block = tag(hea(n_qubits, depth = 2), "Circuit block")
+
+qc_with_state_prep = QuantumCircuit(n_qubits, state_prep_block, circuit_block)
+from qadence.draw import html_string # markdown-exec: hide
 print(html_string(qc_with_state_prep), size="4,4") # markdown-exec: hide
 ```
 Several standard quantum states can be conveniently initialized in Qadence, both in statevector form as well as in block form as shown in following.

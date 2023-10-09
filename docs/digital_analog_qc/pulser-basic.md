@@ -1,4 +1,4 @@
-!!! warning 
+!!! warning
     This tutorial needs to be fixed.
 
 
@@ -100,7 +100,10 @@ At variance with other backends, the Pulser one provides the concept of `Device`
 
 A `Device` instance encapsulate all the properties defining a real neutral atoms processor, including but not limited to the maximum laser amplitude for the pulses, the maximum distance between two qubits and the maximum duration of the pulse.
 
-`qadence` offers a simplified interface with only two devices which can be found [here][qadence.backends.pulser.devices]
+!!! warning
+    Fix link below.
+
+`qadence` offers a simplified interface with only two devices which can be found [here](/backends.pulser.devices)
 
 * `IDEALIZED` (default): ideal device which should be used only for testing purposes. It does not have any limitation in what can be run with it.
 * `REALISTIC`: device specification very similar to a real neutral atom quantum processor.
