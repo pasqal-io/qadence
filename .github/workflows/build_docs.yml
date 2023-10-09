@@ -43,12 +43,12 @@ jobs:
         pip install hatch
 
     - name: Build docs
-      if: ${{ !startsWith(githuf.ref, 'ref/tags/v') }}
+      if: ${{ !startsWith(github.ref, 'ref/tags/v') }}
       run: |
         hatch -v run docs:build
 
     - name: Deploy docs
-      if: startsWith(githuf.ref, 'ref/tags/v')
+      if: startsWith(github.ref, 'ref/tags/v')
       run: |
         echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
         git config user.name "GitHub Actions"
