@@ -132,6 +132,10 @@ plugins:
 
 - markdown-exec
 
+extra:
+ version:
+   provider: mike
+
 # To get nice tabs
 extra_css:
 - css/mkdocstrings.css
