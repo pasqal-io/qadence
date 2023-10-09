@@ -1,4 +1,4 @@
-name: Run Qadence docs tests.
+name: Build documentation.
 
 on:
   push:
@@ -19,6 +19,21 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v4
+
+    - name: Commit built docs to branch: rtd-pages
+      run: |
+        ls
+        mkdir site # this will be replaces by build docs
+        touch site/index.html # this too
+        mv site/ /tmp/
+        git checkout rtd-pages
+        rm -r _readthedocs
+        mv /tmp/site _readthedocs
+        ls
+        ls _readthedocs
+        git add _readthedocs
+        git commit -m "Update built docs."
+        git push
 
     - name: Set up Python 3.10
       uses: actions/setup-python@v4
