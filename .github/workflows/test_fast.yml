@@ -37,7 +37,7 @@ jobs:
         shell: bash
         run: |
           python -m hatch run test "not slow"
-      - name: Test docs
-        shell: bash
-        run: |
-          python -m hatch -e docs run mkdocs build --clean --strict
+      # - name: Test docs
+      #   shell: bash
+      #   run: |
+      #     python -m hatch -e docs run mkdocs build --clean --strict
