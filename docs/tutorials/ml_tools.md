@@ -119,7 +119,7 @@ from qadence.ml_tools import train_with_grad, TrainConfig
 n_qubits = 2
 fm = feature_map(n_qubits)
 ansatz = hea(n_qubits=n_qubits, depth=3)
-observable = hamiltonian_factory(n_qubits, detuning = Z)
+observable = hamiltonian_factory(n_qubits, detuning=Z)
 circuit = QuantumCircuit(n_qubits, fm, ansatz)
 
 model = QNN(circuit, observable, backend="pyqtorch", diff_mode="ad")
