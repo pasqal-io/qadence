@@ -1,3 +1,7 @@
+!!! warning 
+    This tutorial needs to be fixed.
+
+
 Qadence offers a direct interface with Pulser[^1], an open-source pulse-level interface written in Python and specifically designed for programming neutral atom quantum computers.
 
 Using directly Pulser requires deep knowledge on pulse-level programming and on how neutral atom devices work. Qadence abstracts out this complexity by using the familiar block-based interface for building pulse sequences in Pulser while leaving the possibility
@@ -54,7 +58,7 @@ bell_state = chain(
 To convert the chain block into a pulse sequence, we define a `Register` with two qubits and combine it to create a circuit as usual. Then we construct a `QuantumModel` with a Pulser backend to convert it into a proper parametrized pulse sequence. Supplying the
 parameter values allows to sample from the pulse sequence result.
 
-```python exec="on" source="material-block" session="pulser-basic"
+```python exec="on" source="material-block" "html=1" session="pulser-basic"
 import torch
 import matplotlib.pyplot as plt
 from qadence import Register, QuantumCircuit, QuantumModel
@@ -121,16 +125,17 @@ model = QuantumModel(
     configuration={"device_type": Device.REALISTIC}
 )
 
-# alternatively directly one of the devices available in Pulser
-# can also be supplied in the same way
-from pulser.devices import AnalogDevice
+# FIXME: Specified device is not supported.
+# # alternatively directly one of the devices available in Pulser
+# # can also be supplied in the same way
+# from pulser.devices import AnalogDevice
 
-model = QuantumModel(
-    circuit,
-    backend="pulser",
-    diff_mode="gpsr",
-    configuration={"device_type": AnalogDevice}
-)
+# model = QuantumModel(
+#     circuit,
+#     backend="pulser",
+#     diff_mode="gpsr",
+#     configuration={"device_type": AnalogDevice}
+# )
 ```
 
 ## Create your own gate
@@ -156,32 +161,33 @@ obs = [zz, xy + yx]
 
 Now we define the `QuantumModel` and pass the observable list to it together with the constructed circuit.
 
-```python exec="on" source="material-block" result="json" session="pulser-basic"
-from qadence import RX, AnalogRot
+```python exec="on" source="material-block" html="1" session="pulser-basic"
+# FIXME: protocol not defined
+# from qadence import RX, AnalogRot
 
-register = Register(2)
-circuit = QuantumCircuit(register, protocol)
-model = QuantumModel(circuit, backend="pulser", diff_mode='gpsr')
+# register = Register(2)
+# circuit = QuantumCircuit(register, protocol)
+# model = QuantumModel(circuit, backend="pulser", diff_mode='gpsr')
 
-params = {
-    "t": torch.tensor([383]),  # ns
-    "y": torch.tensor([torch.pi / 2]),
-}
+# params = {
+#     "t": torch.tensor([383]),  # ns
+#     "y": torch.tensor([torch.pi / 2]),
+# }
 
-sample = model.sample(params, n_shots=50)[0]
+# sample = model.sample(params, n_shots=50)[0]
 
-fig, ax = plt.subplots()
-plt.bar(sample.keys(), sample.values())
-from docs import docsutils # markdown-exec: hide
-print(docsutils.fig_to_html(fig)) # markdown-exec: hide
+# fig, ax = plt.subplots()
+# plt.bar(sample.keys(), sample.values())
+# from docs import docsutils # markdown-exec: hide
+# print(docsutils.fig_to_html(fig)) # markdown-exec: hide
 ```
 
 One can also easily access and manipulate the underlying pulse sequence.
 
 ```python exec="on" source="material-block" html="1" session="pulser-basic"
-model.assign_parameters(params).draw(draw_phase_area=True, show=False)
-from docs import docsutils # markdown-exec: hide
-print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
+# model.assign_parameters(params).draw(draw_phase_area=True, show=False)
+# from docs import docsutils # markdown-exec: hide
+# print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
 ```
 
 ## Large qubits registers
@@ -191,48 +197,50 @@ with two or three qubits. But for the blocks we have so far, large registers
 work better with a square loop layout like the following.
 
 ```python exec="on" source="material-block" html="1" session="pulser-basic"
-register = Register.square(qubits_side=4)
-register.draw(show=False)
-from docs import docsutils # markdown-exec: hide
-print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
+# register = Register.square(qubits_side=4)
+# register.draw(show=False)
+# from docs import docsutils # markdown-exec: hide
+# print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
 ```
 
 In those cases, global pulses are preferred to generate entanglement to avoid
 changing the addressing pattern on the fly.
 
 ```python exec="on" source="material-block" html="1" session="pulser-basic"
-protocol = chain(
-    entangle("t"),
-    AnalogRY(torch.pi / 2),
-)
+# from qadence import AnalogRY
 
-register = Register.square(qubits_side=2)
-circuit = QuantumCircuit(register, protocol)
-model = QuantumModel(circuit, backend="pulser", diff_mode="gpsr")
+# protocol = chain(
+#     entangle("t"),
+#     AnalogRY(torch.pi / 2),
+# )
 
-# add modulation to the pulse sequence by modifying the
-# backend configuration
-model.backend.backend.config.with_modulation = True
+# register = Register.square(qubits_side=2)
+# circuit = QuantumCircuit(register, protocol)
+# model = QuantumModel(circuit, backend="pulser", diff_mode="gpsr")
 
-params = {
-    "x": torch.tensor([3*torch.pi/2]),  # ns
-}
+# # add modulation to the pulse sequence by modifying the
+# # backend configuration
+# model.backend.backend.config.with_modulation = True
 
-sample = model.sample(params, n_shots=500)[0]
+# params = {
+#     "x": torch.tensor([3*torch.pi/2]),  # ns
+# }
 
-fig, ax = plt.subplots()
-ax.bar(sample.keys(), sample.values())
-plt.xticks(rotation='vertical')
-from docs import docsutils # markdown-exec: hide
-print(docsutils.fig_to_html(fig)) # markdown-exec: hide
+# sample = model.sample(params, n_shots=500)[0]
+
+# fig, ax = plt.subplots()
+# ax.bar(sample.keys(), sample.values())
+# plt.xticks(rotation='vertical')
+# from docs import docsutils # markdown-exec: hide
+# print(docsutils.fig_to_html(fig)) # markdown-exec: hide
 ```
 
 Again, let's plot the corresponding pulse sequence.
 
 ```python exec="on" source="material-block" html="1" session="pulser-basic"
-model.assign_parameters(params).draw(draw_phase_area=True, show=False)
-from docs import docsutils # markdown-exec: hide
-print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
+# model.assign_parameters(params).draw(draw_phase_area=True, show=False)
+# from docs import docsutils # markdown-exec: hide
+# print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
 ```
 
 !!! note
@@ -247,40 +255,40 @@ version of a quantum neural network circuit with feature map and variational
 ansatz.
 
 ```python exec="on" source="material-block" html="1" session="pulser-basic"
-from qadence import kron, fourier_feature_map
-from qadence.operations import RX, RY, AnalogRX
+# from qadence import kron, fourier_feature_map
+# from qadence.operations import RX, RY, AnalogRX
 
-hea_one_layer = chain(
-    kron(RY(0, "th00"), RY(1, "th01")),
-    kron(RX(0, "th10"), RX(1, "th11")),
-    kron(RY(0, "th20"), RY(1, "th21")),
-    entangle("t", qubit_support=(0,1)),
-)
+# hea_one_layer = chain(
+#     kron(RY(0, "th00"), RY(1, "th01")),
+#     kron(RX(0, "th10"), RX(1, "th11")),
+#     kron(RY(0, "th20"), RY(1, "th21")),
+#     entangle("t", qubit_support=(0,1)),
+# )
 
-protocol = chain(
-    fourier_feature_map(1, param="x"),
-    hea_one_layer,
-    AnalogRX(torch.pi/4)
-)
+# protocol = chain(
+#     fourier_feature_map(1, param="x"),
+#     hea_one_layer,
+#     AnalogRX(torch.pi/4)
+# )
 
-register = Register(2)
-circuit = QuantumCircuit(register, protocol)
-model = QuantumModel(circuit, backend="pulser", diff_mode="gpsr")
+# register = Register(2)
+# circuit = QuantumCircuit(register, protocol)
+# model = QuantumModel(circuit, backend="pulser", diff_mode="gpsr")
 
-params = {
-    "x": torch.tensor([0.8]), # rad
-    "t": torch.tensor([900]), # ns
-    "th00":  torch.rand(1), # rad
-    "th01":  torch.rand(1), # rad
-    "th10":  torch.rand(1), # rad
-    "th11":  torch.rand(1), # rad
-    "th20":  torch.rand(1), # rad
-    "th21":  torch.rand(1), # rad
-}
+# params = {
+#     "x": torch.tensor([0.8]), # rad
+#     "t": torch.tensor([900]), # ns
+#     "th00":  torch.rand(1), # rad
+#     "th01":  torch.rand(1), # rad
+#     "th10":  torch.rand(1), # rad
+#     "th11":  torch.rand(1), # rad
+#     "th20":  torch.rand(1), # rad
+#     "th21":  torch.rand(1), # rad
+# }
 
-model.assign_parameters(params).draw(draw_phase_area=True, show=True)
-from docs import docsutils # markdown-exec: hide
-print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
+# model.assign_parameters(params).draw(draw_phase_area=True, show=True)
+# from docs import docsutils # markdown-exec: hide
+# print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
 ```
 
 ## References
