@@ -1,4 +1,4 @@
-name: Run Qadence fast tests.
+name: fast tests
 
 on:
   push:
