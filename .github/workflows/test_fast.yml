@@ -23,16 +23,21 @@ jobs:
         os: [ubuntu-latest]
         python-version: ["3.9", "3.10"]
     steps:
-      - name: Checkout Qadence
+      - name: Checkout
         uses: actions/checkout@v3
-      - name: Set up Qadence and pytest
-        uses: ./.github/workflows/qadence-setup
-        with:
-          python-version: ${{ matrix.python-version }}
-          extra-packages: pytest
-      - name: Install Hatch
+      - name: Set up Python
+        uses: actions/setup-python@v3
+      - name: Install hatch
+        shell: bash
         run: |
-          pip install hatch
-      - name: Run fast tests
+          apt-get update -y && apt-get install -y libglpk-dev glpk-utils git
+          python -m pip install --upgrade pip
+          python -m pip install hatch
+      - name: Perform unit tests
+        shell: bash
         run: |
-          hatch -e tests run test -m "not slow"
+          python -m hatch run test "not slow"
+      - name: Test docs
+        shell: bash
+        run: |
+          python -m hatch -e docs run mkdocs build --clean --strict
