@@ -29,7 +29,7 @@ def _(block: AbstractBlock, in_place: bool = False) -> AbstractBlock:
     if in_place:
         raise NotImplementedError
     if isinstance(block, ChainBlock):
-        return chain(*(b for b in reversed(block.blocks)))
+        return chain(*(reverse(b, in_place=in_place) for b in reversed(block.blocks)))
     else:
         return block
 
