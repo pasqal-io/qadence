@@ -127,7 +127,7 @@ For a more comprehensive introduction and advanced topics, please have a look at
 * [Basic tutorials](tutorials/getting_started.md) for first hands-on.
 * [Digital-analog basics](digital_analog_qc/analog-basics.md) to build quantum programs in the digital-analog paradigm.
 * [Parametric quantum circuits](tutorials/parameters.md) for the generation and manipulation of parametric programs.
-* [Advanced features](advanced_tutorials) about low-level backend interface and differentiablity.
+* [Advanced features](advanced_tutorials/differentiability.md) about low-level backend interface and differentiablity.
 * [`QuantumModel`](advanced_tutorials/custom-models.md) for defining custom models.
 
 ## Installation guide

@@ -46,7 +46,7 @@ class CustomQuantumModel(QuantumModel):
 The custom model can be used like any other `QuantumModel`:
 ```python exec="on" source="material-block" result="json" session="custom-model"
 from qadence import Parameter, RX, CNOT, QuantumCircuit
-from qadence import chain, kron, total_magnetization
+from qadence import chain, kron, hamiltonian_factory, Z
 from sympy import acos
 
 def quantum_circuit(n_qubits):
@@ -64,7 +64,7 @@ def quantum_circuit(n_qubits):
 n_qubits = 4
 batch_size = 10
 circuit = quantum_circuit(n_qubits)
-observable = total_magnetization(n_qubits)
+observable = hamiltonian_factory(n_qubits, detuning = Z)  # Total magnetization
 
 model = CustomQuantumModel(circuit, observable, backend="pyqtorch")
 

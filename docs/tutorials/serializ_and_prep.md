@@ -15,13 +15,13 @@ Let's start with serialization into a dictionary.
 ```python exec="on" source="material-block" session="seralize_2"
 import torch
 from qadence import QuantumCircuit, QuantumModel, DiffMode
-from qadence import chain, total_magnetization, feature_map, hea
+from qadence import chain, hamiltonina_factory, feature_map, hea, Z
 from qadence.serialization import serialize, deserialize
 
 n_qubits = 4
 
 my_block = chain(feature_map(n_qubits, param="x"), hea(n_qubits, depth=2))
-obs = total_magnetization(n_qubits)
+obs = hamiltonian_factory(n_qubits, detuning = Z)
 
 # Use the block defined above to create a quantum circuit
 # serialize/deserialize it
