@@ -17,17 +17,17 @@ which follow a more object-oriented way to construct circuits and express progra
 
 	```python exec="on" source="material-block" html="1"
 	from qadence import X, Y, kron
-	from qadence.draw import display
+	#from visualization import display
 
 	kron_block = kron(X(0), Y(1))
-	display(kron_block)
+	#display(kron_block)
 
 	from qadence.draw import html_string # markdown-exec: hide
 	from qadence import chain # markdown-exec: hide
 	print(html_string(kron(X(0), Y(1))), size="2,2") # markdown-exec: hide
 	```
 
-## Primitive Blocks
+## Primitive blocks
 
 A [`PrimitiveBlock`][qadence.blocks.primitive.PrimitiveBlock] represents a digital or an analog time-evolution quantum operation applied to a qubit support.
 Programs can always be decomposed down into a sequence of `PrimitiveBlock` elements.
@@ -38,21 +38,21 @@ Two canonical examples of digital primitive blocks are the parametrized `RX` and
 from qadence import RX
 
 # A rotation gate on qubit 0 with a fixed numerical parameter.
-rx0 = RX(0, 0.5)
+rx_gate = RX(0, 0.5)
 
 from qadence.draw import html_string # markdown-exec: hide
 from qadence import chain # markdown-exec: hide
-print(html_string(chain(rx0), size="2,2")) # markdown-exec: hide
+print(html_string(chain(rx_gate), size="2,2")) # markdown-exec: hide
 ```
 
 ```python exec="on" source="material-block" html="1"
 from qadence import CNOT
 
 # A CNOT gate with control on qubit 0 and target on qubit 1.
-c01 = CNOT(0, 1)
+cnot_gate = CNOT(0, 1)
 from qadence.draw import html_string # markdown-exec: hide
 from qadence import chain # markdown-exec: hide
-print(html_string(chain(c01), size="2,2")) # markdown-exec: hide
+print(html_string(chain(cnot_gate), size="2,2")) # markdown-exec: hide
 ```
 
 A list of all instances of primitive blocks (also referred to as *operations*) can be found [here](../qadence/operations.md).

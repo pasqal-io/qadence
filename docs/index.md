@@ -1,9 +1,6 @@
 **Qadence** is a Python package that provides a simple interface to build _**digital-analog quantum
 programs**_ with tunable qubit interaction defined on _**arbitrary register topologies**_ realizable on neutral atom devices.
 
-[![pre-commit](https://github.com/pasqal-io/qadence/actions/workflows/lint.yml/badge.svg)](https://github.com/pasqal-io/qadence/actions/workflows/lint.yml)
-[![tests](https://github.com/pasqal-io/qadence/actions/workflows/test_fast.yml/badge.svg)](https://github.com/pasqal-io/qadence/actions/workflows/test_fast.yml)
-
 ## Feature highlights
 
 * A [block-based system](tutorials/getting_started.md) for composing _**complex digital-analog
@@ -21,20 +18,7 @@ programs**_ with tunable qubit interaction defined on _**arbitrary register topo
 
 * _**Efficient execution**_ on a variety of different purpose backends: from state vector simulators to tensor network emulators and real devices.
 
-
-## Citation
-
-If you use Qadence for a publication, we kindly ask you to cite our work using the bibtex citation:
-
-```
-@misc{qadence2023pasqal,
-  url = {https://github.com/pasqal-io/qadence},
-  title = {Qadence: {A} {D}igital-analog quantum programming interface.},
-  year = {2023}
-}
-```
-
-In following are some rudimentary examples of Qadence possibilites in the digital, analog and digital-analog paradigms.
+In following are some examples of Qadence possibilites in the digital, analog and digital-analog paradigms.
 
 ## Sampling the canonical Bell state
 
@@ -93,7 +77,7 @@ assert samples[0] == Counter({"001": 100}) # markdown-exec: hide
 
 ## Digital-analog example
 
-This final example deals with the construction and sampling of an Ising Hamiltonian that includes a distance-based interaction between qubits and a global analog block of rotations around the X-axis. Here, global has to be understood as applied to the whole register. <Specify the distance unit.>
+This final example deals with the construction and sampling of an Ising Hamiltonian that includes a distance-based interaction between qubits and a global analog block of rotations around the $X$-axis. Here, _global_ has to be understood as applied to the whole register for qubits.
 
 ```python exec="on" source="material-block" result="json"
 from torch import pi
@@ -119,11 +103,11 @@ js = js_divergence(samples[0], Counter({"01":33, "10":33, "00":33, "11":1})) # m
 assert js < 0.05 # markdown-exec: hide```
 ```
 
-## Further Resources
+## Further resources
 
 For a more comprehensive introduction and advanced topics, please have a look at the following tutorials:
 
-* [Quantum state conventions](tutorials/state_conventions.md) used throughout **Qadence**.
+* [Quantum state conventions](tutorials/state_conventions.md) used throughout Qadence.
 * [Basic tutorials](tutorials/getting_started.md) for first hands-on.
 * [Digital-analog basics](digital_analog_qc/analog-basics.md) to build quantum programs in the digital-analog paradigm.
 * [Parametric quantum circuits](tutorials/parameters.md) for the generation and manipulation of parametric programs.
@@ -132,7 +116,7 @@ For a more comprehensive introduction and advanced topics, please have a look at
 
 ## Installation guide
 
-Qadence can be install with `pip` from PyPI as follows:
+Qadence can be installed from PyPI with `pip` as follows:
 
 ```bash
 pip install qadence
@@ -164,4 +148,15 @@ pip install qadence[braket, pulser, visualization]
     # via conda
     conda install python-graphviz
     ```
----
+
+## Citation
+
+If you use Qadence for a publication, we kindly ask you to cite our work using the following BibTex entry:
+
+```
+@misc{qadence2023pasqal,
+  url = {https://github.com/pasqal-io/qadence},
+  title = {Qadence: {A} {D}igital-analog quantum programming interface.},
+  year = {2023}
+}
+```
