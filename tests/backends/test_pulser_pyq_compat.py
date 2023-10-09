@@ -26,7 +26,7 @@ from qadence.types import DiffMode
         # Bell state generation
         (
             QuantumCircuit(2, chain(H(0), CNOT(0, 1))),
-            QuantumCircuit(2, chain(entangle(383, qubit_support=(0, 1)), RY(0, 3 * torch.pi / 2))),
+            QuantumCircuit(2, chain(entangle(1000, qubit_support=(0, 1)), RY(0, 3 * torch.pi / 2))),
         )
     ],
 )
