@@ -103,7 +103,7 @@ A `Device` instance encapsulate all the properties defining a real neutral atoms
 !!! warning
     Fix link below.
 
-`qadence` offers a simplified interface with only two devices which can be found [here](/backends.pulser.devices)
+Qadence offers a simplified interface with only two devices which can be found [here](/backends.pulser.devices)
 
 * `IDEALIZED` (default): ideal device which should be used only for testing purposes. It does not have any limitation in what can be run with it.
 * `REALISTIC`: device specification very similar to a real neutral atom quantum processor.
