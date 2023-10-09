@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from qadence import RX, RZ, H, HamEvo, I, QuantumCircuit, S, X, Y, Z, chain, kron
 from qadence.blocks import AbstractBlock, AddBlock, ChainBlock, KronBlock
+from qadence.constructors import hea
 from qadence.transpile import digitalize, flatten, reverse
 from qadence.types import LTSOrder
 
@@ -59,4 +60,10 @@ def test_reverse() -> None:
     assert reverse(qc.block) == rev_expected
 
     x = chain(chain(X(0), Y(0), Z(0)), chain(I(0), H(0), S(0)))
+    assert reverse(reverse(x)) == x
+
+    x = hea(2, 2)  # type: ignore[assignment]
+    assert reverse(reverse(x)) == x
+
+    x = chain(2 * RX(0, "theta"))
     assert reverse(reverse(x)) == x
