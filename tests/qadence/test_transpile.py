@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from qadence import RX, RZ, H, HamEvo, X, chain, kron
+from qadence import RX, RZ, H, HamEvo, I, QuantumCircuit, S, X, Y, Z, chain, kron
 from qadence.blocks import AbstractBlock, AddBlock, ChainBlock, KronBlock
-from qadence.transpile import digitalize, flatten
+from qadence.transpile import digitalize, flatten, reverse
 from qadence.types import LTSOrder
 
 
@@ -43,7 +43,20 @@ def test_flatten() -> None:
     x = chain(kron(chain(chain(X(0), X(0)))))
     assert flatten(x, [ChainBlock]) == chain(kron(chain(X(0), X(0))))
 
+
+def test_digitalize() -> None:
     x = chain(chain(X(0), HamEvo(X(0), 2), RX(0, 2)))
     assert digitalize(x, LTSOrder.BASIC) == chain(
         chain(X(0), chain(H(0), RZ(0, 4.0), H(0)), RX(0, 2.0))
     )
+
+
+def test_reverse() -> None:
+    x = chain(X(0), Y(0), Z(0))
+    qc = QuantumCircuit(1, x)
+    rev_expected = chain(Z(0), Y(0), X(0))
+    assert reverse(qc, False) == QuantumCircuit(1, rev_expected)
+    assert reverse(qc.block, False) == rev_expected
+
+    x = chain(chain(X(0), Y(0), Z(0)), chain(I(0), H(0), S(0)))
+    assert reverse(reverse(x, False), False) == x
