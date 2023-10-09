@@ -1,0 +1,31 @@
+name: Run all Qadence tests on schedule.
+
+on:
+  schedule:
+    # 03:00 every Saturday morning
+    - cron: '0 3 * * 6'
+  workflow_dispatch: {}
+
+concurrency:
+  group: ${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  test_qadence_ubuntu:
+    name: Test Qadence (ubuntu)
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install Hatch
+      run: |
+        pip install hatch
+    - name: Run tests
+      run: |
+        hatch -v run test
