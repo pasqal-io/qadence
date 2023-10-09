@@ -64,15 +64,15 @@ def train(
     from pathlib import Path
     import torch
     from itertools import count
-    from qadence.constructors import total_magnetization, hea, feature_map
-    from qadence import chain, Parameter, QuantumCircuit
+    from qadence.constructors import hamiltonian_factory, hea, feature_map
+    from qadence import chain, Parameter, QuantumCircuit, Z
     from qadence.models import QNN
     from qadence.ml_tools import train_with_grad, TrainConfig
 
     n_qubits = 2
     fm = feature_map(n_qubits)
     ansatz = hea(n_qubits=n_qubits, depth=3)
-    observable = total_magnetization(n_qubits)
+    observable = hamiltonian_factory(n_qubits, detuning = Z)
     circuit = QuantumCircuit(n_qubits, fm, ansatz)
 
     model = QNN(circuit, observable, backend="pyqtorch", diff_mode="ad")
