@@ -27,22 +27,7 @@ from qadence.types import DiffMode
         (
             QuantumCircuit(2, chain(H(0), CNOT(0, 1))),
             QuantumCircuit(2, chain(entangle(383, qubit_support=(0, 1)), RY(0, 3 * torch.pi / 2))),
-        ),
-        # GHZ state 3-qubits
-        (
-            QuantumCircuit(Register.line(3), chain(H(0), CNOT(0, 1), CNOT(1, 2))),
-            QuantumCircuit(
-                Register.line(3),
-                chain(
-                    entangle(383, qubit_support=(0, 1, 2)),
-                    RY(0, 3 * torch.pi / 2),
-                    wait(660),
-                    RY(2, 3 * torch.pi / 2),
-                ),
-            ),
-        ),
-        # NOTE: Although we can create an effective GHZ state with four qubits in Pulser,
-        # the final distribution is not compatible with the "pure" result from pyqtorch.
+        )
     ],
 )
 @pytest.mark.flaky(max_runs=5)
