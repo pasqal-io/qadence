@@ -33,6 +33,7 @@ a suitable quantum circuit.
 
 ```python  exec="on" source="material-block" html="1"
 from qadence import product_block, tag, QuantumCircuit
+from qadence.draw import display
 
 state_prep_block = product_block("10")
 display(state_prep_block)
@@ -63,7 +64,7 @@ print("Uniform state = \n") # markdown-exec: hide
 print(f"{uniform_state}") # markdown-exec: hide
 print("Zero state = \n") # markdown-exec: hide
 print(f"{zero_state}") # markdown-exec: hide
-print("One state = \n" # markdown-exec: hide
+print("One state = \n") # markdown-exec: hide
 print(f"{one_state}") # markdown-exec: hide
 ```
 

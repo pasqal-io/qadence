@@ -261,7 +261,7 @@ print(html_string(circuit)) # markdown-exec: hide
     print(html_string(circuit)) # markdown-exec: hide
     ```
 
-The `hea` function will be further explored in the [QML Constructors tutorial](qml_constructors.md).
+The `hea` function will be further explored in the [QML Constructors tutorial](tutorials.qml_tools).
 
 ## Parametric observables
 

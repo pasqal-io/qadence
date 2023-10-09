@@ -17,7 +17,7 @@ which follow a more object-oriented way to construct circuits and express progra
 
 	```python exec="on" source="material-block" html="1"
 	from qadence import X, Y, kron
-	from visualization import display
+	from qadence.draw import display
 
 	kron_block = kron(X(0), Y(1))
 	display(kron_block)
