@@ -40,17 +40,23 @@ vari.tag = "vari"
 hamevo = HamEvo(kron(*map(Z, range(constants.n_qubits))), 10)
 
 b = chain(
+    feature_map(constants.n_qubits, fm_type="tower"),
+    hea(constants.n_qubits, 1),
     constants,
     fixed,
     hamevo,
     feat,
     HamEvo(kron(*map(Z, range(constants.n_qubits))), 10),
+    AnalogRX("x"),
+    AnalogRX("x", qubit_support=(3, 4, 5)),
+    wait("x"),
     vari,
     add(*map(X, range(constants.n_qubits))),
     2.1 * kron(*map(X, range(constants.n_qubits))),
     SWAP(0, 1),
     kron(SWAP(0, 1), SWAP(3, 4)),
 )
+# b = chain(feature_map(4, fm_type="tower"), hea(4,1, strategy=Strategy.SDAQC))
 # d = make_diagram(b)
 # d.show()
 
@@ -60,9 +66,9 @@ circuit = QuantumCircuit(b.n_qubits, b)
 
 
 if os.environ.get("CI") == "true":
-    savefig(circuit, "test.png")
+    savefig(circuit, "test.svg")
 else:
-    display(circuit, theme="dark")
+    display(circuit, theme="light")
 
 # FIXME: this is not working yet because total_magnetization blocks completely mess up the
 # graph layout for some reason :(
