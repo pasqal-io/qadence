@@ -20,7 +20,7 @@ from qadence.register import Register
     [
         # Bell state
         (
-            chain(entangle(383, qubit_support=(0, 1)), RY(0, 3 * torch.pi / 2)),
+            chain(entangle(1000, qubit_support=(0, 1)), RY(0, 3 * torch.pi / 2)),
             Register(2),
             Counter({"00": 250, "11": 250}),
         ),

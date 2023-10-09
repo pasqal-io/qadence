@@ -2,29 +2,32 @@ Quantum programs in Qadence are constructed via a block-system, with an emphasis
 *primitive* blocks to obtain larger, *composite* blocks. This functional approach is different from other frameworks
 which follow a more object-oriented way to construct circuits and express programs.
 
-??? note "Visualize blocks"
+??? note "How to visualize blocks"
 
-	There are two ways to display blocks in a Python interpreter: either as a tree in ASCII format using `print`
+	There are two ways to display blocks in a Python interpreter: either as a tree in ASCII format using `print`:
 
-	```python exec="on" source="material-block" html="1"
+	```python exec="on" source="material-block" result="json"
 	from qadence import X, Y, kron
-	print(kron(X(0), Y(1)))
+
+	kron_block = kron(X(0), Y(1))
+	print(kron_block)
 	```
 
 	Or using the visualization package which opens an interactive window:
 
-	```
+	```python exec="on" source="material-block" html="1"
 	from qadence import X, Y, kron
-	from visualisation import display
+	#from visualization import display
 
-	display(kron(X(0), Y(1)))
+	kron_block = kron(X(0), Y(1))
+	#display(kron_block)
 
 	from qadence.draw import html_string # markdown-exec: hide
 	from qadence import chain # markdown-exec: hide
-	print(html_string(kron(X(0), Y(1))), size="2,2")) # markdown-exec: hide
+	print(html_string(kron(X(0), Y(1))), size="2,2") # markdown-exec: hide
 	```
 
-## Primitive Blocks
+## Primitive blocks
 
 A [`PrimitiveBlock`][qadence.blocks.primitive.PrimitiveBlock] represents a digital or an analog time-evolution quantum operation applied to a qubit support.
 Programs can always be decomposed down into a sequence of `PrimitiveBlock` elements.
@@ -35,21 +38,21 @@ Two canonical examples of digital primitive blocks are the parametrized `RX` and
 from qadence import RX
 
 # A rotation gate on qubit 0 with a fixed numerical parameter.
-rx0 = RX(0, 0.5)
+rx_gate = RX(0, 0.5)
 
 from qadence.draw import html_string # markdown-exec: hide
 from qadence import chain # markdown-exec: hide
-print(html_string(chain(rx0), size="2,2")) # markdown-exec: hide
+print(html_string(chain(rx_gate), size="2,2")) # markdown-exec: hide
 ```
 
 ```python exec="on" source="material-block" html="1"
 from qadence import CNOT
 
 # A CNOT gate with control on qubit 0 and target on qubit 1.
-c01 = CNOT(0, 1)
+cnot_gate = CNOT(0, 1)
 from qadence.draw import html_string # markdown-exec: hide
 from qadence import chain # markdown-exec: hide
-print(html_string(chain(c01), size="2,2")) # markdown-exec: hide
+print(html_string(chain(cnot_gate), size="2,2")) # markdown-exec: hide
 ```
 
 A list of all instances of primitive blocks (also referred to as *operations*) can be found [here](../qadence/operations.md).
@@ -97,15 +100,12 @@ each sub-block and results in a `AddBlock` type which can be used to construct P
 Please note that `AddBlock` can give rise to non-unitary computations that might not be supported by all backends.
 
 ??? note "Get the matrix of a block"
-    It is always possible to retrieve the matrix representation of a block. Please note that the returned tensor
-    contains a batch dimension for the purposes of block parametrization.
+    It is always possible to retrieve the matrix representation of a block by calling the `block.tensor()` method.
+	Please note that the returned tensor contains a batch dimension for the purposes of block parametrization.
 
     ```python exec="on" source="material-block" result="json" session="i-xx"
-    print("X(0) * X(0)")
-    print(chain_x.tensor())
-    print("\n") # markdown-exec: hide
-    print("X(0) * X(1)")
-    print(chain_xx.tensor())
+    print(f"X(0) * X(0) tensor = {chain_x.tensor()}") # markdown-exec: hide
+    print(f"X(0) @ X(1) tensor = {chain_xx.tensor()}") # markdown-exec: hide
     ```
 
 ```python exec="on" source="material-block" result="json"
@@ -130,9 +130,7 @@ from qadence.draw import html_string # markdown-exec: hide
 print(html_string(final_block, size="4,4")) # markdown-exec: hide
 ```
 
-## Program execution
-
-### Fast block execution
+## Block execution
 
 To quickly run quantum operations and access wavefunctions, samples or expectation values of
 observables, one can use the convenience functions `run`, `sample` and `expectation`. The following
@@ -161,12 +159,12 @@ print(f"{ex = }") # markdown-exec: hide
 
 More fine-grained control and better performance is provided via the high-level `QuantumModel` abstraction.
 
-### Execution via `QuantumCircuit` and `QuantumModel`
+## Execution via `QuantumCircuit` and `QuantumModel`
 
 Quantum programs in Qadence are constructed in two steps:
 
 1. Build a [`QuantumCircuit`][qadence.circuit.QuantumCircuit] which ties together a composite block and a register.
-2. Define a [`QuantumModel`](/tutorials/quantumodels) which differentiates, compiles and executes the circuit.
+2. Define a [`QuantumModel`](/tutorials/quantummodels) which differentiates, compiles and executes the circuit.
 
 `QuantumCircuit` is a central class in Qadence and circuits are abstract
 objects from the actual hardware/simulator that they are expected to be executed on.
@@ -180,7 +178,7 @@ from qadence import QuantumCircuit, Register, H, chain
 # on a register of three qubits.
 register = Register(3)
 circuit = QuantumCircuit(register, chain(H(0), H(1)))
-print(circuit) # markdown-exec: hide
+print(f"circuit = {circuit}") # markdown-exec: hide
 ```
 
 !!! note "Registers and qubit supports"
@@ -204,49 +202,3 @@ print(f"{xs = }") # markdown-exec: hide
 ```
 
 For more details on `QuantumModel`, see [here](/tutorials/quantummodels).
-
-## State initialization
-
-Qadence offers convenience routines for preparing initial quantum states.
-These routines are divided into two approaches:
-
-- As a dense matrix.
-- From a suitable quantum circuit. This is available for every backend and it should be added
-in front of the desired quantum circuit to simulate.
-
-Let's illustrate the usage of the state preparation routine. For more details,
-please refer to the [API reference](/qadence/index).
-
-```python exec="on" source="material-block" result="json" session="seralize"
-from qadence import random_state, product_state, is_normalized, StateGeneratorType
-
-# Random initial state.
-# the default `type` is StateGeneratorType.HaarMeasureFast
-state = random_state(n_qubits=2, type=StateGeneratorType.RANDOM_ROTATIONS)
-print(f"{Random initial state generated with rotations:\n {state.detach().numpy().flatten()}}") # markdown-exec: hide
-
-# Check the normalization.
-assert is_normalized(state)
-
-# Product state from a given bitstring.
-# NB: Qadence follows the big endian convention.
-state = product_state("01")
-print(f"{Product state corresponding to bitstring '10':\n {state.detach().numpy().flatten()}}") # markdown-exec: hide
-```
-
-Now we see how to generate the product state corresponding to the one above with
-a suitable quantum circuit.
-
-```python
-from qadence import product_block, tag, QuantumCircuit
-
-state_prep_b = product_block("10")
-display(state_prep_b)
-
-# let's now prepare a circuit
-state_prep_b = product_block("1000")
-tag(state_prep_b, "prep")
-qc_with_state_prep = QuantumCircuit(4, state_prep_b, fourier_b, hea_b)
-
-print(html_string(qc_with_state_prep), size="4,4")) # markdown-exec: hide
-```
