@@ -187,7 +187,7 @@ print(f"circuit = {circuit}") # markdown-exec: hide
 	Qubit supports are subsets of the circuit register tied to blocks.
 
 
-`QuantumModel` is another central class in Qadence. It specifies a [Backend](backend.md) for
+`QuantumModel` is another central class in Qadence. It specifies a [Backend](backends.md) for
 the differentiation, compilation and execution of the abstract circuit.
 
 ```python exec="on" source="material-block" result="json"

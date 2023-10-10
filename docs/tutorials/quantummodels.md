@@ -84,6 +84,6 @@ print(f"{ex = }") # markdown-exec: hide
 
 ### Quantum Neural Network (QNN)
 
-The `QNN` is a subclass of the `QuantumModel` geared towards quantum machine learning and parameter optimisation. See the [ML
-Tools](qml_tools.md) section or the [`QNN` API reference][qadence.models.QNN] for more detailed
+The `QNN` is a subclass of the `QuantumModel` geared towards quantum machine learning and parameter optimisation. See the
+[machine learning tools](../qml/qml_tools.md) section or the [`QNN` API reference][qadence.models.QNN] for more detailed
 information, and the [parametric program tutorial](parameters.md) for parameterization.
