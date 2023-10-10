@@ -1,9 +1,9 @@
 # Digital-Analog Emulation
 
-!!! note "TL;DR: Automatic emulation in the `pyqtorch` backend"
+!!! note "Automatic emulation in the PyQTorch backend"
 
     All analog blocks are automatically translated to their emulated version when running them
-    with the `pyqtorch` backend (by calling `add_interaction` on them under the hood):
+    with the PyQTorch backend:
 
     ```python exec="on" source="material-block" result="json"
     import torch
@@ -12,7 +12,6 @@
     reg = Register.from_coordinates([(0,0), (0,5)])
     print(sample(reg, AnalogRX(torch.pi)))
     ```
-
 
 Qadence includes primitives for the simple construction of ising-like
 Hamiltonians to account for the interaction among qubits.  This allows to
