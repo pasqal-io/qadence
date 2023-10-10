@@ -1,0 +1,24 @@
+name: debug
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch: {}
+
+jobs:
+
+  test_qadence_ubuntu:
+    name: debug
+    runs-on: ubuntu-latest
+    steps:
+    - name: debug
+      run: |
+        VERSION=${{ github.ref }}
+        ls $VERSION
+ 
