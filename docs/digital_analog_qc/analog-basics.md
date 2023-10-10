@@ -1,107 +1,103 @@
 # Digital-Analog Emulation
 
-!!! note "TL;DR: Automatic emulation in the `pyqtorch` backend"
+## From theory to implementation
+
+Qadence includes primitives for the construction of Ising-like
+Hamiltonians to account for custom qubit interaction. This allows to
+simulate systems close to real quantum computing platforms such as
+neutral atoms. The general form for _time-independent_ Ising Hamiltonians is
+
+$$
+\mathcal{H} = \sum_{i} \frac{\hbar\Omega}{2} \hat\sigma^x_i - \sum_{i} \hbar\delta \hat n_i  + \mathcal{H}_{\textrm{int}},
+$$
+
+where $\Omega$ is the Rabi frequency, $\delta$ is the detuning, $\hat n = \frac{1-\hat\sigma_z}{2}$ is the number operator, and $\mathcal{H}_{\textrm{int}}$ a pair-wise interaction term. Two central operations implement this Hamiltonian as blocks:
+
+- [`WaitBlock`][qadence.blocks.analog.WaitBlock] by free-evolving $\mathcal{H}_{\textrm{int}}$
+- [`ConstantAnalogRotation`][qadence.blocks.analog.ConstantAnalogRotation] by free-evolving $\mathcal{H}$
+
+
+The `wait` operation can be emulated with an $ZZ$- (Ising) or an $XY$-interaction:
+
+```python exec="on" source="material-block" result="json"
+from qadence import Register, wait, add_interaction, run, Interaction
+
+block = wait(duration=3000)
+print(f"block = {block} \n") # markdown-exec: hide
+
+reg = Register.from_coordinates([(0,0), (0,5)])  # Dimensionless.
+emulated = add_interaction(reg, block, interaction=Interaction.XY)  # or Interaction.ZZ for Ising.
+
+print("emulated.generator = \n") # markdown-exec: hide
+print(emulated.generator) # markdown-exec: hide
+```
+
+The `AnalogRot` constructor can be used to create a fully customizable `ConstantAnalogRotation` instances:
+
+```python exec="on" source="material-block" result="json"
+import torch
+from qadence import AnalogRot, AnalogRX
+
+# Implement a global RX rotation by setting all parameters.
+block = AnalogRot(
+    duration=1000., # [ns]
+    omega=torch.pi, # [rad/μs]
+    delta=0,        # [rad/μs]
+    phase=0,        # [rad]
+)
+print(f"AnalogRot = {block}\n") # markdown-exec: hide
+
+# Or use the shortcut.
+block = AnalogRX(torch.pi)
+print(f"AnalogRX = {block}") # markdown-exec: hide
+```
+
+!!! note "Automatic emulation in the PyQTorch backend"
 
     All analog blocks are automatically translated to their emulated version when running them
-    with the `pyqtorch` backend (by calling `add_interaction` on them under the hood):
+    with the PyQTorch backend:
 
     ```python exec="on" source="material-block" result="json"
     import torch
     from qadence import Register, AnalogRX, sample
 
     reg = Register.from_coordinates([(0,0), (0,5)])
-    print(sample(reg, AnalogRX(torch.pi)))
+	sample = sample(reg, AnalogRX(torch.pi))
+    print(f"sample = {sample}") # markdown-exec: hide
     ```
 
+To compose analog blocks, the regular `chain` and `kron` operations can be used under the following restrictions:
 
-Qadence includes primitives for the simple construction of ising-like
-Hamiltonians to account for the interaction among qubits.  This allows to
-simulate systems closer to real quantum computing platforms such as
-neutral atoms. The constructed Hamiltonians are of the form
-
-$$
-\mathcal{H} = \sum_{i} \frac{\hbar\Omega}{2} \hat\sigma^x_i - \sum_{i} \hbar\delta \hat n_i  + \mathcal{H}_{int},
-$$
-
-
-where $\hat n = \frac{1-\hat\sigma_z}{2}$, and $\mathcal{H}_{int}$ is a pair-wise interaction term.
-
-
-We currently have two central operations that can be used to compose analog programs.
-
-- [`WaitBlock`][qadence.blocks.analog.WaitBlock] for interactions
-- [`ConstantAnalogRotation`][qadence.blocks.analog.ConstantAnalogRotation]
-
-Both are _time-independent_ and can be emulated by calling `add_interaction`.
-
-To compose analog blocks you can use `chain` and `kron` as usual with the following restrictions:
-
-- [`AnalogChain`][qadence.blocks.analog.AnalogChain]s can only be constructed from AnalogKron blocks
-  or _**globally supported**_ primitive, analog blocks.
-- [`AnalogKron`][qadence.blocks.analog.AnalogKron]s can only be constructed from _**non-global**_,
+- The resulting [`AnalogChain`][qadence.blocks.analog.AnalogChain] type can only be constructed from `AnalogKron` blocks
+  or _**globally supported**_ primitive analog blocks.
+- The resulting [`AnalogKron`][qadence.blocks.analog.AnalogKron] type can only be constructed from _**non-global**_
   analog blocks with the _**same duration**_.
 
-The `wait` operation can be emulated with an *Ising* or an $XY$-interaction:
-
 ```python exec="on" source="material-block" result="json"
-from qadence import Register, wait, add_interaction, run
-
-block = wait(duration=3000)
-print(block)
-
-print("") # markdown-exec: hide
-reg = Register.from_coordinates([(0,0), (0,5)])  # we need atomic distances
-emulated = add_interaction(reg, block, interaction="XY")  # or: interaction="Ising"
-print(emulated.generator)
-```
-
-
-The `AnalogRot` constructor can create any constant (in time), analog rotation.
-
-```python exec="on" source="material-block" result="json"
-import torch
-from qadence import AnalogRot, AnalogRX
-
-# implement a global RX rotation
-block = AnalogRot(
-    duration=1000.,  # [ns]
-    omega=torch.pi, # [rad/μs]
-    delta=0,        # [rad/μs]
-    phase=0,        # [rad]
-)
-print(block)
-
-# or use the short hand
-block = AnalogRX(torch.pi)
-print(block)
-```
-
-Analog blocks can also be `chain`ed, and `kron`ed like all other blocks, but with two small caveats:
-
-```python exec="on" source="material-block"
 import torch
 from qadence import AnalogRot, kron, chain, wait
 
-# only blocks with the same `duration` can be `kron`ed
-kron(
+# Only analog blocks with a global qubit support can be composed
+# using chain.
+analog_chain = chain(wait(duration=200), AnalogRot(duration=300, omega=2.0))
+print(f"Analog Chain block = {analog_chain}") # markdown-exec: hide
+
+# Only blocks with the same `duration` can be composed using kron.
+analog_kron = kron(
     wait(duration=1000, qubit_support=(0,1)),
     AnalogRot(duration=1000, omega=2.0, qubit_support=(2,3))
 )
-
-# only blocks with `"global"` or the same qubit support can be `chain`ed
-chain(wait(duration=200), AnalogRot(duration=300, omega=2.0))
+print(f"Analog Kron block = {analog_kron}") # markdown-exec: hide
 ```
 
 !!! note "Composing digital & analog blocks"
-    You can also compose digital and analog blocks where the additional restrictions of `chain`/`kron`
-    only apply to composite blocks which only contain analog blocks. For more details/examples, see
+    It is possible to compose digital and analog blocks where the additional restrictions for `chain` and `kron`
+    only apply to composite blocks which contain analog blocks only. For further details, see
     [`AnalogChain`][qadence.blocks.analog.AnalogChain] and [`AnalogKron`][qadence.blocks.analog.AnalogKron].
-
 
 ## Fitting a simple function
 
-Just as most other blocks, analog blocks can be parametrized, and thus we can build a
-small ansatz which can fit a sine wave. When using the `pyqtorch` backend the
+Analog blocks can indeed be parametrized to, for instance, create small ansatze to fit a sine function. When using the `pyqtorch` backend the
 `add_interaction` function is called automatically. As usual, we can choose which
 differentiation backend we want to use: autodiff or parameter shift rule (PSR).
 

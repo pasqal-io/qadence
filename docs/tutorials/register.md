@@ -81,10 +81,10 @@ reg = Register.from_coordinates(
 
 import matplotlib.pyplot as plt # markdown-exec: hide
 plt.clf() # markdown-exec: hide
-reg.draw()
 fig = plt.gcf() # markdown-exec: hide
 fig.set_size_inches(4, 2) # markdown-exec: hide
 plt.tight_layout() # markdown-exec: hide
+reg.draw(show=False)
 from docs import docsutils # markdown-exec: hide
 print(docsutils.fig_to_html(fig)) # markdown-exec: hide
 ```
@@ -96,12 +96,12 @@ print(docsutils.fig_to_html(fig)) # markdown-exec: hide
 ## Connectivity graphs
 
 Register topology is often asssumed in simulations to be an all-to-all qubit connectivity.
-When running on real devices that enable the [digital-analog](/digital_analog_qc/index.md) computing paradigm,
+When running on real devices that enable the [digital-analog](../digital_analog_qc/daqc-basics.md) computing paradigm,
 qubit interaction must be specified either by specifying distances between qubits,
 or by defining edges in the register connectivity graph.
 
 It is possible to access the abstract graph nodes and edges to work with if needed as in the [perfect state
-transfer](/#perfect-state-transfer) example.
+transfer](../index.md#analog-emulation-of-a-perfect-state-transfer) example.
 
 ```python exec="on" source="material-block" result="json" session="reg-usage"
 from qadence import Register
@@ -114,9 +114,8 @@ print(f"{reg.edges = }") # markdown-exec: hide
 It is possible to customize qubit interaction through the [`add_interaction`][qadence.transpile.emulate.add_interaction] method.
 In that case, `Register.coords` are accessible from the concrete graph:
 
-
 ```python exec="on" source="material-block" result="json" session="reg-usage"
-print(f"{reg.coords = }") # markdown-exec: hide
+print(f"{reg.coords = }")
 ```
 
-More details about their usage in the digital-analog paradigm can be found in the [digital-analog basics](/digital_analog_qc/analog-basics) section.
+More details about their usage in the digital-analog paradigm can be found in the [digital-analog basics](../digital_analog_qc/analog-basics.md) section.
