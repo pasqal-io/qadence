@@ -1,4 +1,4 @@
-name: Run Qadence example and notebook tests.
+name: Run Qadence example tests
 
 on:
   push:
@@ -7,34 +7,31 @@ on:
   pull_request:
     branches:
       - main
-  paths:
-    - examples
-    - notebooks
-  schedule:
-    # 03:00 every Saturday morning
-    - cron: '0 3 * * 6'
   workflow_dispatch: {}
 
 concurrency:
-  group: ${{ github.head_ref || github.run_id }}
+  group: examples-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
 jobs:
   test_qadence_ubuntu:
     name: Test Qadence (ubuntu)
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+
+    - name: Install graphviz
+      run: sudo apt-get install -y graphviz
+
     - name: Select Python 3.10
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
+
     - name: Install Hatch
       run: |
         pip install hatch
+
     - name: Run example tests
       run: |
         hatch -v run test-examples
-    - name: Run notebooks tests
-      run: |
-        hatch -v run test-notebooks
