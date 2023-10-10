@@ -96,12 +96,12 @@ print(docsutils.fig_to_html(fig)) # markdown-exec: hide
 ## Connectivity graphs
 
 Register topology is often asssumed in simulations to be an all-to-all qubit connectivity.
-When running on real devices that enable the [digital-analog](/digital_analog_qc/index.md) computing paradigm,
+When running on real devices that enable the [digital-analog](../digital_analog_qc/index.md) computing paradigm,
 qubit interaction must be specified either by specifying distances between qubits,
 or by defining edges in the register connectivity graph.
 
 It is possible to access the abstract graph nodes and edges to work with if needed as in the [perfect state
-transfer](/#perfect-state-transfer) example.
+transfer](../index.md#analog-emulation-of-a-perfect-state-transfer) example.
 
 ```python exec="on" source="material-block" result="json" session="reg-usage"
 from qadence import Register
@@ -119,4 +119,4 @@ In that case, `Register.coords` are accessible from the concrete graph:
 print(f"{reg.coords = }") # markdown-exec: hide
 ```
 
-More details about their usage in the digital-analog paradigm can be found in the [digital-analog basics](/digital_analog_qc/analog-basics) section.
+More details about their usage in the digital-analog paradigm can be found in the [digital-analog basics](../digital_analog_qc/analog-basics.md) section.
