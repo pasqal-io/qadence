@@ -1,10 +1,12 @@
-# Quantum Machine Learning Constructors
+# Quantum machine learning constructors
 
-Besides the [arbitrary Hamiltonian constructors](hamiltonians.md), Qadence also provides a complete set of program constructors useful for digital-analog quantum machine learning programs.
+Besides the [arbitrary Hamiltonian constructors](../tutorials/hamiltonians.md), Qadence also provides a complete set of
+program constructors useful for digital-analog quantum machine learning programs.
 
-## Feature Maps
+## Feature maps
 
-A few feature maps are directly available for feature loading,
+A few feature maps are directly available for loading classical data into quantum circuits by encoding them
+into gate rotation angles.
 
 ```python exec="on" source="material-block" result="json" session="fms"
 from qadence import feature_map
@@ -21,9 +23,11 @@ fm = feature_map(n_qubits, fm_type="tower")
 print(f"Tower {fm}") # markdown-exec: hide
 ```
 
-## Hardware-Efficient Ansatz
+## Hardware-efficient ansatz
 
-Ansatze blocks for quantum machine-learning are typically built following the Hardware-Efficient Ansatz formalism (HEA). Both fully digital and digital-analog HEAs can easily be built with the `hea` function. By default, the digital version is returned:
+Ansatze blocks for quantum machine-learning are typically built following the Hardware-Efficient Ansatz formalism (HEA).
+Both fully digital and digital-analog HEAs can easily be built with the `hea` function. By default,
+the digital version is returned:
 
 ```python exec="on" source="material-block" html="1" session="ansatz"
 from qadence import hea
@@ -55,7 +59,7 @@ from qadence.draw import html_string # markdown-exec: hide
 print(html_string(ansatz, size="4,4")) # markdown-exec: hide
 ```
 
-Having a truly *hardware-efficient* ansatz means that the entangling operation can be chosen according to each device's native interactions. Besides digital operations, in Qadence it is also possible to build digital-analog HEAs with the entanglement produced by the natural evolution of a set of interacting qubits, as is natural in neutral atom devices. As with other digital-analog functions, this can be controlled with the `strategy` argument which can be chosen from the [`Strategy`](../qadence/types.md) enum type. Currently, only `Strategy.DIGITAL` and `Strategy.SDAQC` are available. By default, calling `strategy = Strategy.SDAQC` will use a global entangling Hamiltonian with Ising-like NN interactions and constant interaction strength inside a `HamEvo` operation,
+Having a truly *hardware-efficient* ansatz means that the entangling operation can be chosen according to each device's native interactions. Besides digital operations, in Qadence it is also possible to build digital-analog HEAs with the entanglement produced by the natural evolution of a set of interacting qubits, as natively implemented in neutral atom devices. As with other digital-analog functions, this can be controlled with the `strategy` argument which can be chosen from the [`Strategy`](../qadence/types.md) enum type. Currently, only `Strategy.DIGITAL` and `Strategy.SDAQC` are available. By default, calling `strategy = Strategy.SDAQC` will use a global entangling Hamiltonian with Ising-like NN interactions and constant interaction strength inside a `HamEvo` operation,
 
 ```python exec="on" source="material-block" html="1" session="ansatz"
 from qadence import Strategy
@@ -103,6 +107,9 @@ Qadence also offers a out-of-the-box training routine called `train_with_grad`
 for optimizing fully-differentiable models like `QNN`s and `QuantumModel`s containing either *trainable* and/or *non-trainable* parameters (i.e., inputs). Feel free to [refresh your memory about different parameter types](/tutorials/parameters).
 
 ## Machine Learning Tools
+
+`qadence` also offers a out-of-the-box training routine called `train_with_grad`
+for optimizing fully-differentiable models like `QNN`s and `QuantumModel`s containing either *trainable* and/or *non-trainable* parameters (i.e., inputs). Feel free to [refresh your memory about different parameter types](/tutorials/parameters).
 
 `train_with_grad` performs training, logging/printing loss metrics and storing intermediate checkpoints of models.
 
