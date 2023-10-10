@@ -32,3 +32,7 @@ jobs:
     - name: Run fast tests
       run: |
         hatch -v run test -m "not slow"
+    - name: Coveralls
+      uses: coverallsapp/github-action@master
+      with:
+        path-to-lcov: coverage.lcov
