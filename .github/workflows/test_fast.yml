@@ -14,15 +14,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test_qadence:
+  test_qadence_39:
     runs-on: ubuntu-latest
+
     container:
-      image: seitzdom/pytorch-ubuntu:latest
+      image: pasqalofficial/qadence:latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
       - name: Install hatch
         shell: bash
         run: |
@@ -32,7 +35,7 @@ jobs:
       - name: Perform unit tests
         shell: bash
         run: |
-          python -m hatch run test "not slow"
+          python -m hatch -v run test "not slow"
       # - name: Test docs
       #   shell: bash
       #   run: |
