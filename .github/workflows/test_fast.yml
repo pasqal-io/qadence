@@ -45,7 +45,7 @@ jobs:
 
   publish:
     name: Publish to PyPI
-    if: startsWith(github.ref, 'ref/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v')
     needs: test_qadence_ubuntu
     runs-on: ubuntu-latest
     steps:
@@ -77,7 +77,7 @@ jobs:
 
   deploy_docs:
     name: Deploy Qadence docs (ubuntu)
-    if: startsWith(github.ref, 'ref/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v')
     needs: test_qadence_ubuntu
     runs-on: ubuntu-latest
     steps:
