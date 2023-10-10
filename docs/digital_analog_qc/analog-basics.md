@@ -16,7 +16,6 @@ where $\Omega$ is the Rabi frequency, $\delta$ is the detuning, $\hat n = \frac{
 - [`WaitBlock`][qadence.blocks.analog.WaitBlock] by free-evolving $\mathcal{H}_{\textrm{int}}$
 - [`ConstantAnalogRotation`][qadence.blocks.analog.ConstantAnalogRotation] by free-evolving $\mathcal{H}$
 
-
 The `wait` operation can be emulated with an $ZZ$- (Ising) or an $XY$-interaction:
 
 ```python exec="on" source="material-block" result="json"
