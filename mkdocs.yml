@@ -1,5 +1,6 @@
 site_name: Qadence
-repo_url: "https://gitlab.pasqal.com/pqs/qadence"
+repo_url: "https://github.com/pasqal-io/qadence/"
+site_url: "https://pasqal-io.github.io/qadence/"
 repo_name: "qadence"
 
 nav:
@@ -131,6 +132,10 @@ plugins:
           docstring_section_style: spacy
 
 - markdown-exec
+
+extra:
+ version:
+   provider: mike
 
 # To get nice tabs
 extra_css:

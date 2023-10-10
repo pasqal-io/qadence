@@ -26,7 +26,7 @@ programs**_ with tunable interaction defined on _**arbitrary qubit register layo
 * `QuantumModel`s to make `QuantumCircuit`s differentiable and runnable on a variety of different
   backends like state vector simulators, tensor network emulators and real devices.
 
-Documentation can be found here: [https://pasqal-qadence.readthedocs-hosted.com/en/latest](https://pasqal-qadence.readthedocs-hosted.com/en/latest).
+Documentation can be found here: [https://pasqal-io.github.io/qadence/latest/](https://pasqal-io.github.io/qadence/latest/).
 
 
 ## Citation
