@@ -5,6 +5,7 @@ programs**_ with tunable qubit interaction defined on _**arbitrary register topo
 
 [![pre-commit](https://github.com/pasqal-io/qadence/actions/workflows/lint.yml/badge.svg)](https://github.com/pasqal-io/qadence/actions/workflows/lint.yml)
 [![tests](https://github.com/pasqal-io/qadence/actions/workflows/test_fast.yml/badge.svg)](https://github.com/pasqal-io/qadence/actions/workflows/test_fast.yml)
+[![Build documentation](https://github.com/pasqal-io/qadence/actions/workflows/build_docs.yml/badge.svg)](https://github.com/pasqal-io/qadence/actions/workflows/build_docs.yml)
 
 ## Feature highlights
 
