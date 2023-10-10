@@ -18,7 +18,7 @@ jobs:
     name: Test Python 3.9
     runs-on: ubuntu-latest
     container:
-      image: seitzdom/pytorch-ubuntu:latest
+      image: pasqalofficial/qadence_fast:latest
     steps:
         - name: Checkout
           uses: actions/checkout@v4
