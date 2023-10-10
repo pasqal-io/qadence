@@ -5,7 +5,9 @@ programs**_ with tunable qubit interaction defined on _**arbitrary register topo
 
 [![pre-commit](https://github.com/pasqal-io/qadence/actions/workflows/lint.yml/badge.svg)](https://github.com/pasqal-io/qadence/actions/workflows/lint.yml)
 [![tests](https://github.com/pasqal-io/qadence/actions/workflows/test_fast.yml/badge.svg)](https://github.com/pasqal-io/qadence/actions/workflows/test_fast.yml)
-[![Build documentation](https://github.com/pasqal-io/qadence/actions/workflows/build_docs.yml/badge.svg)](https://github.com/pasqal-io/qadence/actions/workflows/build_docs.yml)
+[![Build documentation](https://github.com/pasqal-io/qadence/actions/workflows/build_docs.yml/badge.svg)](https://pasqal-io.github.io/qadence/latest)
+
+Documentation can be found [here](https://pasqal-io.github.io/qadence/latest).
 
 ## Feature highlights
 
@@ -23,10 +25,6 @@ programs**_ with tunable qubit interaction defined on _**arbitrary register topo
 * Out-of-the-box _**automatic differentiability**_ of quantum programs with [PyTorch](https://pytorch.org/) integration.
 
 * _**Efficient execution**_ on a variety of different purpose backends: from state vector simulators to tensor network emulators and real devices.
-
-## Documentation
-
-Lastest documentation can be found [here](https://pasqal-io.github.io/qadence/latest).
 
 ## Installation guide
 
