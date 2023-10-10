@@ -93,7 +93,7 @@ print(html_string(kron_xx, size="2,2")) # markdown-exec: hide
 
 For the digital case, it should be noted that `kron` and `chain` are semantically equivalent up to the diagrammatic representation as `chain` implicitly fills blank wires with identities.
 However, Qadence also supports *analog* blocks, for which composing sequentially or in parallel becomes non-equivalent. More
-about analog blocks can be found in the [digital-analog](/digital_analog_qc/analog-basics) section.
+about analog blocks can be found in the [digital-analog](../digital_analog_qc/analog-basics.md) section.
 
 - [**add**][qadence.blocks.utils.add] sums the corresponding matrix of
 each sub-block and results in a `AddBlock` type which can be used to construct Pauli operators.
@@ -164,7 +164,7 @@ More fine-grained control and better performance is provided via the high-level 
 Quantum programs in Qadence are constructed in two steps:
 
 1. Build a [`QuantumCircuit`][qadence.circuit.QuantumCircuit] which ties together a composite block and a register.
-2. Define a [`QuantumModel`](/tutorials/quantummodels) which differentiates, compiles and executes the circuit.
+2. Define a [`QuantumModel`](quantummodels.md) which differentiates, compiles and executes the circuit.
 
 `QuantumCircuit` is a central class in Qadence and circuits are abstract
 objects from the actual hardware/simulator that they are expected to be executed on.
@@ -183,11 +183,11 @@ print(f"circuit = {circuit}") # markdown-exec: hide
 
 !!! note "Registers and qubit supports"
     Registers can also be constructed from qubit coordinates to create arbitrary register
-    topologies. See details in the [digital-analog](/digital_analog_qc/analog-basics.md) section.
+    topologies. See details in the [digital-analog](../digital_analog_qc/analog-basics.md) section.
 	Qubit supports are subsets of the circuit register tied to blocks.
 
 
-`QuantumModel` is another central class in Qadence. It specifies a [Backend](/tutorials/backend.md) for
+`QuantumModel` is another central class in Qadence. It specifies a [Backend](backend.md) for
 the differentiation, compilation and execution of the abstract circuit.
 
 ```python exec="on" source="material-block" result="json"
@@ -201,4 +201,4 @@ xs = model.sample(n_shots=100)
 print(f"{xs = }") # markdown-exec: hide
 ```
 
-For more details on `QuantumModel`, see [here](/tutorials/quantummodels).
+For more details on `QuantumModel`, see [here](quantummodels.md).
