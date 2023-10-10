@@ -19,6 +19,6 @@ jobs:
     steps:
     - name: debug
       run: |
-        VERSION=${{ github.ref }}
-        ls $VERSION
+        VERSION=${{ github.ref_name }}
+        echo $VERSION
  
