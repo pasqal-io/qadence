@@ -1,4 +1,4 @@
-name: Build documentation
+name: Build & deploy documentation
 
 on:
   push:
@@ -19,7 +19,8 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
 
-    - uses: actions/checkout@v4
+    - name: Checkout Qadence
+      uses: actions/checkout@v4
 
     - name: Install JetBrains Mono font
       run: |

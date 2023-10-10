@@ -1,8 +1,8 @@
-name: Upload Release to PyPI
+name: Upload release to PyPI
 
 on:
-  release:
-    types: [released]
+  push:
+    tag: "v*"
 
 jobs:
   deploy:
@@ -12,19 +12,19 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: ${{ github.ref }}
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.10
+
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install setuptools wheel hatch
+          pip install hatch
+
       - name: Build and publish package
         shell: bash
-        run: hatch build
-             export PYPI_URL=https://upload.pypi.org/legacy/
-             export HATCH_PYPI_REPO=$PYPI_URL
-             export HATCH_PYPI_USER=$PYPI_USERNAME
-             export HATCH_PYPI_AUTH=$PYPI_PASSWORD
-             hatch publish
+        run: |
+          hatch build
+          hatch publish
