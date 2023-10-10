@@ -105,4 +105,4 @@ jobs:
         echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
         git config user.name "GitHub Actions"
         git config user.email "actions@github.com"
-        mike deploy --push --update-aliases $VERSION latest
+        hatch -v run docs:mike deploy --push --update-aliases $VERSION latest
