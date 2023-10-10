@@ -29,7 +29,7 @@ The [`DifferentiableBackend`][qadence.backends.pytorch_wrapper.DifferentiableBac
 for the given backend. This can be chosen from two types:
 
 - Automatic differentiation (AD): available for PyTorch based backends (PyQTorch).
-- Parameter Shift Rules (PSR): available for all backends. See this [section](/advanced_tutorials/differentiability) for more information on differentiability and PSR.
+- Parameter Shift Rules (PSR): available for all backends. See this [section](../advanced_tutorials/differentiability.md) for more information on differentiability and PSR.
 
 In practice, only a `diff_mode` should be provided in the `QuantumModel`. Please note that `diff_mode` defaults to `None`:
 
