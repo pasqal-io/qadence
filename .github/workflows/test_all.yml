@@ -13,7 +13,7 @@ concurrency:
 jobs:
   test_qadence_ubuntu:
     name: Test Qadence (ubuntu)
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ["3.9", "3.10"]
