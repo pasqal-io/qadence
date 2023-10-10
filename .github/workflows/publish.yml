@@ -2,7 +2,8 @@ name: Upload release to PyPI
 
 on:
   push:
-    tag: "v*"
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
 
 jobs:
   deploy:
