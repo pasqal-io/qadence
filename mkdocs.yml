@@ -26,7 +26,6 @@ nav:
       - Pulse-level Programming with Pulser: digital_analog_qc/pulser-basic.md
     - DAQC Transform:
       - CNOT with Interacting Qubits: digital_analog_qc/daqc-cnot.md
-      - Digital-analog QFT: digital_analog_qc/daqc-qft.md
 
   - Variational Quantum Algorithms:
     - qml/index.md
