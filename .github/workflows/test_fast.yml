@@ -15,25 +15,26 @@ concurrency:
 
 jobs:
   test_qadence_39:
+    name: Test Python 3.9
     runs-on: ubuntu-latest
     container:
-        image: pasqalofficial/qadence:latest
+      image: pasqalofficial/qadence:latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.9"
-      - name: Install hatch
-        shell: bash
-        run: |
-          python -m pip install hatch
-      - name: Perform unit tests
-        shell: bash
-        run: |
-          python -m hatch -v run test "not slow"
-      # - name: Test docs
-      #   shell: bash
-      #   run: |
-      #     python -m hatch -e docs run mkdocs build --clean --strict
+        - name: Checkout
+          uses: actions/checkout@v4
+        - name: Set up Python
+          uses: actions/setup-python@v4
+          with:
+            python-version: "3.9"
+        - name: Install hatch
+          shell: bash
+          run: |
+            python -m pip install hatch
+        - name: Perform unit tests
+          shell: bash
+          run: |
+            python -m hatch -v run test "not slow"
+        # - name: Test docs
+        #   shell: bash
+        #   run: |
+        #     python -m hatch -e docs run mkdocs build --clean --strict
