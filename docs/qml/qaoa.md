@@ -1,14 +1,12 @@
 In this tutorial, we show how to solve the maximum cut (MaxCut) combinatorial
 optimization problem on a graph using the Quantum Approximate Optimization
-Algorithm (QAOA[^1]), introduced in 2014. This showcases the flexibility of
-Qadence for implementing variational algorithms without classical input
-data.
+Algorithm (QAOA[^1]), introduced in 2014.
 
 Given an arbitrary graph, the MaxCut problem consists in finding a cut
 partitioning the nodes into two sets, such that the number edges that are the
 cut is maximized. This is a very common combinatorial problem, the interested
-reader can refer to this introduction.
-Let's first generate a random graph using the `networkx` library.
+reader can refer to this introduction. Let's first generate a random graph
+using the `networkx` library.
 
 ```python exec="on" source="material-block" html="1" session="qaoa"
 import numpy as np

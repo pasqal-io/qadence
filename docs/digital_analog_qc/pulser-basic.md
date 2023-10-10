@@ -1,11 +1,7 @@
-!!! warning
-    This tutorial needs to be fixed.
-
-
 Qadence offers a direct interface with Pulser[^1], an open-source pulse-level interface written in Python and specifically designed for programming neutral atom quantum computers.
 
-Using directly Pulser requires deep knowledge on pulse-level programming and on how neutral atom devices work. Qadence abstracts out this complexity by using the familiar block-based interface for building pulse sequences in Pulser while leaving the possibility
-to directly manipulate them if required.
+Using directly Pulser requires deep knowledge on pulse-level programming and on how neutral atom devices work. Qadence abstracts this complexity out by using the familiar block-based interface for building pulse sequences in Pulser while leaving the possibility
+to directly manipulate them if required by, for instance, optimal pulse shaping.
 
 !!! note
     The Pulser backend is still experimental and the interface might change in the future.
@@ -22,11 +18,13 @@ $$
 \mathcal{H}_{int} = \sum_{i<j} \frac{C_6}{|R_i - R_j|^6} \hat{n}_i \hat{n}_j
 $$
 
-where $C_6$ is an interaction coefficient which depends on the principal quantum number of
-the neutral atom system, $R_i$ are the atomic position in Cartesian coordinates
+where $C_6$ is an interaction coefficient which depends on the principal quantum number of chosen
+the neutral atom system, $R_i$ are the atomic positions in Cartesian coordinates
 and $\hat{n} = \frac{1-\sigma^z_i}{2}$ is the number operator.
 
-Notice that this interaction is **always-on** for any computation performed with the Pulser backend and cannot be switched off.
+!!! note
+    The Ising interaction is **always-on** for all computations performed with the
+    Pulser backend. It cannot be switched off.
 
 ## Pulse sequences with Qadence
 

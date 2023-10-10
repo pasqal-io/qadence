@@ -1,5 +1,6 @@
 **Qadence** is a Python package that provides a simple interface to build _**digital-analog quantum
-programs**_ with tunable qubit interaction defined on _**arbitrary register topologies**_ realizable on neutral atom devices.
+programs**_ with tunable qubit interaction defined on _**arbitrary register topologies**_
+realizable on neutral atom devices.
 
 ## Feature highlights
 
@@ -18,28 +19,7 @@ programs**_ with tunable qubit interaction defined on _**arbitrary register topo
 
 * _**Efficient execution**_ on a variety of different purpose backends: from state vector simulators to tensor network emulators and real devices.
 
-In following are some examples of Qadence possibilites in the digital, analog and digital-analog paradigms.
-
-## Sampling the canonical Bell state
-
-This example illustrates how to prepare a [Bell state](https://en.wikipedia.org/wiki/Bell_state) using digital gates and sampling from the outcome bitstring distribution:
-
-```python exec="on" source="material-block" result="json"
-import torch # markdown-exec: hide
-torch.manual_seed(0) # markdown-exec: hide
-from qadence import CNOT, H, chain, sample
-
-# Preparing a Bell state by composing a Hadamard and CNOT gates in sequence.
-bell_state = chain(H(0), CNOT(0,1))
-
-# Sample with 100 shots.
-samples = sample(bell_state, n_shots=100)
-print(f"samples = {samples}") # markdown-exec: hide
-from qadence.divergences import js_divergence # markdown-exec: hide
-from collections import Counter # markdown-exec: hide
-js = js_divergence(samples[0], Counter({"00":50, "11":50})) # markdown-exec: hide
-assert js < 0.005 # markdown-exec: hide
-```
+In following are some examples of Qadence possibilites in the analog, digital-analog and digital paradigms.
 
 ## Analog emulation of a perfect state transfer
 
@@ -101,6 +81,27 @@ samples = sample(register, AnalogRX(pi))
 print(f"distance =  5: {samples = }") # markdown-exec: hide
 js = js_divergence(samples[0], Counter({"01":33, "10":33, "00":33, "11":1})) # markdown-exec: hide
 assert js < 0.05 # markdown-exec: hide```
+```
+
+## Sampling the canonical Bell state
+
+This example illustrates how to prepare a [Bell state](https://en.wikipedia.org/wiki/Bell_state) using digital gates and sampling from the outcome bitstring distribution:
+
+```python exec="on" source="material-block" result="json"
+import torch # markdown-exec: hide
+torch.manual_seed(0) # markdown-exec: hide
+from qadence import CNOT, H, chain, sample
+
+# Preparing a Bell state by composing a Hadamard and CNOT gates in sequence.
+bell_state = chain(H(0), CNOT(0,1))
+
+# Sample with 100 shots.
+samples = sample(bell_state, n_shots=100)
+print(f"samples = {samples}") # markdown-exec: hide
+from qadence.divergences import js_divergence # markdown-exec: hide
+from collections import Counter # markdown-exec: hide
+js = js_divergence(samples[0], Counter({"00":50, "11":50})) # markdown-exec: hide
+assert js < 0.005 # markdown-exec: hide
 ```
 
 ## Further resources

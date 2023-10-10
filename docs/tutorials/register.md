@@ -114,9 +114,8 @@ print(f"{reg.edges = }") # markdown-exec: hide
 It is possible to customize qubit interaction through the [`add_interaction`][qadence.transpile.emulate.add_interaction] method.
 In that case, `Register.coords` are accessible from the concrete graph:
 
-
 ```python exec="on" source="material-block" result="json" session="reg-usage"
-print(f"{reg.coords = }") # markdown-exec: hide
+print(f"{reg.coords = }")
 ```
 
 More details about their usage in the digital-analog paradigm can be found in the [digital-analog basics](/digital_analog_qc/analog-basics) section.
