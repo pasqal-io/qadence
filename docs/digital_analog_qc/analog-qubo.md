@@ -161,10 +161,10 @@ for i in range(20):
 # Sample and visualize the optimal solution.
 model.reset_vparams(res.x)
 optimal_count = model.sample({}, n_shots=1000)[0]
-print(f"optimal_count_dict = {optimal_count}") # markdown-exec: hide
+print(f"optimal_count = {optimal_count}") # markdown-exec: hide
 ```
 
-Finally, plot to solution:
+Finally, plot the solution:
 
 ```python exec="on" source="material-block" html="1" session="qubo"
 fig, axs = plt.subplots(1, 2, figsize=(12, 4)) # markdown-exec: hide
