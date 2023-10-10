@@ -14,17 +14,17 @@ nav:
     - State Conventions: tutorials/state_conventions.md
     - State Initialization: tutorials/state_init.md
     - Arbitrary Hamiltonians: tutorials/hamiltonians.md
-    - Wavefunction Overlaps: tutorials/overlap.md
+    - Wavefunction overlaps: tutorials/overlap.md
     - Serialization: tutorials/serializ_and_prep.md
     - Backends: tutorials/backends.md
 
-  - Digital-Analog Quantum Computing:
+  - Digital-analog quantum computing:
     - digital_analog_qc/daqc-basics.md
     - Digital-Analog Emulation:
       - Basics: digital_analog_qc/analog-basics.md
-      - Solve a QUBO Problem: digital_analog_qc/analog-qubo.md
+      - Solve a QUBO problem: digital_analog_qc/analog-qubo.md
       - Pulse-level programming with Pulser: digital_analog_qc/pulser-basic.md
-    - DAQC Transform:
+    - DAQC transform:
       - CNOT with interacting qubits: digital_analog_qc/daqc-cnot.md
 
   - Variational Quantum Algorithms:

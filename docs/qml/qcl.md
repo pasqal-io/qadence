@@ -1,6 +1,6 @@
 This tutorial shows how to apply `qadence` for solving a basic quantum
 machine learning application: fitting a simple function with the
-quantum circuit learning (QCL) [^1] algorithm.
+quantum circuit learning[^1] (QCL) algorithm.
 
 QCL is a supervised quantum machine learning algorithm that uses a
 parametrized quantum neural network to learn the behavior of an arbitrary

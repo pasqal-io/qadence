@@ -99,7 +99,7 @@ At variance with other backends, the Pulser one provides the concept of `Device`
 the Pulser. Check [this](https://pulser.readthedocs.io/en/stable/tutorials/virtual_devices.html) tutorial for more
 information.
 
-A `Device` instance encapsulate all the properties defining a real neutral atoms processor, including but not limited
+A `Device` instance encapsulates all the properties for the definition of a real neutral atoms processor, including but not limited
 to the maximum laser amplitude for the pulses, the maximum distance between two qubits and the maximum duration of the pulse.
 
 Qadence offers a simplified interface with only two devices which are detailed [here](../backends/pulser.md):
@@ -140,7 +140,7 @@ print(sample)
 
 ## Create your own gate
 
-A big advantage of using the block-based interface if `qadence` is that it makes it easy to create complex
+A big advantage of using the block-based interface if  Qadence is that it makes it easy to create complex
 operations from simple ones as a block composition. In the following, we use the entanglement operation as an example.
 
 The operation consists of moving _all_ the qubits to the `X` basis having the atoms' interaction perform a controlled-Z operation
