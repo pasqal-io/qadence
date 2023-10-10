@@ -54,8 +54,8 @@ Below, the QAOA quantum circuit with the cost and mixing components is defined u
 into digital single and two-qubits operations via the `.digital_decomposition()` method.
 The decomposition is exact since the Hamiltonian generator is diagonal.
 
-```python exec="on" source="material-block" html="1" session="qaoa"
-from qadence import Zero, I, HamEvo, tag, chain, QuantumCircuit, RX, Z
+```python exec="on" source="material-block" result="json" session="qaoa"
+from qadence import Zero, I, HamEvo, tag, kron, chain, QuantumCircuit, RX, Z
 
 # generators associated with the edges of the given graph
 zz_ops = [kron(Z(edge[0]), Z(edge[1])) for edge in graph.edges()]
@@ -107,12 +107,12 @@ quantum circuit and the sum runs over the edges of the graph $N_{\mathcal{E}}$.
 import torch
 from qadence import QuantumModel
 
-model = QuantumModel(circuit, backend="pyqtorch", observable=zz_ops, diff_mode='gpsr')
+torch.manual_seed(seed)
 
-_ = torch.manual_seed(seed)
 
 def loss_function(_model: QuantumModel):
-    expval_ops = model.expectation().squeeze()
+
+    expval_ops = _model.expectation().squeeze()
 
     # this corresponds to the MaxCut cost by definition
     # with negative sign in front to perform maximization
@@ -123,6 +123,7 @@ def loss_function(_model: QuantumModel):
     return -1.0 * expval
 
 # initialize the parameters to random values
+model = QuantumModel(circuit, observable=zz_ops)
 model.reset_vparams(torch.rand(model.num_vparams))
 initial_loss = loss_function(model)
 print(f"Initial loss: {initial_loss}")
@@ -151,7 +152,7 @@ Given the trained quantum model, one needs to sample the resulting quantum state
 recover the bitstring with the highest probability which corresponds to the maximum
 cut of the graph.
 
-```python exec="on" source="material-block" html="1" session="qaoa"
+```python exec="on" source="material-block" result="json" session="qaoa"
 samples = model.sample(n_shots=100)[0]
 most_frequent = max(samples, key=samples.get)
 
