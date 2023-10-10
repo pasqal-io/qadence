@@ -102,7 +102,6 @@ jobs:
         pip install hatch
     - name: Deploy docs
       run: |
-        echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
         git config user.name "GitHub Actions"
         git config user.email "actions@github.com"
-        hatch -v run docs:mike deploy --push --update-aliases $VERSION latest
+        hatch -v run docs:mike deploy --push --update-aliases ${{ github.ref_name }} latest
