@@ -1,37 +1,69 @@
 # Qadence
 
-*Qadence* is a Python package that provides a simple interface to build _**digital-analog quantum
-programs**_ with tunable interaction defined on _**arbitrary qubit register layouts**_.
+**Qadence** is a Python package that provides a simple interface to build _**digital-analog quantum
+programs**_ with tunable qubit interaction defined on _**arbitrary register topologies**_ realizable on neutral atom devices.
 
 [![pre-commit](https://github.com/pasqal-io/qadence/actions/workflows/lint.yml/badge.svg)](https://github.com/pasqal-io/qadence/actions/workflows/lint.yml)
 [![tests](https://github.com/pasqal-io/qadence/actions/workflows/test_fast.yml/badge.svg)](https://github.com/pasqal-io/qadence/actions/workflows/test_fast.yml)
+[![Build documentation](https://github.com/pasqal-io/qadence/actions/workflows/build_docs.yml/badge.svg)](https://pasqal-io.github.io/qadence/latest)
+
+Documentation can be found [here](https://pasqal-io.github.io/qadence/latest).
 
 ## Feature highlights
 
 * A [block-based system](tutorials/getting_started.md) for composing _**complex digital-analog
-  programs**_ in a flexible and extensible manner. Heavily inspired by
-  [`Yao.jl`](https://github.com/QuantumBFS/Yao.jl) and functional programming concepts.
+  programs**_ in a flexible and scalable manner, inspired by the Julia quantum SDK
+  [Yao.jl](https://github.com/QuantumBFS/Yao.jl) and functional programming concepts.
 
-* A [simple interface](digital_analog_qc/analog-basics.md) to work with _**interacting qubit systems**_
-  using [arbitrary qubit registers](tutorials/register.md).
+* A [simple interface](digital_analog_qc/analog-basics.md) to work with _**interacting neutral-atom qubit systems**_
+  using [arbitrary registers topologies](tutorials/register.md).
 
-* Intuitive, [expression-based system](tutorials/parameters.md) built on top of `sympy` to construct
-  _**parametric quantum programs**_.
+* An intuitive [expression-based system](tutorials/parameters.md) developed on top of the symbolic library [Sympy](https://www.sympy.org/en/index.html) to construct _**parametric quantum programs**_ easily.
 
-* [Higher-order generalized parameter shift](link to psr tutorial) rules for _**differentiating
-  arbitrary quantum operations**_ on real hardware.
+* [High-order generalized parameter shift rules](link to psr tutorial) for _**differentiating parametrized quantum operations**_.
 
-* Out-of-the-box automatic differentiability of quantum programs using [https://pytorch.org](https://pytorch.org)
+* Out-of-the-box _**automatic differentiability**_ of quantum programs with [PyTorch](https://pytorch.org/) integration.
 
-* `QuantumModel`s to make `QuantumCircuit`s differentiable and runnable on a variety of different
-  backends like state vector simulators, tensor network emulators and real devices.
+* _**Efficient execution**_ on a variety of different purpose backends: from state vector simulators to tensor network emulators and real devices.
 
-Documentation can be found here: [https://pasqal-io.github.io/qadence/latest/](https://pasqal-io.github.io/qadence/latest/).
+## Installation guide
 
+Qadence can be installed from PyPI with `pip` as follows:
+
+```bash
+pip install qadence
+```
+
+The default backend for Qadence is [PyQTorch](https://github.com/pasqal-io/pyqtorch), a differentiable state vector simulator for digital-analog simulation. It is possible to install additional backends and the circuit visualization library using the following extras:
+
+* `braket`: the [Braket](https://github.com/amazon-braket/amazon-braket-sdk-python) backend.
+* `pulser`: the [Pulser](https://github.com/pasqal-io/Pulser) backend for composing, simulating and executing pulse sequences for neutral-atom quantum devices.
+* `visualization`: to display diagrammatically quantum circuits.
+
+by running:
+
+```bash
+pip install qadence[braket, pulser, visualization]
+```
+
+!!! warning
+    In order to correctly install the `visualization` extra, the `graphviz` package needs to be installed
+    in your system:
+
+    ```bash
+    # on Ubuntu
+    sudo apt install graphviz
+
+    # on MacOS
+    brew install graphviz
+
+    # via conda
+    conda install python-graphviz
+    ```
 
 ## Citation
 
-If you use Qadence for a publication, we kindly ask you to cite our work using the bibtex citation:
+If you use Qadence for a publication, we kindly ask you to cite our work using the following BibTex entry:
 
 ```
 @misc{qadence2023pasqal,
@@ -39,36 +71,4 @@ If you use Qadence for a publication, we kindly ask you to cite our work using t
   title = {Qadence: {A} {D}igital-analog quantum programming interface.},
   year = {2023}
 }
-```
-
-
-## Installation guide
-
-Qadence can be install with `pip` as follows:
-
-```bash
-pip install qadence[pulser,visualization]
-```
-
-The default backend for qadence is [`pyqtorch`](https://github.com/pasqal-io/pyqtorch) (a
-differentiable state vector simulator).  You can install one or all of the following additional
-backends and the circuit visualization library using the following extras:
-
-* `braket`: install the Amazon Braket quantum backend
-* `pulser`: install the [Pulser](https://github.com/pasqal-io/Pulser) backend. Pulser is a framework
-  for composing, simulating and executing pulse sequences for neutral-atom quantum devices.
-* `visualization`: install the library necessary to visualize quantum circuits.
-
-**NOTE**: In order to correctly install the "visualization" extra, you need to have `graphviz` installed
-in your system. This depends on the operating system you are using:
-
-```bash
-# on Ubuntu
-sudo apt install graphviz
-
-# on MacOS
-brew install graphviz
-
-# via conda
-conda install python-graphviz
 ```
