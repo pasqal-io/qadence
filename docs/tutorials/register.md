@@ -84,6 +84,7 @@ plt.clf() # markdown-exec: hide
 fig = plt.gcf() # markdown-exec: hide
 fig.set_size_inches(4, 2) # markdown-exec: hide
 plt.tight_layout() # markdown-exec: hide
+reg.draw(show=False)
 from docs import docsutils # markdown-exec: hide
 print(docsutils.fig_to_html(fig)) # markdown-exec: hide
 ```
