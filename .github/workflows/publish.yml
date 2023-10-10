@@ -1,8 +1,16 @@
 name: Upload release to PyPI
 
+# on:
+#   push:
+#     tag: "v*"
 on:
   push:
-    tag: "v*"
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch: {}
 
 jobs:
   deploy:
