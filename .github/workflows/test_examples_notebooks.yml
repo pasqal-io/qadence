@@ -1,4 +1,4 @@
-name: Run Qadence notebooks tests.
+name: Run Qadence example and notebook tests.
 
 on:
   push:
@@ -8,7 +8,11 @@ on:
     branches:
       - main
   paths:
-    - examples/notebooks
+    - examples
+    - notebooks
+  schedule:
+    # 03:00 every Saturday morning
+    - cron: '0 3 * * 6'
   workflow_dispatch: {}
 
 concurrency:
@@ -28,6 +32,9 @@ jobs:
     - name: Install Hatch
       run: |
         pip install hatch
+    - name: Run example tests
+      run: |
+        hatch -v run test-examples
     - name: Run notebooks tests
       run: |
         hatch -v run test-notebooks

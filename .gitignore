@@ -49,12 +49,28 @@ runs/
 # Mkdocs
 site/
 
-# converted notebooks
-docs/**/*.py
-
 # pt files
 *.pt
 
 # event files
 events.out.tfevents.*
 /examples/notebooks/onboarding_sandbox.ipynb
+
+# latex
+*.aux
+*.lof
+*.log
+*.lot
+*.fls
+*.out
+*.toc
+*.fmt
+*.fot
+*.cb
+*.cb2
+*.lb
+*.pdf
+*.ps
+*.dvi
+
+*.gv

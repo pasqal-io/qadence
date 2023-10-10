@@ -315,13 +315,13 @@ def block_to_tensor(
 
     Examples:
     ```python exec="on" source="material-block" result="json"
-    from qadence import hea, total_magnetization, block_to_tensor
+    from qadence import hea, hamiltonian_factory, Z, block_to_tensor
 
     block = hea(2,2)
     print(block_to_tensor(block))
 
     # In case you have a diagonal observable, you can use
-    obs = total_magnetization(2)
+    obs = hamiltonian_factory(2, detuning = Z)
     print(block_to_tensor(obs, tensor_type="SparseDiagonal"))
     ```
     """
