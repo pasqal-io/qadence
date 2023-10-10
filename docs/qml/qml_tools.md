@@ -4,12 +4,12 @@ quantum machine learning algorithms, including:
 * a set of constructors for circuits commonly used in quantum machine learning
 * a set of tools for optimizing quantum neural networks and loading classical data into a QML algorithm
 
-# Quantum machine learning constructors
+## Quantum machine learning constructors
 
 Besides the [arbitrary Hamiltonian constructors](../tutorials/hamiltonians.md), Qadence also provides a complete set of
 program constructors useful for digital-analog quantum machine learning programs.
 
-## Feature maps
+### Feature maps
 
 A few feature maps are directly available for loading classical data into quantum circuits by encoding them
 into gate rotation angles.
@@ -29,7 +29,7 @@ fm = feature_map(n_qubits, fm_type="tower")
 print(f"Tower {fm}") # markdown-exec: hide
 ```
 
-## Hardware-efficient ansatz
+### Hardware-efficient ansatz
 
 Ansatze blocks for quantum machine-learning are typically built following the Hardware-Efficient Ansatz formalism (HEA).
 Both fully digital and digital-analog HEAs can easily be built with the `hea` function. By default,
@@ -110,9 +110,9 @@ from qadence.draw import html_string # markdown-exec: hide
 print(html_string(ansatz, size="4,4")) # markdown-exec: hide
 ```
 
-# Machine Learning Tools
+## Machine Learning Tools
 
-## Dataloaders
+### Dataloaders
 
 When using `qadence`, you can supply classical data to a quantum machine learning
 algorithm by using a standard PyTorch `DataLoader` instance. Qadence also provides
@@ -161,7 +161,7 @@ for i in range(n_epochs):
 
 ```
 
-## Optimization routines
+### Optimization routines
 
 For training QML models, `qadence` also offers a few out-of-the-box routines for optimizing differentiable
 models like `QNN`s and `QuantumModel`s containing either *trainable* and/or *non-trainable* parameters
@@ -214,7 +214,7 @@ config = TrainConfig(
 
 Let's see it in action with a simple example.
 
-### Fitting a funtion with a QNN using `ml_tools`
+#### Fitting a funtion with a QNN using `ml_tools`
 
 Let's look at a complete example of how to use `train_with_grad` now.
 
@@ -276,7 +276,7 @@ plt.plot(model(input_values).detach().numpy())
 For users who want to use the low-level API of `qadence`, here is the example from above
 written without `train_with_grad`.
 
-### Fitting a function - Low-level API
+#### Fitting a function - Low-level API
 
 ```python exec="on" source="material-block" result="json"
 from pathlib import Path
