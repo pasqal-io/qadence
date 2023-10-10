@@ -116,8 +116,8 @@ print(html_string(ansatz, size="4,4")) # markdown-exec: hide
 
 When using `qadence`, you can supply classical data to a quantum machine learning
 algorithm by using a standard PyTorch `DataLoader` instance. Qadence also provides
-a wrapper utility [`DictDataLoader`][qadence.ml_tools.data.DictDataLoader] which allows
-to build dictionaries of `DataLoader`s and easily iterate over them.
+the `DictDataLoader` convenience class which allows
+to build dictionaries of `DataLoader`s instances and easily iterate over them.
 
 ```python exec="on" source="material-block" result="json"
 import torch
