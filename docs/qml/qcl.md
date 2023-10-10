@@ -72,7 +72,7 @@ ansatz = qd.hea(n_qubits, depth=n_qubits, strategy=qd.Strategy.SDAQC)
 ansatz = qd.tag(ansatz, "ansatz")
 
 # total magnetization observable
-observable = qd.total_magnetization(n_qubits)
+observable = qd.hamiltonian_factory(n_qubits, detuning = qd.Z)
 
 circuit = qd.QuantumCircuit(n_qubits, feature_map, ansatz)
 model = qd.QNN(circuit, [observable])

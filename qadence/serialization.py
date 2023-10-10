@@ -104,7 +104,7 @@ def serialize(obj: SUPPORTED_TYPES, save_params: bool = False) -> dict:
     Examples:
     ```python exec="on" source="material-block" result="json"
     import torch
-    from qadence import serialize, deserialize, hea, total_magnetization
+    from qadence import serialize, deserialize, hea, hamiltonian_factory, Z
     from qadence import QuantumCircuit, QuantumModel
 
     n_qubits = 2
@@ -120,7 +120,7 @@ def serialize(obj: SUPPORTED_TYPES, save_params: bool = False) -> dict:
     assert qc == qc_deserialized
 
     ## Finally, let's wrap it in a QuantumModel
-    obs = total_magnetization(n_qubits)
+    obs = hamiltonian_factory(n_qubits, detuning = Z)
     qm = QuantumModel(qc, obs, backend='pyqtorch', diff_mode='ad')
 
     qm_dict = serialize(qm)
@@ -165,7 +165,7 @@ def deserialize(d: dict, as_torch: bool = False) -> SUPPORTED_TYPES:
     Examples:
     ```python exec="on" source="material-block" result="json"
     import torch
-    from qadence import serialize, deserialize, hea, total_magnetization
+    from qadence import serialize, deserialize, hea, hamiltonian_factory, Z
     from qadence import QuantumCircuit, QuantumModel
 
     n_qubits = 2
@@ -181,7 +181,7 @@ def deserialize(d: dict, as_torch: bool = False) -> SUPPORTED_TYPES:
     assert qc == qc_deserialized
 
     ## Finally, let's wrap it in a QuantumModel
-    obs = total_magnetization(n_qubits)
+    obs = hamiltonian_factory(n_qubits, detuning = Z)
     qm = QuantumModel(qc, obs, backend='pyqtorch', diff_mode='ad')
 
     qm_dict = serialize(qm)
@@ -263,7 +263,7 @@ def save(
     from pathlib import Path
     import os
 
-    from qadence import save, load, hea, total_magnetization
+    from qadence import save, load, hea, hamiltonian_factory, Z
     from qadence import QuantumCircuit, QuantumModel
 
     n_qubits = 2
@@ -275,7 +275,7 @@ def save(
     qc == loaded_qc
     os.remove('circ.json')
     ## Let's wrap it in a QuantumModel and store that
-    obs = total_magnetization(n_qubits)
+    obs = hamiltonian_factory(n_qubits, detuning = Z)
     qm = QuantumModel(qc, obs, backend='pyqtorch', diff_mode='ad')
     save(qm, folder= '.',file_name= 'quantum_model')
     qm_loaded = load('quantum_model.json')
@@ -317,7 +317,7 @@ def load(file_path: str | Path, map_location: str = "cpu") -> SUPPORTED_TYPES:
     from pathlib import Path
     import os
 
-    from qadence import save, load, hea, total_magnetization
+    from qadence import save, load, hea, hamiltonian_factory, Z
     from qadence import QuantumCircuit, QuantumModel
 
     n_qubits = 2
@@ -329,7 +329,7 @@ def load(file_path: str | Path, map_location: str = "cpu") -> SUPPORTED_TYPES:
     qc == loaded_qc
     os.remove('circ.json')
     ## Let's wrap it in a QuantumModel and store that
-    obs = total_magnetization(n_qubits)
+    obs = hamiltonian_factory(n_qubits, detuning = Z)
     qm = QuantumModel(qc, obs, backend='pyqtorch', diff_mode='ad')
     save(qm, folder= '.',file_name= 'quantum_model')
     qm_loaded = load('quantum_model.json')

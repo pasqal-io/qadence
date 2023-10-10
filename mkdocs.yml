@@ -1,22 +1,25 @@
 site_name: Qadence
-repo_url: "https://gitlab.pasqal.com/pqs/qadence"
+repo_url: "https://github.com/pasqal-io/qadence/"
+site_url: "https://pasqal-io.github.io/qadence/"
 repo_name: "qadence"
 
 nav:
 
   - Qadence:
-    - index.md
+    - Qadence: index.md
     - Getting Started: tutorials/getting_started.md
     - Quantum Models: tutorials/quantummodels.md
     - Parametric Programs: tutorials/parameters.md
     - Quantum Registers: tutorials/register.md
+    - State Conventions: tutorials/state_conventions.md
+    - State Initialization: tutorials/state_init.md
     - Arbitrary Hamiltonians: tutorials/hamiltonians.md
     - Wavefunction Overlaps: tutorials/overlap.md
-    - Program Constructors, States & Serialization: tutorials/serializ_and_prep.md
+    - Serialization: tutorials/serializ_and_prep.md
     - Backends: tutorials/backends.md
-    - State Conventions: tutorials/state_conventions.md
+    - Tools for Classical and Quantum Machine Learning: tutorials/qml_tools.md
 
-  - Digital-Analog:
+  - Digital-Analog Quantum Computing:
     - digital_analog_qc/daqc-basics.md
     - Digital-Analog Emulation:
       - Basics: digital_analog_qc/analog-basics.md
@@ -128,9 +131,11 @@ plugins:
           merge_init_into_class: true
           docstring_section_style: spacy
 
-- mkdocs-jupyter:
-    theme: light
 - markdown-exec
+
+extra:
+ version:
+   provider: mike
 
 # To get nice tabs
 extra_css:

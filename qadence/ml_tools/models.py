@@ -60,14 +60,14 @@ class TransformedModule(torch.nn.Module):
     from qadence.models import QNN, TransformedModule
     from qadence.circuit import QuantumCircuit
     from qadence.blocks import chain
-    from qadence.constructors import total_magnetization, hea
-    from qadence import Parameter, QuantumCircuit
+    from qadence.constructors import hamiltonian_factory, hea
+    from qadence import Parameter, QuantumCircuit, Z
 
     n_qubits = 2
     phi = Parameter("phi", trainable=False)
     fm = chain(*[RY(i, phi) for i in range(n_qubits)])
     ansatz = hea(n_qubits=n_qubits, depth=3)
-    observable = total_magnetization(n_qubits)
+    observable = hamiltonian_factory(n_qubits, detuning = Z)
     circuit = QuantumCircuit(n_qubits, fm, ansatz)
 
     model = QNN(circuit, observable, backend="pyqtorch", diff_mode="ad")

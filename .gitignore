@@ -49,9 +49,6 @@ runs/
 # Mkdocs
 site/
 
-# converted notebooks
-docs/**/*.py
-
 # pt files
 *.pt
 

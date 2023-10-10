@@ -34,10 +34,10 @@ RealisticDevice = PulserDevice(
     channel_objects=(
         Rydberg.Global(
             max_abs_detuning=2 * pi * 4,
-            max_amp=2 * pi * 3,
+            max_amp=2 * pi * 1.5,
             clock_period=4,
             min_duration=16,
-            max_duration=2**26,
+            max_duration=4000,
             mod_bandwidth=16,
             eom_config=RydbergEOM(
                 limiting_beam=RydbergBeam.RED,

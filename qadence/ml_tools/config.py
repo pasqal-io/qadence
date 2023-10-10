@@ -38,6 +38,8 @@ class TrainConfig:
     """A boolean function which evaluates a given validation metric is satisfied"""
     trainstop_criterion: Optional[Callable] = None
     """A boolean function which evaluates a given training stopping metric is satisfied"""
+    batch_size: int = 1
+    """The batch_size to use when passing a list/tuple of torch.Tensors."""
 
     def __post_init__(self) -> None:
         if self.folder:

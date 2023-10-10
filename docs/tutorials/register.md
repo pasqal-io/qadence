@@ -1,3 +1,7 @@
+In Qadence, quantum programs can be executed by specifying the layout of a register of resources as a lattice.
+Built-in [`Register`][qadence.register.Register] types can be used or constructed for arbitrary topologies.
+Common register topologies are available and illustrated in the plot below.
+
 ```python exec="on" html="1"
 import numpy as np
 import matplotlib.pyplot as plt
@@ -45,15 +49,10 @@ from docs import docsutils # markdown-exec: hide
 print(docsutils.fig_to_html(fig)) # markdown-exec: hide
 ```
 
-To construct programs that work with interacting qubit systems the
-[`Register`][qadence.register.Register] lets you construct arbitrary topologies of qubit registers.
+## Building and drawing registers
 
-Qadence provides a few commonly used register lattices, such as `"line"` or `"rectangular_lattice"`.
-The available topologies are shown in the plot above.
+Built-in topologies are directly accessible in the `Register`:
 
-## Building registers
-
-As an example, lets construct a honeycomb lattice and draw it:
 ```python exec="on" source="material-block" html="1"
 from qadence import Register
 
@@ -67,8 +66,10 @@ fig.set_size_inches(3, 3) # markdown-exec: hide
 print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
 ```
 
-You can also construct arbitrarily shaped registers by manually providing coordinates.
-Note that there are no edges defined in `Register`s that are constructed via `from_coordinates`.
+Arbitrarily shaped registers can be constructed by providing coordinates.
+
+!!! note "Registers defined from coordinates"
+	`Register` constructed via the `from_coordinates` method do not define edges in the connectivity graph.
 
 ```python exec="on" source="material-block" html="1"
 import numpy as np
@@ -88,42 +89,34 @@ from docs import docsutils # markdown-exec: hide
 print(docsutils.fig_to_html(fig)) # markdown-exec: hide
 ```
 
-!!! warning "Qubit coordinate units"
-    The coordinates of qubits in `qadence` are *dimensionless*, e.g. for the Pulser backend they are
-    converted to $\mu m$.
+!!! warning "Units for qubit coordinates"
+    Qubits coordinates in Qadence are *dimensionless* but converted to the required unit when executed on a backend.
+	For instance, [Pulser](https://github.com/pasqal-io/Pulser) uses $\mu \textrm{m}$.
 
-## Usage
+## Connectivity graphs
 
-In the digital computing paradigm, register topology is often disregarded in
-simulations and an all-to-all qubit connectivity is assumed. This is of course not the case when
-running on real devices.  In the [digital-analog](/digital_analog_qc/index.md) computing paradigm,
-we have to specify how qubits interact either by taking into account the distances between qubits,
-or by manually defining edges in the register graph.
+Register topology is often asssumed in simulations to be an all-to-all qubit connectivity.
+When running on real devices that enable the [digital-analog](/digital_analog_qc/index.md) computing paradigm,
+qubit interaction must be specified either by specifying distances between qubits,
+or by defining edges in the register connectivity graph.
 
-### Abstract graphs
-
-We can ignore the register coordinates and only deal with the edges that are present in the
-`Register.edges`. For instance, this is the case in the [perfect state
+It is possible to access the abstract graph nodes and edges to work with if needed as in the [perfect state
 transfer](/#perfect-state-transfer) example.
 
 ```python exec="on" source="material-block" result="json" session="reg-usage"
 from qadence import Register
 
 reg = Register.rectangular_lattice(2,3)
-print(f"{reg.nodes=}")
-print(f"{reg.edges=}")
+print(f"{reg.nodes = }") # markdown-exec: hide
+print(f"{reg.edges = }") # markdown-exec: hide
 ```
 
-### Graphs with coordinates
+It is possible to customize qubit interaction through the [`add_interaction`][qadence.transpile.emulate.add_interaction] method.
+In that case, `Register.coords` are accessible from the concrete graph:
 
-If interactions are based on the distance of the individual qubits in the register then instead of
-the edges, we deal with `Register.coords` like in
-[`add_interaction`][qadence.transpile.emulate.add_interaction].
 
 ```python exec="on" source="material-block" result="json" session="reg-usage"
-print(f"{reg.coords=}")
+print(f"{reg.coords = }") # markdown-exec: hide
 ```
 
-You might have already seen the [simplest example](/#digital-analog-emulation) that makes
-use of register coordinates. See the [digital-analog section](/digital_analog_qc/analog-basics)
-for more details.
+More details about their usage in the digital-analog paradigm can be found in the [digital-analog basics](/digital_analog_qc/analog-basics) section.

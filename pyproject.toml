@@ -18,10 +18,10 @@ authors = [
     { name = "Vytautas Abramavicius", email = "vytautas.abramavicius@pasqal.com" },
 ]
 requires-python = ">=3.9,<3.11"
-license = {text = "Proprietary"}
+license = {text = "Apache 2.0"}
 version = "0.9.1"
 classifiers=[
-    "License :: Other/Proprietary License",
+    "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",
@@ -39,7 +39,8 @@ dependencies = [
     "jsonschema",
     "nevergrad",
     "scipy<1.11",
-    "pyqtorch==0.5.0"
+    "pyqtorch==0.5.0",
+    "matplotlib"
 ]
 
 [tool.hatch.metadata]
@@ -55,7 +56,6 @@ visualization = [
   # "latex2svg @ git+https://github.com/Moonbase59/latex2svg.git#egg=latex2svg",
   # "scour",
 ]
-scipy = ["scipy<1.11"]
 all = [
   "pulser>=0.12.0",
   "amazon-braket-sdk",
@@ -74,20 +74,16 @@ dependencies = [
   "pytest-cov",
   "pytest-mypy",
   "pytest-xdist",
-  "nbconvert",
   "ipykernel",
-  "jupyter_contrib_nbextensions",
   "pre-commit",
   "black",
   "isort",
   "ruff",
-  "notebook<7.0",
-  "dill",
 ]
 features = ["all"]
 
 [tool.hatch.envs.default.scripts]
-test = "pytest --cov-report=xml --cov-config=pyproject.toml --cov=qadence --cov=tests --ignore=./tests/test_examples.py --ignore=./tests/test_notebooks.py {args}"
+test = "pytest --cov-report lcov --cov-config=pyproject.toml --cov=qadence --cov=tests --ignore=./tests/test_examples.py --ignore=./tests/test_notebooks.py {args}"
 test-examples = "pytest ./tests/test_examples.py {args}"
 test-notebooks = "pytest ./tests/test_notebooks.py {args}"
 no-cov = "cov --no-cov {args}"
@@ -120,12 +116,9 @@ dependencies = [
   "mkdocstrings",
   "mkdocstrings-python",
   "mkdocs-section-index==0.3.6",
-  "mkdocs-jupyter",
   "mkdocs-exclude",
   "markdown-exec",
-  "notebook<7",
-  "jupyter_contrib_nbextensions",
-  "dill",
+  "mike",
 ]
 features = ["pulser", "braket", "visualization"]
 
