@@ -26,7 +26,7 @@ programs**_ with tunable qubit interaction defined on _**arbitrary register topo
 
 ## Documentation
 
-Lastest documentation can be found [here](https://pasqal-io.github.io/qadence/latest)
+Lastest documentation can be found [here](https://pasqal-io.github.io/qadence/latest).
 
 ## Installation guide
 

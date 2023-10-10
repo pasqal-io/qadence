@@ -118,6 +118,7 @@ dependencies = [
   "mkdocs-section-index==0.3.6",
   "mkdocs-exclude",
   "markdown-exec",
+  "mike",
 ]
 features = ["pulser", "braket", "visualization"]
 
