@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   test_qadence:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     container:
       image: seitzdom/pytorch-ubuntu:latest
     steps:
