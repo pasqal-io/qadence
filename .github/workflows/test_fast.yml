@@ -14,27 +14,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test_qadence_39:
-    name: Test Python 3.9
-    runs-on: ubuntu-latest
+  test_qadence_ubuntu_39:
+    name: Test Qadence (ubuntu)
+    runs-on: ubuntu-22.04
     container:
       image: pasqalofficial/qadence_fast:latest
     steps:
-        - name: Checkout
-          name: Checkout Qadence
+    - name: Checkout Qadence
       uses: actions/checkout@v4
-        - name: Set up Python
-          uses: actions/setup-python@v4
-          with:
-            python-version: "3.9"
-        - name: Install hatch
-          shell: bash
-          run: |
-            python -m pip install hatch
-        - name: Perform unit tests
-          shell: bash
-          run: |
-            hatch -v run test-fast-ci -m "not slow"
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.9"
+    - name: Install Hatch
+      run: |
+        pip install hatch
+    - name: Run fast tests
+      run: |
+        hatch -v run test -m "not slow"
     - name: Upload coverage data
       uses: actions/upload-artifact@v3
       with:
