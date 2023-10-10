@@ -33,7 +33,7 @@ jobs:
         - name: Perform unit tests
           shell: bash
           run: |
-            python -m hatch -v run test-fast-ci "not slow"
+            hatch -v run test-fast-ci -m "not slow"
         # - name: Test docs
         #   shell: bash
         #   run: |
