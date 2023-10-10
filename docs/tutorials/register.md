@@ -81,7 +81,6 @@ reg = Register.from_coordinates(
 
 import matplotlib.pyplot as plt # markdown-exec: hide
 plt.clf() # markdown-exec: hide
-reg.draw()
 fig = plt.gcf() # markdown-exec: hide
 fig.set_size_inches(4, 2) # markdown-exec: hide
 plt.tight_layout() # markdown-exec: hide
