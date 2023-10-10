@@ -36,7 +36,6 @@ nav:
   - Advanced Tutorials:
     - Quantum circuits differentiation: advanced_tutorials/differentiability.md
     - Custom quantum models: advanced_tutorials/custom-models.md
-    - Ground-state VQE: advanced_tutorials/vqe.md
 
   - API:
     - Block system: qadence/blocks.md
