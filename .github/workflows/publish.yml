@@ -24,7 +24,17 @@ jobs:
           pip install hatch
 
       - name: Build and publish package
-        shell: bash
         run: |
           hatch build
           hatch publish
+
+      - name: Confirm deployment
+        timeout-minutes: 5
+        run: |
+          VERSION=$(echo ${GITHUB_REF#refs/tags/} | sed 's/^v//')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          until pip download pulser==$version
+          do
+            echo "Failed to download from PyPI, will wait for upload and retry."
+            sleep 10
+          done
