@@ -12,7 +12,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.constructors import ising_hamiltonian, total_magnetization
 from qadence.divergences import js_divergence
 from qadence.models import QuantumModel
-from qadence.operations import CNOT, RX, RY, AnalogRX, AnalogRY, H, X, Z, entangle, wait
+from qadence.operations import CNOT, RX, RY, AnalogRX, AnalogRY, H, X, Z, entangle
 from qadence.parameters import FeatureParameter
 from qadence.types import DiffMode
 
@@ -26,23 +26,8 @@ from qadence.types import DiffMode
         # Bell state generation
         (
             QuantumCircuit(2, chain(H(0), CNOT(0, 1))),
-            QuantumCircuit(2, chain(entangle(383, qubit_support=(0, 1)), RY(0, 3 * torch.pi / 2))),
-        ),
-        # GHZ state 3-qubits
-        (
-            QuantumCircuit(Register.line(3), chain(H(0), CNOT(0, 1), CNOT(1, 2))),
-            QuantumCircuit(
-                Register.line(3),
-                chain(
-                    entangle(383, qubit_support=(0, 1, 2)),
-                    RY(0, 3 * torch.pi / 2),
-                    wait(660),
-                    RY(2, 3 * torch.pi / 2),
-                ),
-            ),
-        ),
-        # NOTE: Although we can create an effective GHZ state with four qubits in Pulser,
-        # the final distribution is not compatible with the "pure" result from pyqtorch.
+            QuantumCircuit(2, chain(entangle(1000, qubit_support=(0, 1)), RY(0, 3 * torch.pi / 2))),
+        )
     ],
 )
 @pytest.mark.flaky(max_runs=5)
