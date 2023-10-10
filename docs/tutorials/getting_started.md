@@ -17,11 +17,10 @@ which follow a more object-oriented way to construct circuits and express progra
 
 	```python exec="on" source="material-block" html="1"
 	from qadence import X, Y, kron
-	#from visualization import display
+	from qadence.draw import display
 
 	kron_block = kron(X(0), Y(1))
-	#display(kron_block)
-
+	# display(kron_block)  # un-comment this line
 	from qadence.draw import html_string # markdown-exec: hide
 	from qadence import chain # markdown-exec: hide
 	print(html_string(kron(X(0), Y(1))), size="2,2") # markdown-exec: hide
