@@ -1,11 +1,11 @@
 # Constructing arbitrary Hamiltonians
 
 At the heart of digital-analog quantum computing is the description and execution of analog blocks, which represent a set of interacting qubits under some interaction Hamiltonian.
-For this purpose, Qadence relies on the [`hamiltonian_factory`](../qadence/constructors.md) function to create arbitrary Hamiltonian blocks to be used as generators of `HamEvo` or as observables to be measured.
+For this purpose, Qadence relies on the [`hamiltonian_factory`][qadence.constructors.hamiltonians.hamiltonian_factory] function to create arbitrary Hamiltonian blocks to be used as generators of `HamEvo` or as observables to be measured.
 
 ## Arbitrary all-to-all Hamiltonians
 
-Arbitrary all-to-all interaction Hamiltonians can be easily created by passing the number of qubits in the first argument. The type of `interaction` can be chosen from the available ones in the [`Interaction`](../qadence/types.md) enum type.
+Arbitrary all-to-all interaction Hamiltonians can be easily created by passing the number of qubits in the first argument. The type of `interaction` can be chosen from the available ones in the [`Interaction`][qadence.types.Interaction] enum type.
 
 ```python exec="on" source="material-block" result="json" session="hamiltonians"
 from qadence import hamiltonian_factory

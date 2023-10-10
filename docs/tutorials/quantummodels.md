@@ -2,7 +2,7 @@ A quantum program can be expressed and executed using the [`QuantumModel`][qaden
 It serves three primary purposes:
 
 _**Parameter handling**_: by conveniently handling and embedding the two parameter types that Qadence supports:
-*feature* and *variational* (see more details in [this section](parameters.md)).
+*feature* and *variational* (see more details in the [next section](parameters.md)).
 
 _**Differentiability**_: by enabling a *differentiable backend* that supports two differentiable modes: automated differentiation (AD) and parameter shift rule (PSR).
 The former is used to differentiate non-gate parameters and enabled for PyTorch-based simulators only. The latter is used to differentiate gate parameters and is enabled for all backends.
@@ -13,8 +13,8 @@ _**Execution**_: by defining which backend the program is expected to be execute
     Quantum models can execute on a number of different purpose backends: simulators, emulators or real hardware.
     By default, Qadence executes on the [PyQTorch](https://github.com/pasqal-io/PyQ) backend which
     implements a state vector simulator. Other choices include the [Pulser](https://pulser.readthedocs.io/en/stable/)
-    backend (pulse sequences on programmable neutral atom arrays).  For more information see
-    [backend tutorial](backends.md).
+    backend (pulse sequences on programmable neutral atom arrays).  For more information see the
+    [backend section](backends.md).
 
 The base `QuantumModel` exposes the following methods:
 
@@ -50,7 +50,8 @@ model = QuantumModel(circuit, observable, backend=BackendName.PYQTORCH)
 # The converted circuit is a private attribute and should not
 # manually be tampered with, but we can at least verify its there
 # by printing it.
-print(model._circuit.native)
+print("model._circuit.native = \n") # markdown-exec: hide
+print(f"{model._circuit.native}") # markdown-exec: hide
 
 from pyqtorch.modules import QuantumCircuit as PyQCircuit  # markdown-exec: hide
 assert isinstance(model._circuit.native, PyQCircuit) # markdown-exec: hide
@@ -66,10 +67,8 @@ values = {"x": torch.rand(3)}
 
 wf = model.run(values)
 print(f"{wf = }") # markdown-exec: hide
-
 xs = model.sample(values, n_shots=100)
 print(f"{xs = }") # markdown-exec: hide
-
 ex = model.expectation(values)
 print(f"{ex = }") # markdown-exec: hide
 ```
@@ -86,5 +85,5 @@ print(f"{ex = }") # markdown-exec: hide
 ### Quantum Neural Network (QNN)
 
 The `QNN` is a subclass of the `QuantumModel` geared towards quantum machine learning and parameter optimisation. See the [ML
-Tools](/tutorials/ml_tools) section or the [`QNN` API reference][qadence.models.QNN] for more detailed
+Tools](qml_tools.md) section or the [`QNN` API reference][qadence.models.QNN] for more detailed
 information, and the [parametric program tutorial](parameters.md) for parameterization.

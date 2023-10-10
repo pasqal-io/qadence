@@ -7,37 +7,33 @@ nav:
 
   - Qadence:
     - Qadence: index.md
-    - Getting Started: tutorials/getting_started.md
-    - Quantum Models: tutorials/quantummodels.md
-    - Parametric Programs: tutorials/parameters.md
-    - Quantum Registers: tutorials/register.md
-    - State Conventions: tutorials/state_conventions.md
-    - State Initialization: tutorials/state_init.md
+    - Getting started: tutorials/getting_started.md
+    - Quantum models: tutorials/quantummodels.md
+    - Parametric programs: tutorials/parameters.md
+    - Quantum registers: tutorials/register.md
+    - State conventions: tutorials/state_conventions.md
+    - State initialization: tutorials/state_init.md
     - Arbitrary Hamiltonians: tutorials/hamiltonians.md
-    - Wavefunction Overlaps: tutorials/overlap.md
+    - Wavefunction overlaps: tutorials/overlap.md
     - Serialization: tutorials/serializ_and_prep.md
     - Backends: tutorials/backends.md
-    - Tools for Classical and Quantum Machine Learning: tutorials/qml_tools.md
 
-  - Digital-Analog Quantum Computing:
+  - Digital-analog quantum computing:
     - digital_analog_qc/daqc-basics.md
-    - Digital-Analog Emulation:
-      - Basics: digital_analog_qc/analog-basics.md
-      - Solve a QUBO Problem: digital_analog_qc/analog-qubo.md
-      - Pulse-level Programming with Pulser: digital_analog_qc/pulser-basic.md
-    - DAQC Transform:
-      - CNOT with Interacting Qubits: digital_analog_qc/daqc-cnot.md
-      - Digital-analog QFT: digital_analog_qc/daqc-qft.md
+    - Digital-analog emulation: digital_analog_qc/analog-basics.md
+    - Solve a QUBO oroblem: digital_analog_qc/analog-qubo.md
+    - Pulse-level programming with Pulser: digital_analog_qc/pulser-basic.md
+    - CNOT with interacting qubits: digital_analog_qc/daqc-cnot.md
 
-  - Variational Quantum Algorithms:
+  - Variational quantum algorithms:
     - qml/index.md
-    - Quantum Circuit Learning: qml/qcl.md
-    - QAOA for Solving MaxCut: qml/qaoa.md
+    - Quantum circuit learning: qml/qcl.md
+    - Solving MaxCut with QAOA: qml/qaoa.md
+    - Tools for quantum machine learning: qml/qml_tools.md
 
   - Advanced Tutorials:
     - Quantum circuits differentiation: advanced_tutorials/differentiability.md
-    - Custom QuantumModels: advanced_tutorials/custom-models.md
-    - Ground-state VQE: advanced_tutorials/vqe.md
+    - Custom quantum models: advanced_tutorials/custom-models.md
 
   - API:
     - Block system: qadence/blocks.md
@@ -45,24 +41,24 @@ nav:
     - Register: qadence/register.md
     - QuantumCircuit: qadence/quantumcircuit.md
     - Parameters: qadence/parameters.md
-    - State Preparation: qadence/states.md
+    - State preparation: qadence/states.md
     - Constructors: qadence/constructors.md
     - Transpilation: qadence/transpile.md
     - Execution: qadence/execution.md
-    - Quantum Models: models.md
-    - Machine Learning Tools: qadence/ml_tools.md
+    - Quantum models: models.md
+    - QML tools: qadence/ml_tools.md
     - Serialization: qadence/serialization.md
     - Types: qadence/types.md
 
     - Backends:
-      - Abstract Backend: backends/backend.md
+      - Abstract backend: backends/backend.md
       - PyQTorch: backends/pyqtorch.md
       - Amazon Braket: backends/braket.md
       - Pulser: backends/pulser.md
       - DifferentiableBackend: backends/differentiable.md
 
   - Development:
-    - Architecture and Sharp Bits: development/architecture.md
+    - Architecture and sharp bits: development/architecture.md
     - Drawing: development/draw.md
     - Contributing: development/contributing.md
 

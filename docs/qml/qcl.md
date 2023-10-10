@@ -1,15 +1,13 @@
-In this tutorial, we show how to apply `qadence` for solving a basic quantum
+This tutorial shows how to apply `qadence` for solving a basic quantum
 machine learning application: fitting a simple function with the
-quantum circuit learning (QCL) algorithm.
+quantum circuit learning[^1] (QCL) algorithm.
 
-Quantum circuit learning [^1] is a supervised quantum machine learning algorithm that uses
-parametrized quantum neural networks to learn the behavior of an arbitrary
-mathematical function starting from some training data extracted from it. We
-choose the function
+QCL is a supervised quantum machine learning algorithm that uses a
+parametrized quantum neural network to learn the behavior of an arbitrary
+mathematical function using a set of function values as training data. This tutorial
+shows how to fit the $sin(x)$ function in the $[-1, 1]$ domain.
 
-For this tutorial, we show how to fit the $sin(x)$ function in the domain $[-1, 1]$.
-
-Let's start with defining training and test data.
+In the following, train and test data are defined.
 
 ```python exec="on" source="material-block" session="qcl" result="json"
 from typing import Callable
@@ -46,14 +44,17 @@ x_test, y_test = x[n_test-len(x):], y[n_test-len(x):]
 ## Train the QCL model
 
 Qadence provides the [`QNN`][qadence.models.qnn.QNN] convenience constructor to build a quantum neural network.
-The `QNN` class needs a circuit and a list of observables; both the number of feature parameters and the number
-of observables in the list must be equal to the number of desired outputs of the quantum neural network.
+The `QNN` class needs a circuit and a list of observables; the number of feature parameters in the input circuit
+determines the number of input features (i.e. the dimensionality of the classical data given as input) whereas
+the number of observables determines the number of outputs of the quantum neural network.
 
-As observable, we use the total qubit magnetization leveraging a convenience constructor provided by `qadence`:
+Total qubit magnetization is used as observable:
 
 $$
 \hat{O} = \sum_i^N \hat{\sigma}_i^z
 $$
+
+In the following the observable, quantum circuit and corresponding QNN model are constructed.
 
 ```python exec="on" source="material-block" session="qcl" result="json"
 import sympy
@@ -81,9 +82,9 @@ print(expval)
 ```
 
 The QCL algorithm uses the output of the quantum neural network as a tunable
-function approximator. We can use standard PyTorch code for training the QNN
-using a mean-square error loss, the Adam optimizer and also train on the GPU
-if any is available:
+universal function approximator. Standard PyTorch code is used for training the QNN
+using a mean-square error loss, Adam optimizer. Training is performend on the GPU
+if available:
 
 ```python exec="on" source="material-block" session="qcl" result="json"
 
@@ -112,8 +113,11 @@ for i in range(n_epochs):
         print(f"Epoch {i+1} - Loss: {loss.item()}")
 ```
 
-The quantum model is now trained on the training data points. Let's see how well it fits the
-function on the test set.
+Qadence offers some convenience functions to implement this training loop with advanced
+logging and metrics track features. You can refer to [this](../qml/qml_tools.md) for more details.
+
+The quantum model is now trained on the training data points. To determine the quality of the results,
+one can check to see how well it fits the function on the test set.
 
 ```python exec="on" source="material-block" session="qcl" result="json"
 import matplotlib.pyplot as plt
