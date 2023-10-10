@@ -55,7 +55,7 @@ bell_state = chain(
 ```
 
 To convert the chain block into a pulse sequence, we define a `Register` with two qubits and combine it to create a circuit as usual. Then we construct a `QuantumModel` with a Pulser backend to convert it into a proper parametrized pulse sequence. Supplying the
-parameter values allows to sample from the pulse sequence result like any other `qadence` backend.
+parameter values allows to sample from the pulse sequence result like any other Qadence backend.
 
 ```python exec="on" source="material-block" "html=1" session="pulser-basic"
 import torch
