@@ -34,7 +34,7 @@ jobs:
       - name: Build and publish package
         run: |
           hatch build
-          hatch publish
+          hatch publish -u ${{ secrets.HATCH_PYPI_USER }} -a ${{ secrets.HATCH_PYPI_AUTH }}
 
       - name: Confirm deployment
         timeout-minutes: 5
