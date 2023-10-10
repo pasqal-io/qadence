@@ -21,8 +21,8 @@ nav:
   - Digital-analog quantum computing:
     - digital_analog_qc/daqc-basics.md
     - Digital-Analog Emulation: digital_analog_qc/analog-basics.md
-    - Solve a QUBO Problem: digital_analog_qc/analog-qubo.md
     - Pulse-level Programming with Pulser: digital_analog_qc/pulser-basic.md
+    - Solve a QUBO Problem: digital_analog_qc/analog-qubo.md
     - CNOT with Interacting Qubits: digital_analog_qc/daqc-cnot.md
     - Digital-Analog QFT: digital_analog_qc/daqc-qft.md
 
