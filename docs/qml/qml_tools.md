@@ -1,3 +1,9 @@
+Qadence offers a wide range of utilities for helping building and researching
+quantum machine learning algorithms, including:
+
+* a set of constructors for circuits commonly used in quantum machine learning
+* a set of tools for optimizing quantum neural networks and loading classical data into a QML algorithm
+
 # Quantum machine learning constructors
 
 Besides the [arbitrary Hamiltonian constructors](../tutorials/hamiltonians.md), Qadence also provides a complete set of
@@ -104,7 +110,46 @@ from qadence.draw import html_string # markdown-exec: hide
 print(html_string(ansatz, size="4,4")) # markdown-exec: hide
 ```
 
-## Machine Learning Tools
+# Machine Learning Tools
+
+## Dataloaders
+
+When using `qadence`, you can supply classical data to a quantum machine learning
+algorithm by using a standard PyTorch `DataLoader` instance. Qadence also provides
+a wrapper utility [`DictDataLoader`][qadence.ml_tools.DictDataLoader] which allows
+to build dictionaries of `DataLoader`s and easily iterate over them.
+
+```python exec="on" source="material-block" result="json"
+from torch.utils.data import DataLoader, TensorDataset
+from qadence.ml_tools import DictDataLoader
+
+def dataloader() -> DataLoader:
+    batch_size = 25
+    x = torch.linspace(0, 1, batch_size).reshape(-1, 1)
+    y = torch.sin(x)
+
+    dataset = TensorDataset(x, y)
+    return DataLoader(dataset, batch_size=batch_size)
+
+
+def dictdataloader() -> DictDataLoader:
+    batch_size = 25
+
+    keys = ["y1", "y2"]
+    dls = {}
+    for k in keys:
+        x = torch.rand(batch_size, 1)
+        y = torch.sin(x)
+        dataset = TensorDataset(x, y)
+        dataloader = DataLoader(dataset, batch_size=batch_size)
+        dls[k] = dataloader
+
+    return DictDataLoader(dls)
+
+
+```
+
+## Optimization
 
 For training QML models, `qadence` also offers a few out-of-the-box routines for optimizing differentiable
 models like `QNN`s and `QuantumModel`s containing either *trainable* and/or *non-trainable* parameters
