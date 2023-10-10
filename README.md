@@ -23,6 +23,10 @@ programs**_ with tunable qubit interaction defined on _**arbitrary register topo
 
 * _**Efficient execution**_ on a variety of different purpose backends: from state vector simulators to tensor network emulators and real devices.
 
+## Documentation
+
+Lastest documentation can be found [here](https://pasqal-io.github.io/qadence/latest)
+
 ## Installation guide
 
 Qadence can be installed from PyPI with `pip` as follows:
