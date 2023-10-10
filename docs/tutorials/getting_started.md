@@ -13,7 +13,7 @@ which follow a more object-oriented way to construct circuits and express progra
 	print(kron_block)
 	```
 
-	Or using the visualization package which opens a new window:
+	Or using the visualization package:
 
 	```python exec="on" source="material-block" html="1"
 	from qadence import X, Y, kron
