@@ -1,4 +1,4 @@
-name: Run Qadence example tests
+name: Tests
 
 on:
   push:
@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   test_qadence_ubuntu:
-    name: Test Qadence (ubuntu)
+    name: Examples (ubuntu)
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4

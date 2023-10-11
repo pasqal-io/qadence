@@ -83,9 +83,8 @@ dependencies = [
 features = ["all"]
 
 [tool.hatch.envs.default.scripts]
-test = "pytest -n auto --cov-report lcov --cov-config=pyproject.toml --cov=qadence --cov=tests --ignore=./tests/test_examples.py --ignore=./tests/test_notebooks.py {args}"
+test = "pytest -n auto --cov-report lcov --cov-config=pyproject.toml --cov=qadence --cov=tests --ignore=./tests/test_examples.py {args}"
 test-examples = "pytest ./tests/test_examples.py {args}"
-test-notebooks = "pytest ./tests/test_notebooks.py {args}"
 no-cov = "cov --no-cov {args}"
 test-docs = "mkdocs build --clean --strict"
 test-all = "pytest -n auto {args}  && mkdocs build --clean --strict"

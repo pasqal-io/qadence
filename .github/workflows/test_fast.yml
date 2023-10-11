@@ -1,4 +1,4 @@
-name: Fast tests
+name: Tests
 
 on:
   push:
@@ -18,7 +18,7 @@ concurrency:
 jobs:
 
   test_qadence_ubuntu:
-    name: Test Qadence (ubuntu)
+    name: Qadence (ubuntu)
     runs-on: ubuntu-latest
     strategy:
       matrix:

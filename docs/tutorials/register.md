@@ -30,7 +30,7 @@ axs = axs.flatten()
 for i, (args, xl, yl) in enumerate(argss):
     reg = Register.lattice(*args)
     plt.sca(axs[i])
-    reg.draw()
+    reg.draw(show=False)
     axs[i].set_title(f"{args[0]}")
     axs[i].set(aspect="equal")
     axs[i].set_xlim(*xl)
@@ -59,7 +59,7 @@ from qadence import Register
 reg = Register.honeycomb_lattice(2, 3)
 import matplotlib.pyplot as plt # markdown-exec: hide
 plt.clf() # markdown-exec: hide
-reg.draw()
+reg.draw(show=False)
 from docs import docsutils # markdown-exec: hide
 fig = plt.gcf() # markdown-exec: hide
 fig.set_size_inches(3, 3) # markdown-exec: hide
