@@ -191,7 +191,7 @@ def torchify(expr: Expr) -> SymPyModule:
         A torchified, differentiable Expression.
     """
     extra_funcs = {sympy.core.numbers.ImaginaryUnit: 1.0j}
-    return SymPyModule(expressions=[expr], extra_funcs=extra_funcs)
+    return SymPyModule(expressions=[sympy.N(expr)], extra_funcs=extra_funcs)
 
 
 def sympy_to_numeric(expr: Basic) -> TNumber:
