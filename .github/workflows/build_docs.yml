@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   test_qadence_ubuntu:
-    name: Test Qadence docs (ubuntu)
+    name: docs (ubuntu)
     runs-on: ubuntu-latest
     steps:
 
