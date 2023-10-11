@@ -6,8 +6,6 @@ from .feature_maps import (
     fourier_feature_map,
     tower_feature_map,
     exp_fourier_feature_map,
-    ReuploadScaling,
-    BasisSet,
 )
 
 from .ansatze import hea, build_qnn
@@ -31,8 +29,6 @@ __all__ = [
     "fourier_feature_map",
     "tower_feature_map",
     "exp_fourier_feature_map",
-    "ReuploadScaling",
-    "BasisSet",
     "hea",
     "build_qnn",
     "hamiltonian_factory",

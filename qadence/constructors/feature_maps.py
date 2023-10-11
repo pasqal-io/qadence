@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import inspect
-from enum import Enum
+import math
 from typing import Callable, Type, Union
 
 import sympy
@@ -9,21 +9,10 @@ import sympy
 from qadence.blocks import AbstractBlock, KronBlock, chain, kron, tag
 from qadence.operations import PHASE, RX, RY, RZ, H
 from qadence.parameters import FeatureParameter, Parameter
-from qadence.types import TParameter
+from qadence.types import BasisSet, ReuploadScaling, TParameter
 
-Rotation = Union[RX, RY, RZ, PHASE]
-
-
-class BasisSet(str, Enum):
-    FOURIER = "Fourier"
-    CHEBYSHEV = "Chebyshev"
-
-
-class ReuploadScaling(str, Enum):
-    CONSTANT = "Constant"
-    TOWER = "Tower"
-    EXP_UP = "Exponential_up"
-    EXP_DOWN = "Exponential_down"
+TRotation = Type[Union[RX, RY, RZ, PHASE]]
+ROTATIONS = [RX, RY, RZ, PHASE]
 
 
 def _set_range(fm_type: BasisSet | Type[sympy.Function] | str) -> tuple[float, float]:
@@ -35,32 +24,25 @@ def _set_range(fm_type: BasisSet | Type[sympy.Function] | str) -> tuple[float, f
         return (0.0, 1.0)
 
 
-def _get_rs_func(
-    reupload_scaling: Callable | ReuploadScaling, support: tuple[int, ...]
-) -> tuple[Callable, str]:
+def _get_rs_func(reupload_scaling: Callable | ReuploadScaling) -> tuple[Callable, str]:
     if reupload_scaling == ReuploadScaling.CONSTANT:
 
         def rs_func(i: int) -> float:
-            return float(1)
+            return 1
 
     elif reupload_scaling == ReuploadScaling.TOWER:
 
         def rs_func(i: int) -> float:
             return float(i + 1)
 
-    elif reupload_scaling == ReuploadScaling.EXP_UP:
+    elif reupload_scaling == ReuploadScaling.EXP:
 
         def rs_func(i: int) -> float:
             return float(2**i)
 
-    elif reupload_scaling == ReuploadScaling.EXP_DOWN:
-
-        def rs_func(i: int) -> float:
-            return float(2 ** (len(support) - 1 - i))
-
     else:
         raise NotImplementedError(
-            f"Re-upload scaling {reupload_scaling} not Implemented; choose one from /"
+            f"Re-upload scaling {reupload_scaling} not implemented; choose one from /"
             f"{[rs for rs in ReuploadScaling]}, or your own python function with a /"
             "single int arg as input and int or float output!"
         )
@@ -74,7 +56,7 @@ def feature_map(
     n_qubits: int,
     support: tuple[int, ...] | None = None,
     param: Parameter | sympy.Basic | str = "phi",
-    op: Type[Rotation] = RX,
+    op: TRotation = RX,
     fm_type: BasisSet | Type[sympy.Function] | str = BasisSet.FOURIER,
     reupload_scaling: Callable | ReuploadScaling = ReuploadScaling.CONSTANT,
     feature_range: tuple[float, float] = None,
@@ -88,36 +70,44 @@ def feature_map(
         support: Puts one feature-encoding rotation gate on every qubit in `support`. n_qubits in
             this case specifies the total overall qubits of the circuit, which may be wider than the
             support itself, but not narrower.
-        param: Parameter of the feature map; you can pass a string or sympy expression or Parameter;
-            it will be set as non-trainable (FeatureParameter) regardless
+        param: Parameter of the feature map; you can pass a string, sympy expression or Parameter;
+            it will be set as non-trainable (FeatureParameter) regardless.
         op: Rotation operation of the feature map; choose from RX, RY, RZ, PHASE
-        fm_type: Determines the basis set that this encoding relates to; choose
-                from `BasisSet.FOURIER` for Fourier encoding, or `BasisSet.CHEBYSHEV`
-                for Chebyshev polynomials of the first kind.
-        reupload_scaling: the feature_map re-uploads the data on len(support) qubits;
-            however, in each re-upload one may choose a different scaling factor in front,
-            to enrich the spectrum.
-        feature_range: what is the range of data that the input data is assumed to come from?
-        target_range: what is the range of data the data encoder assumes as the natural range? for
-            example, in Chebyshev polynomials, the natural range is (-1,1), while for Fourier it may
-             be chosen as (0,2pi)
+        fm_type: Determines the basis set for the encoding; choose from `BasisSet.FOURIER` for
+            Fourier encoding, or `BasisSet.CHEBYSHEV` for Chebyshev polynomials of the first kind.
+        reupload_scaling: how the feature map scales the data that is re-uploaded for each qubit.
+        feature_range: range of data that the input data is assumed to come from.
+        target_range: range of data the data encoder assumes as the natural range. For example,
+            in Chebyshev polynomials it is (-1, 1), while for Fourier it may be chosen as (0, 2pi).
         multiplier: overall multiplier; this is useful for reuploading the feature map serially with
-         different scalings there; can be a number or parameter/expression
+            different scalings there; can be a number or parameter/expression.
 
     Example:
     ```python exec="on" source="material-block" result="json"
-    from qadence import feature_map
+    from qadence import feature_map, BasisSet, ReuploadScaling
 
-    fm = feature_map(3, fm_type="fourier")
+    fm = feature_map(3, fm_type=BasisSet.FOURIER)
     print(f"{fm = }")
 
-    fm = feature_map(3, fm_type="chebyshev")
+    fm = feature_map(3, fm_type=BasisSet.CHEBYSHEV)
     print(f"{fm = }")
 
-    fm = feature_map(3, fm_type="tower")
+    fm = feature_map(3, fm_type=BasisSet.FOURIER, reupload_scaling = ReuploadScaling.TOWER)
     print(f"{fm = }")
     ```
     """
+
+    # Process input
+    if support is None:
+        support = tuple(range(n_qubits))
+    elif len(support) != n_qubits:
+        raise ValueError("Wrong qubit support supplied")
+
+    if op not in ROTATIONS:
+        raise ValueError(
+            f"Operation {op} not supported. Please one from {[rot.__name__ for rot in ROTATIONS]}."
+        )
+
     if isinstance(param, Parameter):
         fparam = param
         if fparam.is_trainable:
@@ -125,23 +115,26 @@ def feature_map(
     else:
         fparam = FeatureParameter(param)
 
-    if support is None:
-        support = tuple(range(n_qubits))
-
-    assert len(support) <= n_qubits, "Wrong qubit support supplied"
-
     # Set feature and target range
     feature_range = _set_range(fm_type) if feature_range is None else feature_range
     target_range = _set_range(fm_type) if target_range is None else target_range
 
-    # Rescale the parameter according to feature and target range
+    # Rescale the feature parameter
     f_max = max(feature_range)
     f_min = min(feature_range)
     t_max = max(target_range)
     t_min = min(target_range)
 
-    scaled_fparam = (t_max - t_min) * (fparam - f_min) / (f_max - f_min) + t_max
+    scaling = (t_max - t_min) / (f_max - f_min)
+    shift = t_min - f_min * scaling
 
+    if math.isclose(scaling, 1.0):
+        # So we don't get 1.0 factor in visualization
+        scaled_fparam = fparam + shift
+    else:
+        scaled_fparam = scaling * fparam + shift
+
+    # Transform feature parameter
     if fm_type == BasisSet.FOURIER:
         transformed_feature = scaled_fparam
         basis_tag = fm_type.value
@@ -162,23 +155,24 @@ def feature_map(
         rs_func = reupload_scaling
         rs_tag = "Custom"
     else:
-        rs_func, rs_tag = _get_rs_func(reupload_scaling, support)
+        rs_func, rs_tag = _get_rs_func(reupload_scaling)
 
-    # Set multiplier
-    mult = 1.0 if multiplier is None else multiplier
+    # Set overall multiplier
+    multiplier = 1 if multiplier is None else multiplier
 
     # Build feature map
     op_list = []
     for i, qubit in enumerate(support):
-        op_list.append(op(qubit, mult * rs_func(i) * transformed_feature))  # type: ignore[operator]
+        op_list.append(op(qubit, multiplier * rs_func(i) * transformed_feature))
     fm = kron(*op_list)
 
     fm.tag = rs_tag + " " + basis_tag + " FM"
+
     return fm
 
 
 def fourier_feature_map(
-    n_qubits: int, support: tuple[int, ...] = None, param: str = "phi", op: Type[Rotation] = RX
+    n_qubits: int, support: tuple[int, ...] = None, param: str = "phi", op: TRotation = RX
 ) -> AbstractBlock:
     """Construct a Fourier feature map
 
@@ -191,7 +185,7 @@ def fourier_feature_map(
 
 
 def chebyshev_feature_map(
-    n_qubits: int, support: tuple[int, ...] = None, param: str = "phi", op: Type[Rotation] = RX
+    n_qubits: int, support: tuple[int, ...] = None, param: str = "phi", op: TRotation = RX
 ) -> AbstractBlock:
     """Construct a Chebyshev feature map
 
@@ -205,7 +199,7 @@ def chebyshev_feature_map(
 
 
 def tower_feature_map(
-    n_qubits: int, support: tuple[int, ...] = None, param: str = "phi", op: Type[Rotation] = RX
+    n_qubits: int, support: tuple[int, ...] = None, param: str = "phi", op: TRotation = RX
 ) -> AbstractBlock:
     """Construct a Chebyshev tower feature map
 
@@ -251,7 +245,7 @@ def exp_fourier_feature_map(
         param=param,
         op=RZ,
         fm_type=BasisSet.FOURIER,
-        reupload_scaling=ReuploadScaling.EXP_UP,
+        reupload_scaling=ReuploadScaling.EXP,
         feature_range=feature_range,
         target_range=(0.0, 2 * sympy.pi),
     )
