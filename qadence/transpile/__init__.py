@@ -12,6 +12,7 @@ from .circuit import fill_identities
 from .digitalize import digitalize
 from .emulate import add_interaction
 from .invert import invert_endianness, reassign
+from .reverse import reverse
 from .transpile import blockfn_to_circfn, transpile
 
 __all__ = ["add_interaction", "set_trainable", "invert_endianness"]
