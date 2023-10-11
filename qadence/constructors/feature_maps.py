@@ -181,7 +181,7 @@ def fourier_feature_map(
         param: The base name for the feature `Parameter`
     """
     fm = feature_map(n_qubits, support=support, param=param, op=op, fm_type=BasisSet.FOURIER)
-    return tag(fm, tag="FourierFM")
+    return fm
 
 
 def chebyshev_feature_map(
@@ -195,7 +195,7 @@ def chebyshev_feature_map(
         param: The base name for the feature `Parameter`
     """
     fm = feature_map(n_qubits, support=support, param=param, op=op, fm_type=BasisSet.CHEBYSHEV)
-    return tag(fm, tag="ChebyshevFM")
+    return fm
 
 
 def tower_feature_map(
@@ -215,7 +215,7 @@ def tower_feature_map(
         fm_type=BasisSet.CHEBYSHEV,
         reupload_scaling=ReuploadScaling.TOWER,
     )
-    return tag(fm, tag="TowerFM")
+    return fm
 
 
 def exp_fourier_feature_map(
