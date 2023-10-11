@@ -1,8 +1,8 @@
-# DAQC Transform
+# CNOT with interacting qubits
 
-Digital-analog quantum computing focuses on using simple digital gates combined with more complex and device-dependent analog interactions to represent quantum programs. Such techniques have been shown to be universal for quantum computation [^1]. However, while this approach may have advantages when adapting quantum programs to real devices, known quantum algorithms are very often expressed in a fully digital paradigm. As such, it is also important to have concrete ways to transform from one paradigm to another.
+Digital-analog quantum computing focuses on using single qubit digital gates combined with more complex and device-dependent analog interactions to represent quantum programs. This paradigm has been shown to be universal for quantum computation[^1]. However, while this approach may have advantages when adapting quantum programs to real devices, known quantum algorithms are very often expressed in a fully digital paradigm. As such, it is also important to have concrete ways to transform from one paradigm to another.
 
-In this tutorial we will exemplify this transformation starting with the representation of a simple digital CNOT using the universality of the Ising Hamiltonian [^2].
+In this tutorial will exemplify the DAQC transformation starting with the representation of a simple digital CNOT using the universality of the Ising Hamiltonian[^2].
 
 ## CNOT with CPHASE
 
@@ -13,7 +13,7 @@ First, note that the CNOT can be decomposed with two Hadamard and a CPHASE gate 
 
 ```python exec="on" source="material-block" result="json" session="daqc-cnot"
 import torch
-import qadence as qd
+from qadence import chain, sample, product_state
 
 from qadence.draw import display
 from qadence import X, I, Z, H, N, CPHASE, CNOT, HamEvo
@@ -26,12 +26,12 @@ cnot_gate = CNOT(0, 1)
 
 # CNOT decomposed
 phi = torch.pi
-cnot_decomp = qd.chain(H(1), CPHASE(0, 1, phi), H(1))
+cnot_decomp = chain(H(1), CPHASE(0, 1, phi), H(1))
 
-init_state = qd.product_state("10")
+init_state = product_state("10")
 
-print(qd.sample(n_qubits, block = cnot_gate, state = init_state, n_shots = 100))
-print(qd.sample(n_qubits, block = cnot_decomp, state = init_state, n_shots = 100))
+print(f"sample from CNOT gate and 100 shots = {sample(n_qubits, block=cnot_gate, state=init_state, n_shots=100)}")  # markdown-exec: hide
+print(f"sample from decomposed CNOT gate and 100 shots = {sample(n_qubits, block=cnot_decomp, state=init_state, n_shots=100)}") # markdown-exec: hide
 ```
 
 The CPHASE gate is fully diagonal, and can be implemented by exponentiating an Ising-like Hamiltonian, or *generator*,
@@ -43,37 +43,39 @@ $$\begin{aligned}
 &=-N_iN_j
 \end{aligned}$$
 
-where we used the number operator $N_i = \frac{1}{2}(I_i-Z_i)$, leading to an Ising-like interaction $N_iN_j$ that is common in neutral-atom systems. Let's rebuild the CNOT using this evolution.
+where the number operator $N_i = \frac{1}{2}(I_i-Z_i)=\hat{n}_i$ is used, leading to an Ising-like interaction $\hat{n}_i\hat{n}_j$ that is common in neutral-atom systems. Let's rebuild the CNOT using this evolution.
 
 ```python exec="on" source="material-block" session="daqc-cnot"
+from qadence import kron, block_to_tensor
+
 # Hamiltonian for the CPHASE gate
-h_cphase = (-1.0) * qd.kron(N(0), N(1))
+h_cphase = (-1.0) * kron(N(0), N(1))
 
 # Exponentiating the Hamiltonian
 cphase_evo = HamEvo(h_cphase, phi)
 
 # Check that we have the CPHASE gate:
-cphase_matrix = qd.block_to_tensor(CPHASE(0, 1, phi))
-cphase_evo_matrix = qd.block_to_tensor(cphase_evo)
+cphase_matrix = block_to_tensor(CPHASE(0, 1, phi))
+cphase_evo_matrix = block_to_tensor(cphase_evo)
 
 assert torch.allclose(cphase_matrix, cphase_evo_matrix)
 ```
 
-Now that we have checked the generator of the CPHASE gate, we can use it to apply the CNOT:
+Now that the CPHASE generator is checked, it can be applied to the CNOT:
 
 
 ```python exec="on" source="material-block" result="json" session="daqc-cnot"
 # CNOT with Hamiltonian Evolution
-cnot_evo = qd.chain(
+cnot_evo = chain(
     H(1),
     cphase_evo,
     H(1)
 )
 
-init_state = qd.product_state("10")
+init_state = product_state("10")
 
-print(qd.sample(n_qubits, block = cnot_gate, state = init_state, n_shots = 100))
-print(qd.sample(n_qubits, block = cnot_evo, state = init_state, n_shots = 100))
+print(f"sample cnot_gate = {sample(n_qubits, block = cnot_gate, state = init_state, n_shots = 100)}") # markdown-exec: hide
+print(f"sample cnot_evo = {sample(n_qubits, block = cnot_evo, state = init_state, n_shots = 100)}") # markdown-exec: hide
 ```
 
 Thus, a CNOT gate can be applied by combining a few single-qubit gates together with a 2-qubit Ising interaction between the control and the target qubit. This is important because it now allows us to exemplify the usage of the Ising transform proposed in the DAQC paper [^2]. In the paper, the transform is described for $ZZ$ interactions. In `qadence` it works both with $ZZ$ and $NN$ interactions.

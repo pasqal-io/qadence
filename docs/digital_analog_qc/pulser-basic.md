@@ -142,7 +142,7 @@ sample = model.sample(params, n_shots=50)[0]
 print(f"sample = {sample}") # markdown-exec: hide
 ```
 
-## Create your custom gate
+## Create a custom gate
 
 A major advantage of the block-based interface in Qadence is the ease to compose complex
 operations from a restricted set of primitive ones. In the following, a custom entanglement operation is used as an example.
