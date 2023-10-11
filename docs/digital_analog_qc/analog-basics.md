@@ -126,17 +126,18 @@ block = chain(
 obs = add(Z(i) for i in range(reg.n_qubits))
 ```
 
-```python exec="on" session="sin" source="material-block"
-def plot(ax, x, y, **kwargs):
-    xnp = x.detach().cpu().numpy().flatten()
-    ynp = y.detach().cpu().numpy().flatten()
-    ax.plot(xnp, ynp, **kwargs)
+??? note "Plotting functions `plot` and `scatter`"
+    ```python exec="on" session="sin" source="material-block"
+    def plot(ax, x, y, **kwargs):
+        xnp = x.detach().cpu().numpy().flatten()
+        ynp = y.detach().cpu().numpy().flatten()
+        ax.plot(xnp, ynp, **kwargs)
 
-def scatter(ax, x, y, **kwargs):
-    xnp = x.detach().cpu().numpy().flatten()
-    ynp = y.detach().cpu().numpy().flatten()
-    ax.scatter(xnp, ynp, **kwargs)
-```
+    def scatter(ax, x, y, **kwargs):
+        xnp = x.detach().cpu().numpy().flatten()
+        ynp = y.detach().cpu().numpy().flatten()
+        ax.scatter(xnp, ynp, **kwargs)
+    ```
 
 Then we define the dataset we want to train on and plot the initial prediction.
 ```python exec="on" source="material-block" html="1" result="json" session="sin"
