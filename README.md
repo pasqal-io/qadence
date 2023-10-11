@@ -11,16 +11,16 @@ Documentation can be found [here](https://pasqal-io.github.io/qadence/latest).
 
 ## Feature highlights
 
-* A [block-based system](tutorials/getting_started.md) for composing _**complex digital-analog
+* A [block-based system](docs/tutorials/getting_started.md) for composing _**complex digital-analog
   programs**_ in a flexible and scalable manner, inspired by the Julia quantum SDK
   [Yao.jl](https://github.com/QuantumBFS/Yao.jl) and functional programming concepts.
 
-* A [simple interface](digital_analog_qc/analog-basics.md) to work with _**interacting neutral-atom qubit systems**_
-  using [arbitrary registers topologies](tutorials/register.md).
+* A [simple interface](docs/digital_analog_qc/analog-basics.md) to work with _**interacting neutral-atom qubit systems**_
+  using [arbitrary registers topologies](docs/tutorials/register.md).
 
-* An intuitive [expression-based system](tutorials/parameters.md) developed on top of the symbolic library [Sympy](https://www.sympy.org/en/index.html) to construct _**parametric quantum programs**_ easily.
+* An intuitive [expression-based system](docs/tutorials/parameters.md) developed on top of the symbolic library [Sympy](https://www.sympy.org/en/index.html) to construct _**parametric quantum programs**_ easily.
 
-* [High-order generalized parameter shift rules](advanced_tutorials/differentiability.md) for _**differentiating parametrized quantum operations**_.
+* [High-order generalized parameter shift rules](docs/advanced_tutorials/differentiability.md) for _**differentiating parametrized quantum operations**_.
 
 * Out-of-the-box _**automatic differentiability**_ of quantum programs with [PyTorch](https://pytorch.org/) integration.
 
