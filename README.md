@@ -20,7 +20,7 @@ Documentation can be found [here](https://pasqal-io.github.io/qadence/latest).
 
 * An intuitive [expression-based system](tutorials/parameters.md) developed on top of the symbolic library [Sympy](https://www.sympy.org/en/index.html) to construct _**parametric quantum programs**_ easily.
 
-* [High-order generalized parameter shift rules](link to psr tutorial) for _**differentiating parametrized quantum operations**_.
+* [High-order generalized parameter shift rules](advanced_tutorials/differentiability.md) for _**differentiating parametrized quantum operations**_.
 
 * Out-of-the-box _**automatic differentiability**_ of quantum programs with [PyTorch](https://pytorch.org/) integration.
 
