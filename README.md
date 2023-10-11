@@ -40,10 +40,16 @@ The default backend for Qadence is [PyQTorch](https://github.com/pasqal-io/pyqto
 * `pulser`: the [Pulser](https://github.com/pasqal-io/Pulser) backend for composing, simulating and executing pulse sequences for neutral-atom quantum devices.
 * `visualization`: to display diagrammatically quantum circuits.
 
-by running:
+To just get qadence with the `pyqtorch` backend, simply run:
 
 ```bash
-pip install qadence[braket, pulser, visualization]
+pip install qadence
+```
+
+To install other backends or the visualization tool, please use:
+
+```bash
+pip install "qadence[braket, pulser, visualization]"
 ```
 
 !!! warning
