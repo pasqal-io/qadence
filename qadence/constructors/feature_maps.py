@@ -4,7 +4,6 @@ import inspect
 from enum import Enum
 from typing import Callable, Type, Union
 
-import numpy as np
 import sympy
 
 from qadence.blocks import AbstractBlock, KronBlock, chain, kron, tag
@@ -27,13 +26,57 @@ class ReuploadScaling(str, Enum):
     EXP_DOWN = "Exponential_down"
 
 
+def _set_range(fm_type: BasisSet | Type[sympy.Function] | str) -> tuple[float, float]:
+    if fm_type == BasisSet.FOURIER:
+        return (0.0, 2 * sympy.pi)
+    elif fm_type == BasisSet.CHEBYSHEV:
+        return (-1.0, 1.0)
+    else:
+        return (0.0, 1.0)
+
+
+def _get_rs_func(
+    reupload_scaling: Callable | ReuploadScaling, support: tuple[int, ...]
+) -> tuple[Callable, str]:
+    if reupload_scaling == ReuploadScaling.CONSTANT:
+
+        def rs_func(i: int) -> float:
+            return float(1)
+
+    elif reupload_scaling == ReuploadScaling.TOWER:
+
+        def rs_func(i: int) -> float:
+            return float(i + 1)
+
+    elif reupload_scaling == ReuploadScaling.EXP_UP:
+
+        def rs_func(i: int) -> float:
+            return float(2**i)
+
+    elif reupload_scaling == ReuploadScaling.EXP_DOWN:
+
+        def rs_func(i: int) -> float:
+            return float(2 ** (len(support) - 1 - i))
+
+    else:
+        raise NotImplementedError(
+            f"Re-upload scaling {reupload_scaling} not Implemented; choose one from /"
+            f"{[rs for rs in ReuploadScaling]}, or your own python function with a /"
+            "single int arg as input and int or float output!"
+        )
+
+    rs_tag = reupload_scaling.value
+
+    return rs_func, rs_tag
+
+
 def feature_map(
     n_qubits: int,
-    support: tuple[int, ...] = None,
+    support: tuple[int, ...] | None = None,
     param: Parameter | sympy.Basic | str = "phi",
     op: Type[Rotation] = RX,
     fm_type: BasisSet | Type[sympy.Function] | str = BasisSet.FOURIER,
-    reupload_scaling: Callable | str | ReuploadScaling = ReuploadScaling.CONSTANT,
+    reupload_scaling: Callable | ReuploadScaling = ReuploadScaling.CONSTANT,
     feature_range: tuple[float, float] = None,
     target_range: tuple[float, float] = None,
     multiplier: Parameter | TParameter = None,
@@ -87,85 +130,47 @@ def feature_map(
 
     assert len(support) <= n_qubits, "Wrong qubit support supplied"
 
-    def set_range(fm_type: BasisSet | Type[sympy.Function] | str) -> tuple[float, float]:
-        if fm_type == BasisSet.FOURIER:
-            out_range = (0.0, 2 * sympy.pi)
-        elif fm_type == BasisSet.CHEBYSHEV:
-            out_range = (-1.0, 1.0)
-        else:
-            out_range = (0.0, 1.0)
-        return out_range
+    # Set feature and target range
+    feature_range = _set_range(fm_type) if feature_range is None else feature_range
+    target_range = _set_range(fm_type) if target_range is None else target_range
 
-    fr = set_range(fm_type) if feature_range is None else feature_range
-    tr = set_range(fm_type) if target_range is None else target_range
+    # Rescale the parameter according to feature and target range
+    f_max = max(feature_range)
+    f_min = min(feature_range)
+    t_max = max(target_range)
+    t_min = min(target_range)
 
-    # this scales data to the range (-1, 1), only introducing sympy scalings if necessary
-    if np.isclose(float(np.mean(fr)), 0.0) and np.isclose(float(np.mean(tr)), 0.0):
-        scaled_and_shifted_fparam = (
-            fparam if np.isclose(float(fr[1]), float(tr[1])) else fparam * tr[1] / fr[1]
-        )
-    elif np.isclose(float(fr[1] - fr[0]), float(tr[1] - tr[0])):
-        scaled_and_shifted_fparam = fparam - (fr[0] - tr[0])
-    else:
-        scaled_and_shifted_fparam = (tr[1] - tr[0]) * (fparam - fr[0]) / (fr[1] - fr[0]) + tr[0]
+    scaled_fparam = (t_max - t_min) * (fparam - f_min) / (f_max - f_min) + t_max
 
     if fm_type == BasisSet.FOURIER:
-        transformed_feature = scaled_and_shifted_fparam
-        basis_tag = "Fourier"
+        transformed_feature = scaled_fparam
+        basis_tag = fm_type.value
     elif fm_type == BasisSet.CHEBYSHEV:
-        transformed_feature = sympy.acos(scaled_and_shifted_fparam)
-        basis_tag = "Chebyshev"
+        transformed_feature = sympy.acos(scaled_fparam)
+        basis_tag = fm_type.value
     elif inspect.isclass(fm_type) and issubclass(fm_type, sympy.Function):
-        transformed_feature = fm_type(scaled_and_shifted_fparam)
+        transformed_feature = fm_type(scaled_fparam)
         basis_tag = str(fm_type)
     else:
         raise NotImplementedError(
             f"{fm_type} not implemented. Choose a basis set from {[bs for bs in BasisSet]}, /"
-            "or your own sympy.Function to wrap the given feature parameter with"
+            "or your own sympy.Function to wrap the given feature parameter with."
         )
 
+    # Set reupload scaling function
     if callable(reupload_scaling):
-        rs = reupload_scaling
+        rs_func = reupload_scaling
         rs_tag = "Custom"
-    elif reupload_scaling == ReuploadScaling.CONSTANT:
-
-        def rs(i: int) -> float:
-            return float(1)
-
-        rs_tag = "Constant"
-    elif reupload_scaling == ReuploadScaling.TOWER:
-
-        def rs(i: int) -> float:
-            return float(
-                i + 1
-            )  # in qadence, qubit indices start at zero, but tower should start at 1
-
-        rs_tag = "Tower"
-    elif reupload_scaling == ReuploadScaling.EXP_UP:
-
-        def rs(i: int) -> float:
-            return float(2**i)
-
-        rs_tag = "Exponential"
-    elif reupload_scaling == ReuploadScaling.EXP_DOWN:
-
-        def rs(i: int) -> float:
-            return float(2 ** (len(support) - 1 - i))
-
-        rs_tag = "Exponential"
     else:
-        raise NotImplementedError(
-            f"Re-upload scaling {reupload_scaling} not Implemented; choose one from /"
-            f"{[rs for rs in ReuploadScaling]}, or your own python function with a /"
-            "single int arg as input and int or float output!"
-        )
+        rs_func, rs_tag = _get_rs_func(reupload_scaling, support)
 
+    # Set multiplier
     mult = 1.0 if multiplier is None else multiplier
 
-    # assembling all ingredients
+    # Build feature map
     op_list = []
     for i, qubit in enumerate(support):
-        op_list.append(op(qubit, mult * rs(i) * transformed_feature))  # type: ignore[operator]
+        op_list.append(op(qubit, mult * rs_func(i) * transformed_feature))  # type: ignore[operator]
     fm = kron(*op_list)
 
     fm.tag = rs_tag + " " + basis_tag + " FM"
