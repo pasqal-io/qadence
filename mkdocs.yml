@@ -7,6 +7,7 @@ nav:
 
   - Qadence:
     - Qadence: index.md
+    - Code of conduct: CODE_OF_CONDUCT.md
     - Getting started: tutorials/getting_started.md
     - Quantum models: tutorials/quantummodels.md
     - Parametric programs: tutorials/parameters.md
@@ -60,7 +61,7 @@ nav:
   - Development:
     - Architecture and sharp bits: development/architecture.md
     - Drawing: development/draw.md
-    - Contributing: development/contributing.md
+    - Contributing: CONTRIBUTING.md
 
 edit_uri: edit/main/docs/
 
