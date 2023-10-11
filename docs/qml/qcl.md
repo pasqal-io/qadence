@@ -5,7 +5,7 @@ quantum circuit learning[^1] (QCL) algorithm.
 QCL is a supervised quantum machine learning algorithm that uses a
 parametrized quantum neural network to learn the behavior of an arbitrary
 mathematical function using a set of function values as training data. This tutorial
-shows how to fit the $sin(x)$ function in the $[-1, 1]$ domain.
+shows how to fit the $\sin(x)$ function in the $[-1, 1]$ domain.
 
 In the following, train and test data are defined.
 
@@ -119,7 +119,7 @@ logging and metrics track features. You can refer to [this](../qml/qml_tools.md)
 The quantum model is now trained on the training data points. To determine the quality of the results,
 one can check to see how well it fits the function on the test set.
 
-```python exec="on" source="material-block" session="qcl" result="json"
+```python exec="on" source="material-block" session="qcl" html="1"
 import matplotlib.pyplot as plt
 
 y_pred = model({"phi": x_test})

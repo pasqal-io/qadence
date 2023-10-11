@@ -36,7 +36,7 @@ from qadence import product_block, tag, hea, QuantumCircuit
 from qadence.draw import display
 
 state_prep_block = product_block("01")
-display(state_prep_block)
+# display(state_prep_block)
 
 # Let's now prepare a circuit.
 n_qubits = 4
