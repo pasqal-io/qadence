@@ -9,8 +9,6 @@ programs**_ with tunable qubit interaction defined on _**arbitrary register topo
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Pypi](https://badge.fury.io/py/qadence.svg)](https://pypi.org/project/qadence/)
 
-Documentation can be found [here](https://pasqal-io.github.io/qadence/latest).
-
 ## Feature highlights
 
 * A [block-based system](docs/tutorials/getting_started.md) for composing _**complex digital-analog
