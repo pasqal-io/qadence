@@ -216,7 +216,7 @@ params = {
     "th21":  torch.rand(1), # rad
 }
 
-model.assign_parameters(params).draw(draw_phase_area=True, show=True)
+model.assign_parameters(params).draw(draw_phase_area=True, show=False)
 from docs import docsutils # markdown-exec: hide
 print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
 ```
