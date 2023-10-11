@@ -126,7 +126,7 @@ block = chain(
 obs = add(Z(i) for i in range(reg.n_qubits))
 ```
 
-```python exec="on" session="sin"
+```python exec="on" session="sin" source="material-block"
 def plot(ax, x, y, **kwargs):
     xnp = x.detach().cpu().numpy().flatten()
     ynp = y.detach().cpu().numpy().flatten()
