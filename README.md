@@ -3,24 +3,24 @@
 **Qadence** is a Python package that provides a simple interface to build _**digital-analog quantum
 programs**_ with tunable qubit interaction defined on _**arbitrary register topologies**_ realizable on neutral atom devices.
 
-[![pre-commit](https://github.com/pasqal-io/qadence/actions/workflows/lint.yml/badge.svg)](https://github.com/pasqal-io/qadence/actions/workflows/lint.yml)
-[![tests](https://github.com/pasqal-io/qadence/actions/workflows/test_fast.yml/badge.svg)](https://github.com/pasqal-io/qadence/actions/workflows/test_fast.yml)
-[![Build documentation](https://github.com/pasqal-io/qadence/actions/workflows/build_docs.yml/badge.svg)](https://pasqal-io.github.io/qadence/latest)
-
-Documentation can be found [here](https://pasqal-io.github.io/qadence/latest).
+[![Linting](https://github.com/pasqal-io/qadence/actions/workflows/lint.yml/badge.svg)](https://github.com/pasqal-io/qadence/actions/workflows/lint.yml)
+[![Tests](https://github.com/pasqal-io/qadence/actions/workflows/test_fast.yml/badge.svg)](https://github.com/pasqal-io/qadence/actions/workflows/test_fast.yml)
+[![Documentation](https://github.com/pasqal-io/qadence/actions/workflows/build_docs.yml/badge.svg)](https://pasqal-io.github.io/qadence/latest)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Pypi](https://badge.fury.io/py/qadence.svg)](https://pypi.org/project/qadence/)
 
 ## Feature highlights
 
-* A [block-based system](tutorials/getting_started.md) for composing _**complex digital-analog
+* A [block-based system](docs/tutorials/getting_started.md) for composing _**complex digital-analog
   programs**_ in a flexible and scalable manner, inspired by the Julia quantum SDK
   [Yao.jl](https://github.com/QuantumBFS/Yao.jl) and functional programming concepts.
 
-* A [simple interface](digital_analog_qc/analog-basics.md) to work with _**interacting neutral-atom qubit systems**_
-  using [arbitrary registers topologies](tutorials/register.md).
+* A [simple interface](docs/digital_analog_qc/analog-basics.md) to work with _**interacting neutral-atom qubit systems**_
+  using [arbitrary registers topologies](docs/tutorials/register.md).
 
-* An intuitive [expression-based system](tutorials/parameters.md) developed on top of the symbolic library [Sympy](https://www.sympy.org/en/index.html) to construct _**parametric quantum programs**_ easily.
+* An intuitive [expression-based system](docs/tutorials/parameters.md) developed on top of the symbolic library [Sympy](https://www.sympy.org/en/index.html) to construct _**parametric quantum programs**_ easily.
 
-* [High-order generalized parameter shift rules](link to psr tutorial) for _**differentiating parametrized quantum operations**_.
+* [High-order generalized parameter shift rules](docs/advanced_tutorials/differentiability.md) for _**differentiating parametrized quantum operations**_.
 
 * Out-of-the-box _**automatic differentiability**_ of quantum programs with [PyTorch](https://pytorch.org/) integration.
 
@@ -40,10 +40,16 @@ The default backend for Qadence is [PyQTorch](https://github.com/pasqal-io/pyqto
 * `pulser`: the [Pulser](https://github.com/pasqal-io/Pulser) backend for composing, simulating and executing pulse sequences for neutral-atom quantum devices.
 * `visualization`: to display diagrammatically quantum circuits.
 
-by running:
+To just get qadence with the `pyqtorch` backend, simply run:
 
 ```bash
-pip install qadence[braket, pulser, visualization]
+pip install qadence
+```
+
+To install other backends or the visualization tool, please use:
+
+```bash
+pip install "qadence[braket, pulser, visualization]"
 ```
 
 !!! warning
