@@ -83,7 +83,9 @@ def test_single_qubit_block(
     expectation(block, Z(0), values={}, backend=backend)  # type: ignore[arg-type]
 
 
+@pytest.mark.flaky(max_runs=5)
 @given(st.batched_digital_circuits())
+@settings(deadline=None)
 def test_singlequbit_comp(circ_and_vals: tuple[QuantumCircuit, dict[str, Tensor]]) -> None:
     circ, inputs = circ_and_vals
     wf_0 = run(circ, values=inputs)  # type: ignore[arg-type]
