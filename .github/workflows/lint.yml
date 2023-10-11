@@ -1,4 +1,4 @@
-name: Lint and type check
+name: linting
 
 on:
   push:

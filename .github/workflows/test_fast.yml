@@ -1,4 +1,4 @@
-name: Fast tests
+name: tests
 
 on:
   push:
