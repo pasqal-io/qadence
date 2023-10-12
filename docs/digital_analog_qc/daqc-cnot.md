@@ -166,7 +166,7 @@ Just as before, we can check that using the transformed Ising circuit we exactly
 
 ```python exec="on" source="material-block" session="daqc-cnot"
 # CPHASE on (i, j), Identity on third qubit:
-cphase_matrix = block_to_tensor(qd.kron(CPHASE(i, j, phi), I(k)))
+cphase_matrix = block_to_tensor(kron(CPHASE(i, j, phi), I(k)))
 
 # CPHASE using the transformed circuit:
 cphase_evo_matrix = block_to_tensor(transformed_ising)
