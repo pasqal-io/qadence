@@ -146,17 +146,14 @@ And a gradient-free optimization loop is used to compute the optimal solution.
 ```python exec="on" source="material-block" result="json" session="qubo"
 # Optimization loop.
 for i in range(20):
-    try:
-        res = minimize(
-            loss,
-            args=Q,
-            x0=np.random.uniform(1, 10, size=2 * LAYERS),
-            method="COBYLA",
-            tol=1e-8,
-            options={"maxiter": 20},
-        )
-    except Exception:
-        pass
+	res = minimize(
+		loss,
+		args=Q,
+		x0=np.random.uniform(1, 10, size=2 * layers),
+		method="COBYLA",
+		tol=1e-8,
+		options={"maxiter": 20},
+	)
 
 # Sample and visualize the optimal solution.
 model.reset_vparams(res.x)
