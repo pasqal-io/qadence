@@ -128,7 +128,7 @@ Let's exemplify it for our CNOT problem:
 
 
 ```python exec="on" source="material-block" html="1" result="json" session="daqc-cnot"
-from qadence import dacq_transform, Strategy
+from qadence import daqc_transform, Strategy
 
 # The target operation
 i = 0  # Control

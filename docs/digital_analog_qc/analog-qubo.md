@@ -186,7 +186,7 @@ axs[0].bar(xs[:n_to_show], ys[:n_to_show], width=0.5, color=colors) # markdown-e
 axs[0].tick_params(axis="x", labelrotation=90) # markdown-exec: hide
 axs[0].set_title("Initial solution") # markdown-exec: hide
 
-xs, ys = zip(*sorted(optimal_count_dict.items(), # markdown-exec: hide
+xs, ys = zip(*sorted(optimal_count.items(), # markdown-exec: hide
     key=lambda item: item[1], # markdown-exec: hide
     reverse=True # markdown-exec: hide
 )) # markdown-exec: hide
