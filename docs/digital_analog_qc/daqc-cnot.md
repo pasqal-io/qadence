@@ -166,10 +166,10 @@ Just as before, we can check that using the transformed Ising circuit we exactly
 
 ```python exec="on" source="material-block" session="daqc-cnot"
 # CPHASE on (i, j), Identity on third qubit:
-cphase_matrix = qd.block_to_tensor(qd.kron(CPHASE(i, j, phi), I(k)))
+cphase_matrix = block_to_tensor(qd.kron(CPHASE(i, j, phi), I(k)))
 
 # CPHASE using the transformed circuit:
-cphase_evo_matrix = qd.block_to_tensor(transformed_ising)
+cphase_evo_matrix = block_to_tensor(transformed_ising)
 
 # Will fail if global phases are ignored:
 assert torch.allclose(cphase_matrix, cphase_evo_matrix)
@@ -178,23 +178,25 @@ assert torch.allclose(cphase_matrix, cphase_evo_matrix)
 And we can now build the CNOT gate:
 
 ```python exec="on" source="material-block" result="json" session="daqc-cnot"
-cnot_daqc = qd.chain(
+from qadence import equivalent_state
+
+cnot_daqc = chain(
     H(j),
     transformed_ising,
     H(j)
 )
 
 # And finally run the CNOT on a specific 3-qubit initial state:
-init_state = qd.product_state("101")
+init_state = product_state("101")
 
 # Check we get an equivalent wavefunction (will still pass if global phases are ignored)
-wf_cnot = qd.run(n_qubits, block = cnot_target, state = init_state)
-wf_daqc = qd.run(n_qubits, block = cnot_daqc, state = init_state)
-assert qd.equivalent_state(wf_cnot, wf_daqc)
+wf_cnot = run(n_qubits, block = cnot_target, state = init_state)
+wf_daqc = run(n_qubits, block = cnot_daqc, state = init_state)
+assert equivalent_state(wf_cnot, wf_daqc)
 
 # Visualize the CNOT bit-flip:
-print(qd.sample(n_qubits, block = cnot_target, state = init_state, n_shots = 100))
-print(qd.sample(n_qubits, block = cnot_daqc, state = init_state, n_shots = 100))
+print(sample(n_qubits, block = cnot_target, state = init_state, n_shots = 100))
+print(sample(n_qubits, block = cnot_daqc, state = init_state, n_shots = 100))
 ```
 
 And we are done! We have effectively performed a CNOT operation on our desired target qubits by using only the global interaction of the system as the building block Hamiltonian, together with single-qubit rotations. Going through the trouble of decomposing a single digital gate into its Ising Hamiltonian is certainly not very practical, but it serves as a proof of principle for the potential of this technique to represent universal quantum computation. In the next example, we will see it applied to the digital-analog Quantum Fourier Transform.
@@ -223,11 +225,11 @@ def gen_build(g_int):
 And now we perform the DAQC transform by setting `g_int = 1.0`, matching the target Hamiltonian:
 
 ```python exec="on" source="material-block" html="1" result="json" session="daqc-cnot"
-transformed_ising = qd.daqc_transform(
-    n_qubits = 3,
-    gen_target = gen_target,
-    t_f = 1.0,
-    gen_build = gen_build(g_int = 1.0),
+transformed_ising = daqc_transform(
+    n_qubits=3,
+    gen_target=gen_target,
+    t_f=1.0,
+    gen_build=gen_build(g_int = 1.0),
 )
 
 # display(transformed_ising)
@@ -237,11 +239,11 @@ print(html_string(transformed_ising)) # markdown-exec: hide
 And we get the transformed circuit. What if our build Hamiltonian has a very weak interaction between qubits 0 and 1?
 
 ```python exec="on" source="material-block" html="1" result="json" session="daqc-cnot"
-transformed_ising = qd.daqc_transform(
-    n_qubits = 3,
-    gen_target = gen_target,
-    t_f = 1.0,
-    gen_build = gen_build(g_int = 0.001),
+transformed_ising = daqc_transform(
+    n_qubits=3,
+    gen_target=gen_target,
+    t_f=1.0,
+    gen_build=gen_build(g_int = 0.001),
 )
 
 # display(transformed_ising)
@@ -255,11 +257,11 @@ In the limit where that interaction is not present at all, the transform will no
 
 ```python exec="on" source="material-block" result="json" session="daqc-cnot"
 try:
-    transformed_ising = qd.daqc_transform(
-        n_qubits = 3,
-        gen_target = gen_target,
-        t_f = 1.0,
-        gen_build = gen_build(g_int = 0.0),
+    transformed_ising = daqc_transform(
+        n_qubits=3,
+        gen_target=gen_target,
+        t_f=1.0,
+        gen_build=gen_build(g_int = 0.0),
     )
 except ValueError as error:
     print("Error:", error)
