@@ -1750,40 +1750,38 @@ parametrized quantum neural network to learn the behavior of an arbitrary
 mathematical function using a set of function values as training data. This tutorial
 shows how to fit the <span class="arithmatex">\(\sin(x)\)</span> function in the <span class="arithmatex">\([-1, 1]\)</span> domain.</p>
 <p>In the following, train and test data are defined.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kn">import</span> <span class="nn">torch</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># make sure all tensors are kept on the same device</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="c1"># only available from PyTorch 2.0</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">device</span> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">torch</span><span class="o">.</span><span class="n">set_default_device</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="c1"># notice that the domain does not include 1 and -1</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="c1"># this avoids a singularity in the rotation angles when</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="c1"># when encoding the domain points into the quantum circuit</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="c1"># with a non-linear transformation (see below)</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="k">def</span> <span class="nf">qcl_training_data</span><span class="p">(</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    <span class="n">domain</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.99</span><span class="p">,</span> <span class="mf">0.99</span><span class="p">),</span> <span class="n">n_points</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span> <span class="nn">torch</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">random_split</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># make sure all tensors are kept on the same device</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># only available from PyTorch 2.0</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">device</span> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">torch</span><span class="o">.</span><span class="n">set_default_device</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="k">def</span> <span class="nf">qcl_training_data</span><span class="p">(</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="n">domain</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">torch</span><span class="o">.</span><span class="n">pi</span><span class="p">),</span> <span class="n">n_points</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">200</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">domain</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    <span class="n">x_rand</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">DoubleTensor</span><span class="p">(</span><span class="n">n_points</span><span class="p">)</span><span class="o">.</span><span class="n">uniform_</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">))</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>    <span class="n">y_rand</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x_rand</span><span class="p">)</span>
 <a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>    <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">domain</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>    <span class="k">return</span> <span class="n">x_rand</span><span class="p">,</span> <span class="n">y_rand</span>
 <a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>
-<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>    <span class="n">x_rand</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">DoubleTensor</span><span class="p">(</span><span class="n">n_points</span><span class="p">)</span><span class="o">.</span><span class="n">uniform_</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">))</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>    <span class="n">y_rand</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x_rand</span><span class="p">)</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>
-<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>    <span class="k">return</span> <span class="n">x_rand</span><span class="p">,</span> <span class="n">y_rand</span>
-<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>
-<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="n">test_frac</span> <span class="o">=</span> <span class="mf">0.25</span>
-<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">qcl_training_data</span><span class="p">()</span>
-<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="n">n_test</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">*</span> <span class="n">test_frac</span><span class="p">)</span>
-<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="n">x_train</span><span class="p">,</span> <span class="n">y_train</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">n_test</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)],</span> <span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">n_test</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)]</span>
-<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a><span class="n">x_test</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">n_test</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">):],</span> <span class="n">y</span><span class="p">[</span><span class="n">n_test</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">):]</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">qcl_training_data</span><span class="p">()</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="c1"># random train/test split of the dataset</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="n">train_subset</span><span class="p">,</span> <span class="n">test_subset</span> <span class="o">=</span> <span class="n">random_split</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">[</span><span class="mf">0.75</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">])</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="n">train_ind</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">train_subset</span><span class="o">.</span><span class="n">indices</span><span class="p">)</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="n">test_ind</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">test_subset</span><span class="o">.</span><span class="n">indices</span><span class="p">)</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>
+<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="n">x_train</span><span class="p">,</span> <span class="n">y_train</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">train_ind</span><span class="p">],</span> <span class="n">y</span><span class="p">[</span><span class="n">train_ind</span><span class="p">]</span>
+<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="n">x_test</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">test_ind</span><span class="p">],</span> <span class="n">y</span><span class="p">[</span><span class="n">test_ind</span><span class="p">]</span>
 </code></pre></div>
 <div class="result" markdown="1" >
 
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>
-</code></pre></div>
+
 
 </div>
 <h2 id="train-the-qcl-model">Train the QCL model</h2>
@@ -1796,41 +1794,38 @@ the number of observables determines the number of outputs of the quantum neural
 \hat{O} = \sum_i^N \hat{\sigma}_i^z
 \]</div>
 <p>In the following the observable, quantum circuit and corresponding QNN model are constructed.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span> <span class="nn">sympy</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">import</span> <span class="nn">qadence</span> <span class="k">as</span> <span class="nn">qd</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kn">from</span> <span class="nn">qadence.operations</span> <span class="kn">import</span> <span class="n">RX</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span> <span class="nn">qadence</span> <span class="k">as</span> <span class="nn">qd</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">n_qubits</span> <span class="o">=</span> <span class="mi">4</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">n_qubits</span> <span class="o">=</span> <span class="mi">8</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="c1"># create a simple feature map with a non-linear parameter transformation</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">feature_param</span> <span class="o">=</span> <span class="n">qd</span><span class="o">.</span><span class="n">FeatureParameter</span><span class="p">(</span><span class="s2">&quot;phi&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="n">feature_map</span> <span class="o">=</span> <span class="n">qd</span><span class="o">.</span><span class="n">kron</span><span class="p">(</span><span class="n">RX</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">feature_param</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_qubits</span><span class="p">))</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">featre_map</span> <span class="o">=</span> <span class="n">qd</span><span class="o">.</span><span class="n">tag</span><span class="p">(</span><span class="n">feature_map</span><span class="p">,</span> <span class="s2">&quot;feature_map&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="c1"># create a digital-analog variational ansatz using Qadence convenience constructors</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="n">ansatz</span> <span class="o">=</span> <span class="n">qd</span><span class="o">.</span><span class="n">hea</span><span class="p">(</span><span class="n">n_qubits</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="n">n_qubits</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">qd</span><span class="o">.</span><span class="n">Strategy</span><span class="o">.</span><span class="n">SDAQC</span><span class="p">)</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="n">ansatz</span> <span class="o">=</span> <span class="n">qd</span><span class="o">.</span><span class="n">tag</span><span class="p">(</span><span class="n">ansatz</span><span class="p">,</span> <span class="s2">&quot;ansatz&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="c1"># total magnetization observable</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="n">observable</span> <span class="o">=</span> <span class="n">qd</span><span class="o">.</span><span class="n">hamiltonian_factory</span><span class="p">(</span><span class="n">n_qubits</span><span class="p">,</span> <span class="n">detuning</span> <span class="o">=</span> <span class="n">qd</span><span class="o">.</span><span class="n">Z</span><span class="p">)</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="n">circuit</span> <span class="o">=</span> <span class="n">qd</span><span class="o">.</span><span class="n">QuantumCircuit</span><span class="p">(</span><span class="n">n_qubits</span><span class="p">,</span> <span class="n">feature_map</span><span class="p">,</span> <span class="n">ansatz</span><span class="p">)</span>
-<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="n">model</span> <span class="o">=</span> <span class="n">qd</span><span class="o">.</span><span class="n">QNN</span><span class="p">(</span><span class="n">circuit</span><span class="p">,</span> <span class="p">[</span><span class="n">observable</span><span class="p">])</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="n">expval</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">values</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="nb">print</span><span class="p">(</span><span class="n">expval</span><span class="p">)</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># create a simple feature map to encode the input data</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">feature_param</span> <span class="o">=</span> <span class="n">qd</span><span class="o">.</span><span class="n">FeatureParameter</span><span class="p">(</span><span class="s2">&quot;phi&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">feature_map</span> <span class="o">=</span> <span class="n">qd</span><span class="o">.</span><span class="n">kron</span><span class="p">(</span><span class="n">qd</span><span class="o">.</span><span class="n">RX</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">feature_param</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_qubits</span><span class="p">))</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">feature_map</span> <span class="o">=</span> <span class="n">qd</span><span class="o">.</span><span class="n">tag</span><span class="p">(</span><span class="n">feature_map</span><span class="p">,</span> <span class="s2">&quot;feature_map&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="c1"># create a digital-analog variational ansatz using Qadence convenience constructors</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="n">ansatz</span> <span class="o">=</span> <span class="n">qd</span><span class="o">.</span><span class="n">hea</span><span class="p">(</span><span class="n">n_qubits</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="n">n_qubits</span><span class="p">)</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="n">ansatz</span> <span class="o">=</span> <span class="n">qd</span><span class="o">.</span><span class="n">tag</span><span class="p">(</span><span class="n">ansatz</span><span class="p">,</span> <span class="s2">&quot;ansatz&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="c1"># total qubit magnetization observable</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="n">observable</span> <span class="o">=</span> <span class="n">qd</span><span class="o">.</span><span class="n">hamiltonian_factory</span><span class="p">(</span><span class="n">n_qubits</span><span class="p">,</span> <span class="n">detuning</span><span class="o">=</span><span class="n">qd</span><span class="o">.</span><span class="n">Z</span><span class="p">)</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="n">circuit</span> <span class="o">=</span> <span class="n">qd</span><span class="o">.</span><span class="n">QuantumCircuit</span><span class="p">(</span><span class="n">n_qubits</span><span class="p">,</span> <span class="n">feature_map</span><span class="p">,</span> <span class="n">ansatz</span><span class="p">)</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="n">model</span> <span class="o">=</span> <span class="n">qd</span><span class="o">.</span><span class="n">QNN</span><span class="p">(</span><span class="n">circuit</span><span class="p">,</span> <span class="p">[</span><span class="n">observable</span><span class="p">])</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="n">expval</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">values</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
 </code></pre></div>
 <div class="result" markdown="1" >
 
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kc">tens</span><span class="err">or(</span><span class="p">[[</span><span class="w"> </span><span class="mf">0.1640</span><span class="p">],</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">        </span><span class="p">[</span><span class="mf">-0.0787</span><span class="p">],</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">        </span><span class="p">[</span><span class="mf">-0.4532</span><span class="p">],</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">        </span><span class="p">[</span><span class="w"> </span><span class="mf">0.0720</span><span class="p">],</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">        </span><span class="p">[</span><span class="mf">-0.1039</span><span class="p">],</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">        </span><span class="p">[</span><span class="w"> </span><span class="mf">0.1009</span><span class="p">],</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">        </span><span class="p">[</span><span class="mf">-0.2124</span><span class="p">],</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">        </span><span class="p">[</span><span class="w"> </span><span class="mf">0.1358</span><span class="p">],</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">        </span><span class="p">[</span><span class="mf">-0.4851</span><span class="p">],</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">        </span><span class="p">[</span><span class="w"> </span><span class="mf">0.1562</span><span class="p">]],</span><span class="w"> </span><span class="err">grad_</span><span class="kc">fn</span><span class="err">=&lt;Ca</span><span class="kc">t</span><span class="err">Backward</span><span class="mi">0</span><span class="err">&gt;)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kc">tens</span><span class="err">or(</span><span class="p">[[</span><span class="mf">0.2025</span><span class="p">],</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">        </span><span class="p">[</span><span class="mf">0.1315</span><span class="p">],</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">        </span><span class="p">[</span><span class="mf">0.2424</span><span class="p">],</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">        </span><span class="p">[</span><span class="mf">0.1552</span><span class="p">],</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">        </span><span class="p">[</span><span class="mf">0.1592</span><span class="p">],</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">        </span><span class="p">[</span><span class="mf">0.2063</span><span class="p">],</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">        </span><span class="p">[</span><span class="mf">0.1899</span><span class="p">],</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">        </span><span class="p">[</span><span class="mf">0.2208</span><span class="p">],</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">        </span><span class="p">[</span><span class="mf">0.2472</span><span class="p">],</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">        </span><span class="p">[</span><span class="mf">0.1580</span><span class="p">]],</span><span class="w"> </span><span class="err">grad_</span><span class="kc">fn</span><span class="err">=&lt;Ca</span><span class="kc">t</span><span class="err">Backward</span><span class="mi">0</span><span class="err">&gt;)</span>
 </code></pre></div>
 
 </div>
@@ -1838,43 +1833,42 @@ the number of observables determines the number of outputs of the quantum neural
 universal function approximator. Standard PyTorch code is used for training the QNN
 using a mean-square error loss, Adam optimizer. Training is performend on the GPU
 if available:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># train the model</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">n_epochs</span> <span class="o">=</span> <span class="mi">200</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">lr</span> <span class="o">=</span> <span class="mf">0.5</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">input_values</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;phi&quot;</span><span class="p">:</span> <span class="n">x_train</span><span class="p">}</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">mse_loss</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">MSELoss</span><span class="p">()</span>  <span class="c1"># standard PyTorch loss function</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">)</span>  <span class="c1"># standard PyTorch Adam optimizer</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initial loss: </span><span class="si">{</span><span class="n">mse_loss</span><span class="p">(</span><span class="n">model</span><span class="p">(</span><span class="n">input_values</span><span class="p">),</span><span class="w"> </span><span class="n">y_train</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">n_epochs</span> <span class="o">=</span> <span class="mi">100</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">lr</span> <span class="o">=</span> <span class="mf">0.25</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">input_values</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;phi&quot;</span><span class="p">:</span> <span class="n">x_train</span><span class="p">}</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">mse_loss</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">MSELoss</span><span class="p">()</span>  <span class="c1"># standard PyTorch loss function</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">)</span>  <span class="c1"># standard PyTorch Adam optimizer</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initial loss: </span><span class="si">{</span><span class="n">mse_loss</span><span class="p">(</span><span class="n">model</span><span class="p">(</span><span class="n">values</span><span class="o">=</span><span class="n">x_train</span><span class="p">),</span><span class="w"> </span><span class="n">y_train</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="n">y_pred_initial</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">values</span><span class="o">=</span><span class="n">x_test</span><span class="p">)</span>
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="n">y_pred_initial</span> <span class="o">=</span> <span class="n">model</span><span class="p">({</span><span class="s2">&quot;phi&quot;</span><span class="p">:</span> <span class="n">x_test</span><span class="p">})</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_epochs</span><span class="p">):</span>
 <a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="n">running_loss</span> <span class="o">=</span> <span class="mf">0.0</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_epochs</span><span class="p">):</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>    <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>    <span class="n">loss</span> <span class="o">=</span> <span class="n">mse_loss</span><span class="p">(</span><span class="n">model</span><span class="p">(</span><span class="n">input_values</span><span class="p">),</span> <span class="n">y_train</span><span class="p">)</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>    <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
-<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>    <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>
-<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>    <span class="k">if</span> <span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">20</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Epoch </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> - Loss: </span><span class="si">{</span><span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    <span class="c1"># given a `n_batch` number of input points and a `n_observables`</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>    <span class="c1"># number of input observables to measure, the QNN returns</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>    <span class="c1"># an output of the following shape: [n_batch x n_observables]</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>    <span class="c1"># given that there is only one observable, a squeeze is applied to get</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>    <span class="c1"># a 1-dimensional tensor</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>    <span class="n">loss</span> <span class="o">=</span> <span class="n">mse_loss</span><span class="p">(</span><span class="n">model</span><span class="p">(</span><span class="n">values</span><span class="o">=</span><span class="n">x_train</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(),</span> <span class="n">y_train</span><span class="p">)</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>    <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>    <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>    <span class="k">if</span> <span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">20</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Epoch </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> - Loss: </span><span class="si">{</span><span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>
+<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="k">assert</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">1e-3</span>
 </code></pre></div>
 <div class="result" markdown="1" >
 
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="err">I</span><span class="kc">n</span><span class="err">i</span><span class="kc">t</span><span class="err">ial</span><span class="w"> </span><span class="err">loss</span><span class="p">:</span><span class="w"> </span><span class="mf">0.040382579742702956</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="err">Epoch</span><span class="w"> </span><span class="mi">20</span><span class="w"> </span><span class="mi">-</span><span class="w"> </span><span class="err">Loss</span><span class="p">:</span><span class="w"> </span><span class="mf">0.06094355349958272</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="err">Epoch</span><span class="w"> </span><span class="mi">40</span><span class="w"> </span><span class="mi">-</span><span class="w"> </span><span class="err">Loss</span><span class="p">:</span><span class="w"> </span><span class="mf">0.020199471072599125</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="err">Epoch</span><span class="w"> </span><span class="mi">60</span><span class="w"> </span><span class="mi">-</span><span class="w"> </span><span class="err">Loss</span><span class="p">:</span><span class="w"> </span><span class="mf">0.034795959771942046</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="err">Epoch</span><span class="w"> </span><span class="mi">80</span><span class="w"> </span><span class="mi">-</span><span class="w"> </span><span class="err">Loss</span><span class="p">:</span><span class="w"> </span><span class="mf">0.16442932438213143</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="err">Epoch</span><span class="w"> </span><span class="mi">100</span><span class="w"> </span><span class="mi">-</span><span class="w"> </span><span class="err">Loss</span><span class="p">:</span><span class="w"> </span><span class="mf">0.01530923269939165</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="err">Epoch</span><span class="w"> </span><span class="mi">120</span><span class="w"> </span><span class="mi">-</span><span class="w"> </span><span class="err">Loss</span><span class="p">:</span><span class="w"> </span><span class="mf">0.02774412169104146</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="err">Epoch</span><span class="w"> </span><span class="mi">140</span><span class="w"> </span><span class="mi">-</span><span class="w"> </span><span class="err">Loss</span><span class="p">:</span><span class="w"> </span><span class="mf">0.43824295695050114</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="err">Epoch</span><span class="w"> </span><span class="mi">160</span><span class="w"> </span><span class="mi">-</span><span class="w"> </span><span class="err">Loss</span><span class="p">:</span><span class="w"> </span><span class="mf">0.031369205849141414</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="err">Epoch</span><span class="w"> </span><span class="mi">180</span><span class="w"> </span><span class="mi">-</span><span class="w"> </span><span class="err">Loss</span><span class="p">:</span><span class="w"> </span><span class="mf">0.021469213972949482</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="err">Epoch</span><span class="w"> </span><span class="mi">200</span><span class="w"> </span><span class="mi">-</span><span class="w"> </span><span class="err">Loss</span><span class="p">:</span><span class="w"> </span><span class="mf">0.018666303121455067</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="err">I</span><span class="kc">n</span><span class="err">i</span><span class="kc">t</span><span class="err">ial</span><span class="w"> </span><span class="err">loss</span><span class="p">:</span><span class="w"> </span><span class="mf">0.6533070454755132</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="err">Epoch</span><span class="w"> </span><span class="mi">20</span><span class="w"> </span><span class="mi">-</span><span class="w"> </span><span class="err">Loss</span><span class="p">:</span><span class="w"> </span><span class="mf">0.006756732932883166</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="err">Epoch</span><span class="w"> </span><span class="mi">40</span><span class="w"> </span><span class="mi">-</span><span class="w"> </span><span class="err">Loss</span><span class="p">:</span><span class="w"> </span><span class="mf">0.0013178262682413558</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="err">Epoch</span><span class="w"> </span><span class="mi">60</span><span class="w"> </span><span class="mi">-</span><span class="w"> </span><span class="err">Loss</span><span class="p">:</span><span class="w"> </span><span class="mf">0.00024411275385784526</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="err">Epoch</span><span class="w"> </span><span class="mi">80</span><span class="w"> </span><span class="mi">-</span><span class="w"> </span><span class="err">Loss</span><span class="p">:</span><span class="w"> </span><span class="mf">1.8109270091472735e-05</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="err">Epoch</span><span class="w"> </span><span class="mi">100</span><span class="w"> </span><span class="mi">-</span><span class="w"> </span><span class="err">Loss</span><span class="p">:</span><span class="w"> </span><span class="mf">3.3443547512265775e-06</span>
 </code></pre></div>
 
 </div>
@@ -1890,14 +1884,15 @@ one can check to see how well it fits the function on the test set.</p>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">x_train_np</span> <span class="o">=</span> <span class="n">x_train</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">y_train_np</span> <span class="o">=</span> <span class="n">y_train</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">x_test_np</span> <span class="o">=</span> <span class="n">x_test</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="n">y_pred_initial_np</span> <span class="o">=</span> <span class="n">y_pred_initial</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">y_pred_np</span> <span class="o">=</span> <span class="n">y_pred</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="n">fig</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">x_train_np</span><span class="p">,</span> <span class="n">y_train_np</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Training points&quot;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;orange&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x_test_np</span><span class="p">,</span> <span class="n">y_pred_initial_np</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Initial prediction&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;green&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x_test_np</span><span class="p">,</span> <span class="n">y_pred_np</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Final prediction&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="n">y_test_np</span> <span class="o">=</span> <span class="n">y_test</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">y_pred_initial_np</span> <span class="o">=</span> <span class="n">y_pred_initial</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="n">y_pred_np</span> <span class="o">=</span> <span class="n">y_pred</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="n">fig</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">x_test_np</span><span class="p">,</span> <span class="n">y_test_np</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Test points&quot;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;orange&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x_test_np</span><span class="p">,</span> <span class="n">y_pred_initial_np</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Initial prediction&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;green&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x_test_np</span><span class="p">,</span> <span class="n">y_pred_np</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Final prediction&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 </code></pre></div>
 <div class="result" markdown="1" >
 
@@ -1909,7 +1904,7 @@ one can check to see how well it fits the function on the test set.</p>
   <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
    <cc:Work>
     <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
-    <dc:date>2023-10-12T10:40:27.935958</dc:date>
+    <dc:date>2023-10-12T16:59:48.923218</dc:date>
     <dc:format>image/svg+xml</dc:format>
     <dc:creator>
      <cc:Agent>
@@ -1942,7 +1937,7 @@ z
    </g>
    <g id="PathCollection_1">
     <defs>
-     <path id="md5b4585d93" d="M 0 3 
+     <path id="m31aeaef312" d="M 0 3 
 C 0.795609 3 1.55874 2.683901 2.12132 2.12132 
 C 2.683901 1.55874 3 0.795609 3 0 
 C 3 -0.795609 2.683901 -1.55874 2.12132 -2.12132 
@@ -1954,78 +1949,75 @@ C -1.55874 2.683901 -0.795609 3 0 3
 z
 " style="stroke: #ffa500"/>
     </defs>
-    <g clip-path="url(#p17385d6a2f)">
-     <use xlink:href="#md5b4585d93" x="73.832727" y="295.488" style="fill: #ffa500; stroke: #ffa500"/>
-     <use xlink:href="#md5b4585d93" x="76.444293" y="293.46174" style="fill: #ffa500; stroke: #ffa500"/>
-     <use xlink:href="#md5b4585d93" x="77.352048" y="292.746775" style="fill: #ffa500; stroke: #ffa500"/>
-     <use xlink:href="#md5b4585d93" x="79.814458" y="290.779886" style="fill: #ffa500; stroke: #ffa500"/>
-     <use xlink:href="#md5b4585d93" x="82.435471" y="288.642635" style="fill: #ffa500; stroke: #ffa500"/>
-     <use xlink:href="#md5b4585d93" x="83.265341" y="287.95663" style="fill: #ffa500; stroke: #ffa500"/>
-     <use xlink:href="#md5b4585d93" x="90.615669" y="281.688473" style="fill: #ffa500; stroke: #ffa500"/>
-     <use xlink:href="#md5b4585d93" x="93.06401" y="279.525283" style="fill: #ffa500; stroke: #ffa500"/>
-     <use xlink:href="#md5b4585d93" x="98.764986" y="274.346284" style="fill: #ffa500; stroke: #ffa500"/>
-     <use xlink:href="#md5b4585d93" x="101.018411" y="272.245422" style="fill: #ffa500; stroke: #ffa500"/>
-     <use xlink:href="#md5b4585d93" x="105.613865" y="267.868926" style="fill: #ffa500; stroke: #ffa500"/>
-     <use xlink:href="#md5b4585d93" x="106.948085" y="266.575484" style="fill: #ffa500; stroke: #ffa500"/>
-     <use xlink:href="#md5b4585d93" x="107.069051" y="266.457713" style="fill: #ffa500; stroke: #ffa500"/>
-     <use xlink:href="#md5b4585d93" x="109.734667" y="263.841569" style="fill: #ffa500; stroke: #ffa500"/>
-     <use xlink:href="#md5b4585d93" x="113.198769" y="260.382642" style="fill: #ffa500; stroke: #ffa500"/>
-     <use xlink:href="#md5b4585d93" x="113.216208" y="260.365062" style="fill: #ffa500; stroke: #ffa500"/>
-     <use xlink:href="#md5b4585d93" x="122.252911" y="251.036985" style="fill: #ffa500; stroke: #ffa500"/>
-     <use xlink:href="#md5b4585d93" x="126.117629" y="246.918586" style="fill: #ffa500; stroke: #ffa500"/>
-     <use xlink:href="#md5b4585d93" x="127.336906" y="245.60379" style="fill: #ffa500; stroke: #ffa500"/>
-     <use xlink:href="#md5b4585d93" x="134.760075" y="237.444078" style="fill: #ffa500; stroke: #ffa500"/>
-     <use xlink:href="#md5b4585d93" x="140.203184" y="231.298293" style="fill: #ffa500; stroke: #ffa500"/>
-     <use xlink:href="#md5b4585d93" x="142.205778" y="229.004064" style="fill: #ffa500; stroke: #ffa500"/>
-     <use xlink:href="#md5b4585d93" x="144.965472" y="225.814227" style="fill: #ffa500; stroke: #ffa500"/>
-     <use xlink:href="#md5b4585d93" x="154.920388" y="214.048717" style="fill: #ffa500; stroke: #ffa500"/>
-     <use xlink:href="#md5b4585d93" x="156.004477" y="212.744153" style="fill: #ffa500; stroke: #ffa500"/>
+    <g clip-path="url(#pa982ed1025)">
+     <use xlink:href="#m31aeaef312" x="73.832727" y="163.146008" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="75.198045" y="160.056954" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="76.124268" y="157.96659" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="82.157864" y="144.499164" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="92.155881" y="123.106118" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="93.845618" y="119.648515" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="94.696181" y="117.928657" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="101.950836" y="103.887453" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="106.179075" y="96.289534" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="106.322418" y="96.040302" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="107.653763" y="93.752774" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="112.718062" y="85.52263" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="117.923674" y="77.898915" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="137.996922" y="57.640795" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="141.489237" y="55.741118" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="147.977075" y="53.568" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="172.600611" y="61.535407" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="173.219769" y="62.058927" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="183.229468" y="72.56956" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="195.746323" y="90.694408" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="211.703855" y="120.302373" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="219.493191" y="136.685124" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="220.737604" y="139.386208" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="223.29558" y="144.996747" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="229.327508" y="158.471394" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="230.194021" y="160.4279" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="241.582802" y="186.290239" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="251.652011" y="208.742923" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="263.442729" y="233.425351" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="266.540711" y="239.479657" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="269.676005" y="245.38303" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="277.73659" y="259.386379" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="287.174015" y="273.295919" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="301.941795" y="288.724772" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="309.571532" y="293.328536" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="310.811398" y="293.848684" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="315.954685" y="295.31377" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="323.152524" y="295.47438" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="325.779642" y="294.982788" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="330.984917" y="293.145646" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="345.698363" y="281.933626" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="359.537624" y="263.933638" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="375.386856" y="236.038342" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="379.814203" y="227.16065" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="380.195277" y="226.378626" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="386.206178" y="213.718259" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="388.496667" y="208.753555" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="389.176482" y="207.267413" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="394.504521" y="195.453856" style="fill: #ffa500; stroke: #ffa500"/>
+     <use xlink:href="#m31aeaef312" x="398.487273" y="186.479239" style="fill: #ffa500; stroke: #ffa500"/>
     </g>
    </g>
    <g id="matplotlib.axis_1">
     <g id="xtick_1">
      <g id="line2d_1">
       <defs>
-       <path id="me24d591140" d="M 0 0 
+       <path id="m5de74fef7b" d="M 0 0 
 L 0 3.5 
 " style="stroke: #000000; stroke-width: 0.8"/>
       </defs>
       <g>
-       <use xlink:href="#me24d591140" x="68.5969" y="307.584" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m5de74fef7b" x="68.882546" y="307.584" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_1">
-      <!-- −1.00 -->
-      <g transform="translate(53.274243 322.182437) scale(0.1 -0.1)">
+      <!-- 0 -->
+      <g transform="translate(65.701296 322.182437) scale(0.1 -0.1)">
        <defs>
-        <path id="DejaVuSans-2212" d="M 678 2272 
-L 4684 2272 
-L 4684 1741 
-L 678 1741 
-L 678 2272 
-z
-" transform="scale(0.015625)"/>
-        <path id="DejaVuSans-31" d="M 794 531 
-L 1825 531 
-L 1825 4091 
-L 703 3866 
-L 703 4441 
-L 1819 4666 
-L 2450 4666 
-L 2450 531 
-L 3481 531 
-L 3481 0 
-L 794 0 
-L 794 531 
-z
-" transform="scale(0.015625)"/>
-        <path id="DejaVuSans-2e" d="M 684 794 
-L 1344 794 
-L 1344 0 
-L 684 0 
-L 684 794 
-z
-" transform="scale(0.015625)"/>
         <path id="DejaVuSans-30" d="M 2034 4250 
 Q 1547 4250 1301 3770 
 Q 1056 3291 1056 2328 
@@ -2048,94 +2040,48 @@ Q 1250 4750 2034 4750
 z
 " transform="scale(0.015625)"/>
        </defs>
-       <use xlink:href="#DejaVuSans-2212"/>
-       <use xlink:href="#DejaVuSans-31" x="83.789062"/>
-       <use xlink:href="#DejaVuSans-2e" x="147.412109"/>
-       <use xlink:href="#DejaVuSans-30" x="179.199219"/>
-       <use xlink:href="#DejaVuSans-30" x="242.822266"/>
+       <use xlink:href="#DejaVuSans-30"/>
       </g>
      </g>
     </g>
     <g id="xtick_2">
      <g id="line2d_2">
       <g>
-       <use xlink:href="#me24d591140" x="110.04231" y="307.584" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m5de74fef7b" x="122.187617" y="307.584" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_2">
-      <!-- −0.75 -->
-      <g transform="translate(94.719654 322.182437) scale(0.1 -0.1)">
+      <!-- 1 -->
+      <g transform="translate(119.006367 322.182437) scale(0.1 -0.1)">
        <defs>
-        <path id="DejaVuSans-37" d="M 525 4666 
-L 3525 4666 
-L 3525 4397 
-L 1831 0 
-L 1172 0 
-L 2766 4134 
-L 525 4134 
-L 525 4666 
-z
-" transform="scale(0.015625)"/>
-        <path id="DejaVuSans-35" d="M 691 4666 
-L 3169 4666 
-L 3169 4134 
-L 1269 4134 
-L 1269 2991 
-Q 1406 3038 1543 3061 
-Q 1681 3084 1819 3084 
-Q 2600 3084 3056 2656 
-Q 3513 2228 3513 1497 
-Q 3513 744 3044 326 
-Q 2575 -91 1722 -91 
-Q 1428 -91 1123 -41 
-Q 819 9 494 109 
-L 494 744 
-Q 775 591 1075 516 
-Q 1375 441 1709 441 
-Q 2250 441 2565 725 
-Q 2881 1009 2881 1497 
-Q 2881 1984 2565 2268 
-Q 2250 2553 1709 2553 
-Q 1456 2553 1204 2497 
-Q 953 2441 691 2322 
-L 691 4666 
+        <path id="DejaVuSans-31" d="M 794 531 
+L 1825 531 
+L 1825 4091 
+L 703 3866 
+L 703 4441 
+L 1819 4666 
+L 2450 4666 
+L 2450 531 
+L 3481 531 
+L 3481 0 
+L 794 0 
+L 794 531 
 z
 " transform="scale(0.015625)"/>
        </defs>
-       <use xlink:href="#DejaVuSans-2212"/>
-       <use xlink:href="#DejaVuSans-30" x="83.789062"/>
-       <use xlink:href="#DejaVuSans-2e" x="147.412109"/>
-       <use xlink:href="#DejaVuSans-37" x="179.199219"/>
-       <use xlink:href="#DejaVuSans-35" x="242.822266"/>
+       <use xlink:href="#DejaVuSans-31"/>
       </g>
      </g>
     </g>
     <g id="xtick_3">
      <g id="line2d_3">
       <g>
-       <use xlink:href="#me24d591140" x="151.48772" y="307.584" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m5de74fef7b" x="175.492688" y="307.584" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_3">
-      <!-- −0.50 -->
-      <g transform="translate(136.165064 322.182437) scale(0.1 -0.1)">
-       <use xlink:href="#DejaVuSans-2212"/>
-       <use xlink:href="#DejaVuSans-30" x="83.789062"/>
-       <use xlink:href="#DejaVuSans-2e" x="147.412109"/>
-       <use xlink:href="#DejaVuSans-35" x="179.199219"/>
-       <use xlink:href="#DejaVuSans-30" x="242.822266"/>
-      </g>
-     </g>
-    </g>
-    <g id="xtick_4">
-     <g id="line2d_4">
-      <g>
-       <use xlink:href="#me24d591140" x="192.93313" y="307.584" style="stroke: #000000; stroke-width: 0.8"/>
-      </g>
-     </g>
-     <g id="text_4">
-      <!-- −0.25 -->
-      <g transform="translate(177.610474 322.182437) scale(0.1 -0.1)">
+      <!-- 2 -->
+      <g transform="translate(172.311438 322.182437) scale(0.1 -0.1)">
        <defs>
         <path id="DejaVuSans-32" d="M 1228 531 
 L 3431 531 
@@ -2162,167 +2108,140 @@ Q 1991 1309 1228 531
 z
 " transform="scale(0.015625)"/>
        </defs>
-       <use xlink:href="#DejaVuSans-2212"/>
-       <use xlink:href="#DejaVuSans-30" x="83.789062"/>
-       <use xlink:href="#DejaVuSans-2e" x="147.412109"/>
-       <use xlink:href="#DejaVuSans-32" x="179.199219"/>
-       <use xlink:href="#DejaVuSans-35" x="242.822266"/>
+       <use xlink:href="#DejaVuSans-32"/>
+      </g>
+     </g>
+    </g>
+    <g id="xtick_4">
+     <g id="line2d_4">
+      <g>
+       <use xlink:href="#m5de74fef7b" x="228.797759" y="307.584" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_4">
+      <!-- 3 -->
+      <g transform="translate(225.616509 322.182437) scale(0.1 -0.1)">
+       <defs>
+        <path id="DejaVuSans-33" d="M 2597 2516 
+Q 3050 2419 3304 2112 
+Q 3559 1806 3559 1356 
+Q 3559 666 3084 287 
+Q 2609 -91 1734 -91 
+Q 1441 -91 1130 -33 
+Q 819 25 488 141 
+L 488 750 
+Q 750 597 1062 519 
+Q 1375 441 1716 441 
+Q 2309 441 2620 675 
+Q 2931 909 2931 1356 
+Q 2931 1769 2642 2001 
+Q 2353 2234 1838 2234 
+L 1294 2234 
+L 1294 2753 
+L 1863 2753 
+Q 2328 2753 2575 2939 
+Q 2822 3125 2822 3475 
+Q 2822 3834 2567 4026 
+Q 2313 4219 1838 4219 
+Q 1578 4219 1281 4162 
+Q 984 4106 628 3988 
+L 628 4550 
+Q 988 4650 1302 4700 
+Q 1616 4750 1894 4750 
+Q 2613 4750 3031 4423 
+Q 3450 4097 3450 3541 
+Q 3450 3153 3228 2886 
+Q 3006 2619 2597 2516 
+z
+" transform="scale(0.015625)"/>
+       </defs>
+       <use xlink:href="#DejaVuSans-33"/>
       </g>
      </g>
     </g>
     <g id="xtick_5">
      <g id="line2d_5">
       <g>
-       <use xlink:href="#me24d591140" x="234.37854" y="307.584" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m5de74fef7b" x="282.10283" y="307.584" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_5">
-      <!-- 0.00 -->
-      <g transform="translate(223.245728 322.182437) scale(0.1 -0.1)">
-       <use xlink:href="#DejaVuSans-30"/>
-       <use xlink:href="#DejaVuSans-2e" x="63.623047"/>
-       <use xlink:href="#DejaVuSans-30" x="95.410156"/>
-       <use xlink:href="#DejaVuSans-30" x="159.033203"/>
+      <!-- 4 -->
+      <g transform="translate(278.92158 322.182437) scale(0.1 -0.1)">
+       <defs>
+        <path id="DejaVuSans-34" d="M 2419 4116 
+L 825 1625 
+L 2419 1625 
+L 2419 4116 
+z
+M 2253 4666 
+L 3047 4666 
+L 3047 1625 
+L 3713 1625 
+L 3713 1100 
+L 3047 1100 
+L 3047 0 
+L 2419 0 
+L 2419 1100 
+L 313 1100 
+L 313 1709 
+L 2253 4666 
+z
+" transform="scale(0.015625)"/>
+       </defs>
+       <use xlink:href="#DejaVuSans-34"/>
       </g>
      </g>
     </g>
     <g id="xtick_6">
      <g id="line2d_6">
       <g>
-       <use xlink:href="#me24d591140" x="275.823951" y="307.584" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m5de74fef7b" x="335.407901" y="307.584" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_6">
-      <!-- 0.25 -->
-      <g transform="translate(264.691138 322.182437) scale(0.1 -0.1)">
-       <use xlink:href="#DejaVuSans-30"/>
-       <use xlink:href="#DejaVuSans-2e" x="63.623047"/>
-       <use xlink:href="#DejaVuSans-32" x="95.410156"/>
-       <use xlink:href="#DejaVuSans-35" x="159.033203"/>
+      <!-- 5 -->
+      <g transform="translate(332.226651 322.182437) scale(0.1 -0.1)">
+       <defs>
+        <path id="DejaVuSans-35" d="M 691 4666 
+L 3169 4666 
+L 3169 4134 
+L 1269 4134 
+L 1269 2991 
+Q 1406 3038 1543 3061 
+Q 1681 3084 1819 3084 
+Q 2600 3084 3056 2656 
+Q 3513 2228 3513 1497 
+Q 3513 744 3044 326 
+Q 2575 -91 1722 -91 
+Q 1428 -91 1123 -41 
+Q 819 9 494 109 
+L 494 744 
+Q 775 591 1075 516 
+Q 1375 441 1709 441 
+Q 2250 441 2565 725 
+Q 2881 1009 2881 1497 
+Q 2881 1984 2565 2268 
+Q 2250 2553 1709 2553 
+Q 1456 2553 1204 2497 
+Q 953 2441 691 2322 
+L 691 4666 
+z
+" transform="scale(0.015625)"/>
+       </defs>
+       <use xlink:href="#DejaVuSans-35"/>
       </g>
      </g>
     </g>
     <g id="xtick_7">
      <g id="line2d_7">
       <g>
-       <use xlink:href="#me24d591140" x="317.269361" y="307.584" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m5de74fef7b" x="388.712973" y="307.584" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_7">
-      <!-- 0.50 -->
-      <g transform="translate(306.136548 322.182437) scale(0.1 -0.1)">
-       <use xlink:href="#DejaVuSans-30"/>
-       <use xlink:href="#DejaVuSans-2e" x="63.623047"/>
-       <use xlink:href="#DejaVuSans-35" x="95.410156"/>
-       <use xlink:href="#DejaVuSans-30" x="159.033203"/>
-      </g>
-     </g>
-    </g>
-    <g id="xtick_8">
-     <g id="line2d_8">
-      <g>
-       <use xlink:href="#me24d591140" x="358.714771" y="307.584" style="stroke: #000000; stroke-width: 0.8"/>
-      </g>
-     </g>
-     <g id="text_8">
-      <!-- 0.75 -->
-      <g transform="translate(347.581959 322.182437) scale(0.1 -0.1)">
-       <use xlink:href="#DejaVuSans-30"/>
-       <use xlink:href="#DejaVuSans-2e" x="63.623047"/>
-       <use xlink:href="#DejaVuSans-37" x="95.410156"/>
-       <use xlink:href="#DejaVuSans-35" x="159.033203"/>
-      </g>
-     </g>
-    </g>
-    <g id="xtick_9">
-     <g id="line2d_9">
-      <g>
-       <use xlink:href="#me24d591140" x="400.160181" y="307.584" style="stroke: #000000; stroke-width: 0.8"/>
-      </g>
-     </g>
-     <g id="text_9">
-      <!-- 1.00 -->
-      <g transform="translate(389.027369 322.182437) scale(0.1 -0.1)">
-       <use xlink:href="#DejaVuSans-31"/>
-       <use xlink:href="#DejaVuSans-2e" x="63.623047"/>
-       <use xlink:href="#DejaVuSans-30" x="95.410156"/>
-       <use xlink:href="#DejaVuSans-30" x="159.033203"/>
-      </g>
-     </g>
-    </g>
-   </g>
-   <g id="matplotlib.axis_2">
-    <g id="ytick_1">
-     <g id="line2d_10">
-      <defs>
-       <path id="m4eeb77017c" d="M 0 0 
-L -3.5 0 
-" style="stroke: #000000; stroke-width: 0.8"/>
-      </defs>
-      <g>
-       <use xlink:href="#m4eeb77017c" x="57.6" y="290.103413" style="stroke: #000000; stroke-width: 0.8"/>
-      </g>
-     </g>
-     <g id="text_10">
-      <!-- −0.8 -->
-      <g transform="translate(26.317187 293.902632) scale(0.1 -0.1)">
-       <defs>
-        <path id="DejaVuSans-38" d="M 2034 2216 
-Q 1584 2216 1326 1975 
-Q 1069 1734 1069 1313 
-Q 1069 891 1326 650 
-Q 1584 409 2034 409 
-Q 2484 409 2743 651 
-Q 3003 894 3003 1313 
-Q 3003 1734 2745 1975 
-Q 2488 2216 2034 2216 
-z
-M 1403 2484 
-Q 997 2584 770 2862 
-Q 544 3141 544 3541 
-Q 544 4100 942 4425 
-Q 1341 4750 2034 4750 
-Q 2731 4750 3128 4425 
-Q 3525 4100 3525 3541 
-Q 3525 3141 3298 2862 
-Q 3072 2584 2669 2484 
-Q 3125 2378 3379 2068 
-Q 3634 1759 3634 1313 
-Q 3634 634 3220 271 
-Q 2806 -91 2034 -91 
-Q 1263 -91 848 271 
-Q 434 634 434 1313 
-Q 434 1759 690 2068 
-Q 947 2378 1403 2484 
-z
-M 1172 3481 
-Q 1172 3119 1398 2916 
-Q 1625 2713 2034 2713 
-Q 2441 2713 2670 2916 
-Q 2900 3119 2900 3481 
-Q 2900 3844 2670 4047 
-Q 2441 4250 2034 4250 
-Q 1625 4250 1398 4047 
-Q 1172 3844 1172 3481 
-z
-" transform="scale(0.015625)"/>
-       </defs>
-       <use xlink:href="#DejaVuSans-2212"/>
-       <use xlink:href="#DejaVuSans-30" x="83.789062"/>
-       <use xlink:href="#DejaVuSans-2e" x="147.412109"/>
-       <use xlink:href="#DejaVuSans-38" x="179.199219"/>
-      </g>
-     </g>
-    </g>
-    <g id="ytick_2">
-     <g id="line2d_11">
-      <g>
-       <use xlink:href="#m4eeb77017c" x="57.6" y="245.213142" style="stroke: #000000; stroke-width: 0.8"/>
-      </g>
-     </g>
-     <g id="text_11">
-      <!-- −0.6 -->
-      <g transform="translate(26.317187 249.012361) scale(0.1 -0.1)">
+      <!-- 6 -->
+      <g transform="translate(385.531723 322.182437) scale(0.1 -0.1)">
        <defs>
         <path id="DejaVuSans-36" d="M 2113 2584 
 Q 1688 2584 1439 2293 
@@ -2355,252 +2274,299 @@ Q 3103 4656 3366 4563
 z
 " transform="scale(0.015625)"/>
        </defs>
-       <use xlink:href="#DejaVuSans-2212"/>
-       <use xlink:href="#DejaVuSans-30" x="83.789062"/>
-       <use xlink:href="#DejaVuSans-2e" x="147.412109"/>
-       <use xlink:href="#DejaVuSans-36" x="179.199219"/>
+       <use xlink:href="#DejaVuSans-36"/>
       </g>
      </g>
     </g>
-    <g id="ytick_3">
-     <g id="line2d_12">
+   </g>
+   <g id="matplotlib.axis_2">
+    <g id="ytick_1">
+     <g id="line2d_8">
+      <defs>
+       <path id="m43336d161f" d="M 0 0 
+L -3.5 0 
+" style="stroke: #000000; stroke-width: 0.8"/>
+      </defs>
       <g>
-       <use xlink:href="#m4eeb77017c" x="57.6" y="200.322871" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m43336d161f" x="57.6" y="295.676224" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
-     <g id="text_12">
-      <!-- −0.4 -->
-      <g transform="translate(26.317187 204.12209) scale(0.1 -0.1)">
+     <g id="text_8">
+      <!-- −1.00 -->
+      <g transform="translate(19.954687 299.475443) scale(0.1 -0.1)">
        <defs>
-        <path id="DejaVuSans-34" d="M 2419 4116 
-L 825 1625 
-L 2419 1625 
-L 2419 4116 
+        <path id="DejaVuSans-2212" d="M 678 2272 
+L 4684 2272 
+L 4684 1741 
+L 678 1741 
+L 678 2272 
 z
-M 2253 4666 
-L 3047 4666 
-L 3047 1625 
-L 3713 1625 
-L 3713 1100 
-L 3047 1100 
-L 3047 0 
-L 2419 0 
-L 2419 1100 
-L 313 1100 
-L 313 1709 
-L 2253 4666 
+" transform="scale(0.015625)"/>
+        <path id="DejaVuSans-2e" d="M 684 794 
+L 1344 794 
+L 1344 0 
+L 684 0 
+L 684 794 
+z
+" transform="scale(0.015625)"/>
+       </defs>
+       <use xlink:href="#DejaVuSans-2212"/>
+       <use xlink:href="#DejaVuSans-31" x="83.789062"/>
+       <use xlink:href="#DejaVuSans-2e" x="147.412109"/>
+       <use xlink:href="#DejaVuSans-30" x="179.199219"/>
+       <use xlink:href="#DejaVuSans-30" x="242.822266"/>
+      </g>
+     </g>
+    </g>
+    <g id="ytick_2">
+     <g id="line2d_9">
+      <g>
+       <use xlink:href="#m43336d161f" x="57.6" y="265.355374" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_9">
+      <!-- −0.75 -->
+      <g transform="translate(19.954687 269.154592) scale(0.1 -0.1)">
+       <defs>
+        <path id="DejaVuSans-37" d="M 525 4666 
+L 3525 4666 
+L 3525 4397 
+L 1831 0 
+L 1172 0 
+L 2766 4134 
+L 525 4134 
+L 525 4666 
 z
 " transform="scale(0.015625)"/>
        </defs>
        <use xlink:href="#DejaVuSans-2212"/>
        <use xlink:href="#DejaVuSans-30" x="83.789062"/>
        <use xlink:href="#DejaVuSans-2e" x="147.412109"/>
-       <use xlink:href="#DejaVuSans-34" x="179.199219"/>
+       <use xlink:href="#DejaVuSans-37" x="179.199219"/>
+       <use xlink:href="#DejaVuSans-35" x="242.822266"/>
+      </g>
+     </g>
+    </g>
+    <g id="ytick_3">
+     <g id="line2d_10">
+      <g>
+       <use xlink:href="#m43336d161f" x="57.6" y="235.034524" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_10">
+      <!-- −0.50 -->
+      <g transform="translate(19.954687 238.833742) scale(0.1 -0.1)">
+       <use xlink:href="#DejaVuSans-2212"/>
+       <use xlink:href="#DejaVuSans-30" x="83.789062"/>
+       <use xlink:href="#DejaVuSans-2e" x="147.412109"/>
+       <use xlink:href="#DejaVuSans-35" x="179.199219"/>
+       <use xlink:href="#DejaVuSans-30" x="242.822266"/>
       </g>
      </g>
     </g>
     <g id="ytick_4">
-     <g id="line2d_13">
+     <g id="line2d_11">
       <g>
-       <use xlink:href="#m4eeb77017c" x="57.6" y="155.4326" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m43336d161f" x="57.6" y="204.713674" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
-     <g id="text_13">
-      <!-- −0.2 -->
-      <g transform="translate(26.317187 159.231819) scale(0.1 -0.1)">
+     <g id="text_11">
+      <!-- −0.25 -->
+      <g transform="translate(19.954687 208.512892) scale(0.1 -0.1)">
        <use xlink:href="#DejaVuSans-2212"/>
        <use xlink:href="#DejaVuSans-30" x="83.789062"/>
        <use xlink:href="#DejaVuSans-2e" x="147.412109"/>
        <use xlink:href="#DejaVuSans-32" x="179.199219"/>
+       <use xlink:href="#DejaVuSans-35" x="242.822266"/>
       </g>
      </g>
     </g>
     <g id="ytick_5">
-     <g id="line2d_14">
+     <g id="line2d_12">
       <g>
-       <use xlink:href="#m4eeb77017c" x="57.6" y="110.542329" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m43336d161f" x="57.6" y="174.392823" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
-     <g id="text_14">
-      <!-- 0.0 -->
-      <g transform="translate(34.696875 114.341548) scale(0.1 -0.1)">
+     <g id="text_12">
+      <!-- 0.00 -->
+      <g transform="translate(28.334375 178.192042) scale(0.1 -0.1)">
        <use xlink:href="#DejaVuSans-30"/>
        <use xlink:href="#DejaVuSans-2e" x="63.623047"/>
        <use xlink:href="#DejaVuSans-30" x="95.410156"/>
+       <use xlink:href="#DejaVuSans-30" x="159.033203"/>
       </g>
      </g>
     </g>
     <g id="ytick_6">
-     <g id="line2d_15">
+     <g id="line2d_13">
       <g>
-       <use xlink:href="#m4eeb77017c" x="57.6" y="65.652058" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m43336d161f" x="57.6" y="144.071973" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
-     <g id="text_15">
-      <!-- 0.2 -->
-      <g transform="translate(34.696875 69.451276) scale(0.1 -0.1)">
+     <g id="text_13">
+      <!-- 0.25 -->
+      <g transform="translate(28.334375 147.871192) scale(0.1 -0.1)">
        <use xlink:href="#DejaVuSans-30"/>
        <use xlink:href="#DejaVuSans-2e" x="63.623047"/>
        <use xlink:href="#DejaVuSans-32" x="95.410156"/>
+       <use xlink:href="#DejaVuSans-35" x="159.033203"/>
+      </g>
+     </g>
+    </g>
+    <g id="ytick_7">
+     <g id="line2d_14">
+      <g>
+       <use xlink:href="#m43336d161f" x="57.6" y="113.751123" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_14">
+      <!-- 0.50 -->
+      <g transform="translate(28.334375 117.550342) scale(0.1 -0.1)">
+       <use xlink:href="#DejaVuSans-30"/>
+       <use xlink:href="#DejaVuSans-2e" x="63.623047"/>
+       <use xlink:href="#DejaVuSans-35" x="95.410156"/>
+       <use xlink:href="#DejaVuSans-30" x="159.033203"/>
+      </g>
+     </g>
+    </g>
+    <g id="ytick_8">
+     <g id="line2d_15">
+      <g>
+       <use xlink:href="#m43336d161f" x="57.6" y="83.430273" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_15">
+      <!-- 0.75 -->
+      <g transform="translate(28.334375 87.229492) scale(0.1 -0.1)">
+       <use xlink:href="#DejaVuSans-30"/>
+       <use xlink:href="#DejaVuSans-2e" x="63.623047"/>
+       <use xlink:href="#DejaVuSans-37" x="95.410156"/>
+       <use xlink:href="#DejaVuSans-35" x="159.033203"/>
+      </g>
+     </g>
+    </g>
+    <g id="ytick_9">
+     <g id="line2d_16">
+      <g>
+       <use xlink:href="#m43336d161f" x="57.6" y="53.109423" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_16">
+      <!-- 1.00 -->
+      <g transform="translate(28.334375 56.908642) scale(0.1 -0.1)">
+       <use xlink:href="#DejaVuSans-31"/>
+       <use xlink:href="#DejaVuSans-2e" x="63.623047"/>
+       <use xlink:href="#DejaVuSans-30" x="95.410156"/>
+       <use xlink:href="#DejaVuSans-30" x="159.033203"/>
       </g>
      </g>
     </g>
    </g>
-   <g id="line2d_16">
-    <path d="M 158.047058 209.764067 
-L 158.493768 209.893067 
-L 160.4537 210.523696 
-L 161.436968 210.87927 
-L 163.889049 211.877548 
-L 166.177749 212.9488 
-L 169.417748 214.684091 
-L 172.511588 216.564192 
-L 174.1609 217.64866 
-L 177.310134 219.863348 
-L 182.184882 223.611639 
-L 183.930028 225.031056 
-L 190.358524 230.499142 
-L 194.588991 234.204109 
-L 195.64228 235.127741 
-L 196.774266 236.117926 
-L 203.865259 242.160351 
-L 205.468552 243.462405 
-L 211.993095 248.36824 
-L 212.404886 248.652384 
-L 212.491588 248.711772 
-L 219.081978 252.729806 
-L 221.588951 253.969095 
-L 223.58233 254.826684 
-L 228.349846 256.381673 
-L 232.744962 257.147784 
-L 240.395848 256.829799 
-L 245.634281 255.345848 
-L 247.047044 254.766666 
-L 247.768722 254.441484 
-L 250.259463 253.167472 
-L 255.122316 250.010559 
-L 256.261009 249.145795 
-L 260.935617 245.113576 
-L 263.971829 242.094777 
-L 269.2018 236.206921 
-L 271.190088 233.755509 
-L 272.08308 232.618693 
-L 272.173162 232.502814 
-L 284.193732 215.306067 
-L 290.620786 204.994747 
-L 301.292886 186.881893 
-L 302.642674 184.542419 
-L 303.360979 183.295349 
-L 304.182592 181.867572 
-L 307.359815 176.339514 
-L 308.051757 175.135565 
-L 310.776023 170.401789 
-L 312.400552 167.587309 
-L 313.34046 165.96299 
-L 315.392325 162.429917 
-L 316.993331 159.68773 
-L 319.454874 155.501377 
-L 322.029611 151.167324 
-L 327.131099 142.740338 
-L 328.300456 140.842243 
-L 335.46288 129.522471 
-L 346.819169 112.75327 
-L 350.133359 108.142335 
-L 351.918088 105.711895 
-L 353.11362 104.104201 
-L 356.125463 100.125561 
-L 357.572211 98.250303 
-L 362.190662 92.415629 
-L 366.765246 86.856036 
-L 371.625094 81.177117 
-L 374.986792 77.379439 
-L 381.251319 70.573434 
-L 382.585928 69.167579 
-L 384.162399 67.526477 
-L 385.059066 66.602419 
-L 389.384204 62.239738 
-L 393.287544 58.436305 
-L 397.693843 54.296044 
-L 398.487273 53.568 
-" clip-path="url(#p17385d6a2f)" style="fill: none; stroke: #008000; stroke-opacity: 0.5; stroke-width: 1.5; stroke-linecap: square"/>
-   </g>
    <g id="line2d_17">
-    <path d="M 158.047058 211.031566 
-L 158.493768 210.775242 
-L 160.4537 209.639662 
-L 161.436968 209.063552 
-L 163.889049 207.609719 
-L 166.177749 206.232859 
-L 169.417748 204.256077 
-L 172.511588 202.344726 
-L 174.1609 201.318808 
-L 177.310134 199.351352 
-L 182.184882 196.300011 
-L 183.930028 195.210856 
-L 190.358524 191.244093 
-L 194.588991 188.697583 
-L 195.64228 188.074339 
-L 196.774266 187.410007 
-L 203.865259 183.400128 
-L 205.468552 182.535182 
-L 211.993095 179.20328 
-L 212.404886 179.003904 
-L 212.491588 178.9621 
-L 219.081978 175.969806 
-L 221.588951 174.93222 
-L 223.58233 174.148584 
-L 228.349846 172.426535 
-L 232.744962 171.031738 
-L 240.395848 169.041314 
-L 245.634281 167.985295 
-L 247.047044 167.740538 
-L 247.768722 167.621782 
-L 250.259463 167.243396 
-L 255.122316 166.635852 
-L 256.261009 166.516578 
-L 260.935617 166.106795 
-L 263.971829 165.900469 
-L 269.2018 165.629772 
-L 271.190088 165.547874 
-L 272.08308 165.513829 
-L 272.173162 165.510476 
-L 284.193732 165.102389 
-L 290.620786 164.810876 
-L 301.292886 163.987765 
-L 302.642674 163.843269 
-L 303.360979 163.762158 
-L 304.182592 163.665708 
-L 307.359815 163.254685 
-L 308.051757 163.156939 
-L 310.776023 162.742619 
-L 312.400552 162.472807 
-L 313.34046 162.308844 
-L 315.392325 161.930769 
-L 316.993331 161.616546 
-L 319.454874 161.100663 
-L 322.029611 160.519049 
-L 327.131099 159.244047 
-L 328.300456 158.929841 
-L 335.46288 156.844196 
-L 346.819169 153.095637 
-L 350.133359 151.938602 
-L 351.918088 151.309961 
-L 353.11362 150.887662 
-L 356.125463 149.822934 
-L 357.572211 149.31269 
-L 362.190662 147.700431 
-L 366.765246 146.148095 
-L 371.625094 144.574858 
-L 374.986792 143.546314 
-L 381.251319 141.790641 
-L 382.585928 141.447125 
-L 384.162399 141.056306 
-L 385.059066 140.841441 
-L 389.384204 139.883876 
-L 393.287544 139.136879 
-L 397.693843 138.432886 
-L 398.487273 138.322084 
-" clip-path="url(#p17385d6a2f)" style="fill: none; stroke: #1f77b4; stroke-width: 1.5; stroke-linecap: square"/>
+    <path d="M 73.832727 155.760192 
+L 75.198045 154.867316 
+L 76.124268 154.262432 
+L 82.157864 150.457185 
+L 92.155881 145.643095 
+L 93.845618 145.138527 
+L 94.696181 144.92744 
+L 101.950836 144.456534 
+L 106.179075 145.414862 
+L 106.322418 145.464484 
+L 107.653763 145.980173 
+L 112.718062 148.85463 
+L 117.923674 153.298471 
+L 137.996922 181.434598 
+L 141.489237 187.277501 
+L 147.977075 198.032063 
+L 172.600611 228.365945 
+L 173.219769 228.819089 
+L 183.229468 234.158388 
+L 195.746323 237.177161 
+L 211.703855 240.277389 
+L 219.493191 242.971169 
+L 220.737604 243.49524 
+L 223.29558 244.647625 
+L 229.327508 247.696679 
+L 230.194021 248.162815 
+L 241.582802 254.311056 
+L 251.652011 258.32912 
+L 263.442729 258.852228 
+L 266.540711 257.99589 
+L 269.676005 256.669103 
+L 277.73659 251.136337 
+L 287.174015 241.132772 
+L 301.941795 220.492366 
+L 309.571532 209.151373 
+L 310.811398 207.350835 
+L 315.954685 200.147529 
+L 323.152524 191.093875 
+L 325.779642 188.168514 
+L 330.984917 183.058311 
+L 345.698363 173.768338 
+L 359.537624 170.741169 
+L 375.386856 169.590981 
+L 379.814203 168.944673 
+L 380.195277 168.874467 
+L 386.206178 167.404654 
+L 388.496667 166.650638 
+L 389.176482 166.405331 
+L 394.504521 164.144329 
+L 398.487273 162.086033 
+" clip-path="url(#pa982ed1025)" style="fill: none; stroke: #008000; stroke-opacity: 0.5; stroke-width: 1.5; stroke-linecap: square"/>
+   </g>
+   <g id="line2d_18">
+    <path d="M 73.832727 163.035926 
+L 75.198045 159.950424 
+L 76.124268 157.862381 
+L 82.157864 144.408997 
+L 92.155881 123.041685 
+L 93.845618 119.589601 
+L 94.696181 117.872705 
+L 101.950836 103.862406 
+L 106.179075 96.287194 
+L 106.322418 96.038786 
+L 107.653763 93.759053 
+L 112.718062 85.560358 
+L 117.923674 77.969594 
+L 137.996922 57.767252 
+L 141.489237 55.854757 
+L 147.977075 53.636072 
+L 172.600611 61.290003 
+L 173.219769 61.806633 
+L 183.229468 72.245216 
+L 195.746323 90.414552 
+L 211.703855 120.266691 
+L 219.493191 136.789725 
+L 220.737604 139.511465 
+L 223.29558 145.161796 
+L 229.327508 158.711755 
+L 230.194021 160.676548 
+L 241.582802 186.579446 
+L 251.652011 208.968486 
+L 263.442729 233.510628 
+L 266.540711 239.526758 
+L 269.676005 245.394085 
+L 277.73659 259.325508 
+L 287.174015 273.201399 
+L 301.941795 288.672409 
+L 309.571532 293.313677 
+L 310.811398 293.839173 
+L 315.954685 295.321498 
+L 323.152524 295.488 
+L 325.779642 294.992388 
+L 330.984917 293.137599 
+L 345.698363 281.826793 
+L 359.537624 263.734192 
+L 375.386856 235.81397 
+L 379.814203 226.945873 
+L 380.195277 226.164926 
+L 386.206178 213.525317 
+L 388.496667 208.569785 
+L 389.176482 207.086433 
+L 394.504521 195.294953 
+L 398.487273 186.336065 
+" clip-path="url(#pa982ed1025)" style="fill: none; stroke: #1f77b4; stroke-width: 1.5; stroke-linecap: square"/>
    </g>
    <g id="patch_3">
     <path d="M 57.6 307.584 
@@ -2624,26 +2590,26 @@ L 414.72 41.472
    </g>
    <g id="legend_1">
     <g id="patch_7">
-     <path d="M 64.6 93.506375 
-L 177.615625 93.506375 
-Q 179.615625 93.506375 179.615625 91.506375 
-L 179.615625 48.472 
-Q 179.615625 46.472 177.615625 46.472 
-L 64.6 46.472 
-Q 62.6 46.472 62.6 48.472 
-L 62.6 91.506375 
-Q 62.6 93.506375 64.6 93.506375 
+     <path d="M 294.704375 93.506375 
+L 407.72 93.506375 
+Q 409.72 93.506375 409.72 91.506375 
+L 409.72 48.472 
+Q 409.72 46.472 407.72 46.472 
+L 294.704375 46.472 
+Q 292.704375 46.472 292.704375 48.472 
+L 292.704375 91.506375 
+Q 292.704375 93.506375 294.704375 93.506375 
 z
 " style="fill: #ffffff; opacity: 0.8; stroke: #cccccc; stroke-linejoin: miter"/>
     </g>
     <g id="PathCollection_2">
      <g>
-      <use xlink:href="#md5b4585d93" x="76.6" y="55.445438" style="fill: #ffa500; stroke: #ffa500"/>
+      <use xlink:href="#m31aeaef312" x="306.704375" y="55.445438" style="fill: #ffa500; stroke: #ffa500"/>
      </g>
     </g>
-    <g id="text_16">
-     <!-- Training points -->
-     <g transform="translate(94.6 58.070438) scale(0.1 -0.1)">
+    <g id="text_17">
+     <!-- Test points -->
+     <g transform="translate(324.704375 58.070438) scale(0.1 -0.1)">
       <defs>
        <path id="DejaVuSans-54" d="M -19 4666 
 L 3928 4666 
@@ -2656,120 +2622,81 @@ L -19 4134
 L -19 4666 
 z
 " transform="scale(0.015625)"/>
-       <path id="DejaVuSans-72" d="M 2631 2963 
-Q 2534 3019 2420 3045 
-Q 2306 3072 2169 3072 
-Q 1681 3072 1420 2755 
-Q 1159 2438 1159 1844 
-L 1159 0 
-L 581 0 
-L 581 3500 
-L 1159 3500 
-L 1159 2956 
-Q 1341 3275 1631 3429 
-Q 1922 3584 2338 3584 
-Q 2397 3584 2469 3576 
-Q 2541 3569 2628 3553 
-L 2631 2963 
+       <path id="DejaVuSans-65" d="M 3597 1894 
+L 3597 1613 
+L 953 1613 
+Q 991 1019 1311 708 
+Q 1631 397 2203 397 
+Q 2534 397 2845 478 
+Q 3156 559 3463 722 
+L 3463 178 
+Q 3153 47 2828 -22 
+Q 2503 -91 2169 -91 
+Q 1331 -91 842 396 
+Q 353 884 353 1716 
+Q 353 2575 817 3079 
+Q 1281 3584 2069 3584 
+Q 2775 3584 3186 3129 
+Q 3597 2675 3597 1894 
+z
+M 3022 2063 
+Q 3016 2534 2758 2815 
+Q 2500 3097 2075 3097 
+Q 1594 3097 1305 2825 
+Q 1016 2553 972 2059 
+L 3022 2063 
 z
 " transform="scale(0.015625)"/>
-       <path id="DejaVuSans-61" d="M 2194 1759 
-Q 1497 1759 1228 1600 
-Q 959 1441 959 1056 
-Q 959 750 1161 570 
-Q 1363 391 1709 391 
-Q 2188 391 2477 730 
-Q 2766 1069 2766 1631 
-L 2766 1759 
-L 2194 1759 
-z
-M 3341 1997 
-L 3341 0 
-L 2766 0 
-L 2766 531 
-Q 2569 213 2275 61 
-Q 1981 -91 1556 -91 
-Q 1019 -91 701 211 
-Q 384 513 384 1019 
-Q 384 1609 779 1909 
-Q 1175 2209 1959 2209 
-L 2766 2209 
-L 2766 2266 
-Q 2766 2663 2505 2880 
-Q 2244 3097 1772 3097 
-Q 1472 3097 1187 3025 
-Q 903 2953 641 2809 
-L 641 3341 
-Q 956 3463 1253 3523 
-Q 1550 3584 1831 3584 
-Q 2591 3584 2966 3190 
-Q 3341 2797 3341 1997 
+       <path id="DejaVuSans-73" d="M 2834 3397 
+L 2834 2853 
+Q 2591 2978 2328 3040 
+Q 2066 3103 1784 3103 
+Q 1356 3103 1142 2972 
+Q 928 2841 928 2578 
+Q 928 2378 1081 2264 
+Q 1234 2150 1697 2047 
+L 1894 2003 
+Q 2506 1872 2764 1633 
+Q 3022 1394 3022 966 
+Q 3022 478 2636 193 
+Q 2250 -91 1575 -91 
+Q 1294 -91 989 -36 
+Q 684 19 347 128 
+L 347 722 
+Q 666 556 975 473 
+Q 1284 391 1588 391 
+Q 1994 391 2212 530 
+Q 2431 669 2431 922 
+Q 2431 1156 2273 1281 
+Q 2116 1406 1581 1522 
+L 1381 1569 
+Q 847 1681 609 1914 
+Q 372 2147 372 2553 
+Q 372 3047 722 3315 
+Q 1072 3584 1716 3584 
+Q 2034 3584 2315 3537 
+Q 2597 3491 2834 3397 
 z
 " transform="scale(0.015625)"/>
-       <path id="DejaVuSans-69" d="M 603 3500 
-L 1178 3500 
-L 1178 0 
-L 603 0 
-L 603 3500 
-z
-M 603 4863 
-L 1178 4863 
-L 1178 4134 
-L 603 4134 
-L 603 4863 
-z
-" transform="scale(0.015625)"/>
-       <path id="DejaVuSans-6e" d="M 3513 2113 
-L 3513 0 
-L 2938 0 
-L 2938 2094 
-Q 2938 2591 2744 2837 
-Q 2550 3084 2163 3084 
-Q 1697 3084 1428 2787 
-Q 1159 2491 1159 1978 
-L 1159 0 
-L 581 0 
-L 581 3500 
-L 1159 3500 
-L 1159 2956 
-Q 1366 3272 1645 3428 
-Q 1925 3584 2291 3584 
-Q 2894 3584 3203 3211 
-Q 3513 2838 3513 2113 
-z
-" transform="scale(0.015625)"/>
-       <path id="DejaVuSans-67" d="M 2906 1791 
-Q 2906 2416 2648 2759 
-Q 2391 3103 1925 3103 
-Q 1463 3103 1205 2759 
-Q 947 2416 947 1791 
-Q 947 1169 1205 825 
-Q 1463 481 1925 481 
-Q 2391 481 2648 825 
-Q 2906 1169 2906 1791 
-z
-M 3481 434 
-Q 3481 -459 3084 -895 
-Q 2688 -1331 1869 -1331 
-Q 1566 -1331 1297 -1286 
-Q 1028 -1241 775 -1147 
-L 775 -588 
-Q 1028 -725 1275 -790 
-Q 1522 -856 1778 -856 
-Q 2344 -856 2625 -561 
-Q 2906 -266 2906 331 
-L 2906 616 
-Q 2728 306 2450 153 
-Q 2172 0 1784 0 
-Q 1141 0 747 490 
-Q 353 981 353 1791 
-Q 353 2603 747 3093 
-Q 1141 3584 1784 3584 
-Q 2172 3584 2450 3431 
-Q 2728 3278 2906 2969 
-L 2906 3500 
-L 3481 3500 
-L 3481 434 
+       <path id="DejaVuSans-74" d="M 1172 4494 
+L 1172 3500 
+L 2356 3500 
+L 2356 3053 
+L 1172 3053 
+L 1172 1153 
+Q 1172 725 1289 603 
+Q 1406 481 1766 481 
+L 2356 481 
+L 2356 0 
+L 1766 0 
+Q 1100 0 847 248 
+Q 594 497 594 1153 
+L 594 3053 
+L 172 3053 
+L 172 3500 
+L 594 3500 
+L 594 4494 
+L 1172 4494 
 z
 " transform="scale(0.015625)"/>
        <path id="DejaVuSans-20" transform="scale(0.015625)"/>
@@ -2820,91 +2747,100 @@ Q 353 2609 779 3096
 Q 1206 3584 1959 3584 
 z
 " transform="scale(0.015625)"/>
-       <path id="DejaVuSans-74" d="M 1172 4494 
-L 1172 3500 
-L 2356 3500 
-L 2356 3053 
-L 1172 3053 
-L 1172 1153 
-Q 1172 725 1289 603 
-Q 1406 481 1766 481 
-L 2356 481 
-L 2356 0 
-L 1766 0 
-Q 1100 0 847 248 
-Q 594 497 594 1153 
-L 594 3053 
-L 172 3053 
-L 172 3500 
-L 594 3500 
-L 594 4494 
-L 1172 4494 
+       <path id="DejaVuSans-69" d="M 603 3500 
+L 1178 3500 
+L 1178 0 
+L 603 0 
+L 603 3500 
+z
+M 603 4863 
+L 1178 4863 
+L 1178 4134 
+L 603 4134 
+L 603 4863 
 z
 " transform="scale(0.015625)"/>
-       <path id="DejaVuSans-73" d="M 2834 3397 
-L 2834 2853 
-Q 2591 2978 2328 3040 
-Q 2066 3103 1784 3103 
-Q 1356 3103 1142 2972 
-Q 928 2841 928 2578 
-Q 928 2378 1081 2264 
-Q 1234 2150 1697 2047 
-L 1894 2003 
-Q 2506 1872 2764 1633 
-Q 3022 1394 3022 966 
-Q 3022 478 2636 193 
-Q 2250 -91 1575 -91 
-Q 1294 -91 989 -36 
-Q 684 19 347 128 
-L 347 722 
-Q 666 556 975 473 
-Q 1284 391 1588 391 
-Q 1994 391 2212 530 
-Q 2431 669 2431 922 
-Q 2431 1156 2273 1281 
-Q 2116 1406 1581 1522 
-L 1381 1569 
-Q 847 1681 609 1914 
-Q 372 2147 372 2553 
-Q 372 3047 722 3315 
-Q 1072 3584 1716 3584 
-Q 2034 3584 2315 3537 
-Q 2597 3491 2834 3397 
+       <path id="DejaVuSans-6e" d="M 3513 2113 
+L 3513 0 
+L 2938 0 
+L 2938 2094 
+Q 2938 2591 2744 2837 
+Q 2550 3084 2163 3084 
+Q 1697 3084 1428 2787 
+Q 1159 2491 1159 1978 
+L 1159 0 
+L 581 0 
+L 581 3500 
+L 1159 3500 
+L 1159 2956 
+Q 1366 3272 1645 3428 
+Q 1925 3584 2291 3584 
+Q 2894 3584 3203 3211 
+Q 3513 2838 3513 2113 
 z
 " transform="scale(0.015625)"/>
       </defs>
       <use xlink:href="#DejaVuSans-54"/>
-      <use xlink:href="#DejaVuSans-72" x="46.333984"/>
-      <use xlink:href="#DejaVuSans-61" x="87.447266"/>
-      <use xlink:href="#DejaVuSans-69" x="148.726562"/>
-      <use xlink:href="#DejaVuSans-6e" x="176.509766"/>
-      <use xlink:href="#DejaVuSans-69" x="239.888672"/>
-      <use xlink:href="#DejaVuSans-6e" x="267.671875"/>
-      <use xlink:href="#DejaVuSans-67" x="331.050781"/>
-      <use xlink:href="#DejaVuSans-20" x="394.527344"/>
-      <use xlink:href="#DejaVuSans-70" x="426.314453"/>
-      <use xlink:href="#DejaVuSans-6f" x="489.791016"/>
-      <use xlink:href="#DejaVuSans-69" x="550.972656"/>
-      <use xlink:href="#DejaVuSans-6e" x="578.755859"/>
-      <use xlink:href="#DejaVuSans-74" x="642.134766"/>
-      <use xlink:href="#DejaVuSans-73" x="681.34375"/>
+      <use xlink:href="#DejaVuSans-65" x="44.083984"/>
+      <use xlink:href="#DejaVuSans-73" x="105.607422"/>
+      <use xlink:href="#DejaVuSans-74" x="157.707031"/>
+      <use xlink:href="#DejaVuSans-20" x="196.916016"/>
+      <use xlink:href="#DejaVuSans-70" x="228.703125"/>
+      <use xlink:href="#DejaVuSans-6f" x="292.179688"/>
+      <use xlink:href="#DejaVuSans-69" x="353.361328"/>
+      <use xlink:href="#DejaVuSans-6e" x="381.144531"/>
+      <use xlink:href="#DejaVuSans-74" x="444.523438"/>
+      <use xlink:href="#DejaVuSans-73" x="483.732422"/>
      </g>
     </g>
-    <g id="line2d_18">
-     <path d="M 66.6 69.248563 
-L 76.6 69.248563 
-L 86.6 69.248563 
+    <g id="line2d_19">
+     <path d="M 296.704375 69.248563 
+L 306.704375 69.248563 
+L 316.704375 69.248563 
 " style="fill: none; stroke: #008000; stroke-opacity: 0.5; stroke-width: 1.5; stroke-linecap: square"/>
     </g>
-    <g id="text_17">
+    <g id="text_18">
      <!-- Initial prediction -->
-     <g transform="translate(94.6 72.748563) scale(0.1 -0.1)">
+     <g transform="translate(324.704375 72.748563) scale(0.1 -0.1)">
       <defs>
        <path id="DejaVuSans-49" d="M 628 4666 
 L 1259 4666 
 L 1259 0 
 L 628 0 
 L 628 4666 
+z
+" transform="scale(0.015625)"/>
+       <path id="DejaVuSans-61" d="M 2194 1759 
+Q 1497 1759 1228 1600 
+Q 959 1441 959 1056 
+Q 959 750 1161 570 
+Q 1363 391 1709 391 
+Q 2188 391 2477 730 
+Q 2766 1069 2766 1631 
+L 2766 1759 
+L 2194 1759 
+z
+M 3341 1997 
+L 3341 0 
+L 2766 0 
+L 2766 531 
+Q 2569 213 2275 61 
+Q 1981 -91 1556 -91 
+Q 1019 -91 701 211 
+Q 384 513 384 1019 
+Q 384 1609 779 1909 
+Q 1175 2209 1959 2209 
+L 2766 2209 
+L 2766 2266 
+Q 2766 2663 2505 2880 
+Q 2244 3097 1772 3097 
+Q 1472 3097 1187 3025 
+Q 903 2953 641 2809 
+L 641 3341 
+Q 956 3463 1253 3523 
+Q 1550 3584 1831 3584 
+Q 2591 3584 2966 3190 
+Q 3341 2797 3341 1997 
 z
 " transform="scale(0.015625)"/>
        <path id="DejaVuSans-6c" d="M 603 4863 
@@ -2914,29 +2850,21 @@ L 603 0
 L 603 4863 
 z
 " transform="scale(0.015625)"/>
-       <path id="DejaVuSans-65" d="M 3597 1894 
-L 3597 1613 
-L 953 1613 
-Q 991 1019 1311 708 
-Q 1631 397 2203 397 
-Q 2534 397 2845 478 
-Q 3156 559 3463 722 
-L 3463 178 
-Q 3153 47 2828 -22 
-Q 2503 -91 2169 -91 
-Q 1331 -91 842 396 
-Q 353 884 353 1716 
-Q 353 2575 817 3079 
-Q 1281 3584 2069 3584 
-Q 2775 3584 3186 3129 
-Q 3597 2675 3597 1894 
-z
-M 3022 2063 
-Q 3016 2534 2758 2815 
-Q 2500 3097 2075 3097 
-Q 1594 3097 1305 2825 
-Q 1016 2553 972 2059 
-L 3022 2063 
+       <path id="DejaVuSans-72" d="M 2631 2963 
+Q 2534 3019 2420 3045 
+Q 2306 3072 2169 3072 
+Q 1681 3072 1420 2755 
+Q 1159 2438 1159 1844 
+L 1159 0 
+L 581 0 
+L 581 3500 
+L 1159 3500 
+L 1159 2956 
+Q 1341 3275 1631 3429 
+Q 1922 3584 2338 3584 
+Q 2397 3584 2469 3576 
+Q 2541 3569 2628 3553 
+L 2631 2963 
 z
 " transform="scale(0.015625)"/>
        <path id="DejaVuSans-64" d="M 2906 2969 
@@ -3007,15 +2935,15 @@ z
       <use xlink:href="#DejaVuSans-6e" x="746.773438"/>
      </g>
     </g>
-    <g id="line2d_19">
-     <path d="M 66.6 83.926688 
-L 76.6 83.926688 
-L 86.6 83.926688 
+    <g id="line2d_20">
+     <path d="M 296.704375 83.926688 
+L 306.704375 83.926688 
+L 316.704375 83.926688 
 " style="fill: none; stroke: #1f77b4; stroke-width: 1.5; stroke-linecap: square"/>
     </g>
-    <g id="text_18">
+    <g id="text_19">
      <!-- Final prediction -->
-     <g transform="translate(94.6 87.426688) scale(0.1 -0.1)">
+     <g transform="translate(324.704375 87.426688) scale(0.1 -0.1)">
       <defs>
        <path id="DejaVuSans-46" d="M 628 4666 
 L 3309 4666 
@@ -3053,7 +2981,7 @@ z
   </g>
  </g>
  <defs>
-  <clipPath id="p17385d6a2f">
+  <clipPath id="pa982ed1025">
    <rect x="57.6" y="41.472" width="357.12" height="266.112"/>
   </clipPath>
  </defs>
