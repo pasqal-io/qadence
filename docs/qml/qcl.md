@@ -9,7 +9,7 @@ shows how to fit the $\sin(x)$ function in the $[-1, 1]$ domain.
 
 In the following, train and test data are defined.
 
-```python exec="on" source="material-block" session="qcl" result="json"
+```python exec="on" source="material-block" session="qcl"
 import torch
 from torch.utils.data import random_split
 
