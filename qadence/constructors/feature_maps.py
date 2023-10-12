@@ -27,29 +27,17 @@ def _set_range(fm_type: BasisSet | Type[sympy.Function] | str) -> tuple[float, f
         return (0.0, 1.0)
 
 
-def _rs_constant(i: int) -> int:
-    return 1
-
-
-def _rs_tower(i: int) -> float:
-    return float(i + 1)
-
-
-def _rs_exp(i: int) -> float:
-    return float(2**i)
-
-
 RS_FUNC_DICT = {
-    ReuploadScaling.CONSTANT: _rs_constant,
-    ReuploadScaling.TOWER: _rs_tower,
-    ReuploadScaling.EXP: _rs_exp,
+    ReuploadScaling.CONSTANT: lambda i: 1,
+    ReuploadScaling.TOWER: lambda i: float(i + 1),
+    ReuploadScaling.EXP: lambda i: float(2**i),
 }
 
 
 def feature_map(
     n_qubits: int,
     support: tuple[int, ...] | None = None,
-    param: Parameter | sympy.Basic | str = "phi",
+    param: Parameter | str = "phi",
     op: TRotation = RX,
     fm_type: BasisSet | Type[sympy.Function] | str = BasisSet.FOURIER,
     reupload_scaling: ReuploadScaling | Callable | str = ReuploadScaling.CONSTANT,
@@ -109,9 +97,13 @@ def feature_map(
             "Please use the respective enumerations: 'fm_type = BasisSet.FOURIER', "
             "'fm_type = BasisSet.CHEBYSHEV' or 'reupload_scaling = ReuploadScaling.TOWER'."
         )
-        fm_type = BasisSet.FOURIER if fm_type == "fourier" else fm_type
-        fm_type = BasisSet.CHEBYSHEV if fm_type == "chebyshev" else fm_type
-        reupload_scaling = ReuploadScaling.TOWER if fm_type == "tower" else reupload_scaling
+        if fm_type == "fourier":
+            fm_type = BasisSet.FOURIER
+        elif fm_type == "chebyshev":
+            fm_type = BasisSet.CHEBYSHEV
+        elif fm_type == "tower":
+            fm_type = BasisSet.FOURIER
+            reupload_scaling = ReuploadScaling.TOWER
 
     if isinstance(param, Parameter):
         fparam = param
@@ -125,13 +117,8 @@ def feature_map(
     target_range = _set_range(fm_type) if target_range is None else target_range
 
     # Rescale the feature parameter
-    f_max = max(feature_range)
-    f_min = min(feature_range)
-    t_max = max(target_range)
-    t_min = min(target_range)
-
-    scaling = (t_max - t_min) / (f_max - f_min)
-    shift = t_min - f_min * scaling
+    scaling = (max(target_range) - min(target_range)) / (max(feature_range) - min(feature_range))
+    shift = min(target_range) - min(feature_range) * scaling
 
     if math.isclose(scaling, 1.0):
         # So we don't get 1.0 factor in visualization
