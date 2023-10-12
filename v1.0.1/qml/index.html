@@ -1712,7 +1712,7 @@ with an arbitrary non-linear function embedding for the input values:</p>
 </code></pre></div>
 <div class="result" markdown="1" >
 
-[Counter({'1111': 75, '1011': 9, '0111': 6, '1101': 4, '1110': 4, '0110': 2}), Counter({'1111': 24, '1110': 16, '1101': 9, '0111': 8, '1001': 7, '0011': 6, '0110': 6, '0100': 5, '1010': 5, '1011': 5, '0101': 3, '0010': 2, '1100': 2, '0000': 1, '0001': 1}), Counter({'0000': 28, '1000': 14, '0001': 12, '0010': 6, '0100': 6, '0101': 6, '1100': 6, '0011': 5, '0110': 4, '1001': 4, '1011': 2, '1101': 2, '1110': 2, '0111': 1, '1010': 1, '1111': 1})]
+[Counter({'0000': 19, '1000': 15, '0100': 9, '0001': 8, '0010': 8, '0101': 6, '1010': 6, '0011': 5, '1001': 4, '1100': 4, '1101': 4, '0111': 3, '1110': 3, '0110': 2, '1011': 2, '1111': 2}), Counter({'0000': 28, '1000': 14, '0001': 11, '0100': 8, '0010': 7, '1010': 7, '1100': 6, '0110': 4, '1101': 4, '0111': 3, '0011': 2, '1001': 2, '0101': 1, '1011': 1, '1110': 1, '1111': 1}), Counter({'1111': 29, '0111': 13, '1011': 11, '1110': 10, '1101': 8, '0011': 4, '0101': 4, '1010': 4, '0010': 3, '0110': 3, '1000': 3, '1001': 3, '0001': 2, '0000': 1, '0100': 1, '1100': 1})]
 
 
 </div>
@@ -1759,18 +1759,18 @@ use the convenience <code>QNN</code> quantum model abstraction.</p>
 </code></pre></div>
 <div class="result" markdown="1" >
 
-Quantum model output: tensor([[0.1904],
-        [0.3953],
-        [0.2193],
-        [0.0431],
-        [0.2558],
-        [0.3160],
-        [0.0408],
-        [0.4406],
-        [0.4627],
-        [0.4138]], grad_fn=<CatBackward0>)
-First-order derivative w.r.t. the feature parameter: tensor([ 0.5730,  0.6237,  0.6140, -1.0375,  0.6560,  0.6914, -0.9687, -0.5948,
-        -0.1979, -0.8826], grad_fn=<MulBackward0>)
+Quantum model output: tensor([[ 0.3380],
+        [ 0.3526],
+        [ 0.0839],
+        [ 0.4578],
+        [ 0.4946],
+        [ 0.3522],
+        [ 0.0447],
+        [-0.0138],
+        [ 0.2831],
+        [-0.0146]], grad_fn=<CatBackward0>)
+First-order derivative w.r.t. the feature parameter: tensor([ -1.1865,   2.6427,   1.5276,  -0.9308,   2.4990, -13.1417,   1.1742,
+         -0.1297,  -1.2414,  -0.0503], grad_fn=<MulBackward0>)
 
 
 </div>
@@ -1785,8 +1785,8 @@ for arbitrary quantum operations which can be selected when constructing the
 </code></pre></div>
 <div class="result" markdown="1" >
 
-First-order derivative w.r.t. the feature parameter: tensor([ 0.5730,  0.6237,  0.6140, -1.0375,  0.6560,  0.6914, -0.9687, -0.5948,
-        -0.1979, -0.8826], grad_fn=<MulBackward0>)
+First-order derivative w.r.t. the feature parameter: tensor([ -1.1865,   2.6427,   1.5276,  -0.9308,   2.4990, -13.1417,   1.1742,
+         -0.1297,  -1.2414,  -0.0503], grad_fn=<MulBackward0>)
 
 
 </div>
