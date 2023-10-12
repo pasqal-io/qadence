@@ -114,11 +114,11 @@ def feature_map(
         reupload_scaling = ReuploadScaling.TOWER if fm_type == "tower" else reupload_scaling
 
     if isinstance(param, Parameter):
-        fparam = param
-        if fparam.trainable:
-            fparam.trainable = False
+       fparam = param
+       if fparam.trainable:
+           fparam.trainable = False
     else:
-        fparam = FeatureParameter(param)
+       fparam = FeatureParameter(param)
 
     # Set feature and target range
     feature_range = _set_range(fm_type) if feature_range is None else feature_range

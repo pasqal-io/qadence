@@ -264,13 +264,14 @@ def test_feature_maps(
     reupload_scaling: ReuploadScaling,
     op: type[RX] | type[RY] | type[RZ] | type[PHASE],
 ) -> None:
-    x = Parameter("x", trainable=True)
+    x = Parameter("x", trainable=False)
+    values = {"x": torch.rand(1)}
     block = feature_map(
         n_qubits, param=x, op=op, fm_type=fm_type, reupload_scaling=reupload_scaling
     )  # type: ignore[arg-type]
     init_state = random_state(n_qubits)
-    wf_pyq = run(n_qubits, block, state=init_state, values={"x": torch.Tensor([1.0])})
-    wf_mat = _calc_mat_vec_wavefunction(block, n_qubits, init_state)
+    wf_pyq = run(n_qubits, block, state=init_state, values=values)
+    wf_mat = _calc_mat_vec_wavefunction(block, n_qubits, init_state, values=values)
     assert equivalent_state(wf_pyq, wf_mat, atol=ATOL_32)
 
 
