@@ -110,6 +110,8 @@ for i in range(n_epochs):
 
     if (i+1) % 20 == 0:
         print(f"Epoch {i+1} - Loss: {loss.item()}")
+
+assert running_loss[-1] < 1e-3
 ```
 
 Qadence offers some convenience functions to implement this training loop with advanced
