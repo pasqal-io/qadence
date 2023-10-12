@@ -94,7 +94,6 @@ optimizer = torch.optim.Adam(model.parameters(), lr=lr)  # standard PyTorch Adam
 print(f"Initial loss: {mse_loss(model(values=x_train), y_train)}")
 y_pred_initial = model(values=x_test)
 
-running_loss = 0.0
 for i in range(n_epochs):
 
     optimizer.zero_grad()
@@ -111,7 +110,7 @@ for i in range(n_epochs):
     if (i+1) % 20 == 0:
         print(f"Epoch {i+1} - Loss: {loss.item()}")
 
-assert running_loss[-1] < 1e-3
+assert loss.item() < 1e-3
 ```
 
 Qadence offers some convenience functions to implement this training loop with advanced
