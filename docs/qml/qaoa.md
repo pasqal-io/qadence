@@ -32,9 +32,7 @@ print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
 
 The goal of the MaxCut algorithm is to maximize the following cost function:
 
-$$
-\mathcal{C}(p) = \sum_{\alpha}^m \mathcal{C}_{\alpha}(p)
-$$
+$$\mathcal{C}(p) = \sum_{\alpha}^m \mathcal{C}_{\alpha}(p)$$
 
 where $p$ is the given partition of the graph, $\alpha$ is an index over the edges and $\mathcal{C}_{\alpha}(p)$ is written
 such that if the nodes connected by the $\alpha$ edge are in the same set, it returns $0$, otherwise it returns $1$.
@@ -54,7 +52,7 @@ Below, the QAOA quantum circuit with the cost and mixing components is defined u
 into digital single and two-qubits operations via the `.digital_decomposition()` method.
 The decomposition is exact since the Hamiltonian generator is diagonal.
 
-```python exec="on" source="material-block" result="json" session="qaoa"
+```python exec="on" source="material-block" html="1" session="qaoa"
 from qadence import Zero, I, HamEvo, tag, kron, chain, QuantumCircuit, RX, Z
 
 # generators associated with the edges of the given graph
@@ -96,9 +94,7 @@ and train it using standard gradient based optimization.
 
 The loss function to be minimized reads:
 
-$$
-\mathcal{L} = \sum_{i,j}^{N_{\mathcal{E}}} \frac{1}{2} \left(1 - \langle \psi | \sigma_i^z \sigma_j^z | \psi \rangle \right)
-$$
+$$\mathcal{L} = \sum_{i,j}^{N_{\mathcal{E}}} \frac{1}{2} \left(1 - \langle \psi | \sigma_i^z \sigma_j^z | \psi \rangle \right)$$
 
 where $\psi(\beta, \gamma)$ is the wavefunction obtained by propagating the QAQA
 quantum circuit and the sum runs over the edges of the graph $N_{\mathcal{E}}$.
@@ -152,7 +148,7 @@ Given the trained quantum model, one needs to sample the resulting quantum state
 recover the bitstring with the highest probability which corresponds to the maximum
 cut of the graph.
 
-```python exec="on" source="material-block" result="json" session="qaoa"
+```python exec="on" source="material-block" html="1" session="qaoa"
 samples = model.sample(n_shots=100)[0]
 most_frequent = max(samples, key=samples.get)
 
