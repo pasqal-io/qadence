@@ -39,6 +39,7 @@ from qadence.operations import (
     MCRX,
     MCRY,
     MCRZ,
+    PHASE,
     RX,
     RY,
     RZ,
@@ -56,7 +57,7 @@ from qadence.operations import (
     Z,
 )
 from qadence.states import equivalent_state, random_state, zero_state
-from qadence.types import Interaction
+from qadence.types import BasisSet, Interaction, ReuploadScaling
 
 
 def _calc_mat_vec_wavefunction(
@@ -252,13 +253,23 @@ def test_total_magnetization(n_qubits: int) -> None:
 
 
 @pytest.mark.parametrize("n_qubits", [1, 2, 4])
-@pytest.mark.parametrize("fm_type", ["tower", "fourier", "chebyshev"])
-@pytest.mark.parametrize("op", [RX, RY, RZ])
-def test_feature_maps(n_qubits: int, fm_type: str, op: AbstractBlock) -> None:
+@pytest.mark.parametrize("fm_type", [BasisSet.FOURIER, BasisSet.CHEBYSHEV])
+@pytest.mark.parametrize(
+    "reupload_scaling", [ReuploadScaling.CONSTANT, ReuploadScaling.TOWER, ReuploadScaling.EXP]
+)
+@pytest.mark.parametrize("op", [RX, RY, RZ, PHASE])
+def test_feature_maps(
+    n_qubits: int,
+    fm_type: BasisSet,
+    reupload_scaling: ReuploadScaling,
+    op: type[RX] | type[RY] | type[RZ] | type[PHASE],
+) -> None:
     x = Parameter("x", trainable=True)
-    block = feature_map(n_qubits, param=x, op=op, fm_type=fm_type)  # type: ignore[arg-type]
+    block = feature_map(
+        n_qubits, param=x, op=op, fm_type=fm_type, reupload_scaling=reupload_scaling
+    )  # type: ignore[arg-type]
     init_state = random_state(n_qubits)
-    wf_pyq = run(n_qubits, block, state=init_state)
+    wf_pyq = run(n_qubits, block, state=init_state, values={"x": torch.Tensor([1.0])})
     wf_mat = _calc_mat_vec_wavefunction(block, n_qubits, init_state)
     assert equivalent_state(wf_pyq, wf_mat, atol=ATOL_32)
 

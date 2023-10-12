@@ -40,7 +40,7 @@ vari.tag = "vari"
 hamevo = HamEvo(kron(*map(Z, range(constants.n_qubits))), 10)
 
 b = chain(
-    feature_map(constants.n_qubits, fm_type="tower"),
+    feature_map(constants.n_qubits, fm_type="Tower"),
     hea(constants.n_qubits, 1),
     constants,
     fixed,

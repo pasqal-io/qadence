@@ -53,9 +53,9 @@ def feature_map(
     op: TRotation = RX,
     fm_type: BasisSet | Type[sympy.Function] | str = BasisSet.FOURIER,
     reupload_scaling: ReuploadScaling | Callable | str = ReuploadScaling.CONSTANT,
-    feature_range: tuple[float, float] = None,
-    target_range: tuple[float, float] = None,
-    multiplier: Parameter | TParameter = None,
+    feature_range: tuple[float, float] | None = None,
+    target_range: tuple[float, float] | None = None,
+    multiplier: Parameter | TParameter | None = None,
 ) -> KronBlock:
     """Construct a feature map of a given type.
 
@@ -115,8 +115,8 @@ def feature_map(
 
     if isinstance(param, Parameter):
         fparam = param
-        if fparam.is_trainable:
-            fparam.is_trainable = False
+        if fparam.trainable:
+            fparam.trainable = False
     else:
         fparam = FeatureParameter(param)
 
