@@ -7,9 +7,12 @@ from typing import Callable, Type, Union
 import sympy
 
 from qadence.blocks import AbstractBlock, KronBlock, chain, kron, tag
+from qadence.logger import get_logger
 from qadence.operations import PHASE, RX, RY, RZ, H
 from qadence.parameters import FeatureParameter, Parameter
 from qadence.types import BasisSet, ReuploadScaling, TParameter
+
+logger = get_logger(__name__)
 
 TRotation = Type[Union[RX, RY, RZ, PHASE]]
 ROTATIONS = [RX, RY, RZ, PHASE]
@@ -24,32 +27,23 @@ def _set_range(fm_type: BasisSet | Type[sympy.Function] | str) -> tuple[float, f
         return (0.0, 1.0)
 
 
-def _get_rs_func(reupload_scaling: Callable | ReuploadScaling) -> tuple[Callable, str]:
-    if reupload_scaling == ReuploadScaling.CONSTANT:
+def _rs_constant(i: int) -> int:
+    return 1
 
-        def rs_func(i: int) -> float:
-            return 1
 
-    elif reupload_scaling == ReuploadScaling.TOWER:
+def _rs_tower(i: int) -> float:
+    return float(i + 1)
 
-        def rs_func(i: int) -> float:
-            return float(i + 1)
 
-    elif reupload_scaling == ReuploadScaling.EXP:
+def _rs_exp(i: int) -> float:
+    return float(2**i)
 
-        def rs_func(i: int) -> float:
-            return float(2**i)
 
-    else:
-        raise NotImplementedError(
-            f"Re-upload scaling {reupload_scaling} not implemented; choose one from /"
-            f"{[rs for rs in ReuploadScaling]}, or your own python function with a /"
-            "single int arg as input and int or float output!"
-        )
-
-    rs_tag = reupload_scaling.value
-
-    return rs_func, rs_tag
+RS_FUNC_DICT = {
+    ReuploadScaling.CONSTANT: _rs_constant,
+    ReuploadScaling.TOWER: _rs_tower,
+    ReuploadScaling.EXP: _rs_exp,
+}
 
 
 def feature_map(
@@ -58,7 +52,7 @@ def feature_map(
     param: Parameter | sympy.Basic | str = "phi",
     op: TRotation = RX,
     fm_type: BasisSet | Type[sympy.Function] | str = BasisSet.FOURIER,
-    reupload_scaling: Callable | ReuploadScaling = ReuploadScaling.CONSTANT,
+    reupload_scaling: ReuploadScaling | Callable | str = ReuploadScaling.CONSTANT,
     feature_range: tuple[float, float] = None,
     target_range: tuple[float, float] = None,
     multiplier: Parameter | TParameter = None,
@@ -80,7 +74,7 @@ def feature_map(
         target_range: range of data the data encoder assumes as the natural range. For example,
             in Chebyshev polynomials it is (-1, 1), while for Fourier it may be chosen as (0, 2pi).
         multiplier: overall multiplier; this is useful for reuploading the feature map serially with
-            different scalings there; can be a number or parameter/expression.
+            different scalings; can be a number or parameter/expression.
 
     Example:
     ```python exec="on" source="material-block" result="json"
@@ -107,6 +101,17 @@ def feature_map(
         raise ValueError(
             f"Operation {op} not supported. Please one from {[rot.__name__ for rot in ROTATIONS]}."
         )
+
+    # Backward compatibility
+    if fm_type in ("fourier", "chebyshev", "tower"):
+        logger.warning(
+            "Selecting `fm_type` as 'fourier', 'chebyshev' or 'tower' is deprecated. "
+            "Please use the respective enumerations: 'fm_type = BasisSet.FOURIER', "
+            "'fm_type = BasisSet.CHEBYSHEV' or 'reupload_scaling = ReuploadScaling.TOWER'."
+        )
+        fm_type = BasisSet.FOURIER if fm_type == "fourier" else fm_type
+        fm_type = BasisSet.CHEBYSHEV if fm_type == "chebyshev" else fm_type
+        reupload_scaling = ReuploadScaling.TOWER if fm_type == "tower" else reupload_scaling
 
     if isinstance(param, Parameter):
         fparam = param
@@ -137,25 +142,36 @@ def feature_map(
     # Transform feature parameter
     if fm_type == BasisSet.FOURIER:
         transformed_feature = scaled_fparam
-        basis_tag = fm_type.value
     elif fm_type == BasisSet.CHEBYSHEV:
         transformed_feature = sympy.acos(scaled_fparam)
-        basis_tag = fm_type.value
     elif inspect.isclass(fm_type) and issubclass(fm_type, sympy.Function):
         transformed_feature = fm_type(scaled_fparam)
-        basis_tag = str(fm_type)
     else:
         raise NotImplementedError(
-            f"{fm_type} not implemented. Choose a basis set from {[bs for bs in BasisSet]}, /"
-            "or your own sympy.Function to wrap the given feature parameter with."
+            f"Feature map type {fm_type} not implemented. Choose an item from the BasisSet enum: "
+            f"{[bs.name for bs in BasisSet]}, or your own sympy.Function to wrap the given "
+            "feature parameter with."
         )
+
+    basis_tag = fm_type.value if isinstance(fm_type, BasisSet) else str(fm_type)
 
     # Set reupload scaling function
     if callable(reupload_scaling):
         rs_func = reupload_scaling
         rs_tag = "Custom"
     else:
-        rs_func, rs_tag = _get_rs_func(reupload_scaling)
+        try:
+            rs_func = RS_FUNC_DICT[reupload_scaling]  # type: ignore [index]
+            if isinstance(reupload_scaling, ReuploadScaling):
+                rs_tag = reupload_scaling.value
+            else:
+                rs_tag = reupload_scaling
+        except (KeyError, ValueError) as error:
+            raise NotImplementedError(
+                f"Reupload scaling {reupload_scaling} not implemented; choose an item from "
+                f"the ReuploadScaling enum: {[rs.name for rs in ReuploadScaling]}, or your own "
+                "python function with a single int arg as input and int or float output."
+            )
 
     # Set overall multiplier
     multiplier = 1 if multiplier is None else multiplier
@@ -174,7 +190,7 @@ def feature_map(
 def fourier_feature_map(
     n_qubits: int, support: tuple[int, ...] = None, param: str = "phi", op: TRotation = RX
 ) -> AbstractBlock:
-    """Construct a Fourier feature map
+    """Construct a Fourier feature map.
 
     Args:
         n_qubits: number of qubits across which the FM is created
@@ -187,7 +203,7 @@ def fourier_feature_map(
 def chebyshev_feature_map(
     n_qubits: int, support: tuple[int, ...] = None, param: str = "phi", op: TRotation = RX
 ) -> AbstractBlock:
-    """Construct a Chebyshev feature map
+    """Construct a Chebyshev feature map.
 
     Args:
         n_qubits: number of qubits across which the FM is created
@@ -201,7 +217,7 @@ def chebyshev_feature_map(
 def tower_feature_map(
     n_qubits: int, support: tuple[int, ...] = None, param: str = "phi", op: TRotation = RX
 ) -> AbstractBlock:
-    """Construct a Chebyshev tower feature map
+    """Construct a Chebyshev tower feature map.
 
     Args:
         n_qubits: number of qubits across which the FM is created

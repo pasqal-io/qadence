@@ -124,7 +124,7 @@ class LTSOrder(StrEnum):
     """ST4."""
 
 
-class BasisSet(str, Enum):
+class BasisSet(StrEnum):
     """Basis set for feature maps."""
 
     FOURIER = "Fourier"
@@ -133,10 +133,15 @@ class BasisSet(str, Enum):
     """Chebyshev polynomials of the first kind."""
 
 
-class ReuploadScaling(str, Enum):
+class ReuploadScaling(StrEnum):
+    """Scaling for data reuploads in feature maps."""
+
     CONSTANT = "Constant"
+    """Constant scaling."""
     TOWER = "Tower"
+    """Linearly increasing scaling."""
     EXP = "Exponential"
+    """Exponentially increasing scaling."""
 
 
 class _DiffMode(StrEnum):
