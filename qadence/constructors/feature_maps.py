@@ -3,6 +3,7 @@ from __future__ import annotations
 import inspect
 from collections.abc import Callable
 from math import isclose, pi
+from typing import Union
 
 from sympy import Function, acos
 
@@ -15,7 +16,7 @@ from qadence.types import BasisFeatureMap, ScalingFeatureMap, TParameter
 logger = get_logger(__name__)
 
 ROTATIONS = [RX, RY, RZ, PHASE]
-RotationTypes = type[RX] | type[RY] | type[RZ] | type[PHASE]
+RotationTypes = type[Union[RX | RY | RZ | PHASE]]
 
 
 def _set_range(fm_type: BasisFeatureMap | type[Function] | str) -> tuple[float, float]:
