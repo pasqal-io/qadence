@@ -51,7 +51,7 @@ from qadence import kron, block_to_tensor
 # Hamiltonian for the CPHASE gate
 h_cphase = (-1.0) * kron(N(0), N(1))
 
-# Exponentiating and time-evloving the Hamiltonian until t=phi.
+# Exponentiating and time-evolving the Hamiltonian until t=phi.
 cphase_evo = HamEvo(h_cphase, phi)
 
 # Check that we have the CPHASE gate:
