@@ -108,8 +108,7 @@ def feature_map(
 
     if isinstance(param, Parameter):
         fparam = param
-        if fparam.trainable:
-            fparam.trainable = False
+        fparam.trainable = False
     else:
         fparam = FeatureParameter(param)
 
