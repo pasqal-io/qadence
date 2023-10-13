@@ -1,9 +1,7 @@
 Variational algorithms on noisy devices and quantum machine learning (QML) [^1] in particular are
-the target applications for Qadence. For this purpose, the
-library offers both flexible symbolic expressions for the
-quantum circuit parameters via `sympy` (see [here](../tutorials/parameters.md) for more
-details) and native automatic differentiation via integration with
-[PyTorch](https://pytorch.org/) deep learning framework.
+the target applications for Qadence. For this purpose, the library offers both flexible symbolic expressions for the
+quantum circuit parameters via `sympy` (see [here](../tutorials/parameters.md) for more details) and native automatic 
+differentiation via integration with [PyTorch](https://pytorch.org/) deep learning framework.
 
 Qadence symbolic parameter interface allows to create
 arbitrary feature maps to encode classical data into quantum circuits
@@ -29,14 +27,15 @@ print(samples)
 
 The [`constructors.feature_map`][qadence.constructors.feature_map] module provides
 convenience functions to build commonly used feature maps where the input parameter
-is encoded in the single-qubit gates rotation angle.
+is encoded in the single-qubit gates rotation angle. This function will be further
+demonstrated in the [QML constructors tutorial](qml_constructors.md).
 
 Furthermore, Qadence is natively integrated with PyTorch automatic differentiation engine thus
 Qadence quantum models can be used seamlessly in a PyTorch workflow.
 
 Let's create a quantum neural network model using the feature map just defined, a
-digital-analog variational ansatz and a simple observable $X(0) \otimes X(1)$. We
-use the convenience `QNN` quantum model abstraction.
+digital-analog variational ansatz ([also explained here](qml_constructors.md)) and a 
+simple observable $X(0) \otimes X(1)$. We use the convenience `QNN` quantum model abstraction.
 
 ```python exec="on" source="material-block" result="json" session="qml"
 ansatz = qd.hea(n_qubits, strategy="sDAQC")
