@@ -52,15 +52,17 @@ def feature_map(
         support: Puts one feature-encoding rotation gate on every qubit in `support`. n_qubits in
             this case specifies the total overall qubits of the circuit, which may be wider than the
             support itself, but not narrower.
-        param: Parameter of the feature map; you can pass a string, sympy expression or Parameter;
+        param: Parameter of the feature map; you can pass a string or Parameter;
             it will be set as non-trainable (FeatureParameter) regardless.
-        op: Rotation operation of the feature map; choose from RX, RY, RZ, PHASE
+        op: Rotation operation of the feature map; choose from RX, RY, RZ or PHASE.
         fm_type: Basis set for data encoding; choose from `BasisFeatureMap.FOURIER` for Fourier
             encoding, or `BasisFeatureMap.CHEBYSHEV` for Chebyshev polynomials of the first kind.
         reupload_scaling: how the feature map scales the data that is re-uploaded for each qubit.
+            choose from `ScalingFeatureMap` enumeration or provide your own function with a single
+            int as input and int or float as output.
         feature_range: range of data that the input data is assumed to come from.
         target_range: range of data the data encoder assumes as the natural range. For example,
-            in Chebyshev polynomials it is (-1, 1), while for Fourier it may be chosen as (0, 2pi).
+            in Chebyshev polynomials it is (-1, 1), while for Fourier it may be chosen as (0, 2*pi).
         multiplier: overall multiplier; this is useful for reuploading the feature map serially with
             different scalings; can be a number or parameter/expression.
 
