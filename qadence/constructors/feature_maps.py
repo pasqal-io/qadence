@@ -1,27 +1,27 @@
 from __future__ import annotations
 
 import inspect
-import math
-from typing import Callable, Type, Union
+from collections.abc import Callable
+from math import isclose, pi
 
-import sympy
+from sympy import Function, acos
 
 from qadence.blocks import AbstractBlock, KronBlock, chain, kron, tag
 from qadence.logger import get_logger
 from qadence.operations import PHASE, RX, RY, RZ, H
 from qadence.parameters import FeatureParameter, Parameter
-from qadence.types import BasisSet, ReuploadScaling, TParameter
+from qadence.types import BasisFeatureMap, ReuploadScaling, TParameter
 
 logger = get_logger(__name__)
 
-TRotation = Type[Union[RX, RY, RZ, PHASE]]
 ROTATIONS = [RX, RY, RZ, PHASE]
+RotationTypes = type[RX | RY | RZ | PHASE]
 
 
-def _set_range(fm_type: BasisSet | Type[sympy.Function] | str) -> tuple[float, float]:
-    if fm_type == BasisSet.FOURIER:
-        return (0.0, 2 * sympy.pi)
-    elif fm_type == BasisSet.CHEBYSHEV:
+def _set_range(fm_type: BasisFeatureMap | type[Function] | str) -> tuple[float, float]:
+    if fm_type == BasisFeatureMap.FOURIER:
+        return (0.0, 2 * pi)
+    elif fm_type == BasisFeatureMap.CHEBYSHEV:
         return (-1.0, 1.0)
     else:
         return (0.0, 1.0)
@@ -38,8 +38,8 @@ def feature_map(
     n_qubits: int,
     support: tuple[int, ...] | None = None,
     param: Parameter | str = "phi",
-    op: TRotation = RX,
-    fm_type: BasisSet | Type[sympy.Function] | str = BasisSet.FOURIER,
+    op: RotationTypes = RX,
+    fm_type: BasisFeatureMap | type[Function] | str = BasisFeatureMap.FOURIER,
     reupload_scaling: ReuploadScaling | Callable | str = ReuploadScaling.CONSTANT,
     feature_range: tuple[float, float] | None = None,
     target_range: tuple[float, float] | None = None,
@@ -55,8 +55,8 @@ def feature_map(
         param: Parameter of the feature map; you can pass a string, sympy expression or Parameter;
             it will be set as non-trainable (FeatureParameter) regardless.
         op: Rotation operation of the feature map; choose from RX, RY, RZ, PHASE
-        fm_type: Determines the basis set for the encoding; choose from `BasisSet.FOURIER` for
-            Fourier encoding, or `BasisSet.CHEBYSHEV` for Chebyshev polynomials of the first kind.
+        fm_type: Basis set for data encoding; choose from `BasisFeatureMap.FOURIER` for Fourier
+            encoding, or `BasisFeatureMap.CHEBYSHEV` for Chebyshev polynomials of the first kind.
         reupload_scaling: how the feature map scales the data that is re-uploaded for each qubit.
         feature_range: range of data that the input data is assumed to come from.
         target_range: range of data the data encoder assumes as the natural range. For example,
@@ -66,15 +66,15 @@ def feature_map(
 
     Example:
     ```python exec="on" source="material-block" result="json"
-    from qadence import feature_map, BasisSet, ReuploadScaling
+    from qadence import feature_map, BasisFeatureMap, ReuploadScaling
 
-    fm = feature_map(3, fm_type=BasisSet.FOURIER)
+    fm = feature_map(3, fm_type=BasisFeatureMap.FOURIER)
     print(f"{fm = }")
 
-    fm = feature_map(3, fm_type=BasisSet.CHEBYSHEV)
+    fm = feature_map(3, fm_type=BasisFeatureMap.CHEBYSHEV)
     print(f"{fm = }")
 
-    fm = feature_map(3, fm_type=BasisSet.FOURIER, reupload_scaling = ReuploadScaling.TOWER)
+    fm = feature_map(3, fm_type=BasisFeatureMap.FOURIER, reupload_scaling = ReuploadScaling.TOWER)
     print(f"{fm = }")
     ```
     """
@@ -87,22 +87,23 @@ def feature_map(
 
     if op not in ROTATIONS:
         raise ValueError(
-            f"Operation {op} not supported. Please one from {[rot.__name__ for rot in ROTATIONS]}."
+            f"Operation {op} not supported. "
+            f"Please provide one from {[rot.__name__ for rot in ROTATIONS]}."
         )
 
-    # Backward compatibility
+    # Backwards compatibility
     if fm_type in ("fourier", "chebyshev", "tower"):
         logger.warning(
             "Selecting `fm_type` as 'fourier', 'chebyshev' or 'tower' is deprecated. "
-            "Please use the respective enumerations: 'fm_type = BasisSet.FOURIER', "
-            "'fm_type = BasisSet.CHEBYSHEV' or 'reupload_scaling = ReuploadScaling.TOWER'."
+            "Please use the respective enumerations: 'fm_type = BasisFeatureMap.FOURIER', "
+            "'fm_type = BasisFeatureMap.CHEBYSHEV' or 'reupload_scaling = ReuploadScaling.TOWER'."
         )
         if fm_type == "fourier":
-            fm_type = BasisSet.FOURIER
+            fm_type = BasisFeatureMap.FOURIER
         elif fm_type == "chebyshev":
-            fm_type = BasisSet.CHEBYSHEV
+            fm_type = BasisFeatureMap.CHEBYSHEV
         elif fm_type == "tower":
-            fm_type = BasisSet.FOURIER
+            fm_type = BasisFeatureMap.FOURIER
             reupload_scaling = ReuploadScaling.TOWER
 
     if isinstance(param, Parameter):
@@ -120,45 +121,44 @@ def feature_map(
     scaling = (max(target_range) - min(target_range)) / (max(feature_range) - min(feature_range))
     shift = min(target_range) - min(feature_range) * scaling
 
-    if math.isclose(scaling, 1.0):
+    if isclose(scaling, 1.0):
         # So we don't get 1.0 factor in visualization
         scaled_fparam = fparam + shift
     else:
         scaled_fparam = scaling * fparam + shift
 
     # Transform feature parameter
-    if fm_type == BasisSet.FOURIER:
+    if fm_type == BasisFeatureMap.FOURIER:
         transformed_feature = scaled_fparam
-    elif fm_type == BasisSet.CHEBYSHEV:
-        transformed_feature = sympy.acos(scaled_fparam)
-    elif inspect.isclass(fm_type) and issubclass(fm_type, sympy.Function):
+    elif fm_type == BasisFeatureMap.CHEBYSHEV:
+        transformed_feature = acos(scaled_fparam)
+    elif inspect.isclass(fm_type) and issubclass(fm_type, Function):
         transformed_feature = fm_type(scaled_fparam)
     else:
         raise NotImplementedError(
-            f"Feature map type {fm_type} not implemented. Choose an item from the BasisSet enum: "
-            f"{[bs.name for bs in BasisSet]}, or your own sympy.Function to wrap the given "
-            "feature parameter with."
+            f"Feature map type {fm_type} not implemented. Choose an item from the BasisFeatureMap "
+            f"enum: {[bs.name for bs in BasisFeatureMap]}, or your own sympy.Function to wrap "
+            "the given feature parameter with."
         )
 
-    basis_tag = fm_type.value if isinstance(fm_type, BasisSet) else str(fm_type)
+    basis_tag = fm_type.value if isinstance(fm_type, BasisFeatureMap) else str(fm_type)
 
     # Set reupload scaling function
     if callable(reupload_scaling):
         rs_func = reupload_scaling
         rs_tag = "Custom"
     else:
-        try:
-            rs_func = RS_FUNC_DICT[reupload_scaling]  # type: ignore [index]
-            if isinstance(reupload_scaling, ReuploadScaling):
-                rs_tag = reupload_scaling.value
-            else:
-                rs_tag = reupload_scaling
-        except (KeyError, ValueError) as error:
+        rs_func = RS_FUNC_DICT.get(reupload_scaling, None)  # type: ignore [call-overload]
+        if rs_func is None:
             raise NotImplementedError(
                 f"Reupload scaling {reupload_scaling} not implemented; choose an item from "
                 f"the ReuploadScaling enum: {[rs.name for rs in ReuploadScaling]}, or your own "
                 "python function with a single int arg as input and int or float output."
             )
+        if isinstance(reupload_scaling, ReuploadScaling):
+            rs_tag = reupload_scaling.value
+        else:
+            rs_tag = reupload_scaling
 
     # Set overall multiplier
     multiplier = 1 if multiplier is None else multiplier
@@ -175,7 +175,7 @@ def feature_map(
 
 
 def fourier_feature_map(
-    n_qubits: int, support: tuple[int, ...] = None, param: str = "phi", op: TRotation = RX
+    n_qubits: int, support: tuple[int, ...] = None, param: str = "phi", op: RotationTypes = RX
 ) -> AbstractBlock:
     """Construct a Fourier feature map.
 
@@ -183,12 +183,12 @@ def fourier_feature_map(
         n_qubits: number of qubits across which the FM is created
         param: The base name for the feature `Parameter`
     """
-    fm = feature_map(n_qubits, support=support, param=param, op=op, fm_type=BasisSet.FOURIER)
+    fm = feature_map(n_qubits, support=support, param=param, op=op, fm_type=BasisFeatureMap.FOURIER)
     return fm
 
 
 def chebyshev_feature_map(
-    n_qubits: int, support: tuple[int, ...] = None, param: str = "phi", op: TRotation = RX
+    n_qubits: int, support: tuple[int, ...] = None, param: str = "phi", op: RotationTypes = RX
 ) -> AbstractBlock:
     """Construct a Chebyshev feature map.
 
@@ -197,12 +197,14 @@ def chebyshev_feature_map(
         support (Iterable[int]): The qubit support
         param: The base name for the feature `Parameter`
     """
-    fm = feature_map(n_qubits, support=support, param=param, op=op, fm_type=BasisSet.CHEBYSHEV)
+    fm = feature_map(
+        n_qubits, support=support, param=param, op=op, fm_type=BasisFeatureMap.CHEBYSHEV
+    )
     return fm
 
 
 def tower_feature_map(
-    n_qubits: int, support: tuple[int, ...] = None, param: str = "phi", op: TRotation = RX
+    n_qubits: int, support: tuple[int, ...] = None, param: str = "phi", op: RotationTypes = RX
 ) -> AbstractBlock:
     """Construct a Chebyshev tower feature map.
 
@@ -215,7 +217,7 @@ def tower_feature_map(
         support=support,
         param=param,
         op=op,
-        fm_type=BasisSet.CHEBYSHEV,
+        fm_type=BasisFeatureMap.CHEBYSHEV,
         reupload_scaling=ReuploadScaling.TOWER,
     )
     return fm
@@ -247,10 +249,10 @@ def exp_fourier_feature_map(
         support=support,
         param=param,
         op=RZ,
-        fm_type=BasisSet.FOURIER,
+        fm_type=BasisFeatureMap.FOURIER,
         reupload_scaling=ReuploadScaling.EXP,
         feature_range=feature_range,
-        target_range=(0.0, 2 * sympy.pi),
+        target_range=(0.0, 2 * pi),
     )
     rlayer.tag = None
     return tag(chain(hlayer, rlayer), f"ExpFourierFM({param})")

@@ -34,7 +34,7 @@ __all__ = [
     "StateGeneratorType",
     "LTSOrder",
     "ReuploadScaling",
-    "BasisSet",
+    "BasisFeatureMap",
     "TensorType",
     "DiffMode",
     "BackendName",
@@ -124,7 +124,7 @@ class LTSOrder(StrEnum):
     """ST4."""
 
 
-class BasisSet(StrEnum):
+class BasisFeatureMap(StrEnum):
     """Basis set for feature maps."""
 
     FOURIER = "Fourier"

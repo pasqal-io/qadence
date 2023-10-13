@@ -10,7 +10,7 @@ from metrics import ATOL_64
 from qadence import (
     PHASE,
     RX,
-    BasisSet,
+    BasisFeatureMap,
     FeatureParameter,
     ReuploadScaling,
     X,
@@ -40,14 +40,16 @@ PARAM_DICT_1 = {
 
 
 @pytest.mark.parametrize("param_dict", [PARAM_DICT_0, PARAM_DICT_1])
-@pytest.mark.parametrize("fm_type", [BasisSet.FOURIER, BasisSet.CHEBYSHEV, sympy.asin])
+@pytest.mark.parametrize(
+    "fm_type", [BasisFeatureMap.FOURIER, BasisFeatureMap.CHEBYSHEV, sympy.asin]
+)
 @pytest.mark.parametrize(
     "reupload_scaling",
     [ReuploadScaling.CONSTANT, ReuploadScaling.TOWER, ReuploadScaling.EXP, lambda i: 5 * i + 2],
 )
 def test_feature_map_creation_and_run(
     param_dict: dict,
-    fm_type: BasisSet | type[sympy.Function],
+    fm_type: BasisFeatureMap | type[sympy.Function],
     reupload_scaling: ReuploadScaling | Callable,
 ) -> None:
     n_qubits = 4
@@ -62,23 +64,23 @@ def test_feature_map_creation_and_run(
 
 
 @pytest.mark.parametrize("n_qubits", [3, 4, 5])
-@pytest.mark.parametrize("fm_type", [BasisSet.FOURIER, BasisSet.CHEBYSHEV])
+@pytest.mark.parametrize("fm_type", [BasisFeatureMap.FOURIER, BasisFeatureMap.CHEBYSHEV])
 @pytest.mark.parametrize(
     "reupload_scaling",
     [ReuploadScaling.TOWER, ReuploadScaling.CONSTANT, ReuploadScaling.EXP, "exp_down"],
 )
 def test_feature_map_correctness(
-    n_qubits: int, fm_type: BasisSet, reupload_scaling: ReuploadScaling
+    n_qubits: int, fm_type: BasisFeatureMap, reupload_scaling: ReuploadScaling
 ) -> None:
     support = tuple(range(n_qubits))
 
     # Preparing exact result
-    if fm_type == BasisSet.CHEBYSHEV:
+    if fm_type == BasisFeatureMap.CHEBYSHEV:
         xv = torch.linspace(-0.95, 0.95, 100)
         transformed_xv = torch.acos(xv)
         feature_range = (-1.0, 1.0)
         target_range = (-1.0, 1.0)
-    elif fm_type == BasisSet.FOURIER:
+    elif fm_type == BasisFeatureMap.FOURIER:
         xv = torch.linspace(0.0, 2 * torch.pi, 100)
         transformed_xv = xv
         feature_range = (0.0, 2 * torch.pi)
