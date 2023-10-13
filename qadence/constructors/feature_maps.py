@@ -16,7 +16,7 @@ from qadence.types import BasisFeatureMap, ScalingFeatureMap, TParameter
 logger = get_logger(__name__)
 
 ROTATIONS = [RX, RY, RZ, PHASE]
-RotationTypes = type[Union[RX | RY | RZ | PHASE]]
+RotationTypes = type[Union[RX, RY, RZ, PHASE]]
 
 
 def _set_range(fm_type: BasisFeatureMap | type[Function] | str) -> tuple[float, float]:
