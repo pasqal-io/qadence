@@ -15,14 +15,14 @@ The `feature_map` function provides the necessary tools to easily several types 
 two main types of feature maps use a Fourier basis or a Chebyshev basis.
 
 ```python exec="on" source="material-block" html="1" session="fms"
-from qadence import feature_map, BasisSet, chain
+from qadence import feature_map, BasisFeatureMap, chain
 from qadence.draw import display
 
 n_qubits = 3
 
-fourier_fm = feature_map(n_qubits, fm_type=BasisSet.FOURIER)
+fourier_fm = feature_map(n_qubits, fm_type=BasisFeatureMap.FOURIER)
 
-chebyshev_fm = feature_map(n_qubits, fm_type=BasisSet.CHEBYSHEV)
+chebyshev_fm = feature_map(n_qubits, fm_type=BasisFeatureMap.CHEBYSHEV)
 
 block = chain(fourier_fm, chebyshev_fm)
 from qadence.draw import html_string # markdown-exec: hide
