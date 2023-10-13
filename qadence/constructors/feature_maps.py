@@ -10,7 +10,7 @@ from qadence.blocks import AbstractBlock, KronBlock, chain, kron, tag
 from qadence.logger import get_logger
 from qadence.operations import PHASE, RX, RY, RZ, H
 from qadence.parameters import FeatureParameter, Parameter
-from qadence.types import BasisFeatureMap, ReuploadScaling, TParameter
+from qadence.types import BasisFeatureMap, ScalingFeatureMap, TParameter
 
 logger = get_logger(__name__)
 
@@ -28,9 +28,9 @@ def _set_range(fm_type: BasisFeatureMap | type[Function] | str) -> tuple[float, 
 
 
 RS_FUNC_DICT = {
-    ReuploadScaling.CONSTANT: lambda i: 1,
-    ReuploadScaling.TOWER: lambda i: float(i + 1),
-    ReuploadScaling.EXP: lambda i: float(2**i),
+    ScalingFeatureMap.CONSTANT: lambda i: 1,
+    ScalingFeatureMap.TOWER: lambda i: float(i + 1),
+    ScalingFeatureMap.EXP: lambda i: float(2**i),
 }
 
 
@@ -40,7 +40,7 @@ def feature_map(
     param: Parameter | str = "phi",
     op: RotationTypes = RX,
     fm_type: BasisFeatureMap | type[Function] | str = BasisFeatureMap.FOURIER,
-    reupload_scaling: ReuploadScaling | Callable | str = ReuploadScaling.CONSTANT,
+    reupload_scaling: ScalingFeatureMap | Callable | str = ScalingFeatureMap.CONSTANT,
     feature_range: tuple[float, float] | None = None,
     target_range: tuple[float, float] | None = None,
     multiplier: Parameter | TParameter | None = None,
@@ -66,7 +66,7 @@ def feature_map(
 
     Example:
     ```python exec="on" source="material-block" result="json"
-    from qadence import feature_map, BasisFeatureMap, ReuploadScaling
+    from qadence import feature_map, BasisFeatureMap, ScalingFeatureMap
 
     fm = feature_map(3, fm_type=BasisFeatureMap.FOURIER)
     print(f"{fm = }")
@@ -74,7 +74,7 @@ def feature_map(
     fm = feature_map(3, fm_type=BasisFeatureMap.CHEBYSHEV)
     print(f"{fm = }")
 
-    fm = feature_map(3, fm_type=BasisFeatureMap.FOURIER, reupload_scaling = ReuploadScaling.TOWER)
+    fm = feature_map(3, fm_type=BasisFeatureMap.FOURIER, reupload_scaling = ScalingFeatureMap.TOWER)
     print(f"{fm = }")
     ```
     """
@@ -96,7 +96,7 @@ def feature_map(
         logger.warning(
             "Selecting `fm_type` as 'fourier', 'chebyshev' or 'tower' is deprecated. "
             "Please use the respective enumerations: 'fm_type = BasisFeatureMap.FOURIER', "
-            "'fm_type = BasisFeatureMap.CHEBYSHEV' or 'reupload_scaling = ReuploadScaling.TOWER'."
+            "'fm_type = BasisFeatureMap.CHEBYSHEV' or 'reupload_scaling = ScalingFeatureMap.TOWER'."
         )
         if fm_type == "fourier":
             fm_type = BasisFeatureMap.FOURIER
@@ -104,7 +104,7 @@ def feature_map(
             fm_type = BasisFeatureMap.CHEBYSHEV
         elif fm_type == "tower":
             fm_type = BasisFeatureMap.FOURIER
-            reupload_scaling = ReuploadScaling.TOWER
+            reupload_scaling = ScalingFeatureMap.TOWER
 
     if isinstance(param, Parameter):
         fparam = param
@@ -151,10 +151,10 @@ def feature_map(
         if rs_func is None:
             raise NotImplementedError(
                 f"Reupload scaling {reupload_scaling} not implemented; choose an item from "
-                f"the ReuploadScaling enum: {[rs.name for rs in ReuploadScaling]}, or your own "
+                f"the ScalingFeatureMap enum: {[rs.name for rs in ScalingFeatureMap]}, or your own "
                 "python function with a single int arg as input and int or float output."
             )
-        if isinstance(reupload_scaling, ReuploadScaling):
+        if isinstance(reupload_scaling, ScalingFeatureMap):
             rs_tag = reupload_scaling.value
         else:
             rs_tag = reupload_scaling
@@ -217,7 +217,7 @@ def tower_feature_map(
         param=param,
         op=op,
         fm_type=BasisFeatureMap.CHEBYSHEV,
-        reupload_scaling=ReuploadScaling.TOWER,
+        reupload_scaling=ScalingFeatureMap.TOWER,
     )
     return fm
 
@@ -249,7 +249,7 @@ def exp_fourier_feature_map(
         param=param,
         op=RZ,
         fm_type=BasisFeatureMap.FOURIER,
-        reupload_scaling=ReuploadScaling.EXP,
+        reupload_scaling=ScalingFeatureMap.EXP,
         feature_range=feature_range,
         target_range=(0.0, 2 * pi),
     )

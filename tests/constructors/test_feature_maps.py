@@ -12,7 +12,7 @@ from qadence import (
     RX,
     BasisFeatureMap,
     FeatureParameter,
-    ReuploadScaling,
+    ScalingFeatureMap,
     X,
     Z,
     exp_fourier_feature_map,
@@ -45,12 +45,17 @@ PARAM_DICT_1 = {
 )
 @pytest.mark.parametrize(
     "reupload_scaling",
-    [ReuploadScaling.CONSTANT, ReuploadScaling.TOWER, ReuploadScaling.EXP, lambda i: 5 * i + 2],
+    [
+        ScalingFeatureMap.CONSTANT,
+        ScalingFeatureMap.TOWER,
+        ScalingFeatureMap.EXP,
+        lambda i: 5 * i + 2,
+    ],
 )
 def test_feature_map_creation_and_run(
     param_dict: dict,
     fm_type: BasisFeatureMap | type[sympy.Function],
-    reupload_scaling: ReuploadScaling | Callable,
+    reupload_scaling: ScalingFeatureMap | Callable,
 ) -> None:
     n_qubits = 4
 
@@ -67,10 +72,10 @@ def test_feature_map_creation_and_run(
 @pytest.mark.parametrize("fm_type", [BasisFeatureMap.FOURIER, BasisFeatureMap.CHEBYSHEV])
 @pytest.mark.parametrize(
     "reupload_scaling",
-    [ReuploadScaling.TOWER, ReuploadScaling.CONSTANT, ReuploadScaling.EXP, "exp_down"],
+    [ScalingFeatureMap.TOWER, ScalingFeatureMap.CONSTANT, ScalingFeatureMap.EXP, "exp_down"],
 )
 def test_feature_map_correctness(
-    n_qubits: int, fm_type: BasisFeatureMap, reupload_scaling: ReuploadScaling
+    n_qubits: int, fm_type: BasisFeatureMap, reupload_scaling: ScalingFeatureMap
 ) -> None:
     support = tuple(range(n_qubits))
 
@@ -86,17 +91,17 @@ def test_feature_map_correctness(
         feature_range = (0.0, 2 * torch.pi)
         target_range = (0.0, 2 * torch.pi)
 
-    if reupload_scaling == ReuploadScaling.CONSTANT:
+    if reupload_scaling == ScalingFeatureMap.CONSTANT:
 
         def scaling(j: int) -> float:
             return 1
 
-    elif reupload_scaling == ReuploadScaling.TOWER:
+    elif reupload_scaling == ScalingFeatureMap.TOWER:
 
         def scaling(j: int) -> float:
             return float(j + 1)
 
-    elif reupload_scaling == ReuploadScaling.EXP:
+    elif reupload_scaling == ScalingFeatureMap.EXP:
 
         def scaling(j: int) -> float:
             return float(2**j)
@@ -106,7 +111,7 @@ def test_feature_map_correctness(
         def scaling(j: int) -> float:
             return float(2 ** (n_qubits - j - 1))
 
-        reupload_scaling = ReuploadScaling.EXP
+        reupload_scaling = ScalingFeatureMap.EXP
         support = tuple(reversed(range(n_qubits)))
 
     target = torch.cat(
