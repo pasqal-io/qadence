@@ -58,7 +58,7 @@ print(html_string(block)) # markdown-exec: hide
 ```python exec="on" source="material-block" html="1"
 from qadence import feature_map, hea, chain, ReuploadScaling
 
-block = chain(feature_map(4, fm_type=ReuploadScaling.TOWER), hea(4,2))
+block = chain(feature_map(4, reupload_scaling=ReuploadScaling.TOWER), hea(4,2))
 from qadence.draw import html_string # markdown-exec: hide
 print(html_string(block)) # markdown-exec: hide
 ```
