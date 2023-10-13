@@ -113,7 +113,7 @@ print(f"h_sys = {h_sys}") # markdown-exec: hide
 Now let's consider that the experimental system is fixed, and qubits can not be isolated one from another. The options are:
 
 - Turn on or off the global system Hamiltonian.
-- Perform single-qubit rotations.
+- Perform local single-qubit rotations.
 
 To perform a *fully digital* `CNOT(0,1)`, the interacting control on qubit 0 and target on qubit 1 must be isolated from the third one to implement the gate directly. While this can be achieved for a three-qubit system, it becomes experimentally untractable when scaling the qubit count.
 
