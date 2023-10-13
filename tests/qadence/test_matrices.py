@@ -57,7 +57,7 @@ from qadence.operations import (
     Z,
 )
 from qadence.states import equivalent_state, random_state, zero_state
-from qadence.types import BasisSet, Interaction, ReuploadScaling
+from qadence.types import BasisFeatureMap, Interaction, ScalingFeatureMap
 
 
 def _calc_mat_vec_wavefunction(
@@ -253,15 +253,15 @@ def test_total_magnetization(n_qubits: int) -> None:
 
 
 @pytest.mark.parametrize("n_qubits", [1, 2, 4])
-@pytest.mark.parametrize("fm_type", [BasisSet.FOURIER, BasisSet.CHEBYSHEV])
+@pytest.mark.parametrize("fm_type", [BasisFeatureMap.FOURIER, BasisFeatureMap.CHEBYSHEV])
 @pytest.mark.parametrize(
-    "reupload_scaling", [ReuploadScaling.CONSTANT, ReuploadScaling.TOWER, ReuploadScaling.EXP]
+    "reupload_scaling", [ScalingFeatureMap.CONSTANT, ScalingFeatureMap.TOWER, ScalingFeatureMap.EXP]
 )
 @pytest.mark.parametrize("op", [RX, RY, RZ, PHASE])
 def test_feature_maps(
     n_qubits: int,
-    fm_type: BasisSet,
-    reupload_scaling: ReuploadScaling,
+    fm_type: BasisFeatureMap,
+    reupload_scaling: ScalingFeatureMap,
     op: type[RX] | type[RY] | type[RZ] | type[PHASE],
 ) -> None:
     x = Parameter("x", trainable=False)
