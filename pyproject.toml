@@ -19,7 +19,7 @@ authors = [
 ]
 requires-python = ">=3.9,<3.11"
 license = {text = "Apache 2.0"}
-version = "0.9.1"
+version = "1.0.1"
 classifiers=[
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python",
@@ -83,12 +83,11 @@ dependencies = [
 features = ["all"]
 
 [tool.hatch.envs.default.scripts]
-test = "pytest --cov-report=xml --cov-config=pyproject.toml --cov=qadence --cov=tests --ignore=./tests/test_examples.py --ignore=./tests/test_notebooks.py {args}"
+test = "pytest -n auto --cov-report lcov --cov-config=pyproject.toml --cov=qadence --cov=tests --ignore=./tests/test_examples.py {args}"
 test-examples = "pytest ./tests/test_examples.py {args}"
-test-notebooks = "pytest ./tests/test_notebooks.py {args}"
 no-cov = "cov --no-cov {args}"
 test-docs = "mkdocs build --clean --strict"
-test-all = "pytest {args}  && mkdocs build --clean --strict"
+test-all = "pytest -n auto {args}  && mkdocs build --clean --strict"
 
 [tool.pytest.ini_options]
 markers = [
@@ -118,6 +117,7 @@ dependencies = [
   "mkdocs-section-index==0.3.6",
   "mkdocs-exclude",
   "markdown-exec",
+  "mike",
 ]
 features = ["pulser", "braket", "visualization"]
 

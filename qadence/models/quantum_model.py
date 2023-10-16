@@ -78,11 +78,12 @@ class QuantumModel(nn.Module):
 
         self.inputs = [p for p in circuit.unique_parameters if not p.trainable and not p.is_number]
         if diff_mode is None:
-            raise ValueError("`diff_mode` cannot be `None` in a `QuantumModel`")
+            raise ValueError("`diff_mode` cannot be `None` in a `QuantumModel`.")
 
         self.backend = backend_factory(
             backend=backend, diff_mode=diff_mode, configuration=configuration
         )
+
         if isinstance(observable, list) or observable is None:
             observable = observable
         else:
@@ -180,6 +181,9 @@ class QuantumModel(nn.Module):
             return errmodel(output[0])
         else:
             raise NotImplementedError
+        return self.backend.sample(
+            self._circuit, params, n_shots=n_shots, state=state, endianness=endianness
+        )
 
     def expectation(
         self,

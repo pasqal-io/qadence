@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 name: linting and type check
+=======
+name: Linting
+>>>>>>> main
 
 on:
   push:
@@ -10,18 +14,22 @@ on:
 jobs:
   lint:
 
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout Qadence
+      uses: actions/checkout@v4
+
     - name: Set up Python 3.x
       uses: actions/setup-python@v4
       with:
         python-version: '3.x'
+
     - name: Install pre-commit
       run: |
         pip install pre-commit
         pre-commit install
+
     - name: Check files
       run: |
         pre-commit run --all-files

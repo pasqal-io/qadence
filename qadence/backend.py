@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import importlib
 from abc import ABC, abstractmethod
 from collections import Counter
 from dataclasses import dataclass, fields
-from typing import Any, Callable, Iterator, Optional, Tuple
+from typing import Any, Callable, Iterator, Tuple
 
 from openfermion import QubitOperator
 from torch import Tensor
@@ -23,7 +22,7 @@ from qadence.blocks.analog import ConstantAnalogRotation, WaitBlock
 from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.parameters import stringify
-from qadence.types import BackendName, Endianness
+from qadence.types import BackendName, DiffMode, Endianness
 
 
 @dataclass
@@ -31,6 +30,7 @@ class BackendConfiguration:
     _use_gate_params: bool = True
     use_sparse_observable: bool = False
     use_gradient_checkpointing: bool = False
+    use_single_qubit_composition: bool = False
 
     def available_options(self) -> str:
         """Return as a string the available fields with types of the configuration
@@ -219,7 +219,7 @@ class Backend(ABC):
         state: Tensor | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
-        """Sample bitstrings.
+        """Sample bit strings.
 
         Arguments:
             circuit: A converted circuit as returned by `backend.circuit`.
@@ -227,7 +227,7 @@ class Backend(ABC):
                 [`embedding`][qadence.blocks.embedding.embedding] for more info.
             n_shots: Number of shots to sample.
             state: Initial state.
-            endianness: Endianness of the resulting bitstrings.
+            endianness: Endianness of the resulting bit strings.
         """
         raise NotImplementedError
 
@@ -249,7 +249,7 @@ class Backend(ABC):
             endianness: Endianness of the resulting samples.
 
         Returns:
-            A list of Counter objects where each key represents a bitstring
+            A list of Counter objects where each key represents a bit string
             and its value the number of times it has been sampled from the given wave function.
         """
         raise NotImplementedError
@@ -271,7 +271,7 @@ class Backend(ABC):
             param_values: _**Already embedded**_ parameters of the circuit. See
                 [`embedding`][qadence.blocks.embedding.embedding] for more info.
             state: Initial state.
-            endianness: Endianness of the resulting bitstrings.
+            endianness: Endianness of the resulting bit strings.
         """
         raise NotImplementedError
 
@@ -279,14 +279,21 @@ class Backend(ABC):
     def assign_parameters(self, circuit: ConvertedCircuit, param_values: dict[str, Tensor]) -> Any:
         raise NotImplementedError
 
+    @staticmethod
     @abstractmethod
-    def overlap(self, bra: QuantumCircuit, ket: Optional[QuantumCircuit] = None) -> Tensor:
+    def _overlap(bras: Tensor, kets: Tensor) -> Tensor:
         raise NotImplementedError
 
     @staticmethod
     @abstractmethod
     def default_configuration() -> BackendConfiguration:
         raise NotImplementedError
+
+    def default_diffmode(self) -> DiffMode:
+        if self.supports_ad:
+            return DiffMode.AD
+        else:
+            return DiffMode.GPSR
 
 
 class ConvertedCircuit(Module):

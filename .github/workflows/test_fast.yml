@@ -1,27 +1,44 @@
+<<<<<<< HEAD
 name: fast tests
+=======
+name: Tests
+>>>>>>> main
 
 on:
   push:
     branches:
       - main
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
   pull_request:
     branches:
       - main
   workflow_dispatch: {}
 
 concurrency:
-  group: ${{ github.head_ref || github.run_id }}
+  group: fast-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
 jobs:
+
   test_qadence_ubuntu:
+<<<<<<< HEAD
     name: Test Qadence (ubuntu)
     runs-on: ubuntu-22.04
+=======
+    name: Qadence (ubuntu)
+    runs-on: ubuntu-latest
+>>>>>>> main
     strategy:
       matrix:
         python-version: ["3.9", "3.10"]
     steps:
+<<<<<<< HEAD
     - uses: actions/checkout@v4
+=======
+    - name: Checkout Qadence
+      uses: actions/checkout@v4
+>>>>>>> main
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
@@ -32,3 +49,73 @@ jobs:
     - name: Run fast tests
       run: |
         hatch -v run test -m "not slow"
+    - name: Upload coverage data
+      uses: actions/upload-artifact@v3
+      with:
+        name: "coverage-data"
+        path: .coverage.*
+        if-no-files-found: ignore
+
+  publish:
+    name: Publish to PyPI
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: test_qadence_ubuntu
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Qadence
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install hatch
+      - name: Build and publish package
+        run: |
+          hatch build
+          hatch publish -u ${{ secrets.HATCH_PYPI_USER }} -a ${{ secrets.HATCH_PYPI_AUTH }}
+      - name: Confirm deployment
+        timeout-minutes: 5
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          until pip download qadence==$VERSION
+          do
+            echo "Failed to download from PyPI, will wait for upload and retry."
+            sleep 1
+          done
+
+  deploy_docs:
+    name: Deploy Qadence docs (ubuntu)
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: test_qadence_ubuntu
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Qadence
+      uses: actions/checkout@v4
+    - name: Install JetBrains Mono font
+      run: |
+        sudo apt install -y wget unzip fontconfig
+        wget https://download.jetbrains.com/fonts/JetBrainsMono-2.304.zip
+        unzip JetBrainsMono-2.304.zip -d JetBrainsMono
+        mkdir -p /usr/share/fonts/truetype/jetbrains
+        cp JetBrainsMono/fonts/ttf/*.ttf /usr/share/fonts/truetype/jetbrains/
+        fc-cache -f -v
+    - name: Install graphviz
+      run: sudo apt-get install -y graphviz
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    - name: Install Hatch
+      run: |
+        pip install hatch
+    - name: Deploy docs
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+        git fetch origin gh-pages
+        hatch -v run docs:mike deploy --push --update-aliases ${{ github.ref_name }} latest

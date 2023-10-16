@@ -1,5 +1,6 @@
 **Qadence** is a Python package that provides a simple interface to build _**digital-analog quantum
-programs**_ with tunable qubit interaction defined on _**arbitrary register topologies**_ realizable on neutral atom devices.
+programs**_ with tunable qubit interaction defined on _**arbitrary register topologies**_
+realizable on neutral atom devices.
 
 ## Feature highlights
 
@@ -12,34 +13,14 @@ programs**_ with tunable qubit interaction defined on _**arbitrary register topo
 
 * An intuitive [expression-based system](tutorials/parameters.md) developed on top of the symbolic library [Sympy](https://www.sympy.org/en/index.html) to construct _**parametric quantum programs**_ easily.
 
-* [High-order generalized parameter shift rules](link to psr tutorial) for _**differentiating parametrized quantum operations**_.
+* [High-order generalized parameter shift rules](advanced_tutorials/differentiability.md) for _**differentiating parametrized quantum operations**_.
 
 * Out-of-the-box _**automatic differentiability**_ of quantum programs with [PyTorch](https://pytorch.org/) integration.
 
 * _**Efficient execution**_ on a variety of different purpose backends: from state vector simulators to tensor network emulators and real devices.
 
-In following are some examples of Qadence possibilites in the digital, analog and digital-analog paradigms.
+In following are some examples of Qadence possibilites in the analog, digital-analog and digital paradigms.
 
-## Sampling the canonical Bell state
-
-This example illustrates how to prepare a [Bell state](https://en.wikipedia.org/wiki/Bell_state) using digital gates and sampling from the outcome bitstring distribution:
-
-```python exec="on" source="material-block" result="json"
-import torch # markdown-exec: hide
-torch.manual_seed(0) # markdown-exec: hide
-from qadence import CNOT, H, chain, sample
-
-# Preparing a Bell state by composing a Hadamard and CNOT gates in sequence.
-bell_state = chain(H(0), CNOT(0,1))
-
-# Sample with 100 shots.
-samples = sample(bell_state, n_shots=100)
-print(f"samples = {samples}") # markdown-exec: hide
-from qadence.divergences import js_divergence # markdown-exec: hide
-from collections import Counter # markdown-exec: hide
-js = js_divergence(samples[0], Counter({"00":50, "11":50})) # markdown-exec: hide
-assert js < 0.005 # markdown-exec: hide
-```
 
 ## Analog emulation of a perfect state transfer
 
@@ -128,10 +109,17 @@ The default backend for Qadence is [PyQTorch](https://github.com/pasqal-io/pyqto
 * `pulser`: the [Pulser](https://github.com/pasqal-io/Pulser) backend for composing, simulating and executing pulse sequences for neutral-atom quantum devices.
 * `visualization`: to display diagrammatically quantum circuits.
 
-by running:
+
+To just get qadence with the `pyqtorch` backend, simply run:
 
 ```bash
-pip install qadence[braket, pulser, visualization]
+pip install qadence
+```
+
+To install other backends or the visualization tool, please use:
+
+```bash
+pip install "qadence[braket, pulser, visualization]"
 ```
 
 !!! warning

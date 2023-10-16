@@ -1,19 +1,19 @@
-# DAQC Transform
+# `CNOT` with interacting qubits
 
-Digital-analog quantum computing focuses on using simple digital gates combined with more complex and device-dependent analog interactions to represent quantum programs. Such techniques have been shown to be universal for quantum computation [^1]. However, while this approach may have advantages when adapting quantum programs to real devices, known quantum algorithms are very often expressed in a fully digital paradigm. As such, it is also important to have concrete ways to transform from one paradigm to another.
+Digital-analog quantum computing focuses on using single qubit digital gates combined with more complex and device-dependent analog interactions to represent quantum programs. This paradigm has been shown to be universal for quantum computation[^1]. However, while this approach may have advantages when adapting quantum programs to real devices, known quantum algorithms are very often expressed in a fully digital paradigm. As such, it is also important to have concrete ways to transform from one paradigm to another.
 
-In this tutorial we will exemplify this transformation starting with the representation of a simple digital CNOT using the universality of the Ising Hamiltonian [^2].
+This tutorial will exemplify the *DAQC transformation* starting with the representation of a simple digital `CNOT` using the universality of the Ising Hamiltonian[^2].
 
-## CNOT with CPHASE
+## `CNOT` with `CPHASE`
 
-Let's look at a single example of how the digital-analog transformation can be used to perform a CNOT on two qubits inside a register of globally interacting qubits.
+Let's look at a single example of how the digital-analog transformation can be used to perform a `CNOT` on two qubits inside a register of globally interacting qubits.
 
-First, note that the CNOT can be decomposed with two Hadamard and a CPHASE gate with $\phi=\pi$:
+First, note that the `CNOT` can be decomposed with two Hadamard and a `CPHASE` gate with $\phi=\pi$:
 
 
 ```python exec="on" source="material-block" result="json" session="daqc-cnot"
 import torch
-import qadence as qd
+from qadence import chain, sample, product_state
 
 from qadence.draw import display
 from qadence import X, I, Z, H, N, CPHASE, CNOT, HamEvo
@@ -34,7 +34,15 @@ print(qd.sample(n_qubits, block = cnot_gate, state = init_state, n_shots = 100))
 print(qd.sample(n_qubits, block = cnot_decomp, state = init_state, n_shots = 100))
 ```
 
-The CPHASE gate is fully diagonal, and can be implemented by exponentiating an Ising-like Hamiltonian, or *generator*,
+cnot_decomp = chain(H(1), CPHASE(0, 1, phi), H(1))
+
+init_state = product_state("10")
+
+print(f"sample from CNOT gate and 100 shots = {sample(n_qubits, block=cnot_gate, state=init_state, n_shots=100)}")  # markdown-exec: hide
+print(f"sample from decomposed CNOT gate and 100 shots = {sample(n_qubits, block=cnot_decomp, state=init_state, n_shots=100)}") # markdown-exec: hide
+```
+
+The `CPHASE` matrix is diagonal, and can be implemented by exponentiating an Ising-like Hamiltonian, or *generator*,
 
 $$\text{CPHASE}(i,j,\phi)=\text{exp}\left(-i\phi \mathcal{H}_\text{CP}(i, j)\right)$$
 
@@ -43,44 +51,47 @@ $$\begin{aligned}
 &=-N_iN_j
 \end{aligned}$$
 
-where we used the number operator $N_i = \frac{1}{2}(I_i-Z_i)$, leading to an Ising-like interaction $N_iN_j$ that is common in neutral-atom systems. Let's rebuild the CNOT using this evolution.
 
-```python exec="on" source="material-block" session="daqc-cnot"
+where the number operator $N_i = \frac{1}{2}(I_i-Z_i)=\hat{n}_i$ is used, leading to an Ising-like interaction $\hat{n}_i\hat{n}_j$ realisable in neutral-atom systems. Let's rebuild the `CNOT` using this evolution.
+
+```python exec="on" source="material-block"  result="json" session="daqc-cnot"
+from qadence import kron, block_to_tensor
+
 # Hamiltonian for the CPHASE gate
-h_cphase = (-1.0) * qd.kron(N(0), N(1))
+h_cphase = (-1.0) * kron(N(0), N(1))
 
-# Exponentiating the Hamiltonian
+# Exponentiating and time-evolving the Hamiltonian until t=phi.
 cphase_evo = HamEvo(h_cphase, phi)
 
 # Check that we have the CPHASE gate:
-cphase_matrix = qd.block_to_tensor(CPHASE(0, 1, phi))
-cphase_evo_matrix = qd.block_to_tensor(cphase_evo)
+cphase_matrix = block_to_tensor(CPHASE(0, 1, phi))
+cphase_evo_matrix = block_to_tensor(cphase_evo)
 
-assert torch.allclose(cphase_matrix, cphase_evo_matrix)
+print(f"cphase_matrix == cphase_evo_matrix: {torch.allclose(cphase_matrix, cphase_evo_matrix)}") # markdown-exec: hide
 ```
 
-Now that we have checked the generator of the CPHASE gate, we can use it to apply the CNOT:
-
+Now that the `CPHASE` generator is checked, it can be applied to the `CNOT`:
 
 ```python exec="on" source="material-block" result="json" session="daqc-cnot"
 # CNOT with Hamiltonian Evolution
-cnot_evo = qd.chain(
+cnot_evo = chain(
     H(1),
     cphase_evo,
     H(1)
 )
 
-init_state = qd.product_state("10")
+# Initialize state to check CNOTs sample outcomes.
+init_state = product_state("10")
 
-print(qd.sample(n_qubits, block = cnot_gate, state = init_state, n_shots = 100))
-print(qd.sample(n_qubits, block = cnot_evo, state = init_state, n_shots = 100))
+print(f"sample cnot_gate = {sample(n_qubits, block = cnot_gate, state = init_state, n_shots = 100)}") # markdown-exec: hide
+print(f"sample cnot_evo = {sample(n_qubits, block = cnot_evo, state = init_state, n_shots = 100)}") # markdown-exec: hide
 ```
 
-Thus, a CNOT gate can be applied by combining a few single-qubit gates together with a 2-qubit Ising interaction between the control and the target qubit. This is important because it now allows us to exemplify the usage of the Ising transform proposed in the DAQC paper [^2]. In the paper, the transform is described for $ZZ$ interactions. In `qadence` it works both with $ZZ$ and $NN$ interactions.
+Thus, a `CNOT` gate can be created by combining a few single-qubit gates together with a two-qubit Ising interaction between the control and the target qubit which is the essence of the Ising transform proposed in the seminal DAQC paper[^2] for $ZZ$ interactions. In Qadence, both $ZZ$ and $NN$ interactions are supported.
 
-## CNOT in an interacting system of 3 qubits
+## `CNOT` in an interacting system of three qubits
 
-Consider a simple experimental setup with $n=3$ interacting qubits in a triangular grid. For simplicity let's consider that all qubits interact with each other with an Ising ($NN$) interaction of constant strength $g_\text{int}$. The Hamiltonian for the system can be written by summing this interaction over all pairs:
+Consider a simple experimental setup with $n=3$ interacting qubits laid out in a triangular grid. For the sake of simplicity, all qubits interact with each other with an $NN$-Ising interaction of constant strength $g_\text{int}$. The Hamiltonian for the system can be written by summing interaction terms over all pairs:
 
 $$\mathcal{H}_\text{sys}=\sum_{i=0}^{n}\sum_{j=0}^{i-1}g_\text{int}N_iN_j,$$
 
@@ -88,115 +99,120 @@ which in this case leads to only three interaction terms,
 
 $$\mathcal{H}_\text{sys}=g_\text{int}(N_0N_1+N_1N_2+N_0N_2)$$
 
-This generator can be easily built:
-
+This generator can be easily built in Qadence:
 
 ```python exec="on" source="material-block" result="json" session="daqc-cnot"
+from qadence import add, kron
 n_qubits = 3
 
+# Interaction strength.
 g_int = 1.0
 
+# Build a list of interactions.
 interaction_list = []
 for i in range(n_qubits):
     for j in range(i):
-        interaction_list.append(g_int * qd.kron(N(i), N(j)))
+        interaction_list.append(g_int * kron(N(i), N(j)))
 
-h_sys = qd.add(*interaction_list)
+h_sys = add(*interaction_list)
 
-print(h_sys)
+print(f"h_sys = {h_sys}") # markdown-exec: hide
 ```
 
-Now let's consider that the experimental system is fixed, and we cannot isolate the qubits from each other. All we can do is the following:
+Now let's consider that the experimental system is fixed, and qubits can not be isolated one from another. The options are:
 
 - Turn on or off the global system Hamiltonian.
-- Perform single-qubit rotations on individual qubits.
+- Perform local single-qubit rotations.
 
-How can we perform a CNOT on two specific qubits of our choice?
+To perform a *fully digital* `CNOT(0,1)`, the interacting control on qubit 0 and target on qubit 1 must be isolated from the third one to implement the gate directly. While this can be achieved for a three-qubit system, it becomes experimentally untractable when scaling the qubit count.
 
-To perform a *fully digital* CNOT we would need to isolate the control and target qubit from the third one and have those interact to implement the gate directly. While this may be relatively simple for a 3-qubit system, the experimental burden becomes much greater when we start going into the dozens of qubits.
+However, this is not the case within the digital-analog paradigm. In fact, the two qubit Ising interaction required for the `CNOT` can be represented with a combination of the global system Hamiltonian and a specific set of single-qubit rotations. Full details about this transformation are to be found in the DAQC paper[^2] but a more succint yet in-depth description takes place in the next section. It is conveniently available in Qadence by calling the `daqc_transform` function.
 
-However, with the digital-analog paradigm that is not the case! In fact, we can represent the two qubit Ising interaction required for the CNOT by combining the global system Hamiltonian with a specific set of single-qubit rotations. The full details of this transformation are described in the DAQC paper [^2], and it is available in `qadence` by calling the `daqc_transform` function.
+In the most general sense, the `daqc_transform` function will return a circuit that represents the evolution of a target Hamiltonian $\mathcal{H}_\text{target}$ (here the unitary of the gate) until a specified time $t_f$ by using only the evolution of a build Hamiltonian $\mathcal{H}_\text{build}$ (here $\mathcal{H}_\text{sys}$) together with local $X$-gates. In Qadence, `daqc_transform` is applicable for $\mathcal{H}_\text{target}$ and $\mathcal{H}_\text{build}$ composed only of $ZZ$- or $NN$-interactions. These generators are parsed by the `daqc_transform` function and the appropriate type is automatically determined together with the appropriate single-qubit detunings and global phases.
 
-The `daqc_transform` function will essentially return a program that represents the evolution of an Hamiltonian $H_\text{target}$ (*target Hamiltonian*) for a specified time $t_f$ by using only the evolution of an Hamiltonian $H_\text{build}$ (*build Hamiltonian*) for specific intervals of time together with specific single-qubit $X$ rotations. Currently, in `qadence` it is available for resource and target Hamiltonians composed only of $ZZ$ or $NN$ interactions. The generators are parsed by the `daqc_transform` function, the appropriate type is automatically determined, and the appropriate single-qubit detunings and global phases are applied.
-
-Let's exemplify it for our CNOT problem:
-
+Let's apply it for the `CNOT` implementation:
 
 ```python exec="on" source="material-block" html="1" result="json" session="daqc-cnot"
-# The target operation
-i = 0  # Control
-j = 1  # Target
+from qadence import daqc_transform, Strategy
+
+# Settings for the target CNOT operation
+i = 0  # Control qubit
+j = 1  # Target qubit
 k = 2  # The extra qubit
 
-# CNOT on control and target, Identity on the extra qubit
-cnot_target = qd.kron(CNOT(i, j), I(k))
+# Define the target CNOT operation
+# by composing with identity on the extra qubit.
+cnot_target = kron(CNOT(i, j), I(k))
 
-# The two-qubit Ising (NN) interaction for the CPHASE
-h_int = (-1.0) * qd.kron(N(i), N(j))
+# The two-qubit NN-Ising interaction term for the CPHASE
+h_int = (-1.0) * kron(N(i), N(j))
 
 # Transforming the two-qubit Ising interaction using only our system Hamiltonian
-transformed_ising = qd.daqc_transform(
-    n_qubits = 3,        # Total number of qubits in the transformation
-    gen_target = h_int,  # The target Ising generator
-    t_f = torch.pi,      # The target evolution time
-    gen_build = h_sys,   # The building block Ising generator to be used
-    strategy = "sDAQC",   # Currently only sDAQC is implemented
-    ignore_global_phases = False  # Global phases from mapping between Z and N
+transformed_ising = daqc_transform(
+    n_qubits=3,        # Total number of qubits in the transformation
+    gen_target=h_int,  # The target Ising generator
+    t_f=torch.pi,      # The target evolution time
+    gen_build=h_sys,   # The building block Ising generator to be used
+    strategy=Strategy.SDAQC,   # Currently only sDAQC is implemented
+    ignore_global_phases=False  # Global phases from mapping between Z and N
+>>>>>>> main
 )
 
 # display(transformed_ising)
 print(html_string(transformed_ising)) # markdown-exec: hide
 ```
 
-The circuit above actually only uses two evolutions of the global Hamiltonian. In the displayed circuit also see other instances of `HamEvo` which account for global-phases and single-qubit detunings related to the mapping between the $Z$ and $N$ operator. Optionally, the application of the global phases can also be ignored, as shown in the input of `daqc_transform`. This will not create exactly the same state or operator matrix in tensor form, but in practice they will be equivalent.
+The output circuit displays three groups of system Hamiltonian evolutions which account for global-phases and single-qubit detunings related to the mapping between the $Z$ and $N$ operators. Optionally, global phases can be ignored.
 
-In general, the mapping of a $n$-qubit Ising Hamiltonian will require at most $n(n-1)$ evolutions. The transformed circuit performs these evolutions for specific times that are computed from the solution of a linear system of equations involving the set of interactions in the target and build Hamiltonians.
+In general, the mapping of a $n$-qubit Ising Hamiltonian to another will require at most $n(n-1)$ evolutions. The transformed circuit performs these evolutions for specific times that are computed from the solution of a linear system of equations involving the set of interactions in the target and build Hamiltonians.
 
-In this case the mapping is exact, since we used the *step-wise* DAQC technique (sDAQC). In *banged* DAQC (bDAQC) the mapping is not exact, but is easier to implement on a physical device with always-on interactions such as neutral-atom systems. Currently, only the sDAQC technique is available in `qadence`.
+In this case, the mapping is exact when using the *step-wise* DAQC strategy (`Strategy.SDAQC`) available in Qadence. In *banged* DAQC (`Strategy.BDAQC`) the mapping is approximate, but easier to implement on a physical device with always-on interactions such as neutral-atom systems.
 
-Just as before, we can check that using the transformed Ising circuit we exactly recover the CPHASE gate:
-
-
-```python exec="on" source="material-block" session="daqc-cnot"
-# CPHASE on (i, j), Identity on third qubit:
-cphase_matrix = qd.block_to_tensor(qd.kron(CPHASE(i, j, phi), I(k)))
-
-# CPHASE using the transformed circuit:
-cphase_evo_matrix = qd.block_to_tensor(transformed_ising)
-
-# Will fail if global phases are ignored:
-assert torch.allclose(cphase_matrix, cphase_evo_matrix)
-```
-
-And we can now build the CNOT gate:
+Just as before, the transformed Ising circuit can be checked to exactly recover the `CPHASE` gate:
 
 ```python exec="on" source="material-block" result="json" session="daqc-cnot"
-cnot_daqc = qd.chain(
+# CPHASE on (i, j), Identity on third qubit:
+cphase_matrix = block_to_tensor(kron(CPHASE(i, j, phi), I(k)))
+
+# CPHASE using the transformed circuit:
+cphase_evo_matrix = block_to_tensor(transformed_ising)
+
+# Check that it implements the CPHASE.
+# Will fail if global phases are ignored.
+print(f"cphase_matrix == cphase_evo_matrix : {torch.allclose(cphase_matrix, cphase_evo_matrix)}") # markdown-exec: hide
+```
+
+The `CNOT` gate can now finally be built:
+
+```python exec="on" source="material-block" result="json" session="daqc-cnot"
+from qadence import equivalent_state, run, sample
+
+cnot_daqc = chain(
     H(j),
     transformed_ising,
     H(j)
 )
 
-# And finally run the CNOT on a specific 3-qubit initial state:
-init_state = qd.product_state("101")
+# And finally apply the CNOT on a specific 3-qubit initial state:
+init_state = product_state("101")
 
-# Check we get an equivalent wavefunction (will still pass if global phases are ignored)
-wf_cnot = qd.run(n_qubits, block = cnot_target, state = init_state)
-wf_daqc = qd.run(n_qubits, block = cnot_daqc, state = init_state)
-assert qd.equivalent_state(wf_cnot, wf_daqc)
+# Check we get an equivalent wavefunction
+wf_cnot = run(n_qubits, block=cnot_target, state=init_state)
+wf_daqc = run(n_qubits, block=cnot_daqc, state=init_state)
+print(f"wf_cnot == wf_dacq : {equivalent_state(wf_cnot, wf_daqc)}") # markdown-exec: hide
 
-# Visualize the CNOT bit-flip:
-print(qd.sample(n_qubits, block = cnot_target, state = init_state, n_shots = 100))
-print(qd.sample(n_qubits, block = cnot_daqc, state = init_state, n_shots = 100))
+# Visualize the CNOT bit-flip in samples.
+print(f"sample cnot_target = {sample(n_qubits, block=cnot_target, state=init_state, n_shots=100)}") # markdown-exec: hide
+print(f"sample cnot_dacq = {sample(n_qubits, block=cnot_daqc, state=init_state, n_shots=100)}") # markdown-exec: hide
 ```
 
-And we are done! We have effectively performed a CNOT operation on our desired target qubits by using only the global interaction of the system as the building block Hamiltonian, together with single-qubit rotations. Going through the trouble of decomposing a single digital gate into its Ising Hamiltonian is certainly not very practical, but it serves as a proof of principle for the potential of this technique to represent universal quantum computation. In the next example, we will see it applied to the digital-analog Quantum Fourier Transform.
+As one can see, a `CNOT` operation has been succesfully implemented on the desired target qubits by using only the global system as the building block Hamiltonian and single-qubit rotations. Decomposing a single digital gate into an Ising Hamiltonian serves as a proof of principle for the potential of this technique to represent universal quantum computation.
 
 ## Technical details on the DAQC transformation
 
 - The mapping between target generator and final circuit is performed by solving a linear system of size $n(n-1)$ where $n$ is the number of qubits, so it can be computed *efficiently* (i.e., with a polynomial cost in the number of qubits).
 - The linear system to be solved is actually not invertible for $n=4$ qubits. This is very specific edge case requiring a workaround, that is currently not yet implemented.
-- As mentioned, the final circuit has at most $n(n-1)$ slices, so there is at most a polynomial overhead in circuit depth.
+- As mentioned, the final circuit has at most $n(n-1)$ slices, so there is at most a quadratic overhead in circuit depth.
 
 Finally, and most important to its usage:
 
@@ -213,46 +229,45 @@ def gen_build(g_int):
     return g_int * (Z(0) @ Z(1)) + 1.0 * (Z(1) @ Z(2))
 ```
 
-And now we perform the DAQC transform by setting `g_int = 1.0`, matching the target Hamiltonian:
+And now we perform the DAQC transform by setting `g_int=1.0`, exactly matching the target Hamiltonian:
 
 ```python exec="on" source="material-block" html="1" result="json" session="daqc-cnot"
-transformed_ising = qd.daqc_transform(
-    n_qubits = 3,
-    gen_target = gen_target,
-    t_f = 1.0,
-    gen_build = gen_build(g_int = 1.0),
+transformed_ising = daqc_transform(
+    n_qubits=3,
+    gen_target=gen_target,
+    t_f=1.0,
+    gen_build=gen_build(g_int=1.0),
 )
 
 # display(transformed_ising)
 print(html_string(transformed_ising)) # markdown-exec: hide
 ```
 
-And we get the transformed circuit. What if our build Hamiltonian has a very weak interaction between qubits 0 and 1?
+Now, if the interaction between qubits 0 and 1 is weakened in the build Hamiltonian:
 
 ```python exec="on" source="material-block" html="1" result="json" session="daqc-cnot"
-transformed_ising = qd.daqc_transform(
-    n_qubits = 3,
-    gen_target = gen_target,
-    t_f = 1.0,
-    gen_build = gen_build(g_int = 0.001),
+transformed_ising = daqc_transform(
+    n_qubits=3,
+    gen_target=gen_target,
+    t_f=1.0,
+    gen_build=gen_build(g_int=0.001),
 )
 
 # display(transformed_ising)
 print(html_string(transformed_ising)) # markdown-exec: hide
 ```
 
-As we can see, to represent the same interaction between 0 and 1, the slices using the build Hamiltonian need to evolve for much longer, since the target interaction is not sufficiently represented in the building block Hamiltonian.
+The times slices using the build Hamiltonian need now to evolve for much longer to represent the same interaction since it is not sufficiently represented in the building block Hamiltonian.
 
-In the limit where that interaction is not present at all, the transform will not work:
-
+In the limit where that interaction is not present, the transform will not work:
 
 ```python exec="on" source="material-block" result="json" session="daqc-cnot"
 try:
-    transformed_ising = qd.daqc_transform(
-        n_qubits = 3,
-        gen_target = gen_target,
-        t_f = 1.0,
-        gen_build = gen_build(g_int = 0.0),
+    transformed_ising = daqc_transform(
+        n_qubits=3,
+        gen_target=gen_target,
+        t_f=1.0,
+        gen_build=gen_build(g_int = 0.0),
     )
 except ValueError as error:
     print("Error:", error)

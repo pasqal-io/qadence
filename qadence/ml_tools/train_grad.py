@@ -147,7 +147,7 @@ def train(
                     loss, metrics = optimize_step(
                         model, optimizer, loss_fn, dataloader, device=device
                     )
-
+                    loss = loss.item()
                 # single epoch with DictDataloader using a single iteration method
                 # DictDataloader returns a single sample of the data
                 # with a given batch size decided when the dataloader is defined

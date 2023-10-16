@@ -1,0 +1,48 @@
+name: Documentation
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch: {}
+
+concurrency:
+  group: docs-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  test_qadence_ubuntu:
+    name: docs (ubuntu)
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Checkout Qadence
+      uses: actions/checkout@v4
+
+    - name: Install JetBrains Mono font
+      run: |
+        sudo apt install -y wget unzip fontconfig
+        wget https://download.jetbrains.com/fonts/JetBrainsMono-2.304.zip
+        unzip JetBrainsMono-2.304.zip -d JetBrainsMono
+        mkdir -p /usr/share/fonts/truetype/jetbrains
+        cp JetBrainsMono/fonts/ttf/*.ttf /usr/share/fonts/truetype/jetbrains/
+        fc-cache -f -v
+
+    - name: Install graphviz
+      run: sudo apt-get install -y graphviz
+
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install Hatch
+      run: |
+        pip install hatch
+
+    - name: Build docs
+      run: |
+        hatch -v run docs:build
