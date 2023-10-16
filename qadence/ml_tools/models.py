@@ -181,7 +181,7 @@ class TransformedModule(torch.nn.Module):
 
         else:
             assert isinstance(self.model, torch.nn.Module) and isinstance(x, Tensor)
-            return self._input_scaling * (x + self._input_shifting)
+            return self._input_scaling * x + self._input_shifting
 
     def forward(self, x: dict[str, Tensor] | Tensor, *args: Any, **kwargs: Any) -> Tensor:
         y = self.model(self._transform_x(x), *args, **kwargs)
@@ -231,7 +231,7 @@ class TransformedModule(torch.nn.Module):
             protocol=protocol,
             endianness=endianness,
         )
-        return self._output_scaling * (exp + self._output_shifting)
+        return self._output_scaling * exp + self._output_shifting
 
     def _to_dict(self, save_params: bool = True) -> dict:
         from qadence.serialization import serialize
@@ -245,10 +245,11 @@ class TransformedModule(torch.nn.Module):
             return res  # type: ignore[no-any-return]
 
         _d = serialize(self.model, save_params=save_params)
+
         return {
             self.__class__.__name__: _d,
-            "in_features:": self.in_features,
-            "out_features:": self.out_features,
+            "in_features": self.in_features,
+            "out_features": self.out_features,
             "_input_scaling": store_fn(self._input_scaling),
             "_output_scaling": store_fn(self._output_scaling),
             "_input_shifting": store_fn(self._input_shifting),
