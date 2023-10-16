@@ -9,8 +9,6 @@ on:
       - main
   workflow_dispatch: {}
 
-permissions:
-  contents: write
 
 jobs:
   deploy_docs:
@@ -40,4 +38,7 @@ jobs:
       run: |
         git config user.name "GitHub Actions"
         git config user.email "actions@github.com"
+        git fetch origin gh-pages
+        git pull
+        git checkout v1.0.1
         hatch -v run docs:mike deploy --push --update-aliases 0.0.1debug latest
