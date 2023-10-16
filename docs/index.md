@@ -138,7 +138,7 @@ pip install qadence
 To install other backends or the visualization tool, please use:
 
 ```bash
-pip install "qadence[braket, pulser, visualization]"
+pip install "qadence[braket,pulser,visualization]"
 ```
 
 !!! warning
@@ -156,11 +156,34 @@ pip install "qadence[braket, pulser, visualization]"
     conda install python-graphviz
     ```
 
+## Install from source
+
+We recommend to use the [`hatch`](https://hatch.pypa.io/latest/) environment manager to install `qadence` from source:
+
+```bash
+python -m pip install hatch
+
+# get into a shell with all the dependencies
+python -m hatch shell
+
+# run a command within the virtual environment with all the dependencies
+python -m hatch run python my_script.py
+```
+
+!!! warning
+    `hatch` will not combine nicely with other environment managers such Conda. If you want to use Conda,
+    install it from source using `pip`:
+
+    ```bash
+    # within the Conda environment
+    python -m pip install -e .
+    ```
+
 ## Citation
 
 If you use Qadence for a publication, we kindly ask you to cite our work using the following BibTex entry:
 
-```
+```latex
 @misc{qadence2023pasqal,
   url = {https://github.com/pasqal-io/qadence},
   title = {Qadence: {A} {D}igital-analog quantum programming interface.},
