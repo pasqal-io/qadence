@@ -108,28 +108,28 @@ class TransformedModule(torch.nn.Module):
         else:
             self.in_features = in_features  # type: ignore[assignment]
             self.out_features = out_features  # type: ignore[assignment]
-        if isinstance(input_scaling, (float, int)) or input_scaling is None:
+        if not isinstance(input_scaling, torch.Tensor):
             self.register_buffer(
                 "_input_scaling",
                 _set_fixed_operation(self.in_features, input_scaling, "scale"),
             )
         else:
             self._input_scaling = input_scaling
-        if isinstance(input_shifting, (float, int)) or input_shifting is None:
+        if not isinstance(input_shifting, torch.Tensor):
             self.register_buffer(
                 "_input_shifting",
                 _set_fixed_operation(self.in_features, input_shifting, "shift"),
             )
         else:
             self._input_shifting = input_shifting
-        if isinstance(output_scaling, (float, int)) or output_scaling is None:
+        if not isinstance(output_scaling, torch.Tensor):
             self.register_buffer(
                 "_output_scaling",
                 _set_fixed_operation(self.out_features, output_scaling, "scale"),
             )
         else:
             self._output_scaling = output_scaling
-        if isinstance(output_shifting, (float, int)) or output_shifting is None:
+        if not isinstance(output_shifting, torch.Tensor):
             self.register_buffer(
                 "_output_shifting",
                 _set_fixed_operation(self.out_features, output_shifting, "shift"),
@@ -247,6 +247,8 @@ class TransformedModule(torch.nn.Module):
         _d = serialize(self.model, save_params=save_params)
         return {
             self.__class__.__name__: _d,
+            "in_features:": self.in_features,
+            "out_features:": self.out_features,
             "_input_scaling": store_fn(self._input_scaling),
             "_output_scaling": store_fn(self._output_scaling),
             "_input_shifting": store_fn(self._input_shifting),
@@ -260,6 +262,8 @@ class TransformedModule(torch.nn.Module):
         _m: QuantumModel | QNN = deserialize(d[cls.__name__], as_torch)  # type: ignore[assignment]
         return cls(
             _m,
+            in_features=d["in_features"],
+            out_features=d["out_features"],
             input_scaling=torch.tensor(d["_input_scaling"]),
             output_scaling=torch.tensor(d["_output_scaling"]),
             input_shifting=torch.tensor(d["_input_shifting"]),
