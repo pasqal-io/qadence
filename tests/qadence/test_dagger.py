@@ -155,3 +155,8 @@ def test_composite_blocks_no_fails(block: AbstractBlock) -> None:
 @settings(deadline=None)
 def test_circuit_dagger(circuit: QuantumCircuit) -> None:
     circuit == circuit.dagger().dagger()
+
+
+def test_circuit_dagger_explicit() -> None:
+    circuit = QuantumCircuit(4, chain(X(0), Y(1), Z(3), Y(0)))
+    assert circuit.dagger() == QuantumCircuit(4, chain(Y(0), Z(3), Y(1), X(0)))
