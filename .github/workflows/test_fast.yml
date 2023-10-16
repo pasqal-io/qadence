@@ -20,6 +20,8 @@ jobs:
   test_qadence_ubuntu:
     name: Qadence (ubuntu)
     runs-on: ubuntu-latest
+    container:
+      image: pasqalofficial/qadence_base:latest
     strategy:
       matrix:
         python-version: ["3.9", "3.10"]
