@@ -38,5 +38,4 @@ jobs:
       run: |
         git config user.name "GitHub Actions"
         git config user.email "actions@github.com"
-        git fetch origin gh-pages
-        hatch -v run docs:mike deploy --push --update-aliases 0.0.1debug latest
+        hatch -v run docs:mike deploy --push --ignore --update-aliases 0.0.1debug latest
