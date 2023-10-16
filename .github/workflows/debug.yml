@@ -38,5 +38,4 @@ jobs:
       run: |
         git config user.name "GitHub Actions"
         git config user.email "actions@github.com"
-        git fetch gh-pages
-        hatch -v run docs:mike deploy --push --update-aliases ${{ github.ref_name }} latest
+        hatch -v run docs:mike deploy --push --rebase --update-aliases ${{ github.ref_name }} latest
