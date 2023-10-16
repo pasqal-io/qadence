@@ -9,22 +9,17 @@ shows how to fit the $\sin(x)$ function in the $[-1, 1]$ domain.
 
 In the following, train and test data are defined.
 
-```python exec="on" source="material-block" session="qcl" result="json"
-from typing import Callable
-
+```python exec="on" source="material-block" session="qcl"
 import torch
+from torch.utils.data import random_split
 
 # make sure all tensors are kept on the same device
 # only available from PyTorch 2.0
 device = "cuda" if torch.cuda.is_available() else "cpu"
 torch.set_default_device(device)
 
-# notice that the domain does not include 1 and -1
-# this avoids a singularity in the rotation angles when
-# when encoding the domain points into the quantum circuit
-# with a non-linear transformation (see below)
 def qcl_training_data(
-    domain: tuple = (-0.99, 0.99), n_points: int = 100
+    domain: tuple = (0, 2*torch.pi), n_points: int = 200
 ) -> tuple[torch.Tensor, torch.Tensor]:
 
     start, end = domain
@@ -34,11 +29,15 @@ def qcl_training_data(
 
     return x_rand, y_rand
 
-test_frac = 0.25
 x, y = qcl_training_data()
-n_test = int(len(x) * test_frac)
-x_train, y_train = x[0:n_test-len(x)], y[0:n_test-len(x)]
-x_test, y_test = x[n_test-len(x):], y[n_test-len(x):]
+
+# random train/test split of the dataset
+train_subset, test_subset = random_split(x, [0.75, 0.25])
+train_ind = sorted(train_subset.indices)
+test_ind = sorted(test_subset.indices)
+
+x_train, y_train = x[train_ind], y[train_ind]
+x_test, y_test = x[test_ind], y[test_ind]
 ```
 
 ## Train the QCL model
@@ -57,28 +56,26 @@ $$
 In the following the observable, quantum circuit and corresponding QNN model are constructed.
 
 ```python exec="on" source="material-block" session="qcl" result="json"
-import sympy
 import qadence as qd
-from qadence.operations import RX
 
-n_qubits = 8
+n_qubits = 4
 
-# create a simple feature map with a non-linear parameter transformation
+# create a simple feature map to encode the input data
 feature_param = qd.FeatureParameter("phi")
-feature_map = qd.kron(RX(i, feature_param) for i in range(n_qubits))
-featre_map = qd.tag(feature_map, "feature_map")
+feature_map = qd.kron(qd.RX(i, feature_param) for i in range(n_qubits))
+feature_map = qd.tag(feature_map, "feature_map")
 
 # create a digital-analog variational ansatz using Qadence convenience constructors
-ansatz = qd.hea(n_qubits, depth=n_qubits, strategy=qd.Strategy.SDAQC)
+ansatz = qd.hea(n_qubits, depth=n_qubits)
 ansatz = qd.tag(ansatz, "ansatz")
 
-# total magnetization observable
-observable = qd.hamiltonian_factory(n_qubits, detuning = qd.Z)
+# total qubit magnetization observable
+observable = qd.hamiltonian_factory(n_qubits, detuning=qd.Z)
 
 circuit = qd.QuantumCircuit(n_qubits, feature_map, ansatz)
 model = qd.QNN(circuit, [observable])
 expval = model(values=torch.rand(10))
-print(expval)
+print(expval) # markdown-exec: hide
 ```
 
 The QCL algorithm uses the output of the quantum neural network as a tunable
@@ -87,30 +84,33 @@ using a mean-square error loss, Adam optimizer. Training is performend on the GP
 if available:
 
 ```python exec="on" source="material-block" session="qcl" result="json"
-
-# train the model
-n_epochs = 200
-lr = 0.5
+n_epochs = 100
+lr = 0.25
 
 input_values = {"phi": x_train}
 mse_loss = torch.nn.MSELoss()  # standard PyTorch loss function
 optimizer = torch.optim.Adam(model.parameters(), lr=lr)  # standard PyTorch Adam optimizer
 
-print(f"Initial loss: {mse_loss(model(input_values), y_train)}")
+print(f"Initial loss: {mse_loss(model(values=x_train), y_train)}")
+y_pred_initial = model(values=x_test)
 
-y_pred_initial = model({"phi": x_test})
-
-running_loss = 0.0
 for i in range(n_epochs):
 
     optimizer.zero_grad()
 
-    loss = mse_loss(model(input_values), y_train)
+    # given a `n_batch` number of input points and a `n_observables`
+    # number of input observables to measure, the QNN returns
+    # an output of the following shape: [n_batch x n_observables]
+    # given that there is only one observable, a squeeze is applied to get
+    # a 1-dimensional tensor
+    loss = mse_loss(model(values=x_train).squeeze(), y_train)
     loss.backward()
     optimizer.step()
 
     if (i+1) % 20 == 0:
         print(f"Epoch {i+1} - Loss: {loss.item()}")
+
+assert loss.item() < 1e-3
 ```
 
 Qadence offers some convenience functions to implement this training loop with advanced
@@ -128,11 +128,12 @@ y_pred = model({"phi": x_test})
 x_train_np = x_train.cpu().detach().numpy().flatten()
 y_train_np = y_train.cpu().detach().numpy().flatten()
 x_test_np = x_test.cpu().detach().numpy().flatten()
+y_test_np = y_test.cpu().detach().numpy().flatten()
 y_pred_initial_np = y_pred_initial.cpu().detach().numpy().flatten()
 y_pred_np = y_pred.cpu().detach().numpy().flatten()
 
 fig, _ = plt.subplots()
-plt.scatter(x_train_np, y_train_np, label="Training points", marker="o", color="orange")
+plt.scatter(x_test_np, y_test_np, label="Test points", marker="o", color="orange")
 plt.plot(x_test_np, y_pred_initial_np, label="Initial prediction", color="green", alpha=0.5)
 plt.plot(x_test_np, y_pred_np, label="Final prediction")
 plt.legend()
