@@ -39,5 +39,6 @@ jobs:
         git config user.name "GitHub Actions"
         git config user.email "actions@github.com"
         git fetch origin gh-pages
+        git fetch origin refs/tags/v1.0.1
         git checkout v1.0.1
         hatch -v run docs:mike deploy --push --update-aliases 0.0.1debug latest
