@@ -181,7 +181,7 @@ class TransformedModule(torch.nn.Module):
 
         else:
             assert isinstance(self.model, torch.nn.Module) and isinstance(x, Tensor)
-            return self._input_scaling * x + self._input_shifting
+            return self._input_scaling * (x + self._input_shifting)
 
     def forward(self, x: dict[str, Tensor] | Tensor, *args: Any, **kwargs: Any) -> Tensor:
         y = self.model(self._transform_x(x), *args, **kwargs)
