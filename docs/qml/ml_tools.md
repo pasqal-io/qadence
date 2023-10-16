@@ -1,11 +1,11 @@
 ## Dataloaders
 
-When using `qadence`, you can supply classical data to a quantum machine learning
+When using Qadence, you can supply classical data to a quantum machine learning
 algorithm by using a standard PyTorch `DataLoader` instance. Qadence also provides
 the `DictDataLoader` convenience class which allows
 to build dictionaries of `DataLoader`s instances and easily iterate over them.
 
-```python exec="on" source="material-block" result="json"
+```python exec="on" source="material-block"
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 from qadence.ml_tools import DictDataLoader
@@ -49,9 +49,9 @@ for i in range(n_epochs):
 
 ## Optimization routines
 
-For training QML models, `qadence` also offers a few out-of-the-box routines for optimizing differentiable
+For training QML models, Qadence also offers a few out-of-the-box routines for optimizing differentiable
 models like `QNN`s and `QuantumModel`s containing either *trainable* and/or *non-trainable* parameters
-(you can refer to [this](../tutorials/parameters) for a refresh about different parameter types):
+(you can refer to [the parameters tutorial](../tutorials/parameters.md) for a refresh about different parameter types):
 
 * [`train_with_grad`][qadence.ml_tools.train_with_grad] for gradient-based optimization using PyTorch native optimizers
 * [`train_gradient_free`][qadence.ml_tools.train_gradient_free] for gradient-free optimization using
@@ -65,7 +65,7 @@ As every other training routine commonly used in Machine Learning, it requires
 However, in addition, it requires a `loss_fn` and a `TrainConfig`.
 A `loss_fn` is required to be a function which expects both a model and data and returns a tuple of (loss, metrics: `<dict>`), where `metrics` is a dict of scalars which can be customized too.
 
-```python exec="on" source="material-block" result="json"
+```python exec="on" source="material-block"
 import torch
 from itertools import count
 cnt = count()
@@ -83,7 +83,7 @@ def loss_fn(model: torch.nn.Module, data: torch.Tensor) -> tuple[torch.Tensor, d
 The [`TrainConfig`][qadence.ml_tools.config.TrainConfig] tells `train_with_grad` what batch_size should be used,
 how many epochs to train, in which intervals to print/log metrics and how often to store intermediate checkpoints.
 
-```python exec="on" source="material-block" result="json"
+```python exec="on" source="material-block"
 from qadence.ml_tools import TrainConfig
 
 batch_size = 5
@@ -104,7 +104,7 @@ Let's see it in action with a simple example.
 
 Let's look at a complete example of how to use `train_with_grad` now.
 
-```python exec="on" source="material-block" result="json"
+```python exec="on" source="material-block" html="1"
 from pathlib import Path
 import torch
 from itertools import count
@@ -138,7 +138,7 @@ def loss_fn(model: torch.nn.Module, data: torch.Tensor) -> tuple[torch.Tensor, d
 
 tmp_path = Path("/tmp")
 
-n_epochs = 5
+n_epochs = 50
 
 config = TrainConfig(
     folder=tmp_path,
@@ -155,8 +155,11 @@ y = torch.sin(x)
 
 train_with_grad(model, (x, y), optimizer, config, loss_fn=loss_fn)
 
-plt.plot(y.numpy())
-plt.plot(model(input_values).detach().numpy())
+plt.clf() # markdown-exec: hide
+plt.plot(x.numpy(), y.numpy())
+plt.plot(x.numpy(), model(x).detach().numpy())
+from docs import docsutils # markdown-exec: hide
+print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
 ```
 
 For users who want to use the low-level API of `qadence`, here is the example from above
@@ -164,7 +167,7 @@ written without `train_with_grad`.
 
 ### Fitting a function - Low-level API
 
-```python exec="on" source="material-block" result="json"
+```python exec="on" source="material-block"
 from pathlib import Path
 import torch
 from itertools import count
