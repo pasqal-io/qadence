@@ -106,7 +106,7 @@ def feature_map(
         elif fm_type == "chebyshev":
             fm_type = BasisFeatureMap.CHEBYSHEV
         elif fm_type == "tower":
-            fm_type = BasisFeatureMap.FOURIER
+            fm_type = BasisFeatureMap.CHEBYSHEV
             reupload_scaling = ScalingFeatureMap.TOWER
 
     if isinstance(param, Parameter):
