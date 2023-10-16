@@ -19,8 +19,8 @@ from qadence.blocks.analog import (
     WaitBlock,
 )
 from qadence.blocks.composite import CompositeBlock
+from qadence.blocks.construct import _construct
 from qadence.blocks.primitive import PrimitiveBlock, ScaleBlock
-from qadence.blocks.utils import _construct
 from qadence.circuit import QuantumCircuit
 from qadence.operations import HamEvo, I, N, X, Y, add, chain, kron, wait
 from qadence.qubit_support import QubitSupport

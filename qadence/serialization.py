@@ -13,7 +13,7 @@ from sympy import Basic, Expr, srepr
 from qadence import QuantumCircuit, operations
 from qadence import blocks as qadenceblocks
 from qadence.blocks import AbstractBlock
-from qadence.blocks.utils import tag
+from qadence.blocks.construct import tag
 from qadence.logger import get_logger
 from qadence.ml_tools.models import TransformedModule
 from qadence.models import QNN, QuantumModel

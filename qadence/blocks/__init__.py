@@ -15,14 +15,10 @@ from .primitive import (
     ControlBlock,
 )
 from .composite import AddBlock, ChainBlock, CompositeBlock, KronBlock, PutBlock
+from .construct import add, chain, kron, tag, put
 from .matrix import MatrixBlock
 from .manipulate import from_openfermion, to_openfermion
 from .utils import (
-    add,
-    chain,
-    kron,
-    tag,
-    put,
     block_is_commuting_hamiltonian,
     block_is_qubit_hamiltonian,
     parameters,

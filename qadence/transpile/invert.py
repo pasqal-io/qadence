@@ -21,7 +21,7 @@ def reassign(block: AbstractBlock, qubit_map: dict[int, int]) -> AbstractBlock:
 
     """
     from qadence.blocks import CompositeBlock, ControlBlock, ParametricControlBlock, ScaleBlock
-    from qadence.blocks.utils import _construct
+    from qadence.blocks.construct import _construct
 
     def _block_with_updated_support(block: AbstractBlock) -> AbstractBlock:
         if isinstance(block, ControlBlock) or isinstance(block, ParametricControlBlock):

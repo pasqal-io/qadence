@@ -31,13 +31,11 @@ from qadence.blocks.analog import (
     WaitBlock,
 )
 from qadence.blocks.block_to_tensor import block_to_tensor
+from qadence.blocks.construct import add, chain, kron  # noqa
 from qadence.blocks.utils import (
-    add,  # noqa
     block_is_commuting_hamiltonian,
     block_is_qubit_hamiltonian,
-    chain,
     expressions,
-    kron,
 )
 from qadence.decompose import lie_trotter_suzuki
 from qadence.logger import get_logger

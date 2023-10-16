@@ -22,7 +22,7 @@ from qadence.blocks.block_to_tensor import (
     _block_to_tensor_embedded,
     block_to_tensor,
 )
-from qadence.blocks.utils import add, chain, kron
+from qadence.blocks.construct import add, chain, kron
 from qadence.constructors import (
     feature_map,
     hamiltonian_factory,

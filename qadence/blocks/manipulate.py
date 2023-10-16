@@ -7,7 +7,7 @@ from openfermion.utils import count_qubits
 
 from qadence import operations
 from qadence.blocks import AbstractBlock, AddBlock, CompositeBlock, PrimitiveBlock, ScaleBlock
-from qadence.blocks.utils import add, kron
+from qadence.blocks.construct import add, kron
 from qadence.parameters import evaluate
 
 

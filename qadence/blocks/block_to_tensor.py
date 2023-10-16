@@ -15,7 +15,8 @@ from qadence.blocks import (
     PrimitiveBlock,
     ScaleBlock,
 )
-from qadence.blocks.utils import chain, kron, uuid_to_expression
+from qadence.blocks.construct import chain, kron
+from qadence.blocks.utils import uuid_to_expression
 from qadence.parameters import evaluate, stringify
 from qadence.types import Endianness, TensorType, TNumber
 

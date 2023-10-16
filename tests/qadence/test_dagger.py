@@ -7,7 +7,7 @@ from sympy import acos
 
 from qadence import Parameter
 from qadence.blocks import AbstractBlock, chain, kron
-from qadence.blocks.utils import assert_same_block, put
+from qadence.blocks.construct import put
 from qadence.constructors import hea
 from qadence.operations import (
     CNOT,
@@ -58,7 +58,7 @@ from qadence.operations import (
 )
 def test_all_fixed_primitive_blocks(block: AbstractBlock) -> None:
     # testing all fixed primitive blocks, for which U=U''
-    assert_same_block(block, block.dagger().dagger())
+    block == block.dagger().dagger()
 
 
 @pytest.mark.parametrize(
@@ -77,22 +77,22 @@ def test_all_fixed_primitive_blocks(block: AbstractBlock) -> None:
 )
 def test_self_adjoint_blocks(block: AbstractBlock) -> None:
     # some cases are self-adjoint, which means the property U=U'
-    assert_same_block(block, block.dagger())
+    block == block.dagger()
 
 
 def test_t_and_s_gates() -> None:
     # testing those cases which are not self-adjoint, and require special backend implementations
-    assert_same_block(S(0), SDagger(0).dagger())
-    assert_same_block(SDagger(0), S(0).dagger())
-    assert_same_block(T(0), TDagger(0).dagger())
-    assert_same_block(TDagger(0), T(0).dagger())
+    S(0) == SDagger(0).dagger()
+    SDagger(0) == S(0).dagger()
+    T(0) == TDagger(0).dagger()
+    TDagger(0) == T(0).dagger()
 
 
 def test_scale_dagger() -> None:
     # testing scale blocks with numerical or parametric values
     for scale in [2, 2.1, Parameter("x"), acos(Parameter("x"))]:
-        assert_same_block(scale * X(0), (-scale * X(0)).dagger())
-        assert_same_block(scale * X(0), (scale * X(0)).dagger().dagger())
+        scale * X(0) == (-scale * X(0)).dagger()
+        scale * X(0) == (scale * X(0)).dagger().dagger()
 
 
 @pytest.mark.parametrize(
@@ -120,15 +120,15 @@ def test_all_self_adjoint_blocks(block: Tuple[int, AbstractBlock]) -> None:
         else:
             generator = X(0) + 3 * Y(1) * Z(1) + 2 * X(1)
             block = HamEvo(generator, p_type)  # type: ignore[assignment]
-        assert_same_block(block, block.dagger().dagger())  # type: ignore[arg-type,attr-defined]
+        block == block.dagger().dagger()  # type: ignore[arg-type,attr-defined]
         if not isinstance(p_type, str):
             block_dagger = (
                 block_class(*tuple(range(n_qubits)), -p_type)  # type: ignore[operator]
                 if n_qubits >= 0
                 else HamEvo(generator, -p_type)
             )
-            assert_same_block(block, block_dagger.dagger())  # type: ignore[arg-type,attr-defined]
-            assert_same_block(block.dagger(), block_dagger)  # type: ignore[arg-type,attr-defined]
+            block == block_dagger.dagger()  # type: ignore[arg-type,attr-defined]
+            block.dagger() == block_dagger  # type: ignore[arg-type,attr-defined]
 
 
 @pytest.mark.parametrize(

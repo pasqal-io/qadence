@@ -229,7 +229,7 @@ class ScaleBlock(ParametricBlock):
         super().__init__(block.qubit_support)
 
     def __pow__(self, power: int) -> AbstractBlock:
-        from qadence.blocks.utils import chain
+        from qadence.blocks.construct import chain
 
         expr = self.parameters.parameter
         return ScaleBlock(chain(self.block for _ in range(power)), expr**power)

@@ -76,8 +76,8 @@ class AbstractBlock(ABC):
         pass
 
     def __mul__(self, other: Union[AbstractBlock, TNumber, Parameter]) -> AbstractBlock:
+        from qadence.blocks.construct import chain
         from qadence.blocks.primitive import ScaleBlock
-        from qadence.blocks.utils import chain
 
         # TODO: Improve type checking here
         if isinstance(other, AbstractBlock):
@@ -95,8 +95,8 @@ class AbstractBlock(ABC):
 
     def __imul__(self, other: Union[AbstractBlock, TNumber, Parameter]) -> AbstractBlock:
         from qadence.blocks.composite import ChainBlock
+        from qadence.blocks.construct import chain
         from qadence.blocks.primitive import ScaleBlock
-        from qadence.blocks.utils import chain
 
         if not isinstance(other, AbstractBlock):
             raise TypeError("In-place multiplication is available only for AbstractBlock instances")
@@ -121,14 +121,14 @@ class AbstractBlock(ABC):
         return self * ix
 
     def __add__(self, other: AbstractBlock) -> AbstractBlock:
-        from qadence.blocks.utils import add
+        from qadence.blocks.construct import add
 
         if not isinstance(other, AbstractBlock):
             raise TypeError(f"Can only add a block to another block. Got {type(other)}.")
         return add(self, other)
 
     def __radd__(self, other: AbstractBlock) -> AbstractBlock:
-        from qadence.blocks.utils import add
+        from qadence.blocks.construct import add
 
         if isinstance(other, int) and other == 0:
             return self
@@ -138,7 +138,7 @@ class AbstractBlock(ABC):
 
     def __iadd__(self, other: AbstractBlock) -> AbstractBlock:
         from qadence.blocks.composite import AddBlock
-        from qadence.blocks.utils import add
+        from qadence.blocks.construct import add
 
         if not isinstance(other, AbstractBlock):
             raise TypeError(f"Can only add a block to another block. Got {type(other)}.")
@@ -151,8 +151,8 @@ class AbstractBlock(ABC):
         )
 
     def __sub__(self, other: AbstractBlock) -> AbstractBlock:
+        from qadence.blocks.construct import add
         from qadence.blocks.primitive import ScaleBlock
-        from qadence.blocks.utils import add
 
         if not isinstance(other, AbstractBlock):
             raise TypeError(f"Can only subtract a block from another block. Got {type(other)}.")
@@ -165,7 +165,7 @@ class AbstractBlock(ABC):
 
     def __isub__(self, other: AbstractBlock) -> AbstractBlock:
         from qadence.blocks.composite import AddBlock
-        from qadence.blocks.utils import add
+        from qadence.blocks.construct import add
 
         if not isinstance(other, AbstractBlock):
             raise TypeError(f"Can only add a block to another block. Got {type(other)}.")
@@ -178,7 +178,7 @@ class AbstractBlock(ABC):
         )
 
     def __pow__(self, power: int) -> AbstractBlock:
-        from qadence.blocks.utils import chain
+        from qadence.blocks.construct import chain
 
         return chain(self for _ in range(power))
 
@@ -189,7 +189,7 @@ class AbstractBlock(ABC):
         return self
 
     def __matmul__(self, other: AbstractBlock) -> AbstractBlock:
-        from qadence.blocks.utils import kron
+        from qadence.blocks.construct import kron
 
         if not isinstance(other, AbstractBlock):
             raise TypeError(f"Can only kron a block to another block. Got {type(other)}.")
@@ -197,7 +197,7 @@ class AbstractBlock(ABC):
 
     def __imatmul__(self, other: AbstractBlock) -> AbstractBlock:
         from qadence.blocks.composite import KronBlock
-        from qadence.blocks.utils import kron
+        from qadence.blocks.construct import kron
 
         if not isinstance(other, AbstractBlock):
             raise TypeError(f"Can only kron a block with another block. Got {type(other)}.")

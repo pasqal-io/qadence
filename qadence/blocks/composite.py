@@ -125,7 +125,7 @@ class CompositeBlock(AbstractBlock):
     def _from_dict(cls, d: dict) -> CompositeBlock:
         from qadence import blocks as qadenceblocks
         from qadence import operations
-        from qadence.blocks.utils import _construct, tag
+        from qadence.blocks.construct import _construct, tag
 
         blocks = [
             getattr(operations, b["type"])._from_dict(b)

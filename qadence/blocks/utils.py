@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing
 from enum import Enum
 from itertools import chain as _flatten
-from typing import Generator, List, Type, TypeVar, Union, get_args
+from typing import List, Union, get_args
 
 from sympy import Basic, Expr
 from torch import Tensor
@@ -16,127 +16,15 @@ from qadence.blocks import (
     KronBlock,
     ParametricBlock,
     PrimitiveBlock,
-    PutBlock,
     ScaleBlock,
     TimeEvolutionBlock,
 )
-from qadence.blocks.analog import AnalogBlock, AnalogComposite, ConstantAnalogRotation, WaitBlock
-from qadence.blocks.analog import chain as analog_chain
-from qadence.blocks.analog import kron as analog_kron
+from qadence.blocks.analog import AnalogComposite, ConstantAnalogRotation, WaitBlock
 from qadence.errors import NotPauliBlockError
 from qadence.logger import get_logger
 from qadence.parameters import Parameter
 
 logger = get_logger(__name__)
-
-
-TPrimitiveBlock = TypeVar("TPrimitiveBlock", bound=PrimitiveBlock)
-TCompositeBlock = TypeVar("TCompositeBlock", bound=CompositeBlock)
-
-
-def _construct(
-    Block: Type[TCompositeBlock],
-    args: tuple[Union[AbstractBlock, Generator, List[AbstractBlock]], ...],
-) -> TCompositeBlock:
-    if len(args) == 1 and isinstance(args[0], Generator):
-        args = tuple(args[0])
-    return Block([b for b in args])  # type: ignore [arg-type]
-
-
-def chain(*args: Union[AbstractBlock, Generator, List[AbstractBlock]]) -> ChainBlock:
-    """Chain blocks sequentially. On digital backends this can be interpreted
-    loosely as a matrix mutliplication of blocks. In the analog case it chains
-    blocks in time.
-
-    Arguments:
-        *args: Blocks to chain. Can also be a generator.
-
-    Returns:
-        ChainBlock
-
-    Example:
-    ```python exec="on" source="material-block" result="json"
-    from qadence import X, Y, chain
-
-    b = chain(X(0), Y(0))
-
-    # or use a generator
-    b = chain(X(i) for i in range(3))
-    print(b)
-    ```
-    """
-    # ugly hack to use `AnalogChain` if we are dealing only with analog blocks
-    if len(args) and all(
-        isinstance(a, AnalogBlock) or isinstance(a, AnalogComposite) for a in args
-    ):
-        return analog_chain(*args)  # type: ignore[return-value,arg-type]
-    return _construct(ChainBlock, args)
-
-
-def kron(*args: Union[AbstractBlock, Generator]) -> KronBlock:
-    """Stack blocks vertically. On digital backends this can be intepreted
-    loosely as a kronecker product of blocks. In the analog case it executes
-    blocks parallel in time.
-
-    Arguments:
-        *args: Blocks to kron. Can also be a generator.
-
-    Returns:
-        KronBlock
-
-    Example:
-    ```python exec="on" source="material-block" result="json"
-    from qadence import X, Y, kron
-
-    b = kron(X(0), Y(1))
-
-    # or use a generator
-    b = kron(X(i) for i in range(3))
-    print(b)
-    ```
-    """
-    # ugly hack to use `AnalogKron` if we are dealing only with analog blocks
-    if len(args) and all(
-        isinstance(a, AnalogBlock) or isinstance(a, AnalogComposite) for a in args
-    ):
-        return analog_kron(*args)  # type: ignore[return-value,arg-type]
-    return _construct(KronBlock, args)
-
-
-def add(*args: Union[AbstractBlock, Generator]) -> AddBlock:
-    """Sums blocks.
-
-    Arguments:
-        *args: Blocks to add. Can also be a generator.
-
-    Returns:
-        AddBlock
-
-    Example:
-    ```python exec="on" source="material-block" result="json"
-    from qadence import X, Y, add
-
-    b = add(X(0), Y(0))
-
-    # or use a generator
-    b = add(X(i) for i in range(3))
-    print(b)
-    ```
-    """
-    return _construct(AddBlock, args)
-
-
-def tag(block: AbstractBlock, tag: str) -> AbstractBlock:
-    block.tag = tag
-    return block
-
-
-def put(block: AbstractBlock, min_qubit: int, max_qubit: int) -> PutBlock:
-    from qadence.transpile import reassign
-
-    support = tuple(range(min(block.qubit_support), max(block.qubit_support) + 1))
-    shifted_block = reassign(block, {i: i - min(support) for i in support})
-    return PutBlock(shifted_block, tuple(range(min_qubit, max_qubit + 1)))
 
 
 def primitive_blocks(block: AbstractBlock) -> List[PrimitiveBlock]:
@@ -478,21 +366,3 @@ and NOT this way:
             "should be either a ScaleBlock or one of Add, Chain "
             f"and Kron blocks. Got {type(block)}."
         )
-
-
-def assert_same_block(b1: AbstractBlock, b2: AbstractBlock) -> None:
-    assert type(b1) == type(
-        b2
-    ), f"Block {b1} is not the same type ({type(b1)}) as Block {b2} ({type(b2)})"
-    assert b1.name == b2.name, f"Block {b1} and {b2} don't have the same names!"
-    assert (
-        b1.qubit_support == b2.qubit_support
-    ), f"Block {b1} and {b2} don't have the same qubit support!"
-    if isinstance(b1, ParametricBlock) and isinstance(
-        b2, ParametricBlock
-    ):  # if the block is parametric, we can check some additional things
-        assert len(b1.parameters.items()) == len(
-            b2.parameters.items()
-        ), f"Blocks {b1} and {b2} have differing numbers of parameters."
-        for p1, p2 in zip(b1.parameters.expressions(), b2.parameters.expressions()):
-            assert p1 == p2

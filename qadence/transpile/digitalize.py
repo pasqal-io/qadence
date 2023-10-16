@@ -5,7 +5,7 @@ from typing import overload
 
 from qadence import HamEvo, QuantumCircuit
 from qadence.blocks import AbstractBlock, CompositeBlock
-from qadence.blocks.utils import _construct
+from qadence.blocks.construct import _construct
 from qadence.operations import U
 from qadence.types import LTSOrder
 

@@ -22,9 +22,8 @@ from qadence.blocks import (
     chain,
     kron,
 )
+from qadence.blocks.construct import TPrimitiveBlock, _construct
 from qadence.blocks.utils import (
-    TPrimitiveBlock,
-    _construct,
     parameters,
 )
 from qadence.logger import get_logger
