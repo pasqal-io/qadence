@@ -1,0 +1,42 @@
+name: Debug
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch: {}
+
+  deploy_docs:
+    name: Deploy Qadence docs (ubuntu)
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: test_qadence_ubuntu
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Qadence
+      uses: actions/checkout@v4
+    - name: Install JetBrains Mono font
+      run: |
+        sudo apt install -y wget unzip fontconfig
+        wget https://download.jetbrains.com/fonts/JetBrainsMono-2.304.zip
+        unzip JetBrainsMono-2.304.zip -d JetBrainsMono
+        mkdir -p /usr/share/fonts/truetype/jetbrains
+        cp JetBrainsMono/fonts/ttf/*.ttf /usr/share/fonts/truetype/jetbrains/
+        fc-cache -f -v
+    - name: Install graphviz
+      run: sudo apt-get install -y graphviz
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    - name: Install Hatch
+      run: |
+        pip install hatch
+    - name: Deploy docs
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+        git fetch gh-pages
+        hatch -v run docs:mike deploy --push --update-aliases ${{ github.ref_name }} latest
