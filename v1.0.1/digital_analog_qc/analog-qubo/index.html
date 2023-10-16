@@ -11,10 +11,10 @@
         <link rel="canonical" href="https://pasqal-io.github.io/qadence/v1.0.1/digital_analog_qc/analog-qubo/">
       
       
-        <link rel="prev" href="../analog-basics/">
+        <link rel="prev" href="../pulser-basic/">
       
       
-        <link rel="next" href="../pulser-basic/">
+        <link rel="next" href="../daqc-cnot/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -22,7 +22,7 @@
     
     
       
-        <title>Solve a QUBO oroblem - Qadence</title>
+        <title>Solve a QUBO problem - Qadence</title>
       
     
     
@@ -121,7 +121,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Solve a QUBO oroblem
+              Solve a QUBO problem
             
           </span>
         </div>
@@ -758,6 +758,26 @@
                 
   
   
+  
+    <li class="md-nav__item">
+      <a href="../pulser-basic/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Pulse-level programming with Pulser
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -771,7 +791,7 @@
           
   
   <span class="md-ellipsis">
-    Solve a QUBO oroblem
+    Solve a QUBO problem
   </span>
   
 
@@ -782,7 +802,7 @@
         
   
   <span class="md-ellipsis">
-    Solve a QUBO oroblem
+    Solve a QUBO problem
   </span>
   
 
@@ -812,26 +832,6 @@
   
 </nav>
       
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../pulser-basic/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Pulse-level programming with Pulser
-  </span>
-  
-
-      </a>
     </li>
   
 
@@ -1726,14 +1726,15 @@
   
 
 
-  <h1>Solve a QUBO oroblem</h1>
+  <h1>Solve a QUBO problem</h1>
 
 <p>In this notebook we solve a quadratic unconstrained optimization problem with
-<code>qadence</code> emulated analog interface using the QAOA variational algorithm. The
+Qadence emulated analog interface using the QAOA variational algorithm. The
 problem is detailed in the Pulser documentation
 <a href="https://pulser.readthedocs.io/en/stable/tutorials/qubo.html">here</a>.</p>
+<h2 id="define-and-solve-qubo">Define and solve QUBO</h2>
 <details class="note">
-<summary>Construct QUBO register (defines <code>qubo_register_coords</code> function)</summary>
+<summary>Pre-requisite: construct QUBO register</summary>
 <p>Before we start we have to define a register that fits into our device.
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span> <span class="nn">torch</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
@@ -1787,7 +1788,6 @@ problem is detailed in the Pulser documentation
 
 </div></p>
 </details>
-<h2 id="define-and-solve-qubo">Define and solve QUBO</h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kn">import</span> <span class="nn">torch</span>
@@ -1804,79 +1804,81 @@ problem is detailed in the Pulser documentation
 
 
 </div>
-<p>The QUBO is defined by weighted connections <code>Q</code> and a cost function.</p>
+<p>The QUBO problem is initially defined by a graph of weighted connections <code>Q</code> and a cost function.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">def</span> <span class="nf">cost_colouring</span><span class="p">(</span><span class="n">bitstring</span><span class="p">,</span> <span class="n">Q</span><span class="p">):</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">bitstring</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">cost</span> <span class="o">=</span> <span class="n">z</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">Q</span> <span class="o">@</span> <span class="n">z</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="k">return</span> <span class="n">cost</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="c1"># Cost function.</span>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="k">def</span> <span class="nf">cost_fn</span><span class="p">(</span><span class="n">counter</span><span class="p">,</span> <span class="n">Q</span><span class="p">):</span>
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">cost</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">counter</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">*</span> <span class="n">cost_colouring</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">Q</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">counter</span><span class="p">)</span>
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="k">return</span> <span class="n">cost</span> <span class="o">/</span> <span class="nb">sum</span><span class="p">(</span><span class="n">counter</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>  <span class="c1"># Divide by total samples</span>
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
 <a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="n">Q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="p">[</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>        <span class="p">[</span><span class="o">-</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">19.7365809</span><span class="p">,</span> <span class="mf">19.7365809</span><span class="p">,</span> <span class="mf">5.42015853</span><span class="p">,</span> <span class="mf">5.42015853</span><span class="p">],</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>        <span class="p">[</span><span class="mf">19.7365809</span><span class="p">,</span> <span class="o">-</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">20.67626392</span><span class="p">,</span> <span class="mf">0.17675796</span><span class="p">,</span> <span class="mf">0.85604541</span><span class="p">],</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>        <span class="p">[</span><span class="mf">19.7365809</span><span class="p">,</span> <span class="mf">20.67626392</span><span class="p">,</span> <span class="o">-</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">0.85604541</span><span class="p">,</span> <span class="mf">0.17675796</span><span class="p">],</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>        <span class="p">[</span><span class="mf">5.42015853</span><span class="p">,</span> <span class="mf">0.17675796</span><span class="p">,</span> <span class="mf">0.85604541</span><span class="p">,</span> <span class="o">-</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">0.32306662</span><span class="p">],</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>        <span class="p">[</span><span class="mf">5.42015853</span><span class="p">,</span> <span class="mf">0.85604541</span><span class="p">,</span> <span class="mf">0.17675796</span><span class="p">,</span> <span class="mf">0.32306662</span><span class="p">,</span> <span class="o">-</span><span class="mf">10.0</span><span class="p">],</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>    <span class="p">]</span>
-<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="p">)</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="c1"># Weights.</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="n">Q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    <span class="p">[</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>        <span class="p">[</span><span class="o">-</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">19.7365809</span><span class="p">,</span> <span class="mf">19.7365809</span><span class="p">,</span> <span class="mf">5.42015853</span><span class="p">,</span> <span class="mf">5.42015853</span><span class="p">],</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>        <span class="p">[</span><span class="mf">19.7365809</span><span class="p">,</span> <span class="o">-</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">20.67626392</span><span class="p">,</span> <span class="mf">0.17675796</span><span class="p">,</span> <span class="mf">0.85604541</span><span class="p">],</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>        <span class="p">[</span><span class="mf">19.7365809</span><span class="p">,</span> <span class="mf">20.67626392</span><span class="p">,</span> <span class="o">-</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">0.85604541</span><span class="p">,</span> <span class="mf">0.17675796</span><span class="p">],</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>        <span class="p">[</span><span class="mf">5.42015853</span><span class="p">,</span> <span class="mf">0.17675796</span><span class="p">,</span> <span class="mf">0.85604541</span><span class="p">,</span> <span class="o">-</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">0.32306662</span><span class="p">],</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>        <span class="p">[</span><span class="mf">5.42015853</span><span class="p">,</span> <span class="mf">0.85604541</span><span class="p">,</span> <span class="mf">0.17675796</span><span class="p">,</span> <span class="mf">0.32306662</span><span class="p">,</span> <span class="o">-</span><span class="mf">10.0</span><span class="p">],</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>    <span class="p">]</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="p">)</span>
 </code></pre></div>
 <div class="result" markdown="1" >
 
 
 
 </div>
-<p>Build a register from graph extracted from the QUBO exactly
-as you would do with Pulser.
+<p>Now, build a weighted register graph from the QUBO definition similarly to what is
+done in Pulser.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">reg</span> <span class="o">=</span> <span class="n">Register</span><span class="o">.</span><span class="n">from_coordinates</span><span class="p">(</span><span class="n">qubo_register_coords</span><span class="p">(</span><span class="n">Q</span><span class="p">))</span>
 </code></pre></div>
 <div class="result" markdown="1" >
 
 
 
-</div></p>
+</div>
 <p>The analog circuit is composed of two global rotations per layer.  The first
 rotation corresponds to the mixing Hamiltonian and the second one to the
-embedding Hamiltonian.  Subsequently we add the Ising interaction term to
-emulate the analog circuit.  This uses a principal quantum number n=70 for the
-Rydberg level under the hood.
+embedding Hamiltonian in the QAOA algorithm. Subsequently, there is an Ising interaction term to
+emulate the analog circuit. Please note that the Rydberg level is set to 70.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">qadence.transpile.emulate</span> <span class="kn">import</span> <span class="n">ising_interaction</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">LAYERS</span> <span class="o">=</span> <span class="mi">2</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">block</span> <span class="o">=</span> <span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">AnalogRX</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;t</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="n">AnalogRZ</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;s</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">LAYERS</span><span class="p">)])</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">layers</span> <span class="o">=</span> <span class="mi">2</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">block</span> <span class="o">=</span> <span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">AnalogRX</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;t</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="n">AnalogRZ</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;s</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">layers</span><span class="p">)])</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">emulated</span> <span class="o">=</span> <span class="n">add_interaction</span><span class="p">(</span>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">reg</span><span class="p">,</span> <span class="n">block</span><span class="p">,</span> <span class="n">interaction</span><span class="o">=</span><span class="k">lambda</span> <span class="n">r</span><span class="p">,</span> <span class="n">ps</span><span class="p">:</span> <span class="n">ising_interaction</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">ps</span><span class="p">,</span> <span class="n">rydberg_level</span><span class="o">=</span><span class="mi">70</span><span class="p">)</span>
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="p">)</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="nb">print</span><span class="p">(</span><span class="n">emulated</span><span class="p">)</span>
 </code></pre></div>
 <div class="result" markdown="1" >
 
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="err">Chai</span><span class="kc">n</span><span class="err">Block(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="err">)</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="err">├──</span><span class="w"> </span><span class="err">Chai</span><span class="kc">n</span><span class="err">Block(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="err">)</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="err">HamEvo(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="err">)</span><span class="w"> </span><span class="p">[</span><span class="err">params</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">&#39;</span><span class="mi">51</span><span class="err">_</span><span class="mi">1430082484387</span><span class="err">*</span><span class="kc">t</span><span class="mi">0</span><span class="err">&#39;</span><span class="p">]]</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="err">HamEvo(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="err">)</span><span class="w"> </span><span class="p">[</span><span class="err">params</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">&#39;</span><span class="mi">38</span><span class="err">_</span><span class="mi">8279677658339</span><span class="err">*s</span><span class="mi">0</span><span class="err">&#39;</span><span class="p">]]</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="err">└──</span><span class="w"> </span><span class="err">Chai</span><span class="kc">n</span><span class="err">Block(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="err">)</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">    </span><span class="err">├──</span><span class="w"> </span><span class="err">HamEvo(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="err">)</span><span class="w"> </span><span class="p">[</span><span class="err">params</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">&#39;</span><span class="mi">51</span><span class="err">_</span><span class="mi">1430082484387</span><span class="err">*</span><span class="kc">t</span><span class="mi">1</span><span class="err">&#39;</span><span class="p">]]</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="err">└──</span><span class="w"> </span><span class="err">HamEvo(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="err">)</span><span class="w"> </span><span class="p">[</span><span class="err">params</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">&#39;</span><span class="mi">38</span><span class="err">_</span><span class="mi">8279677658339</span><span class="err">*s</span><span class="mi">1</span><span class="err">&#39;</span><span class="p">]]</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="err">emula</span><span class="kc">te</span><span class="err">d</span><span class="w"> </span><span class="err">=</span><span class="w"> </span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="err">Chai</span><span class="kc">n</span><span class="err">Block(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="err">)</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="err">├──</span><span class="w"> </span><span class="err">Chai</span><span class="kc">n</span><span class="err">Block(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="err">)</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="err">HamEvo(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="err">)</span><span class="w"> </span><span class="p">[</span><span class="err">params</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">&#39;</span><span class="mi">51</span><span class="err">_</span><span class="mi">1430082484387</span><span class="err">*</span><span class="kc">t</span><span class="mi">0</span><span class="err">&#39;</span><span class="p">]]</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="err">HamEvo(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="err">)</span><span class="w"> </span><span class="p">[</span><span class="err">params</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">&#39;</span><span class="mi">38</span><span class="err">_</span><span class="mi">8279677658339</span><span class="err">*s</span><span class="mi">0</span><span class="err">&#39;</span><span class="p">]]</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="err">└──</span><span class="w"> </span><span class="err">Chai</span><span class="kc">n</span><span class="err">Block(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="err">)</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">    </span><span class="err">├──</span><span class="w"> </span><span class="err">HamEvo(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="err">)</span><span class="w"> </span><span class="p">[</span><span class="err">params</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">&#39;</span><span class="mi">51</span><span class="err">_</span><span class="mi">1430082484387</span><span class="err">*</span><span class="kc">t</span><span class="mi">1</span><span class="err">&#39;</span><span class="p">]]</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">    </span><span class="err">└──</span><span class="w"> </span><span class="err">HamEvo(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="err">)</span><span class="w"> </span><span class="p">[</span><span class="err">params</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">&#39;</span><span class="mi">38</span><span class="err">_</span><span class="mi">8279677658339</span><span class="err">*s</span><span class="mi">1</span><span class="err">&#39;</span><span class="p">]]</span>
 </code></pre></div>
 
-</div></p>
-<p>Sample the model to get the initial solution.
+</div>
+<p>Next, an initial solution is computed by sampling the model:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">model</span> <span class="o">=</span> <span class="n">QuantumModel</span><span class="p">(</span><span class="n">QuantumCircuit</span><span class="p">(</span><span class="n">reg</span><span class="p">,</span> <span class="n">emulated</span><span class="p">),</span> <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;pyqtorch&quot;</span><span class="p">,</span> <span class="n">diff_mode</span><span class="o">=</span><span class="s1">&#39;gpsr&#39;</span><span class="p">)</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">initial_counts</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">sample</span><span class="p">({},</span> <span class="n">n_shots</span><span class="o">=</span><span class="mi">1000</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 </code></pre></div>
 <div class="result" markdown="1" >
 
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="err">i</span><span class="kc">n</span><span class="err">i</span><span class="kc">t</span><span class="err">ial_cou</span><span class="kc">nts</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="err">Cou</span><span class="kc">nter</span><span class="err">(</span><span class="p">{</span><span class="err">&#39;</span><span class="mi">00000</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">470</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">01000</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">89</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">00100</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">86</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">10000</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">76</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">00001</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">74</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">00010</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">72</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">00101</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">19</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">11000</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">18</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">10010</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">13</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">01001</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">12</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">10100</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">12</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">00011</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">11</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">00110</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">11</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">01100</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">10001</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">01010</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">7</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">01101</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">10110</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">00111</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">10011</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">11010</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">01011</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">10101</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">}</span><span class="err">)</span>
+</code></pre></div>
 
-
-</div></p>
-<p>The loss function is defined by averaging over the evaluated bitstrings.
+</div>
+<p>Then, the loss function is defined by averaging over the evaluated bitstrings.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">def</span> <span class="nf">loss</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">Q</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">param</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
@@ -1889,64 +1891,31 @@ Rydberg level under the hood.
 
 
 </div>
-Here we use a gradient-free optimization loop for reaching the optimal solution.
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1">#</span>
+<p>And a gradient-free optimization loop is used to compute the optimal solution.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Optimization loop.</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">20</span><span class="p">):</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="k">try</span><span class="p">:</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>        <span class="n">res</span> <span class="o">=</span> <span class="n">minimize</span><span class="p">(</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>            <span class="n">loss</span><span class="p">,</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>            <span class="n">args</span><span class="o">=</span><span class="n">Q</span><span class="p">,</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>            <span class="n">x0</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">2</span> <span class="o">*</span> <span class="n">LAYERS</span><span class="p">),</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>            <span class="n">method</span><span class="o">=</span><span class="s2">&quot;COBYLA&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>            <span class="n">tol</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">,</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>            <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;maxiter&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">},</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>        <span class="p">)</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>        <span class="k">pass</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="c1"># sample the optimal solution</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="n">model</span><span class="o">.</span><span class="n">reset_vparams</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="n">optimal_count_dict</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">sample</span><span class="p">({},</span> <span class="n">n_shots</span><span class="o">=</span><span class="mi">1000</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="nb">print</span><span class="p">(</span><span class="n">optimal_count_dict</span><span class="p">)</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">res</span> <span class="o">=</span> <span class="n">minimize</span><span class="p">(</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>        <span class="n">loss</span><span class="p">,</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>        <span class="n">args</span><span class="o">=</span><span class="n">Q</span><span class="p">,</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        <span class="n">x0</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">2</span> <span class="o">*</span> <span class="n">layers</span><span class="p">),</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>        <span class="n">method</span><span class="o">=</span><span class="s2">&quot;COBYLA&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>        <span class="n">tol</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">,</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>        <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;maxiter&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">},</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="p">)</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="c1"># Sample and visualize the optimal solution.</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="n">model</span><span class="o">.</span><span class="n">reset_vparams</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="n">optimal_count</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">sample</span><span class="p">({},</span> <span class="n">n_shots</span><span class="o">=</span><span class="mi">1000</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 </code></pre></div>
 <div class="result" markdown="1" >
 
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="err">Cou</span><span class="kc">nter</span><span class="err">(</span><span class="p">{</span><span class="err">&#39;</span><span class="mi">00111</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">243</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">01011</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">200</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">00100</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">103</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">01000</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">97</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">01001</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">82</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">00110</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">72</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">00000</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">61</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">00001</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">33</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">00010</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">25</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">10000</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">23</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">01010</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">16</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">00101</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">14</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">10001</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">7</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">10011</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">7</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">01111</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">10010</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">01101</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">00011</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">01100</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">}</span><span class="err">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="err">op</span><span class="kc">t</span><span class="err">imal_cou</span><span class="kc">nt</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="err">Cou</span><span class="kc">nter</span><span class="err">(</span><span class="p">{</span><span class="err">&#39;</span><span class="mi">00111</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">243</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">01011</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">200</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">00100</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">103</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">01000</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">97</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">01001</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">82</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">00110</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">72</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">00000</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">61</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">00001</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">33</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">00010</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">25</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">10000</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">23</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">01010</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">16</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">00101</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">14</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">10001</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">7</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">10011</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">7</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">01111</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">10010</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">01101</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">00011</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">01100</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">}</span><span class="err">)</span>
 </code></pre></div>
 
-</div></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># known solutions to the QUBO</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">solution_bitstrings</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;01011&quot;</span><span class="p">,</span> <span class="s2">&quot;00111&quot;</span><span class="p">]</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">n_to_show</span> <span class="o">=</span> <span class="mi">20</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">xs</span><span class="p">,</span> <span class="n">ys</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="nb">sorted</span><span class="p">(</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">initial_counts</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">item</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="p">))</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="n">colors</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;r&quot;</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">solution_bitstrings</span> <span class="k">else</span> <span class="s2">&quot;g&quot;</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">xs</span><span class="p">]</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;bitstrings&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;counts&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">xs</span><span class="p">[:</span><span class="n">n_to_show</span><span class="p">],</span> <span class="n">ys</span><span class="p">[:</span><span class="n">n_to_show</span><span class="p">],</span> <span class="n">width</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">)</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">labelrotation</span><span class="o">=</span><span class="mi">90</span><span class="p">)</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Initial solution&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>
-<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="n">xs</span><span class="p">,</span> <span class="n">ys</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="nb">sorted</span><span class="p">(</span><span class="n">optimal_count_dict</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>    <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">item</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>    <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="p">))</span>
-<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>
-<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="n">colors</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;r&quot;</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">solution_bitstrings</span> <span class="k">else</span> <span class="s2">&quot;g&quot;</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">xs</span><span class="p">]</span>
-<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>
-<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;bitstrings&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;counts&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a><span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">xs</span><span class="p">[:</span><span class="n">n_to_show</span><span class="p">],</span> <span class="n">ys</span><span class="p">[:</span><span class="n">n_to_show</span><span class="p">],</span> <span class="n">width</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">)</span>
-<a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a><span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">labelrotation</span><span class="o">=</span><span class="mi">90</span><span class="p">)</span>
-<a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a><span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Optimal solution&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a><span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</div>
+<p>Finally, plot the solution:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Known solutions to the QUBO problem.</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">solution_bitstrings</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;01011&quot;</span><span class="p">,</span> <span class="s2">&quot;00111&quot;</span><span class="p">]</span>
 </code></pre></div>
 <div class="result" markdown="1" >
 
@@ -1958,7 +1927,7 @@ Here we use a gradient-free optimization loop for reaching the optimal solution.
   <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
    <cc:Work>
     <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
-    <dc:date>2023-10-12T17:03:06.311174</dc:date>
+    <dc:date>2023-10-16T14:58:01.960719</dc:date>
     <dc:format>image/svg+xml</dc:format>
     <dc:creator>
      <cc:Agent>
@@ -1995,7 +1964,7 @@ L 76.876081 224.17
 L 76.876081 35.589048 
 L 68.121477 35.589048 
 z
-" clip-path="url(#p137608f42a)" style="fill: #008000"/>
+" clip-path="url(#p6e2e1a5f1a)" style="fill: #008000"/>
    </g>
    <g id="patch_4">
     <path d="M 85.630685 224.17 
@@ -2003,7 +1972,7 @@ L 94.385288 224.17
 L 94.385288 188.45999 
 L 85.630685 188.45999 
 z
-" clip-path="url(#p137608f42a)" style="fill: #008000"/>
+" clip-path="url(#p6e2e1a5f1a)" style="fill: #008000"/>
    </g>
    <g id="patch_5">
     <path d="M 103.139892 224.17 
@@ -2011,7 +1980,7 @@ L 111.894496 224.17
 L 111.894496 189.663698 
 L 103.139892 189.663698 
 z
-" clip-path="url(#p137608f42a)" style="fill: #008000"/>
+" clip-path="url(#p6e2e1a5f1a)" style="fill: #008000"/>
    </g>
    <g id="patch_6">
     <path d="M 120.6491 224.17 
@@ -2019,7 +1988,7 @@ L 129.403703 224.17
 L 129.403703 193.676059 
 L 120.6491 193.676059 
 z
-" clip-path="url(#p137608f42a)" style="fill: #008000"/>
+" clip-path="url(#p6e2e1a5f1a)" style="fill: #008000"/>
    </g>
    <g id="patch_7">
     <path d="M 138.158307 224.17 
@@ -2027,7 +1996,7 @@ L 146.912911 224.17
 L 146.912911 194.478531 
 L 138.158307 194.478531 
 z
-" clip-path="url(#p137608f42a)" style="fill: #008000"/>
+" clip-path="url(#p6e2e1a5f1a)" style="fill: #008000"/>
    </g>
    <g id="patch_8">
     <path d="M 155.667515 224.17 
@@ -2035,7 +2004,7 @@ L 164.422118 224.17
 L 164.422118 195.281003 
 L 155.667515 195.281003 
 z
-" clip-path="url(#p137608f42a)" style="fill: #008000"/>
+" clip-path="url(#p6e2e1a5f1a)" style="fill: #008000"/>
    </g>
    <g id="patch_9">
     <path d="M 173.176722 224.17 
@@ -2043,7 +2012,7 @@ L 181.931326 224.17
 L 181.931326 216.546515 
 L 173.176722 216.546515 
 z
-" clip-path="url(#p137608f42a)" style="fill: #008000"/>
+" clip-path="url(#p6e2e1a5f1a)" style="fill: #008000"/>
    </g>
    <g id="patch_10">
     <path d="M 190.685929 224.17 
@@ -2051,7 +2020,7 @@ L 199.440533 224.17
 L 199.440533 216.947751 
 L 190.685929 216.947751 
 z
-" clip-path="url(#p137608f42a)" style="fill: #008000"/>
+" clip-path="url(#p6e2e1a5f1a)" style="fill: #008000"/>
    </g>
    <g id="patch_11">
     <path d="M 208.195137 224.17 
@@ -2059,7 +2028,7 @@ L 216.949741 224.17
 L 216.949741 218.953931 
 L 208.195137 218.953931 
 z
-" clip-path="url(#p137608f42a)" style="fill: #008000"/>
+" clip-path="url(#p6e2e1a5f1a)" style="fill: #008000"/>
    </g>
    <g id="patch_12">
     <path d="M 225.704344 224.17 
@@ -2067,7 +2036,7 @@ L 234.458948 224.17
 L 234.458948 219.355167 
 L 225.704344 219.355167 
 z
-" clip-path="url(#p137608f42a)" style="fill: #008000"/>
+" clip-path="url(#p6e2e1a5f1a)" style="fill: #008000"/>
    </g>
    <g id="patch_13">
     <path d="M 243.213552 224.17 
@@ -2075,7 +2044,7 @@ L 251.968156 224.17
 L 251.968156 219.355167 
 L 243.213552 219.355167 
 z
-" clip-path="url(#p137608f42a)" style="fill: #008000"/>
+" clip-path="url(#p6e2e1a5f1a)" style="fill: #008000"/>
    </g>
    <g id="patch_14">
     <path d="M 260.722759 224.17 
@@ -2083,7 +2052,7 @@ L 269.477363 224.17
 L 269.477363 219.756403 
 L 260.722759 219.756403 
 z
-" clip-path="url(#p137608f42a)" style="fill: #008000"/>
+" clip-path="url(#p6e2e1a5f1a)" style="fill: #008000"/>
    </g>
    <g id="patch_15">
     <path d="M 278.231967 224.17 
@@ -2091,7 +2060,7 @@ L 286.986571 224.17
 L 286.986571 219.756403 
 L 278.231967 219.756403 
 z
-" clip-path="url(#p137608f42a)" style="fill: #008000"/>
+" clip-path="url(#p6e2e1a5f1a)" style="fill: #008000"/>
    </g>
    <g id="patch_16">
     <path d="M 295.741174 224.17 
@@ -2099,7 +2068,7 @@ L 304.495778 224.17
 L 304.495778 220.960111 
 L 295.741174 220.960111 
 z
-" clip-path="url(#p137608f42a)" style="fill: #008000"/>
+" clip-path="url(#p6e2e1a5f1a)" style="fill: #008000"/>
    </g>
    <g id="patch_17">
     <path d="M 313.250382 224.17 
@@ -2107,7 +2076,7 @@ L 322.004985 224.17
 L 322.004985 220.960111 
 L 313.250382 220.960111 
 z
-" clip-path="url(#p137608f42a)" style="fill: #008000"/>
+" clip-path="url(#p6e2e1a5f1a)" style="fill: #008000"/>
    </g>
    <g id="patch_18">
     <path d="M 330.759589 224.17 
@@ -2115,7 +2084,7 @@ L 339.514193 224.17
 L 339.514193 221.361348 
 L 330.759589 221.361348 
 z
-" clip-path="url(#p137608f42a)" style="fill: #008000"/>
+" clip-path="url(#p6e2e1a5f1a)" style="fill: #008000"/>
    </g>
    <g id="patch_19">
     <path d="M 348.268797 224.17 
@@ -2123,7 +2092,7 @@ L 357.0234 224.17
 L 357.0234 222.966292 
 L 348.268797 222.966292 
 z
-" clip-path="url(#p137608f42a)" style="fill: #008000"/>
+" clip-path="url(#p6e2e1a5f1a)" style="fill: #008000"/>
    </g>
    <g id="patch_20">
     <path d="M 365.778004 224.17 
@@ -2131,7 +2100,7 @@ L 374.532608 224.17
 L 374.532608 222.966292 
 L 365.778004 222.966292 
 z
-" clip-path="url(#p137608f42a)" style="fill: #008000"/>
+" clip-path="url(#p6e2e1a5f1a)" style="fill: #008000"/>
    </g>
    <g id="patch_21">
     <path d="M 383.287212 224.17 
@@ -2139,7 +2108,7 @@ L 392.041815 224.17
 L 392.041815 223.367528 
 L 383.287212 223.367528 
 z
-" clip-path="url(#p137608f42a)" style="fill: #ff0000"/>
+" clip-path="url(#p6e2e1a5f1a)" style="fill: #ff0000"/>
    </g>
    <g id="patch_22">
     <path d="M 400.796419 224.17 
@@ -2147,18 +2116,18 @@ L 409.551023 224.17
 L 409.551023 223.367528 
 L 400.796419 223.367528 
 z
-" clip-path="url(#p137608f42a)" style="fill: #008000"/>
+" clip-path="url(#p6e2e1a5f1a)" style="fill: #008000"/>
    </g>
    <g id="matplotlib.axis_1">
     <g id="xtick_1">
      <g id="line2d_1">
       <defs>
-       <path id="m7877243318" d="M 0 0 
+       <path id="mfb30117df6" d="M 0 0 
 L 0 3.5 
 " style="stroke: #000000; stroke-width: 0.8"/>
       </defs>
       <g>
-       <use xlink:href="#m7877243318" x="72.498779" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="72.498779" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_1">
@@ -2198,7 +2167,7 @@ z
     <g id="xtick_2">
      <g id="line2d_2">
       <g>
-       <use xlink:href="#m7877243318" x="90.007987" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="90.007987" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_2">
@@ -2231,7 +2200,7 @@ z
     <g id="xtick_3">
      <g id="line2d_3">
       <g>
-       <use xlink:href="#m7877243318" x="107.517194" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="107.517194" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_3">
@@ -2248,7 +2217,7 @@ z
     <g id="xtick_4">
      <g id="line2d_4">
       <g>
-       <use xlink:href="#m7877243318" x="125.026402" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="125.026402" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_4">
@@ -2265,7 +2234,7 @@ z
     <g id="xtick_5">
      <g id="line2d_5">
       <g>
-       <use xlink:href="#m7877243318" x="142.535609" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="142.535609" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_5">
@@ -2282,7 +2251,7 @@ z
     <g id="xtick_6">
      <g id="line2d_6">
       <g>
-       <use xlink:href="#m7877243318" x="160.044816" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="160.044816" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_6">
@@ -2299,7 +2268,7 @@ z
     <g id="xtick_7">
      <g id="line2d_7">
       <g>
-       <use xlink:href="#m7877243318" x="177.554024" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="177.554024" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_7">
@@ -2316,7 +2285,7 @@ z
     <g id="xtick_8">
      <g id="line2d_8">
       <g>
-       <use xlink:href="#m7877243318" x="195.063231" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="195.063231" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_8">
@@ -2333,7 +2302,7 @@ z
     <g id="xtick_9">
      <g id="line2d_9">
       <g>
-       <use xlink:href="#m7877243318" x="212.572439" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="212.572439" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_9">
@@ -2350,7 +2319,7 @@ z
     <g id="xtick_10">
      <g id="line2d_10">
       <g>
-       <use xlink:href="#m7877243318" x="230.081646" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="230.081646" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_10">
@@ -2367,7 +2336,7 @@ z
     <g id="xtick_11">
      <g id="line2d_11">
       <g>
-       <use xlink:href="#m7877243318" x="247.590854" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="247.590854" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_11">
@@ -2384,7 +2353,7 @@ z
     <g id="xtick_12">
      <g id="line2d_12">
       <g>
-       <use xlink:href="#m7877243318" x="265.100061" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="265.100061" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_12">
@@ -2401,7 +2370,7 @@ z
     <g id="xtick_13">
      <g id="line2d_13">
       <g>
-       <use xlink:href="#m7877243318" x="282.609269" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="282.609269" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_13">
@@ -2418,7 +2387,7 @@ z
     <g id="xtick_14">
      <g id="line2d_14">
       <g>
-       <use xlink:href="#m7877243318" x="300.118476" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="300.118476" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_14">
@@ -2435,7 +2404,7 @@ z
     <g id="xtick_15">
      <g id="line2d_15">
       <g>
-       <use xlink:href="#m7877243318" x="317.627684" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="317.627684" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_15">
@@ -2452,7 +2421,7 @@ z
     <g id="xtick_16">
      <g id="line2d_16">
       <g>
-       <use xlink:href="#m7877243318" x="335.136891" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="335.136891" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_16">
@@ -2469,7 +2438,7 @@ z
     <g id="xtick_17">
      <g id="line2d_17">
       <g>
-       <use xlink:href="#m7877243318" x="352.646098" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="352.646098" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_17">
@@ -2486,7 +2455,7 @@ z
     <g id="xtick_18">
      <g id="line2d_18">
       <g>
-       <use xlink:href="#m7877243318" x="370.155306" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="370.155306" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_18">
@@ -2503,7 +2472,7 @@ z
     <g id="xtick_19">
      <g id="line2d_19">
       <g>
-       <use xlink:href="#m7877243318" x="387.664513" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="387.664513" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_19">
@@ -2520,7 +2489,7 @@ z
     <g id="xtick_20">
      <g id="line2d_20">
       <g>
-       <use xlink:href="#m7877243318" x="405.173721" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="405.173721" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_20">
@@ -2717,12 +2686,12 @@ z
     <g id="ytick_1">
      <g id="line2d_21">
       <defs>
-       <path id="mde3370bd50" d="M 0 0 
+       <path id="md9827366ae" d="M 0 0 
 L -3.5 0 
 " style="stroke: #000000; stroke-width: 0.8"/>
       </defs>
       <g>
-       <use xlink:href="#mde3370bd50" x="51.05" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#md9827366ae" x="51.05" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_22">
@@ -2735,7 +2704,7 @@ L -3.5 0
     <g id="ytick_2">
      <g id="line2d_22">
       <g>
-       <use xlink:href="#mde3370bd50" x="51.05" y="184.046393" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#md9827366ae" x="51.05" y="184.046393" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_23">
@@ -2750,7 +2719,7 @@ L -3.5 0
     <g id="ytick_3">
      <g id="line2d_23">
       <g>
-       <use xlink:href="#mde3370bd50" x="51.05" y="143.922786" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#md9827366ae" x="51.05" y="143.922786" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_24">
@@ -2791,7 +2760,7 @@ z
     <g id="ytick_4">
      <g id="line2d_24">
       <g>
-       <use xlink:href="#mde3370bd50" x="51.05" y="103.799179" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#md9827366ae" x="51.05" y="103.799179" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_25">
@@ -2840,7 +2809,7 @@ z
     <g id="ytick_5">
      <g id="line2d_25">
       <g>
-       <use xlink:href="#mde3370bd50" x="51.05" y="63.675572" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#md9827366ae" x="51.05" y="63.675572" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_26">
@@ -3058,7 +3027,7 @@ L 503.926803 224.17
 L 503.926803 35.589048 
 L 494.698977 35.589048 
 z
-" clip-path="url(#p0ed14c9e39)" style="fill: #ff0000"/>
+" clip-path="url(#p28cd15b338)" style="fill: #ff0000"/>
    </g>
    <g id="patch_29">
     <path d="M 513.154628 224.17 
@@ -3066,7 +3035,7 @@ L 522.382454 224.17
 L 522.382454 68.95934 
 L 513.154628 68.95934 
 z
-" clip-path="url(#p0ed14c9e39)" style="fill: #ff0000"/>
+" clip-path="url(#p28cd15b338)" style="fill: #ff0000"/>
    </g>
    <g id="patch_30">
     <path d="M 531.610279 224.17 
@@ -3074,7 +3043,7 @@ L 540.838105 224.17
 L 540.838105 144.23651 
 L 531.610279 144.23651 
 z
-" clip-path="url(#p0ed14c9e39)" style="fill: #008000"/>
+" clip-path="url(#p28cd15b338)" style="fill: #008000"/>
    </g>
    <g id="patch_31">
     <path d="M 550.065931 224.17 
@@ -3082,7 +3051,7 @@ L 559.293756 224.17
 L 559.293756 148.89283 
 L 550.065931 148.89283 
 z
-" clip-path="url(#p0ed14c9e39)" style="fill: #008000"/>
+" clip-path="url(#p28cd15b338)" style="fill: #008000"/>
    </g>
    <g id="patch_32">
     <path d="M 568.521582 224.17 
@@ -3090,7 +3059,7 @@ L 577.749407 224.17
 L 577.749407 160.533629 
 L 568.521582 160.533629 
 z
-" clip-path="url(#p0ed14c9e39)" style="fill: #008000"/>
+" clip-path="url(#p28cd15b338)" style="fill: #008000"/>
    </g>
    <g id="patch_33">
     <path d="M 586.977233 224.17 
@@ -3098,7 +3067,7 @@ L 596.205058 224.17
 L 596.205058 168.294162 
 L 586.977233 168.294162 
 z
-" clip-path="url(#p0ed14c9e39)" style="fill: #008000"/>
+" clip-path="url(#p28cd15b338)" style="fill: #008000"/>
    </g>
    <g id="patch_34">
     <path d="M 605.432884 224.17 
@@ -3106,7 +3075,7 @@ L 614.660709 224.17
 L 614.660709 176.830749 
 L 605.432884 176.830749 
 z
-" clip-path="url(#p0ed14c9e39)" style="fill: #008000"/>
+" clip-path="url(#p28cd15b338)" style="fill: #008000"/>
    </g>
    <g id="patch_35">
     <path d="M 623.888535 224.17 
@@ -3114,7 +3083,7 @@ L 633.116361 224.17
 L 633.116361 198.560241 
 L 623.888535 198.560241 
 z
-" clip-path="url(#p0ed14c9e39)" style="fill: #008000"/>
+" clip-path="url(#p28cd15b338)" style="fill: #008000"/>
    </g>
    <g id="patch_36">
     <path d="M 642.344186 224.17 
@@ -3122,7 +3091,7 @@ L 651.572012 224.17
 L 651.572012 204.768667 
 L 642.344186 204.768667 
 z
-" clip-path="url(#p0ed14c9e39)" style="fill: #008000"/>
+" clip-path="url(#p28cd15b338)" style="fill: #008000"/>
    </g>
    <g id="patch_37">
     <path d="M 660.799837 224.17 
@@ -3130,7 +3099,7 @@ L 670.027663 224.17
 L 670.027663 206.320774 
 L 660.799837 206.320774 
 z
-" clip-path="url(#p0ed14c9e39)" style="fill: #008000"/>
+" clip-path="url(#p28cd15b338)" style="fill: #008000"/>
    </g>
    <g id="patch_38">
     <path d="M 679.255488 224.17 
@@ -3138,7 +3107,7 @@ L 688.483314 224.17
 L 688.483314 211.753147 
 L 679.255488 211.753147 
 z
-" clip-path="url(#p0ed14c9e39)" style="fill: #008000"/>
+" clip-path="url(#p28cd15b338)" style="fill: #008000"/>
    </g>
    <g id="patch_39">
     <path d="M 697.711139 224.17 
@@ -3146,7 +3115,7 @@ L 706.938965 224.17
 L 706.938965 213.305254 
 L 697.711139 213.305254 
 z
-" clip-path="url(#p0ed14c9e39)" style="fill: #008000"/>
+" clip-path="url(#p28cd15b338)" style="fill: #008000"/>
    </g>
    <g id="patch_40">
     <path d="M 716.166791 224.17 
@@ -3154,7 +3123,7 @@ L 725.394616 224.17
 L 725.394616 218.737627 
 L 716.166791 218.737627 
 z
-" clip-path="url(#p0ed14c9e39)" style="fill: #008000"/>
+" clip-path="url(#p28cd15b338)" style="fill: #008000"/>
    </g>
    <g id="patch_41">
     <path d="M 734.622442 224.17 
@@ -3162,7 +3131,7 @@ L 743.850267 224.17
 L 743.850267 218.737627 
 L 734.622442 218.737627 
 z
-" clip-path="url(#p0ed14c9e39)" style="fill: #008000"/>
+" clip-path="url(#p28cd15b338)" style="fill: #008000"/>
    </g>
    <g id="patch_42">
     <path d="M 753.078093 224.17 
@@ -3170,7 +3139,7 @@ L 762.305918 224.17
 L 762.305918 220.289733 
 L 753.078093 220.289733 
 z
-" clip-path="url(#p0ed14c9e39)" style="fill: #008000"/>
+" clip-path="url(#p28cd15b338)" style="fill: #008000"/>
    </g>
    <g id="patch_43">
     <path d="M 771.533744 224.17 
@@ -3178,7 +3147,7 @@ L 780.761569 224.17
 L 780.761569 220.289733 
 L 771.533744 220.289733 
 z
-" clip-path="url(#p0ed14c9e39)" style="fill: #008000"/>
+" clip-path="url(#p28cd15b338)" style="fill: #008000"/>
    </g>
    <g id="patch_44">
     <path d="M 789.989395 224.17 
@@ -3186,7 +3155,7 @@ L 799.217221 224.17
 L 799.217221 221.065787 
 L 789.989395 221.065787 
 z
-" clip-path="url(#p0ed14c9e39)" style="fill: #008000"/>
+" clip-path="url(#p28cd15b338)" style="fill: #008000"/>
    </g>
    <g id="patch_45">
     <path d="M 808.445046 224.17 
@@ -3194,7 +3163,7 @@ L 817.672872 224.17
 L 817.672872 222.617893 
 L 808.445046 222.617893 
 z
-" clip-path="url(#p0ed14c9e39)" style="fill: #008000"/>
+" clip-path="url(#p28cd15b338)" style="fill: #008000"/>
    </g>
    <g id="patch_46">
     <path d="M 826.900697 224.17 
@@ -3202,13 +3171,13 @@ L 836.128523 224.17
 L 836.128523 223.393947 
 L 826.900697 223.393947 
 z
-" clip-path="url(#p0ed14c9e39)" style="fill: #008000"/>
+" clip-path="url(#p28cd15b338)" style="fill: #008000"/>
    </g>
    <g id="matplotlib.axis_3">
     <g id="xtick_21">
      <g id="line2d_26">
       <g>
-       <use xlink:href="#m7877243318" x="499.31289" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="499.31289" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_29">
@@ -3225,7 +3194,7 @@ z
     <g id="xtick_22">
      <g id="line2d_27">
       <g>
-       <use xlink:href="#m7877243318" x="517.768541" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="517.768541" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_30">
@@ -3242,7 +3211,7 @@ z
     <g id="xtick_23">
      <g id="line2d_28">
       <g>
-       <use xlink:href="#m7877243318" x="536.224192" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="536.224192" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_31">
@@ -3259,7 +3228,7 @@ z
     <g id="xtick_24">
      <g id="line2d_29">
       <g>
-       <use xlink:href="#m7877243318" x="554.679843" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="554.679843" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_32">
@@ -3276,7 +3245,7 @@ z
     <g id="xtick_25">
      <g id="line2d_30">
       <g>
-       <use xlink:href="#m7877243318" x="573.135494" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="573.135494" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_33">
@@ -3293,7 +3262,7 @@ z
     <g id="xtick_26">
      <g id="line2d_31">
       <g>
-       <use xlink:href="#m7877243318" x="591.591146" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="591.591146" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_34">
@@ -3310,7 +3279,7 @@ z
     <g id="xtick_27">
      <g id="line2d_32">
       <g>
-       <use xlink:href="#m7877243318" x="610.046797" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="610.046797" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_35">
@@ -3327,7 +3296,7 @@ z
     <g id="xtick_28">
      <g id="line2d_33">
       <g>
-       <use xlink:href="#m7877243318" x="628.502448" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="628.502448" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_36">
@@ -3344,7 +3313,7 @@ z
     <g id="xtick_29">
      <g id="line2d_34">
       <g>
-       <use xlink:href="#m7877243318" x="646.958099" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="646.958099" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_37">
@@ -3361,7 +3330,7 @@ z
     <g id="xtick_30">
      <g id="line2d_35">
       <g>
-       <use xlink:href="#m7877243318" x="665.41375" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="665.41375" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_38">
@@ -3378,7 +3347,7 @@ z
     <g id="xtick_31">
      <g id="line2d_36">
       <g>
-       <use xlink:href="#m7877243318" x="683.869401" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="683.869401" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_39">
@@ -3395,7 +3364,7 @@ z
     <g id="xtick_32">
      <g id="line2d_37">
       <g>
-       <use xlink:href="#m7877243318" x="702.325052" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="702.325052" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_40">
@@ -3412,7 +3381,7 @@ z
     <g id="xtick_33">
      <g id="line2d_38">
       <g>
-       <use xlink:href="#m7877243318" x="720.780703" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="720.780703" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_41">
@@ -3429,7 +3398,7 @@ z
     <g id="xtick_34">
      <g id="line2d_39">
       <g>
-       <use xlink:href="#m7877243318" x="739.236354" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="739.236354" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_42">
@@ -3446,7 +3415,7 @@ z
     <g id="xtick_35">
      <g id="line2d_40">
       <g>
-       <use xlink:href="#m7877243318" x="757.692006" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="757.692006" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_43">
@@ -3463,7 +3432,7 @@ z
     <g id="xtick_36">
      <g id="line2d_41">
       <g>
-       <use xlink:href="#m7877243318" x="776.147657" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="776.147657" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_44">
@@ -3480,7 +3449,7 @@ z
     <g id="xtick_37">
      <g id="line2d_42">
       <g>
-       <use xlink:href="#m7877243318" x="794.603308" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="794.603308" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_45">
@@ -3497,7 +3466,7 @@ z
     <g id="xtick_38">
      <g id="line2d_43">
       <g>
-       <use xlink:href="#m7877243318" x="813.058959" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="813.058959" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_46">
@@ -3514,7 +3483,7 @@ z
     <g id="xtick_39">
      <g id="line2d_44">
       <g>
-       <use xlink:href="#m7877243318" x="831.51461" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#mfb30117df6" x="831.51461" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_47">
@@ -3548,7 +3517,7 @@ z
     <g id="ytick_6">
      <g id="line2d_45">
       <g>
-       <use xlink:href="#mde3370bd50" x="477.6275" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#md9827366ae" x="477.6275" y="224.17" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_49">
@@ -3561,7 +3530,7 @@ z
     <g id="ytick_7">
      <g id="line2d_46">
       <g>
-       <use xlink:href="#mde3370bd50" x="477.6275" y="185.367335" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#md9827366ae" x="477.6275" y="185.367335" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_50">
@@ -3602,7 +3571,7 @@ z
     <g id="ytick_8">
      <g id="line2d_47">
       <g>
-       <use xlink:href="#mde3370bd50" x="477.6275" y="146.56467" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#md9827366ae" x="477.6275" y="146.56467" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_51">
@@ -3617,7 +3586,7 @@ z
     <g id="ytick_9">
      <g id="line2d_48">
       <g>
-       <use xlink:href="#mde3370bd50" x="477.6275" y="107.762005" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#md9827366ae" x="477.6275" y="107.762005" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_52">
@@ -3632,7 +3601,7 @@ z
     <g id="ytick_10">
      <g id="line2d_49">
       <g>
-       <use xlink:href="#mde3370bd50" x="477.6275" y="68.95934" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#md9827366ae" x="477.6275" y="68.95934" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_53">
@@ -3647,7 +3616,7 @@ z
     <g id="ytick_11">
      <g id="line2d_50">
       <g>
-       <use xlink:href="#mde3370bd50" x="477.6275" y="30.156675" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#md9827366ae" x="477.6275" y="30.156675" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_54">
@@ -3794,10 +3763,10 @@ z
   </g>
  </g>
  <defs>
-  <clipPath id="p137608f42a">
+  <clipPath id="p6e2e1a5f1a">
    <rect x="51.05" y="26.16" width="375.5725" height="198.01"/>
   </clipPath>
-  <clipPath id="p0ed14c9e39">
+  <clipPath id="p28cd15b338">
    <rect x="477.6275" y="26.16" width="375.5725" height="198.01"/>
   </clipPath>
  </defs>
