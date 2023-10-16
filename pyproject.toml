@@ -17,15 +17,16 @@ authors = [
     { name = "Joao P. Moutinho", email = "joao.moutinho@pasqal.com"},
     { name = "Vytautas Abramavicius", email = "vytautas.abramavicius@pasqal.com" },
 ]
-requires-python = ">=3.9,<3.11"
+requires-python = ">=3.9,<3.12"
 license = {text = "Apache 2.0"}
-version = "1.0.1"
+version = "1.0.2"
 classifiers=[
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
@@ -126,7 +127,7 @@ build = "mkdocs build --clean --strict"
 serve = "mkdocs serve --dev-addr localhost:8000"
 
 [[tool.hatch.envs.test.matrix]]
-python = ["39", "310"]
+python = ["39", "310", "311"]
 
 [tool.hatch.envs.tests]
 features = ["all"]
