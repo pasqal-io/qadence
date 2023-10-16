@@ -11,6 +11,7 @@ PROTOCOL_TO_MODULE = {
 
 @dataclass
 class ErrorMitigation:
+    READOUT = "readout"
     ZNE = "zne"
 
     def __init__(self, protocol: str, options: dict) -> None:
