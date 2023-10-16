@@ -9,6 +9,7 @@ on:
       - main
   workflow_dispatch: {}
 
+
 jobs:
   deploy_docs:
     name: Deploy Qadence docs (ubuntu)
