@@ -158,5 +158,17 @@ def test_circuit_dagger(circuit: QuantumCircuit) -> None:
 
 
 def test_circuit_dagger_explicit() -> None:
-    circuit = QuantumCircuit(4, chain(X(0), Y(1), Z(3), Y(0)))
-    assert circuit.dagger() == QuantumCircuit(4, chain(Y(0), Z(3), Y(1), X(0)))
+    theta = Parameter("theta")
+    circuit = QuantumCircuit(4, chain(X(0), kron(Y(1), RZ(3, theta)), Y(0)))
+    circuit_daggered = QuantumCircuit(4, chain(Y(0), kron(RZ(3, -theta), Y(1)), X(0)))
+
+    assert circuit.dagger() == circuit_daggered
+
+
+@pytest.mark.parametrize("trainable", [True, False])
+def test_parametric_dagger(trainable: bool) -> None:
+    theta = Parameter("theta", trainable=trainable)
+    rx = RX(0, theta)
+    assert rx.dagger() != rx
+    assert rx.dagger().parameters.parameter == -rx.parameters.parameter
+    assert rx == rx.dagger().dagger()
