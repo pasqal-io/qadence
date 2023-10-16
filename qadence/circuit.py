@@ -115,11 +115,15 @@ class QuantumCircuit:
         """
         return parameters(self.block)
 
+    def dagger(self) -> QuantumCircuit:
+        """Reverse the QuantumCircuit by calling dagger on the block."""
+        return QuantumCircuit(self.n_qubits, self.block.dagger())
+
     def get_blocks_by_tag(self, tag: str) -> list[AbstractBlock]:
         """Extract one or more blocks using the human-readable tag
 
-        This function recurservily explores all composite blocks to find
-        all the occurrences of a certain tag in the blocks
+        This function recursively explores all composite blocks to find
+        all the occurrences of a certain tag in the blocks.
 
         Args:
             tag (str): the tag to look for
