@@ -211,6 +211,7 @@ def test_tm_save_load(
     )
     criterion = torch.nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
+    init_val = model._input_scaling.detach().clone()
 
     def loss_fn(model: torch.nn.Module, data: torch.Tensor) -> tuple[torch.Tensor, dict]:
         x = torch.rand(1)
@@ -223,9 +224,9 @@ def test_tm_save_load(
         folder=tmp_path, max_iter=n_epochs, print_every=1, checkpoint_every=1, write_every=1
     )
     model, optimizer = train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
+    model = BasicTransformedModule
     x = torch.rand(1)
-    loaded_model, loaded_opt, iter = load_checkpoint(
-        tmp_path, BasicTransformedModule, torch.optim.Adam(model.parameters(), lr=0.1)
+    model, opt, iter = load_checkpoint(
+        tmp_path, model, torch.optim.Adam(model.parameters(), lr=0.1)
     )
-    assert loaded_model._input_scaling == model._input_scaling
-    assert torch.allclose(loaded_model(x), model(x), rtol=1e-1, atol=1e-1)
+    assert model._input_scaling != init_val

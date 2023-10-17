@@ -246,22 +246,32 @@ class TransformedModule(torch.nn.Module):
 
         _d = serialize(self.model, save_params=save_params)
 
+        scale_dict = {
+            name: param
+            for name, param in self.state_dict().items()
+            if name in ["_input_scaling", "_input_shifting", "_output_scaling", "_output_shifting"]
+        }
+
         return {
-            self.__class__.__name__: _d,
-            "in_features": self.in_features,
-            "out_features": self.out_features,
-            "_input_scaling": store_fn(self._input_scaling),
-            "_output_scaling": store_fn(self._output_scaling),
-            "_input_shifting": store_fn(self._input_shifting),
-            "_output_shifting": store_fn(self._output_shifting),
+            self.__class__.__name__: {
+                "model": _d,
+                "in_features": self.in_features,
+                "out_features": self.out_features,
+                "scaling_parameters": scale_dict,
+                "_input_scaling": store_fn(self._input_scaling),
+                "_output_scaling": store_fn(self._output_scaling),
+                "_input_shifting": store_fn(self._input_shifting),
+                "_output_shifting": store_fn(self._output_shifting),
+            }
         }
 
     @classmethod
-    def _from_dict(cls, d: dict, as_torch: bool = False) -> TransformedModule:
+    def _from_dict(cls, d: dict, as_torch: bool = True) -> TransformedModule:
         from qadence.serialization import deserialize
 
-        _m: QuantumModel | QNN = deserialize(d[cls.__name__], as_torch)  # type: ignore[assignment]
-        return cls(
+        d = d[cls.__name__]
+        _m: QuantumModel | QNN = deserialize(d["model"], as_torch)  # type: ignore[assignment]
+        tm = cls(
             _m,
             in_features=d["in_features"],
             out_features=d["out_features"],
@@ -270,3 +280,6 @@ class TransformedModule(torch.nn.Module):
             input_shifting=torch.tensor(d["_input_shifting"]),
             output_shifting=torch.tensor(d["_output_shifting"]),
         )
+        # we do this only if the TransformedModule has/had trainable parameters.
+        tm.load_state_dict(d["scaling_parameters"], strict=False)
+        return tm
