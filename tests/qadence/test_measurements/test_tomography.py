@@ -9,7 +9,7 @@ import torch
 from hypothesis import given, settings
 from metrics import HIGH_ACCEPTANCE, LOW_ACCEPTANCE, MIDDLE_ACCEPTANCE  # type: ignore
 
-from qadence import BackendName, BasisFeatureMap, DiffMode
+from qadence import BackendName, BasisSet, DiffMode
 from qadence.backends import backend_factory
 from qadence.blocks import (
     AbstractBlock,
@@ -251,23 +251,23 @@ def test_empirical_average() -> None:
         (QuantumCircuit(1, H(0)), {}, Z(0)),
         (QuantumCircuit(2, kron(H(0), H(1))), {}, kron(X(0), X(1))),
         (
-            QuantumCircuit(4, feature_map(4, fm_type=BasisFeatureMap.CHEBYSHEV), hea(4, depth=2)),
+            QuantumCircuit(4, feature_map(4, fm_type=BasisSet.CHEBYSHEV), hea(4, depth=2)),
             {"phi": torch.rand(1)},
             total_magnetization(4),
         ),
         (
-            QuantumCircuit(4, feature_map(4, fm_type=BasisFeatureMap.CHEBYSHEV), hea(4, depth=2)),
+            QuantumCircuit(4, feature_map(4, fm_type=BasisSet.CHEBYSHEV), hea(4, depth=2)),
             {"phi": torch.rand(1)},
             zz_hamiltonian(4),
         ),
         # (
-        #     QuantumCircuit(4, feature_map(4, fm_type=BasisFeatureMap.CHEBYSHEV), hea(4, depth=2)),
+        #     QuantumCircuit(4, feature_map(4, fm_type=BasisSet.CHEBYSHEV), hea(4, depth=2)),
         #     {"phi": torch.rand(1)},
         #     ising_hamiltonian(4),
         #     HIGH_ACCEPTANCE,
         # ),
         (
-            QuantumCircuit(4, feature_map(4, fm_type=BasisFeatureMap.CHEBYSHEV), hea(4, depth=2)),
+            QuantumCircuit(4, feature_map(4, fm_type=BasisSet.CHEBYSHEV), hea(4, depth=2)),
             {"phi": torch.rand(1)},
             add(
                 0.5 * kron(X(0), Y(1), X(2), Y(3)),
@@ -478,7 +478,7 @@ def test_forward_and_backward_passes_with_qnn(observable: AbstractBlock, accepta
     kwargs = {"n_shots": 1000000}
 
     # fm = fourier_feature_map(n_qubits)
-    fm = feature_map(n_qubits, fm_type=BasisFeatureMap.CHEBYSHEV)
+    fm = feature_map(n_qubits, fm_type=BasisSet.CHEBYSHEV)
     ansatz = hea(n_qubits, depth=2)
     circuit = QuantumCircuit(n_qubits, fm, ansatz)
     values = {"phi": torch.rand(batch_size, requires_grad=True)}
@@ -530,7 +530,7 @@ def test_partial_derivatives_with_qnn(observable: AbstractBlock, acceptance: flo
     kwargs = {"n_shots": 100000}
 
     # fm = fourier_feature_map(n_qubits)
-    fm = feature_map(n_qubits, fm_type=BasisFeatureMap.CHEBYSHEV)
+    fm = feature_map(n_qubits, fm_type=BasisSet.CHEBYSHEV)
     ansatz = hea(n_qubits, depth=2)
     circuit = QuantumCircuit(n_qubits, fm, ansatz)
     values = {"phi": torch.rand(batch_size, requires_grad=True)}
@@ -626,7 +626,7 @@ def test_high_order_derivatives_with_qnn(observable: AbstractBlock, acceptance: 
     kwargs = {"n_shots": 100000}
 
     # fm = fourier_feature_map(n_qubits)
-    fm = feature_map(n_qubits, fm_type=BasisFeatureMap.CHEBYSHEV)
+    fm = feature_map(n_qubits, fm_type=BasisSet.CHEBYSHEV)
     ansatz = hea(n_qubits, depth=2)
     circuit = QuantumCircuit(n_qubits, fm, ansatz)
     values = {"phi": torch.rand(batch_size, requires_grad=True)}

@@ -11,7 +11,7 @@ from qadence.blocks import AbstractBlock, KronBlock, chain, kron, tag
 from qadence.logger import get_logger
 from qadence.operations import PHASE, RX, RY, RZ, H
 from qadence.parameters import FeatureParameter, Parameter
-from qadence.types import BasisFeatureMap, ScalingFeatureMap, TParameter
+from qadence.types import BasisSet, ReuploadScaling, TParameter
 
 logger = get_logger(__name__)
 
@@ -19,19 +19,19 @@ ROTATIONS = [RX, RY, RZ, PHASE]
 RotationTypes = type[Union[RX, RY, RZ, PHASE]]
 
 
-def _set_range(fm_type: BasisFeatureMap | type[Function] | str) -> tuple[float, float]:
-    if fm_type == BasisFeatureMap.FOURIER:
+def _set_range(fm_type: BasisSet | type[Function] | str) -> tuple[float, float]:
+    if fm_type == BasisSet.FOURIER:
         return (0.0, 2 * pi)
-    elif fm_type == BasisFeatureMap.CHEBYSHEV:
+    elif fm_type == BasisSet.CHEBYSHEV:
         return (-1.0, 1.0)
     else:
         return (0.0, 1.0)
 
 
 RS_FUNC_DICT = {
-    ScalingFeatureMap.CONSTANT: lambda i: 1,
-    ScalingFeatureMap.TOWER: lambda i: float(i + 1),
-    ScalingFeatureMap.EXP: lambda i: float(2**i),
+    ReuploadScaling.CONSTANT: lambda i: 1,
+    ReuploadScaling.TOWER: lambda i: float(i + 1),
+    ReuploadScaling.EXP: lambda i: float(2**i),
 }
 
 
@@ -40,8 +40,8 @@ def feature_map(
     support: tuple[int, ...] | None = None,
     param: Parameter | str = "phi",
     op: RotationTypes = RX,
-    fm_type: BasisFeatureMap | type[Function] | str = BasisFeatureMap.FOURIER,
-    reupload_scaling: ScalingFeatureMap | Callable | str = ScalingFeatureMap.CONSTANT,
+    fm_type: BasisSet | type[Function] | str = BasisSet.FOURIER,
+    reupload_scaling: ReuploadScaling | Callable | str = ReuploadScaling.CONSTANT,
     feature_range: tuple[float, float] | None = None,
     target_range: tuple[float, float] | None = None,
     multiplier: Parameter | TParameter | None = None,
@@ -56,10 +56,10 @@ def feature_map(
         param: Parameter of the feature map; you can pass a string or Parameter;
             it will be set as non-trainable (FeatureParameter) regardless.
         op: Rotation operation of the feature map; choose from RX, RY, RZ or PHASE.
-        fm_type: Basis set for data encoding; choose from `BasisFeatureMap.FOURIER` for Fourier
-            encoding, or `BasisFeatureMap.CHEBYSHEV` for Chebyshev polynomials of the first kind.
+        fm_type: Basis set for data encoding; choose from `BasisSet.FOURIER` for Fourier
+            encoding, or `BasisSet.CHEBYSHEV` for Chebyshev polynomials of the first kind.
         reupload_scaling: how the feature map scales the data that is re-uploaded for each qubit.
-            choose from `ScalingFeatureMap` enumeration or provide your own function with a single
+            choose from `ReuploadScaling` enumeration or provide your own function with a single
             int as input and int or float as output.
         feature_range: range of data that the input data is assumed to come from.
         target_range: range of data the data encoder assumes as the natural range. For example,
@@ -69,15 +69,15 @@ def feature_map(
 
     Example:
     ```python exec="on" source="material-block" result="json"
-    from qadence import feature_map, BasisFeatureMap, ScalingFeatureMap
+    from qadence import feature_map, BasisSet, ReuploadScaling
 
-    fm = feature_map(3, fm_type=BasisFeatureMap.FOURIER)
+    fm = feature_map(3, fm_type=BasisSet.FOURIER)
     print(f"{fm = }")
 
-    fm = feature_map(3, fm_type=BasisFeatureMap.CHEBYSHEV)
+    fm = feature_map(3, fm_type=BasisSet.CHEBYSHEV)
     print(f"{fm = }")
 
-    fm = feature_map(3, fm_type=BasisFeatureMap.FOURIER, reupload_scaling = ScalingFeatureMap.TOWER)
+    fm = feature_map(3, fm_type=BasisSet.FOURIER, reupload_scaling = ReuploadScaling.TOWER)
     print(f"{fm = }")
     ```
     """
@@ -98,16 +98,16 @@ def feature_map(
     if fm_type in ("fourier", "chebyshev", "tower"):
         logger.warning(
             "Selecting `fm_type` as 'fourier', 'chebyshev' or 'tower' is deprecated. "
-            "Please use the respective enumerations: 'fm_type = BasisFeatureMap.FOURIER', "
-            "'fm_type = BasisFeatureMap.CHEBYSHEV' or 'reupload_scaling = ScalingFeatureMap.TOWER'."
+            "Please use the respective enumerations: 'fm_type = BasisSet.FOURIER', "
+            "'fm_type = BasisSet.CHEBYSHEV' or 'reupload_scaling = ReuploadScaling.TOWER'."
         )
         if fm_type == "fourier":
-            fm_type = BasisFeatureMap.FOURIER
+            fm_type = BasisSet.FOURIER
         elif fm_type == "chebyshev":
-            fm_type = BasisFeatureMap.CHEBYSHEV
+            fm_type = BasisSet.CHEBYSHEV
         elif fm_type == "tower":
-            fm_type = BasisFeatureMap.CHEBYSHEV
-            reupload_scaling = ScalingFeatureMap.TOWER
+            fm_type = BasisSet.CHEBYSHEV
+            reupload_scaling = ReuploadScaling.TOWER
 
     if isinstance(param, Parameter):
         fparam = param
@@ -130,20 +130,20 @@ def feature_map(
         scaled_fparam = scaling * fparam + shift
 
     # Transform feature parameter
-    if fm_type == BasisFeatureMap.FOURIER:
+    if fm_type == BasisSet.FOURIER:
         transformed_feature = scaled_fparam
-    elif fm_type == BasisFeatureMap.CHEBYSHEV:
+    elif fm_type == BasisSet.CHEBYSHEV:
         transformed_feature = acos(scaled_fparam)
     elif inspect.isclass(fm_type) and issubclass(fm_type, Function):
         transformed_feature = fm_type(scaled_fparam)
     else:
         raise NotImplementedError(
-            f"Feature map type {fm_type} not implemented. Choose an item from the BasisFeatureMap "
-            f"enum: {[bs.name for bs in BasisFeatureMap]}, or your own sympy.Function to wrap "
+            f"Feature map type {fm_type} not implemented. Choose an item from the BasisSet "
+            f"enum: {[bs.name for bs in BasisSet]}, or your own sympy.Function to wrap "
             "the given feature parameter with."
         )
 
-    basis_tag = fm_type.value if isinstance(fm_type, BasisFeatureMap) else str(fm_type)
+    basis_tag = fm_type.value if isinstance(fm_type, BasisSet) else str(fm_type)
 
     # Set reupload scaling function
     if callable(reupload_scaling):
@@ -154,10 +154,10 @@ def feature_map(
         if rs_func is None:
             raise NotImplementedError(
                 f"Reupload scaling {reupload_scaling} not implemented; choose an item from "
-                f"the ScalingFeatureMap enum: {[rs.name for rs in ScalingFeatureMap]}, or your own "
+                f"the ReuploadScaling enum: {[rs.name for rs in ReuploadScaling]}, or your own "
                 "python function with a single int arg as input and int or float output."
             )
-        if isinstance(reupload_scaling, ScalingFeatureMap):
+        if isinstance(reupload_scaling, ReuploadScaling):
             rs_tag = reupload_scaling.value
         else:
             rs_tag = reupload_scaling
@@ -185,7 +185,7 @@ def fourier_feature_map(
         n_qubits: number of qubits across which the FM is created
         param: The base name for the feature `Parameter`
     """
-    fm = feature_map(n_qubits, support=support, param=param, op=op, fm_type=BasisFeatureMap.FOURIER)
+    fm = feature_map(n_qubits, support=support, param=param, op=op, fm_type=BasisSet.FOURIER)
     return fm
 
 
@@ -199,9 +199,7 @@ def chebyshev_feature_map(
         support (Iterable[int]): The qubit support
         param: The base name for the feature `Parameter`
     """
-    fm = feature_map(
-        n_qubits, support=support, param=param, op=op, fm_type=BasisFeatureMap.CHEBYSHEV
-    )
+    fm = feature_map(n_qubits, support=support, param=param, op=op, fm_type=BasisSet.CHEBYSHEV)
     return fm
 
 
@@ -219,8 +217,8 @@ def tower_feature_map(
         support=support,
         param=param,
         op=op,
-        fm_type=BasisFeatureMap.CHEBYSHEV,
-        reupload_scaling=ScalingFeatureMap.TOWER,
+        fm_type=BasisSet.CHEBYSHEV,
+        reupload_scaling=ReuploadScaling.TOWER,
     )
     return fm
 
@@ -251,8 +249,8 @@ def exp_fourier_feature_map(
         support=support,
         param=param,
         op=RZ,
-        fm_type=BasisFeatureMap.FOURIER,
-        reupload_scaling=ScalingFeatureMap.EXP,
+        fm_type=BasisSet.FOURIER,
+        reupload_scaling=ReuploadScaling.EXP,
         feature_range=feature_range,
         target_range=(0.0, 2 * pi),
     )
