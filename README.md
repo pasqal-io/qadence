@@ -39,6 +39,7 @@ The default, pre-installed backend for Qadence is [PyQTorch](https://github.com/
 * `braket`: the [Braket](https://github.com/amazon-braket/amazon-braket-sdk-python) backend.
 * `pulser`: the [Pulser](https://github.com/pasqal-io/Pulser) backend for composing, simulating and executing pulse sequences for neutral-atom quantum devices.
 * `visualization`: to display diagrammatically quantum circuits.
+* `all` : Install all available backends and tools.
 
 To install other backends or the visualization tool, please use:
 
@@ -64,10 +65,11 @@ conda install python-graphviz
 ## Contributing
 
 Before making a contribution, please review our [code of conduct](docs/CODE_OF_CONDUCT.md).
-To submit bug reports or feature requests, please use our [issue tracker](https://github.com/pasqal-io/qadence/issues).
-To contribute to `qadence`, please refer to [contributing guidelines](docs/CONTRIBUTING.md).
 
-### Install from source
+- **Submitting Issues:** To submit bug reports or feature requests, please use our [issue tracker](https://github.com/pasqal-io/qadence/issues).
+- **Developing in qadence:** To learn more about how to develop within `qadence`, please refer to [contributing guidelines](docs/CONTRIBUTING.md).
+
+### Setting up qadence in development mode
 
 We recommend to use the [`hatch`](https://hatch.pypa.io/latest/) environment manager to install `qadence` from source:
 
