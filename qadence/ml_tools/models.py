@@ -108,28 +108,28 @@ class TransformedModule(torch.nn.Module):
         else:
             self.in_features = in_features  # type: ignore[assignment]
             self.out_features = out_features  # type: ignore[assignment]
-        if not isinstance(input_scaling, torch.Tensor):
+        if not isinstance(input_scaling, torch.nn.Parameter):
             self.register_buffer(
                 "_input_scaling",
                 _set_fixed_operation(self.in_features, input_scaling, "scale"),
             )
         else:
             self._input_scaling = input_scaling
-        if not isinstance(input_shifting, torch.Tensor):
+        if not isinstance(input_shifting, torch.nn.Parameter):
             self.register_buffer(
                 "_input_shifting",
                 _set_fixed_operation(self.in_features, input_shifting, "shift"),
             )
         else:
             self._input_shifting = input_shifting
-        if not isinstance(output_scaling, torch.Tensor):
+        if not isinstance(output_scaling, torch.nn.Parameter):
             self.register_buffer(
                 "_output_scaling",
                 _set_fixed_operation(self.out_features, output_scaling, "scale"),
             )
         else:
             self._output_scaling = output_scaling
-        if not isinstance(output_shifting, torch.Tensor):
+        if not isinstance(output_shifting, torch.nn.Parameter):
             self.register_buffer(
                 "_output_shifting",
                 _set_fixed_operation(self.out_features, output_shifting, "shift"),

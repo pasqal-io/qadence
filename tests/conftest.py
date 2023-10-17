@@ -203,8 +203,8 @@ def BasicTransformedModule(BasicQNN: QNN) -> TransformedModule:
         BasicQNN,
         None,
         None,
-        input_scaling=torch.rand(1),
-        output_scaling=torch.rand(1),
-        input_shifting=torch.rand(1),
-        output_shifting=torch.rand(1),
+        input_scaling=torch.nn.Parameter(torch.rand(1)),
+        output_scaling=torch.nn.Parameter(torch.rand(1)),
+        input_shifting=torch.nn.Parameter(torch.rand(1)),
+        output_shifting=torch.nn.Parameter(torch.rand(1)),
     )

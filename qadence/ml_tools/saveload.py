@@ -19,7 +19,7 @@ def get_latest_checkpoint_name(folder: Path, type: str) -> Path:
     file = Path("")
     files = [f for f in os.listdir(folder) if f.endswith(".pt") and type in f]
     if len(files) == 0:
-        logger.error(f"Directory {folder} does not contain any {type} checkpoints.")
+        logger.info(f"Directory {folder} does not contain any {type} checkpoints.")
     if len(files) == 1:
         file = Path(files[0])
     else:
@@ -64,7 +64,7 @@ def write_checkpoint(
     try:
         d = (
             model._to_dict(save_params=True)
-            if isinstance(model, (QNN, QuantumModel)) or isinstance(model, TransformedModule)
+            if isinstance(model, (QNN, QuantumModel, TransformedModule))
             else model.state_dict()
         )
         torch.save((iteration, d), folder / model_checkpoint_name)
@@ -90,8 +90,13 @@ def load_model(
     from qadence.models import QNN, QuantumModel
 
     iteration = 0
-    if model_ckpt_name == "":
+    if not model_ckpt_name:
         model_ckpt_name = get_latest_checkpoint_name(folder, "model")
+    else:
+        if os.path.isfile(folder / model_ckpt_name):
+            logger.info(f"Found checkpoint at {folder/model_ckpt_name}.")
+        else:
+            logger.error(f"Requested checkpoint name {folder/model_ckpt_name} does not exist.")
 
     try:
         iteration, model_dict = torch.load(folder / model_ckpt_name, *args, **kwargs)
@@ -103,10 +108,7 @@ def load_model(
     except Exception as e:
         msg = f"Unable to load state dict due to {e}.\
                No corresponding pre-trained model found. Returning the un-trained model."
-        import warnings
-
-        warnings.warn(msg, UserWarning)
-        logger.warn(msg)
+        logger.info(msg)
     return model, iteration
 
 

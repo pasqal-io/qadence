@@ -9,7 +9,7 @@ import pytest
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 
-from qadence.ml_tools import DictDataLoader, TrainConfig, train_with_grad
+from qadence.ml_tools import DictDataLoader, TrainConfig, load_checkpoint, train_with_grad
 from qadence.ml_tools.models import TransformedModule
 from qadence.models import QNN
 
@@ -108,6 +108,7 @@ def test_train_dataloader_no_data(tmp_path: Path, BasicNoInput: torch.nn.Module)
     assert torch.allclose(out, torch.zeros(1), atol=1e-2, rtol=1e-2)
 
 
+@pytest.mark.slow
 @pytest.mark.flaky(max_runs=10)
 def test_train_dictdataloader(tmp_path: Path, Basic: torch.nn.Module) -> None:
     data = dictdataloader()
@@ -160,6 +161,7 @@ def test_modules_save_load(BasicQNN: QNN, BasicTransformedModule: TransformedMod
         assert torch.allclose(torch.sin(x), model(x), rtol=1e-1, atol=1e-1)
 
 
+@pytest.mark.slow
 @pytest.mark.flaky(max_runs=10)
 def test_train_tensor_tuple(tmp_path: Path, Basic: torch.nn.Module) -> None:
     model = Basic
@@ -191,3 +193,39 @@ def test_train_tensor_tuple(tmp_path: Path, Basic: torch.nn.Module) -> None:
 
     x = torch.rand(5, 1)
     assert torch.allclose(torch.sin(x), model(x), rtol=1e-1, atol=1e-1)
+
+
+def test_tm_save_load(
+    tmp_path: Path, BasicTransformedModule: TransformedModule, BasicQNN: QNN
+) -> None:
+    data = FMdictdataloader()
+
+    model: torch.nn.Module = TransformedModule(
+        BasicQNN,
+        None,
+        None,
+        torch.nn.Parameter(torch.rand(1)),
+        torch.nn.Parameter(torch.rand(1)),
+        torch.nn.Parameter(torch.rand(1)),
+        torch.nn.Parameter(torch.rand(1)),
+    )
+    criterion = torch.nn.MSELoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
+
+    def loss_fn(model: torch.nn.Module, data: torch.Tensor) -> tuple[torch.Tensor, dict]:
+        x = torch.rand(1)
+        y = torch.sin(x)
+        l1 = criterion(model(x), y)
+        return l1, {}
+
+    n_epochs = 5
+    config = TrainConfig(
+        folder=tmp_path, max_iter=n_epochs, print_every=1, checkpoint_every=1, write_every=1
+    )
+    model, optimizer = train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
+    x = torch.rand(1)
+    loaded_model, loaded_opt, iter = load_checkpoint(
+        tmp_path, BasicTransformedModule, torch.optim.Adam(model.parameters(), lr=0.1)
+    )
+    assert loaded_model._input_scaling == model._input_scaling
+    assert torch.allclose(loaded_model(x), model(x), rtol=1e-1, atol=1e-1)
