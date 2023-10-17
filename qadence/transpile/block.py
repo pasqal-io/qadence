@@ -406,7 +406,14 @@ def chain_single_qubit_ops(block: AbstractBlock) -> AbstractBlock:
     ```
     """
     if is_chain_of_primitivekrons(block):
-        return kron(*map(lambda bs: chain(*bs), zip(*block)))  # type: ignore[misc]
+        try:
+            return kron(*map(lambda bs: chain(*bs), zip(*block)))  # type: ignore[misc]
+        except Exception as e:
+            logger.debug(
+                f"Unable to transpile {block} using chain_single_qubit_ops\
+                         due to {e}. Returning original circuit."
+            )
+            return block
 
     elif isinstance(block, CompositeBlock):
         return _construct(type(block), tuple(chain_single_qubit_ops(b) for b in block.blocks))
