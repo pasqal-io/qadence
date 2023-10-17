@@ -81,14 +81,14 @@ python -m hatch shell
 python -m hatch run python my_script.py
 ```
 
-!!! warning
-    `hatch` will not combine nicely with other environment managers such Conda. If you want to use Conda,
-    install it from source using `pip`:
+**WARNING**
+`hatch` will not combine nicely with other environment managers such as Conda. If you still want to use Conda,
+install it from source using `pip`:
 
-    ```bash
-    # within the Conda environment
-    python -m pip install -e .
-    ```
+```bash
+# within the Conda environment
+python -m pip install -e .
+```
 
 ## Citation
 
