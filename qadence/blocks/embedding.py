@@ -2,10 +2,13 @@ from __future__ import annotations
 
 from typing import Callable, Iterable, List
 
+import jax.numpy as jnp
 import numpy as np
 import sympy
+import sympy2jax as s2j
 import sympytorch  # type: ignore [import]
 import torch
+from jax.typing import ArrayLike
 from torch import Tensor
 
 from qadence.blocks import (
@@ -16,9 +19,23 @@ from qadence.blocks.utils import (
     parameters,
     uuid_to_expression,
 )
-from qadence.parameters import evaluate, stringify, torchify
+from qadence.parameters import evaluate, make_differentiable, stringify
+from qadence.types import Engine, TNumber
 
 StrTensorDict = dict[str, Tensor]
+StrArrayDict = dict[str, ArrayLike]
+
+ParamDictType = StrArrayDict | StrArrayDict
+
+
+def concretize_parameter(value: TNumber, requires_grad: bool, engine: Engine) -> Tensor | ArrayLike:
+    if engine == Engine.JAX:
+        if requires_grad:
+            return jnp.array(value)
+        else:
+            return np.array(value)
+    else:
+        return torch.tensor(value, requires_grad=requires_grad)
 
 
 def unique(x: Iterable) -> List:
@@ -26,12 +43,12 @@ def unique(x: Iterable) -> List:
 
 
 def embedding(
-    block: AbstractBlock, to_gate_params: bool = False
-) -> tuple[StrTensorDict, Callable[[StrTensorDict, StrTensorDict], StrTensorDict],]:
+    block: AbstractBlock, to_gate_params: bool = False, engine: Engine = Engine.TORCH
+) -> tuple[ParamDictType, Callable[[ParamDictType, ParamDictType], ParamDictType],]:
     """Construct embedding function which maps user-facing parameters to either *expression-level*
     parameters or *gate-level* parameters. The construced embedding function has the signature:
 
-         embedding_fn(params: StrTensorDict, inputs: StrTensorDict) -> StrTensorDict:
+         embedding_fn(params: ParamDictType, inputs: ParamDictType) -> ParamDictType:
 
     which means that it maps the *variational* parameter dict `params` and the *feature* parameter
     dict `inputs` to one new parameter dict `embedded_dict` which holds all parameters that are
@@ -75,14 +92,16 @@ def embedding(
     # we dont need to care about constant symbols if they are contained in an symbolic expression
     # we only care about gate params which are ONLY a constant
 
-    embeddings: dict[sympy.Expr, sympytorch.SymPyModule] = {
-        expr: torchify(expr) for expr in unique_expressions if not expr.is_number
+    embeddings: dict[sympy.Expr, sympytorch.SymPyModule | s2j.SymbolicModule] = {
+        expr: make_differentiable(expr=expr, engine=engine)
+        for expr in unique_expressions
+        if not expr.is_number
     }
 
     uuid_to_expr = uuid_to_expression(block)
 
-    def embedding_fn(params: StrTensorDict, inputs: StrTensorDict) -> StrTensorDict:
-        embedded_params: dict[sympy.Expr, Tensor] = {}
+    def embedding_fn(params: ParamDictType, inputs: ParamDictType) -> ParamDictType:
+        embedded_params: dict[sympy.Expr, Tensor | ArrayLike] = {}
         for expr, fn in embeddings.items():
             angle: Tensor
             values = {}
@@ -110,7 +129,7 @@ def embedding(
             embedded_params[e] = params[stringify(e)]
 
         if to_gate_params:
-            gate_lvl_params: StrTensorDict = {}
+            gate_lvl_params: ParamDictType = {}
             for uuid, e in uuid_to_expr.items():
                 gate_lvl_params[uuid] = embedded_params[e]
             return gate_lvl_params
@@ -118,18 +137,18 @@ def embedding(
             return {stringify(k): v for k, v in embedded_params.items()}
 
     params: StrTensorDict
-    params = {p.name: torch.tensor([p.value], requires_grad=True) for p in trainable_symbols}
+    params = {p.name: concretize_parameter(p.value, True, engine) for p in trainable_symbols}
     params.update(
         {
-            stringify(expr): torch.tensor([evaluate(expr)], requires_grad=False)
+            stringify(expr): concretize_parameter(
+                evaluate(expr), requires_grad=False, engine=engine
+            )
             for expr in constant_expressions
         }
     )
     params.update(
         {
-            stringify(expr): torch.tensor(
-                np.array(expr.tolist(), dtype=np.cdouble), requires_grad=False
-            )
+            stringify(expr): np.array(expr.tolist(), dtype=np.cdouble)
             for expr in unique_const_matrices
         }
     )

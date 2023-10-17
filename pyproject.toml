@@ -62,7 +62,8 @@ jax = ["jax",
     "jaxopt",
     "einops",
     "scipy<1.11",
-    "numpy"]
+    "numpy",
+    "sympy2jax"]
 
 all = [
   "pulser>=0.12.0",

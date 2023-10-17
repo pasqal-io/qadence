@@ -9,11 +9,12 @@ import sympy
 import torch
 from sympy import *
 from sympy import Array, Basic, Expr, Symbol, sympify
-from sympytorch import SymPyModule
+from sympy2jax import SymbolicModule as JaxSympyModule
+from sympytorch import SymPyModule as torchSympyModule
 from torch import Tensor
 
 from qadence.logger import get_logger
-from qadence.types import TNumber
+from qadence.types import Engine, TNumber
 
 # Modules to be automatically added to the qadence namespace
 __all__ = ["FeatureParameter", "Parameter", "VariationalParameter"]
@@ -182,7 +183,7 @@ def extract_original_param_entry(
     return param if not param.is_number else evaluate(param)
 
 
-def torchify(expr: Expr) -> SymPyModule:
+def torchify(expr: Expr) -> torchSympyModule:
     """
     Arguments:
         expr: An expression consisting of Parameters.
@@ -191,7 +192,15 @@ def torchify(expr: Expr) -> SymPyModule:
         A torchified, differentiable Expression.
     """
     extra_funcs = {sympy.core.numbers.ImaginaryUnit: 1.0j}
-    return SymPyModule(expressions=[sympy.N(expr)], extra_funcs=extra_funcs)
+    return torchSympyModule(expressions=[sympy.N(expr)], extra_funcs=extra_funcs)
+
+
+def make_differentiable(expr: Expr, engine: Engine) -> torchSympyModule | JaxSympyModule:
+    if engine == Engine.JAX:
+        return JaxSympyModule(expr)
+    else:
+        extra_funcs = {sympy.core.numbers.ImaginaryUnit: 1.0j}
+        return torchSympyModule(expressions=[sympy.N(expr)], extra_funcs=extra_funcs)
 
 
 def sympy_to_numeric(expr: Basic) -> TNumber:

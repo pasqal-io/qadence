@@ -18,7 +18,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.extensions import get_gpsr_fns
 from qadence.measurements import Measurements
 from qadence.ml_tools import promote_to_tensor
-from qadence.types import DiffMode, Endianness
+from qadence.types import DiffMode, Endianness, Engine
 
 
 class PSRExpectation(Function):
@@ -86,6 +86,7 @@ class DifferentiableExpectation:
     state: Tensor | None = None
     protocol: Measurements | None = None
     endianness: Endianness = Endianness.BIG
+    engine: Engine = Engine.TORCH
 
     def ad(self) -> Tensor:
         self.observable = (
@@ -207,6 +208,7 @@ class DifferentiableBackend(nn.Module):
 
         self.backend = backend
         self.diff_mode = diff_mode
+        self.engine = backend.engine
         self.psr_args = psr_args
         # TODO: Add differentiable overlap calculation
         self._overlap: Callable = None  # type: ignore [assignment]
