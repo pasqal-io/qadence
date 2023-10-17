@@ -6,8 +6,8 @@ programs**_ with tunable qubit interaction defined on _**arbitrary register topo
 [![Linting](https://github.com/pasqal-io/qadence/actions/workflows/lint.yml/badge.svg)](https://github.com/pasqal-io/qadence/actions/workflows/lint.yml)
 [![Tests](https://github.com/pasqal-io/qadence/actions/workflows/test_fast.yml/badge.svg)](https://github.com/pasqal-io/qadence/actions/workflows/test_fast.yml)
 [![Documentation](https://github.com/pasqal-io/qadence/actions/workflows/build_docs.yml/badge.svg)](https://pasqal-io.github.io/qadence/latest)
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Pypi](https://badge.fury.io/py/qadence.svg)](https://pypi.org/project/qadence/)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ## Feature highlights
 
@@ -28,46 +28,53 @@ programs**_ with tunable qubit interaction defined on _**arbitrary register topo
 
 ## Installation guide
 
-Qadence can be installed from PyPI with `pip` as follows:
+Qadence is available on [PyPI](https://pypi.org/project/qadence/) and can be installed using `pip` as follows:
 
 ```bash
 pip install qadence
 ```
 
-The default backend for Qadence is [PyQTorch](https://github.com/pasqal-io/pyqtorch), a differentiable state vector simulator for digital-analog simulation. It is possible to install additional backends and the circuit visualization library using the following extras:
+The default, pre-installed backend for Qadence is [PyQTorch](https://github.com/pasqal-io/pyqtorch), a differentiable state vector simulator for digital-analog simulation. It is possible to install additional backends and the circuit visualization library using the following extras:
 
-* `braket`: the [Braket](https://github.com/amazon-braket/amazon-braket-sdk-python) backend.
-* `pulser`: the [Pulser](https://github.com/pasqal-io/Pulser) backend for composing, simulating and executing pulse sequences for neutral-atom quantum devices.
-* `visualization`: to display diagrammatically quantum circuits.
+* `pulser`: The [Pulser](https://github.com/pasqal-io/Pulser) backend for composing, simulating and executing pulse sequences for neutral-atom quantum devices.
+* `braket`: The [Braket](https://github.com/amazon-braket/amazon-braket-sdk-python) backend, an open source library that provides a framework for interacting with quantum computing hardware devices through Amazon Braket.
+* `visualization`: A visualization library to display quantum circuit diagrams.
 
-To just get qadence with the `pyqtorch` backend, simply run:
-
-```bash
-pip install qadence
-```
-
-To install other backends or the visualization tool, please use:
+To install individual extras, use the following syntax (**IMPORTANT** Make sure to use quotes):
 
 ```bash
 pip install "qadence[braket,pulser,visualization]"
 ```
 
-!!! warning
-    In order to correctly install the `visualization` extra, the `graphviz` package needs to be installed
-    in your system:
+To install all available extras, simply do:
 
-    ```bash
-    # on Ubuntu
-    sudo apt install graphviz
+```bash
+pip install "qadence[all]"
+```
 
-    # on MacOS
-    brew install graphviz
+**IMPORTANT**
+Before installing `qadence` with the `visualization` extra, make sure to install the `graphviz` package
+on your system:
 
-    # via conda
-    conda install python-graphviz
-    ```
+```bash
+# For Debian-based distributions (e.g. Debian, Ubuntu)
+sudo apt install graphviz
 
-## Install from source
+# on MacOS
+brew install graphviz
+
+# via conda
+conda install python-graphviz
+```
+
+## Contributing
+
+Before making a contribution, please review our [code of conduct](docs/CODE_OF_CONDUCT.md).
+
+- **Submitting Issues:** To submit bug reports or feature requests, please use our [issue tracker](https://github.com/pasqal-io/qadence/issues).
+- **Developing in qadence:** To learn more about how to develop within `qadence`, please refer to [contributing guidelines](docs/CONTRIBUTING.md).
+
+### Setting up qadence in development mode
 
 We recommend to use the [`hatch`](https://hatch.pypa.io/latest/) environment manager to install `qadence` from source:
 
@@ -81,14 +88,14 @@ python -m hatch shell
 python -m hatch run python my_script.py
 ```
 
-!!! warning
-    `hatch` will not combine nicely with other environment managers such Conda. If you want to use Conda,
-    install it from source using `pip`:
+**WARNING**
+`hatch` will not combine nicely with other environment managers such as Conda. If you still want to use Conda,
+install it from source using `pip`:
 
-    ```bash
-    # within the Conda environment
-    python -m pip install -e .
-    ```
+```bash
+# within the Conda environment
+python -m pip install -e .
+```
 
 ## Citation
 
@@ -101,3 +108,6 @@ If you use Qadence for a publication, we kindly ask you to cite our work using t
   year = {2023}
 }
 ```
+
+## License
+Qadence is a free and open source software package, released under the Apache License, Version 2.0.
