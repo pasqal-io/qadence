@@ -57,7 +57,7 @@ Before installing `qadence` with the `visualization` extra, make sure to install
 on your system:
 
 ```bash
-# on Ubuntu
+# For Debian-based distributions (e.g. Debian, Ubuntu)
 sudo apt install graphviz
 
 # on MacOS
