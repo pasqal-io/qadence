@@ -40,13 +40,11 @@ The default, pre-installed backend for Qadence is [PyQTorch](https://github.com/
 * `braket`: The [Braket](https://github.com/amazon-braket/amazon-braket-sdk-python) backend, an open source library that provides a framework for interacting with quantum computing hardware devices through Amazon Braket.
 * `visualization`: A visualization library to display quantum circuit diagrams.
 
-To install individual extras, use the following syntax:
+To install individual extras, use the following syntax (**Make sure to use quotes**):
 
 ```bash
 pip install "qadence[braket,pulser,visualization]"
 ```
-
-**NOTE** Please use quotes
 
 To install all available extras, simply do:
 
