@@ -36,9 +36,9 @@ pip install qadence
 
 The default, pre-installed backend for Qadence is [PyQTorch](https://github.com/pasqal-io/pyqtorch), a differentiable state vector simulator for digital-analog simulation. It is possible to install additional backends and the circuit visualization library using the following extras:
 
-* `braket`: the [Braket](https://github.com/amazon-braket/amazon-braket-sdk-python) backend.
-* `pulser`: the [Pulser](https://github.com/pasqal-io/Pulser) backend for composing, simulating and executing pulse sequences for neutral-atom quantum devices.
-* `visualization`: to display diagrammatically quantum circuits.
+* `pulser`: The [Pulser](https://github.com/pasqal-io/Pulser) backend for composing, simulating and executing pulse sequences for neutral-atom quantum devices.
+* `braket`: The [Braket](https://github.com/amazon-braket/amazon-braket-sdk-python) backend, an open source library that provides a framework for interacting with quantum computing hardware devices through Amazon Braket.
+* `visualization`: A visualization library to display quantum circuit diagrams.
 * `all` : Install all available backends and tools.
 
 To install other backends or the visualization tool, please use:
