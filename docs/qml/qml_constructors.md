@@ -9,14 +9,14 @@ The `feature_map` function can easily create several types of data-encoding bloc
 two main types of feature maps use a Fourier basis or a Chebyshev basis.
 
 ```python exec="on" source="material-block" html="1" session="fms"
-from qadence import feature_map, BasisFeatureMap, chain
+from qadence import feature_map, BasisSet, chain
 from qadence.draw import display
 
 n_qubits = 3
 
-fourier_fm = feature_map(n_qubits, fm_type=BasisFeatureMap.FOURIER)
+fourier_fm = feature_map(n_qubits, fm_type=BasisSet.FOURIER)
 
-chebyshev_fm = feature_map(n_qubits, fm_type=BasisFeatureMap.CHEBYSHEV)
+chebyshev_fm = feature_map(n_qubits, fm_type=BasisSet.CHEBYSHEV)
 
 block = chain(fourier_fm, chebyshev_fm)
 from qadence.draw import html_string # markdown-exec: hide
@@ -47,22 +47,22 @@ print(html_string(block, size="6,4")) # markdown-exec: hide
 ```
 
 Furthermore, the `reupload_scaling` argument can be used to change the scaling applied to each qubit
-in the support of the feature map. The default scalings can be chosen from the `ScalingFeatureMap` enumeration.
+in the support of the feature map. The default scalings can be chosen from the `ReuploadScaling` enumeration.
 
 ```python exec="on" source="material-block" html="1" session="fms"
-from qadence import ScalingFeatureMap
+from qadence import ReuploadScaling
 from qadence.draw import display
 
 n_qubits = 5
 
 # Default constant value
-fm_constant = feature_map(n_qubits, fm_type=BasisFeatureMap.FOURIER, reupload_scaling=ScalingFeatureMap.CONSTANT)
+fm_constant = feature_map(n_qubits, fm_type=BasisSet.FOURIER, reupload_scaling=ReuploadScaling.CONSTANT)
 
 # Linearly increasing scaling
-fm_tower = feature_map(n_qubits, fm_type=BasisFeatureMap.FOURIER, reupload_scaling=ScalingFeatureMap.TOWER)
+fm_tower = feature_map(n_qubits, fm_type=BasisSet.FOURIER, reupload_scaling=ReuploadScaling.TOWER)
 
 # Exponentially increasing scaling
-fm_exp = feature_map(n_qubits, fm_type=BasisFeatureMap.FOURIER, reupload_scaling=ScalingFeatureMap.EXP)
+fm_exp = feature_map(n_qubits, fm_type=BasisSet.FOURIER, reupload_scaling=ReuploadScaling.EXP)
 
 block = chain(fm_constant, fm_tower, fm_exp)
 from qadence.draw import html_string # markdown-exec: hide
@@ -79,7 +79,7 @@ def custom_scaling(i: int) -> int | float:
     return (i+1) ** (0.5)
 
 # Custom scaling function
-fm_custom = feature_map(n_qubits, fm_type=BasisFeatureMap.CHEBYSHEV, reupload_scaling=custom_scaling)
+fm_custom = feature_map(n_qubits, fm_type=BasisSet.CHEBYSHEV, reupload_scaling=custom_scaling)
 
 from qadence.draw import html_string # markdown-exec: hide
 print(html_string(fm_custom, size="6,4")) # markdown-exec: hide
@@ -98,8 +98,8 @@ fm_full = feature_map(
     support = tuple(reversed(range(n_qubits))), # Reverse the qubit support to run the scaling from bottom to top
     param = "x", # Change the name of the parameter
     op = RY, # Change the rotation gate between RX, RY, RZ or PHASE
-    fm_type = BasisFeatureMap.CHEBYSHEV,
-    reupload_scaling = ScalingFeatureMap.EXP,
+    fm_type = BasisSet.CHEBYSHEV,
+    reupload_scaling = ReuploadScaling.EXP,
     feature_range = (-1.0, 2.0), # Range from which the input data comes from
     target_range = (1.0, 3.0), # Range the encoder assumes as the natural range
     multiplier = 5.0 # Extra multiplier, which can also be a Parameter
