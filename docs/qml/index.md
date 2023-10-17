@@ -35,7 +35,7 @@ Furthermore, Qadence is natively integrated with PyTorch automatic differentiati
 Qadence quantum models can be used seamlessly in a PyTorch workflow.
 
 Let's create a quantum neural network model using the feature map just defined, a
-digital-analog variational ansaztz and a simple observable $X(0) \otimes X(1)$. We
+digital-analog variational ansatz and a simple observable $X(0) \otimes X(1)$. We
 use the convenience `QNN` quantum model abstraction.
 
 ```python exec="on" source="material-block" result="json" session="qml"
