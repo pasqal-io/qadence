@@ -46,7 +46,7 @@ To install other backends or the visualization tool, please use:
 pip install "qadence[braket,pulser,visualization]"
 ```
 
-[!IMPORTANT]
+**IMPORTANT**
 Before installing `qadence` with the `visualization` extra, make sure to install the `graphviz` package
 on your system:
 
@@ -75,8 +75,8 @@ python -m hatch shell
 python -m hatch run python my_script.py
 ```
 
-> [!WARNING]
-> `hatch` will not combine nicely with other environment managers such as Conda. If you still want to use Conda,
+**WARNING**
+`hatch` will not combine nicely with other environment managers such as Conda. If you still want to use Conda,
 install it from source using `pip`:
 
 ```bash
