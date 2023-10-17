@@ -378,16 +378,15 @@ def is_kron_of_primitives(block: AbstractBlock) -> bool:
 
 
 def is_chain_of_primitivekrons(block: AbstractBlock) -> bool:
-    return (
-        isinstance(block, ChainBlock)
-        and len(block) > 1
-        and all(
-            [
-                is_kron_of_primitives(b) and b.qubit_support == block.qubit_support
-                for b in block.blocks
-            ]
+    if isinstance(block, ChainBlock) and len(block) > 1:
+        same_length = len(set(map(len, block))) == 1
+        kron_of_primitives_same_qubit = all(
+            is_kron_of_primitives(b) and b.qubit_support == block.qubit_support
+            for b in block.blocks
         )
-    )
+        return same_length and kron_of_primitives_same_qubit
+    else:
+        return False
 
 
 def chain_single_qubit_ops(block: AbstractBlock) -> AbstractBlock:
@@ -407,16 +406,8 @@ def chain_single_qubit_ops(block: AbstractBlock) -> AbstractBlock:
     ```
     """
     if is_chain_of_primitivekrons(block):
-        kronblocks = block.blocks  # type: ignore[attr-defined]
-        n_blocks = len(kronblocks)
-        chains = []
-        for qb_idx in range(block.n_qubits):
-            prim_gates = []
-            for kron_idx in range(n_blocks):
-                prim_gates.append(kronblocks[kron_idx][qb_idx])  # type: ignore[index]
-            chains.append(chain(*prim_gates))
         try:
-            return kron(*chains)
+            return kron(*map(lambda bs: chain(*bs), zip(*block)))  # type: ignore[misc]
         except Exception as e:
             logger.debug(
                 f"Unable to transpile {block} using chain_single_qubit_ops\
