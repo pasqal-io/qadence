@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from qadence import chain, kron
 from qadence.blocks import AbstractBlock, AddBlock, ChainBlock, KronBlock
-from qadence.transpile import chain_single_qubit_ops, digitalize, flatten
 from qadence.operations import RX, RZ, H, HamEvo, X
+from qadence.transpile import chain_single_qubit_ops, digitalize, flatten
 from qadence.types import LTSOrder
 
 
