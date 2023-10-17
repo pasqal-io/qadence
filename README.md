@@ -75,8 +75,8 @@ python -m hatch shell
 python -m hatch run python my_script.py
 ```
 
-[!WARNING]
-`hatch` will not combine nicely with other environment managers such as Conda. If you still want to use Conda,
+> [!WARNING]
+> `hatch` will not combine nicely with other environment managers such as Conda. If you still want to use Conda,
 install it from source using `pip`:
 
 ```bash
