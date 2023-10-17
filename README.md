@@ -28,7 +28,7 @@ programs**_ with tunable qubit interaction defined on _**arbitrary register topo
 
 ## Installation guide
 
-Qadence can be installed from PyPI with `pip` as follows:
+Qadence is available on [PyPI](https://pypi.org/project/qadence/) and can be installed using `pip` as follows:
 
 ```bash
 pip install qadence
@@ -61,7 +61,13 @@ brew install graphviz
 conda install python-graphviz
 ```
 
-## Install from source
+## Contributing
+
+Before making a contribution, please review our [code of conduct](docs/CODE_OF_CONDUCT.md).
+To submit bug reports or feature requests, please use our [issue tracker](https://github.com/pasqal-io/qadence/issues).
+To contribute to `qadence`, please refer to [contributing guidelines](docs/CONTRIBUTING.md).
+
+### Install from source
 
 We recommend to use the [`hatch`](https://hatch.pypa.io/latest/) environment manager to install `qadence` from source:
 
@@ -95,3 +101,6 @@ If you use Qadence for a publication, we kindly ask you to cite our work using t
   year = {2023}
 }
 ```
+
+## License
+Qadence is a free and open source software package, released under the Apache License, Version 2.0.
