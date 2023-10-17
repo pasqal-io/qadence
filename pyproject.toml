@@ -56,6 +56,14 @@ visualization = [
   # "latex2svg @ git+https://github.com/Moonbase59/latex2svg.git#egg=latex2svg",
   # "scour",
 ]
+jax = ["jax",
+    "flax",
+    "optax",
+    "jaxopt",
+    "einops",
+    "scipy<1.11",
+    "numpy"]
+
 all = [
   "pulser>=0.12.0",
   "amazon-braket-sdk",
@@ -63,6 +71,14 @@ all = [
   # FIXME: will be needed once we support latex labels
   # "latex2svg @ git+https://github.com/Moonbase59/latex2svg.git#egg=latex2svg",
   # "scour",
+    "jax",
+    "flax",
+    "optax",
+    "jaxopt",
+    "einops",
+    "scipy<1.11",
+    "numpy"
+
 ]
 
 [tool.hatch.envs.default]

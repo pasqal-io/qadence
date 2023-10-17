@@ -22,6 +22,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.overlap import overlap_exact
 from qadence.register import Register
+from qadence.types import Engine
 from qadence.utils import Endianness
 
 from .channels import GLOBAL_CHANNEL, LOCAL_CHANNEL
@@ -121,6 +122,7 @@ class Backend(BackendInterface):
     with_noise: bool = False
     native_endianness: Endianness = Endianness.BIG
     config: Configuration = Configuration()
+    engine: Engine = Engine.NONE
 
     def circuit(self, circ: QuantumCircuit) -> Sequence:
         native = make_sequence(circ, self.config)

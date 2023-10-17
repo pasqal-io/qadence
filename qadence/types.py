@@ -367,3 +367,9 @@ class OpName(StrEnum):
     """The entanglement operation."""
     WAIT = "wait"
     """The wait operation."""
+
+
+class Engine(StrEnum):
+    TORCH = "torch"
+    JAX = "jax"
+    NONE = "none"

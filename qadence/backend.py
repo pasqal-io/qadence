@@ -22,7 +22,7 @@ from qadence.blocks.analog import ConstantAnalogRotation, WaitBlock
 from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.parameters import stringify
-from qadence.types import BackendName, DiffMode, Endianness
+from qadence.types import BackendName, DiffMode, Endianness, Engine
 
 
 @dataclass
@@ -96,6 +96,7 @@ class Backend(ABC):
     is_remote: bool
     with_measurements: bool
     native_endianness: Endianness
+    engine: Engine
 
     # FIXME: should this also go into the configuration?
     with_noise: bool

@@ -25,6 +25,7 @@ from qadence.transpile import (
     scale_primitive_blocks_only,
     transpile,
 )
+from qadence.types import Engine
 from qadence.utils import Endianness, int_to_basis
 
 from .config import Configuration
@@ -44,6 +45,7 @@ class Backend(BackendInterface):
     with_noise: bool = False
     native_endianness: Endianness = Endianness.BIG
     config: Configuration = Configuration()
+    engine: Engine = Engine.TORCH
 
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:
         transpilations = [

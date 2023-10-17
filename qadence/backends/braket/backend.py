@@ -17,6 +17,7 @@ from qadence.blocks import AbstractBlock, block_to_tensor
 from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.overlap import overlap_exact
+from qadence.types import Engine
 from qadence.utils import Endianness
 
 from .config import Configuration
@@ -45,6 +46,7 @@ class Backend(BackendInterface):
     with_noise: bool = False
     native_endianness: Endianness = Endianness.BIG
     config: Configuration = Configuration()
+    engine: Engine = Engine.NONE
 
     # braket specifics
     # TODO: include it in the configuration?
