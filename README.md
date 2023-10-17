@@ -34,17 +34,11 @@ Qadence can be installed from PyPI with `pip` as follows:
 pip install qadence
 ```
 
-The default backend for Qadence is [PyQTorch](https://github.com/pasqal-io/pyqtorch), a differentiable state vector simulator for digital-analog simulation. It is possible to install additional backends and the circuit visualization library using the following extras:
+The default, pre-installed backend for Qadence is [PyQTorch](https://github.com/pasqal-io/pyqtorch), a differentiable state vector simulator for digital-analog simulation. It is possible to install additional backends and the circuit visualization library using the following extras:
 
 * `braket`: the [Braket](https://github.com/amazon-braket/amazon-braket-sdk-python) backend.
 * `pulser`: the [Pulser](https://github.com/pasqal-io/Pulser) backend for composing, simulating and executing pulse sequences for neutral-atom quantum devices.
 * `visualization`: to display diagrammatically quantum circuits.
-
-To just get qadence with the `pyqtorch` backend, simply run:
-
-```bash
-pip install qadence
-```
 
 To install other backends or the visualization tool, please use:
 
@@ -52,20 +46,20 @@ To install other backends or the visualization tool, please use:
 pip install "qadence[braket,pulser,visualization]"
 ```
 
-!!! warning
-    In order to correctly install the `visualization` extra, the `graphviz` package needs to be installed
-    in your system:
+[!IMPORTANT]
+Before installing `qadence` with the `visualization` extra, make sure to install the `graphviz` package
+on your system:
 
-    ```bash
-    # on Ubuntu
-    sudo apt install graphviz
+```bash
+# on Ubuntu
+sudo apt install graphviz
 
-    # on MacOS
-    brew install graphviz
+# on MacOS
+brew install graphviz
 
-    # via conda
-    conda install python-graphviz
-    ```
+# via conda
+conda install python-graphviz
+```
 
 ## Install from source
 
@@ -81,7 +75,7 @@ python -m hatch shell
 python -m hatch run python my_script.py
 ```
 
-**WARNING**
+[!WARNING]
 `hatch` will not combine nicely with other environment managers such as Conda. If you still want to use Conda,
 install it from source using `pip`:
 
