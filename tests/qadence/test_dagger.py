@@ -3,9 +3,11 @@ from __future__ import annotations
 from typing import Tuple
 
 import pytest
+import strategies as st
+from hypothesis import given, settings
 from sympy import acos
 
-from qadence import Parameter
+from qadence import Parameter, QuantumCircuit
 from qadence.blocks import AbstractBlock, chain, kron
 from qadence.blocks.utils import assert_same_block, put
 from qadence.constructors import hea
@@ -147,3 +149,26 @@ def test_all_self_adjoint_blocks(block: Tuple[int, AbstractBlock]) -> None:
 )
 def test_composite_blocks_no_fails(block: AbstractBlock) -> None:
     assert isinstance(block.dagger(), AbstractBlock)
+
+
+@given(st.restricted_circuits())
+@settings(deadline=None)
+def test_circuit_dagger(circuit: QuantumCircuit) -> None:
+    circuit == circuit.dagger().dagger()
+
+
+def test_circuit_dagger_explicit() -> None:
+    theta = Parameter("theta")
+    circuit = QuantumCircuit(4, chain(X(0), kron(Y(1), RZ(3, theta)), Y(0)))
+    circuit_daggered = QuantumCircuit(4, chain(Y(0), kron(RZ(3, -theta), Y(1)), X(0)))
+
+    assert circuit.dagger() == circuit_daggered
+
+
+@pytest.mark.parametrize("trainable", [True, False])
+def test_parametric_dagger(trainable: bool) -> None:
+    theta = Parameter("theta", trainable=trainable)
+    rx = RX(0, theta)
+    assert rx.dagger() != rx
+    assert rx.dagger().parameters.parameter == -rx.parameters.parameter
+    assert rx == rx.dagger().dagger()

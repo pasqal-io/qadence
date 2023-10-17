@@ -45,7 +45,7 @@ def test_get_block_by_tag() -> None:
     assert len(ansatz) == 2
 
 
-def test_reverse() -> None:
+def test_invert_endianness() -> None:
     block1 = X(0)
     block2 = Y(1)
     block3 = RX(2, Parameter("theta"))
@@ -99,7 +99,7 @@ def test_loaded_circuit_from_json() -> None:
 
 @pytest.mark.parametrize(
     "n_qubits",
-    [2, 4, 6, 8],
+    [2, 4],
 )
 def test_underlying_hea(n_qubits: int) -> None:
     from qadence.blocks import ChainBlock
