@@ -33,8 +33,8 @@ __all__ = [
     "BackendName",
     "StateGeneratorType",
     "LTSOrder",
-    "ScalingFeatureMap",
-    "BasisFeatureMap",
+    "ReuploadScaling",
+    "BasisSet",
     "TensorType",
     "DiffMode",
     "BackendName",
@@ -124,7 +124,11 @@ class LTSOrder(StrEnum):
     """ST4."""
 
 
+<<<<<<< HEAD
 class BasisFeatureMap(StrEnum):
+=======
+class BasisSet(StrEnum):
+>>>>>>> main
     """Basis set for feature maps."""
 
     FOURIER = "Fourier"
@@ -133,7 +137,11 @@ class BasisFeatureMap(StrEnum):
     """Chebyshev polynomials of the first kind."""
 
 
+<<<<<<< HEAD
 class ScalingFeatureMap(StrEnum):
+=======
+class ReuploadScaling(StrEnum):
+>>>>>>> main
     """Scaling for data reuploads in feature maps."""
 
     CONSTANT = "Constant"
