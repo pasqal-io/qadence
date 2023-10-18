@@ -47,7 +47,7 @@ simple observable $X(0) \otimes X(1)$. We use the convenience `QNN` quantum mode
 
 ```python exec="on" source="material-block" result="json" session="qml"
 ansatz = qd.hea(n_qubits, strategy="sDAQC")
-circuit = qd.QuantumCircuit(n_qubits, feature_map, ansatz)
+circuit = qd.QuantumCircuit(n_qubits, fm, ansatz)
 observable = qd.kron(X(0), X(1))
 
 model = qd.QNN(circuit, observable)
