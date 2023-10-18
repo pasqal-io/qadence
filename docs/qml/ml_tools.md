@@ -50,8 +50,8 @@ for i in range(n_epochs):
 ## Optimization routines
 
 For training QML models, Qadence also offers a few out-of-the-box routines for optimizing differentiable
-models like `QNN`s and `QuantumModel`s containing either *trainable* and/or *non-trainable* parameters
-(you can refer to [the parameters tutorial](../tutorials/parameters.md) for a refresh about different parameter types):
+models, _e.g._ `QNN`s and `QuantumModel`s containing either *trainable* and/or *non-trainable* parameters
+(see [the parameters tutorial](../tutorials/parameters.md) for a refresh about different parameter types):
 
 * [`train_with_grad`][qadence.ml_tools.train_with_grad] for gradient-based optimization using PyTorch native optimizers
 * [`train_gradient_free`][qadence.ml_tools.train_gradient_free] for gradient-free optimization using

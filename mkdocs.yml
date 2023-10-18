@@ -28,12 +28,10 @@ nav:
 
   - Variational quantum algorithms:
     - qml/index.md
-    - Tools for quantum machine learning:
-      - Constructors: qml/qml_constructors.md
-      - Training tools: qml/ml_tools.md
-    - Example applications:
-      - Quantum circuit learning: qml/qcl.md
-      - Solving MaxCut with QAOA: qml/qaoa.md
+    - Constructors: qml/qml_constructors.md
+    - Training tools: qml/ml_tools.md
+    - Quantum circuit learning: qml/qcl.md
+    - Solving MaxCut with QAOA: qml/qaoa.md
 
   - Advanced Tutorials:
     - Quantum circuits differentiation: advanced_tutorials/differentiability.md

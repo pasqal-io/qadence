@@ -22,14 +22,15 @@ from sympy import acos
 
 n_qubits = 4
 
+# Example feature map, also directly available with the `feature_map` function
 fp = qd.FeatureParameter("phi")
-feature_map = qd.kron(RX(i, 2 * acos(fp)) for i in range(n_qubits))
+fm = qd.kron(RX(i, acos(fp)) for i in range(n_qubits))
 
 # the key in the dictionary must correspond to
 # the name of the assigned to the feature parameter
 inputs = {"phi": torch.rand(3)}
-samples = qd.sample(feature_map, values=inputs)
-print(samples[0])
+samples = qd.sample(fm, values=inputs)
+print(samples[0])  # markdown-exec: hide
 ```
 
 The [`constructors.feature_map`][qadence.constructors.feature_map] module provides
@@ -64,7 +65,7 @@ values = {"phi": torch.rand(10, requires_grad=True)}
 # the forward pass of the quantum model returns the expectation
 # value of the input observable
 out = model(values)
-print(f"Quantum model output: \n{out}\n")
+print(f"Quantum model output: \n{out}\n")  # markdown-exec: hide
 
 # you can compute the gradient with respect to inputs using
 # PyTorch autograd differentiation engine
