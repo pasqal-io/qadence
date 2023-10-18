@@ -49,6 +49,3 @@ class Configuration(BackendConfiguration):
     def __post_init__(self) -> None:
         if self.sim_config is not None and not isinstance(self.sim_config, SimConfig):
             raise TypeError("Wrong 'sim_config' attribute type, pass a valid SimConfig object!")
-
-        # Use gate-level parameters
-        self.use_gate_params = True

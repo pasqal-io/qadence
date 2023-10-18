@@ -40,10 +40,10 @@ class BackendConfiguration:
             str: a string with all the available fields, one per line
         """
         conf_msg = ""
-        for field in fields(self):
-            if not field.name.startswith("_"):
+        for _field in fields(self):
+            if not _field.name.startswith("_"):
                 conf_msg += (
-                    f"Name: {field.name} - Type: {field.type} - Default value: {field.default}\n"
+                    f"Name: {_field.name} - Type: {_field.type} - Default value: {_field.default}\n"
                 )
         return conf_msg
 

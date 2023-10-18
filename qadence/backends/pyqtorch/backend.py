@@ -18,8 +18,6 @@ from qadence.measurements import Measurements
 from qadence.overlap import overlap_exact
 from qadence.states import zero_state
 from qadence.transpile import (
-    add_interaction,
-    blockfn_to_circfn,
     chain_single_qubit_ops,
     flatten,
     scale_primitive_blocks_only,
@@ -46,14 +44,7 @@ class Backend(BackendInterface):
     config: Configuration = Configuration()
 
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:
-        transpilations = [
-            lambda circ: add_interaction(circ, interaction=self.config.interaction),
-            lambda circ: blockfn_to_circfn(chain_single_qubit_ops)(circ)
-            if self.config.use_single_qubit_composition
-            else blockfn_to_circfn(flatten)(circ),
-            blockfn_to_circfn(scale_primitive_blocks_only),
-        ]
-
+        transpilations = self.config.transpilation_passes
         abstract = transpile(*transpilations)(circuit)  # type: ignore[call-overload]
         ops = convert_block(abstract.block, n_qubits=circuit.n_qubits, config=self.config)
         native = pyq.QuantumCircuit(abstract.n_qubits, ops)

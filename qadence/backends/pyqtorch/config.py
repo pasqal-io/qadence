@@ -4,6 +4,13 @@ from dataclasses import dataclass
 from typing import Callable
 
 from qadence.backend import BackendConfiguration
+from qadence.transpile import (
+    add_interaction,
+    blockfn_to_circfn,
+    chain_single_qubit_ops,
+    flatten,
+    scale_primitive_blocks_only,
+)
 from qadence.types import AlgoHEvo, Interaction
 
 
@@ -29,3 +36,13 @@ class Configuration(BackendConfiguration):
     loop_expectation: bool = False
     """When computing batches of expectation values, only allocate one wavefunction and loop over
     the batch of parameters to only allocate a single wavefunction at any given time."""
+
+    def __post_init__(self) -> None:
+        if len(self.transpilation_passes) == 0:
+            self.transpilation_passes = [
+                lambda circ: add_interaction(circ, interaction=self.interaction),
+                lambda circ: blockfn_to_circfn(chain_single_qubit_ops)(circ)
+                if self.use_single_qubit_composition
+                else blockfn_to_circfn(flatten)(circ),
+                blockfn_to_circfn(scale_primitive_blocks_only),
+            ]
