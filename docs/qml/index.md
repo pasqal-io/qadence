@@ -30,7 +30,7 @@ fm = qd.kron(RX(i, acos(fp)) for i in range(n_qubits))
 # the name of the assigned to the feature parameter
 inputs = {"phi": torch.rand(3)}
 samples = qd.sample(fm, values=inputs)
-print(samples[0])  # markdown-exec: hide
+print(f"samples = {samples[0]}")  # markdown-exec: hide
 ```
 
 The [`constructors.feature_map`][qadence.constructors.feature_map] module provides
