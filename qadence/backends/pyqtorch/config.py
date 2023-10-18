@@ -17,8 +17,8 @@ class Configuration(BackendConfiguration):
     # number of steps for the Hamiltonian evolution
     n_steps_hevo: int = 100
 
+    # Use gradient checkpointing. Recommended for higher-order optimization tasks.
     use_gradient_checkpointing: bool = False
-    """Use gradient checkpointing. Recommended for higher-order optimization tasks."""
 
     use_single_qubit_composition: bool = False
     """Composes chains of single qubit gates into a single matmul if possible."""

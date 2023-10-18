@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections import Counter
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, field, fields
 from typing import Any, Callable, Iterator, Tuple
 
 from openfermion import QubitOperator
@@ -31,6 +31,7 @@ class BackendConfiguration:
     use_sparse_observable: bool = False
     use_gradient_checkpointing: bool = False
     use_single_qubit_composition: bool = False
+    transpilation_passes: list[Callable] = field(default_factory=list)
 
     def available_options(self) -> str:
         """Return as a string the available fields with types of the configuration

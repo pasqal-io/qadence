@@ -55,11 +55,16 @@ class Backend(BackendInterface):
             raise NotImplementedError("Braket backend does not support cloud execution yet")
 
     def circuit(self, circ: QuantumCircuit) -> ConvertedCircuit:
-        from qadence.transpile import digitalize, fill_identities, transpile
+        from qadence.transpile import transpile
 
-        # make sure that we don't have empty wires. braket does not like it.
-        transpilations = [fill_identities, digitalize]
-        abstract_circ = transpile(*transpilations)(circ)  # type: ignore[call-overload]
+        passes = self.config.transpilation_passes
+        breakpoint()
+        # passes = [fill_identities, digitalize]
+        if len(passes) > 0:
+            abstract_circ = transpile(*passes)(circ)  # type: ignore[call-overload]
+        else:
+            abstract_circ = circ
+
         native = BraketCircuit(convert_block(abstract_circ.block))
         return ConvertedCircuit(native=native, abstract=abstract_circ, original=circ)
 

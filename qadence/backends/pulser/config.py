@@ -34,9 +34,6 @@ class Configuration(BackendConfiguration):
     # add modulation to the local execution
     with_modulation: bool = False
 
-    # Use gate-level parameters
-    use_gate_params = True
-
     # pulse amplitude on local channel
     amplitude_local: Optional[float] = None
 
@@ -52,3 +49,6 @@ class Configuration(BackendConfiguration):
     def __post_init__(self) -> None:
         if self.sim_config is not None and not isinstance(self.sim_config, SimConfig):
             raise TypeError("Wrong 'sim_config' attribute type, pass a valid SimConfig object!")
+
+        # Use gate-level parameters
+        self.use_gate_params = True
