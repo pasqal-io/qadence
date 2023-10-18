@@ -16,16 +16,14 @@ from qadence.types import AlgoHEvo, Interaction
 
 @dataclass
 class Configuration(BackendConfiguration):
-    # FIXME: currently not used
-    # determine which kind of Hamiltonian evolution
-    # algorithm to use
     algo_hevo: AlgoHEvo = AlgoHEvo.EXP
+    """Determine which kind of Hamiltonian evolution algorithm to use"""
 
-    # number of steps for the Hamiltonian evolution
     n_steps_hevo: int = 100
+    """Default number of steps for the Hamiltonian evolution"""
 
-    # Use gradient checkpointing. Recommended for higher-order optimization tasks.
     use_gradient_checkpointing: bool = False
+    """Use gradient checkpointing. Recommended for higher-order optimization tasks."""
 
     use_single_qubit_composition: bool = False
     """Composes chains of single qubit gates into a single matmul if possible."""
@@ -37,7 +35,11 @@ class Configuration(BackendConfiguration):
     """When computing batches of expectation values, only allocate one wavefunction and loop over
     the batch of parameters to only allocate a single wavefunction at any given time."""
 
+    # this post init is needed because of the way dataclasses
+    # inherit attributes and class MRO. See here:
+    # https://stackoverflow.com/a/53085935
     def __post_init__(self) -> None:
+        # default transpilation passes for PyQTorch backend
         if len(self.transpilation_passes) == 0:
             self.transpilation_passes = [
                 lambda circ: add_interaction(circ, interaction=self.interaction),
