@@ -130,7 +130,7 @@ print(f"{matrix_little.detach()}") # markdown-exec: hide
 
 ## Backends
 
-An important part of having clear state conventions is that we need to make sure our results are consistent accross different computational backends, which may have their own conventions. In Qadence, this is taken care for automatically: by calling operations for different backends, the result is expected to be equivalent up to qubit ordering.
+An important part of having clear state conventions is that we need to make sure our results are consistent accross different computational backends, which may have their own conventions. In Qadence, this is taken care of automatically: by calling operations for different backends, the result is expected to be equivalent up to qubit ordering.
 
 ```python exec="on" source="material-block" result="json" session="end-0"
 import warnings # markdown-exec: hide
