@@ -19,7 +19,7 @@ authors = [
 ]
 requires-python = ">=3.9,<3.11"
 license = {text = "Apache 2.0"}
-version = "1.0.1"
+version = "1.0.2"
 classifiers=[
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python",
@@ -63,7 +63,6 @@ all = [
   # FIXME: will be needed once we support latex labels
   # "latex2svg @ git+https://github.com/Moonbase59/latex2svg.git#egg=latex2svg",
   # "scour",
-  "scipy<1.11"
 ]
 
 [tool.hatch.envs.default]
