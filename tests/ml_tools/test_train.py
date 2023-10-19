@@ -211,7 +211,10 @@ def test_tm_save_load(
     )
     criterion = torch.nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
-    init_val = model._input_scaling.detach().clone()
+    input_scaling_init_val = model._input_scaling.detach().clone()
+    input_shifting_init_val = model._input_shifting.detach().clone()
+    output_scaling_init_val = model._output_scaling.detach().clone()
+    output_shifting_init_val = model._output_shifting.detach().clone()
 
     def loss_fn(model: torch.nn.Module, data: torch.Tensor) -> tuple[torch.Tensor, dict]:
         x = torch.rand(1)
@@ -224,9 +227,23 @@ def test_tm_save_load(
         folder=tmp_path, max_iter=n_epochs, print_every=1, checkpoint_every=1, write_every=1
     )
     model, optimizer = train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
+
+    input_scaling_post_val = model._input_scaling.detach().clone()
+    input_shifting_post_val = model._input_shifting.detach().clone()
+    output_scaling_post_val = model._output_scaling.detach().clone()
+    output_shifting_post_val = model._output_shifting.detach().clone()
+
     model = BasicTransformedModule
     x = torch.rand(1)
     model, opt, iter = load_checkpoint(
         tmp_path, model, torch.optim.Adam(model.parameters(), lr=0.1)
     )
-    assert model._input_scaling != init_val
+    assert model._input_scaling != input_scaling_init_val
+    assert model._input_shifting != input_shifting_init_val
+    assert model._output_scaling != output_scaling_init_val
+    assert model._output_shifting != output_shifting_init_val
+
+    assert model._input_scaling == input_scaling_post_val
+    assert model._input_shifting == input_shifting_post_val
+    assert model._output_scaling == output_scaling_post_val
+    assert model._output_shifting == output_shifting_post_val

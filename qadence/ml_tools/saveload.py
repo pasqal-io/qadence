@@ -101,7 +101,7 @@ def load_model(
     try:
         iteration, model_dict = torch.load(folder / model_ckpt_name, *args, **kwargs)
         if isinstance(model, (QuantumModel, QNN, TransformedModule)):
-            model._from_dict(model_dict, as_torch=True)
+            model = model._from_dict(model_dict, as_torch=True)
         elif isinstance(model, Module):
             model.load_state_dict(model_dict, strict=True)
 

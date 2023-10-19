@@ -245,12 +245,14 @@ class TransformedModule(torch.nn.Module):
             return res  # type: ignore[no-any-return]
 
         _d = serialize(self.model, save_params=save_params)
-
-        scale_dict = {
-            name: param
-            for name, param in self.state_dict().items()
-            if name in ["_input_scaling", "_input_shifting", "_output_scaling", "_output_shifting"]
-        }
+        scale_dict = {}
+        if save_params:
+            scale_dict = {
+                name: param
+                for name, param in self.state_dict().items()
+                if name
+                in ["_input_scaling", "_input_shifting", "_output_scaling", "_output_shifting"]
+            }
 
         return {
             self.__class__.__name__: {
@@ -281,5 +283,6 @@ class TransformedModule(torch.nn.Module):
             output_shifting=torch.tensor(d["_output_shifting"]),
         )
         # we do this only if the TransformedModule has/had trainable parameters.
-        tm.load_state_dict(d["scaling_parameters"], strict=False)
+        if as_torch:
+            tm.load_state_dict(d["scaling_parameters"], strict=False)
         return tm
