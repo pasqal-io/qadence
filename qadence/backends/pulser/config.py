@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
+from pasqal_cloud.device import EmulatorType
 from pulser_simulation.simconfig import SimConfig
 
 from qadence.backend import BackendConfiguration
@@ -48,6 +49,12 @@ class Configuration(BackendConfiguration):
 
     # interaction type
     interaction: Interaction = Interaction.NN
+
+    # platform to execute sequence on on the cloud
+    cloud_platform: Optional[EmulatorType] = None
+
+    # credentials for connecting to the cloud platform
+    cloud_credentials: Optional[dict] = None
 
     def __post_init__(self) -> None:
         if self.sim_config is not None and not isinstance(self.sim_config, SimConfig):
