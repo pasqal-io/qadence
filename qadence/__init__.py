@@ -10,7 +10,7 @@ from .backends import *
 from .blocks import *
 from .circuit import *
 from .constructors import *
-from .errors import *
+from .exceptions import *
 from .execution import *
 from .measurements import *
 from .ml_tools import *
@@ -43,7 +43,7 @@ list_of_submodules = [
     ".blocks",
     ".circuit",
     ".constructors",
-    ".errors",
+    ".exceptions",
     ".execution",
     ".measurements",
     ".ml_tools",

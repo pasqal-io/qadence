@@ -1,3 +1,16 @@
+
+
+# uniform incorporation of noise (make sure counting is correct as discussed with Roland)
+# add suggestions on shot noise (gaussian and poisson -
+# what is the best way to incorporate these in comparison to uniform)?
+# add to backend
+# use measurements architecture
+# check circ, qiskit, tket, pennylane noise models
+# add proper citations where needed
+# remove from quantum_model as this is not general enough!
+# tests!!
+
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
