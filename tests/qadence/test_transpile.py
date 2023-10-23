@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from qadence import RX, RZ, H, HamEvo, X, chain, kron
+from qadence import chain, kron
 from qadence.blocks import AbstractBlock, AddBlock, ChainBlock, KronBlock
-from qadence.transpile import digitalize, flatten
+from qadence.operations import RX, RZ, H, HamEvo, X
+from qadence.transpile import chain_single_qubit_ops, digitalize, flatten
 from qadence.types import LTSOrder
 
 
@@ -43,7 +44,14 @@ def test_flatten() -> None:
     x = chain(kron(chain(chain(X(0), X(0)))))
     assert flatten(x, [ChainBlock]) == chain(kron(chain(X(0), X(0))))
 
+
+def test_digitalize() -> None:
     x = chain(chain(X(0), HamEvo(X(0), 2), RX(0, 2)))
     assert digitalize(x, LTSOrder.BASIC) == chain(
         chain(X(0), chain(H(0), RZ(0, 4.0), H(0)), RX(0, 2.0))
     )
+
+
+def test_chain_of_krons() -> None:
+    b = chain(kron(X(0), X(2)), kron(X(0), X(2)))
+    assert chain_single_qubit_ops(b) == kron(chain(X(0), X(0)), chain(X(2), X(2)))

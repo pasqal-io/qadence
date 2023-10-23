@@ -39,6 +39,7 @@ from qadence.operations import (
     MCRX,
     MCRY,
     MCRZ,
+    PHASE,
     RX,
     RY,
     RZ,
@@ -56,7 +57,7 @@ from qadence.operations import (
     Z,
 )
 from qadence.states import equivalent_state, random_state, zero_state
-from qadence.types import Interaction
+from qadence.types import BasisSet, Interaction, ReuploadScaling
 
 
 def _calc_mat_vec_wavefunction(
@@ -155,7 +156,7 @@ def test_rotation_gates(batch_size: int, gate: ParametricBlock, n_qubits: int) -
 @pytest.mark.parametrize("gate", [MCRX, MCRY, MCRZ, MCPHASE])
 @pytest.mark.parametrize("n_qubits", [2, 4, 6])
 def test_controlled_parameterized_gates(gate: ParametricControlBlock, n_qubits: int) -> None:
-    qubits = np.random.choice(list(range(n_qubits)), size=n_qubits, replace=False).tolist()
+    qubits = np.random.choice(n_qubits, size=n_qubits, replace=False).tolist()
     control = tuple(qubits[:-1])
     target = qubits[-1]
     q = np.random.choice([*control, target])
@@ -170,7 +171,7 @@ def test_controlled_parameterized_gates(gate: ParametricControlBlock, n_qubits: 
 @pytest.mark.parametrize("gate", [CNOT, SWAP])
 @pytest.mark.parametrize("n_qubits", [2, 4, 6])
 def test_swap_cnot_gates(gate: AbstractBlock, n_qubits: int) -> None:
-    control, target = np.random.choice(list(range(n_qubits)), size=2, replace=False).tolist()
+    control, target = np.random.choice(n_qubits, size=2, replace=False).tolist()
     q = np.random.choice([control, target])
     block = chain(X(q), gate(control, target))  # type: ignore[operator]
     init_state = random_state(n_qubits)
@@ -194,7 +195,7 @@ def test_cswap_gate(n_qubits: int) -> None:
 @pytest.mark.parametrize("n_qubits", [3, 4, 6])
 def test_toffoli_gates(n_qubits: int) -> None:
     init_state = random_state(n_qubits)
-    target = np.random.choice(list(range(n_qubits)), size=1, replace=False)[0]
+    target = np.random.choice(n_qubits, size=1, replace=False)[0]
     control = tuple([qubit for qubit in range(n_qubits) if qubit != target])
     block = Toffoli(control, target)
     wf_pyq = run(n_qubits, block, state=init_state)
@@ -213,7 +214,7 @@ def test_hamevo_gate(n_qubits: int, generator_type: str) -> None:
         generator = generator.unsqueeze(0)
     elif generator_type == "block":
         ops = [X, Y] * 2
-        qubit_supports = np.random.choice(list(range(dim)), len(ops), replace=True)
+        qubit_supports = np.random.choice(dim, len(ops), replace=True)
         generator = chain(
             add(*[op(q) for op, q in zip(ops, qubit_supports)]),
             *[op(q) for op, q in zip(ops, qubit_supports)],
@@ -252,14 +253,25 @@ def test_total_magnetization(n_qubits: int) -> None:
 
 
 @pytest.mark.parametrize("n_qubits", [1, 2, 4])
-@pytest.mark.parametrize("fm_type", ["tower", "fourier", "chebyshev"])
-@pytest.mark.parametrize("op", [RX, RY, RZ])
-def test_feature_maps(n_qubits: int, fm_type: str, op: AbstractBlock) -> None:
-    x = Parameter("x", trainable=True)
-    block = feature_map(n_qubits, param=x, op=op, fm_type=fm_type)  # type: ignore[arg-type]
+@pytest.mark.parametrize("fm_type", [BasisSet.FOURIER, BasisSet.CHEBYSHEV])
+@pytest.mark.parametrize(
+    "reupload_scaling", [ReuploadScaling.CONSTANT, ReuploadScaling.TOWER, ReuploadScaling.EXP]
+)
+@pytest.mark.parametrize("op", [RX, RY, RZ, PHASE])
+def test_feature_maps(
+    n_qubits: int,
+    fm_type: BasisSet,
+    reupload_scaling: ReuploadScaling,
+    op: type[RX] | type[RY] | type[RZ] | type[PHASE],
+) -> None:
+    x = Parameter("x", trainable=False)
+    values = {"x": torch.rand(1)}
+    block = feature_map(
+        n_qubits, param=x, op=op, fm_type=fm_type, reupload_scaling=reupload_scaling
+    )  # type: ignore[arg-type]
     init_state = random_state(n_qubits)
-    wf_pyq = run(n_qubits, block, state=init_state)
-    wf_mat = _calc_mat_vec_wavefunction(block, n_qubits, init_state)
+    wf_pyq = run(n_qubits, block, state=init_state, values=values)
+    wf_mat = _calc_mat_vec_wavefunction(block, n_qubits, init_state, values=values)
     assert equivalent_state(wf_pyq, wf_mat, atol=ATOL_32)
 
 
@@ -294,7 +306,7 @@ def test_qft_block(n_qubits: int) -> None:
 def test_random_qubit_support(n_qubits: int) -> None:
     dim = np.random.randint(1, n_qubits + 1)
     ops = [X, Y, Z, S, T] * 2
-    qubit_supports = np.random.choice(list(range(dim)), len(ops), replace=True)
+    qubit_supports = np.random.choice(dim, len(ops), replace=True)
     block = chain(
         *[op(q) for op, q in zip(ops, qubit_supports)],  # type: ignore [abstract]
     )

@@ -139,7 +139,7 @@ for i in range(n_epochs):
 ```
 
 Qadence offers some convenience functions to implement this training loop with advanced
-logging and metrics track features. You can refer to [this](../qml/qml_tools.md) for more details.
+logging and metrics track features. You can refer to [this tutorial](../qml/ml_tools.md) for more details.
 
 ## Results
 
