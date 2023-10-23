@@ -20,6 +20,7 @@ from qadence.blocks import (
 )
 from qadence.blocks.analog import ConstantAnalogRotation, WaitBlock
 from qadence.circuit import QuantumCircuit
+from qadence.errors import Errors
 from qadence.measurements import Measurements
 from qadence.parameters import stringify
 from qadence.types import BackendName, DiffMode, Endianness
@@ -217,6 +218,7 @@ class Backend(ABC):
         param_values: dict[str, Tensor] = {},
         n_shots: int = 1000,
         state: Tensor | None = None,
+        error: Errors | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         """Sample bit strings.

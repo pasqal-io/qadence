@@ -14,6 +14,7 @@ from qadence.backend import BackendName, ConvertedCircuit, ConvertedObservable
 from qadence.backends.utils import to_list_of_dicts
 from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
+from qadence.errors import Errors
 from qadence.measurements import Measurements
 from qadence.overlap import overlap_exact
 from qadence.states import zero_state
@@ -195,6 +196,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         n_shots: int = 1,
         state: Tensor | None = None,
+        error: Errors | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         if n_shots < 1:
@@ -215,17 +217,23 @@ class Backend(BackendInterface):
 
         wf = self.run(circuit=circuit, param_values=param_values, state=state)
         probs = torch.abs(torch.pow(wf, 2))
-        return list(
+        counters = list(
             map(
                 lambda _probs: _sample(
                     _probs=_probs,
                     n_shots=n_shots,
+                    error=error,
                     endianness=endianness,
                     n_qubits=circuit.abstract.n_qubits,
                 ),
                 probs,
             )
         )
+        if error is not None:
+            error_fn = error.get_error_fn()
+            return error_fn(counters=counters, n_qubits=circuit.abstract.n_qubits)
+        else:
+            return counters
 
     def assign_parameters(self, circuit: ConvertedCircuit, param_values: dict[str, Tensor]) -> Any:
         raise NotImplementedError
