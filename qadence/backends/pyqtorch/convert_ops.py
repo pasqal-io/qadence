@@ -5,10 +5,10 @@ from itertools import chain as flatten
 from operator import add
 from typing import Callable, Sequence
 
-import pyqtorch.modules as pyq
+import pyqtorch as pyq
 import sympy
 import torch
-from pyqtorch.core.utils import _apply_batch_gate
+from pyqtorch.apply import _apply_einsum as _apply_batch_gate
 from torch.nn import Module
 from torch.utils.checkpoint import checkpoint
 
@@ -84,12 +84,15 @@ def convert_block(
                 config=config,
             )
         else:
-            op = ParametricPyQOperation(n_qubits, block, config)
+            op = getattr(pyq, block.name)(block.qubit_support[0], config.get_param_name(block)[0])
         return [op]
     elif isinstance(block, MatrixBlock):
         return [PyQMatrixBlock(block, n_qubits, config)]
     elif isinstance(block, PrimitiveBlock):
-        return [PyQOperation(n_qubits, block)]
+        if len(block.qubit_support) == 1:
+            return [getattr(pyq, block.name)(block.qubit_support[0])]
+        else:
+            return [getattr(pyq, block.name)(block.qubit_support[0], block.qubit_support[1])]
     elif isinstance(block, CompositeBlock):
         ops = list(flatten(*(convert_block(b, n_qubits, config) for b in block.blocks)))
         if is_single_qubit_chain(block) and config.use_single_qubit_composition:
@@ -112,72 +115,6 @@ def convert_block(
             "with `add_interaction` first."
         )
         raise NotImplementedError(msg)
-
-
-class PyQOperation(Module):
-    def __init__(self, n_qubits: int, block: AbstractBlock):
-        super().__init__()
-        name = block.name[1:] if block.name.startswith("MC") else block.name
-        Op = getattr(pyq, name)
-        self.operation = Op(block.qubit_support, n_qubits)
-
-    # primitive blocks do not require any parameter value, hence the
-    # second empty argument added here
-    def forward(self, state: torch.Tensor, _: dict[str, torch.Tensor] = None) -> torch.Tensor:
-        return self.apply(self.matrices(), state)
-
-    def matrices(self, _: dict[str, torch.Tensor] = None) -> torch.Tensor:
-        return self.operation.matrix
-
-    def apply(self, matrices: torch.Tensor, state: torch.Tensor) -> torch.Tensor:
-        return self.operation.apply(matrices, state)
-
-
-class ParametricPyQOperation(Module):
-    def __init__(self, n_qubits: int, block: ParametricBlock, config: Configuration):
-        super().__init__()
-        name = block.name[1:] if block.name.startswith("MC") else block.name
-        Op = getattr(pyq, name)
-        self.operation = Op(block.qubit_support, n_qubits)
-        self.param_names = config.get_param_name(block)
-        num_params = len(self.param_names)
-        if num_params == 1:
-
-            def _fwd(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-                return self.apply(self.matrices(values), state)
-
-        else:
-
-            def _fwd(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-                op_params = {key: values[key] for key in self.param_names}
-                max_batch_size = max(p.size() for p in values.values())
-                new_values = {
-                    k: (v if v.size() == max_batch_size else v.repeat(max_batch_size, 1, 1))
-                    for k, v in op_params.items()
-                }
-                return self.apply(self.matrices(new_values), state)
-
-        if config.use_gradient_checkpointing:
-
-            def _forward(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-                return checkpoint(_fwd, state, values, use_reentrant=False)
-
-        else:
-
-            def _forward(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-                return _fwd(state, values)
-
-        self._forward = _forward
-
-    def matrices(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
-        thetas = torch.vstack([values[name] for name in self.param_names])
-        return self.operation.matrices(thetas)
-
-    def apply(self, matrices: torch.Tensor, state: torch.Tensor) -> torch.Tensor:
-        return self.operation.apply(matrices, state)
-
-    def forward(self, state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-        return self._forward(state, values)
 
 
 class PyQMatrixBlock(Module):

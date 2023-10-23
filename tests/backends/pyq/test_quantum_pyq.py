@@ -10,7 +10,7 @@ import pytest
 import strategies as st
 import torch
 from hypothesis import given, settings
-from pyqtorch.core.circuit import QuantumCircuit as PyQQuantumCircuit
+from pyqtorch.circuit import QuantumCircuit as PyQQuantumCircuit
 from sympy import acos
 from torch import Tensor
 

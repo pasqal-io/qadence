@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from math import prod
 from typing import Any
 
-import pyqtorch.modules as pyq
+import pyqtorch as pyq
 import torch
 from torch import Tensor
 
@@ -56,7 +56,7 @@ class Backend(BackendInterface):
 
         abstract = transpile(*transpilations)(circuit)  # type: ignore[call-overload]
         ops = convert_block(abstract.block, n_qubits=circuit.n_qubits, config=self.config)
-        native = pyq.QuantumCircuit(abstract.n_qubits, ops)
+        native = pyq.QuantumCircuit(abstract.n_qubits, ops, diff_mode="adjoint")
         return ConvertedCircuit(native=native, abstract=abstract, original=circuit)
 
     def observable(self, observable: AbstractBlock, n_qubits: int) -> ConvertedObservable:
