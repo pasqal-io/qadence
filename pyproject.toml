@@ -39,7 +39,7 @@ dependencies = [
     "jsonschema",
     "nevergrad",
     "scipy<1.11",
-    "pyqtorch",
+    "pyqtorch @ git+https://github.com/pasqal-io/pyqtorch.git@ds/remake",
     "matplotlib"
 ]
 
