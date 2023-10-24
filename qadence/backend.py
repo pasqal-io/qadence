@@ -6,6 +6,7 @@ from dataclasses import dataclass, fields
 from typing import Any, Callable, Iterator, Tuple
 
 from openfermion import QubitOperator
+from qadence.mitigations import Mitigations
 from torch import Tensor
 from torch.nn import Module
 
@@ -262,6 +263,7 @@ class Backend(ABC):
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
         protocol: Measurements | None = None,
+        mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         """Compute the expectation value of the `circuit` with the given `observable`.

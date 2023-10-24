@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
+from qadence.mitigations import Mitigations
 import qutip
 import torch
 from pulser import Register as PulserRegister
@@ -221,6 +222,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
         protocol: Measurements | None = None,
+        mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         state = self.run(circuit, param_values=param_values, state=state, endianness=endianness)

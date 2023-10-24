@@ -22,6 +22,7 @@ from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.logger import get_logger
 from qadence.measurements import Measurements
+from qadence.mitigations import Mitigations
 from qadence.utils import Endianness
 
 logger = get_logger(__name__)
@@ -48,6 +49,7 @@ class QuantumModel(nn.Module):
         backend: BackendName | str = BackendName.PYQTORCH,
         diff_mode: DiffMode = DiffMode.AD,
         protocol: Measurements | None = None,
+        mitigation: Mitigations | None = None,
         configuration: BackendConfiguration | dict | None = None,
     ):
         """Initialize a generic QuantumModel instance.
@@ -175,6 +177,7 @@ class QuantumModel(nn.Module):
         observable: list[ConvertedObservable] | ConvertedObservable | None = None,
         state: Optional[Tensor] = None,
         protocol: Measurements | None = None,
+        mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         """Compute expectation using the given backend.
@@ -194,6 +197,8 @@ class QuantumModel(nn.Module):
         params = self.embedding_fn(self._params, values)
         if protocol is None:
             protocol = self._protocol
+        if mitigation is None:
+            mitigation = self._mitigation
 
         return self.backend.expectation(
             circuit=self._circuit,
@@ -201,6 +206,7 @@ class QuantumModel(nn.Module):
             param_values=params,
             state=state,
             protocol=protocol,
+            mitigation=mitigation,
             endianness=endianness,
         )
 

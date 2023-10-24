@@ -6,6 +6,7 @@ from math import prod
 from typing import Any
 
 import pyqtorch.modules as pyq
+from qadence.mitigations.protocols import Mitigations
 import torch
 from torch import Tensor
 
@@ -177,6 +178,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
         protocol: Measurements | None = None,
+        mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         fn = self._looped_expectation if self.config.loop_expectation else self._batched_expectation
