@@ -156,7 +156,7 @@ def test_rotation_gates(batch_size: int, gate: ParametricBlock, n_qubits: int) -
 @pytest.mark.parametrize("gate", [MCRX, MCRY, MCRZ, MCPHASE])
 @pytest.mark.parametrize("n_qubits", [2, 4, 6])
 def test_controlled_parameterized_gates(gate: ParametricControlBlock, n_qubits: int) -> None:
-    qubits = np.random.choice(list(range(n_qubits)), size=n_qubits, replace=False).tolist()
+    qubits = np.random.choice(n_qubits, size=n_qubits, replace=False).tolist()
     control = tuple(qubits[:-1])
     target = qubits[-1]
     q = np.random.choice([*control, target])
@@ -171,7 +171,7 @@ def test_controlled_parameterized_gates(gate: ParametricControlBlock, n_qubits: 
 @pytest.mark.parametrize("gate", [CNOT, SWAP])
 @pytest.mark.parametrize("n_qubits", [2, 4, 6])
 def test_swap_cnot_gates(gate: AbstractBlock, n_qubits: int) -> None:
-    control, target = np.random.choice(list(range(n_qubits)), size=2, replace=False).tolist()
+    control, target = np.random.choice(n_qubits, size=2, replace=False).tolist()
     q = np.random.choice([control, target])
     block = chain(X(q), gate(control, target))  # type: ignore[operator]
     init_state = random_state(n_qubits)
@@ -195,7 +195,7 @@ def test_cswap_gate(n_qubits: int) -> None:
 @pytest.mark.parametrize("n_qubits", [3, 4, 6])
 def test_toffoli_gates(n_qubits: int) -> None:
     init_state = random_state(n_qubits)
-    target = np.random.choice(list(range(n_qubits)), size=1, replace=False)[0]
+    target = np.random.choice(n_qubits, size=1, replace=False)[0]
     control = tuple([qubit for qubit in range(n_qubits) if qubit != target])
     block = Toffoli(control, target)
     wf_pyq = run(n_qubits, block, state=init_state)
@@ -214,7 +214,7 @@ def test_hamevo_gate(n_qubits: int, generator_type: str) -> None:
         generator = generator.unsqueeze(0)
     elif generator_type == "block":
         ops = [X, Y] * 2
-        qubit_supports = np.random.choice(list(range(dim)), len(ops), replace=True)
+        qubit_supports = np.random.choice(dim, len(ops), replace=True)
         generator = chain(
             add(*[op(q) for op, q in zip(ops, qubit_supports)]),
             *[op(q) for op, q in zip(ops, qubit_supports)],
@@ -306,7 +306,7 @@ def test_qft_block(n_qubits: int) -> None:
 def test_random_qubit_support(n_qubits: int) -> None:
     dim = np.random.randint(1, n_qubits + 1)
     ops = [X, Y, Z, S, T] * 2
-    qubit_supports = np.random.choice(list(range(dim)), len(ops), replace=True)
+    qubit_supports = np.random.choice(dim, len(ops), replace=True)
     block = chain(
         *[op(q) for op, q in zip(ops, qubit_supports)],  # type: ignore [abstract]
     )

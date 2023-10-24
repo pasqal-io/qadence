@@ -56,7 +56,7 @@ def hamevo_generator_tensor() -> torch.Tensor:
 def hamevo_generator_block() -> AbstractBlock:
     n_qubits = 4
     ops = [X, Y] * 2
-    qubit_supports = np.random.choice(list(range(n_qubits)), len(ops), replace=True)
+    qubit_supports = np.random.choice(n_qubits, len(ops), replace=True)
     ham = chain(
         add(*[op(q) for op, q in zip(ops, qubit_supports)]),
         *[op(q) for op, q in zip(ops, qubit_supports)],
