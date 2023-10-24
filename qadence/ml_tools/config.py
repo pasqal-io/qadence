@@ -41,7 +41,7 @@ class TrainConfig:
     batch_size: int = 1
     """The batch_size to use when passing a list/tuple of torch.Tensors."""
     verbose: bool = True
-    """Whether or not to to be verbose during training."""
+    """Whether or not to print out metrics values during training."""
 
     def __post_init__(self) -> None:
         if self.folder:
