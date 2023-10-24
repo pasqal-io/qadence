@@ -13,7 +13,6 @@ from sympy import Basic
 from qadence.blocks.primitive import AbstractBlock
 from qadence.parameters import Parameter, ParamMap, evaluate
 from qadence.qubit_support import QubitSupport
-from qadence.register import Register
 from qadence.types import Interaction
 
 
@@ -81,13 +80,6 @@ class AnalogBlock(AbstractBlock):
         if self.tag is not None:
             s += rf" \[tag: {self.tag}]"
         return s
-
-    def compute_eigenvalues_generator(
-        self, register: Register, block: AbstractBlock, spacing: float
-    ) -> torch.Tensor:
-        from qadence import add_interaction
-
-        return add_interaction(register, block, spacing=spacing).eigenvalues_generator
 
 
 @dataclass(eq=False, repr=False)

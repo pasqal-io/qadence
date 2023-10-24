@@ -14,6 +14,7 @@ from pulser_simulation.simresults import SimulationResults
 from pulser_simulation.simulation import QutipEmulator
 from torch import Tensor
 
+from qadence import add_interaction
 from qadence.backend import Backend as BackendInterface
 from qadence.backend import BackendName, ConvertedCircuit, ConvertedObservable
 from qadence.backends.utils import to_list_of_dicts
@@ -86,7 +87,7 @@ def make_sequence(circ: QuantumCircuit, config: Configuration) -> Sequence:
     )
     sequence.add(zero_pulse, GLOBAL_CHANNEL, "wait-for-all")
 
-    add_pulses(sequence, circ.block, config, circ.register, spacing)
+    add_pulses(sequence, circ.block, config)
     sequence.measure()
 
     return sequence
@@ -123,6 +124,9 @@ class Backend(BackendInterface):
     config: Configuration = Configuration()
 
     def circuit(self, circ: QuantumCircuit) -> Sequence:
+        # set eigenvalues of any ConstantAnalogRotation blocks in circuit
+        add_interaction(circ, spacing=self.config.spacing)
+
         native = make_sequence(circ, self.config)
 
         return ConvertedCircuit(native=native, abstract=circ, original=circ)
