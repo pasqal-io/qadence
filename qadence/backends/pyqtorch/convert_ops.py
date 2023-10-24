@@ -76,15 +76,19 @@ def convert_block(
                 # TODO: use the hevo_algo configuration here to switch between different algorithms
                 # for executing the Hamiltonian evolution
                 operation=pyq.HamiltonianEvolution(
-                    block.qubit_support,
+                    list(block.qubit_support),
                     n_qubits,
                     n_steps=config.n_steps_hevo,
                 ),
                 block=block,
                 config=config,
             )
-        else:
+        elif block.n_supports == 1:
             op = getattr(pyq, block.name)(block.qubit_support[0], config.get_param_name(block)[0])
+        else:
+            op = getattr(pyq, block.name)(
+                block.qubit_support[0], block.qubit_support[1], config.get_param_name(block)[0]
+            )
         return [op]
     elif isinstance(block, MatrixBlock):
         return [PyQMatrixBlock(block, n_qubits, config)]
@@ -151,13 +155,13 @@ class PyQComposedBlock(Module):
         self, state: torch.Tensor, values: dict[str, torch.Tensor] | None = None
     ) -> torch.Tensor:
         batch_size = state.size(-1)
-        return self.apply(self.matrices(values, batch_size), state)
+        return self.apply(self.unitary(values, batch_size), state)
 
     def apply(self, matrices: torch.Tensor, state: torch.Tensor) -> torch.Tensor:
         batch_size = state.size(-1)
         return _apply_batch_gate(state, matrices, self.qubits, self.n_qubits, batch_size)
 
-    def matrices(self, values: dict[str, torch.Tensor] | None, batch_size: int) -> torch.Tensor:
+    def unitary(self, values: dict[str, torch.Tensor] | None, batch_size: int) -> torch.Tensor:
         perm = (2, 0, 1)  # We permute the dims since torch.bmm expects the batch_dim at 0.
 
         def _expand_mat(m: torch.Tensor) -> torch.Tensor:
@@ -172,7 +176,7 @@ class PyQComposedBlock(Module):
         # We reverse the list of tensors here since matmul is not commutative.
         return torch.permute(
             reduce(
-                torch.bmm, (_expand_mat(op.matrices(values)) for op in reversed(self.operations))
+                torch.bmm, (_expand_mat(op.unitary(values)) for op in reversed(self.operations))
             ),
             tuple(
                 torch.argsort(torch.tensor(perm))
@@ -364,9 +368,9 @@ class ScalePyQOperation(Module):
 
         self._forward = _forward
 
-    def matrices(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
+    def unitary(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
         thetas = values[self.param_name]
-        return (thetas * self.operation.matrices()).unsqueeze(2)
+        return (thetas * self.operation.unitary(values)).unsqueeze(2)
 
     def forward(self, state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
         return self._forward(state, values)

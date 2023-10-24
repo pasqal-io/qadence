@@ -288,11 +288,11 @@ def test_run_with_parametric_single_qubit_gates(
 
 
 def test_ugate_pure_pyqtorch() -> None:
-    import pyqtorch.modules as pyqtorch
+    import pyqtorch as pyq
 
     thetas = torch.rand(3)
-    state = pyqtorch.zero_state(n_qubits=1, dtype=torch.complex128)
-    pyqtorch_u = pyqtorch.U(qubits=[0], n_qubits=1)
+    state = pyq.zero_state(n_qubits=1, dtype=torch.complex128)
+    pyqtorch_u = pyq.U(qubits=[0], n_qubits=1)
     Qadence_u = U(0, phi=thetas[0], theta=thetas[1], omega=thetas[2])
     circ = QuantumCircuit(1, Qadence_u)
     backend = Backend()

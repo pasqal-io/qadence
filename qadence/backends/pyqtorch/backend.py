@@ -107,7 +107,7 @@ class Backend(BackendInterface):
             else:
                 batch_size = max([len(tensor) for tensor in param_values.values()])
             state = circuit.native.init_state(batch_size=batch_size)
-        state = circuit.native(state, param_values)
+        state = circuit.native.run(state, param_values)
 
         # make sure that the batch dimension is the first one, as standard
         # for PyTorch, and not the last one as done in PyQ
