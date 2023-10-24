@@ -84,20 +84,20 @@ class DifferentiableExpectation:
     observable: list[ConvertedObservable] | ConvertedObservable
     param_values: dict[str, Tensor]
     state: Tensor | None = None
-    protocol: Measurements | None = None
+    measurement: Measurements | None = None
     endianness: Endianness = Endianness.BIG
 
     def ad(self) -> Tensor:
         self.observable = (
             self.observable if isinstance(self.observable, list) else [self.observable]
         )
-        if self.protocol:
-            expectation_fn = self.protocol.get_measurement_fn()
+        if self.measurement:
+            expectation_fn = self.measurement.get_measurement_fn()
             expectations = expectation_fn(
                 circuit=self.circuit.original,
                 observables=[obs.original for obs in self.observable],
                 param_values=self.param_values,
-                options=self.protocol.options,
+                options=self.measurement.options,
                 state=self.state,
                 endianness=self.endianness,
             )
@@ -117,19 +117,19 @@ class DifferentiableExpectation:
         # wrapper which unpacks the parameters
         # as pytorch grads can only calculated w.r.t tensors
         # so we unpack the params, feed in the names separately
-        # as apply doesnt take keyword arguments
+        # as apply doesn't take keyword arguments
         # We also fold in the observable into the backend which makes
         # life easier in the custom autodiff.
         self.observable = (
             self.observable if isinstance(self.observable, list) else [self.observable]
         )
 
-        if self.protocol is not None:
+        if self.measurement is not None:
             expectation_fn = partial(
-                self.protocol.get_measurement_fn(),
+                self.measurement.get_measurement_fn(),
                 circuit=self.circuit.original,
                 observables=[obs.original for obs in self.observable],
-                options=self.protocol.options,
+                options=self.measurement.options,
                 state=self.state,
                 endianness=self.endianness,
             )
@@ -229,7 +229,7 @@ class DifferentiableBackend(nn.Module):
         observable: list[ConvertedObservable] | ConvertedObservable,
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
-        protocol: Measurements | None = None,
+        measurement: Measurements | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         """Compute the expectation value of a given observable.
@@ -239,7 +239,7 @@ class DifferentiableBackend(nn.Module):
             observable: A backend native observable to compute the expectation value from.
             param_values: A dict of values for symbolic substitution.
             state: An initial state.
-            protocol: A shot-based measurement protocol.
+            measurement: A shot-based measurement protocol.
             endianness: Endianness of the state.
 
         Returns:
@@ -252,7 +252,7 @@ class DifferentiableBackend(nn.Module):
             observable=observable,
             param_values=param_values,
             state=state,
-            protocol=protocol,
+            measurement=measurement,
             endianness=endianness,
         )
 

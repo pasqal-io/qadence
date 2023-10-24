@@ -220,7 +220,7 @@ class Backend(BackendInterface):
         observable: list[ConvertedObservable] | ConvertedObservable,
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
-        protocol: Measurements | None = None,
+        measurement: Measurements | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         state = self.run(circuit, param_values=param_values, state=state, endianness=endianness)

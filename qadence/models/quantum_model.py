@@ -48,7 +48,7 @@ class QuantumModel(nn.Module):
         observable: list[AbstractBlock] | AbstractBlock | None = None,
         backend: BackendName | str = BackendName.PYQTORCH,
         diff_mode: DiffMode = DiffMode.AD,
-        protocol: Measurements | None = None,
+        measurement: Measurements | None = None,
         configuration: BackendConfiguration | dict | None = None,
         error: Errors | None = None,
     ):
@@ -61,7 +61,7 @@ class QuantumModel(nn.Module):
             backend: A backend for circuit execution.
             diff_mode: A differentiability mode. Parameter shift based modes work on all backends.
                 AD based modes only on PyTorch based backends.
-            protocol: Optional measurement protocol. If None, use
+            measurement: Optional measurement protocol. If None, use
                 exact expectation value with a statevector simulator.
             configuration: Configuration for the backend.
 
@@ -94,7 +94,7 @@ class QuantumModel(nn.Module):
         self._observable = conv.observable
         self._backend_name = backend
         self._diff_mode = diff_mode
-        self._protocol = protocol
+        self._measurement = measurement
         self._error = error
 
         self._params = nn.ParameterDict(
@@ -180,7 +180,7 @@ class QuantumModel(nn.Module):
         values: dict[str, Tensor] = {},
         observable: list[ConvertedObservable] | ConvertedObservable | None = None,
         state: Optional[Tensor] = None,
-        protocol: Measurements | None = None,
+        measurement: Measurements | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         """Compute expectation using the given backend.
@@ -198,15 +198,15 @@ class QuantumModel(nn.Module):
             observable = self._observable
 
         params = self.embedding_fn(self._params, values)
-        if protocol is None:
-            protocol = self._protocol
+        if measurement is None:
+            measurement = self._measurement
 
         return self.backend.expectation(
             circuit=self._circuit,
             observable=observable,
             param_values=params,
             state=state,
-            protocol=protocol,
+            measurement=measurement,
             endianness=endianness,
         )
 
@@ -224,7 +224,7 @@ class QuantumModel(nn.Module):
             "observable": abs_obs,
             "backend": self._backend_name,
             "diff_mode": self._diff_mode,
-            "protocol": self._protocol._to_dict() if self._protocol is not None else {},
+            "measurement": self._measurement._to_dict() if self._measurement is not None else {},
             "backend_configuration": asdict(self.backend.backend.config),  # type: ignore
         }
         param_dict_conv = {}
@@ -246,7 +246,7 @@ class QuantumModel(nn.Module):
             ),
             backend=qm_dict["backend"],
             diff_mode=qm_dict["diff_mode"],
-            protocol=Measurements._from_dict(qm_dict["protocol"]),
+            measurement=Measurements._from_dict(qm_dict["measurement"]),
             configuration=config_factory(qm_dict["backend"], qm_dict["backend_configuration"]),
         )
 

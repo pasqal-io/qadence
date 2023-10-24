@@ -127,7 +127,7 @@ class Backend(BackendInterface):
         observable: list[ConvertedObservable] | ConvertedObservable,
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
-        protocol: Measurements | None = None,
+        measurement: Measurements | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         state = self.run(
@@ -151,7 +151,7 @@ class Backend(BackendInterface):
         observable: list[ConvertedObservable] | ConvertedObservable,
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
-        protocol: Measurements | None = None,
+        measurement: Measurements | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         state = zero_state(circuit.abstract.n_qubits, batch_size=1) if state is None else state
@@ -177,7 +177,7 @@ class Backend(BackendInterface):
         observable: list[ConvertedObservable] | ConvertedObservable,
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
-        protocol: Measurements | None = None,
+        measurement: Measurements | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         fn = self._looped_expectation if self.config.loop_expectation else self._batched_expectation
@@ -186,7 +186,7 @@ class Backend(BackendInterface):
             observable=observable,
             param_values=param_values,
             state=state,
-            protocol=protocol,
+            measurement=measurement,
             endianness=endianness,
         )
 

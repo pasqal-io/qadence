@@ -153,7 +153,7 @@ class Backend(BackendInterface):
         observable: list[ConvertedObservable] | ConvertedObservable,
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
-        protocol: Measurements | None = None,
+        measurement: Measurements | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         # Do not flip endianness here because then we would have to reverse the observable

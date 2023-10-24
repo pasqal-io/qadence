@@ -214,7 +214,7 @@ class TransformedModule(torch.nn.Module):
         values: dict[str, torch.Tensor],
         observable: List[ConvertedObservable] | ConvertedObservable | None = None,
         state: torch.Tensor | None = None,
-        protocol: Measurements | None = None,
+        measurement: Measurements | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         """
@@ -228,7 +228,7 @@ class TransformedModule(torch.nn.Module):
             values=self._transform_x(values),
             observable=observable if observable is not None else self.model._observable,
             state=state,
-            protocol=protocol,
+            measurement=measurement,
             endianness=endianness,
         )
         return self._output_scaling * exp + self._output_shifting

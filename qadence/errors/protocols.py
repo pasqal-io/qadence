@@ -1,0 +1,2 @@
+class Errors():
+    pass # placeholder

@@ -46,7 +46,7 @@ class QNN(QuantumModel):
         transform: Callable[[Tensor], Tensor] = None,  # transform output of the QNN
         backend: BackendName = BackendName.PYQTORCH,
         diff_mode: DiffMode = DiffMode.AD,
-        protocol: Measurements | None = None,
+        measurement: Measurements | None = None,
         configuration: BackendConfiguration | dict | None = None,
     ):
         """Initialize the QNN
@@ -60,7 +60,7 @@ class QNN(QuantumModel):
             transform: A transformation applied to the output of the QNN.
             backend: The chosen quantum backend.
             diff_mode: The differentiation engine to use. Choices 'gpsr' or 'ad'.
-            protocol: optional measurement protocol. If None,
+            measurement: optional measurement protocol. If None,
                 use exact expectation value with a statevector simulator
             configuration: optional configuration for the backend
 
@@ -70,7 +70,7 @@ class QNN(QuantumModel):
             observable=observable,
             backend=backend,
             diff_mode=diff_mode,
-            protocol=protocol,
+            measurement=measurement,
             configuration=configuration,
         )
 
@@ -83,7 +83,7 @@ class QNN(QuantumModel):
         self,
         values: dict[str, Tensor] | Tensor = None,
         state: Tensor | None = None,
-        protocol: Measurements | None = None,
+        measurement: Measurements | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         """Forward pass of the model
@@ -110,11 +110,11 @@ class QNN(QuantumModel):
             values = {}
         if not isinstance(values, dict):
             values = self._format_to_dict(values)
-        if protocol is None:
-            protocol = self._protocol
+        if measurement is None:
+            measurement = self._measurement
 
         return self.transform(
-            self.expectation(values=values, state=state, protocol=protocol, endianness=endianness)
+            self.expectation(values=values, state=state, measurement=measurement, endianness=endianness)
         )
 
     def _format_to_dict(self, values: Tensor) -> dict[str, Tensor]:

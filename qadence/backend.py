@@ -154,7 +154,7 @@ class Backend(ABC):
         self, circuit: QuantumCircuit, observable: list[AbstractBlock] | AbstractBlock | None = None
     ) -> Converted:
         """Convert an abstract circuit (and optionally and observable) to their native
-        representation. Additionally this function constructs an embedding function which maps from
+        representation. Additionally, this function constructs an embedding function which maps from
         user-facing parameters to device parameters (read more on parameter embedding
         [here][qadence.blocks.embedding.embedding]).
         """
@@ -263,7 +263,7 @@ class Backend(ABC):
         observable: list[ConvertedObservable] | ConvertedObservable,
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
-        protocol: Measurements | None = None,
+        measurement: Measurements | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         """Compute the expectation value of the `circuit` with the given `observable`.
@@ -273,6 +273,8 @@ class Backend(ABC):
             param_values: _**Already embedded**_ parameters of the circuit. See
                 [`embedding`][qadence.blocks.embedding.embedding] for more info.
             state: Initial state.
+            measurement: Optional measurement protocol. If None, use
+                exact expectation value with a statevector simulator.
             endianness: Endianness of the resulting bitstrings.
         """
         raise NotImplementedError
