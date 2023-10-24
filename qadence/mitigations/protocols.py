@@ -10,7 +10,7 @@ PROTOCOL_TO_MODULE = {
 
 
 @dataclass
-class ErrorMitigation:
+class Mitigations:
     READOUT = "readout"
     ZNE = "zne"
 
@@ -18,7 +18,7 @@ class ErrorMitigation:
         self.protocol: str = protocol
         self.options: dict = options
 
-    def get_errormitigation_fn(self) -> Callable:
+    def get_mitigation_fn(self) -> Callable:
         try:
             module = importlib.import_module(PROTOCOL_TO_MODULE[self.protocol])
         except KeyError:
@@ -30,7 +30,7 @@ class ErrorMitigation:
         return {"protocol": self.protocol, "options": self.options}
 
     @classmethod
-    def _from_dict(cls, d: dict) -> ErrorMitigation | None:
+    def _from_dict(cls, d: dict) -> Mitigations | None:
         if d:
             return cls(d["protocol"], **d["options"])
         return None
