@@ -112,7 +112,7 @@ def train(
             else:
                 raise NotImplementedError("Unsupported dataloader type!")
 
-            if iteration % config.print_every == 0:
+            if iteration % config.print_every == 0 and config.verbose:
                 print_metrics(loss, metrics, iteration)
 
             if iteration % config.write_every == 0:

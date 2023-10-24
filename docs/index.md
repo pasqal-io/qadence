@@ -24,7 +24,7 @@ In following are some examples of Qadence possibilites in the analog, digital-an
 ## Analog emulation of a perfect state transfer
 
 This next example showcases the construction and sampling of a system that admits a perfect state transfer between the two edge qubits of a three qubit register laid out in a
-line. This relies on time-evolving a Hamiltonian for a custom defined qubit interation until $t=\frac{\pi}{\sqrt 2}$.
+line. This relies on time-evolving a Hamiltonian for a custom defined qubit interaction until $t=\frac{\pi}{\sqrt 2}$.
 
 ```python exec="on" source="material-block" result="json"
 from torch import pi
@@ -75,7 +75,7 @@ from qadence.divergences import js_divergence # markdown-exec: hide
 js = js_divergence(samples[0], Counter({"11": 100})) # markdown-exec: hide
 assert js < 0.01 # markdown-exec: hide
 
-# Interacting qubits as close together.
+# Interacting qubits are close to each other.
 register = Register.from_coordinates([(0,0), (0,5)])
 samples = sample(register, AnalogRX(pi))
 print(f"distance =  5: {samples = }") # markdown-exec: hide
@@ -138,7 +138,7 @@ pip install qadence
 To install other backends or the visualization tool, please use:
 
 ```bash
-pip install "qadence[braket, pulser, visualization]"
+pip install "qadence[braket,pulser,visualization]"
 ```
 
 !!! warning
@@ -156,11 +156,34 @@ pip install "qadence[braket, pulser, visualization]"
     conda install python-graphviz
     ```
 
+## Install from source
+
+We recommend to use the [`hatch`](https://hatch.pypa.io/latest/) environment manager to install `qadence` from source:
+
+```bash
+python -m pip install hatch
+
+# get into a shell with all the dependencies
+python -m hatch shell
+
+# run a command within the virtual environment with all the dependencies
+python -m hatch run python my_script.py
+```
+
+!!! warning
+    `hatch` will not combine nicely with other environment managers such Conda. If you want to use Conda,
+    install it from source using `pip`:
+
+    ```bash
+    # within the Conda environment
+    python -m pip install -e .
+    ```
+
 ## Citation
 
 If you use Qadence for a publication, we kindly ask you to cite our work using the following BibTex entry:
 
-```
+```latex
 @misc{qadence2023pasqal,
   url = {https://github.com/pasqal-io/qadence},
   title = {Qadence: {A} {D}igital-analog quantum programming interface.},

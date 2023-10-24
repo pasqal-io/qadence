@@ -178,12 +178,10 @@ class N(PrimitiveBlock):
     @property
     def generator(self) -> None:
         raise ValueError("Property `generator` not available for non-unitary operator.")
-        return None
 
     @property
     def eigenvalues_generator(self) -> None:
         raise ValueError("Property `eigenvalues_generator` not available for non-unitary operator.")
-        return None
 
     @property
     def eigenvalues(self) -> Tensor:

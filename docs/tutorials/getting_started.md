@@ -23,7 +23,7 @@ which follow a more object-oriented way to construct circuits and express progra
 	# display(kron_block)  # un-comment this line
 	from qadence.draw import html_string # markdown-exec: hide
 	from qadence import chain # markdown-exec: hide
-	print(html_string(kron(X(0), Y(1))), size="2,2") # markdown-exec: hide
+	print(html_string(kron(X(0), Y(1)))) # markdown-exec: hide
 	```
 
 ## Primitive blocks
@@ -41,7 +41,7 @@ rx_gate = RX(0, 0.5)
 
 from qadence.draw import html_string # markdown-exec: hide
 from qadence import chain # markdown-exec: hide
-print(html_string(chain(rx_gate), size="2,2")) # markdown-exec: hide
+print(html_string(chain(rx_gate))) # markdown-exec: hide
 ```
 
 ```python exec="on" source="material-block" html="1"
@@ -51,7 +51,7 @@ from qadence import CNOT
 cnot_gate = CNOT(0, 1)
 from qadence.draw import html_string # markdown-exec: hide
 from qadence import chain # markdown-exec: hide
-print(html_string(chain(cnot_gate), size="2,2")) # markdown-exec: hide
+print(html_string(chain(cnot_gate))) # markdown-exec: hide
 ```
 
 A list of all instances of primitive blocks (also referred to as *operations*) can be found [here](../qadence/operations.md).
@@ -70,14 +70,14 @@ from qadence import X, chain
 # Chaining on the same qubit using a call to the function.
 chain_x = chain(X(0), X(0))
 from qadence.draw import html_string # markdown-exec: hide
-print(html_string(chain_x, size="2,2")) # markdown-exec: hide
+print(html_string(chain_x)) # markdown-exec: hide
 ```
 ```python exec="on" source="material-block" html="1" session="i-xx"
 # Chaining on different qubits using the operator overload.
 # Identical to the kron operation.
 chain_xx = X(0) * X(1)
 from qadence.draw import html_string # markdown-exec: hide
-print(html_string(chain_xx, size="2,2")) # markdown-exec: hide
+print(html_string(chain_xx)) # markdown-exec: hide
 ```
 
 - [**kron**][qadence.blocks.utils.kron] applies a set of blocks in parallel (simultaneously) on *disjoint qubit support* and results in a `KronBlock` type. This is akin to applying a tensor product of the sub-blocks with the `@` operator.
@@ -87,7 +87,7 @@ from qadence import X, kron
 
 kron_xx = kron(X(0), X(1))  # Equivalent to X(0) @ X(1)
 from qadence.draw import html_string # markdown-exec: hide
-print(html_string(kron_xx, size="2,2")) # markdown-exec: hide
+print(html_string(kron_xx)) # markdown-exec: hide
 ```
 
 For the digital case, it should be noted that `kron` and `chain` are semantically equivalent up to the diagrammatic representation as `chain` implicitly fills blank wires with identities.
@@ -126,7 +126,7 @@ composite_block = kron(xy, CNOT(3,4))
 final_block = chain(composite_block, composite_block)
 
 from qadence.draw import html_string # markdown-exec: hide
-print(html_string(final_block, size="4,4")) # markdown-exec: hide
+print(html_string(final_block)) # markdown-exec: hide
 ```
 
 ## Block execution

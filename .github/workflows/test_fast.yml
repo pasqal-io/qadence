@@ -50,7 +50,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out Qadence
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.ref }}
       - name: Set up Python
@@ -104,4 +104,5 @@ jobs:
       run: |
         git config user.name "GitHub Actions"
         git config user.email "actions@github.com"
+        git fetch origin gh-pages
         hatch -v run docs:mike deploy --push --update-aliases ${{ github.ref_name }} latest
