@@ -17,6 +17,16 @@ from qadence.types import AlgoHEvo, Interaction
 logger = get_logger(__name__)
 
 
+def default_passes(config: Configuration) -> list[Callable]:
+    return [
+        lambda circ: add_interaction(circ, interaction=config.interaction),
+        lambda circ: blockfn_to_circfn(chain_single_qubit_ops)(circ)
+        if config.use_single_qubit_composition
+        else blockfn_to_circfn(flatten)(circ),
+        blockfn_to_circfn(scale_primitive_blocks_only),
+    ]
+
+
 @dataclass
 class Configuration(BackendConfiguration):
     algo_hevo: AlgoHEvo = AlgoHEvo.EXP
@@ -38,18 +48,18 @@ class Configuration(BackendConfiguration):
     """When computing batches of expectation values, only allocate one wavefunction and loop over
     the batch of parameters to only allocate a single wavefunction at any given time."""
 
-    # this post init is needed because of the way dataclasses
-    # inherit attributes and class MRO. See here:
-    # https://stackoverflow.com/a/53085935
-    def __post_init__(self) -> None:
-        super().__post_init__()
+    # # this post init is needed because of the way dataclasses
+    # # inherit attributes and class MRO. See here:
+    # # https://stackoverflow.com/a/53085935
+    # def __post_init__(self) -> None:
+    #     super().__post_init__()
 
-        # apply default transpilation passes for PyQTorch backend
-        if self.transpilation_passes is None:
-            self.transpilation_passes = [
-                lambda circ: add_interaction(circ, interaction=self.interaction),
-                lambda circ: blockfn_to_circfn(chain_single_qubit_ops)(circ)
-                if self.use_single_qubit_composition
-                else blockfn_to_circfn(flatten)(circ),
-                blockfn_to_circfn(scale_primitive_blocks_only),
-            ]
+    #     # apply default transpilation passes for PyQTorch backend
+    #     if self.transpilation_passes is None:
+    #         self.transpilation_passes = [
+    #             lambda circ: add_interaction(circ, interaction=self.interaction),
+    #             lambda circ: blockfn_to_circfn(chain_single_qubit_ops)(circ)
+    #             if self.use_single_qubit_composition
+    #             else blockfn_to_circfn(flatten)(circ),
+    #             blockfn_to_circfn(scale_primitive_blocks_only),
+    #         ]

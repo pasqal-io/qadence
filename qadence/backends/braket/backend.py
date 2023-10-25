@@ -20,7 +20,7 @@ from qadence.overlap import overlap_exact
 from qadence.transpile import transpile
 from qadence.utils import Endianness
 
-from .config import Configuration
+from .config import Configuration, default_passes
 from .convert_ops import convert_block
 
 
@@ -57,7 +57,8 @@ class Backend(BackendInterface):
 
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:
         passes = self.config.transpilation_passes
-        assert passes is not None  # to please MyPy
+        if passes is None:
+            passes = default_passes
 
         if len(passes) > 0:
             circuit = transpile(*passes)(circuit)

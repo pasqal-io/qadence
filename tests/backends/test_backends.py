@@ -318,3 +318,9 @@ def test_output_cphase_batching(bsize: int) -> None:
 
     assert torch.allclose(exp_list[0], exp_list[1])
     assert equivalent_state(wf_list[0], wf_list[1])
+
+
+def test_custom_transpilation_passes() -> None:
+    backend_list = [BackendName.BRAKET, BackendName.PYQTORCH]
+
+    # TODO

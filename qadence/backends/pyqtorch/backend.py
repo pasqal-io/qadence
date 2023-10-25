@@ -25,7 +25,7 @@ from qadence.transpile import (
 )
 from qadence.utils import Endianness, int_to_basis
 
-from .config import Configuration
+from .config import Configuration, default_passes
 from .convert_ops import convert_block, convert_observable
 
 
@@ -45,7 +45,8 @@ class Backend(BackendInterface):
 
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:
         passes = self.config.transpilation_passes
-        assert passes is not None  # to please MyPy
+        if passes is None:
+            passes = default_passes(self.config)
 
         if len(passes) > 0:
             circuit = transpile(*passes)(circuit)
