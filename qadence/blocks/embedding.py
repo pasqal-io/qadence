@@ -21,6 +21,10 @@ from qadence.parameters import evaluate, stringify, torchify
 StrTensorDict = dict[str, Tensor]
 
 
+DEVICE = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+torch.set_default_device(DEVICE)
+
+
 def unique(x: Iterable) -> List:
     return list(set(x))
 
@@ -109,6 +113,7 @@ def embedding(
         for e in constant_expressions + unique_const_matrices:
             embedded_params[e] = params[stringify(e)]
 
+        embedded_params = {k: v.to(device=DEVICE) for k, v in embedded_params.items()}
         if to_gate_params:
             gate_lvl_params: StrTensorDict = {}
             for uuid, e in uuid_to_expr.items():
@@ -133,4 +138,4 @@ def embedding(
             for expr in unique_const_matrices
         }
     )
-    return params, embedding_fn
+    return {k: v.to(device=DEVICE) for k, v in params.items()}, embedding_fn

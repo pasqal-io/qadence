@@ -3,7 +3,8 @@ from __future__ import annotations
 from typing import Callable
 
 from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, TimeRemainingColumn
-from torch import Tensor
+from torch import cuda, set_default_device
+from torch import device as torchdevice
 from torch.nn import Module
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
@@ -11,17 +12,20 @@ from torch.utils.tensorboard import SummaryWriter
 
 from qadence.logger import get_logger
 from qadence.ml_tools.config import TrainConfig
-from qadence.ml_tools.data import DictDataLoader
+from qadence.ml_tools.data import DataLoaderType, DictDataLoader, dataloader_to_device
 from qadence.ml_tools.optimize_step import optimize_step
 from qadence.ml_tools.printing import print_metrics, write_tensorboard
 from qadence.ml_tools.saveload import load_checkpoint, write_checkpoint
 
 logger = get_logger(__name__)
 
+DEVICE = torchdevice("cuda") if cuda.is_available() else torchdevice("cpu")
+set_default_device(DEVICE)
+
 
 def train(
     model: Module,
-    dataloader: DictDataLoader | DataLoader | list[Tensor] | tuple[Tensor, Tensor] | None,
+    dataloader: DataLoaderType,
     optimizer: Optimizer,
     config: TrainConfig,
     loss_fn: Callable,
@@ -134,6 +138,9 @@ def train(
         assert len(dataloader) == 2, "Please provide exactly two torch tensors."
         x, y = dataloader
         dataloader = to_dataloader(x=x, y=y, batch_size=config.batch_size)
+
+    dataloader = dataloader_to_device(dataloader, device=device)
+
     with progress:
         dl_iter = iter(dataloader) if isinstance(dataloader, DictDataLoader) else None
 

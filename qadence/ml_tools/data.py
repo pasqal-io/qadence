@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Union
 
-import torch
+from torch import Tensor
+from torch import device as torchdevice
 from torch.utils.data import DataLoader, TensorDataset
 
 
@@ -23,10 +25,35 @@ class DictDataLoader:
         self.iters = {key: iter(dl) for key, dl in self.dataloaders.items()}
         return self
 
-    def __next__(self) -> dict[str, torch.Tensor]:
+    def __next__(self) -> dict[str, Tensor]:
         return {key: next(it) for key, it in self.iters.items()}
 
+    def to(self, device: torchdevice) -> DictDataLoader:
+        self.iters = {
+            key: DataLoader([dataloader_to_device(t, device=device) for t in dl])
+            for key, dl in self.dataloaders.items()
+        }
+        return self
 
-def to_dataloader(x: torch.Tensor, y: torch.Tensor, batch_size: int = 1) -> DataLoader:
+
+DataLoaderType = Union[DictDataLoader, DataLoader, list[Tensor], tuple[Tensor, Tensor], None]
+
+
+def to_dataloader(x: Tensor, y: Tensor, batch_size: int = 1) -> DataLoader:
     """Convert two torch tensors x and y to a Dataloader."""
     return DataLoader(TensorDataset(x, y), batch_size=batch_size)
+
+
+def dataloader_to_device(
+    dataloader: DataLoaderType, device: torchdevice = torchdevice("cpu")
+) -> DataLoaderType:
+    if isinstance(dataloader, Tensor):
+        return dataloader.to(device=device)
+    elif isinstance(dataloader, (list, tuple)):
+        return list([t.to(device=device) for t in dataloader])
+    elif isinstance(dataloader, (DataLoader)):
+        return DataLoader([dataloader_to_device(t, device=device) for t in dataloader])
+    elif isinstance(dataloader, DictDataLoader):
+        return dataloader.to(device=device)
+    else:
+        return dataloader
