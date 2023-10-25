@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections import Counter
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, fields
 from typing import Any, Callable, Iterator, Tuple
 
 from openfermion import QubitOperator
@@ -20,9 +20,12 @@ from qadence.blocks import (
 )
 from qadence.blocks.analog import ConstantAnalogRotation, WaitBlock
 from qadence.circuit import QuantumCircuit
+from qadence.logger import get_logger
 from qadence.measurements import Measurements
 from qadence.parameters import stringify
 from qadence.types import BackendName, DiffMode, Endianness
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -31,7 +34,14 @@ class BackendConfiguration:
     use_sparse_observable: bool = False
     use_gradient_checkpointing: bool = False
     use_single_qubit_composition: bool = False
-    transpilation_passes: list[Callable] = field(default_factory=list)
+    transpilation_passes: list[Callable] | None = None
+
+    def __post_init__(self) -> None:
+        if self.transpilation_passes is not None:
+            assert all(
+                [callable(f) for f in self.transpilation_passes]
+            ), "Wrong transpilation passes supplied"
+            logger.warning("Custom transpilation passes cannot be serialized in JSON format!")
 
     def available_options(self) -> str:
         """Return as a string the available fields with types of the configuration

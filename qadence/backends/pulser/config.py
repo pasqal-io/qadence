@@ -7,8 +7,11 @@ from pulser_simulation.simconfig import SimConfig
 
 from qadence.backend import BackendConfiguration
 from qadence.blocks.analog import Interaction
+from qadence.logger import get_logger
 
 from .devices import Device
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -53,5 +56,6 @@ class Configuration(BackendConfiguration):
     NN interaction is support. XY interaction is possible but not implemented"""
 
     def __post_init__(self) -> None:
+        super().__post_init__()
         if self.sim_config is not None and not isinstance(self.sim_config, SimConfig):
             raise TypeError("Wrong 'sim_config' attribute type, pass a valid SimConfig object!")

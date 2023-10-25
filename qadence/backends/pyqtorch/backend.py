@@ -44,11 +44,15 @@ class Backend(BackendInterface):
     config: Configuration = Configuration()
 
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:
-        transpilations = self.config.transpilation_passes
-        abstract = transpile(*transpilations)(circuit)  # type: ignore[call-overload]
-        ops = convert_block(abstract.block, n_qubits=circuit.n_qubits, config=self.config)
-        native = pyq.QuantumCircuit(abstract.n_qubits, ops)
-        return ConvertedCircuit(native=native, abstract=abstract, original=circuit)
+        passes = self.config.transpilation_passes
+        assert passes is not None  # to please MyPy
+
+        if len(passes) > 0:
+            circuit = transpile(*passes)(circuit)
+
+        ops = convert_block(circuit.block, n_qubits=circuit.n_qubits, config=self.config)
+        native = pyq.QuantumCircuit(circuit.n_qubits, ops)
+        return ConvertedCircuit(native=native, abstract=circuit, original=circuit)
 
     def observable(self, observable: AbstractBlock, n_qubits: int) -> ConvertedObservable:
         # make sure only leaves, i.e. primitive blocks are scaled

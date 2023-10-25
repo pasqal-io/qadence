@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 from qadence.backend import BackendConfiguration
+from qadence.logger import get_logger
 from qadence.transpile import (
     add_interaction,
     blockfn_to_circfn,
@@ -12,6 +13,8 @@ from qadence.transpile import (
     scale_primitive_blocks_only,
 )
 from qadence.types import AlgoHEvo, Interaction
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -39,8 +42,10 @@ class Configuration(BackendConfiguration):
     # inherit attributes and class MRO. See here:
     # https://stackoverflow.com/a/53085935
     def __post_init__(self) -> None:
-        # default transpilation passes for PyQTorch backend
-        if len(self.transpilation_passes) == 0:
+        super().__post_init__()
+
+        # apply default transpilation passes for PyQTorch backend
+        if self.transpilation_passes is None:
             self.transpilation_passes = [
                 lambda circ: add_interaction(circ, interaction=self.interaction),
                 lambda circ: blockfn_to_circfn(chain_single_qubit_ops)(circ)
