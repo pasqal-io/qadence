@@ -114,7 +114,9 @@ class QNN(QuantumModel):
             measurement = self._measurement
 
         return self.transform(
-            self.expectation(values=values, state=state, measurement=measurement, endianness=endianness)
+            self.expectation(
+                values=values, state=state, measurement=measurement, endianness=endianness
+            )
         )
 
     def _format_to_dict(self, values: Tensor) -> dict[str, Tensor]:

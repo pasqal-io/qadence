@@ -1,2 +1,2 @@
-class Errors():
-    pass # placeholder
+class Errors:
+    pass  # placeholder

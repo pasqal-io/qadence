@@ -13,6 +13,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.register import Register
 from qadence.types import DiffMode
 from qadence.utils import Endianness
+from qadence.errors import Errors
 
 # Modules to be automatically added to the qadence namespace
 __all__ = ["run", "sample", "expectation"]
@@ -94,7 +95,7 @@ def sample(
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> list[Counter]:
     """Convenience wrapper for the `QuantumModel.sample` method.  This is a
-    `functools.singledispatch`ed function so it can be called with a number of different arguments.
+    `functools.singledispatch`ed function, so it can be called with a number of different arguments.
     See the examples of the [`expectation`][qadence.execution.expectation] function. This function
     works exactly the same.
 
@@ -120,6 +121,7 @@ def _(
     state: Union[Tensor, None] = None,
     n_shots: int = 100,
     backend: BackendName = BackendName.PYQTORCH,
+    error: Errors | None = None,
     endianness: Endianness = Endianness.BIG,
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> list[Counter]:
@@ -130,6 +132,7 @@ def _(
         param_values=conv.embedding_fn(conv.params, values),
         n_shots=n_shots,
         state=state,
+        error=error,
         endianness=endianness,
     )
 
@@ -162,7 +165,7 @@ def expectation(
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> Tensor:
     """Convenience wrapper for the `QuantumModel.expectation` method.  This is a
-    `functools.singledispatch`ed function so it can be called with a number of different arguments
+    `functools.singledispatch`ed function, so it can be called with a number of different arguments
     (see in the examples).
 
     Arguments:

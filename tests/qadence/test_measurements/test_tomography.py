@@ -327,7 +327,7 @@ def test_basic_tomography_for_backend_forward_pass(circuit: QuantumCircuit) -> N
             exp_tomo = qm.expectation(
                 values=inputs,
                 measurement=Measurements(
-                    measurement=Measurements.TOMOGRAPHY,
+                    protocol=Measurements.TOMOGRAPHY,
                     options=kwargs,
                 ),
             )[0]
@@ -352,7 +352,7 @@ def test_basic_tomography_for_quantum_model(circuit: QuantumCircuit) -> None:
     kwargs = {"n_shots": 100000}
     estimated_values = model.expectation(
         inputs,
-        measurement=Measurements(measurement=Measurements.TOMOGRAPHY, options=kwargs),
+        measurement=Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs),
     )
     pyqtorch_backend = backend_factory(backend=backend, diff_mode=diff_mode)
     (conv_circ, conv_obs, embed, params) = pyqtorch_backend.convert(circuit, observable)
@@ -376,7 +376,7 @@ def test_basic_list_observables_tomography_for_quantum_model(circuit: QuantumCir
     kwargs = {"n_shots": 100000}
     estimated_values = model.expectation(
         inputs,
-        measurement=Measurements(measurement=Measurements.TOMOGRAPHY, options=kwargs),
+        measurement=Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs),
     )
     pyqtorch_backend = backend_factory(BackendName.PYQTORCH, diff_mode=DiffMode.GPSR)
     (conv_circ, conv_obs, embed, params) = pyqtorch_backend.convert(
@@ -437,7 +437,7 @@ def test_basic_tomography_for_parametric_circuit_forward_pass(
     kwargs = {"n_shots": 100000}
     estimated_values = model.expectation(
         values=values,
-        measurement=Measurements(measurement=Measurements.TOMOGRAPHY, options=kwargs),
+        measurement=Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs),
     )
     pyqtorch_backend = backend_factory(BackendName.PYQTORCH, diff_mode=DiffMode.GPSR)
     (conv_circ, conv_obs, embed, params) = pyqtorch_backend.convert(circuit, observable)
@@ -483,7 +483,7 @@ def test_forward_and_backward_passes_with_qnn(observable: AbstractBlock, accepta
     circuit = QuantumCircuit(n_qubits, fm, ansatz)
     values = {"phi": torch.rand(batch_size, requires_grad=True)}
 
-    protocol = Measurements(measurement=Measurements.TOMOGRAPHY, options=kwargs)
+    measurement = Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs)
 
     model_with_psr = QNN(circuit=circuit, observable=observable, diff_mode=DiffMode.GPSR)
     model_with_psr_and_init = QNN(
@@ -540,7 +540,7 @@ def test_partial_derivatives_with_qnn(observable: AbstractBlock, acceptance: flo
     model_with_psr.zero_grad()
     expectation_tomo = model_with_psr.expectation(
         values=values,
-        measurement=Measurements(measurement=Measurements.TOMOGRAPHY, options=kwargs),
+        measurement=Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs),
     )
     dexpval_tomo_phi = torch.autograd.grad(
         expectation_tomo,
@@ -636,7 +636,7 @@ def test_high_order_derivatives_with_qnn(observable: AbstractBlock, acceptance: 
     model_with_psr.zero_grad()
     expectation_tomo = model_with_psr.expectation(
         values=values,
-        measurement=Measurements(measurement=Measurements.TOMOGRAPHY, options=kwargs),
+        measurement=Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs),
     )
     dexpval_tomo_phi = torch.autograd.grad(
         expectation_tomo,
@@ -700,6 +700,6 @@ def test_chemistry_hamiltonian() -> None:
     )
     estim = model.expectation(
         values={},
-        measurement=Measurements(measurement=Measurements.TOMOGRAPHY, options=kwargs),
+        measurement=Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs),
     )
     assert torch.allclose(estim, exact, atol=LOW_ACCEPTANCE)

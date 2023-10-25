@@ -222,7 +222,6 @@ class Backend(BackendInterface):
                 lambda _probs: _sample(
                     _probs=_probs,
                     n_shots=n_shots,
-                    error=error,
                     endianness=endianness,
                     n_qubits=circuit.abstract.n_qubits,
                 ),

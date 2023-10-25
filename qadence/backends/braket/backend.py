@@ -15,6 +15,7 @@ from qadence.backend import BackendName, ConvertedCircuit, ConvertedObservable
 from qadence.backends.utils import to_list_of_dicts
 from qadence.blocks import AbstractBlock, block_to_tensor
 from qadence.circuit import QuantumCircuit
+from qadence.errors import Errors
 from qadence.measurements import Measurements
 from qadence.overlap import overlap_exact
 from qadence.utils import Endianness
@@ -122,6 +123,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         n_shots: int = 1,
         state: Tensor | None = None,
+        error: Errors | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         """Execute the circuit and return samples of the resulting wavefunction."""

@@ -229,6 +229,7 @@ class Backend(ABC):
                 [`embedding`][qadence.blocks.embedding.embedding] for more info.
             n_shots: Number of shots to sample.
             state: Initial state.
+            error: A noise model to use.
             endianness: Endianness of the resulting bitstrings.
         """
         raise NotImplementedError

@@ -16,8 +16,8 @@ class Measurements:
     TOMOGRAPHY = "tomography"
     SHADOW = "shadow"
 
-    def __init__(self, measurement: str, options: dict) -> None:
-        self.measurement: str = protocol
+    def __init__(self, protocol: str, options: dict) -> None:
+        self.protocol: str = protocol
         self.options: dict = options
 
     def get_measurement_fn(self) -> Callable:
