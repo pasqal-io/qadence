@@ -18,7 +18,6 @@ from qadence.measurements import Measurements
 from qadence.overlap import overlap_exact
 from qadence.states import zero_state
 from qadence.transpile import (
-    add_interaction,
     blockfn_to_circfn,
     chain_single_qubit_ops,
     flatten,
