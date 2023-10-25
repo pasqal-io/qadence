@@ -6,7 +6,7 @@ from typing import Callable, Generator, Iterable, Type
 
 import sympy
 
-from qadence import SWAP, I
+from qadence.operations import SWAP, I
 from qadence.blocks import (
     AbstractBlock,
     AddBlock,

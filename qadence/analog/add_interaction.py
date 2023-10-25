@@ -7,6 +7,7 @@ from typing import Any, Callable, Union, overload
 
 import torch
 
+from qadence.analog.utils import ising_interaction, rot_generator, xy_interaction
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.analog import (
     AnalogBlock,
@@ -24,8 +25,6 @@ from qadence.operations import HamEvo, I, add, chain, kron, wait
 from qadence.qubit_support import QubitSupport
 from qadence.register import Register
 from qadence.transpile.transpile import blockfn_to_circfn
-
-from .utils import ising_interaction, rot_generator, xy_interaction
 
 INTERACTIONS = {Interaction.NN: ising_interaction, Interaction.XY: xy_interaction}
 

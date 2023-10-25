@@ -8,7 +8,7 @@ from typing import Any, overload
 import numpy as np
 from torch import Tensor, tensor
 
-from qadence import QuantumCircuit
+from qadence.circuit import QuantumCircuit
 from qadence.blocks import AbstractBlock
 
 
