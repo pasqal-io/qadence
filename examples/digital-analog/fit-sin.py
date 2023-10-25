@@ -11,14 +11,12 @@ from qadence import (
     AnalogRZ,
     DiffMode,
     FeatureParameter,
-    Interaction,
     QuantumCircuit,
     QuantumModel,
     Register,
     VariationalParameter,
     Z,
     add,
-    add_interaction,
     chain,
     expectation,
     wait,
@@ -54,8 +52,6 @@ block = chain(
     wait(1000 * VariationalParameter("theta", value=0.5)),
     AnalogRX(pi / 2),
 )
-
-block = add_interaction(reg, block, interaction=Interaction.NN)
 
 # observable
 obs = add(Z(i) for i in range(reg.n_qubits))

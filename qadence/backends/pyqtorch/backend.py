@@ -9,6 +9,7 @@ import pyqtorch.modules as pyq
 import torch
 from torch import Tensor
 
+from qadence.analog import add_interaction
 from qadence.backend import Backend as BackendInterface
 from qadence.backend import BackendName, ConvertedCircuit, ConvertedObservable
 from qadence.backends.utils import to_list_of_dicts
@@ -46,6 +47,7 @@ class Backend(BackendInterface):
 
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:
         transpilations = [
+            lambda circ: add_interaction(circ, interaction=self.config.interaction),
             lambda circ: blockfn_to_circfn(chain_single_qubit_ops)(circ)
             if self.config.use_single_qubit_composition
             else blockfn_to_circfn(flatten)(circ),
