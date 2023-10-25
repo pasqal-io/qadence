@@ -47,7 +47,6 @@ class Backend(BackendInterface):
 
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:
         transpilations = [
-            lambda circ: add_interaction(circ, interaction=self.config.interaction),
             lambda circ: blockfn_to_circfn(chain_single_qubit_ops)(circ)
             if self.config.use_single_qubit_composition
             else blockfn_to_circfn(flatten)(circ),
