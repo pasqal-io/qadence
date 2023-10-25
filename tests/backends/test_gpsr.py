@@ -90,7 +90,7 @@ def circuit_hamevo_block_gpsr(n_qubits: int) -> QuantumCircuit:
 
     dim = np.random.randint(1, n_qubits + 1)
     ops = [X, Y, Z] * 2
-    qubit_supports = np.random.choice(list(range(dim)), len(ops), replace=True)
+    qubit_supports = np.random.choice(dim, len(ops), replace=True)
     generator = chain(
         add(*[op(q) for op, q in zip(ops, qubit_supports)]),  # type: ignore [abstract]
         *[op(q) for op, q in zip(ops, qubit_supports)],  # type: ignore [abstract]

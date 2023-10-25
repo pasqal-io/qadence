@@ -1,7 +1,7 @@
 Qadence base `Parameter` type is a subtype of `sympy.Symbol`. There are three kinds of parameter subtypes used:
 
 - _**Fixed Parameter**_: A constant with a fixed, non-trainable value (_e.g._ $\dfrac{\pi}{2}$).
-- _**Variational Parameter**_: A trainable parameter which can be be optimized.
+- _**Variational Parameter**_: A trainable parameter which can be optimized.
 - _**Feature Parameter**_: A non-trainable parameter which can be used to encode classical data into a quantum state.
 
 ## Fixed Parameters
@@ -135,7 +135,7 @@ obs = 2*kron(*map(Z, range(3)))
 block = chain(block, obs)
 
 from qadence.draw import html_string # markdown-exec: hide
-print(html_string(block, size="4,4")) # markdown-exec: hide
+print(html_string(block)) # markdown-exec: hide
 ```
 
 Please note the different colors for the parametrization with different types. The default palette assigns light blue for `VariationalParameter`, light green for `FeatureParameter` and shaded red for observables.
@@ -188,7 +188,7 @@ The `QuantumModel` class also provides convenience methods to manipulate paramet
 from qadence import QuantumModel, BackendName, DiffMode
 
 model = QuantumModel(circuit, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD)
-num_vparams = model.num_vparams
+num_vparams = model.num_vparams # get the number of variational parameters
 vparams_values = model.vparams
 
 print(f"{num_vparams = }") # markdown-exec: hide
@@ -307,10 +307,10 @@ print(f"Variational parameters = {model.vparams}") # markdown-exec: hide
 
 ## Non-unitary circuits
 
-Qadence allows to compose with non-unitary blocks.
+Qadence allows composing with non-unitary blocks.
 Here is an example of a non-unitary block as a sum of Pauli operators with complex coefficients.
 
-!!! warning "Currently, only the `PyQTorch` backend fully supports execution with non-unitary circuits."
+!!! warning "Currently, only the `PyQTorch` backend fully supports execution of non-unitary circuits."
 
 ```python exec="on" source="material-block" result="json" session="non-unitary"
 from qadence import QuantumModel, QuantumCircuit, Z, X

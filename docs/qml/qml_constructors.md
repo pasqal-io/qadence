@@ -20,7 +20,7 @@ chebyshev_fm = feature_map(n_qubits, fm_type=BasisSet.CHEBYSHEV)
 
 block = chain(fourier_fm, chebyshev_fm)
 from qadence.draw import html_string # markdown-exec: hide
-print(html_string(block, size="6,4")) # markdown-exec: hide
+print(html_string(block)) # markdown-exec: hide
 ```
 
 A custom encoding function can also be passed with `sympy`
@@ -43,7 +43,7 @@ custom_fm_1 = feature_map(n_qubits, fm_type=custom_func)
 
 block = chain(custom_fm_0, custom_fm_1)
 from qadence.draw import html_string # markdown-exec: hide
-print(html_string(block, size="6,4")) # markdown-exec: hide
+print(html_string(block)) # markdown-exec: hide
 ```
 
 Furthermore, the `reupload_scaling` argument can be used to change the scaling applied to each qubit
@@ -66,7 +66,7 @@ fm_exp = feature_map(n_qubits, fm_type=BasisSet.FOURIER, reupload_scaling=Reuplo
 
 block = chain(fm_constant, fm_tower, fm_exp)
 from qadence.draw import html_string # markdown-exec: hide
-print(html_string(block, size="6,4")) # markdown-exec: hide
+print(html_string(block)) # markdown-exec: hide
 ```
 
 A custom scaling can also be defined with a function with an `int` input and `int` or `float` output.
@@ -82,7 +82,7 @@ def custom_scaling(i: int) -> int | float:
 fm_custom = feature_map(n_qubits, fm_type=BasisSet.CHEBYSHEV, reupload_scaling=custom_scaling)
 
 from qadence.draw import html_string # markdown-exec: hide
-print(html_string(fm_custom, size="6,4")) # markdown-exec: hide
+print(html_string(fm_custom)) # markdown-exec: hide
 ```
 
 A full description of the remaining arguments can be found in the [`feature_map` API reference][qadence.constructors.feature_map]. We provide an example below.
@@ -106,7 +106,7 @@ fm_full = feature_map(
 )
 
 from qadence.draw import html_string # markdown-exec: hide
-print(html_string(fm_full, size="6,4")) # markdown-exec: hide
+print(html_string(fm_full)) # markdown-exec: hide
 ```
 
 ## Hardware-efficient ansatz
@@ -124,7 +124,7 @@ depth = 2
 
 ansatz = hea(n_qubits, depth)
 from qadence.draw import html_string # markdown-exec: hide
-print(html_string(ansatz, size="8,4")) # markdown-exec: hide
+print(html_string(ansatz)) # markdown-exec: hide
 ```
 
 As seen above, the rotation layers are automatically parameterized, and the prefix `"theta"` can be changed with the `param_prefix` argument.
@@ -142,7 +142,7 @@ ansatz = hea(
     entangler=CPHASE
 )
 from qadence.draw import html_string # markdown-exec: hide
-print(html_string(ansatz, size="8,4")) # markdown-exec: hide
+print(html_string(ansatz)) # markdown-exec: hide
 ```
 
 Having a truly *hardware-efficient* ansatz means that the entangling operation can be chosen according to each device's native interactions. Besides digital operations, in Qadence it is also possible to build digital-analog HEAs with the entanglement produced by the natural evolution of a set of interacting qubits, as natively implemented in neutral atom devices. As with other digital-analog functions, this can be controlled with the `strategy` argument which can be chosen from the [`Strategy`](../qadence/types.md) enum type. Currently, only `Strategy.DIGITAL` and `Strategy.SDAQC` are available. By default, calling `strategy = Strategy.SDAQC` will use a global entangling Hamiltonian with Ising-like $NN$ interactions and constant interaction strength,
@@ -156,7 +156,7 @@ ansatz = hea(
     strategy=Strategy.SDAQC
 )
 from qadence.draw import html_string # markdown-exec: hide
-print(html_string(ansatz, size="8,4")) # markdown-exec: hide
+print(html_string(ansatz)) # markdown-exec: hide
 ```
 
 Note that, by default, only the time-parameter is automatically parameterized when building a digital-analog HEA. However, as described in the [Hamiltonians tutorial](../tutorials/hamiltonians.md), arbitrary interaction Hamiltonians can be easily built with the `hamiltonian_factory` function, with both customized or fully parameterized interactions, and these can be directly passed as the `entangler` for a customizable digital-analog HEA.
@@ -187,5 +187,5 @@ ansatz = hea(
     strategy=Strategy.SDAQC
 )
 from qadence.draw import html_string # markdown-exec: hide
-print(html_string(ansatz, size="8,4")) # markdown-exec: hide
+print(html_string(ansatz)) # markdown-exec: hide
 ```

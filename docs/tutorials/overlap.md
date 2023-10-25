@@ -18,7 +18,7 @@ from qadence import Overlap, OverlapMethod, QuantumCircuit, H, RX, X, FeaturePar
 # Create two quantum circuits
 # with a single qubit rotation on two random qubits
 n_qubits = 4
-qubits = np.random.choice(list(range(n_qubits)), n_qubits, replace=True)
+qubits = np.random.choice(n_qubits, n_qubits, replace=False)
 
 phi = FeatureParameter("phi")
 circuit_bra = QuantumCircuit(n_qubits, RX(qubits[0], phi))

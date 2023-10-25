@@ -95,7 +95,7 @@ class WaitBlock(AnalogBlock):
     """
     Waits. In real interacting quantum devices, it means letting the system evolve freely according
     to the time-dependent Schrodinger equation. With emulators, this block is translated to an
-    appropriate interaction Hamiltonian, for example, an Ising interation
+    appropriate interaction Hamiltonian, for example, an Ising interaction
 
         Hᵢₙₜ = ∑ᵢⱼ C₆/rᵢⱼ⁶ nᵢnⱼ
 

@@ -12,20 +12,21 @@ from pulser_simulation.simulation import QutipEmulator
 from qadence.backends.pulser.backend import make_sequence
 from qadence.backends.pulser.config import Configuration
 from qadence.backends.pulser.devices import Device, RealisticDevice
-from qadence.backends.pulser.pulses import digital_rot_pulse, entangle_pulse
+from qadence.backends.pulser.pulses import digital_xy_rot_pulse, digital_z_rot_pulse, entangle_pulse
 from qadence.blocks import AbstractBlock
 from qadence.blocks.analog import Interaction
 from qadence.circuit import QuantumCircuit
 from qadence.divergences import js_divergence
-from qadence.operations import RX, RY, entangle
+from qadence.operations import RX, RY, RZ, entangle
 from qadence.register import Register as QadenceRegister
 
 
 @pytest.mark.parametrize(
     "Qadence_op, func",
     [
-        (RX(0, 1.5), lambda ch: digital_rot_pulse(1.5, 0, ch)),
-        (RY(1, 1.5), lambda ch: digital_rot_pulse(1.5, np.pi / 2, ch)),
+        (RX(0, 1.5), lambda ch: digital_xy_rot_pulse(1.5, 0, ch)),
+        (RY(1, 1.5), lambda ch: digital_xy_rot_pulse(1.5, np.pi / 2, ch)),
+        (RZ(0, 1.5), lambda ch: digital_z_rot_pulse(1.5, np.pi / 2, ch)),
     ],
 )
 def test_single_qubit_block_conversion(Qadence_op: AbstractBlock, func: Callable) -> None:
