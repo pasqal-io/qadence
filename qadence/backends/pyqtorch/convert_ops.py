@@ -8,7 +8,7 @@ from typing import Callable, Sequence
 import pyqtorch as pyq
 import sympy
 import torch
-from pyqtorch.apply import _apply_einsum as _apply_batch_gate
+from pyqtorch.apply import apply_operator as _apply_batch_gate
 from torch.nn import Module
 from torch.utils.checkpoint import checkpoint
 
@@ -78,7 +78,6 @@ def convert_block(
                 operation=pyq.HamiltonianEvolution(
                     list(block.qubit_support),
                     n_qubits,
-                    n_steps=config.n_steps_hevo,
                 ),
                 block=block,
                 config=config,
@@ -95,12 +94,14 @@ def convert_block(
     elif isinstance(block, PrimitiveBlock):
         if len(block.qubit_support) == 1:
             return [getattr(pyq, block.name)(block.qubit_support[0])]
+        elif isinstance(block, U):
+            return [getattr(pyq, block.name)(block.qubit_support[0])]
         else:
             return [getattr(pyq, block.name)(block.qubit_support[0], block.qubit_support[1])]
     elif isinstance(block, CompositeBlock):
         ops = list(flatten(*(convert_block(b, n_qubits, config) for b in block.blocks)))
         if is_single_qubit_chain(block) and config.use_single_qubit_composition:
-            return [PyQComposedBlock(ops, block.qubit_support, n_qubits, config)]
+            return [PyQComposedBlock(ops, list(block.qubit_support), n_qubits, config)]
         else:
             # NOTE: without wrapping in a pyq.QuantumCircuit here the kron/chain
             # blocks won't be properly nested which leads to incorrect results from
@@ -125,7 +126,7 @@ class PyQMatrixBlock(Module):
     def __init__(self, block: MatrixBlock, n_qubits: int, config: Configuration = None):
         super().__init__()
         self.n_qubits = n_qubits
-        self.qubits = block.qubit_support
+        self.qubits = list(block.qubit_support)
         self.register_buffer("mat", block.matrix.unsqueeze(2))
 
     def forward(self, state: torch.Tensor, _: dict[str, torch.Tensor] = None) -> torch.Tensor:
@@ -140,7 +141,7 @@ class PyQComposedBlock(Module):
     def __init__(
         self,
         ops: list[Module],
-        qubits: list[int] | tuple,
+        qubits: list[int],
         n_qubits: int,
         config: Configuration = None,
     ):
