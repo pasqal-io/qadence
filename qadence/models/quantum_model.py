@@ -95,6 +95,7 @@ class QuantumModel(nn.Module):
         self._backend_name = backend
         self._diff_mode = diff_mode
         self._protocol = protocol
+        self._mitigation = mitigation
 
         self._params = nn.ParameterDict(
             {
