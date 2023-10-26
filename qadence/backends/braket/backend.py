@@ -16,6 +16,7 @@ from qadence.backends.utils import to_list_of_dicts
 from qadence.blocks import AbstractBlock, block_to_tensor
 from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
+from qadence.mitigations import Mitigations
 from qadence.overlap import overlap_exact
 from qadence.utils import Endianness
 
@@ -154,6 +155,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
         protocol: Measurements | None = None,
+        mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         # Do not flip endianness here because then we would have to reverse the observable
