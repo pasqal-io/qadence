@@ -1,71 +1,102 @@
 from __future__ import annotations
 
-def expectation_val(reg, obs, parameters, noise_type=None, noise_p=None):
-    
-    seq = Sequence(reg, Chadoq2)
-    seq.declare_channel("ch0", "rydberg_global")
-    
-    if noise_type == "dephasing":
-        config = SimConfig(noise=noise_type,dephasing_prob=noise_p)
-    elif noise_type == "depolarizing":
-        config = SimConfig(noise=noise_type,depolarizing_prob=noise_p)
+from typing import cast
+
+import numpy as np
+import torch
+from pulser_simulation import SimConfig
+from torch import Tensor
+
+from qadence import BackendName
+from qadence.backend import ConvertedCircuit, ConvertedObservable
+from qadence.backends.api import backend_factory
+from qadence.backends.pulser.backend import Backend
+from qadence.blocks import block_to_tensor
+from qadence.measurements import Measurements
+from qadence.mitigations import Mitigations
+from qadence.types import NoiseModels
+from qadence.utils import Endianness
+
+
+def zne(noise_probas: list, zne_dataset: list) -> float:
+    # Rearrange the dataset by selecting each element in the batches.
+    # TODO: Correct for arbitrary batches.
+    rearranged_dataset = [s[0][0] for s in zne_dataset]
+    # Polynomial fit.
+    p = np.poly1d(np.polyfit(noise_probas, rearranged_dataset, 4))
+    return float(p(0.0))  # Return the zero-noise fitted value.
+
+
+def analog_zne(
+    backend_name: BackendName,
+    circuit: ConvertedCircuit,
+    observable: list[ConvertedObservable] | ConvertedObservable,
+    param_values: dict[str, Tensor] = {},
+    state: Tensor | None = None,
+    protocol: Measurements | None = None,
+    mitigation: Mitigations | None = None,
+    endianness: Endianness = Endianness.BIG,
+) -> Tensor:
+    assert mitigation
+    noise_model = mitigation.options.get("noise_model")
+    if noise_model is None:
+        KeyError(f"A noise model should be choosen from {NoiseModels.list()}. Got {noise_model}.")
+    assert noise_model
+    noise_probas = mitigation.options.get("noise_probas")
+    if noise_probas is None:
+        KeyError(f"A range of noise probabilies should be passed. Got {noise_probas}.")
+    noise_probas = cast(list, noise_probas)
+    backend = backend_factory(backend=BackendName.PULSER, diff_mode=None)
+    backend = cast(Backend, backend)  # Cast the Pulser backend.
+    backend_config = backend.config
+    # Construct the ZNE dataset.
+    zne_dataset = []
+    for noise_proba in noise_probas:
+        # Setting the backend config to account for the noise.
+        if noise_model == NoiseModels.DEPOLARIZING:
+            backend_config.sim_config = SimConfig(noise=noise_model, depolarizing_prob=noise_proba)
+        elif noise_model == NoiseModels.DEPHASING:
+            backend_config.sim_config = SimConfig(noise=noise_model, dephasing_prob=noise_proba)
+        # Get density matrices in the noisy case.
+        density_matrices = backend.run_noisy(
+            circuit, param_values=param_values, state=state, endianness=endianness
+        )
+        # Set the sim_config state back to original for any further use.
+        # self.config.sim_config = None
+        # Convert observables to Numpy types compatible with QuTip simulations.
+        # Matrices are flipped to match QuTip conventions.
+        observables_np = [np.flip(block_to_tensor(obs.original).numpy()) for obs in observable]
+        # Get expectation values at the end of the time serie [0,t]
+        # at intervals of the sampling rate.
+        zne_dataset.append(
+            [[dm.expect(obs)[0][-1] for obs in observables_np] for dm in density_matrices]
+        )
+    # Zero-noise extrapolate.
+    exp_val = zne(noise_probas=noise_probas, zne_dataset=zne_dataset)
+    return torch.tensor([exp_val])
+
+
+def mitigate(
+    backend_name: BackendName,
+    circuit: ConvertedCircuit,
+    observable: list[ConvertedObservable] | ConvertedObservable,
+    param_values: dict[str, Tensor] = {},
+    state: Tensor | None = None,
+    protocol: Measurements | None = None,
+    mitigation: Mitigations | None = None,
+    endianness: Endianness = Endianness.BIG,
+) -> Tensor:
+    if backend_name == BackendName.PULSER:
+        mitigated_exp = analog_zne(
+            backend_name=backend_name,
+            circuit=circuit,
+            observable=observable,
+            param_values=param_values,
+            state=state,
+            protocol=protocol,
+            mitigation=mitigation,
+            endianness=endianness,
+        )
     else:
-        config = SimConfig()
-
-   
-    for x in parameters:                      
-        seq.add(Pulse.ConstantPulse(1000 , x, 0.0, 0), "ch0") ## amplitude
-        seq.add(Pulse.ConstantPulse(1000 , 0, 1, 0), "ch0") ## detuning
-
-    
-    ## sampling rate is used to finely monitor pulse sheduling to apply the evolution
-    simul = simulation.QutipEmulator.from_sequence(seq, sampling_rate =0.01, config = config)
-    results = simul.run()
-
-    return results.expect([obs])[0][-1]
-
-
-def zne(prob_range,sample_points,reg,obs,amplitude_list,noise_type):
-    prob_min = prob_range[0]
-    prob_max = prob_range[1]
-
-    noise_list = np.linspace(prob_min,prob_max, sample_points)
-    
-    ### storing the expectation values for different noise values
-    output = []
-
-    for noise in noise_list:
-        output.append(expectation_val(reg,obs,amplitude_list,noise_type=noise_type, noise_p=noise))
-
-    # print(output)  
-
-    ## doing a polynomial fit with 1 less degree to prevent any overfitting, this may not always be a good idea, maybe leave it to the user to decide
-    
-    degree=sample_points-1
-    coefs, res, _, _, _ = np.polyfit(noise_list,output,degree, full = True)
-    
-    return coefs[-1]
-
-
-
-
-def mitigate(options: dict) -> None:
-    ## Lets define our pulses here (this defines the evolution hamiltonian)
-    ## using a simple set of pulses
-    amplitude_list = np.random.rand(4)
-
-
-    ## generating a register for qubit location
-    n_qubits = 2
-    qubits = dict(enumerate([(-2,0),(2,0)]))
-    reg = Register(qubits)
-
-
-    ## taking Z_1 +Z_2 to be the obs
-    obs = tensor(sigmaz(),qeye(2)) +  tensor(qeye(2),sigmaz())
-    prob_range= (0.1,0.5)
-    sample_points = 8
-    
-    zne = ZNE(prob_range,sample_points,reg,obs,amplitude_list,"depolarizing")
-    exact = expectation_val(reg, obs, amplitude_list, )
-    return zne, exact
+        raise NotImplementedError(f"ZNE is not implemented for the backend {backend_name}.")
+    return mitigated_exp
