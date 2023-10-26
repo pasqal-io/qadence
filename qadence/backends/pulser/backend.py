@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
-from qadence.mitigations import Mitigations
 import qutip
 import torch
 from pulser import Register as PulserRegister
@@ -21,6 +20,7 @@ from qadence.backends.utils import to_list_of_dicts
 from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
+from qadence.mitigations import Mitigations
 from qadence.overlap import overlap_exact
 from qadence.register import Register
 from qadence.utils import Endianness
@@ -176,7 +176,6 @@ class Backend(BackendInterface):
                 .full()
                 .flatten()
             )
-
             # We flip the wavefunction coming out of pulser,
             # essentially changing logic 0 with logic 1 in the basis states.
             batched_wf[i] = np.flip(wf)
@@ -243,15 +242,28 @@ class Backend(BackendInterface):
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
-        state = self.run(circuit, param_values=param_values, state=state, endianness=endianness)
-
         observables = observable if isinstance(observable, list) else [observable]
-        support = sorted(list(circuit.abstract.register.support))
-        res_list = [obs.native(state, param_values, qubit_support=support) for obs in observables]
-
-        res = torch.transpose(torch.stack(res_list), 0, 1)
-        res = res if len(res.shape) > 0 else res.reshape(1)
-        return res.real
+        if mitigation is None:
+            state = self.run(circuit, param_values=param_values, state=state, endianness=endianness)
+            support = sorted(list(circuit.abstract.register.support))
+            res_list = [
+                obs.native(state, param_values, qubit_support=support) for obs in observables
+            ]
+            res = torch.transpose(torch.stack(res_list), 0, 1)
+            res = res if len(res.shape) > 0 else res.reshape(1)
+            return res.real
+        elif mitigation is not None:
+            mitigation_fn = mitigation.get_mitigation_fn()
+            mitigated_exp_val = mitigation_fn(
+                backend_name=self.name,
+                circuit=circuit,
+                observable=observables,
+                state=state,
+                protocol=protocol,
+                mitigation=mitigation,
+                endianness=endianness,
+            )
+            return mitigated_exp_val
 
     @staticmethod
     def _overlap(bras: Tensor, kets: Tensor) -> Tensor:
