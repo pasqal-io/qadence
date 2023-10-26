@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Callable, cast
 
 PROTOCOL_TO_MODULE = {
-    "zne": "qadence.mitigation.zne",
+    "zne": "qadence.mitigations.zne",
 }
 
 
