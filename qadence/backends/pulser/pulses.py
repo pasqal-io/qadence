@@ -102,17 +102,17 @@ def add_pulses(
 
         if block.qubit_support.is_global:
             pulse = analog_rot_pulse(a, w, p, d, global_channel, config)
-            sequence.add(pulse, GLOBAL_CHANNEL, measurement="wait-for-all")
+            sequence.add(pulse, GLOBAL_CHANNEL, protocol="wait-for-all")
         else:
             pulse = analog_rot_pulse(a, w, p, d, local_channel, config)
             sequence.target(qubit_support, LOCAL_CHANNEL)
-            sequence.add(pulse, LOCAL_CHANNEL, measurement="wait-for-all")
+            sequence.add(pulse, LOCAL_CHANNEL, protocol="wait-for-all")
 
     elif isinstance(block, AnalogEntanglement):
         (uuid, duration) = block.parameters.uuid_param("duration")
         t = evaluate(duration) if duration.is_number else sequence.declare_variable(uuid)
         sequence.add(
-            entangle_pulse(t, global_channel, config), GLOBAL_CHANNEL, measurement="wait-for-all"
+            entangle_pulse(t, global_channel, config), GLOBAL_CHANNEL, protocol="wait-for-all"
         )
 
     elif isinstance(block, (RX, RY)):
@@ -120,7 +120,7 @@ def add_pulses(
         angle = evaluate(p) if p.is_number else sequence.declare_variable(uuid)
         pulse = rx(angle) if isinstance(block, RX) else ry(angle)
         sequence.target(qubit_support, LOCAL_CHANNEL)
-        sequence.add(pulse, LOCAL_CHANNEL, measurement="wait-for-all")
+        sequence.add(pulse, LOCAL_CHANNEL, protocol="wait-for-all")
 
     elif isinstance(block, CompositeBlock) or isinstance(block, AnalogComposite):
         for block in block.blocks:

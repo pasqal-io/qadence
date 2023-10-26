@@ -230,7 +230,7 @@ class Backend(ABC):
             n_shots: Number of shots to sample.
             state: Initial state.
             error: A noise model to use.
-            endianness: Endianness of the resulting bitstrings.
+            endianness: Endianness of the resulting bit strings.
         """
         raise NotImplementedError
 
@@ -276,7 +276,7 @@ class Backend(ABC):
             state: Initial state.
             measurement: Optional measurement protocol. If None, use
                 exact expectation value with a statevector simulator.
-            endianness: Endianness of the resulting bitstrings.
+            endianness: Endianness of the resulting bit strings.
         """
         raise NotImplementedError
 
