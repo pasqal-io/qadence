@@ -6,7 +6,6 @@ from dataclasses import dataclass, fields
 from typing import Any, Callable, Iterator, Tuple
 
 from openfermion import QubitOperator
-from qadence.mitigations import Mitigations
 from torch import Tensor
 from torch.nn import Module
 
@@ -22,6 +21,7 @@ from qadence.blocks import (
 from qadence.blocks.analog import ConstantAnalogRotation, WaitBlock
 from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
+from qadence.mitigations import Mitigations
 from qadence.parameters import stringify
 from qadence.types import BackendName, DiffMode, Endianness
 
