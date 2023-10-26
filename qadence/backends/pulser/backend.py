@@ -190,6 +190,24 @@ class Backend(BackendInterface):
 
         return batched_wf_torch
 
+    def run_noisy(
+        self,
+        circuit: ConvertedCircuit,
+        param_values: dict[str, Tensor] = {},
+        state: Tensor | None = None,
+        endianness: Endianness = Endianness.BIG,
+    ) -> list:
+        vals = to_list_of_dicts(param_values)
+
+        batched_dm = []
+
+        for i, param_values_el in enumerate(vals):
+            sequence = self.assign_parameters(circuit, param_values_el)
+            sim_result = simulate_sequence(sequence, self.config, state)
+            batched_dm.append(sim_result)
+
+        return batched_dm
+
     def sample(
         self,
         circuit: ConvertedCircuit,
