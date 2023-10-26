@@ -17,6 +17,7 @@ from qadence.blocks.utils import uuid_to_block, uuid_to_eigen
 from qadence.circuit import QuantumCircuit
 from qadence.extensions import get_gpsr_fns
 from qadence.measurements import Measurements
+from qadence.mitigations import Mitigations
 from qadence.ml_tools import promote_to_tensor
 from qadence.types import DiffMode, Endianness
 
@@ -85,6 +86,7 @@ class DifferentiableExpectation:
     param_values: dict[str, Tensor]
     state: Tensor | None = None
     protocol: Measurements | None = None
+    mitigation: Mitigations | None = None
     endianness: Endianness = Endianness.BIG
 
     def ad(self) -> Tensor:
@@ -107,6 +109,7 @@ class DifferentiableExpectation:
                 observable=self.observable,
                 param_values=self.param_values,
                 state=self.state,
+                mitigation=self.mitigation,
                 endianness=self.endianness,
             )
         return promote_to_tensor(
@@ -139,6 +142,7 @@ class DifferentiableExpectation:
                 circuit=self.circuit,
                 observable=self.observable,
                 state=self.state,
+                mitigation=self.mitigation,
                 endianness=self.endianness,
             )
         # PSR only applies to parametric circuits.
@@ -230,6 +234,7 @@ class DifferentiableBackend(nn.Module):
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
         protocol: Measurements | None = None,
+        mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         """Compute the expectation value of a given observable.
@@ -253,6 +258,7 @@ class DifferentiableBackend(nn.Module):
             param_values=param_values,
             state=state,
             protocol=protocol,
+            mitigation=mitigation,
             endianness=endianness,
         )
 

@@ -6,7 +6,6 @@ from math import prod
 from typing import Any
 
 import pyqtorch.modules as pyq
-from qadence.mitigations.protocols import Mitigations
 import torch
 from torch import Tensor
 
@@ -16,6 +15,7 @@ from qadence.backends.utils import to_list_of_dicts
 from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
+from qadence.mitigations.protocols import Mitigations
 from qadence.overlap import overlap_exact
 from qadence.states import zero_state
 from qadence.transpile import (
