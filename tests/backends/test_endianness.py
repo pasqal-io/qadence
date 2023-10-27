@@ -23,6 +23,7 @@ from qadence.utils import (
     basis_to_int,
     nqubits_to_basis,
 )
+from qadence.register import Register
 
 BACKENDS = BackendName.list()
 BACKENDS.remove("pulser")
@@ -158,21 +159,30 @@ def test_backend_sample_endianness(
             truth = invert_endianness(truth)
         assert smple == truth
 
-
 @pytest.mark.parametrize(
-    "circ",
+        "init_state",
+        [
+            product_state("000"),
+            product_state("010"),
+            product_state("111")
+        ]
+)
+@pytest.mark.parametrize(
+    "block",
     [
-        QuantumCircuit(3, RX(0, torch.pi)),
-        QuantumCircuit(3, RX(1, torch.pi)),
-        QuantumCircuit(3, RX(2, torch.pi)),
+        RX(0, torch.pi),
+        RX(1, torch.pi),
+        RX(2, torch.pi),
     ],
 )
 def test_pulser_run_endianness(
-    circ: QuantumCircuit,
+    init_state: Tensor, block: AbstractBlock,
 ) -> None:
+    register = Register.from_coordinates([(0.0, 10.0), (0.0, 20.0), (0.0, 30.0)])
+    circ = QuantumCircuit(register, block)
     for endianness in Endianness:
-        wf_pyq = run(circ, {}, backend="pyqtorch", endianness=endianness)
-        wf_pulser = run(circ, {}, backend="pulser", endianness=endianness)
+        wf_pyq = run(circ, {}, backend="pyqtorch", endianness=endianness, state = init_state)
+        wf_pulser = run(circ, {}, backend="pulser", endianness=endianness, state = init_state)
         assert equivalent_state(wf_pyq, wf_pulser, atol=ATOL_DICT[BackendName.PULSER])
 
 

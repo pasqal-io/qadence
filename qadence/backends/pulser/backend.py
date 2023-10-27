@@ -234,7 +234,6 @@ class Backend(BackendInterface):
         protocol: Measurements | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
-        state = _convert_init_state(state)
         state = self.run(circuit, param_values=param_values, state=state, endianness=endianness)
 
         observables = observable if isinstance(observable, list) else [observable]
