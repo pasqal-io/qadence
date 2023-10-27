@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Union
+from functools import singledispatch
+from typing import Any, Union
 
-from torch import Tensor
+from torch import Tensor, is_tensor
 from torch import device as torchdevice
 from torch.utils.data import DataLoader, TensorDataset
 
@@ -30,7 +31,7 @@ class DictDataLoader:
 
     def to(self, device: torchdevice) -> DictDataLoader:
         self.iters = {
-            key: DataLoader([dataloader_to_device(t, device=device) for t in dl])
+            key: DataLoader([data_to_device(t, device=device) for t in dl])
             for key, dl in self.dataloaders.items()
         }
         return self
@@ -39,21 +40,31 @@ class DictDataLoader:
 DataLoaderType = Union[DictDataLoader, DataLoader, list[Tensor], tuple[Tensor, Tensor], None]
 
 
-def to_dataloader(x: Tensor, y: Tensor, batch_size: int = 1) -> DataLoader:
+def tensor_to_dataloader(x: Tensor, y: Tensor, batch_size: int = 1) -> DataLoader:
     """Convert two torch tensors x and y to a Dataloader."""
     return DataLoader(TensorDataset(x, y), batch_size=batch_size)
 
 
-def dataloader_to_device(
-    dataloader: DataLoaderType, device: torchdevice = torchdevice("cpu")
-) -> DataLoaderType:
-    if isinstance(dataloader, Tensor):
-        return dataloader.to(device=device)
-    elif isinstance(dataloader, (list, tuple)):
-        return list([t.to(device=device) for t in dataloader])
-    elif isinstance(dataloader, (DataLoader)):
-        return DataLoader([dataloader_to_device(t, device=device) for t in dataloader])
-    elif isinstance(dataloader, DictDataLoader):
-        return dataloader.to(device=device)
-    else:
-        return dataloader
+@singledispatch
+def data_to_device(xs: Any, device: str = "cpu") -> Any:
+    return xs
+
+
+@data_to_device.register(list)
+def _(xs: list, device: str = "cpu") -> list:
+    return list(map(lambda x: x.to(device, non_blocking=True) if is_tensor(x) else x, xs))
+
+
+@data_to_device.register(dict)
+def _(xs: dict, device: str = "cpu") -> dict:
+    return {key: val.to(device, non_blocking=True) for key, val in xs.items()}
+
+
+@data_to_device.register(DataLoader)
+def _(xs: dict, device: str = "cpu") -> dict:
+    return {key: [x.to(device, non_blocking=True) for x in val] for key, val in xs.items()}
+
+
+@data_to_device.register(DictDataLoader)
+def _(xs: dict, device: str = "cpu") -> dict:
+    return {key: data_to_device(val) for key, val in xs.items()}
