@@ -25,10 +25,11 @@ def test_readout_error(backend) -> None:
     assert all(
         [
             True
-            for bitstring, count in noisy_samples[0].items()
             if (
-                samples[0]["bitstring"] <= int(count + count * fidelity)
-                or samples[0]["bitstring"] >= int(count - count * fidelity)
+                samples[0]["bitstring"] < int(count + count * fidelity)
+                or samples[0]["bitstring"] > int(count - count * fidelity)
             )
+            else False
+            for bitstring, count in noisy_samples[0].items()
         ]
     )
