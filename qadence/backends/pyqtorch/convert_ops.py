@@ -28,7 +28,14 @@ from qadence.blocks.block_to_tensor import (
     block_to_diagonal,
     block_to_tensor,
 )
-from qadence.operations import OpName, U
+from qadence.operations import (
+    OpName,
+    U,
+    multi_qubit_gateset,
+    single_qubit_gateset,
+    three_qubit_gateset,
+    two_qubit_gateset,
+)
 
 from .config import Configuration
 
@@ -55,6 +62,7 @@ def convert_observable(
 def convert_block(
     block: AbstractBlock, n_qubits: int = None, config: Configuration = None
 ) -> Sequence[Module]:
+    qubit_support = list(block.qubit_support)
     if n_qubits is None:
         n_qubits = max(block.qubit_support) + 1
 
@@ -68,40 +76,25 @@ def convert_block(
         ops = list(flatten(*(convert_block(b, n_qubits, config) for b in block.blocks)))
         return [AddPyQOperation(block.qubit_support, n_qubits, ops, config)]
 
-    elif isinstance(block, ParametricBlock):
-        if isinstance(block, TimeEvolutionBlock):
-            op = HEvoPyQOperation(
-                qubits=block.qubit_support,
+    elif isinstance(block, TimeEvolutionBlock):
+        return [
+            PyQHamiltonianEvolution(
+                qubit_support=block.qubit_support,
                 n_qubits=n_qubits,
-                # TODO: use the hevo_algo configuration here to switch between different algorithms
-                # for executing the Hamiltonian evolution
-                operation=pyq.HamiltonianEvolution(
-                    list(block.qubit_support),
+                pyq_operation=pyq.HamiltonianEvolution(
+                    qubit_support,
                     n_qubits,
                 ),
                 block=block,
                 config=config,
             )
-        elif block.n_supports == 1:
-            op = getattr(pyq, block.name)(block.qubit_support[0], config.get_param_name(block)[0])
-        else:
-            op = getattr(pyq, block.name)(
-                block.qubit_support[0], block.qubit_support[1], config.get_param_name(block)[0]
-            )
-        return [op]
+        ]
     elif isinstance(block, MatrixBlock):
         return [PyQMatrixBlock(block, n_qubits, config)]
-    elif isinstance(block, PrimitiveBlock):
-        if len(block.qubit_support) == 1:
-            return [getattr(pyq, block.name)(block.qubit_support[0])]
-        elif isinstance(block, U):
-            return [getattr(pyq, block.name)(block.qubit_support[0])]
-        else:
-            return [getattr(pyq, block.name)(block.qubit_support[0], block.qubit_support[1])]
     elif isinstance(block, CompositeBlock):
         ops = list(flatten(*(convert_block(b, n_qubits, config) for b in block.blocks)))
         if is_single_qubit_chain(block) and config.use_single_qubit_composition:
-            return [PyQComposedBlock(ops, list(block.qubit_support), n_qubits, config)]
+            return [PyQComposedBlock(ops, qubit_support, n_qubits, config)]
         else:
             # NOTE: without wrapping in a pyq.QuantumCircuit here the kron/chain
             # blocks won't be properly nested which leads to incorrect results from
@@ -112,14 +105,37 @@ def convert_block(
             # AddPyQOperation(Z, Z)
             # which would be wrong.
             return [pyq.QuantumCircuit(n_qubits, ops)]
-
+    elif isinstance(block, tuple(single_qubit_gateset)):
+        pyq_cls = getattr(pyq, block.name)
+        if isinstance(block, ParametricBlock):
+            if isinstance(block, U):
+                op = pyq_cls(qubit_support[0], *config.get_param_name(block))
+            else:
+                op = pyq_cls(qubit_support[0], config.get_param_name(block)[0])
+        else:
+            op = pyq_cls(qubit_support[0])
+        return [op]
+    elif isinstance(block, tuple(two_qubit_gateset)):
+        pyq_cls = getattr(pyq, block.name)
+        if isinstance(block, ParametricBlock):
+            op = pyq_cls(qubit_support[0], qubit_support[1], config.get_param_name(block)[0])
+        else:
+            op = pyq_cls(qubit_support[0], qubit_support[1])
+        return [op]
+    elif isinstance(block, tuple(three_qubit_gateset) + tuple(multi_qubit_gateset)):
+        block_name = block.name[1:] if block.name.startswith("M") else block.name
+        pyq_cls = getattr(pyq, block_name)
+        if isinstance(block, ParametricBlock):
+            op = pyq_cls(qubit_support[:-1], qubit_support[-1], config.get_param_name(block)[0])
+        else:
+            op = pyq_cls(qubit_support[:-1], qubit_support[-1])
+        return [op]
     else:
-        msg = (
+        raise NotImplementedError(
             f"Non supported operation of type {type(block)}. "
             "In case you are trying to run an `AnalogBlock`, try converting it "
             "with `add_interaction` first."
         )
-        raise NotImplementedError(msg)
 
 
 class PyQMatrixBlock(Module):
@@ -229,19 +245,19 @@ class PyQObservable(Module):
         return self._forward(state, values)
 
 
-class HEvoPyQOperation(Module):
+class PyQHamiltonianEvolution(Module):
     def __init__(
         self,
-        qubits: Sequence,
+        qubit_support: Sequence,
         n_qubits: int,
-        operation: Callable,
+        pyq_operation: Callable,
         block: TimeEvolutionBlock,
         config: Configuration,
     ):
         super().__init__()
-        self.qubits = qubits
+        self.qubits = qubit_support
         self.n_qubits = n_qubits
-        self.operation = operation
+        self.operation = pyq_operation
         self.param_names = config.get_param_name(block)
         self._has_parametric_generator: bool
         self.block = block

@@ -56,7 +56,7 @@ class Backend(BackendInterface):
 
         abstract = transpile(*transpilations)(circuit)  # type: ignore[call-overload]
         ops = convert_block(abstract.block, n_qubits=circuit.n_qubits, config=self.config)
-        native = pyq.QuantumCircuit(abstract.n_qubits, ops, diff_mode="adjoint")
+        native = pyq.QuantumCircuit(abstract.n_qubits, ops)
         return ConvertedCircuit(native=native, abstract=abstract, original=circuit)
 
     def observable(self, observable: AbstractBlock, n_qubits: int) -> ConvertedObservable:

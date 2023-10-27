@@ -83,6 +83,7 @@ __all__ = [
     "SWAP",
     "PHASE",
     "CPHASE",
+    "CSWAP",
     "MCPHASE",
     "wait",
     "entangle",
