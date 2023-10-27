@@ -14,8 +14,8 @@ from qadence.divergences import js_divergence
 from qadence.models import QuantumModel
 from qadence.operations import CNOT, RX, RY, RZ, AnalogRX, AnalogRY, H, X, Z, entangle
 from qadence.parameters import FeatureParameter
-from qadence.types import DiffMode
 from qadence.states import random_state
+from qadence.types import DiffMode
 
 
 # "Compare" Pulser and PyQ
@@ -89,8 +89,8 @@ def test_compatibility_pyqtorch_pulser_digital_rot(obs: AbstractBlock) -> None:
         "chi": torch.rand(batch_size),
     }
 
-    pyqtorch_expval = model_pyqtorch.expectation(values=values, state = init_state)
-    pulser_expval = model_pulser.expectation(values=values, state = init_state)
+    pyqtorch_expval = model_pyqtorch.expectation(values=values, state=init_state)
+    pulser_expval = model_pulser.expectation(values=values, state=init_state)
 
     assert torch.allclose(pyqtorch_expval, pulser_expval, atol=ATOL_DICT[BackendName.PULSER])
 

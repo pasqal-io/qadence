@@ -16,6 +16,7 @@ from qadence.blocks import AbstractBlock, MatrixBlock, chain, kron
 from qadence.divergences import js_divergence
 from qadence.ml_tools.utils import rand_featureparameters
 from qadence.operations import CNOT, RX, RY, H, HamEvo, I, X, Z
+from qadence.register import Register
 from qadence.states import equivalent_state, product_state
 from qadence.transpile import invert_endianness
 from qadence.types import Endianness, ResultType
@@ -23,7 +24,6 @@ from qadence.utils import (
     basis_to_int,
     nqubits_to_basis,
 )
-from qadence.register import Register
 
 BACKENDS = BackendName.list()
 BACKENDS.remove("pulser")
@@ -159,13 +159,9 @@ def test_backend_sample_endianness(
             truth = invert_endianness(truth)
         assert smple == truth
 
+
 @pytest.mark.parametrize(
-        "init_state",
-        [
-            product_state("000"),
-            product_state("010"),
-            product_state("111")
-        ]
+    "init_state", [product_state("000"), product_state("010"), product_state("111")]
 )
 @pytest.mark.parametrize(
     "block",
@@ -176,13 +172,14 @@ def test_backend_sample_endianness(
     ],
 )
 def test_pulser_run_endianness(
-    init_state: Tensor, block: AbstractBlock,
+    init_state: Tensor,
+    block: AbstractBlock,
 ) -> None:
     register = Register.from_coordinates([(0.0, 10.0), (0.0, 20.0), (0.0, 30.0)])
     circ = QuantumCircuit(register, block)
     for endianness in Endianness:
-        wf_pyq = run(circ, {}, backend="pyqtorch", endianness=endianness, state = init_state)
-        wf_pulser = run(circ, {}, backend="pulser", endianness=endianness, state = init_state)
+        wf_pyq = run(circ, {}, backend="pyqtorch", endianness=endianness, state=init_state)
+        wf_pulser = run(circ, {}, backend="pulser", endianness=endianness, state=init_state)
         assert equivalent_state(wf_pyq, wf_pulser, atol=ATOL_DICT[BackendName.PULSER])
 
 
