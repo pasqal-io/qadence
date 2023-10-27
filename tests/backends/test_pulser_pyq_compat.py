@@ -14,6 +14,7 @@ from qadence.divergences import js_divergence
 from qadence.models import QuantumModel
 from qadence.operations import CNOT, RX, RY, RZ, AnalogRX, AnalogRY, H, X, Z, entangle
 from qadence.parameters import FeatureParameter
+from qadence.states import random_state
 from qadence.types import DiffMode
 
 
@@ -55,6 +56,7 @@ def test_compatibility_pyqtorch_pulser_digital_rot(obs: AbstractBlock) -> None:
     chi = FeatureParameter("chi")
 
     n_qubits = 2
+    init_state = random_state(n_qubits)
 
     block = chain(
         kron(RX(0, phi), RX(1, phi)),
@@ -78,15 +80,17 @@ def test_compatibility_pyqtorch_pulser_digital_rot(obs: AbstractBlock) -> None:
         configuration=conf,
     )
 
-    batch_size = 5
+    # TODO: Change batch_size back to 5 when respective `pyqtorch` bug is fixed:
+    # https://github.com/pasqal-io/qadence/issues/148
+    batch_size = 1
     values = {
         "phi": torch.rand(batch_size),
         "psi": torch.rand(batch_size),
         "chi": torch.rand(batch_size),
     }
 
-    pyqtorch_expval = model_pyqtorch.expectation(values=values)
-    pulser_expval = model_pulser.expectation(values=values)
+    pyqtorch_expval = model_pyqtorch.expectation(values=values, state=init_state)
+    pulser_expval = model_pulser.expectation(values=values, state=init_state)
 
     assert torch.allclose(pyqtorch_expval, pulser_expval, atol=ATOL_DICT[BackendName.PULSER])
 
