@@ -36,6 +36,13 @@ WEAK_COUPLING_CONST = 1.2
 DEFAULT_SPACING = 8.0  # µm (standard value)
 
 
+def _convert_init_state(state: Tensor) -> np.ndarray:
+    """Flip and squeeze initial state consistent with Pulser convention."""
+    if state.shape[0] > 1:
+        raise ValueError("Pulser backend only supports initial states with batch size 1.")
+    return np.flip(state.cpu().squeeze().numpy())
+
+
 def create_register(register: Register, spacing: float = DEFAULT_SPACING) -> PulserRegister:
     """Create Pulser register instance.
 
@@ -96,7 +103,7 @@ def make_sequence(circ: QuantumCircuit, config: Configuration) -> Sequence:
 # TODO: make it parallelized
 # TODO: add execution on the cloud platform
 def simulate_sequence(
-    sequence: Sequence, config: Configuration, state: Tensor
+    sequence: Sequence, config: Configuration, state: np.ndarray | None
 ) -> SimulationResults:
     simulation = QutipEmulator.from_sequence(
         sequence,
@@ -105,7 +112,7 @@ def simulate_sequence(
         with_modulation=config.with_modulation,
     )
     if state is not None:
-        simulation.set_initial_state(qutip.Qobj(state.cpu().numpy()))
+        simulation.set_initial_state(qutip.Qobj(state))
 
     return simulation.run(nsteps=config.n_steps_solv, method=config.method_solv)
 
@@ -165,7 +172,7 @@ class Backend(BackendInterface):
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         vals = to_list_of_dicts(param_values)
-
+        state = state if state is None else _convert_init_state(state)
         batched_wf = np.zeros((len(vals), 2**circuit.abstract.n_qubits), dtype=np.complex128)
 
         for i, param_values_el in enumerate(vals):
@@ -219,6 +226,7 @@ class Backend(BackendInterface):
             raise ValueError("You can only call sample with n_shots>0.")
 
         vals = to_list_of_dicts(param_values)
+        state = state if state is None else _convert_init_state(state)
 
         samples = []
         for param_values_el in vals:
