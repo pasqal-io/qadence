@@ -3,10 +3,11 @@ from __future__ import annotations
 import pytest
 import torch
 from sympy import acos
+
 import qadence as qd
-from qadence.operations import *
 from qadence import BackendName
 from qadence.errors import Errors
+from qadence.operations import *
 
 
 @pytest.mark.parametrize("backend", [BackendName.BRAKET, BackendName.PYQTORCH, BackendName.PULSER])

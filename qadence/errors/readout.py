@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
 from collections import Counter
 from enum import Enum
 from itertools import chain
+from typing import Any
 
 import numpy as np
 import torch
 from torch.distributions import normal, poisson, uniform
-from typing import Any
 
 from qadence.logger import get_logger
 

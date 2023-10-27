@@ -92,7 +92,7 @@ def sample(
     n_shots: int = 100,
     backend: BackendName = BackendName.PYQTORCH,
     endianness: Endianness = Endianness.BIG,
-    error: Error | None = None,
+    error: Errors | None = None,
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> list[Counter]:
     """Convenience wrapper for the `QuantumModel.sample` method.  This is a
