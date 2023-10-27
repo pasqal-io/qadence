@@ -12,8 +12,9 @@ from qadence.circuit import QuantumCircuit
 from qadence.constructors import ising_hamiltonian, total_magnetization
 from qadence.divergences import js_divergence
 from qadence.models import QuantumModel
-from qadence.operations import CNOT, RX, RY, AnalogRX, AnalogRY, H, X, Z, entangle
+from qadence.operations import CNOT, RX, RY, RZ, AnalogRX, AnalogRY, H, X, Z, entangle
 from qadence.parameters import FeatureParameter
+from qadence.states import random_state
 from qadence.types import DiffMode
 
 
@@ -52,12 +53,15 @@ def test_compatibility_pyqtorch_pulser_entanglement(
 def test_compatibility_pyqtorch_pulser_digital_rot(obs: AbstractBlock) -> None:
     phi = FeatureParameter("phi")
     psi = FeatureParameter("psi")
+    chi = FeatureParameter("chi")
 
     n_qubits = 2
+    init_state = random_state(n_qubits)
 
     block = chain(
         kron(RX(0, phi), RX(1, phi)),
         kron(RY(0, psi), RY(1, psi)),
+        kron(RZ(0, chi), RZ(1, chi)),
     )
     pyqtorch_circuit = QuantumCircuit(n_qubits, block)
 
@@ -67,7 +71,7 @@ def test_compatibility_pyqtorch_pulser_digital_rot(obs: AbstractBlock) -> None:
     model_pyqtorch = QuantumModel(
         pyqtorch_circuit, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD, observable=obs
     )
-    conf = {"spacing": LARGE_SPACING, "amplitude_local": 2 * np.pi}
+    conf = {"spacing": LARGE_SPACING, "amplitude_local": 2 * np.pi, "detuning": 2 * np.pi}
     model_pulser = QuantumModel(
         pulser_circuit,
         backend=BackendName.PULSER,
@@ -76,14 +80,17 @@ def test_compatibility_pyqtorch_pulser_digital_rot(obs: AbstractBlock) -> None:
         configuration=conf,
     )
 
-    batch_size = 5
+    # TODO: Change batch_size back to 5 when respective `pyqtorch` bug is fixed:
+    # https://github.com/pasqal-io/qadence/issues/148
+    batch_size = 1
     values = {
         "phi": torch.rand(batch_size),
         "psi": torch.rand(batch_size),
+        "chi": torch.rand(batch_size),
     }
 
-    pyqtorch_expval = model_pyqtorch.expectation(values=values)
-    pulser_expval = model_pulser.expectation(values=values)
+    pyqtorch_expval = model_pyqtorch.expectation(values=values, state=init_state)
+    pulser_expval = model_pulser.expectation(values=values, state=init_state)
 
     assert torch.allclose(pyqtorch_expval, pulser_expval, atol=ATOL_DICT[BackendName.PULSER])
 

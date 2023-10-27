@@ -135,7 +135,7 @@ obs = 2*kron(*map(Z, range(3)))
 block = chain(block, obs)
 
 from qadence.draw import html_string # markdown-exec: hide
-print(html_string(block, size="4,4")) # markdown-exec: hide
+print(html_string(block)) # markdown-exec: hide
 ```
 
 Please note the different colors for the parametrization with different types. The default palette assigns light blue for `VariationalParameter`, light green for `FeatureParameter` and shaded red for observables.

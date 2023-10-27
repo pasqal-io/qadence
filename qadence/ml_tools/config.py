@@ -10,7 +10,7 @@ from typing import Callable, Optional
 @dataclass
 class TrainConfig:
     """Default config for the train function. The default value of
-    each field can be customize with the constructor:
+    each field can be customized with the constructor:
 
     ```python exec="on" source="material-block" result="json"
     from qadence.ml_tools import TrainConfig
@@ -40,6 +40,8 @@ class TrainConfig:
     """A boolean function which evaluates a given training stopping metric is satisfied"""
     batch_size: int = 1
     """The batch_size to use when passing a list/tuple of torch.Tensors."""
+    verbose: bool = True
+    """Whether or not to print out metrics values during training."""
 
     def __post_init__(self) -> None:
         if self.folder:
