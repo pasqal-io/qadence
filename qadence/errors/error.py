@@ -14,7 +14,7 @@ PROTOCOL_TO_MODULE = {
 class Errors:
     READOUT = "readout"
 
-    def __init__(self, protocol: str, options: dict) -> None:
+    def __init__(self, protocol: str, options: dict | None) -> None:
         self.protocol: str = protocol
         self.options: dict | None = None
 
@@ -30,7 +30,7 @@ class Errors:
         return {"protocol": self.protocol, "options": self.options}
 
     @classmethod
-    def _from_dict(cls, d: dict) -> Erros | None:
+    def _from_dict(cls, d: dict) -> Errors | None:
         if d:
             return cls(d["protocol"], **d["options"])
         return None

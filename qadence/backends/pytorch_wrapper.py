@@ -15,6 +15,7 @@ from qadence.backends.utils import param_dict
 from qadence.blocks import AbstractBlock, PrimitiveBlock
 from qadence.blocks.utils import uuid_to_block, uuid_to_eigen
 from qadence.circuit import QuantumCircuit
+from qadence.errors import Errors
 from qadence.extensions import get_gpsr_fns
 from qadence.measurements import Measurements
 from qadence.ml_tools import promote_to_tensor

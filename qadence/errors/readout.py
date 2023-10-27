@@ -8,6 +8,7 @@ from itertools import chain
 import numpy as np
 import torch
 from torch.distributions import normal, poisson, uniform
+from typing import Any
 
 from qadence.logger import get_logger
 
@@ -70,7 +71,7 @@ def readout_error(
     seed: int | None = None,
     fidelity: float = 0.1,
     noise_distribution: Enum = WhiteNoise.UNIFORM,
-) -> list[Counter]:
+) -> list[Counter[Any]]:
     # option for reproducibility
     if seed is not None:
         torch.manual_seed(seed)

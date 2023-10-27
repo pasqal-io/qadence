@@ -230,7 +230,7 @@ class Backend(BackendInterface):
         )
         if error is not None:
             error_fn = error.get_error_fn()
-            return error_fn(counters=counters, n_qubits=circuit.abstract.n_qubits, shots=n_shots)
+            return error_fn(counters=counters, n_qubits=circuit.abstract.n_qubits, shots=n_shots)  # type: ignore
         else:
             return counters
 

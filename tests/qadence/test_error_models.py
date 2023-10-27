@@ -10,7 +10,7 @@ from qadence.errors import Errors
 
 
 @pytest.mark.parametrize("backend", [BackendName.BRAKET, BackendName.PYQTORCH, BackendName.PULSER])
-def test_readout_error(backend) -> None:
+def test_readout_error(backend: BackendName) -> None:
     n_qubits = 5
     fidelity = 0.1
     fp = qd.FeatureParameter("phi")

@@ -10,10 +10,10 @@ from qadence import backend_factory
 from qadence.backend import BackendConfiguration, BackendName
 from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
+from qadence.errors import Errors
 from qadence.register import Register
 from qadence.types import DiffMode
 from qadence.utils import Endianness
-from qadence.errors import Errors
 
 # Modules to be automatically added to the qadence namespace
 __all__ = ["run", "sample", "expectation"]
@@ -92,6 +92,7 @@ def sample(
     n_shots: int = 100,
     backend: BackendName = BackendName.PYQTORCH,
     endianness: Endianness = Endianness.BIG,
+    error: Error | None = None,
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> list[Counter]:
     """Convenience wrapper for the `QuantumModel.sample` method.  This is a
@@ -106,6 +107,7 @@ def sample(
         n_shots: Number of shots per element in the batch.
         backend: Name of the backend to run on.
         endianness: The target device endianness.
+        error: The error model to use if any.
         configuration: The backend configuration.
 
     Returns:
