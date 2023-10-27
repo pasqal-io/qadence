@@ -30,9 +30,6 @@ from qadence.utils import Endianness, int_to_basis
 from .config import Configuration
 from .convert_ops import convert_block, convert_observable
 
-DEVICE = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-torch.set_default_device(DEVICE)
-
 
 @dataclass(frozen=True, eq=True)
 class Backend(BackendInterface):
@@ -60,9 +57,7 @@ class Backend(BackendInterface):
         abstract = transpile(*transpilations)(circuit)  # type: ignore[call-overload]
         ops = convert_block(abstract.block, n_qubits=circuit.n_qubits, config=self.config)
         native = pyq.QuantumCircuit(abstract.n_qubits, ops)
-        return ConvertedCircuit(
-            native=native.to(device=DEVICE), abstract=abstract, original=circuit
-        )
+        return ConvertedCircuit(native=native, abstract=abstract, original=circuit)
 
     def observable(self, observable: AbstractBlock, n_qubits: int) -> ConvertedObservable:
         # make sure only leaves, i.e. primitive blocks are scaled
@@ -75,9 +70,7 @@ class Backend(BackendInterface):
         block = transpile(*transpilations)(observable)  # type: ignore[call-overload]
 
         (native,) = convert_observable(block, n_qubits=n_qubits, config=self.config)
-        return ConvertedObservable(
-            native=native.to(device=DEVICE), abstract=block, original=observable
-        )
+        return ConvertedObservable(native=native, abstract=block, original=observable)
 
     def run(
         self,

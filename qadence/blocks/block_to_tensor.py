@@ -19,9 +19,6 @@ from qadence.blocks.utils import chain, kron, uuid_to_expression
 from qadence.parameters import evaluate, stringify
 from qadence.types import Endianness, TensorType, TNumber
 
-DEVICE = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-torch.set_default_device(DEVICE)
-
 J = torch.tensor(1j)
 
 ZEROMAT = torch.zeros((2, 2), dtype=torch.cdouble).unsqueeze(0)
@@ -291,7 +288,7 @@ def block_to_diagonal(
             diag_only=True,
             endianness=endianness,
         )
-    return v.to(device=DEVICE)
+    return v
 
 
 # version that will accept user params
@@ -465,4 +462,4 @@ def _block_to_tensor_embedded(
     else:
         raise TypeError(f"Conversion for block type {type(block)} not supported.")
 
-    return mat.to(device=DEVICE)
+    return mat
