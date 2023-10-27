@@ -138,6 +138,7 @@ class Backend(BackendInterface):
             raise NotImplementedError
 
         # loop over all values in the batch
+
         samples = []
         for vals in to_list_of_dicts(param_values):
             final_circuit = self.assign_parameters(circuit, vals)
