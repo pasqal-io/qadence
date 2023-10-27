@@ -32,6 +32,7 @@ from qadence.operations import (
     OpName,
     U,
     multi_qubit_gateset,
+    non_unitary_gateset,
     single_qubit_gateset,
     three_qubit_gateset,
     two_qubit_gateset,
@@ -105,6 +106,8 @@ def convert_block(
             # AddPyQOperation(Z, Z)
             # which would be wrong.
             return [pyq.QuantumCircuit(n_qubits, ops)]
+    elif isinstance(block, tuple(non_unitary_gateset)):
+        return [getattr(pyq, block.name)(block.qubit_support[0])]
     elif isinstance(block, tuple(single_qubit_gateset)):
         pyq_cls = getattr(pyq, block.name)
         if isinstance(block, ParametricBlock):
