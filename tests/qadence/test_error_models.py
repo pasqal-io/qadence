@@ -8,6 +8,7 @@ import qadence as qd
 from qadence import BackendName
 from qadence.errors import Errors
 from qadence.operations import *
+from qadence.operations import RX
 
 
 @pytest.mark.parametrize("backend", [BackendName.BRAKET, BackendName.PYQTORCH, BackendName.PULSER])
