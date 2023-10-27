@@ -26,7 +26,7 @@ from qadence.utils import (
 )
 
 BACKENDS = BackendName.list()
-BACKENDS.remove("pulser")
+BACKENDS.remove(BackendName.PULSER)
 N_SHOTS = 1000
 
 
@@ -178,8 +178,12 @@ def test_pulser_run_endianness(
     register = Register.from_coordinates([(0.0, 10.0), (0.0, 20.0), (0.0, 30.0)])
     circ = QuantumCircuit(register, block)
     for endianness in Endianness:
-        wf_pyq = run(circ, {}, backend="pyqtorch", endianness=endianness, state=init_state)
-        wf_pulser = run(circ, {}, backend="pulser", endianness=endianness, state=init_state)
+        wf_pyq = run(
+            circ, {}, backend=BackendName.PYQTORCH, endianness=endianness, state=init_state
+        )
+        wf_pulser = run(
+            circ, {}, backend=BackendName.PULSER, endianness=endianness, state=init_state
+        )
         assert equivalent_state(wf_pyq, wf_pulser, atol=ATOL_DICT[BackendName.PULSER])
 
 
