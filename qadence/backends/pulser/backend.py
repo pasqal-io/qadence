@@ -214,7 +214,6 @@ class Backend(BackendInterface):
             from qadence.transpile import invert_endianness
 
             samples = invert_endianness(samples)
-        # return samples
         if error is not None:
             error_fn = error.get_error_fn()
             return error_fn(counters=samples, n_qubits=circuit.abstract.n_qubits)

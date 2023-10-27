@@ -71,25 +71,24 @@ def readout_error(
     fidelity: float = 0.1,
     noise_distribution: Enum = WhiteNoise.UNIFORM,
 ) -> list[Counter]:
-    # for ensuring reproducibility
+    # option for reproducibility
     if seed is not None:
         torch.manual_seed(seed)
 
     return [
         Counter(
-            list(
-                chain(
-                    *[
-                        bs_corruption(
-                            bitstring=bitstring,
-                            shots=shots,
-                            fidelity=fidelity,
-                            noise_distribution=noise_distribution,
-                            n_qubits=n_qubits,
-                        )
-                        for bitstring, shots in counters[0].items()
-                    ]
-                )
+            chain(
+                *[
+                    bs_corruption(
+                        bitstring=bitstring,
+                        shots=shots,
+                        fidelity=fidelity,
+                        noise_distribution=noise_distribution,
+                        n_qubits=n_qubits,
+                    )
+                    for bitstring, shots in counter.items()
+                ]
             )
         )
+        for counter in counters
     ]

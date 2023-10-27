@@ -16,7 +16,7 @@ class Errors:
 
     def __init__(self, protocol: str, options: dict) -> None:
         self.protocol: str = protocol
-        self.options: dict | None = options
+        self.options: dict | None = None
 
     def get_error_fn(self) -> Callable:
         try:
