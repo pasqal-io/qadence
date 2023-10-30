@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import reduce
 from itertools import chain as flatten
 from operator import add
-from typing import Callable, Sequence
+from typing import Sequence, Tuple
 
 import pyqtorch as pyq
 import sympy
@@ -63,9 +63,9 @@ def convert_observable(
 def convert_block(
     block: AbstractBlock, n_qubits: int = None, config: Configuration = None
 ) -> Sequence[Module]:
-    qubit_support = list(block.qubit_support)
+    qubit_support = block.qubit_support
     if n_qubits is None:
-        n_qubits = max(block.qubit_support) + 1
+        n_qubits = max(qubit_support) + 1
 
     if config is None:
         config = Configuration()
@@ -75,17 +75,13 @@ def convert_block(
 
     elif isinstance(block, AddBlock):
         ops = list(flatten(*(convert_block(b, n_qubits, config) for b in block.blocks)))
-        return [AddPyQOperation(block.qubit_support, n_qubits, ops, config)]
+        return [AddPyQOperation(qubit_support, n_qubits, ops, config)]
 
     elif isinstance(block, TimeEvolutionBlock):
         return [
             PyQHamiltonianEvolution(
-                qubit_support=block.qubit_support,
+                qubit_support=qubit_support,
                 n_qubits=n_qubits,
-                pyq_operation=pyq.HamiltonianEvolution(
-                    qubit_support,
-                    n_qubits,
-                ),
                 block=block,
                 config=config,
             )
@@ -107,7 +103,7 @@ def convert_block(
             # which would be wrong.
             return [pyq.QuantumCircuit(n_qubits, ops)]
     elif isinstance(block, tuple(non_unitary_gateset)):
-        return [getattr(pyq, block.name)(block.qubit_support[0])]
+        return [getattr(pyq, block.name)(qubit_support[0])]
     elif isinstance(block, tuple(single_qubit_gateset)):
         pyq_cls = getattr(pyq, block.name)
         if isinstance(block, ParametricBlock):
@@ -160,7 +156,7 @@ class PyQComposedBlock(Module):
     def __init__(
         self,
         ops: list[Module],
-        qubits: list[int],
+        qubits: Tuple[int, ...],
         n_qubits: int,
         config: Configuration = None,
     ):
@@ -253,14 +249,13 @@ class PyQHamiltonianEvolution(Module):
         self,
         qubit_support: Sequence,
         n_qubits: int,
-        pyq_operation: Callable,
         block: TimeEvolutionBlock,
         config: Configuration,
     ):
         super().__init__()
         self.qubits = qubit_support
         self.n_qubits = n_qubits
-        self.operation = pyq_operation
+        self.operation = pyq.HamiltonianEvolution(qubit_support=qubit_support, n_qubits=n_qubits)
         self.param_names = config.get_param_name(block)
         self._has_parametric_generator: bool
         self.block = block
