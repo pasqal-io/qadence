@@ -71,9 +71,11 @@ def test_readout_error_quantum_model(
     error_probability: float, block: AbstractBlock, backend: BackendName
 ) -> None:
     diff_mode = "ad" if backend == BackendName.PYQTORCH else "gpsr"
+
     err_free = QuantumModel(
         QuantumCircuit(block.n_qubits, block), backend=backend, diff_mode=diff_mode
     ).sample()
+
     noisy = QuantumModel(
         QuantumCircuit(block.n_qubits, block), backend=backend, diff_mode=diff_mode
     ).sample(error=Errors(protocol=Errors.READOUT, options=None))
