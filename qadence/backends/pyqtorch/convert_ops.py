@@ -141,7 +141,7 @@ class PyQMatrixBlock(Module):
     def __init__(self, block: MatrixBlock, n_qubits: int, config: Configuration = None):
         super().__init__()
         self.n_qubits = n_qubits
-        self.qubits = list(block.qubit_support)
+        self.qubits = block.qubit_support
         self.register_buffer("mat", block.matrix.unsqueeze(2))
 
     def forward(self, state: torch.Tensor, _: dict[str, torch.Tensor] = None) -> torch.Tensor:
