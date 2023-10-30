@@ -8,7 +8,7 @@ from typing import Sequence, Tuple
 import pyqtorch as pyq
 import sympy
 import torch
-from pyqtorch.apply import apply_operator as _apply_batch_gate
+from pyqtorch.apply import apply_operator
 from torch.nn import Module
 from torch.utils.checkpoint import checkpoint
 
@@ -75,7 +75,7 @@ def convert_block(
 
     elif isinstance(block, AddBlock):
         ops = list(flatten(*(convert_block(b, n_qubits, config) for b in block.blocks)))
-        return [AddPyQOperation(qubit_support, n_qubits, ops, config)]
+        return [AddPyQOperation(n_qubits, ops)]
 
     elif isinstance(block, TimeEvolutionBlock):
         return [
@@ -149,10 +149,10 @@ class PyQMatrixBlock(Module):
 
     def apply(self, matrices: torch.Tensor, state: torch.Tensor) -> torch.Tensor:
         batch_size = state.size(-1)
-        return _apply_batch_gate(state, matrices, self.qubits, self.n_qubits, batch_size)
+        return apply_operator(state, matrices, self.qubits, self.n_qubits, batch_size)
 
 
-class PyQComposedBlock(Module):
+class PyQComposedBlock(pyq.QuantumCircuit):
     def __init__(
         self,
         ops: list[Module],
@@ -162,7 +162,7 @@ class PyQComposedBlock(Module):
     ):
         """Compose a chain of single qubit operations on the same qubit into a single
         call to _apply_batch_gate."""
-        super().__init__()
+        super().__init__(n_qubits, ops)
         self.operations = ops
         self.qubits = qubits
         self.n_qubits = n_qubits
@@ -171,11 +171,9 @@ class PyQComposedBlock(Module):
         self, state: torch.Tensor, values: dict[str, torch.Tensor] | None = None
     ) -> torch.Tensor:
         batch_size = state.size(-1)
-        return self.apply(self.unitary(values, batch_size), state)
-
-    def apply(self, matrices: torch.Tensor, state: torch.Tensor) -> torch.Tensor:
-        batch_size = state.size(-1)
-        return _apply_batch_gate(state, matrices, self.qubits, self.n_qubits, batch_size)
+        return apply_operator(
+            state, self.unitary(values, batch_size), self.qubits, self.n_qubits, batch_size
+        )
 
     def unitary(self, values: dict[str, torch.Tensor] | None, batch_size: int) -> torch.Tensor:
         perm = (2, 0, 1)  # We permute the dims since torch.bmm expects the batch_dim at 0.
@@ -323,33 +321,15 @@ class PyQHamiltonianEvolution(Module):
         return self._forward(state, values)
 
 
-class AddPyQOperation(Module):
-    def __init__(
-        self, qubits: Sequence, n_qubits: int, operations: list[Module], config: Configuration
-    ):
-        super().__init__()
-        self.operations = operations
-
-        def _fwd(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-            return reduce(add, (op(state, values) for op in self.operations))
-
-        if config.use_gradient_checkpointing:
-
-            def _forward(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-                return checkpoint(_fwd, state, values, use_reentrant=False)
-
-        else:
-
-            def _forward(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-                return _fwd(state, values)
-
-        self._forward = _forward
+class AddPyQOperation(pyq.QuantumCircuit):
+    def __init__(self, n_qubits: int, operations: list[Module]):
+        super().__init__(n_qubits=n_qubits, operations=operations)
 
     def forward(self, state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-        return self._forward(state, values)
+        return reduce(add, (op(state, values) for op in self.operations))
 
 
-class ScalePyQOperation(Module):
+class ScalePyQOperation(pyq.QuantumCircuit):
     """
     Computes:
 
@@ -358,7 +338,7 @@ class ScalePyQOperation(Module):
     """
 
     def __init__(self, n_qubits: int, block: ScaleBlock, config: Configuration):
-        super().__init__()
+        super().__init__(n_qubits, convert_block(block.block, n_qubits, config))
         (self.param_name,) = config.get_param_name(block)
         if not isinstance(block.block, PrimitiveBlock):
             raise NotImplementedError(
@@ -368,24 +348,11 @@ class ScalePyQOperation(Module):
             )
         self.operation = convert_block(block.block, n_qubits, config)[0]
 
-        def _fwd(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-            return values[self.param_name] * self.operation(state, values)
-
-        if config.use_gradient_checkpointing:
-
-            def _forward(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-                return checkpoint(_fwd, state, values, use_reentrant=False)
-
-        else:
-
-            def _forward(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-                return _fwd(state, values)
-
-        self._forward = _forward
+    def forward(self, state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
+        for op in self.operations:
+            state = op(state, values)
+        return values[self.param_name] * state
 
     def unitary(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
         thetas = values[self.param_name]
         return (thetas * self.operation.unitary(values)).unsqueeze(2)
-
-    def forward(self, state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-        return self._forward(state, values)
