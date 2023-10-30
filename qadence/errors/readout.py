@@ -28,52 +28,71 @@ class WhiteNoise(Enum):
 
 
 def bitstring_to_array(bitstring: str) -> np.array:
+    """A helper function to convert bit strings to numpy arrays."""
     return np.array([int(i) for i in bitstring])
 
 
 def array_to_bitstring(bitstring: np.array) -> str:
+    """A helper function to convert numpy arrays to bit strings."""
     return "".join(([str(i) for i in bitstring]))
 
 
 def bit_flip(qubit: int) -> int:
+    """A helper function that reverses the states 0 and 1 in the bit string."""
     return 1 if qubit == 0 else 0
-
-
-def bs_corruption(
-    bitstring: str,
-    shots: int,
-    fidelity: float,
-    n_qubits: int,
-    noise_distribution: Enum = WhiteNoise.UNIFORM,
-) -> list:
-    # the noise_matrix should be available to the user if they want to do error correction
-    noise_matrix = noise_distribution.sample([shots, n_qubits])  # type: ignore[attr-defined]
-
-    # simplest approach - en event occurs if its probability is higher than expected
-    # by random chance
-    err_idx = torch.nonzero((noise_matrix < fidelity), as_tuple=True)[1]
-    all_bitstrings = [bitstring] * (shots - len(err_idx))  # add the majority correct bit strings
-
-    def func_distort(idx: int) -> str:
-        bitstring_copy = bitstring_to_array(bitstring)
-        bitstring_copy[idx] = bit_flip(bitstring_copy[idx])
-        return array_to_bitstring(bitstring_copy)
-
-    all_bitstrings.extend([func_distort(idx) for idx in err_idx])
-    return all_bitstrings
 
 
 def readout_error(
     counters: Counter,
     n_qubits: int,
-    shots: int = 1000,
     seed: int | None = None,
-    fidelity: float = 0.1,
+    error_probability: float = 0.1,
     noise_distribution: Enum = WhiteNoise.UNIFORM,
 ) -> list[Counter[Any]]:
+    """
+    Implements a simple uniform readout error model for position-independent bit string
+    corruption.
+
+    Args:
+        counters: Samples of bit string as Counters.
+        n_qubits: Number of shots to sample.
+        seed: Random seed value if any.
+        error_probability: Uniform error probability of wrong readout at any position
+        in the bit strings.
+        noise_distribution: Noise distribution.
+
+    Returns:
+        Samples of corrupted bit strings as list[Counter].
+    """
+
     # option for reproducibility
     if seed is not None:
         torch.manual_seed(seed)
+
+    def bs_corruption(
+        bitstring: str,
+        n_shots: int,
+        error_probability: float,
+        n_qubits: int,
+        noise_distribution: Enum = WhiteNoise.UNIFORM,
+    ) -> list:
+        # the noise_matrix should be available to the user if they want to do error correction
+        noise_matrix = noise_distribution.sample([n_shots, n_qubits])  # type: ignore[attr-defined]
+
+        # simplest approach - en event occurs if its probability is higher than expected
+        # by random chance
+        err_idx = torch.nonzero((noise_matrix < error_probability), as_tuple=True)[1]
+        all_bitstrings = [bitstring] * (
+            n_shots - len(err_idx)
+        )  # add the majority correct bit strings
+
+        def func_distort(idx: int) -> str:
+            bitstring_copy = bitstring_to_array(bitstring)
+            bitstring_copy[idx] = bit_flip(bitstring_copy[idx])
+            return array_to_bitstring(bitstring_copy)
+
+        all_bitstrings.extend([func_distort(idx) for idx in err_idx])
+        return all_bitstrings
 
     return [
         Counter(
@@ -81,12 +100,12 @@ def readout_error(
                 *[
                     bs_corruption(
                         bitstring=bitstring,
-                        shots=shots,
-                        fidelity=fidelity,
+                        n_shots=n_shots,
+                        error_probability=error_probability,
                         noise_distribution=noise_distribution,
                         n_qubits=n_qubits,
                     )
-                    for bitstring, shots in counter.items()
+                    for bitstring, n_shots in counter.items()
                 ]
             )
         )
