@@ -11,6 +11,7 @@ from torch.autograd import Function
 
 from qadence.backend import Backend as QuantumBackend
 from qadence.backend import Converted, ConvertedCircuit, ConvertedObservable
+from qadence.backends.adjoint import AdjointExpectation
 from qadence.backends.utils import param_dict
 from qadence.blocks import AbstractBlock, PrimitiveBlock
 from qadence.blocks.utils import uuid_to_block, uuid_to_eigen
@@ -111,6 +112,20 @@ class DifferentiableExpectation:
             )
         return promote_to_tensor(
             expectations if isinstance(expectations, Tensor) else torch.tensor(expectations)
+        )
+
+    def adjoint(self) -> Tensor:
+        return promote_to_tensor(
+            [
+                AdjointExpectation.apply(
+                    self.circuit.native,
+                    obs.native,
+                    self.state,
+                    self.param_values.keys(),
+                    *self.param_values.values(),
+                )
+                for obs in self.observable
+            ]
         )
 
     def psr(self, psr_fn: Callable, **psr_args: int | float | None) -> Tensor:
@@ -258,6 +273,8 @@ class DifferentiableBackend(nn.Module):
 
         if self.diff_mode == DiffMode.AD:
             expectation = differentiable_expectation.ad
+        elif self.diff_mode == DiffMode.ADJOINT:
+            expectation = differentiable_expectation.adjoint
         else:
             try:
                 fns = get_gpsr_fns()
