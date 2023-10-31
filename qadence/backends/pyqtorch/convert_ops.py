@@ -145,11 +145,7 @@ class PyQMatrixBlock(Module):
         self.register_buffer("mat", block.matrix.unsqueeze(2))
 
     def forward(self, state: torch.Tensor, _: dict[str, torch.Tensor] = None) -> torch.Tensor:
-        return self.apply(self.mat, state)
-
-    def apply(self, matrices: torch.Tensor, state: torch.Tensor) -> torch.Tensor:
-        batch_size = state.size(-1)
-        return apply_operator(state, matrices, self.qubits, self.n_qubits, batch_size)
+        return apply_operator(state, self.mat, self.qubits, self.n_qubits)
 
 
 class PyQComposedBlock(pyq.QuantumCircuit):
@@ -330,13 +326,6 @@ class AddPyQOperation(pyq.QuantumCircuit):
 
 
 class ScalePyQOperation(pyq.QuantumCircuit):
-    """
-    Computes:
-
-        M = matrix(op, theta)
-        scale * matmul(M, state)
-    """
-
     def __init__(self, n_qubits: int, block: ScaleBlock, config: Configuration):
         super().__init__(n_qubits, convert_block(block.block, n_qubits, config))
         (self.param_name,) = config.get_param_name(block)
