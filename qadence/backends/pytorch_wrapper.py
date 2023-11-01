@@ -86,6 +86,7 @@ class DifferentiableExpectation:
     param_values: dict[str, Tensor]
     state: Tensor | None = None
     measurement: Measurements | None = None
+    error: Errors | None = None
     endianness: Endianness = Endianness.BIG
 
     def ad(self) -> Tensor:
@@ -100,6 +101,7 @@ class DifferentiableExpectation:
                 param_values=self.param_values,
                 options=self.measurement.options,
                 state=self.state,
+                error=self.error,
                 endianness=self.endianness,
             )
         else:
@@ -108,6 +110,7 @@ class DifferentiableExpectation:
                 observable=self.observable,
                 param_values=self.param_values,
                 state=self.state,
+                error=self.error,
                 endianness=self.endianness,
             )
         return promote_to_tensor(
@@ -132,6 +135,7 @@ class DifferentiableExpectation:
                 observables=[obs.original for obs in self.observable],
                 options=self.measurement.options,
                 state=self.state,
+                error=self.error,
                 endianness=self.endianness,
             )
         else:
@@ -140,6 +144,7 @@ class DifferentiableExpectation:
                 circuit=self.circuit,
                 observable=self.observable,
                 state=self.state,
+                error=self.error,
                 endianness=self.endianness,
             )
         # PSR only applies to parametric circuits.
@@ -231,6 +236,7 @@ class DifferentiableBackend(nn.Module):
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
+        error: Errors | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         """Compute the expectation value of a given observable.
@@ -254,6 +260,7 @@ class DifferentiableBackend(nn.Module):
             param_values=param_values,
             state=state,
             measurement=measurement,
+            error=error,
             endianness=endianness,
         )
 

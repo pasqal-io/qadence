@@ -181,6 +181,7 @@ class QuantumModel(nn.Module):
         observable: list[ConvertedObservable] | ConvertedObservable | None = None,
         state: Optional[Tensor] = None,
         measurement: Measurements | None = None,
+        error: Errors | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         """Compute expectation using the given backend.
@@ -200,13 +201,15 @@ class QuantumModel(nn.Module):
         params = self.embedding_fn(self._params, values)
         if measurement is None:
             measurement = self._measurement
-
+        if error is None:
+            error = self._error
         return self.backend.expectation(
             circuit=self._circuit,
             observable=observable,
             param_values=params,
             state=state,
             measurement=measurement,
+            error=error,
             endianness=endianness,
         )
 

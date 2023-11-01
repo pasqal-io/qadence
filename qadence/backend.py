@@ -265,6 +265,7 @@ class Backend(ABC):
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
+        error: Errors | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         """Compute the expectation value of the `circuit` with the given `observable`.
