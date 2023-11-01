@@ -160,9 +160,7 @@ class PyQComposedBlock(pyq.QuantumCircuit):
         """Compose a chain of single qubit operations on the same qubit into a single
         call to _apply_batch_gate."""
         super().__init__(n_qubits, ops)
-        self.operations = ops
         self.qubits = qubits
-        self.n_qubits = n_qubits
 
     def forward(
         self, state: torch.Tensor, values: dict[str, torch.Tensor] | None = None
