@@ -14,7 +14,7 @@ PROTOCOL_TO_MODULE = {
 class Errors:
     READOUT = "readout"
 
-    def __init__(self, protocol: str, options: dict | None) -> None:
+    def __init__(self, protocol: str, options: dict | None = None) -> None:
         self.protocol: str = protocol
         self.options: dict | None = None
 
