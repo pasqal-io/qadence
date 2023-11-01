@@ -80,9 +80,7 @@ def test_compatibility_pyqtorch_pulser_digital_rot(obs: AbstractBlock) -> None:
         configuration=conf,
     )
 
-    # TODO: Change batch_size back to 5 when respective `pyqtorch` bug is fixed:
-    # https://github.com/pasqal-io/qadence/issues/148
-    batch_size = 1
+    batch_size = 5
     values = {
         "phi": torch.rand(batch_size),
         "psi": torch.rand(batch_size),
