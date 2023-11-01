@@ -6,17 +6,16 @@ from math import prod
 from typing import Any
 
 import pyqtorch.modules as pyq
-from qadence import logger
 import torch
 from torch import Tensor
 
+from qadence import logger
 from qadence.backend import Backend as BackendInterface
 from qadence.backend import BackendName, ConvertedCircuit, ConvertedObservable
 from qadence.backends.utils import to_list_of_dicts
 from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.errors import Errors
-from qadence.logger import get_logger
 from qadence.measurements import Measurements
 from qadence.overlap import overlap_exact
 from qadence.states import zero_state
@@ -32,9 +31,6 @@ from qadence.utils import Endianness, int_to_basis
 
 from .config import Configuration
 from .convert_ops import convert_block, convert_observable
-
-
-logger = get_logger(__name__)
 
 
 @dataclass(frozen=True, eq=True)
@@ -189,7 +185,8 @@ class Backend(BackendInterface):
         if error is not None:
             logger.warning(
                 f"Errors of type {error} are not implemented for expectation yet. "
-                "This is ignored for now.")
+                "This is ignored for now."
+            )
         fn = self._looped_expectation if self.config.loop_expectation else self._batched_expectation
         return fn(
             circuit=circuit,
