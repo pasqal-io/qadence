@@ -5,6 +5,7 @@ from typing import Any
 from pyqtorch.apply import apply_operator
 from pyqtorch.circuit import QuantumCircuit as PyQCircuit
 from pyqtorch.parametric import Parametric
+from pyqtorch.primitive import Primitive
 from pyqtorch.utils import overlap, param_dict
 from torch import Tensor
 from torch.autograd import Function
@@ -39,23 +40,36 @@ class AdjointExpectation(Function):
             param_values = ctx.saved_tensors
             values = param_dict(ctx.param_names, param_values)
             grads: list = []
+            # ctx.needs_input_grad[3:]
             for op in circuit.reverse():
                 if isinstance(op, ScalePyQOperation):
-                    return [
-                        param_values[op.param_name]
-                    ]  # the gradient of a scaleblock param ist just itself
-                if isinstance(op, PyQCircuit):
-                    grads += _circuit_backward(ctx, op)
-                else:
                     ctx.out_state = apply_operator(
                         ctx.out_state, op.dagger(values), op.qubit_support
                     )
-                    if isinstance(op, Parametric):
+                    if values[op.param_name].requires_grad:
+                        grads += [2 * -values[op.param_name]]
+                    ctx.projected_state = apply_operator(
+                        ctx.projected_state, op.dagger(values), op.qubit_support
+                    )
+                    continue
+                if isinstance(op, PyQCircuit):
+                    grads += [grad_out * g for g in _circuit_backward(ctx, op)]
+                elif isinstance(op, (Primitive, Parametric)):
+                    ctx.out_state = apply_operator(
+                        ctx.out_state, op.dagger(values), op.qubit_support
+                    )
+                    if isinstance(op, Parametric) and values[op.param_name].requires_grad:
                         mu = apply_operator(ctx.out_state, op.jacobian(values), op.qubit_support)
                         grads = [grad_out * 2 * overlap(ctx.projected_state, mu)] + grads
                     ctx.projected_state = apply_operator(
                         ctx.projected_state, op.dagger(values), op.qubit_support
                     )
+                else:
+                    raise TypeError(
+                        f"AdjointExpectation does not support a backward passe for type {type(op)}."
+                    )
             return grads
 
-        return (None, None, None, None, *_circuit_backward(ctx))
+        grads = _circuit_backward(ctx)
+
+        return (None, None, None, None, *grads)

@@ -9,6 +9,7 @@ import pyqtorch as pyq
 import sympy
 import torch
 from pyqtorch.apply import apply_operator
+from pyqtorch.parametric import Parametric
 from torch.nn import Module
 from torch.utils.checkpoint import checkpoint
 
@@ -89,19 +90,19 @@ def convert_block(
     elif isinstance(block, MatrixBlock):
         return [PyQMatrixBlock(block, n_qubits, config)]
     elif isinstance(block, CompositeBlock):
-        ops = list(flatten(*(convert_block(b, n_qubits, config) for b in block.blocks)))
-        if is_single_qubit_chain(block) and config.use_single_qubit_composition:
-            return [PyQComposedBlock(ops, qubit_support, n_qubits, config)]
-        else:
-            # NOTE: without wrapping in a pyq.QuantumCircuit here the kron/chain
-            # blocks won't be properly nested which leads to incorrect results from
-            # the `AddBlock`s. For example:
-            # add(chain(Z(0), Z(1))) has to result in the following (pseudo-code)
-            # AddPyQOperation(pyq.QuantumCircuit(Z, Z))
-            # as opposed to
-            # AddPyQOperation(Z, Z)
-            # which would be wrong.
-            return [pyq.QuantumCircuit(n_qubits, ops)]
+        return list(flatten(*(convert_block(b, n_qubits, config) for b in block.blocks)))
+        # if is_single_qubit_chain(block) and config.use_single_qubit_composition:
+        #     return [PyQComposedBlock(ops, qubit_support, n_qubits, config)]
+        # else:
+        #     # NOTE: without wrapping in a pyq.QuantumCircuit here the kron/chain
+        #     # blocks won't be properly nested which leads to incorrect results from
+        #     # the `AddBlock`s. For example:
+        #     # add(chain(Z(0), Z(1))) has to result in the following (pseudo-code)
+        #     # AddPyQOperation(pyq.QuantumCircuit(Z, Z))
+        #     # as opposed to
+        #     # AddPyQOperation(Z, Z)
+        #     # which would be wrong.
+        # return ops
     elif isinstance(block, tuple(non_unitary_gateset)):
         return [getattr(pyq, block.name)(qubit_support[0])]
     elif isinstance(block, tuple(single_qubit_gateset)):
@@ -325,9 +326,9 @@ class AddPyQOperation(pyq.QuantumCircuit):
         return reduce(add, (op(state, values) for op in self.operations))
 
 
-class ScalePyQOperation(pyq.QuantumCircuit):
+class ScalePyQOperation(Parametric):
     def __init__(self, n_qubits: int, block: ScaleBlock, config: Configuration):
-        super().__init__(n_qubits, convert_block(block.block, n_qubits, config))
+        super().__init__(block.block.name, block.qubit_support)
         (self.param_name,) = config.get_param_name(block)
         if not isinstance(block.block, PrimitiveBlock):
             raise NotImplementedError(
@@ -337,11 +338,9 @@ class ScalePyQOperation(pyq.QuantumCircuit):
             )
         self.operation = convert_block(block.block, n_qubits, config)[0]
 
-    def forward(self, state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-        for op in self.operations:
-            state = op(state, values)
-        return values[self.param_name] * state
-
     def unitary(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
         thetas = values[self.param_name]
-        return (thetas * self.operation.unitary(values)).unsqueeze(2)
+        return thetas * self.operation.unitary(values)
+
+    def jacobian(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
+        return values[self.param_name] * torch.ones_like(self.unitary(values))

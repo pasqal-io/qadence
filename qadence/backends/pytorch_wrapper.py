@@ -11,7 +11,6 @@ from torch.autograd import Function
 
 from qadence.backend import Backend as QuantumBackend
 from qadence.backend import Converted, ConvertedCircuit, ConvertedObservable
-from qadence.backends.adjoint import AdjointExpectation
 from qadence.backends.utils import param_dict
 from qadence.blocks import AbstractBlock, PrimitiveBlock
 from qadence.blocks.utils import uuid_to_block, uuid_to_eigen
@@ -115,17 +114,16 @@ class DifferentiableExpectation:
         )
 
     def adjoint(self) -> Tensor:
+        from qadence.backends.adjoint import AdjointExpectation
+
         return promote_to_tensor(
-            [
-                AdjointExpectation.apply(
-                    self.circuit.native,
-                    obs.native,
-                    self.state,
-                    self.param_values.keys(),
-                    *self.param_values.values(),
-                )
-                for obs in self.observable
-            ]
+            AdjointExpectation.apply(
+                self.circuit.native,
+                self.observable[0].native,
+                self.state,
+                self.param_values.keys(),
+                *self.param_values.values(),
+            )
         )
 
     def psr(self, psr_fn: Callable, **psr_args: int | float | None) -> Tensor:

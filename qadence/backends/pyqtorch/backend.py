@@ -28,7 +28,7 @@ from qadence.transpile import (
 from qadence.utils import Endianness, int_to_basis
 
 from .config import Configuration
-from .convert_ops import convert_block
+from .convert_ops import convert_block, convert_observable
 
 
 @dataclass(frozen=True, eq=True)
@@ -48,29 +48,28 @@ class Backend(BackendInterface):
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:
         transpilations = [
             lambda circ: add_interaction(circ, interaction=self.config.interaction),
-            blockfn_to_circfn(flatten),
-            blockfn_to_circfn(chain_single_qubit_ops),
+            lambda circ: blockfn_to_circfn(chain_single_qubit_ops)(circ)
+            if self.config.use_single_qubit_composition
+            else blockfn_to_circfn(flatten)(circ),
             blockfn_to_circfn(scale_primitive_blocks_only),
         ]
 
         abstract = transpile(*transpilations)(circuit)  # type: ignore[call-overload]
         ops = convert_block(abstract.block, n_qubits=circuit.n_qubits, config=self.config)
-        native = pyq.QuantumCircuit(abstract.n_qubits, ops, diff_mode="adjoint")
+        native = pyq.QuantumCircuit(abstract.n_qubits, ops)
         return ConvertedCircuit(native=native, abstract=abstract, original=circuit)
 
     def observable(self, observable: AbstractBlock, n_qubits: int) -> ConvertedObservable:
         # make sure only leaves, i.e. primitive blocks are scaled
         transpilations = [
-            # lambda block: chain_single_qubit_ops(block)
-            # if self.config.use_single_qubit_composition
-            flatten,
+            lambda block: chain_single_qubit_ops(block)
+            if self.config.use_single_qubit_composition
+            else flatten(block),
             scale_primitive_blocks_only,
         ]
         block = transpile(*transpilations)(observable)  # type: ignore[call-overload]
 
-        native = pyq.QuantumCircuit(
-            observable.n_qubits, convert_block(block, n_qubits=n_qubits, config=self.config)
-        )
+        (native,) = convert_observable(block, n_qubits=n_qubits, config=self.config)
         return ConvertedObservable(native=native, abstract=block, original=observable)
 
     def run(
@@ -130,15 +129,20 @@ class Backend(BackendInterface):
         protocol: Measurements | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
-        observable = observable if isinstance(observable, list) else [observable]
-        from qadence.backends.adjoint import AdjointExpectation
-
-        return AdjointExpectation.apply(
-            circuit.native, observable[0].native, state, param_values.keys(), *param_values.values()
+        state = self.run(
+            circuit,
+            param_values=param_values,
+            state=state,
+            endianness=endianness,
+            pyqify_state=True,
+            # we are calling  the native observable directly, so we want to use pyq shapes
+            unpyqify_state=False,
         )
-        # return torch.hstack([circuit.native.expectation(state =
-        # circuit.native.init_state(batch_size=1)
-        # values= param_values, observable=obs.native).reshape(-1, 1) for obs in observable])
+        observable = observable if isinstance(observable, list) else [observable]
+        _expectation = torch.hstack(
+            [obs.native(state, param_values).reshape(-1, 1) for obs in observable]
+        )
+        return _expectation
 
     def _looped_expectation(
         self,
