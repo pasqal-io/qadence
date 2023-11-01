@@ -39,6 +39,7 @@ class Backend(BackendInterface):
     name: BackendName = BackendName.PYQTORCH
     supports_ad: bool = True
     support_bp: bool = True
+    supports_adjoint: bool = True
     is_remote: bool = False
     with_measurements: bool = True
     with_noise: bool = False

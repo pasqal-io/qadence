@@ -56,6 +56,8 @@ def _gpsr_fns() -> dict:
 def _validate_diff_mode(backend: Backend, diff_mode: DiffMode) -> None:
     if not backend.supports_ad and diff_mode == DiffMode.AD:
         raise TypeError(f"Backend {backend.name} does not support diff_mode {DiffMode.AD}.")
+    elif not backend.supports_adjoint and diff_mode == DiffMode.ADJOINT:
+        raise TypeError(f"Backend {backend.name} does not support diff_mode {DiffMode.ADJOINT}.")
 
 
 def _set_backend_config(backend: Backend, diff_mode: DiffMode) -> None:

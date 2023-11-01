@@ -76,7 +76,6 @@ def test_hea_derivatives() -> None:
             all_params = embeddings_fn(params, inputs)
             return bknd.expectation(pyqtorch_circ, pyqtorch_obs, all_params)
 
-        # assert torch.autograd.gradcheck(func, theta)
         exp = bknd.expectation(
             pyqtorch_circ, pyqtorch_obs, embeddings_fn(params, {param_name: theta})
         )

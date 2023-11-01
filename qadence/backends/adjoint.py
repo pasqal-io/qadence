@@ -32,6 +32,7 @@ class AdjointExpectation(Function):
         ctx.save_for_backward(*param_values)
         return overlap(ctx.out_state, ctx.projected_state)
 
+    # TODO filter observable params so the length of param_values is the same as grads
     @staticmethod
     def backward(ctx: Any, grad_out: Tensor) -> tuple:
         def _circuit_backward(ctx: Any, circuit: PyQCircuit = None) -> Any:
@@ -40,7 +41,6 @@ class AdjointExpectation(Function):
             param_values = ctx.saved_tensors
             values = param_dict(ctx.param_names, param_values)
             grads: list = []
-            # ctx.needs_input_grad[3:]
             for op in circuit.reverse():
                 if isinstance(op, ScalePyQOperation):
                     ctx.out_state = apply_operator(

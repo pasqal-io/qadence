@@ -39,6 +39,7 @@ class Backend(BackendInterface):
     # set standard interface parameters
     name: BackendName = BackendName.BRAKET
     supports_ad: bool = False
+    supports_adjoint: bool = False
     support_bp: bool = False
     is_remote: bool = False
     with_measurements: bool = True

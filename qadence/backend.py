@@ -93,7 +93,7 @@ class Backend(ABC):
     name: BackendName
     supports_ad: bool
     support_bp: bool
-    # supports_adjoint: bool
+    supports_adjoint: bool
     is_remote: bool
     with_measurements: bool
     native_endianness: Endianness
