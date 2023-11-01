@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 import torch
+from metrics import ADJOINT_ACCEPTANCE
 
 from qadence.backends.api import backend_factory
 from qadence.blocks import AbstractBlock, chain
@@ -84,4 +85,4 @@ def test_hea_derivatives() -> None:
 
     ad_grad = get_grad(theta_0_value, circ, "ad")
     adjoint_grad = get_grad(theta_0_value, circ, "adjoint")
-    assert torch.allclose(ad_grad, adjoint_grad, atol=0.1)
+    assert torch.allclose(ad_grad, adjoint_grad, atol=ADJOINT_ACCEPTANCE)
