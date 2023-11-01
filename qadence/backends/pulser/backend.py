@@ -76,7 +76,8 @@ def make_sequence(circ: QuantumCircuit, config: Configuration) -> Sequence:
         spacing = DEFAULT_SPACING
         # TODO: Clarify why this is needed
         # Ideal spacing for entanglement gate
-        # since Pulser's QutipEmulator doesn't allow simulation of sequences with total duration < 4ns
+        # since Pulser's QutipEmulator doesn't allow simulation of sequences
+        # with total duration < 4ns
         # spacing = WEAK_COUPLING_CONST * device.rydberg_blockade_radius(max_amp)  # type: ignore
     else:
         spacing = DEFAULT_SPACING
