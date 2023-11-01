@@ -209,7 +209,7 @@ class PyQObservable(Module):
                 state: torch.Tensor, values: dict[str, torch.Tensor] = None
             ) -> torch.Tensor:
                 state = state.reshape(2**self.n_qubits, state.size(-1))
-                return (diag * state.T).T
+                return (diag * state.T).T.reshape([2] * self.n_qubits + [state.size(-1)])
 
             self.operation = sparse_operation
         else:
@@ -218,25 +218,11 @@ class PyQObservable(Module):
                 convert_block(block, n_qubits, config),
             )
 
-        if config.use_gradient_checkpointing:
-
-            def _forward(
-                state: torch.Tensor, values: dict[str, torch.Tensor] = None
-            ) -> torch.Tensor:
-                new_state = checkpoint(self.operation, state, values, use_reentrant=False)
-                return pyq.overlap(state, new_state)
-
-        else:
-
-            def _forward(
-                state: torch.Tensor, values: dict[str, torch.Tensor] = None
-            ) -> torch.Tensor:
-                return pyq.overlap(state, self.operation(state, values))
-
-        self._forward = _forward
-
     def forward(self, state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-        return self._forward(state, values)
+        return pyq.overlap(state, self.operation(state, values))
+
+    def run(self, state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
+        return self.operation(state, values)
 
 
 class PyQHamiltonianEvolution(Module):

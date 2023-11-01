@@ -116,6 +116,12 @@ class DifferentiableExpectation:
     def adjoint(self) -> Tensor:
         from qadence.backends.adjoint import AdjointExpectation
 
+        self.observable = (
+            self.observable if isinstance(self.observable, list) else [self.observable]
+        )
+        if len(self.observable) > 1:
+            raise NotImplementedError("AdjointExpectation only supports one observable.")
+
         return promote_to_tensor(
             AdjointExpectation.apply(
                 self.circuit.native,
