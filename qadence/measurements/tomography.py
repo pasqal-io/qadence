@@ -131,7 +131,7 @@ def compute_expectation(
     options: dict,
     state: Tensor | None = None,
     backend_name: BackendName = BackendName.PYQTORCH,
-    error: Error | None = None,
+    error: Errors | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
     """Basic tomography protocol with rotations
