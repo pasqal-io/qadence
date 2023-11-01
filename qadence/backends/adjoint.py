@@ -47,7 +47,7 @@ class AdjointExpectation(Function):
                         ctx.out_state, op.dagger(values), op.qubit_support
                     )
                     if values[op.param_name].requires_grad:
-                        grads += [2 * -values[op.param_name]]
+                        grads += [grad_out * 2 * -values[op.param_name]]
                     ctx.projected_state = apply_operator(
                         ctx.projected_state, op.dagger(values), op.qubit_support
                     )
