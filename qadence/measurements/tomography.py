@@ -84,8 +84,8 @@ def iterate_pauli_decomposition(
     n_shots: int,
     state: Tensor | None = None,
     backend_name: BackendName = BackendName.PYQTORCH,
-    endianness: Endianness = Endianness.BIG,
     error: Errors | None = None,
+    endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
     """Estimate total expectation value by averaging all Pauli terms."""
 
@@ -131,6 +131,7 @@ def compute_expectation(
     options: dict,
     state: Tensor | None = None,
     backend_name: BackendName = BackendName.PYQTORCH,
+    error: Error | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
     """Basic tomography protocol with rotations
@@ -158,6 +159,7 @@ def compute_expectation(
                 n_shots=n_shots,
                 state=state,
                 backend_name=backend_name,
+                error=error,
                 endianness=endianness,
             )
         )
