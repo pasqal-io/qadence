@@ -15,12 +15,15 @@ from qadence.circuit import QuantumCircuit
 from qadence.constructors import (
     total_magnetization,
 )
+from qadence.constructors.hamiltonians import hamiltonian_factory
 from qadence.errors import Errors
+from qadence.measurements.protocols import Measurements
 from qadence.models import QuantumModel
 from qadence.operations import (
     CNOT,
     RX,
     RZ,
+    H,
     HamEvo,
     X,
     Y,
@@ -118,3 +121,36 @@ def test_readout_error_backends(backend: BackendName) -> None:
             for bitstring, count in noisy_samples[0].items()
         ]
     )
+
+
+@pytest.mark.parametrize(
+    "block, observable, backend",
+    [
+        (kron(H(0), Z(1)), hamiltonian_factory(2, detuning=Z), BackendName.PYQTORCH),
+        # (kron(Z(0), Z(1), Z(2)) + kron(X(0), Y(1), Z(2)), BackendName.PYQTORCH),
+        # (add(Z(0), Z(1), Z(2)), BackendName.PYQTORCH),
+        # (
+        #     HamEvo(
+        #         generator=kron(X(0), X(1)) + kron(Z(0), Z(1)) + kron(X(2), X(3)), parameter=0.005
+        #     ),
+        #     BackendName.PYQTORCH,
+        # ),
+        # (add(Z(0), Z(1), kron(X(2), X(3))) + add(X(2), X(3)), BackendName.PYQTORCH),
+        # (dd(kron(Z(0), Z(1)), kron(X(2), X(3))), BackendName.PYQTORCH),
+        # (total_magnetization(4), BackendName.PYQTORCH),
+        # (kron(Z(0), Z(1)) + CNOT(0, 1), BackendName.PYQTORCH),
+    ],
+)
+def test_readout_error_with_measurements(
+    block: AbstractBlock, observable: AbstractBlock, backend: BackendName
+):
+    circuit = QuantumCircuit(block.n_qubits, block)
+    model = QuantumModel(circuit=circuit, observable=observable, backend=backend)
+
+    error = Errors(protocol=Errors.READOUT)
+    measurement = Measurements(protocol=Measurements.TOMOGRAPHY, options={"n_shots": 1000})
+
+    measured = model.expectation(measurement=measurement)
+    noisy = model.expectation(measurement=measurement, error=error)
+    exact = model.expectation()
+    print(f"noisy {noisy} exact {exact}")
