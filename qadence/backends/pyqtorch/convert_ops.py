@@ -11,7 +11,6 @@ import torch
 from pyqtorch.apply import apply_operator
 from pyqtorch.matrices import _dagger
 from torch.nn import Module
-from torch.utils.checkpoint import checkpoint
 
 from qadence.blocks import (
     AbstractBlock,
@@ -165,31 +164,21 @@ class PyQComposedBlock(pyq.QuantumCircuit):
     def forward(
         self, state: torch.Tensor, values: dict[str, torch.Tensor] | None = None
     ) -> torch.Tensor:
-        batch_size = state.size(-1)
-        return apply_operator(
-            state, self.unitary(values, batch_size), self.qubits, self.n_qubits, batch_size
-        )
+        return apply_operator(state, self.unitary(values), self.qubits, self.n_qubits)
 
-    def unitary(self, values: dict[str, torch.Tensor] | None, batch_size: int) -> torch.Tensor:
-        perm = (2, 0, 1)  # We permute the dims since torch.bmm expects the batch_dim at 0.
-
-        def _expand_mat(m: torch.Tensor) -> torch.Tensor:
-            if len(m.size()) == 2:
-                m = m.unsqueeze(2).repeat(
-                    1, 1, batch_size
-                )  # Primitive gates are 2D, so we expand them.
-            elif m.shape != (2, 2, batch_size):
-                m = m.repeat(1, 1, batch_size)  # In case a tensor is 3D doesnt have batch_size.
-            return torch.permute(m, perm)  # This returns shape (batch_size, 2, 2)
-
+    def unitary(self, values: dict[str, torch.Tensor] | None) -> torch.Tensor:
+        batch_first_perm = (2, 0, 1)
+        undo_perm = tuple(torch.argsort(torch.tensor(batch_first_perm)))
         # We reverse the list of tensors here since matmul is not commutative.
         return torch.permute(
             reduce(
-                torch.bmm, (_expand_mat(op.unitary(values)) for op in reversed(self.operations))
+                torch.bmm,
+                (
+                    torch.permute(op.unitary(values), batch_first_perm)
+                    for op in reversed(self.operations)
+                ),
             ),
-            tuple(
-                torch.argsort(torch.tensor(perm))
-            ),  # We need to undo the permute since PyQ expects (2, 2, batch_size).
+            undo_perm,  # We need to undo the permute since PyQ expects (2, 2, batch_size).
         )
 
 
@@ -286,17 +275,7 @@ class PyQHamiltonianEvolution(Module):
                 tevo = values[self.param_names[0]]
                 return self.operation(hmat, tevo, state)
 
-        if config.use_gradient_checkpointing:
-
-            def _forward(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-                return checkpoint(_fwd, state, values, use_reentrant=False)
-
-        else:
-
-            def _forward(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-                return _fwd(state, values)
-
-        self._forward = _forward
+        self._forward = _fwd
 
     def forward(self, state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
         return self._forward(state, values)
