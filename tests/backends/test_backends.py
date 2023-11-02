@@ -13,7 +13,7 @@ from torch import Tensor
 
 from qadence import BackendName, DiffMode
 from qadence.backend import BackendConfiguration
-from qadence.backends.api import backend_factory
+from qadence.backends.api import backend_factory, config_factory
 from qadence.blocks import AbstractBlock, chain, kron
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import total_magnetization
@@ -29,6 +29,7 @@ from qadence.states import (
     random_state,
     zero_state,
 )
+from qadence.transpile import fill_identities, flatten
 from qadence.utils import nqubits_to_basis
 
 BACKENDS = BackendName.list()
@@ -320,7 +321,18 @@ def test_output_cphase_batching(bsize: int) -> None:
     assert equivalent_state(wf_list[0], wf_list[1])
 
 
-def test_custom_transpilation_passes() -> None:
-    backend_list = [BackendName.BRAKET, BackendName.PYQTORCH]
+def test_custom_transpilation_passes(parametric_circuit: QuantumCircuit) -> None:
+    backend_list = [BackendName.BRAKET, BackendName.PYQTORCH, BackendName.PULSER]
 
-    # TODO
+    for name in backend_list:
+        config = config_factory(name, {})
+        config.transpilation_passes = [fill_identities, flatten]
+        backend = backend_factory(name)
+        conv = backend.convert(parametric_circuit)
+
+        config = config_factory(name, {})
+        config.transpilation_passes = []
+        backend_no_transp = backend_factory(name)
+        conv_no_transp = backend_no_transp.convert(parametric_circuit)
+
+        breakpoint()

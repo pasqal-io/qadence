@@ -60,11 +60,12 @@ class Backend(BackendInterface):
         if passes is None:
             passes = default_passes
 
+        original_circ = circuit
         if len(passes) > 0:
             circuit = transpile(*passes)(circuit)
 
         native = BraketCircuit(convert_block(circuit.block))
-        return ConvertedCircuit(native=native, abstract=circuit, original=circuit)
+        return ConvertedCircuit(native=native, abstract=circuit, original=original_circ)
 
     def observable(self, obs: AbstractBlock, n_qubits: int = None) -> Any:
         if n_qubits is None:

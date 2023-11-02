@@ -48,12 +48,13 @@ class Backend(BackendInterface):
         if passes is None:
             passes = default_passes(self.config)
 
+        original_circ = circuit
         if len(passes) > 0:
             circuit = transpile(*passes)(circuit)
 
         ops = convert_block(circuit.block, n_qubits=circuit.n_qubits, config=self.config)
         native = pyq.QuantumCircuit(circuit.n_qubits, ops)
-        return ConvertedCircuit(native=native, abstract=circuit, original=circuit)
+        return ConvertedCircuit(native=native, abstract=circuit, original=original_circ)
 
     def observable(self, observable: AbstractBlock, n_qubits: int) -> ConvertedObservable:
         # make sure only leaves, i.e. primitive blocks are scaled
