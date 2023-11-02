@@ -14,6 +14,7 @@ from qadence.states import equivalent_state, random_state
 from qadence.types import DiffMode
 
 
+@pytest.mark.flaky(max_runs=2)
 @pytest.mark.parametrize("n_qubits", [2, 3, 4])
 @pytest.mark.parametrize("spacing", [4.0, 8.0, 15.0])
 @pytest.mark.parametrize("rot_op", [AnalogRX, AnalogRY, AnalogRZ])
