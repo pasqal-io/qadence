@@ -53,7 +53,7 @@ model = QuantumModel(circuit, observable, backend=BackendName.PYQTORCH)
 print("model._circuit.native = \n") # markdown-exec: hide
 print(f"{model._circuit.native}") # markdown-exec: hide
 
-from pyqtorch.modules import QuantumCircuit as PyQCircuit  # markdown-exec: hide
+from pyqtorch import QuantumCircuit as PyQCircuit  # markdown-exec: hide
 assert isinstance(model._circuit.native, PyQCircuit) # markdown-exec: hide
 ```
 
