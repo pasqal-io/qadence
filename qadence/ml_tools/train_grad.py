@@ -148,7 +148,7 @@ def descend(
                 elif isinstance(dataloader, (DictDataLoader, DataLoader)):
                     # resample all the time from the dataloader
                     data = next(dl_iter)  # type: ignore[arg-type]
-                    loss, metrics = optimize_step(model, optimizer, loss_fn, data, device=device)
+                    loss, metrics = optimize_step(model, optimizer, loss_fn, data_to_device(data))
 
                 else:
                     raise NotImplementedError(f"Unsupported dataloader type: {type(dataloader)}")
@@ -208,33 +208,18 @@ def stochastic_descend(
     )
 
     with progress:
-        dl_iter = iter(dataloader) if dataloader is not None else None
-
         # outer epoch loop
         for iteration in progress.track(range(init_iter, init_iter + config.max_iter)):
             try:
-                # in case there is not data needed by the model
-                # this is the case, for example, of quantum models
-                # which do not have classical input data (e.g. chemistry)
-                if dataloader is None:
-                    loss, metrics = optimize_step(model, optimizer, loss_fn, None)
-                    loss = loss.item()
-
-                elif isinstance(dataloader, DataLoader):
-                    # single-epoch with standard DataLoader
-                    # otherwise a standard PyTorch DataLoader behavior
-                    # is assumed with optional mini-batches
-                    running_loss = 0.0
-                    for i, data in enumerate(dataloader):
-                        # TODO: make sure to average metrics as well
-                        loss, metrics = optimize_step(
-                            model, optimizer, loss_fn, data, device=device
-                        )
-                        running_loss += loss.item()
-                    loss = running_loss / (i + 1)
-
-                else:
-                    raise NotImplementedError(f"Unsupported dataloader type: {type(dataloader)}")
+                # single-epoch with standard DataLoader
+                # otherwise a standard PyTorch DataLoader behavior
+                # is assumed with optional mini-batches
+                running_loss = 0.0
+                for i, data in enumerate(dataloader):
+                    # TODO: make sure to average metrics as well
+                    loss, metrics = optimize_step(model, optimizer, loss_fn, data_to_device(data))
+                    running_loss += loss.item()
+                loss = running_loss / (i + 1)
 
                 if iteration % config.print_every == 0 and config.verbose:
                     print_metrics(loss, metrics, iteration)
