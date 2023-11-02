@@ -161,6 +161,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
+        error: Errors | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         # Do not flip endianness here because then we would have to reverse the observable

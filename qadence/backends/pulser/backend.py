@@ -235,6 +235,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
+        errors: Errors | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         state = self.run(circuit, param_values=param_values, state=state, endianness=endianness)
