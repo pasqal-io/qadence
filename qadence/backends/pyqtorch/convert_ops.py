@@ -243,7 +243,6 @@ class PyQHamiltonianEvolution(Module):
         self.qubit_support = qubit_support
         self.n_qubits = n_qubits
         self.param_names = config.get_param_name(block)
-        self._has_parametric_generator: bool
         self.block = block
 
         if isinstance(block.generator, AbstractBlock) and not block.generator.is_parametric:
@@ -285,22 +284,7 @@ class PyQHamiltonianEvolution(Module):
 
         self._time_evolution = lambda values: values[self.param_names[0]]
 
-    def unitary(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
-        pass
-
-    def jacobian(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
-        pass
-
-    def dagger(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
-        return _dagger(self.unitary(values))
-
-    def forward(
-        self,
-        state: torch.Tensor,
-        values: dict[str, torch.Tensor],
-    ) -> torch.Tensor:
-        hamiltonian = self._hamiltonian(values)
-        time_evolution = self._time_evolution(values)
+    def _unitary(self, hamiltonian: torch.Tensor, time_evolution: torch.Tensor) -> torch.Tensor:
         self.batch_size = max(hamiltonian.size()[2], len(time_evolution))
         diag_check = torch.tensor(
             [is_diag(hamiltonian[..., i]) for i in range(hamiltonian.size()[2])]
@@ -325,9 +309,29 @@ class PyQHamiltonianEvolution(Module):
         evolve_operator = (
             _evolve_diag_operator if bool(torch.prod(diag_check)) else _evolve_matrixexp_operator
         )
+        return evolve_operator(hamiltonian, time_evolution)
+
+    def unitary(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
+        return self._unitary(self._hamiltonian(values), self._time_evolution(values))
+
+    def jacobian(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
+        # Only supports jacobian wrt time evolution parameter atm.
+        return torch.autograd.functional.jacobian(
+            lambda t: self._unitary(time_evolution=t, hamiltonian=self._hamiltonian(values)),
+            values[self.param_names[0]],
+        )
+
+    def dagger(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
+        return _dagger(self.unitary(values))
+
+    def forward(
+        self,
+        state: torch.Tensor,
+        values: dict[str, torch.Tensor],
+    ) -> torch.Tensor:
         return apply_operator(
             state,
-            evolve_operator(hamiltonian, time_evolution),
+            self.unitary(values),
             self.qubit_support,
             self.n_qubits,
             self.batch_size,
