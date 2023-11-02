@@ -311,6 +311,7 @@ def compute_expectation(
     options: dict,
     state: Tensor | None = None,
     backend_name: BackendName = BackendName.PYQTORCH,
+    error: Errors | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
     """
@@ -326,6 +327,8 @@ def compute_expectation(
             Here, shadow_size (int), accuracy (float) and confidence (float) are supported.
         state (Tensor | None): an initial input state.
         backend_name (BackendName): a backend name to retrieve computations from.
+        error: A noise model to use.
+        endianness: Endianness of the observable estimate.
 
     Returns:
         expectations (Tensor): an estimation of the expectation values.

@@ -138,6 +138,19 @@ def compute_expectation(
 
     Given a circuit and a list of observables, apply basic tomography protocol to estimate
     the expectation values.
+
+    Args:
+        circuit (QuantumCircuit): a circuit to prepare the state.
+        observables (list[AbstractBlock]): a list of observables
+            to estimate the expectation values from.
+        param_values (dict): a dict of values to substitute the
+            symbolic parameters for.
+        options (dict): a dict of options for the measurement protocol.
+            Here, shadow_size (int), accuracy (float) and confidence (float) are supported.
+        state (Tensor | None): an initial input state.
+        backend_name (BackendName): a backend name to retrieve computations from.
+        error: A noise model to use.
+        endianness: Endianness of the observable estimate.
     """
     if not isinstance(observables, list):
         raise TypeError(

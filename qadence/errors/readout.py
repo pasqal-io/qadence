@@ -59,7 +59,7 @@ def bs_corruption(
     def func_distort(idx: tuple) -> str:
         bitstring_copy = bitstring_to_array(bitstring)
         for id in range(n_qubits):
-            if idx[id] is True:
+            if idx[id]:
                 bitstring_copy[id] = bit_flip(bitstring_copy[id])
         return array_to_bitstring(bitstring_copy)
 
