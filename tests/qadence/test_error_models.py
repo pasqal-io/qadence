@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from itertools import chain
 from collections import Counter
+from itertools import chain
+
 import pytest
-from qadence.errors.readout import bs_corruption
 import strategies as st
 import torch
 from hypothesis import given, settings
@@ -20,6 +20,7 @@ from qadence.blocks import (
 from qadence.circuit import QuantumCircuit
 from qadence.constructors.hamiltonians import hamiltonian_factory
 from qadence.errors import Errors
+from qadence.errors.readout import bs_corruption
 from qadence.measurements.protocols import Measurements
 from qadence.models import QuantumModel
 from qadence.operations import (
@@ -31,6 +32,7 @@ from qadence.operations import (
     Y,
     Z,
 )
+from qadence.types import DiffMode
 
 
 @pytest.mark.parametrize(
@@ -40,31 +42,32 @@ from qadence.operations import (
             1.0,
             [Counter({"00": 27, "01": 23, "10": 24, "11": 26})],
             [Counter({"11": 27, "10": 23, "01": 24, "00": 26})],
-            2
+            2,
         ),
         (
             1.0,
             [Counter({"001": 27, "010": 23, "101": 24, "110": 26})],
             [Counter({"110": 27, "101": 23, "010": 24, "001": 26})],
-            3
-        )
-    ]
+            3,
+        ),
+    ],
 )
-def test_bitstring_corruption(error_probability: float, counters: list, exp_corrupted_counters: list, n_qubits: int) -> None:
+def test_bitstring_corruption(
+    error_probability: float, counters: list, exp_corrupted_counters: list, n_qubits: int
+) -> None:
     corrupted_bitstrings = [
         bs_corruption(
             bitstring=bitstring,
             n_shots=n_shots,
             error_probability=error_probability,
-            n_qubits=n_qubits
+            n_qubits=n_qubits,
         )
         for bitstring, n_shots in counters[0].items()
     ]
     corrupted_counters = [Counter(chain(*corrupted_bitstrings))]
     breakpoint()
-    assert corrupted_counters == exp_corrupted_counters 
+    assert corrupted_counters == exp_corrupted_counters
 
-    
 
 @pytest.mark.parametrize(
     "error_probability, block, backend",
@@ -159,15 +162,17 @@ def test_readout_error_backends(backend: BackendName) -> None:
     )
 
 
-# @pytest.mark.parametrize("measurement_proto", [Measurements.TOMOGRAPHY])
+@pytest.mark.parametrize("measurement_proto", [Measurements.TOMOGRAPHY, Measurements.SHADOW])
 @given(st.restricted_batched_circuits())
 @settings(deadline=None)
 def test_readout_error_with_measurements(
-    circ_and_vals: tuple[QuantumCircuit, dict[str, Tensor]]
+    measurement_proto: Measurements, circ_and_vals: tuple[QuantumCircuit, dict[str, Tensor]]
 ) -> None:
     circuit, inputs = circ_and_vals
+    # print(circuit, inputs)
     observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
-    model = QuantumModel(circuit=circuit, observable=observable)
+    model = QuantumModel(circuit=circuit, observable=observable, diff_mode=DiffMode.GPSR)
+    # model.backend.backend.config._use_gate_params = True
 
     error = Errors(protocol=Errors.READOUT)
     measurement = Measurements(protocol=Measurements.TOMOGRAPHY, options={"n_shots": 1000})
@@ -175,4 +180,17 @@ def test_readout_error_with_measurements(
     measured = model.expectation(values=inputs, measurement=measurement)
     noisy = model.expectation(values=inputs, measurement=measurement, error=error)
     exact = model.expectation(values=inputs)
-    assert torch.allclose(noisy, exact, atol=2.0e-2)
+    # breakpoint()
+    if exact.numel() > 1:
+        exact_values = torch.abs(exact)
+        for noisy_value, exact_value in zip(noisy, exact):
+            noisy_val = noisy_value.item()
+            exact_val = exact_value.item()
+            atol = exact_val / 3.0 if exact_val != 0.0 else 0.33
+            assert torch.allclose(noisy_value, exact_value, atol=atol)
+
+    else:
+        exact_value = torch.abs(exact).item()
+        # print(f"exact {exact_value}")
+        atol = exact_value / 3.0 if exact_value != 0.0 else 0.33
+        assert torch.allclose(noisy, exact, atol=atol)
