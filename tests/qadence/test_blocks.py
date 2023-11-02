@@ -206,7 +206,7 @@ def test_put_block() -> None:
 def test_repr() -> None:
     assert X(1).__repr__() == "X(1)"
     # assert RX(2, Parameter("theta")).__repr__() == "RX(2) [params: (theta(trainable=True),)]"
-    assert CNOT(3, 4).__repr__() == "CNOT(3,4)"
+    assert CNOT(3, 4).__repr__() == "CNOT(3, 4)"
 
 
 @pytest.mark.xfail
