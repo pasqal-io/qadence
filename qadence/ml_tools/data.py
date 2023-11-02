@@ -36,20 +36,20 @@ def to_dataloader(x: Tensor, y: Tensor, batch_size: int = 1) -> DataLoader:
 
 
 @singledispatch
-def data_to_device(xs: Any, device: str = "cpu") -> Any:
+def data_to_device(xs: Any, device: str) -> Any:
     raise ValueError(f"Cannot move {type(xs)} to a pytorch device.")
 
 
 @data_to_device.register
-def _(xs: Tensor, device: str="cpu") -> Tensor:
+def _(xs: Tensor, device: str) -> Tensor:
     return xs.to(device, non_blocking=True)
 
 
 @data_to_device.register
-def _(xs: list, device: str = "cpu") -> list:
-    return [data_to_device(x) for x in xs]
+def _(xs: list, device: str) -> list:
+    return [data_to_device(x, device) for x in xs]
 
 
 @data_to_device.register
-def _(xs: dict, device: str = "cpu") -> dict:
-    return {key: data_to_device(val) for key, val in xs.items()}
+def _(xs: dict, device: str) -> dict:
+    return {key: data_to_device(val, device) for key, val in xs.items()}

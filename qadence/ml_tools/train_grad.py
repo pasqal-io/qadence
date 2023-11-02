@@ -147,8 +147,8 @@ def train(
                 # with a given batch size decided when the dataloader is defined
                 elif isinstance(dataloader, (DictDataLoader, DataLoader)):
                     # resample all the time from the dataloader
-                    data = next(dl_iter)  # type: ignore[arg-type]
-                    loss, metrics = optimize_step(model, optimizer, loss_fn, data_to_device(data))
+                    data = data_to_device(next(dl_iter), device)  # type: ignore[arg-type]
+                    loss, metrics = optimize_step(model, optimizer, loss_fn, data)
 
                 else:
                     raise NotImplementedError(f"Unsupported dataloader type: {type(dataloader)}")
