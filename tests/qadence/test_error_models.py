@@ -1,8 +1,14 @@
 from __future__ import annotations
 
+from itertools import chain
+from collections import Counter
 import pytest
+from qadence.errors.readout import bs_corruption
+import strategies as st
 import torch
+from hypothesis import given, settings
 from sympy import acos
+from torch import Tensor
 
 import qadence as qd
 from qadence import BackendName
@@ -12,9 +18,6 @@ from qadence.blocks import (
     kron,
 )
 from qadence.circuit import QuantumCircuit
-from qadence.constructors import (
-    total_magnetization,
-)
 from qadence.constructors.hamiltonians import hamiltonian_factory
 from qadence.errors import Errors
 from qadence.measurements.protocols import Measurements
@@ -23,13 +26,45 @@ from qadence.operations import (
     CNOT,
     RX,
     RZ,
-    H,
     HamEvo,
     X,
     Y,
     Z,
 )
 
+
+@pytest.mark.parametrize(
+    "error_probability, counters, exp_corrupted_counters, n_qubits",
+    [
+        (
+            1.0,
+            [Counter({"00": 27, "01": 23, "10": 24, "11": 26})],
+            [Counter({"11": 27, "10": 23, "01": 24, "00": 26})],
+            2
+        ),
+        (
+            1.0,
+            [Counter({"001": 27, "010": 23, "101": 24, "110": 26})],
+            [Counter({"110": 27, "101": 23, "010": 24, "001": 26})],
+            3
+        )
+    ]
+)
+def test_bitstring_corruption(error_probability: float, counters: list, exp_corrupted_counters: list, n_qubits: int) -> None:
+    corrupted_bitstrings = [
+        bs_corruption(
+            bitstring=bitstring,
+            n_shots=n_shots,
+            error_probability=error_probability,
+            n_qubits=n_qubits
+        )
+        for bitstring, n_shots in counters[0].items()
+    ]
+    corrupted_counters = [Counter(chain(*corrupted_bitstrings))]
+    breakpoint()
+    assert corrupted_counters == exp_corrupted_counters 
+
+    
 
 @pytest.mark.parametrize(
     "error_probability, block, backend",
@@ -66,7 +101,7 @@ from qadence.operations import (
         ),
         (0.1, add(Z(0), Z(1), kron(X(2), X(3))) + add(X(2), X(3)), BackendName.PYQTORCH),
         (0.05, add(kron(Z(0), Z(1)), kron(X(2), X(3))), BackendName.PYQTORCH),
-        (0.2, total_magnetization(4), BackendName.PYQTORCH),
+        (0.2, hamiltonian_factory(4, detuning=Z), BackendName.PYQTORCH),
         (0.1, kron(Z(0), Z(1)) + CNOT(0, 1), BackendName.PYQTORCH),
     ],
 )
@@ -81,7 +116,7 @@ def test_readout_error_quantum_model(
 
     noisy = QuantumModel(
         QuantumCircuit(block.n_qubits, block), backend=backend, diff_mode=diff_mode
-    ).sample(error=Errors(protocol=Errors.READOUT, options=None))
+    ).sample(error=Errors(protocol=Errors.READOUT))
 
     assert len(noisy[0]) <= 2 ** block.n_qubits and len(noisy[0]) > len(err_free[0])
     assert all(
@@ -107,8 +142,9 @@ def test_readout_error_backends(backend: BackendName) -> None:
     # sample
     samples = qd.sample(feature_map, n_shots=1000, values=inputs, backend=backend, error=None)
     # introduce errors
-    error = Errors(protocol=Errors.READOUT, options=None).get_error_fn()
-    noisy_samples = error(counters=samples, n_qubits=n_qubits, error_probability=error_probability)
+    options = {"error_probability": error_probability}
+    error = Errors(protocol=Errors.READOUT, options=options).get_error_fn()
+    noisy_samples = error(counters=samples, n_qubits=n_qubits)
     # compare that the results are with an error of 10% (the default error_probability)
     assert all(
         [
@@ -123,34 +159,20 @@ def test_readout_error_backends(backend: BackendName) -> None:
     )
 
 
-@pytest.mark.parametrize(
-    "block, observable, backend",
-    [
-        (kron(H(0), Z(1)), hamiltonian_factory(2, detuning=Z), BackendName.PYQTORCH),
-        # (kron(Z(0), Z(1), Z(2)) + kron(X(0), Y(1), Z(2)), BackendName.PYQTORCH),
-        # (add(Z(0), Z(1), Z(2)), BackendName.PYQTORCH),
-        # (
-        #     HamEvo(
-        #         generator=kron(X(0), X(1)) + kron(Z(0), Z(1)) + kron(X(2), X(3)), parameter=0.005
-        #     ),
-        #     BackendName.PYQTORCH,
-        # ),
-        # (add(Z(0), Z(1), kron(X(2), X(3))) + add(X(2), X(3)), BackendName.PYQTORCH),
-        # (dd(kron(Z(0), Z(1)), kron(X(2), X(3))), BackendName.PYQTORCH),
-        # (total_magnetization(4), BackendName.PYQTORCH),
-        # (kron(Z(0), Z(1)) + CNOT(0, 1), BackendName.PYQTORCH),
-    ],
-)
+# @pytest.mark.parametrize("measurement_proto", [Measurements.TOMOGRAPHY])
+@given(st.restricted_batched_circuits())
+@settings(deadline=None)
 def test_readout_error_with_measurements(
-    block: AbstractBlock, observable: AbstractBlock, backend: BackendName
-):
-    circuit = QuantumCircuit(block.n_qubits, block)
-    model = QuantumModel(circuit=circuit, observable=observable, backend=backend)
+    circ_and_vals: tuple[QuantumCircuit, dict[str, Tensor]]
+) -> None:
+    circuit, inputs = circ_and_vals
+    observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
+    model = QuantumModel(circuit=circuit, observable=observable)
 
     error = Errors(protocol=Errors.READOUT)
     measurement = Measurements(protocol=Measurements.TOMOGRAPHY, options={"n_shots": 1000})
 
-    measured = model.expectation(measurement=measurement)
-    noisy = model.expectation(measurement=measurement, error=error)
-    exact = model.expectation()
-    print(f"noisy {noisy} exact {exact}")
+    measured = model.expectation(values=inputs, measurement=measurement)
+    noisy = model.expectation(values=inputs, measurement=measurement, error=error)
+    exact = model.expectation(values=inputs)
+    assert torch.allclose(noisy, exact, atol=2.0e-2)
