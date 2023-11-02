@@ -8,7 +8,7 @@ from qadence import BackendName, Register, add_interaction
 from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.models import QuantumModel
-from qadence.operations import AnalogRX, AnalogRY, AnalogRZ, AnalogRot
+from qadence.operations import AnalogRot, AnalogRX, AnalogRY, AnalogRZ
 from qadence.parameters import FeatureParameter
 from qadence.states import equivalent_state, random_state
 from qadence.types import DiffMode
