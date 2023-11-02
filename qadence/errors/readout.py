@@ -42,12 +42,34 @@ def bit_flip(qubit: int) -> int:
     return 1 if qubit == 0 else 0
 
 
-def readout_error(
+def bs_corruption(
+    bitstring: str,
+    n_shots: int,
+    error_probability: float,
+    n_qubits: int,
+    noise_distribution: Enum = WhiteNoise.UNIFORM,
+) -> list:
+    # the noise_matrix should be available to the user if they want to do error correction
+    noise_matrix = noise_distribution.sample([n_shots, n_qubits])  # type: ignore[attr-defined]
+
+    # simplest approach - en event occurs if its probability is higher than expected
+    # by random chance
+    err_idx = torch.nonzero((noise_matrix < error_probability), as_tuple=True)[1]
+    all_bitstrings = [bitstring] * (n_shots - len(err_idx))  # add the majority correct bit strings
+
+    def func_distort(idx: int) -> str:
+        bitstring_copy = bitstring_to_array(bitstring)
+        bitstring_copy[idx] = bit_flip(bitstring_copy[idx])
+        return array_to_bitstring(bitstring_copy)
+
+    all_bitstrings.extend([func_distort(idx) for idx in err_idx])
+    return all_bitstrings
+
+
+def error(
     counters: Counter,
     n_qubits: int,
-    seed: int | None = None,
-    error_probability: float = 0.1,
-    noise_distribution: Enum = WhiteNoise.UNIFORM,
+    options: dict = dict(),
 ) -> list[Counter[Any]]:
     """
     Implements a simple uniform readout error model for position-independent bit string
@@ -65,49 +87,30 @@ def readout_error(
         Samples of corrupted bit strings as list[Counter].
     """
 
+    seed = options.get("seed")
+    error_probability = options.get("error_probability", 0.1)
+    noise_distribution = options.get("noise_distribution", WhiteNoise.UNIFORM)
+
     # option for reproducibility
     if seed is not None:
         torch.manual_seed(seed)
 
-    def bs_corruption(
-        bitstring: str,
-        n_shots: int,
-        error_probability: float,
-        n_qubits: int,
-        noise_distribution: Enum = WhiteNoise.UNIFORM,
-    ) -> list:
-        # the noise_matrix should be available to the user if they want to do error correction
-        noise_matrix = noise_distribution.sample([n_shots, n_qubits])  # type: ignore[attr-defined]
-
-        # simplest approach - en event occurs if its probability is higher than expected
-        # by random chance
-        err_idx = torch.nonzero((noise_matrix < error_probability), as_tuple=True)[1]
-        all_bitstrings = [bitstring] * (
-            n_shots - len(err_idx)
-        )  # add the majority correct bit strings
-
-        def func_distort(idx: int) -> str:
-            bitstring_copy = bitstring_to_array(bitstring)
-            bitstring_copy[idx] = bit_flip(bitstring_copy[idx])
-            return array_to_bitstring(bitstring_copy)
-
-        all_bitstrings.extend([func_distort(idx) for idx in err_idx])
-        return all_bitstrings
-
-    return [
-        Counter(
-            chain(
-                *[
-                    bs_corruption(
-                        bitstring=bitstring,
-                        n_shots=n_shots,
-                        error_probability=error_probability,
-                        noise_distribution=noise_distribution,
-                        n_qubits=n_qubits,
-                    )
-                    for bitstring, n_shots in counter.items()
-                ]
+    corrupted_bitstrings = []
+    for counter in counters:
+        corrupted_bitstrings.append(
+            Counter(
+                chain(
+                    *[
+                        bs_corruption(
+                            bitstring=bitstring,
+                            n_shots=n_shots,
+                            error_probability=error_probability,
+                            noise_distribution=noise_distribution,
+                            n_qubits=n_qubits,
+                        )
+                        for bitstring, n_shots in counter.items()
+                    ]
+                )
             )
         )
-        for counter in counters
-    ]
+    return corrupted_bitstrings
