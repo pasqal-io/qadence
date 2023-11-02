@@ -275,7 +275,13 @@ def _(block: ConstantAnalogRotation, register: Register, interaction: Callable) 
     # convert "global" to indexed qubit suppport so that we can re-use `kron` dispatched function
     b = deepcopy(block)
     b.qubit_support = QubitSupport(*range(register.n_qubits))
-    return _add_interaction(kron(b), register, interaction)
+
+    # convert to HamEvo block
+    hamevo_block = _add_interaction(kron(b), register, interaction)
+
+    # set eigenvalues of the ConstantAnalogRotation block
+    block.eigenvalues_generator = hamevo_block.eigenvalues_generator
+    return hamevo_block
 
 
 @_add_interaction.register

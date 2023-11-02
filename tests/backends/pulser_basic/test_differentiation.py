@@ -52,8 +52,8 @@ def test_pulser_gpsr(circ_id: int) -> None:
         spacing = 8.0
 
     # define circuits
-    circ = circuit(circ_id)
-    circ_pyq = add_interaction(circ, spacing=spacing)
+    circ_pulser = circuit(circ_id)
+    circ_pyq = add_interaction(circuit(circ_id), spacing=spacing)
 
     # create input values
     xs = torch.linspace(1, 2 * np.pi, 30, requires_grad=True)
@@ -73,7 +73,7 @@ def test_pulser_gpsr(circ_id: int) -> None:
 
     # run with pulser backend
     pulser_backend = PulserBackend(config={"spacing": spacing})  # type: ignore[arg-type]
-    conv = pulser_backend.convert(circ, obs)
+    conv = pulser_backend.convert(circ_pulser, obs)
     pulser_circ, pulser_obs, embedding_fn, params = conv
     diff_backend = DifferentiableBackend(pulser_backend, diff_mode=DiffMode.GPSR, shift_prefac=0.2)
     expval_pulser = diff_backend.expectation(pulser_circ, pulser_obs, embedding_fn(params, values))

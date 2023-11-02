@@ -10,7 +10,6 @@ from pulser.pulse import Pulse
 from pulser.sequence.sequence import Sequence
 from pulser.waveforms import CompositeWaveform, ConstantWaveform, RampWaveform
 
-from qadence import Register
 from qadence.blocks import AbstractBlock, CompositeBlock
 from qadence.blocks.analog import (
     AnalogBlock,
@@ -42,13 +41,7 @@ supported_gates = [
 ]
 
 
-def add_pulses(
-    sequence: Sequence,
-    block: AbstractBlock,
-    config: Configuration,
-    qc_register: Register,
-    spacing: float,
-) -> None:
+def add_pulses(sequence: Sequence, block: AbstractBlock, config: Configuration) -> None:
     # we need this because of the case with a single type of block in a KronBlock
     # TODO: document properly
 
@@ -97,11 +90,6 @@ def add_pulses(
         p = evaluate(phase) if phase.is_number else sequence.declare_variable(p_uuid)
         d = evaluate(detuning) if detuning.is_number else sequence.declare_variable(d_uuid)
 
-        # calculate generator eigenvalues
-        block.eigenvalues_generator = block.compute_eigenvalues_generator(
-            qc_register, block, spacing
-        )
-
         if block.qubit_support.is_global:
             pulse = analog_rot_pulse(a, w, p, d, global_channel, config)
             sequence.add(pulse, GLOBAL_CHANNEL, protocol="wait-for-all")
@@ -131,7 +119,7 @@ def add_pulses(
 
     elif isinstance(block, CompositeBlock) or isinstance(block, AnalogComposite):
         for block in block.blocks:
-            add_pulses(sequence, block, config, qc_register, spacing)
+            add_pulses(sequence, block, config)
 
     else:
         msg = f"The pulser backend currently does not support blocks of type: {type(block)}"
