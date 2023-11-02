@@ -42,14 +42,14 @@ def data_to_device(xs: Any, device: str = "cpu") -> Any:
 
 @data_to_device.register
 def _(xs: Tensor, device: str="cpu") -> Tensor:
-    return xs.to(device)
+    return xs.to(device, non_blocking=True)
 
 
 @data_to_device.register
 def _(xs: list, device: str = "cpu") -> list:
-    return list(map(lambda x: x.to(device, non_blocking=True) if is_tensor(x) else x, xs))
+    return [data_to_device(x) for x in xs]
 
 
 @data_to_device.register
 def _(xs: dict, device: str = "cpu") -> dict:
-    return {key: val.to(device, non_blocking=True) for key, val in xs.items()}
+    return {key: data_to_device(val) for key, val in xs.items()}

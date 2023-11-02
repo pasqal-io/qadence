@@ -19,7 +19,7 @@ from qadence.ml_tools.saveload import load_checkpoint, write_checkpoint
 logger = get_logger(__name__)
 
 
-def descend(
+def train(
     model: Module,
     dataloader: Union[None, DataLoader, DictDataLoader],
     optimizer: Optimizer,
@@ -152,74 +152,6 @@ def descend(
 
                 else:
                     raise NotImplementedError(f"Unsupported dataloader type: {type(dataloader)}")
-
-                if iteration % config.print_every == 0 and config.verbose:
-                    print_metrics(loss, metrics, iteration)
-
-                if iteration % config.write_every == 0:
-                    write_tensorboard(writer, loss, metrics, iteration)
-
-                if config.folder:
-                    if iteration % config.checkpoint_every == 0:
-                        write_checkpoint(config.folder, model, optimizer, iteration)
-
-            except KeyboardInterrupt:
-                print("Terminating training gracefully after the current iteration.")
-                break
-
-    # Final writing and checkpointing
-    if config.folder:
-        write_checkpoint(config.folder, model, optimizer, iteration)
-    write_tensorboard(writer, loss, metrics, iteration)
-    writer.close()
-
-    return model, optimizer
-
-
-def stochastic_descend(
-    model: Module,
-    dataloader: Union[None, DataLoader, DictDataLoader],
-    optimizer: Optimizer,
-    config: TrainConfig,
-    loss_fn: Callable,
-    device: str = "cpu",
-    optimize_step: Callable = optimize_step,
-    write_tensorboard: Callable = write_tensorboard,
-) -> tuple[Module, Optimizer]:
-    assert loss_fn is not None, "Provide a valid loss function"
-
-    # Move model to device before optimizer is loaded
-    model = model.to(device)
-
-    # load available checkpoint
-    init_iter = 0
-    if config.folder:
-        model, optimizer, init_iter = load_checkpoint(config.folder, model, optimizer)
-        logger.debug(f"Loaded model and optimizer from {config.folder}")
-    # initialize tensorboard
-    writer = SummaryWriter(config.folder, purge_step=init_iter)
-
-    ## Training
-    progress = Progress(
-        TextColumn("[progress.description]{task.description}"),
-        BarColumn(),
-        TaskProgressColumn(),
-        TimeRemainingColumn(elapsed_when_finished=True),
-    )
-
-    with progress:
-        # outer epoch loop
-        for iteration in progress.track(range(init_iter, init_iter + config.max_iter)):
-            try:
-                # single-epoch with standard DataLoader
-                # otherwise a standard PyTorch DataLoader behavior
-                # is assumed with optional mini-batches
-                running_loss = 0.0
-                for i, data in enumerate(dataloader):
-                    # TODO: make sure to average metrics as well
-                    loss, metrics = optimize_step(model, optimizer, loss_fn, data_to_device(data))
-                    running_loss += loss.item()
-                loss = running_loss / (i + 1)
 
                 if iteration % config.print_every == 0 and config.verbose:
                     print_metrics(loss, metrics, iteration)
