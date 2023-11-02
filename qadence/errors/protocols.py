@@ -14,16 +14,16 @@ PROTOCOL_TO_MODULE = {
 class Errors:
     READOUT = "readout"
 
-    def __init__(self, protocol: str, options: dict | None = None) -> None:
+    def __init__(self, protocol: str, options: dict = dict()) -> None:
         self.protocol: str = protocol
-        self.options: dict | None = None
+        self.options: dict = options
 
     def get_error_fn(self) -> Callable:
         try:
             module = importlib.import_module(PROTOCOL_TO_MODULE[self.protocol])
         except KeyError:
             ImportError(f"The module corresponding to the protocol {self.protocol} is not found.")
-        fn = getattr(module, "readout_error")
+        fn = getattr(module, "error")
         return cast(Callable, fn)
 
     def _to_dict(self) -> dict:
