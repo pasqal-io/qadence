@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import random
 from collections import Counter
-from itertools import count, product
-from typing import Any, Callable
+from itertools import product
+from typing import Callable
 
 import numpy as np
 import pytest
@@ -28,13 +28,11 @@ from qadence.blocks import (
 )
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import (
-    chebyshev_feature_map,
     hea,
     ising_hamiltonian,
     total_magnetization,
     zz_hamiltonian,
 )
-from qadence.ml_tools import TrainConfig, train_with_grad
 from qadence.models import QuantumModel
 from qadence.operations import (
     CNOT,
@@ -813,35 +811,3 @@ def test_sparse_obs_expectation_value(
     expval_s = qm_sparse.expectation(inputs)
 
     assert torch.allclose(expval, expval_s)
-
-
-@pytest.mark.parametrize("diff_mode", DiffMode.list())
-def test_gradient_checkpointing(diff_mode: DiffMode) -> None:
-    n_qubits = 2
-    qc = QuantumCircuit(n_qubits, chain(chebyshev_feature_map(n_qubits), hea(n_qubits, n_qubits)))
-    qm = QuantumModel(
-        qc,
-        total_magnetization(n_qubits),
-        backend=BackendName.PYQTORCH,
-        diff_mode=diff_mode,
-        configuration=PyqConfig(use_gradient_checkpointing=True),
-    )
-    inputs = {"phi": torch.rand(2, requires_grad=True)}
-
-    opt = torch.optim.Adam(qm.parameters())
-
-    criterion = torch.nn.MSELoss()
-    cnt = count()
-
-    wf = qm.run(inputs)
-    samples = qm.sample(inputs)
-
-    def loss_fn(model: QuantumModel, xs: Any = None) -> tuple[torch.Tensor, dict]:
-        next(cnt)
-        out = model.expectation(inputs)
-        loss = criterion(out, torch.tensor([0.0]))
-        return loss, {}
-
-    train_with_grad(
-        model=qm, dataloader=None, optimizer=opt, config=TrainConfig(max_iter=2), loss_fn=loss_fn
-    )

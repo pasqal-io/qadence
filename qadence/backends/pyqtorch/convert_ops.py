@@ -9,7 +9,7 @@ import pyqtorch as pyq
 import sympy
 import torch
 from pyqtorch.apply import apply_operator
-from pyqtorch.parametric import Parametric
+from pyqtorch.matrices import _dagger
 from torch.nn import Module
 from torch.utils.checkpoint import checkpoint
 
@@ -310,21 +310,27 @@ class AddPyQOperation(pyq.QuantumCircuit):
         return reduce(add, (op(state, values) for op in self.operations))
 
 
-class ScalePyQOperation(Parametric):
+class ScalePyQOperation(pyq.QuantumCircuit):
     def __init__(self, n_qubits: int, block: ScaleBlock, config: Configuration):
-        super().__init__(block.block.name, block.qubit_support)
-        (self.param_name,) = config.get_param_name(block)
         if not isinstance(block.block, PrimitiveBlock):
             raise NotImplementedError(
                 "The pyqtorch backend can currently only scale `PrimitiveBlock` types.\
                 Please use the following transpile function on your circuit first:\
                 from qadence.transpile import scale_primitive_blocks_only"
             )
-        self.operation = convert_block(block.block, n_qubits, config)[0]
+        super().__init__(n_qubits, convert_block(block.block, n_qubits, config))
+        (self.param_name,) = config.get_param_name(block)
+        self.qubit_support = self.operations[0].qubit_support
+
+    def forward(self, state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
+        return apply_operator(state, self.unitary(values), self.qubit_support, self.n_qubits)
 
     def unitary(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
         thetas = values[self.param_name]
-        return thetas * self.operation.unitary(values)
+        return thetas * self.operations[0].unitary(values)
+
+    def dagger(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
+        return _dagger(self.unitary(values))
 
     def jacobian(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
         return values[self.param_name] * torch.ones_like(self.unitary(values))
