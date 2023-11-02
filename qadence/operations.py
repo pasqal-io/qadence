@@ -83,6 +83,7 @@ __all__ = [
     "SWAP",
     "PHASE",
     "CPHASE",
+    "CSWAP",
     "MCPHASE",
     "wait",
     "entangle",
@@ -1189,7 +1190,7 @@ def _analog_rot(
     omega = np.pi
     duration = alpha / omega * 1000
 
-    # FIXME: once https://gitlab.pasqal.com/pqs/qadence/-/issues/402 is fixed set default duration
+    # FIXME: once https://github.com/pasqal-io/qadence/issues/150 is fixed set default duration
     # in the function arguments to:
     # duration = Parameter(160)
     # and compute omega like this:
