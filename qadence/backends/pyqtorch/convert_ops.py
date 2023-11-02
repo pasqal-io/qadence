@@ -10,7 +10,6 @@ import sympy
 import torch
 from pyqtorch.apply import apply_operator
 from pyqtorch.matrices import _dagger
-from pyqtorch.primitive import Primitive
 from torch.nn import Module
 
 from qadence.blocks import (
@@ -186,14 +185,18 @@ class PyQComposedBlock(pyq.QuantumCircuit):
         def _batch_first(m: torch.Tensor) -> torch.Tensor:
             return torch.permute(m, batch_first_perm)  # This returns shape (batch_size, 2, 2)
 
-        def fn(op: Primitive) -> torch.Tensor:
-            return _batch_first(_expand(op.unitary(values)))
+        def _batch_last(m: torch.Tensor) -> torch.Tensor:
+            return torch.permute(
+                m, undo_perm
+            )  # We need to undo the permute since PyQ expects (2, 2, batch_size).
 
         # We reverse the list of tensors here since matmul is not commutative.
 
-        return torch.permute(
-            reduce(torch.bmm, (fn(op) for op in reversed(self.operations))),
-            undo_perm,  # We need to undo the permute since PyQ expects (2, 2, batch_size).
+        return _batch_last(
+            reduce(
+                torch.bmm,
+                (_batch_first(_expand(op.unitary(values))) for op in reversed(self.operations)),
+            )
         )
 
 
