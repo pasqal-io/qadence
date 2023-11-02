@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import Callable
+from typing import Callable, Union
 
 from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, TimeRemainingColumn
+from torch import Tensor
 from torch.nn import Module
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
@@ -10,7 +11,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from qadence.logger import get_logger
 from qadence.ml_tools.config import TrainConfig
-from qadence.ml_tools.data import DataLoaderType, DictDataLoader, data_to_device
+from qadence.ml_tools.data import DictDataLoader, data_to_device
 from qadence.ml_tools.optimize_step import optimize_step
 from qadence.ml_tools.printing import print_metrics, write_tensorboard
 from qadence.ml_tools.saveload import load_checkpoint, write_checkpoint
@@ -18,9 +19,9 @@ from qadence.ml_tools.saveload import load_checkpoint, write_checkpoint
 logger = get_logger(__name__)
 
 
-def train(
+def descend(
     model: Module,
-    dataloader: DataLoaderType,
+    dataloader: Union[None, DataLoader, DictDataLoader],
     optimizer: Optimizer,
     config: TrainConfig,
     loss_fn: Callable,
@@ -127,17 +128,9 @@ def train(
         TaskProgressColumn(),
         TimeRemainingColumn(elapsed_when_finished=True),
     )
-    if isinstance(dataloader, (list, tuple)):
-        from qadence.ml_tools.data import tensor_to_dataloader
-
-        assert len(dataloader) == 2, "Please provide exactly two torch tensors."
-        x, y = dataloader
-        dataloader = tensor_to_dataloader(x=x, y=y, batch_size=config.batch_size)
-
-    dataloader = data_to_device(dataloader, device=device)
 
     with progress:
-        dl_iter = iter(dataloader) if isinstance(dataloader, DictDataLoader) else None
+        dl_iter = iter(dataloader) if dataloader is not None else None
 
         # outer epoch loop
         for iteration in progress.track(range(init_iter, init_iter + config.max_iter)):
@@ -146,22 +139,86 @@ def train(
                 # this is the case, for example, of quantum models
                 # which do not have classical input data (e.g. chemistry)
                 if dataloader is None:
-                    loss, metrics = optimize_step(
-                        model, optimizer, loss_fn, dataloader, device=device
-                    )
+                    loss, metrics = optimize_step(model, optimizer, loss_fn, None)
                     loss = loss.item()
 
                 # single epoch with DictDataloader using a single iteration method
                 # DictDataloader returns a single sample of the data
                 # with a given batch size decided when the dataloader is defined
-                elif isinstance(dataloader, DictDataLoader):
+                elif isinstance(dataloader, (DictDataLoader, DataLoader)):
                     # resample all the time from the dataloader
-                    # by creating a fresh iterator if the dataloader
-                    # does not support automatically iterating datasets
-                    if not dataloader.has_automatic_iter:
-                        dl_iter = iter(dataloader)
                     data = next(dl_iter)  # type: ignore[arg-type]
                     loss, metrics = optimize_step(model, optimizer, loss_fn, data, device=device)
+
+                else:
+                    raise NotImplementedError(f"Unsupported dataloader type: {type(dataloader)}")
+
+                if iteration % config.print_every == 0 and config.verbose:
+                    print_metrics(loss, metrics, iteration)
+
+                if iteration % config.write_every == 0:
+                    write_tensorboard(writer, loss, metrics, iteration)
+
+                if config.folder:
+                    if iteration % config.checkpoint_every == 0:
+                        write_checkpoint(config.folder, model, optimizer, iteration)
+
+            except KeyboardInterrupt:
+                print("Terminating training gracefully after the current iteration.")
+                break
+
+    # Final writing and checkpointing
+    if config.folder:
+        write_checkpoint(config.folder, model, optimizer, iteration)
+    write_tensorboard(writer, loss, metrics, iteration)
+    writer.close()
+
+    return model, optimizer
+
+
+def stochastic_descend(
+    model: Module,
+    dataloader: Union[None, DataLoader, DictDataLoader],
+    optimizer: Optimizer,
+    config: TrainConfig,
+    loss_fn: Callable,
+    device: str = "cpu",
+    optimize_step: Callable = optimize_step,
+    write_tensorboard: Callable = write_tensorboard,
+) -> tuple[Module, Optimizer]:
+    assert loss_fn is not None, "Provide a valid loss function"
+
+    # Move model to device before optimizer is loaded
+    model = model.to(device)
+
+    # load available checkpoint
+    init_iter = 0
+    if config.folder:
+        model, optimizer, init_iter = load_checkpoint(config.folder, model, optimizer)
+        logger.debug(f"Loaded model and optimizer from {config.folder}")
+    # initialize tensorboard
+    writer = SummaryWriter(config.folder, purge_step=init_iter)
+
+    ## Training
+    progress = Progress(
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TaskProgressColumn(),
+        TimeRemainingColumn(elapsed_when_finished=True),
+    )
+
+    with progress:
+        dl_iter = iter(dataloader) if dataloader is not None else None
+
+        # outer epoch loop
+        for iteration in progress.track(range(init_iter, init_iter + config.max_iter)):
+            try:
+                # in case there is not data needed by the model
+                # this is the case, for example, of quantum models
+                # which do not have classical input data (e.g. chemistry)
+                if dataloader is None:
+                    loss, metrics = optimize_step(model, optimizer, loss_fn, None)
+                    loss = loss.item()
 
                 elif isinstance(dataloader, DataLoader):
                     # single-epoch with standard DataLoader
@@ -177,7 +234,7 @@ def train(
                     loss = running_loss / (i + 1)
 
                 else:
-                    raise NotImplementedError("Unsupported dataloader type!")
+                    raise NotImplementedError(f"Unsupported dataloader type: {type(dataloader)}")
 
                 if iteration % config.print_every == 0 and config.verbose:
                     print_metrics(loss, metrics, iteration)
