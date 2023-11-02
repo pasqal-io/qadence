@@ -10,7 +10,7 @@ from pyqtorch.utils import overlap, param_dict
 from torch import Tensor
 from torch.autograd import Function
 
-from qadence.backends.pyqtorch.convert_ops import ScalePyQOperation
+from qadence.backends.pyqtorch.convert_ops import PyQHamiltonianEvolution, ScalePyQOperation
 
 
 class AdjointExpectation(Function):
@@ -53,11 +53,11 @@ class AdjointExpectation(Function):
                     )
                 elif isinstance(op, PyQCircuit):
                     grads += [grad_out * g for g in _circuit_backward(ctx, op)]
-                elif isinstance(op, (Primitive, Parametric)):
+                elif isinstance(op, (Primitive, Parametric, PyQHamiltonianEvolution)):
                     ctx.out_state = apply_operator(
                         ctx.out_state, op.dagger(values), op.qubit_support
                     )
-                    if isinstance(op, Parametric) and values[op.param_name].requires_grad:
+                    if isinstance(op, (Parametric, PyQHamiltonianEvolution)):
                         mu = apply_operator(ctx.out_state, op.jacobian(values), op.qubit_support)
                         grads = [grad_out * 2 * overlap(ctx.projected_state, mu)] + grads
                     ctx.projected_state = apply_operator(

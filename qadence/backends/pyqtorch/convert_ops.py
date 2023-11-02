@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import reduce
 from itertools import chain as flatten
 from operator import add
-from typing import Sequence, Tuple
+from typing import Callable, Sequence, Tuple
 
 import pyqtorch as pyq
 import sympy
@@ -258,7 +258,7 @@ class PyQHamiltonianEvolution(Module):
             m = block.generator.to(dtype=torch.cdouble)
             hmat = block_to_tensor(
                 MatrixBlock(m, qubit_support=block.qubit_support),
-                qubit_support=tuple(self.qubits),
+                qubit_support=self.qubit_support,
                 use_full_support=False,
             )
             hmat = hmat.permute(1, 2, 0)
@@ -315,8 +315,11 @@ class PyQHamiltonianEvolution(Module):
         return self._unitary(self._hamiltonian(values), self._time_evolution(values))
 
     def jacobian(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
+        def finitediff(f: Callable, x: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
+            return (f(x + eps) - f(x - eps)) / (2 * eps)  # type: ignore
+
         # Only supports jacobian wrt time evolution parameter atm.
-        return torch.autograd.functional.jacobian(
+        return finitediff(
             lambda t: self._unitary(time_evolution=t, hamiltonian=self._hamiltonian(values)),
             values[self.param_names[0]],
         )

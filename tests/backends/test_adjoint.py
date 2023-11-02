@@ -8,7 +8,7 @@ from qadence.backends.api import backend_factory
 from qadence.blocks import AbstractBlock, chain
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import hea
-from qadence.operations import CPHASE, RX, X, Z
+from qadence.operations import CPHASE, RX, HamEvo, X, Z
 from qadence.parameters import VariationalParameter
 from qadence.types import DiffMode
 
@@ -85,3 +85,21 @@ def test_hea_derivatives() -> None:
     ad_grad = get_grad(theta_0_value, circ, "ad")
     adjoint_grad = get_grad(theta_0_value, circ, "adjoint")
     assert torch.allclose(ad_grad, adjoint_grad, atol=ADJOINT_ACCEPTANCE)
+
+
+def test_hamevo_timeevo_jacobian() -> None:
+    generatorx = X(0)
+    fmx = HamEvo(generatorx, parameter=VariationalParameter("theta"))
+
+    circ = QuantumCircuit(2, fmx)
+    obs = Z(0)
+    backend = backend_factory(backend="pyqtorch", diff_mode=DiffMode.ADJOINT)
+    (pyqtorch_circ, pyqtorch_obs, embeddings_fn, params) = backend.convert(circ, obs)
+    theta = torch.rand(1, requires_grad=True)
+
+    def func(theta: torch.Tensor) -> torch.Tensor:
+        inputs = {"theta": theta}
+        all_params = embeddings_fn(params, inputs)
+        return backend.expectation(pyqtorch_circ, pyqtorch_obs, all_params)
+
+    assert torch.autograd.gradcheck(func, theta, nondet_tol=0.1)
