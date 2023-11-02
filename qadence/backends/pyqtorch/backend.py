@@ -9,13 +9,13 @@ import pyqtorch.modules as pyq
 import torch
 from torch import Tensor
 
-from qadence import logger
 from qadence.backend import Backend as BackendInterface
 from qadence.backend import BackendName, ConvertedCircuit, ConvertedObservable
 from qadence.backends.utils import to_list_of_dicts
 from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.errors import Errors
+from qadence.logger import get_logger
 from qadence.measurements import Measurements
 from qadence.overlap import overlap_exact
 from qadence.states import zero_state
@@ -31,6 +31,8 @@ from qadence.utils import Endianness, int_to_basis
 
 from .config import Configuration
 from .convert_ops import convert_block, convert_observable
+
+logger = get_logger(__name__)
 
 
 @dataclass(frozen=True, eq=True)
@@ -237,7 +239,10 @@ class Backend(BackendInterface):
         )
         if error is not None:
             error_fn = error.get_error_fn()
-            return error_fn(counters=counters, n_qubits=circuit.abstract.n_qubits)  # type: ignore
+            corrupted_counters: list = error_fn(
+                counters=counters, n_qubits=circuit.abstract.n_qubits, options=error.options
+            )
+            return corrupted_counters
         else:
             return counters
 
