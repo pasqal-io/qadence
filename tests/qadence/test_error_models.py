@@ -65,7 +65,8 @@ def test_bitstring_corruption(
         for bitstring, n_shots in counters[0].items()
     ]
     corrupted_counters = [Counter(chain(*corrupted_bitstrings))]
-    breakpoint()
+    # breakpoint()
+    print(corrupted_counters, exp_corrupted_counters)
     assert corrupted_counters == exp_corrupted_counters
 
 
@@ -111,17 +112,19 @@ def test_bitstring_corruption(
 def test_readout_error_quantum_model(
     error_probability: float, block: AbstractBlock, backend: BackendName
 ) -> None:
+    n_shots = 2000
     diff_mode = "ad" if backend == BackendName.PYQTORCH else "gpsr"
 
     err_free = QuantumModel(
         QuantumCircuit(block.n_qubits, block), backend=backend, diff_mode=diff_mode
-    ).sample()
+    ).sample(n_shots=n_shots)
 
     noisy = QuantumModel(
         QuantumCircuit(block.n_qubits, block), backend=backend, diff_mode=diff_mode
-    ).sample(error=Errors(protocol=Errors.READOUT))
+    ).sample(error=Errors(protocol=Errors.READOUT), n_shots=n_shots)
 
     assert len(noisy[0]) <= 2 ** block.n_qubits and len(noisy[0]) > len(err_free[0])
+    assert sum(noisy[0].values()) == sum(err_free[0].values()) == n_shots
     assert all(
         [
             True

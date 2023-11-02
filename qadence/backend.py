@@ -277,6 +277,7 @@ class Backend(ABC):
             state: Initial state.
             measurement: Optional measurement protocol. If None, use
                 exact expectation value with a statevector simulator.
+            error: A noise model to use.
             endianness: Endianness of the resulting bit strings.
         """
         raise NotImplementedError

@@ -52,17 +52,21 @@ def bs_corruption(
     # the noise_matrix should be available to the user if they want to do error correction
     noise_matrix = noise_distribution.sample([n_shots, n_qubits])  # type: ignore[attr-defined]
 
-    # simplest approach - en event occurs if its probability is higher than expected
+    # the simplest approach - en event occurs if its probability is higher than expected
     # by random chance
-    err_idx = torch.nonzero((noise_matrix < error_probability), as_tuple=True)[1]
-    all_bitstrings = [bitstring] * (n_shots - len(err_idx))  # add the majority correct bit strings
+    err_idx = [(item) for i, item in enumerate(noise_matrix < error_probability) if any(item)]
 
-    def func_distort(idx: int) -> str:
+    def func_distort(idx: tuple) -> str:
         bitstring_copy = bitstring_to_array(bitstring)
-        bitstring_copy[idx] = bit_flip(bitstring_copy[idx])
+        for id in range(n_qubits):
+            if idx[id] is True:
+                bitstring_copy[id] = bit_flip(bitstring_copy[id])
         return array_to_bitstring(bitstring_copy)
 
-    all_bitstrings.extend([func_distort(idx) for idx in err_idx])
+    all_bitstrings = [func_distort(idx) for idx in err_idx]
+    all_bitstrings.extend(
+        [bitstring] * (n_shots - len(all_bitstrings))
+    )  # add the error-free bit strings
     return all_bitstrings
 
 

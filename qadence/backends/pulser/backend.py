@@ -20,6 +20,7 @@ from qadence.backends.utils import to_list_of_dicts
 from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.errors import Errors
+from qadence.logger import get_logger
 from qadence.measurements import Measurements
 from qadence.overlap import overlap_exact
 from qadence.register import Register
@@ -30,6 +31,8 @@ from .config import Configuration
 from .convert_ops import convert_observable
 from .devices import Device, IdealDevice, RealisticDevice
 from .pulses import add_pulses
+
+logger = get_logger(__name__)
 
 WEAK_COUPLING_CONST = 1.2
 
@@ -235,9 +238,15 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
-        errors: Errors | None = None,
+        error: Errors | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
+        if error is not None:
+            logger.warning(
+                f"Errors of type {error} are not implemented for expectation yet. "
+                "This is ignored for now."
+            )
+
         state = self.run(circuit, param_values=param_values, state=state, endianness=endianness)
 
         observables = observable if isinstance(observable, list) else [observable]

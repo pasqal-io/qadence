@@ -163,6 +163,7 @@ def expectation(
     state: Tensor = None,
     backend: BackendName = BackendName.PYQTORCH,
     diff_mode: Union[DiffMode, str, None] = None,
+    error: Union[Errors, None] = None,
     endianness: Endianness = Endianness.BIG,
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> Tensor:
@@ -216,6 +217,7 @@ def _(
     state: Tensor = None,
     backend: BackendName = BackendName.PYQTORCH,
     diff_mode: Union[DiffMode, str, None] = None,
+    error: Union[Errors, None] = None,
     endianness: Endianness = Endianness.BIG,
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> Tensor:
@@ -229,6 +231,7 @@ def _(
             observable=conv.observable,  # type: ignore[arg-type]
             param_values=conv.embedding_fn(conv.params, values),
             state=state,
+            error=error,
             endianness=endianness,
         )
 

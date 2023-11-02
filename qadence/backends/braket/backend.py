@@ -16,12 +16,15 @@ from qadence.backends.utils import to_list_of_dicts
 from qadence.blocks import AbstractBlock, block_to_tensor
 from qadence.circuit import QuantumCircuit
 from qadence.errors import Errors
+from qadence.logger import get_logger
 from qadence.measurements import Measurements
 from qadence.overlap import overlap_exact
 from qadence.utils import Endianness
 
 from .config import Configuration
 from .convert_ops import convert_block
+
+logger = get_logger(__name__)
 
 
 def promote_parameters(parameters: dict[str, Tensor | float]) -> dict[str, float]:
@@ -164,6 +167,11 @@ class Backend(BackendInterface):
         error: Errors | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
+        if error is not None:
+            logger.warning(
+                f"Errors of type {error} are not implemented for expectation yet. "
+                "This is ignored for now."
+            )
         # Do not flip endianness here because then we would have to reverse the observable
         wfs = self.run(circuit, param_values, state=state, endianness=Endianness.BIG)
 
