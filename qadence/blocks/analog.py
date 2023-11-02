@@ -107,7 +107,7 @@ class WaitBlock(AnalogBlock):
 
     To construct this block, use the [`wait`][qadence.operations.wait] function.
 
-    Can be used with [`add_interaction`][qadence.analog.add_interaction.add_interaction].
+    Can be used with `add_interaction`.
     """
 
     _eigenvalues_generator: torch.Tensor | None = None
@@ -143,7 +143,7 @@ class ConstantAnalogRotation(AnalogBlock):
       [`AnalogRY`][qadence.operations.AnalogRY],
       [`AnalogRZ`][qadence.operations.AnalogRZ]
 
-    Can be used with [`add_interaction`][qadence.analog.add_interaction.add_interaction].
+    Can be used with `add_interaction`.
     WARNING: do not use `ConstantAnalogRotation` with `alpha` as differentiable parameter - use
     the convenience wrappers mentioned above.
     """
