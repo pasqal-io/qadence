@@ -97,7 +97,7 @@ def add_interaction(
     of `edges: list[tuple[int, int]]`:
     ```python exec="on" source="material-block" result="json"
     from qadence import AnalogRX, Register, add_interaction
-    from qadence.transpile.emulate import ising_interaction
+    from qadence.analog.utils import ising_interaction
 
     def int_fn(r: Register, pairs: list[tuple[int, int]]) -> AbstractBlock:
         # do either something completely custom
