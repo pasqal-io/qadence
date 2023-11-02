@@ -440,4 +440,15 @@ class ParametricControlBlock(ParametricBlock):
     @property
     def _block_title(self) -> str:
         s = f"{self.name}{self.qubit_support}"
+        params_str = []
+        for p in self.parameters.expressions():
+            if p.is_number:
+                val = evaluate(p)
+                if isinstance(val, float):
+                    val = round(val, 2)
+                params_str.append(val)
+            else:
+                params_str.append(stringify(p))
+
+        s += rf" \[params: {params_str}]"
         return s if self.tag is None else (s + rf" \[tag: {self.tag}]")
