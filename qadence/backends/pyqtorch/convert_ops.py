@@ -10,6 +10,7 @@ import sympy
 import torch
 from pyqtorch.apply import apply_operator
 from pyqtorch.matrices import _dagger
+from pyqtorch.utils import is_diag
 from torch.nn import Module
 
 from qadence.blocks import (
@@ -233,15 +234,14 @@ class PyQObservable(Module):
 class PyQHamiltonianEvolution(Module):
     def __init__(
         self,
-        qubit_support: Sequence,
+        qubit_support: Tuple[int, ...],
         n_qubits: int,
         block: TimeEvolutionBlock,
         config: Configuration,
     ):
         super().__init__()
-        self.qubits = qubit_support
+        self.qubit_support = qubit_support
         self.n_qubits = n_qubits
-        self.operation = pyq.HamiltonianEvolution(qubit_support=qubit_support, n_qubits=n_qubits)
         self.param_names = config.get_param_name(block)
         self._has_parametric_generator: bool
         self.block = block
@@ -249,14 +249,11 @@ class PyQHamiltonianEvolution(Module):
         if isinstance(block.generator, AbstractBlock) and not block.generator.is_parametric:
             hmat = block_to_tensor(
                 block.generator,
-                qubit_support=tuple(self.qubits),
+                qubit_support=self.qubit_support,
                 use_full_support=False,
             )
             hmat = hmat.permute(1, 2, 0)
-
-            def _fwd(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-                tevo = values[self.param_names[0]]
-                return self.operation(hmat, tevo, state)
+            self._hamiltonian = lambda x: hmat
 
         elif isinstance(block.generator, torch.Tensor):
             m = block.generator.to(dtype=torch.cdouble)
@@ -266,46 +263,75 @@ class PyQHamiltonianEvolution(Module):
                 use_full_support=False,
             )
             hmat = hmat.permute(1, 2, 0)
-
-            def _fwd(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-                tevo = values[self.param_names[0]]
-                return self.operation(hmat, tevo, state)
+            self._hamiltonian = lambda x: hmat
 
         elif isinstance(block.generator, sympy.Basic):
-
-            def _fwd(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-                tevo = values[self.param_names[0]]
-                hmat = values[self.param_names[1]]
-                hmat = hmat.squeeze(3)  # FIXME: why is this necessary?
-                hmat = hmat.permute(1, 2, 0)
-                return self.operation(hmat, tevo, state)
-
+            self._hamiltonian = (
+                lambda values: values[self.param_names[1]].squeeze(3).permute(1, 2, 0)
+            )
+            # FIXME Why are we squeezing
         else:
 
-            def _fwd(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
+            def _hamiltonian(values: dict[str, torch.Tensor]) -> torch.Tensor:
                 hmat = _block_to_tensor_embedded(
                     block.generator,  # type: ignore[arg-type]
                     values=values,
-                    qubit_support=tuple(self.qubits),
+                    qubit_support=self.qubit_support,
                     use_full_support=False,
                 )
-                hmat = hmat.permute(1, 2, 0)
-                tevo = values[self.param_names[0]]
-                return self.operation(hmat, tevo, state)
+                return hmat.permute(1, 2, 0)
 
-        self._forward = _fwd
+            self._hamiltonian = _hamiltonian
 
-    def forward(self, state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-        return self._forward(state, values)
+        self._time_evolution = lambda values: values[self.param_names[0]]
 
-    def hamiltonian(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
+    def unitary(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
         pass
 
     def jacobian(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
         pass
 
     def dagger(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
-        return _dagger(self.hamiltonian(values))
+        return _dagger(self.unitary(values))
+
+    def forward(
+        self,
+        state: torch.Tensor,
+        values: dict[str, torch.Tensor],
+    ) -> torch.Tensor:
+        hamiltonian = self._hamiltonian(values)
+        time_evolution = self._time_evolution(values)
+        self.batch_size = max(hamiltonian.size()[2], len(time_evolution))
+        diag_check = torch.tensor(
+            [is_diag(hamiltonian[..., i]) for i in range(hamiltonian.size()[2])]
+        )
+
+        def _evolve_diag_operator(
+            hamiltonian: torch.Tensor, time_evolution: torch.Tensor
+        ) -> torch.Tensor:
+            evol_operator = torch.diagonal(hamiltonian) * (-1j * time_evolution).view((-1, 1))
+            evol_operator = torch.diag_embed(torch.exp(evol_operator))
+            return torch.transpose(evol_operator, 0, -1)
+
+        def _evolve_matrixexp_operator(
+            hamiltonian: torch.Tensor, time_evolution: torch.Tensor
+        ) -> torch.Tensor:
+            evol_operator = torch.transpose(hamiltonian, 0, -1) * (-1j * time_evolution).view(
+                (-1, 1, 1)
+            )
+            evol_operator = torch.linalg.matrix_exp(evol_operator)
+            return torch.transpose(evol_operator, 0, -1)
+
+        evolve_operator = (
+            _evolve_diag_operator if bool(torch.prod(diag_check)) else _evolve_matrixexp_operator
+        )
+        return apply_operator(
+            state,
+            evolve_operator(hamiltonian, time_evolution),
+            self.qubit_support,
+            self.n_qubits,
+            self.batch_size,
+        )
 
 
 class AddPyQOperation(pyq.QuantumCircuit):
