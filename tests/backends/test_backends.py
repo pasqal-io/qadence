@@ -322,9 +322,9 @@ def test_output_cphase_batching(bsize: int) -> None:
 
 
 def test_custom_transpilation_passes() -> None:
-    backend_list = [BackendName.BRAKET]  # , BackendName.PYQTORCH, BackendName.PULSER]
+    backend_list = [BackendName.BRAKET, BackendName.PYQTORCH, BackendName.PULSER]
 
-    block = chain(chain(chain(X(0))), kron(kron(X(0))))
+    block = chain(chain(chain(RX(0, np.pi / 2))), kron(kron(RX(0, np.pi / 2))))
     circuit = QuantumCircuit(1, block)
 
     for name in backend_list:
