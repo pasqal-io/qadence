@@ -51,8 +51,7 @@ class AdjointExpectation(Function):
                     ctx.projected_state = apply_operator(
                         ctx.projected_state, op.dagger(values), op.qubit_support
                     )
-                    continue
-                if isinstance(op, PyQCircuit):
+                elif isinstance(op, PyQCircuit):
                     grads += [grad_out * g for g in _circuit_backward(ctx, op)]
                 elif isinstance(op, (Primitive, Parametric)):
                     ctx.out_state = apply_operator(
