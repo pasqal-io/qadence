@@ -10,13 +10,29 @@ from qadence import backend_factory
 from qadence.backend import BackendConfiguration, BackendName
 from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
+<<<<<<< HEAD
 from qadence.errors import Errors
+=======
+from qadence.qubit_support import QubitSupport
+>>>>>>> main
 from qadence.register import Register
 from qadence.types import DiffMode
 from qadence.utils import Endianness
 
 # Modules to be automatically added to the qadence namespace
 __all__ = ["run", "sample", "expectation"]
+
+
+def _n_qubits_block(block: AbstractBlock) -> int:
+    if isinstance(block.qubit_support, QubitSupport) and block.qubit_support.is_global:
+        raise ValueError(
+            "You cannot determine the number of qubits for"
+            "a block with global qubit support. Use a QuantumCircuit"
+            "instead and explicitly supply the number of qubits as follows: "
+            "\nn_qubits = 4\nQuantumCircuit(n_qubits, block)"
+        )
+    else:
+        return block.n_qubits
 
 
 @singledispatch
@@ -80,7 +96,8 @@ def _(n_qubits: int, block: AbstractBlock, **kwargs: Any) -> Tensor:
 
 @run.register
 def _(block: AbstractBlock, **kwargs: Any) -> Tensor:
-    return run(Register(block.n_qubits), block, **kwargs)
+    n_qubits = _n_qubits_block(block)
+    return run(Register(n_qubits), block, **kwargs)
 
 
 @singledispatch
@@ -151,8 +168,8 @@ def _(n_qubits: int, block: AbstractBlock, **kwargs: Any) -> Tensor:
 
 @sample.register
 def _(block: AbstractBlock, **kwargs: Any) -> Tensor:
-    reg = Register(block.n_qubits)
-    return sample(reg, block, **kwargs)
+    n_qubits = _n_qubits_block(block)
+    return sample(Register(n_qubits), block, **kwargs)
 
 
 @singledispatch
@@ -268,5 +285,5 @@ def _(
 def _(
     block: AbstractBlock, observable: Union[list[AbstractBlock], AbstractBlock], **kwargs: Any
 ) -> Tensor:
-    reg = Register(block.n_qubits)
-    return expectation(QuantumCircuit(reg, block), observable, **kwargs)
+    n_qubits = _n_qubits_block(block)
+    return expectation(QuantumCircuit(Register(n_qubits), block), observable, **kwargs)

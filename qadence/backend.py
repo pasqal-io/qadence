@@ -20,10 +20,16 @@ from qadence.blocks import (
 )
 from qadence.blocks.analog import ConstantAnalogRotation, WaitBlock
 from qadence.circuit import QuantumCircuit
+<<<<<<< HEAD
 from qadence.errors import Errors
+=======
+from qadence.logger import get_logger
+>>>>>>> main
 from qadence.measurements import Measurements
 from qadence.parameters import stringify
 from qadence.types import BackendName, DiffMode, Endianness
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -32,6 +38,14 @@ class BackendConfiguration:
     use_sparse_observable: bool = False
     use_gradient_checkpointing: bool = False
     use_single_qubit_composition: bool = False
+    transpilation_passes: list[Callable] | None = None
+
+    def __post_init__(self) -> None:
+        if self.transpilation_passes is not None:
+            assert all(
+                [callable(f) for f in self.transpilation_passes]
+            ), "Wrong transpilation passes supplied"
+            logger.warning("Custom transpilation passes cannot be serialized in JSON format!")
 
     def available_options(self) -> str:
         """Return as a string the available fields with types of the configuration
@@ -40,10 +54,10 @@ class BackendConfiguration:
             str: a string with all the available fields, one per line
         """
         conf_msg = ""
-        for field in fields(self):
-            if not field.name.startswith("_"):
+        for _field in fields(self):
+            if not _field.name.startswith("_"):
                 conf_msg += (
-                    f"Name: {field.name} - Type: {field.type} - Default value: {field.default}\n"
+                    f"Name: {_field.name} - Type: {_field.type} - Default value: {_field.default}\n"
                 )
         return conf_msg
 
