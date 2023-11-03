@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import Counter
 from enum import Enum
+from itertools import chain
 
 import numpy as np
 import torch
@@ -124,28 +125,28 @@ def error(
     if seed is not None:
         torch.manual_seed(seed)
 
-    # corrupted_bitstrings = []
-    # for counter in counters:
-    #     corrupted_bitstrings.append(
-    #         Counter(
-    #             chain(
-    #                 *[
-    #                     bs_corruption(
-    #                         bitstring=bitstring,
-    #                         n_shots=n_shots,
-    #                         error_probability=error_probability,
-    #                         noise_distribution=noise_distribution,
-    #                         n_qubits=n_qubits,
-    #                     )
-    #                     for bitstring, n_shots in counter.items()
-    #                 ]
-    #             )
-    #         )
-    #     )
+    corrupted_bitstrings = []
+    for counter in counters:
+        corrupted_bitstrings.append(
+            Counter(
+                chain(
+                    *[
+                        bs_corruption(
+                            bitstring=bitstring,
+                            n_shots=n_shots,
+                            error_probability=error_probability,
+                            noise_distribution=noise_distribution,
+                            n_qubits=n_qubits,
+                        )
+                        for bitstring, n_shots in counter.items()
+                    ]
+                )
+            )
+        )
 
     # bitflip_proba = options.get("bitflip_proba")
     # breakpoint()
     # if bitflip_proba is None:
     #     KeyError("Readout error protocol requires a 'bitflip_proba' option of type 'float'.")
-    return corrupt(bitflip_proba=error_probability, counters=counters, n_qubits=n_qubits)
-    # return corrupted_bitstrings
+    # return corrupt(bitflip_proba=error_probability, counters=counters, n_qubits=n_qubits)
+    return corrupted_bitstrings

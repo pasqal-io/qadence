@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
+from itertools import chain
 
 import pytest
 import torch
@@ -15,8 +16,9 @@ from qadence.blocks import (
 )
 from qadence.circuit import QuantumCircuit
 from qadence.constructors.hamiltonians import hamiltonian_factory
+from qadence.divergences import js_divergence
 from qadence.errors import Errors
-from qadence.errors.readout import corrupt
+from qadence.errors.readout import bs_corruption
 from qadence.measurements.protocols import Measurements
 from qadence.models import QuantumModel
 from qadence.operations import (
@@ -52,58 +54,80 @@ from qadence.types import DiffMode
 def test_bitstring_corruption(
     error_probability: float, counters: list, exp_corrupted_counters: list, n_qubits: int
 ) -> None:
-    corrupted_counters = corrupt(
-        bitflip_proba=error_probability,
-        counters=counters,
-        n_qubits=n_qubits,
-    )
-    assert corrupted_counters[0].total() == 100
+    # corrupted_counters = corrupt(
+    #     bitflip_proba=error_probability,
+    #     counters=counters,
+    #     n_qubits=n_qubits,
+    # )
+    corrupted_bitstrings = [
+        bs_corruption(
+            bitstring=bitstring,
+            n_shots=n_shots,
+            error_probability=error_probability,
+            n_qubits=n_qubits,
+        )
+        for bitstring, n_shots in counters[0].items()
+    ]
+
+    corrupted_counters = [Counter(chain(*corrupted_bitstrings))]
+    # assert corrupted_counters[0].total() == 100 # python3.9 complains about .total in Counter
+    assert sum(corrupted_counters[0].values()) == 100
     assert corrupted_counters == exp_corrupted_counters
+    assert torch.allclose(
+        torch.tensor(1.0 - js_divergence(corrupted_counters[0], counters[0])),
+        torch.ones(1),
+        atol=1e-3,
+    )
 
 
 @pytest.mark.parametrize(
-    "error_probability, block, backend",
+    "error_probability, n_shots, block, backend",
     [
-        (0.1, kron(X(0), X(1)), BackendName.BRAKET),
-        (0.1, kron(Z(0), Z(1), Z(2)) + kron(X(0), Y(1), Z(2)), BackendName.BRAKET),
-        (0.15, add(Z(0), Z(1), Z(2)), BackendName.BRAKET),
-        (0.01, kron(X(0), X(1)) + kron(Z(0), Z(1)) + kron(X(2), X(3)), BackendName.BRAKET),
-        (0.1, add(Z(0), Z(1), kron(X(2), X(3))) + add(X(2), X(3)), BackendName.BRAKET),
-        (0.1, add(kron(Z(0), Z(1)), kron(X(2), X(3))), BackendName.BRAKET),
-        (0.1, kron(Z(0), Z(1)) + CNOT(0, 1), BackendName.BRAKET),
+        (0.1, 100, kron(X(0), X(1)), BackendName.BRAKET),
+        (0.1, 1000, kron(Z(0), Z(1), Z(2)) + kron(X(0), Y(1), Z(2)), BackendName.BRAKET),
+        (0.15, 1000, add(Z(0), Z(1), Z(2)), BackendName.BRAKET),
+        (0.1, 5000, kron(X(0), X(1)) + kron(Z(0), Z(1)) + kron(X(2), X(3)), BackendName.BRAKET),
+        (0.1, 500, add(Z(0), Z(1), kron(X(2), X(3))) + add(X(2), X(3)), BackendName.BRAKET),
+        (0.1, 2000, add(kron(Z(0), Z(1)), kron(X(2), X(3))), BackendName.BRAKET),
+        (0.1, 1300, kron(Z(0), Z(1)) + CNOT(0, 1), BackendName.BRAKET),
         (
             0.05,
+            1500,
             kron(RZ(0, parameter=0.01), RZ(1, parameter=0.01))
             + kron(RX(0, parameter=0.01), RX(1, parameter=0.01)),
             BackendName.PULSER,
         ),
-        (0.001, HamEvo(generator=kron(Z(0), Z(1)), parameter=0.05), BackendName.BRAKET),
-        (0.12, HamEvo(generator=kron(Z(0), Z(1), Z(2)), parameter=0.001), BackendName.BRAKET),
+        (0.001, 5000, HamEvo(generator=kron(Z(0), Z(1)), parameter=0.05), BackendName.BRAKET),
+        (0.12, 2000, HamEvo(generator=kron(Z(0), Z(1), Z(2)), parameter=0.001), BackendName.BRAKET),
         (
             0.1,
+            1000,
             HamEvo(generator=kron(Z(0), Z(1)) + kron(Z(0), Z(1), Z(2)), parameter=0.005),
             BackendName.BRAKET,
         ),
-        (0.1, kron(X(0), X(1)), BackendName.PYQTORCH),
-        (0.01, kron(Z(0), Z(1), Z(2)) + kron(X(0), Y(1), Z(2)), BackendName.PYQTORCH),
-        (0.01, add(Z(0), Z(1), Z(2)), BackendName.PYQTORCH),
+        (0.1, 100, kron(X(0), X(1)), BackendName.PYQTORCH),
+        (0.1, 200, kron(Z(0), Z(1), Z(2)) + kron(X(0), Y(1), Z(2)), BackendName.PYQTORCH),
+        (0.01, 1000, add(Z(0), Z(1), Z(2)), BackendName.PYQTORCH),
         (
             0.1,
+            2000,
             HamEvo(
                 generator=kron(X(0), X(1)) + kron(Z(0), Z(1)) + kron(X(2), X(3)), parameter=0.005
             ),
             BackendName.PYQTORCH,
         ),
-        (0.1, add(Z(0), Z(1), kron(X(2), X(3))) + add(X(2), X(3)), BackendName.PYQTORCH),
-        (0.05, add(kron(Z(0), Z(1)), kron(X(2), X(3))), BackendName.PYQTORCH),
-        (0.2, hamiltonian_factory(4, detuning=Z), BackendName.PYQTORCH),
-        (0.1, kron(Z(0), Z(1)) + CNOT(0, 1), BackendName.PYQTORCH),
+        (0.1, 500, add(Z(0), Z(1), kron(X(2), X(3))) + add(X(2), X(3)), BackendName.PYQTORCH),
+        (0.05, 10000, add(kron(Z(0), Z(1)), kron(X(2), X(3))), BackendName.PYQTORCH),
+        (0.2, 1000, hamiltonian_factory(4, detuning=Z), BackendName.PYQTORCH),
+        (0.1, 500, kron(Z(0), Z(1)) + CNOT(0, 1), BackendName.PYQTORCH),
     ],
 )
 def test_readout_error_quantum_model(
-    error_probability: float, block: AbstractBlock, backend: BackendName
+    error_probability: float,
+    n_shots: int,
+    block: AbstractBlock,
+    backend: BackendName,
 ) -> None:
-    n_shots = 2000
     diff_mode = "ad" if backend == BackendName.PYQTORCH else "gpsr"
 
     noiseless_samples: list[Counter] = QuantumModel(
@@ -116,7 +140,14 @@ def test_readout_error_quantum_model(
 
     # breakpoint()
     for noiseless, noisy in zip(noiseless_samples, noisy_samples):
-        assert noiseless.total() == noisy.total()
+        assert sum(noiseless.values()) == sum(noisy.values()) == n_shots
+        # assert noiseless.total() == noisy.total() # python3.9 complains about .total in Counter
+        assert js_divergence(noiseless, noisy) > 0.0
+        assert torch.allclose(
+            torch.tensor(1.0 - js_divergence(noiseless, noisy)),
+            torch.ones(1) - error_probability,
+            atol=1e-1,
+        )
         # print(js_divergence(noiseless, noisy))
     # assert len(noisy[0]) <= 2 ** block.n_qubits and len(noisy[0]) > len(err_free[0])
     # assert all(
@@ -148,8 +179,15 @@ def test_readout_error_backends(backend: BackendName) -> None:
     # breakpoint()
     # compare that the results are with an error of 10% (the default error_probability)
     for sample, noisy_sample in zip(samples, noisy_samples):
-        assert sample.total() == noisy_sample.total()
-        # print(js_divergence(sample, noisy_sample))
+        assert sum(sample.values()) == sum(noisy_sample.values())
+        # python3.9 complains about .total in Counter
+        # assert sample.total() == noisy_sample.total()
+        assert js_divergence(sample, noisy_sample) > 0.0
+        assert torch.allclose(
+            torch.tensor(1.0 - js_divergence(sample, noisy_sample)),
+            torch.ones(1) - error_probability,
+            atol=1e-1,
+        )
     # assert all(
     #     [
     #         True
