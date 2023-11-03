@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from collections import Counter
 from enum import Enum
-from itertools import chain
-from typing import Any
 
 import numpy as np
 import torch
+from torch import rand, where
 from torch.distributions import normal, poisson, uniform
 
 from qadence.logger import get_logger
@@ -68,6 +67,32 @@ def bs_corruption(
         [bitstring] * (n_shots - len(all_bitstrings))
     )  # add the error-free bit strings
     return all_bitstrings
+
+
+def corrupt(bitflip_proba: float, counters: list[Counter], n_qubits: int) -> list[Counter]:
+    def flip_bits(bitstring: str, corruption: int, n_qubits: int) -> str:
+        """Flip bits for the corruption int in bitstring."""
+        str_format = "{:0" + str(n_qubits) + "b}"
+        return str_format.format(int(bitstring, 2) ^ corruption)
+
+    # Get a tensor of random bit indices.
+    rands = where(rand(n_qubits) < bitflip_proba)[0]
+
+    if rands.numel():
+        # Corruption int.
+        corruption = torch.tensor([2**n for n in rands], dtype=torch.int64).sum().item()
+        corrupted_counters = []
+        for counter in counters:
+            corrupted_counter: Counter = Counter()
+            for bitstring, count in counter.items():
+                corrupted_bitstring = flip_bits(
+                    bitstring=bitstring, corruption=corruption, n_qubits=n_qubits
+                )
+                corrupted_counter[corrupted_bitstring] = count
+            corrupted_counters.append(corrupted_counter)
+        return corrupted_counters
+
+    return counters
 
 
 def error(
