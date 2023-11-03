@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
-from typing import Sequence
+from typing import Callable, Sequence
 
 import numpy as np
 import torch
@@ -90,3 +90,7 @@ def to_list_of_dicts(param_values: dict[str, Tensor]) -> list[dict[str, float]]:
     }
 
     return [{k: v[i] for k, v in batched_values.items()} for i in range(max_batch_size)]
+
+
+def finitediff(f: Callable, x: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
+    return (f(x + eps) - f(x - eps)) / (2 * eps)  # type: ignore

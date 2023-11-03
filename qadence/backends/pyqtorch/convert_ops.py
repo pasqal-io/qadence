@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import reduce
 from itertools import chain as flatten
 from operator import add
-from typing import Callable, Sequence, Tuple
+from typing import Sequence, Tuple
 
 import pyqtorch as pyq
 import sympy
@@ -13,6 +13,7 @@ from pyqtorch.matrices import _dagger
 from pyqtorch.utils import is_diag
 from torch.nn import Module
 
+from qadence.backends.utils import finitediff
 from qadence.blocks import (
     AbstractBlock,
     AddBlock,
@@ -314,14 +315,29 @@ class PyQHamiltonianEvolution(Module):
     def unitary(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
         return self._unitary(self._hamiltonian(values), self._time_evolution(values))
 
-    def jacobian(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
-        def finitediff(f: Callable, x: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
-            return (f(x + eps) - f(x - eps)) / (2 * eps)  # type: ignore
-
-        # Only supports jacobian wrt time evolution parameter atm.
+    def jacobian_time(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
         return finitediff(
             lambda t: self._unitary(time_evolution=t, hamiltonian=self._hamiltonian(values)),
             values[self.param_names[0]],
+        )
+
+    def jacobian_generator(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
+        def _generator(val: torch.Tensor) -> torch.Tensor:
+            val_copy = values.copy()
+            val_copy[self.param_names[1]] = val
+            hmat = _block_to_tensor_embedded(
+                self.block.generator,  # type: ignore[arg-type]
+                values=val_copy,
+                qubit_support=self.qubit_support,
+                use_full_support=False,
+            )
+            return hmat.permute(1, 2, 0)
+
+        return finitediff(
+            lambda v: self._unitary(
+                time_evolution=self._time_evolution(values), hamiltonian=_generator(v)
+            ),
+            values[self.param_names[1]],
         )
 
     def dagger(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
@@ -357,7 +373,9 @@ class ScalePyQOperation(pyq.QuantumCircuit):
                 Please use the following transpile function on your circuit first:\
                 from qadence.transpile import scale_primitive_blocks_only"
             )
-        super().__init__(n_qubits, convert_block(block.block, n_qubits, config))
+        ops = convert_block(block.block, n_qubits, config)
+        assert len(ops) == 1
+        super().__init__(n_qubits, ops)
         (self.param_name,) = config.get_param_name(block)
         self.qubit_support = self.operations[0].qubit_support
 
