@@ -22,7 +22,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.overlap import overlap_exact
 from qadence.register import Register
-from qadence.utils import Endianness
+from qadence.utils import Endianness, get_logger
 
 from .channels import GLOBAL_CHANNEL, LOCAL_CHANNEL
 from .cloud import get_client
@@ -30,6 +30,8 @@ from .config import Configuration
 from .convert_ops import convert_observable
 from .devices import Device, IdealDevice, RealisticDevice
 from .pulses import add_pulses
+
+logger = get_logger(__file__)
 
 WEAK_COUPLING_CONST = 1.2
 
@@ -101,22 +103,29 @@ def make_sequence(circ: QuantumCircuit, config: Configuration) -> Sequence:
 
 
 # TODO: make it parallelized
-# TODO: add execution on the cloud platform
 def simulate_sequence(
     sequence: Sequence, config: Configuration, state: Tensor, n_shots: int | None = None
 ) -> SimulationResults | Counter:
-    if config.cloud_credentials is not None and config.cloud_platform is not None:
-        client = get_client(config.cloud_credentials)
+    if config.cloud_configuration is not None:
+        client = get_client(config.cloud_configuration)
+
         serialized_sequence = sequence.to_abstract_repr()
         params: list[dict] = [{"runs": n_shots, "variables": {}}]
 
         batch = client.create_batch(
             serialized_sequence,
             jobs=params,
-            emulator=str(config.cloud_platform),
+            emulator=str(config.cloud_configuration.platform),
             wait=True,
         )
+
         job = list(batch.jobs.values())[0]
+        if job.errors is not None:
+            logger.error(
+                f"The cloud job with ID {job.id} has "
+                f"failed for the following reason: {job.errors}"
+            )
+
         return Counter(job.result)
 
     else:
@@ -193,7 +202,7 @@ class Backend(BackendInterface):
         vals = to_list_of_dicts(param_values)
 
         # TODO: relax this constraint
-        if self.config.cloud_credentials is not None:
+        if self.config.cloud_configuration is not None:
             raise ValueError(
                 "Cannot retrieve the wavefunction from cloud simulations. Do not"
                 "specify any cloud credentials to use the .run() method"

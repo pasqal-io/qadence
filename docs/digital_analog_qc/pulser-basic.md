@@ -6,7 +6,27 @@ to directly manipulate them if required by, for instance, optimal pulse shaping.
 
 !!! note
     The Pulser backend is still experimental and the interface might change in the future.
-	Please note that it does not support `DiffMode.AD`.
+    Please note that it does not support `DiffMode.AD`.
+
+!!! note
+    With the Pulser backend, `qadence` simulations can be executed on the cloud emulators available on the PASQAL
+    cloud platform. In order to do so, make to have valid credentials for the PASQAL cloud platform and use
+    the following configuration for the Pulser backend:
+
+    ```python exec="off" source="material-block" html="1" session="pulser-basic"
+    config = {
+        "cloud_configuration": {
+            "username": "<changeme>",
+            "password": "<changeme>",
+            "project_id": "<changeme>",  # the project should have access to emulators
+            "platform": "EMU_FREE"  # choose between `EMU_TN` and `EMU_FREE`
+        }
+    }
+    ```
+
+For inquiries and more details on the cloud credentials, please contact
+[info@pasqal.com](nfo@pasqal.com).
+
 
 ## Default qubit interaction
 

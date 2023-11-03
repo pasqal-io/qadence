@@ -6,7 +6,7 @@ from typing import Optional
 
 from pasqal_cloud import AUTH0_CONFIG, PASQAL_ENDPOINTS, SDK, Auth0Conf, Endpoints, TokenProvider
 
-DEFAULT_CLOUD_ENV = "prod"
+from .config import DEFAULT_CLOUD_ENV, CloudConfiguration
 
 
 @lru_cache(maxsize=5)
@@ -53,11 +53,11 @@ def _get_client(
     )
 
 
-def get_client(credentials: dict) -> SDK:
+def get_client(credentials: CloudConfiguration) -> SDK:
     return _get_client(
-        username=credentials.get("username", None),
-        password=credentials.get("password", None),
-        project_id=credentials.get("project_id", None),
-        environment=credentials.get("environment", DEFAULT_CLOUD_ENV),
-        token_provider=credentials.get("token_provider", None),
+        username=credentials.username,
+        password=credentials.password,
+        project_id=credentials.project_id,
+        environment=credentials.environment,
+        token_provider=credentials.token_provider,
     )

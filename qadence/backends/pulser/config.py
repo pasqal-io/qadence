@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
+from pasqal_cloud import TokenProvider
 from pasqal_cloud.device import EmulatorType
 from pulser_simulation.simconfig import SimConfig
 
@@ -10,6 +11,18 @@ from qadence.backend import BackendConfiguration
 from qadence.blocks.analog import Interaction
 
 from .devices import Device
+
+DEFAULT_CLOUD_ENV = "prod"
+
+
+@dataclass
+class CloudConfiguration:
+    platform: EmulatorType = EmulatorType.EMU_FREE
+    username: str | None = None
+    password: str | None = None
+    project_id: str | None = None
+    environment: str = "prod"
+    token_provider: TokenProvider | None = None
 
 
 @dataclass
@@ -50,12 +63,12 @@ class Configuration(BackendConfiguration):
     # interaction type
     interaction: Interaction = Interaction.NN
 
-    # platform to execute sequence on on the cloud
-    cloud_platform: Optional[EmulatorType] = None
-
-    # credentials for connecting to the cloud platform
-    cloud_credentials: Optional[dict] = None
+    # configuration for cloud simulations
+    cloud_configuration: Optional[CloudConfiguration] = None
 
     def __post_init__(self) -> None:
         if self.sim_config is not None and not isinstance(self.sim_config, SimConfig):
             raise TypeError("Wrong 'sim_config' attribute type, pass a valid SimConfig object!")
+
+        if isinstance(self.cloud_configuration, dict):
+            self.cloud_configuration = CloudConfiguration(**self.cloud_configuration)
