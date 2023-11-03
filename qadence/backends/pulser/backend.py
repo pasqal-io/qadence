@@ -137,7 +137,7 @@ def simulate_sequence(
             with_modulation=config.with_modulation,
         )
         if state is not None:
-            simulation.set_initial_state(qutip.Qobj(state.cpu().numpy()))
+            simulation.set_initial_state(qutip.Qobj(state))
 
         sim_result = simulation.run(nsteps=config.n_steps_solv, method=config.method_solv)
         if n_shots is not None:
@@ -221,7 +221,7 @@ class Backend(BackendInterface):
             sequence = self.assign_parameters(circuit, param_values_el)
             sim_result = simulate_sequence(sequence, self.config, state, n_shots=None)
             wf = (
-                sim_result.get_final_state(  # type: ignore [union-attr]
+                sim_result.get_final_state(  # type:ignore [union-attr]
                     ignore_global_phase=False, normalize=True
                 )
                 .full()
