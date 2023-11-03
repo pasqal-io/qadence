@@ -17,9 +17,10 @@ from qadence.blocks import AbstractBlock, block_to_tensor
 from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.overlap import overlap_exact
+from qadence.transpile import transpile
 from qadence.utils import Endianness
 
-from .config import Configuration
+from .config import Configuration, default_passes
 from .convert_ops import convert_block
 
 
@@ -54,14 +55,17 @@ class Backend(BackendInterface):
         if self.is_remote:
             raise NotImplementedError("Braket backend does not support cloud execution yet")
 
-    def circuit(self, circ: QuantumCircuit) -> ConvertedCircuit:
-        from qadence.transpile import digitalize, fill_identities, transpile
+    def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:
+        passes = self.config.transpilation_passes
+        if passes is None:
+            passes = default_passes
 
-        # make sure that we don't have empty wires. braket does not like it.
-        transpilations = [fill_identities, digitalize]
-        abstract_circ = transpile(*transpilations)(circ)  # type: ignore[call-overload]
-        native = BraketCircuit(convert_block(abstract_circ.block))
-        return ConvertedCircuit(native=native, abstract=abstract_circ, original=circ)
+        original_circ = circuit
+        if len(passes) > 0:
+            circuit = transpile(*passes)(circuit)
+
+        native = BraketCircuit(convert_block(circuit.block))
+        return ConvertedCircuit(native=native, abstract=circuit, original=original_circ)
 
     def observable(self, obs: AbstractBlock, n_qubits: int = None) -> Any:
         if n_qubits is None:

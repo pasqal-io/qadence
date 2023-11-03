@@ -9,7 +9,6 @@ import pyqtorch as pyq
 import torch
 from torch import Tensor
 
-from qadence.analog import add_interaction
 from qadence.backend import Backend as BackendInterface
 from qadence.backend import BackendName, ConvertedCircuit, ConvertedObservable
 from qadence.backends.utils import to_list_of_dicts
@@ -19,7 +18,6 @@ from qadence.measurements import Measurements
 from qadence.overlap import overlap_exact
 from qadence.states import zero_state
 from qadence.transpile import (
-    blockfn_to_circfn,
     chain_single_qubit_ops,
     flatten,
     scale_primitive_blocks_only,
@@ -27,7 +25,7 @@ from qadence.transpile import (
 )
 from qadence.utils import Endianness, int_to_basis
 
-from .config import Configuration
+from .config import Configuration, default_passes
 from .convert_ops import convert_block, convert_observable
 
 
@@ -46,18 +44,17 @@ class Backend(BackendInterface):
     config: Configuration = Configuration()
 
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:
-        transpilations = [
-            lambda circ: add_interaction(circ, interaction=self.config.interaction),
-            lambda circ: blockfn_to_circfn(chain_single_qubit_ops)(circ)
-            if self.config.use_single_qubit_composition
-            else blockfn_to_circfn(flatten)(circ),
-            blockfn_to_circfn(scale_primitive_blocks_only),
-        ]
+        passes = self.config.transpilation_passes
+        if passes is None:
+            passes = default_passes(self.config)
 
-        abstract = transpile(*transpilations)(circuit)  # type: ignore[call-overload]
-        ops = convert_block(abstract.block, n_qubits=circuit.n_qubits, config=self.config)
-        native = pyq.QuantumCircuit(abstract.n_qubits, ops)
-        return ConvertedCircuit(native=native, abstract=abstract, original=circuit)
+        original_circ = circuit
+        if len(passes) > 0:
+            circuit = transpile(*passes)(circuit)
+
+        ops = convert_block(circuit.block, n_qubits=circuit.n_qubits, config=self.config)
+        native = pyq.QuantumCircuit(circuit.n_qubits, ops)
+        return ConvertedCircuit(native=native, abstract=circuit, original=original_circ)
 
     def observable(self, observable: AbstractBlock, n_qubits: int) -> ConvertedObservable:
         # make sure only leaves, i.e. primitive blocks are scaled
