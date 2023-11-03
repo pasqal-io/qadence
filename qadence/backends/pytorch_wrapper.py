@@ -336,7 +336,9 @@ class DifferentiableBackend(nn.Module):
         observable: list[AbstractBlock] | AbstractBlock | None = None,
     ) -> Converted:
         if self.diff_mode != DiffMode.AD and observable is not None:
-            msg = f"Differentiation mode '{self.diff_mode}' does not support parametric observables."
+            msg = (
+                f"Differentiation mode '{self.diff_mode}' does not support parametric observables."
+            )
             if isinstance(observable, list):
                 for obs in observable:
                     if obs.is_parametric:

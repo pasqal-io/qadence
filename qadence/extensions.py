@@ -70,20 +70,16 @@ def _set_backend_config(backend: Backend, diff_mode: DiffMode) -> None:
 
     _validate_diff_mode(backend, diff_mode)
 
+    # (1) When using PSR with any backend or (2) we use the backends Pulser or Braket,
+    # we have to use gate-level parameters
     if not backend.supports_ad or diff_mode != DiffMode.AD:
         backend.config._use_gate_params = True
-
-    # (1) When using PSR with any backend or (2)  we use the backends Pulser or Braket,
-    # we have to use gate-level parameters
-
     else:
         assert diff_mode == DiffMode.AD
         backend.config._use_gate_params = False
         # We can use expression-level parameters for AD.
         if backend.name == BackendName.PYQTORCH:
             backend.config.use_single_qubit_composition = True
-
-        # For pyqtorch, we enable some specific transpilation passes.
 
 
 # if proprietary qadence_plus is available import the

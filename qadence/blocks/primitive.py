@@ -358,8 +358,7 @@ class ControlBlock(PrimitiveBlock):
 
     @property
     def _block_title(self) -> str:
-        c, t = self.qubit_support
-        s = f"{self.name}({c},{t})"
+        s = f"{self.name}{self.qubit_support}"
         return s if self.tag is None else (s + rf" \[tag: {self.tag}]")
 
     def __ascii__(self, console: Console) -> RenderableType:
@@ -437,3 +436,19 @@ class ParametricControlBlock(ParametricBlock):
         expr = deserialize(targetblock["parameters"])
         block = cls(control, target, expr)  # type: ignore[call-arg]
         return block
+
+    @property
+    def _block_title(self) -> str:
+        s = f"{self.name}{self.qubit_support}"
+        params_str = []
+        for p in self.parameters.expressions():
+            if p.is_number:
+                val = evaluate(p)
+                if isinstance(val, float):
+                    val = round(val, 2)
+                params_str.append(val)
+            else:
+                params_str.append(stringify(p))
+
+        s += rf" \[params: {params_str}]"
+        return s if self.tag is None else (s + rf" \[tag: {self.tag}]")

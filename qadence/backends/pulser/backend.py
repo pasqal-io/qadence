@@ -22,13 +22,17 @@ from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.overlap import overlap_exact
 from qadence.register import Register
-from qadence.utils import Endianness
+from qadence.transpile import transpile
+from qadence.utils import Endianness, get_logger
 
 from .channels import GLOBAL_CHANNEL, LOCAL_CHANNEL
+from .cloud import get_client
 from .config import Configuration
 from .convert_ops import convert_observable
 from .devices import Device, IdealDevice, RealisticDevice
 from .pulses import add_pulses
+
+logger = get_logger(__file__)
 
 WEAK_COUPLING_CONST = 1.2
 
@@ -100,20 +104,46 @@ def make_sequence(circ: QuantumCircuit, config: Configuration) -> Sequence:
 
 
 # TODO: make it parallelized
-# TODO: add execution on the cloud platform
 def simulate_sequence(
-    sequence: Sequence, config: Configuration, state: np.ndarray | None
-) -> SimulationResults:
-    simulation = QutipEmulator.from_sequence(
-        sequence,
-        sampling_rate=config.sampling_rate,
-        config=config.sim_config,
-        with_modulation=config.with_modulation,
-    )
-    if state is not None:
-        simulation.set_initial_state(qutip.Qobj(state))
+    sequence: Sequence, config: Configuration, state: Tensor, n_shots: int | None = None
+) -> SimulationResults | Counter:
+    if config.cloud_configuration is not None:
+        client = get_client(config.cloud_configuration)
 
-    return simulation.run(nsteps=config.n_steps_solv, method=config.method_solv)
+        serialized_sequence = sequence.to_abstract_repr()
+        params: list[dict] = [{"runs": n_shots, "variables": {}}]
+
+        batch = client.create_batch(
+            serialized_sequence,
+            jobs=params,
+            emulator=str(config.cloud_configuration.platform),
+            wait=True,
+        )
+
+        job = list(batch.jobs.values())[0]
+        if job.errors is not None:
+            logger.error(
+                f"The cloud job with ID {job.id} has "
+                f"failed for the following reason: {job.errors}"
+            )
+
+        return Counter(job.result)
+
+    else:
+        simulation = QutipEmulator.from_sequence(
+            sequence,
+            sampling_rate=config.sampling_rate,
+            config=config.sim_config,
+            with_modulation=config.with_modulation,
+        )
+        if state is not None:
+            simulation.set_initial_state(qutip.Qobj(state))
+
+        sim_result = simulation.run(nsteps=config.n_steps_solv, method=config.method_solv)
+        if n_shots is not None:
+            return sim_result.sample_final_state(n_shots)
+        else:
+            return sim_result
 
 
 @dataclass(frozen=True, eq=True)
@@ -131,9 +161,14 @@ class Backend(BackendInterface):
     config: Configuration = Configuration()
 
     def circuit(self, circ: QuantumCircuit) -> Sequence:
+        passes = self.config.transpilation_passes
+        original_circ = circ
+        if passes is not None and len(passes) > 0:
+            circ = transpile(*passes)(circ)
+
         native = make_sequence(circ, self.config)
 
-        return ConvertedCircuit(native=native, abstract=circ, original=circ)
+        return ConvertedCircuit(native=native, abstract=circ, original=original_circ)
 
     def observable(self, observable: AbstractBlock, n_qubits: int = None) -> Tensor:
         from qadence.transpile import flatten, scale_primitive_blocks_only, transpile
@@ -172,14 +207,24 @@ class Backend(BackendInterface):
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         vals = to_list_of_dicts(param_values)
+
+        # TODO: relax this constraint
+        if self.config.cloud_configuration is not None:
+            raise ValueError(
+                "Cannot retrieve the wavefunction from cloud simulations. Do not"
+                "specify any cloud credentials to use the .run() method"
+            )
+
         state = state if state is None else _convert_init_state(state)
         batched_wf = np.zeros((len(vals), 2**circuit.abstract.n_qubits), dtype=np.complex128)
 
         for i, param_values_el in enumerate(vals):
             sequence = self.assign_parameters(circuit, param_values_el)
-            sim_result = simulate_sequence(sequence, self.config, state)
+            sim_result = simulate_sequence(sequence, self.config, state, n_shots=None)
             wf = (
-                sim_result.get_final_state(ignore_global_phase=False, normalize=True)
+                sim_result.get_final_state(  # type:ignore [union-attr]
+                    ignore_global_phase=False, normalize=True
+                )
                 .full()
                 .flatten()
             )
@@ -214,8 +259,7 @@ class Backend(BackendInterface):
         samples = []
         for param_values_el in vals:
             sequence = self.assign_parameters(circuit, param_values_el)
-            sim_result = simulate_sequence(sequence, self.config, state)
-            sample = sim_result.sample_final_state(n_shots)
+            sample = simulate_sequence(sequence, self.config, state, n_shots=n_shots)
             samples.append(sample)
         if endianness != self.native_endianness:
             from qadence.transpile import invert_endianness
