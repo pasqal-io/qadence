@@ -10,11 +10,8 @@ from qadence import backend_factory
 from qadence.backend import BackendConfiguration, BackendName
 from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
-<<<<<<< HEAD
 from qadence.errors import Errors
-=======
 from qadence.qubit_support import QubitSupport
->>>>>>> main
 from qadence.register import Register
 from qadence.types import DiffMode
 from qadence.utils import Endianness

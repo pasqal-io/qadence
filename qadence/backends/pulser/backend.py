@@ -25,7 +25,7 @@ from qadence.measurements import Measurements
 from qadence.overlap import overlap_exact
 from qadence.register import Register
 from qadence.transpile import transpile
-from qadence.utils import Endianness, get_logger
+from qadence.utils import Endianness
 
 from .channels import GLOBAL_CHANNEL, LOCAL_CHANNEL
 from .cloud import get_client
@@ -34,11 +34,7 @@ from .convert_ops import convert_observable
 from .devices import Device, IdealDevice, RealisticDevice
 from .pulses import add_pulses
 
-<<<<<<< HEAD
 logger = get_logger(__name__)
-=======
-logger = get_logger(__file__)
->>>>>>> main
 
 WEAK_COUPLING_CONST = 1.2
 

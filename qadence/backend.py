@@ -20,11 +20,8 @@ from qadence.blocks import (
 )
 from qadence.blocks.analog import ConstantAnalogRotation, WaitBlock
 from qadence.circuit import QuantumCircuit
-<<<<<<< HEAD
 from qadence.errors import Errors
-=======
 from qadence.logger import get_logger
->>>>>>> main
 from qadence.measurements import Measurements
 from qadence.parameters import stringify
 from qadence.types import BackendName, DiffMode, Endianness
