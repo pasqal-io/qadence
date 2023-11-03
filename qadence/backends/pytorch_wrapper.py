@@ -33,7 +33,7 @@ class PSRExpectation(Function):
         *param_values: Tensor,
     ) -> Tensor:
         for param in param_values:
-            param.detach()
+            param = param.detach()
 
         ctx.expectation_fn = expectation_fn
         ctx.param_psrs = param_psrs
