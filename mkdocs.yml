@@ -42,7 +42,7 @@ nav:
     - Measurement protocols: realistic_sims/measurements.md
     - Error models: realistic_sims/errors.md
     - Error mitigation: realistic_sims/mitigation.md
-      
+
   - API:
     - Block system: qadence/blocks.md
     - Operations: qadence/operations.md
