@@ -96,10 +96,10 @@ def corrupt(bitflip_proba: float, counters: list[Counter], n_qubits: int) -> lis
 
 
 def error(
-    counters: Counter,
+    counters: list[Counter],
     n_qubits: int,
     options: dict = dict(),
-) -> list[Counter[Any]]:
+) -> list[Counter]:
     """
     Implements a simple uniform readout error model for position-independent bit string
     corruption.
@@ -124,22 +124,28 @@ def error(
     if seed is not None:
         torch.manual_seed(seed)
 
-    corrupted_bitstrings = []
-    for counter in counters:
-        corrupted_bitstrings.append(
-            Counter(
-                chain(
-                    *[
-                        bs_corruption(
-                            bitstring=bitstring,
-                            n_shots=n_shots,
-                            error_probability=error_probability,
-                            noise_distribution=noise_distribution,
-                            n_qubits=n_qubits,
-                        )
-                        for bitstring, n_shots in counter.items()
-                    ]
-                )
-            )
-        )
-    return corrupted_bitstrings
+    # corrupted_bitstrings = []
+    # for counter in counters:
+    #     corrupted_bitstrings.append(
+    #         Counter(
+    #             chain(
+    #                 *[
+    #                     bs_corruption(
+    #                         bitstring=bitstring,
+    #                         n_shots=n_shots,
+    #                         error_probability=error_probability,
+    #                         noise_distribution=noise_distribution,
+    #                         n_qubits=n_qubits,
+    #                     )
+    #                     for bitstring, n_shots in counter.items()
+    #                 ]
+    #             )
+    #         )
+    #     )
+
+    # bitflip_proba = options.get("bitflip_proba")
+    # breakpoint()
+    # if bitflip_proba is None:
+    #     KeyError("Readout error protocol requires a 'bitflip_proba' option of type 'float'.")
+    return corrupt(bitflip_proba=error_probability, counters=counters, n_qubits=n_qubits)
+    # return corrupted_bitstrings
