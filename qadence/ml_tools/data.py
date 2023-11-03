@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from itertools import cycle
 from functools import singledispatch
 from typing import Any, Union
 
 from torch import Tensor, is_tensor
 from torch import device as torchdevice
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader, TensorDataset, IterableDataset
 
 
 @dataclass
@@ -14,13 +15,6 @@ class DictDataLoader:
     """This class only holds a dictionary of `DataLoader`s and samples from them"""
 
     dataloaders: dict[str, DataLoader]
-
-    # this flag indicates that the dictionary contains dataloaders
-    # which can automatically iterate at each epoch without having to
-    # redefine the iterator itself (so basically no StopIteration exception
-    # will occur). This is the case of the Flow library where the dataloader
-    # is actually mostly used, so it is set to True by default
-    has_automatic_iter: bool = True
 
     def __iter__(self) -> DictDataLoader:
         self.iters = {key: iter(dl) for key, dl in self.dataloaders.items()}
@@ -30,9 +24,40 @@ class DictDataLoader:
         return {key: next(it) for key, it in self.iters.items()}
 
 
-def to_dataloader(x: Tensor, y: Tensor, batch_size: int = 1) -> DataLoader:
+class InfiniteTensorDataset(IterableDataset):
+    def __init__(self, *tensors: torch.Tensor):
+        """Randomly sample points from the first dimension of the given tensors.
+        Behaves like a normal torch `Dataset` just that we can sample from it as
+        many times as we want.
+
+        Examples:
+        ```python exec="on" source="above" result="json"
+        import torch
+        from flow.data import InfiniteTensorDataset
+
+        x_data, y_data = torch.rand(5,2), torch.ones(5,1)
+        # The dataset accepts any number of tensors with the same batch dimension
+        ds = InfiniteTensorDataset(x_data, y_data)
+
+        # call `next` to get one sample from each tensor:
+        xs = next(iter(ds))
+        print(str(xs)) # markdown-exec: hide
+        ```
+        """
+        self.tensors = tensors
+
+    def __iter__(self) -> Iterator:
+        if len(set([t.size(0) for t in self.tensors])) != 1:
+            raise ValueError("Size of first dimension must be the same for all tensors.")
+
+        for idx in cycle(range(self.tensors[0].size(0))):
+            yield tuple(t[idx] for t in self.tensors)
+
+
+def to_dataloader(x: Tensor, y: Tensor, batch_size: int = 1, infinite=False) -> DataLoader:
     """Convert two torch tensors x and y to a Dataloader."""
-    return DataLoader(TensorDataset(x, y), batch_size=batch_size)
+    ds = InfiniteTensorDataset(x, y) if infinite else TensorDataset(x, y)
+    return DataLoader(ds, batch_size=batch_size)
 
 
 @singledispatch
