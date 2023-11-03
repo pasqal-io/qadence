@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from itertools import cycle
 from functools import singledispatch
-from typing import Any, Union
+from itertools import cycle
+from typing import Any, Iterator
 
-from torch import Tensor, is_tensor
-from torch import device as torchdevice
-from torch.utils.data import DataLoader, TensorDataset, IterableDataset
+from torch import Tensor
+from torch.utils.data import DataLoader, IterableDataset, TensorDataset
 
 
 @dataclass
@@ -25,7 +24,7 @@ class DictDataLoader:
 
 
 class InfiniteTensorDataset(IterableDataset):
-    def __init__(self, *tensors: torch.Tensor):
+    def __init__(self, *tensors: Tensor):
         """Randomly sample points from the first dimension of the given tensors.
         Behaves like a normal torch `Dataset` just that we can sample from it as
         many times as we want.
@@ -54,7 +53,7 @@ class InfiniteTensorDataset(IterableDataset):
             yield tuple(t[idx] for t in self.tensors)
 
 
-def to_dataloader(x: Tensor, y: Tensor, batch_size: int = 1, infinite=False) -> DataLoader:
+def to_dataloader(x: Tensor, y: Tensor, batch_size: int = 1, infinite: bool = False) -> DataLoader:
     """Convert two torch tensors x and y to a Dataloader."""
     ds = InfiniteTensorDataset(x, y) if infinite else TensorDataset(x, y)
     return DataLoader(ds, batch_size=batch_size)

@@ -7,9 +7,9 @@ from typing import Any
 import numpy as np
 import pytest
 import torch
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader
 
-from qadence.ml_tools import DictDataLoader, TrainConfig, train_with_grad, to_dataloader
+from qadence.ml_tools import DictDataLoader, TrainConfig, to_dataloader, train_with_grad
 from qadence.ml_tools.models import TransformedModule
 from qadence.models import QNN
 
@@ -28,7 +28,7 @@ def dictdataloader(batch_size: int = 25) -> DictDataLoader:
     y = torch.sin(x)
     dls = {
         "y1": to_dataloader(x, y, batch_size=batch_size, infinite=True),
-        "y2": to_dataloader(x, y, batch_size=batch_size, infinite=True)
+        "y2": to_dataloader(x, y, batch_size=batch_size, infinite=True),
     }
     return DictDataLoader(dls)
 
