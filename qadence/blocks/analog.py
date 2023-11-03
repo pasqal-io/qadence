@@ -134,7 +134,7 @@ class WaitBlock(AnalogBlock):
 class ConstantAnalogRotation(AnalogBlock):
     """Implements a constant analog rotation with interaction dictated by the chosen Hamiltonian
 
-        H = ∑ᵢ(hΩ/2 sin(φ)*Xᵢ - cos(φ)*Yᵢ - hδnᵢ) + Hᵢₙₜ.
+        H/h = ∑ᵢ(Ω/2 cos(φ)*Xᵢ - sin(φ)*Yᵢ - δnᵢ) + Hᵢₙₜ.
 
     To construct this block you can use of the following convenience wrappers:
     - The general rotation operation [`AnalogRot`][qadence.operations.AnalogRot]
