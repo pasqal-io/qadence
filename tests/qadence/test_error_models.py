@@ -54,11 +54,6 @@ from qadence.types import DiffMode
 def test_bitstring_corruption(
     error_probability: float, counters: list, exp_corrupted_counters: list, n_qubits: int
 ) -> None:
-    # corrupted_counters = corrupt(
-    #     bitflip_proba=error_probability,
-    #     counters=counters,
-    #     n_qubits=n_qubits,
-    # )
     corrupted_bitstrings = [
         bs_corruption(
             bitstring=bitstring,
@@ -70,7 +65,6 @@ def test_bitstring_corruption(
     ]
 
     corrupted_counters = [Counter(chain(*corrupted_bitstrings))]
-    # assert corrupted_counters[0].total() == 100 # python3.9 complains about .total in Counter
     assert sum(corrupted_counters[0].values()) == 100
     assert corrupted_counters == exp_corrupted_counters
     assert torch.allclose(
@@ -141,26 +135,12 @@ def test_readout_error_quantum_model(
     # breakpoint()
     for noiseless, noisy in zip(noiseless_samples, noisy_samples):
         assert sum(noiseless.values()) == sum(noisy.values()) == n_shots
-        # assert noiseless.total() == noisy.total() # python3.9 complains about .total in Counter
         assert js_divergence(noiseless, noisy) > 0.0
         assert torch.allclose(
             torch.tensor(1.0 - js_divergence(noiseless, noisy)),
             torch.ones(1) - error_probability,
             atol=1e-1,
         )
-        # print(js_divergence(noiseless, noisy))
-    # assert len(noisy[0]) <= 2 ** block.n_qubits and len(noisy[0]) > len(err_free[0])
-    # assert all(
-    #     [
-    #         True
-    #         if (
-    #             err_free[0]["bitstring"] < int(count + count * error_probability)
-    #             or err_free[0]["bitstring"] > int(count - count * error_probability)
-    #         )
-    #         else False
-    #         for bitstring, count in noisy[0].items()
-    #     ]
-    # )
 
 
 @pytest.mark.parametrize("backend", [BackendName.BRAKET, BackendName.PYQTORCH, BackendName.PULSER])
@@ -176,29 +156,15 @@ def test_readout_error_backends(backend: BackendName) -> None:
     options = {"error_probability": error_probability}
     error = Errors(protocol=Errors.READOUT, options=options).get_error_fn()
     noisy_samples = error(counters=samples, n_qubits=n_qubits)
-    # breakpoint()
     # compare that the results are with an error of 10% (the default error_probability)
     for sample, noisy_sample in zip(samples, noisy_samples):
         assert sum(sample.values()) == sum(noisy_sample.values())
-        # python3.9 complains about .total in Counter
-        # assert sample.total() == noisy_sample.total()
         assert js_divergence(sample, noisy_sample) > 0.0
         assert torch.allclose(
             torch.tensor(1.0 - js_divergence(sample, noisy_sample)),
             torch.ones(1) - error_probability,
             atol=1e-1,
         )
-    # assert all(
-    #     [
-    #         True
-    #         if (
-    #             samples[0]["bitstring"] < int(count + count * error_probability)
-    #             or samples[0]["bitstring"] > int(count - count * error_probability)
-    #         )
-    #         else False
-    #         for bitstring, count in noisy_samples[0].items()
-    #     ]
-    # )
 
 
 # @pytest.mark.flaky(max_runs=5)
