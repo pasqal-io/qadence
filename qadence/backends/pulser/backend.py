@@ -22,6 +22,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.overlap import overlap_exact
 from qadence.register import Register
+from qadence.transpile import transpile
 from qadence.utils import Endianness, get_logger
 
 from .channels import GLOBAL_CHANNEL, LOCAL_CHANNEL
@@ -159,9 +160,14 @@ class Backend(BackendInterface):
     config: Configuration = Configuration()
 
     def circuit(self, circ: QuantumCircuit) -> Sequence:
+        passes = self.config.transpilation_passes
+        original_circ = circ
+        if passes is not None and len(passes) > 0:
+            circ = transpile(*passes)(circ)
+
         native = make_sequence(circ, self.config)
 
-        return ConvertedCircuit(native=native, abstract=circ, original=circ)
+        return ConvertedCircuit(native=native, abstract=circ, original=original_circ)
 
     def observable(self, observable: AbstractBlock, n_qubits: int = None) -> Tensor:
         from qadence.transpile import flatten, scale_primitive_blocks_only, transpile

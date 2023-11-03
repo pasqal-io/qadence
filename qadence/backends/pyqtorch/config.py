@@ -4,18 +4,36 @@ from dataclasses import dataclass
 from typing import Callable
 
 from qadence.backend import BackendConfiguration
+from qadence.logger import get_logger
+from qadence.transpile import (
+    add_interaction,
+    blockfn_to_circfn,
+    chain_single_qubit_ops,
+    flatten,
+    scale_primitive_blocks_only,
+)
 from qadence.types import AlgoHEvo, Interaction
+
+logger = get_logger(__name__)
+
+
+def default_passes(config: Configuration) -> list[Callable]:
+    return [
+        lambda circ: add_interaction(circ, interaction=config.interaction),
+        lambda circ: blockfn_to_circfn(chain_single_qubit_ops)(circ)
+        if config.use_single_qubit_composition
+        else blockfn_to_circfn(flatten)(circ),
+        blockfn_to_circfn(scale_primitive_blocks_only),
+    ]
 
 
 @dataclass
 class Configuration(BackendConfiguration):
-    # FIXME: currently not used
-    # determine which kind of Hamiltonian evolution
-    # algorithm to use
     algo_hevo: AlgoHEvo = AlgoHEvo.EXP
+    """Determine which kind of Hamiltonian evolution algorithm to use"""
 
-    # number of steps for the Hamiltonian evolution
     n_steps_hevo: int = 100
+    """Default number of steps for the Hamiltonian evolution"""
 
     use_gradient_checkpointing: bool = False
     """Use gradient checkpointing. Recommended for higher-order optimization tasks."""

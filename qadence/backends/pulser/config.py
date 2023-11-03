@@ -27,46 +27,50 @@ class CloudConfiguration:
 
 @dataclass
 class Configuration(BackendConfiguration):
-    # device type
     device_type: Device = Device.IDEALIZED
+    """The type of quantum Device to use in the simulations. Choose
+    between IDEALIZED and REALISTIC. This influences pulse duration, max
+    amplitude, minimum atom spacing and other properties of the system"""
 
-    # atomic spacing
     spacing: Optional[float] = None
+    """Atomic spacing for Pulser register"""
 
-    # sampling rate to be used for local simulations
     sampling_rate: float = 1.0
+    """Sampling rate to be used for local simulations. Set to 1.0
+    to avoid any interpolation in the solving procedure"""
 
-    # solver method to pass to the Qutip solver
     method_solv: str = "adams"
+    """Solver method to pass to the Qutip solver"""
 
-    # number of solver steps to pass to the Qutip solver
     n_steps_solv: float = 1e8
+    """Number of solver steps to pass to the Qutip solver"""
 
-    # simulation configuration with optional noise options
     sim_config: Optional[SimConfig] = None
+    """Simulation configuration with optional noise options"""
 
-    # add modulation to the local execution
     with_modulation: bool = False
+    """Add laser modulation to the local execution. This will take
+    into account realistic laser pulse modulation when simulating
+    a pulse sequence"""
 
-    # Use gate-level parameters
-    use_gate_params = True
-
-    # pulse amplitude on local channel
     amplitude_local: Optional[float] = None
+    """Default pulse amplitude on local channel"""
 
-    # pulse amplitude on global channel
     amplitude_global: Optional[float] = None
+    """Default pulse amplitude on global channel"""
 
-    # detuning value
     detuning: Optional[float] = None
+    """Default value for the detuning pulses"""
 
-    # interaction type
     interaction: Interaction = Interaction.NN
+    """Type of interaction introduced in the Hamiltonian. Currently, only
+    NN interaction is support. XY interaction is possible but not implemented"""
 
     # configuration for cloud simulations
     cloud_configuration: Optional[CloudConfiguration] = None
 
     def __post_init__(self) -> None:
+        super().__post_init__()
         if self.sim_config is not None and not isinstance(self.sim_config, SimConfig):
             raise TypeError("Wrong 'sim_config' attribute type, pass a valid SimConfig object!")
 
