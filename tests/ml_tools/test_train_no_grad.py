@@ -7,8 +7,9 @@ from pathlib import Path
 import nevergrad as ng
 import numpy as np
 import torch
+from torch.utils.data import DataLoader
 
-from qadence.ml_tools import TrainConfig, num_parameters, train_gradient_free, to_dataloader
+from qadence.ml_tools import TrainConfig, num_parameters, to_dataloader, train_gradient_free
 
 # ensure reproducibility
 SEED = 42
