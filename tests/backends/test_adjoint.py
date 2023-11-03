@@ -87,9 +87,9 @@ def test_hea_derivatives() -> None:
     assert torch.allclose(ad_grad, adjoint_grad, atol=ADJOINT_ACCEPTANCE)
 
 
-def test_hamevo_timeevo_jacobian() -> None:
-    generatorx = X(0)
-    fmx = HamEvo(generatorx, parameter=VariationalParameter("theta"))
+def test_hamevo_timeevo_grad() -> None:
+    generator = X(0)
+    fmx = HamEvo(generator, parameter=VariationalParameter("theta"))
 
     circ = QuantumCircuit(2, fmx)
     obs = Z(0)
@@ -102,4 +102,23 @@ def test_hamevo_timeevo_jacobian() -> None:
         all_params = embeddings_fn(params, inputs)
         return backend.expectation(pyqtorch_circ, pyqtorch_obs, all_params)
 
-    assert torch.autograd.gradcheck(func, theta, nondet_tol=0.1)
+    assert torch.autograd.gradcheck(func, theta, nondet_tol=ADJOINT_ACCEPTANCE)
+
+
+def test_hamevo_generator_grad() -> None:
+    theta = VariationalParameter("theta")
+    generator = RX(0, theta)
+    fmx = HamEvo(generator, parameter=1.0)
+
+    circ = QuantumCircuit(2, fmx)
+    obs = Z(0)
+    backend = backend_factory(backend="pyqtorch", diff_mode=DiffMode.ADJOINT)
+    (pyqtorch_circ, pyqtorch_obs, embeddings_fn, params) = backend.convert(circ, obs)
+    theta = torch.rand(1, requires_grad=True)
+
+    def func(theta: torch.Tensor) -> torch.Tensor:
+        inputs = {"theta": theta}
+        all_params = embeddings_fn(params, inputs)
+        return backend.expectation(pyqtorch_circ, pyqtorch_obs, all_params)
+
+    assert torch.autograd.gradcheck(func, theta, nondet_tol=ADJOINT_ACCEPTANCE)
