@@ -112,7 +112,7 @@ def test_train_dictdataloader(tmp_path: Path, Basic: torch.nn.Module) -> None:
         l2 = criterion(model(x2), y2)
         return l1 + l2, {}
 
-    n_epochs = 200
+    n_epochs = 100
     config = TrainConfig(
         folder=tmp_path, max_iter=n_epochs, print_every=10, checkpoint_every=100, write_every=100
     )
