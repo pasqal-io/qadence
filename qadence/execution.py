@@ -20,7 +20,7 @@ __all__ = ["run", "sample", "expectation"]
 
 
 def _n_qubits_block(block: AbstractBlock) -> int:
-    if isinstance(block.qubit_support, QubitSupport):
+    if isinstance(block.qubit_support, QubitSupport) and block.qubit_support.is_global:
         raise ValueError(
             "You cannot determine the number of qubits for"
             "a block with global qubit support. Use a QuantumCircuit"
