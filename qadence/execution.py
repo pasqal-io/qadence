@@ -236,7 +236,7 @@ def _(
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> Tensor:
     observable = observable if isinstance(observable, list) else [observable]
-    bknd = backend_factory(backend, configuration=configuration)
+    bknd = backend_factory(backend, configuration=configuration, diff_mode=diff_mode)
     conv = bknd.convert(circuit, observable)
 
     def _expectation() -> Tensor:

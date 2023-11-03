@@ -328,13 +328,16 @@ class DifferentiableBackend(nn.Module):
         observable: list[AbstractBlock] | AbstractBlock | None = None,
     ) -> Converted:
         if self.diff_mode != DiffMode.AD and observable is not None:
+            msg = (
+                f"Differentiation mode '{self.diff_mode}' does not support parametric observables."
+            )
             if isinstance(observable, list):
                 for obs in observable:
                     if obs.is_parametric:
-                        raise ValueError("PSR cannot be applied to a parametric observable.")
+                        raise ValueError(msg)
             else:
                 if observable.is_parametric:
-                    raise ValueError("PSR cannot be applied to a parametric observable.")
+                    raise ValueError(msg)
         return self.backend.convert(circuit, observable)
 
     def assign_parameters(self, circuit: ConvertedCircuit, param_values: dict[str, Tensor]) -> Any:
