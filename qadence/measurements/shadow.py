@@ -260,6 +260,7 @@ def estimations(
     confidence: float = 0.1,
     state: Tensor | None = None,
     backend_name: BackendName = BackendName.PYQTORCH,
+    error: Errors | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
     """Compute expectation values for all local observables using median of means."""
@@ -275,6 +276,7 @@ def estimations(
         param_values=param_values,
         state=state,
         backend_name=backend_name,
+        error=error,
         endianness=endianness,
     )
     estimations = []
@@ -358,5 +360,6 @@ def compute_expectation(
         confidence=confidence,
         state=state,
         backend_name=backend_name,
+        error=error,
         endianness=endianness,
     )
