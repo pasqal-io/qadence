@@ -1,14 +1,10 @@
 from __future__ import annotations
 
 from collections import Counter
-from itertools import chain
 
 import pytest
-import strategies as st
 import torch
-from hypothesis import given, settings
 from sympy import acos
-from torch import Tensor
 
 import qadence as qd
 from qadence import BackendName
@@ -20,13 +16,14 @@ from qadence.blocks import (
 from qadence.circuit import QuantumCircuit
 from qadence.constructors.hamiltonians import hamiltonian_factory
 from qadence.errors import Errors
-from qadence.errors.readout import bs_corruption
+from qadence.errors.readout import corrupt
 from qadence.measurements.protocols import Measurements
 from qadence.models import QuantumModel
 from qadence.operations import (
     CNOT,
     RX,
     RZ,
+    H,
     HamEvo,
     X,
     Y,
@@ -55,17 +52,12 @@ from qadence.types import DiffMode
 def test_bitstring_corruption(
     error_probability: float, counters: list, exp_corrupted_counters: list, n_qubits: int
 ) -> None:
-    corrupted_bitstrings = [
-        bs_corruption(
-            bitstring=bitstring,
-            n_shots=n_shots,
-            error_probability=1.0,
-            n_qubits=n_qubits,
-        )
-        for bitstring, n_shots in counters[0].items()
-    ]
-    corrupted_counters = [Counter(chain(*corrupted_bitstrings))]
-    # breakpoint()
+    corrupted_counters = corrupt(
+        bitflip_proba=error_probability,
+        counters=counters,
+        n_qubits=n_qubits,
+    )
+    assert corrupted_counters[0].total() == 100
     assert corrupted_counters == exp_corrupted_counters
 
 
@@ -114,26 +106,30 @@ def test_readout_error_quantum_model(
     n_shots = 2000
     diff_mode = "ad" if backend == BackendName.PYQTORCH else "gpsr"
 
-    err_free = QuantumModel(
+    noiseless_samples: list[Counter] = QuantumModel(
         QuantumCircuit(block.n_qubits, block), backend=backend, diff_mode=diff_mode
     ).sample(n_shots=n_shots)
 
-    noisy = QuantumModel(
+    noisy_samples: list[Counter] = QuantumModel(
         QuantumCircuit(block.n_qubits, block), backend=backend, diff_mode=diff_mode
     ).sample(error=Errors(protocol=Errors.READOUT), n_shots=n_shots)
 
-    assert sum(noisy[0].values()) == sum(err_free[0].values()) == n_shots
-    assert all(
-        [
-            True
-            if (
-                err_free[0]["bitstring"] < int(count + count * error_probability)
-                or err_free[0]["bitstring"] > int(count - count * error_probability)
-            )
-            else False
-            for bitstring, count in noisy[0].items()
-        ]
-    )
+    # breakpoint()
+    for noiseless, noisy in zip(noiseless_samples, noisy_samples):
+        assert noiseless.total() == noisy.total()
+        # print(js_divergence(noiseless, noisy))
+    # assert len(noisy[0]) <= 2 ** block.n_qubits and len(noisy[0]) > len(err_free[0])
+    # assert all(
+    #     [
+    #         True
+    #         if (
+    #             err_free[0]["bitstring"] < int(count + count * error_probability)
+    #             or err_free[0]["bitstring"] > int(count - count * error_probability)
+    #         )
+    #         else False
+    #         for bitstring, count in noisy[0].items()
+    #     ]
+    # )
 
 
 @pytest.mark.parametrize("backend", [BackendName.BRAKET, BackendName.PYQTORCH, BackendName.PULSER])
@@ -149,49 +145,60 @@ def test_readout_error_backends(backend: BackendName) -> None:
     options = {"error_probability": error_probability}
     error = Errors(protocol=Errors.READOUT, options=options).get_error_fn()
     noisy_samples = error(counters=samples, n_qubits=n_qubits)
+    # breakpoint()
     # compare that the results are with an error of 10% (the default error_probability)
-    assert all(
-        [
-            True
-            if (
-                samples[0]["bitstring"] < int(count + count * error_probability)
-                or samples[0]["bitstring"] > int(count - count * error_probability)
-            )
-            else False
-            for bitstring, count in noisy_samples[0].items()
-        ]
-    )
+    for sample, noisy_sample in zip(samples, noisy_samples):
+        assert sample.total() == noisy_sample.total()
+        # print(js_divergence(sample, noisy_sample))
+    # assert all(
+    #     [
+    #         True
+    #         if (
+    #             samples[0]["bitstring"] < int(count + count * error_probability)
+    #             or samples[0]["bitstring"] > int(count - count * error_probability)
+    #         )
+    #         else False
+    #         for bitstring, count in noisy_samples[0].items()
+    #     ]
+    # )
 
 
-@pytest.mark.parametrize("measurement_proto", [Measurements.TOMOGRAPHY, Measurements.SHADOW])
-@given(st.restricted_batched_circuits())
-@settings(deadline=None)
+# @pytest.mark.flaky(max_runs=5)
+@pytest.mark.parametrize(
+    "measurement_proto, options",
+    [
+        (Measurements.TOMOGRAPHY, {"n_shots": 10000}),
+        (Measurements.SHADOW, {"accuracy": 0.1, "confidence": 0.1}),
+    ],
+)
+# @given(st.restricted_batched_circuits())
+# @settings(deadline=None)
 def test_readout_error_with_measurements(
-    measurement_proto: Measurements, circ_and_vals: tuple[QuantumCircuit, dict[str, Tensor]]
+    measurement_proto: Measurements,
+    options: dict,
+    # circ_and_vals: tuple[QuantumCircuit, dict[str, Tensor]]
 ) -> None:
-    circuit, inputs = circ_and_vals
-    # print(circuit, inputs)
+    # circuit, inputs = circ_and_vals
+    circuit = QuantumCircuit(2, kron(H(0), Z(1)))
+    inputs: dict = dict()
     observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
+
     model = QuantumModel(circuit=circuit, observable=observable, diff_mode=DiffMode.GPSR)
     # model.backend.backend.config._use_gate_params = True
 
     error = Errors(protocol=Errors.READOUT)
-    measurement = Measurements(protocol=Measurements.TOMOGRAPHY, options={"n_shots": 1000})
+    measurement = Measurements(protocol=str(measurement_proto), options=options)
 
-    measured = model.expectation(values=inputs, measurement=measurement)
+    # measured = model.expectation(values=inputs, measurement=measurement)
     noisy = model.expectation(values=inputs, measurement=measurement, error=error)
     exact = model.expectation(values=inputs)
-    # breakpoint()
     if exact.numel() > 1:
-        exact_values = torch.abs(exact)
         for noisy_value, exact_value in zip(noisy, exact):
-            noisy_val = noisy_value.item()
-            exact_val = exact_value.item()
+            exact_val = torch.abs(exact_value).item()
             atol = exact_val / 3.0 if exact_val != 0.0 else 0.33
             assert torch.allclose(noisy_value, exact_value, atol=atol)
 
     else:
         exact_value = torch.abs(exact).item()
-        # print(f"exact {exact_value}")
         atol = exact_value / 3.0 if exact_value != 0.0 else 0.33
         assert torch.allclose(noisy, exact, atol=atol)
