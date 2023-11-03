@@ -8,7 +8,7 @@ from qadence.types import LTSOrder
 
 
 def test_flatten() -> None:
-    from qadence.transpile.block import _flat_blocks
+    from qadence.transpile.flatten import _flat_blocks
 
     x: AbstractBlock
 

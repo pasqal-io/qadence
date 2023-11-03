@@ -48,7 +48,7 @@ allow-direct-references = true
 allow-ambiguous-features = true
 
 [project.optional-dependencies]
-pulser = ["pulser>=v0.12.0"]
+pulser = ["pulser>=v0.15.2", "pasqal-cloud>=0.3.5"]
 braket = ["amazon-braket-sdk"]
 visualization = [
   "graphviz",
@@ -57,7 +57,7 @@ visualization = [
   # "scour",
 ]
 all = [
-  "pulser>=0.12.0",
+  "pulser>=0.15.2",
   "amazon-braket-sdk",
   "graphviz",
   # FIXME: will be needed once we support latex labels
