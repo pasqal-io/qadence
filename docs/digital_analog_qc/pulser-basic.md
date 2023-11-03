@@ -25,7 +25,7 @@ to directly manipulate them if required by, for instance, optimal pulse shaping.
     ```
 
 For inquiries and more details on the cloud credentials, please contact
-[info@pasqal.com](nfo@pasqal.com).
+[info@pasqal.com](mailto:info@pasqal.com).
 
 
 ## Default qubit interaction
