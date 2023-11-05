@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import pytest
-from qadence_extensions.rydberg_hea import rydberg_hea
 
 import qadence as qd
+from qadence import rydberg_hea
 
 
 @pytest.mark.parametrize("detunings", [True, False])
@@ -21,7 +21,7 @@ def test_rydberg_hea_construction(detunings: bool, drives: bool, phase: bool) ->
         addressable_drive=drives,
         tunable_phase=phase,
     )
-    assert isinstance(ansatz, qd.AbstractBlock)
+    assert isinstance(ansatz, qd.CompositeBlock)
     assert len(ansatz.blocks) == n_layers
 
     drive_layer = ansatz.blocks[0].blocks[0]

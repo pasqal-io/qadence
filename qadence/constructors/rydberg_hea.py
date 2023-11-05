@@ -5,12 +5,9 @@ from typing import Type
 import sympy
 
 import qadence as qd
-from qadence import (
-    VariationalParameter,
-    add,
-    chain,
-    hamiltonian_factory,
-)
+from qadence.blocks import add, chain
+from qadence.constructors import hamiltonian_factory
+from qadence.parameters import VariationalParameter
 from qadence.types import TParameter
 
 
@@ -18,7 +15,7 @@ def _amplitude_map(
     n_qubits: int,
     pauli_op: Type[qd.AbstractBlock],
     weights: list[TParameter] | None = None,
-) -> qd.AbstractBlock:
+) -> qd.blocks.AddBlock:
     """Create an generator equivalent to a laser amplitude mapping on the device
 
     Basically, given a certain quantum operation `pauli_op`, this routine constructs
@@ -52,7 +49,7 @@ def rydberg_hea_layer(
     detunings: list[TParameter] | None = None,
     drives: list[TParameter] | None = None,
     drive_scaling: float = 1.0,
-) -> qd.AbstractBlock:
+) -> qd.blocks.ChainBlock:
     """A single layer of the Rydberg hardware efficient ansatz
 
     Args:
@@ -108,7 +105,7 @@ def rydberg_hea(
     addressable_drive: bool = False,
     tunable_phase: bool = False,
     additional_prefix: str = None,
-) -> qd.AbstractBlock:
+) -> qd.blocks.ChainBlock:
     """Hardware efficient ansatz for neutral atom (Rydberg) platforms
 
     This constructor implements a variational ansatz which is very close to

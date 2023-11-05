@@ -20,6 +20,8 @@ from .hamiltonians import (
     zz_hamiltonian,
 )
 
+from .rydberg_hea import rydberg_hea, rydberg_hea_layer
+
 from .qft import qft
 
 # Modules to be automatically added to the qadence namespace
@@ -38,4 +40,6 @@ __all__ = [
     "zz_hamiltonian",
     "qft",
     "daqc_transform",
+    "rydberg_hea",
+    "rydberg_hea_layer",
 ]
