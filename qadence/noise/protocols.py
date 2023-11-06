@@ -9,7 +9,6 @@ PROTOCOL_TO_MODULE = {
 }
 
 
-# TODO: make this a StrEnum to keep consistency with the rest of the interface
 @dataclass
 class Noise:
     READOUT = "readout"
