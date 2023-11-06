@@ -33,10 +33,8 @@ from .pulses import add_pulses
 
 logger = get_logger(__file__)
 
-# TODO: Clarify why this is needed
 WEAK_COUPLING_CONST = 1.2
 
-# TODO: Clarify why this is needed
 DEFAULT_SPACING = 8.0  # µm (standard value)
 
 
