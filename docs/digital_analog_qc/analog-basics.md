@@ -1,17 +1,40 @@
-# Digital-Analog Emulation
+!!! note
+    The digital-analog emulation framework is under construction and the interface may change in the near-future.
+    Nevertheless, the currest version serves as a prototype of the functionality. Any feedback is appreciated.
 
 ## From theory to implementation
 
-Qadence includes primitives for the construction of Ising-like
-Hamiltonians to account for custom qubit interaction. This allows to
-simulate systems close to real quantum computing platforms such as
-neutral atoms. The general form for _time-independent_ Ising Hamiltonians is
+Qadence includes primitives for the construction of programs implemented on a set of interacting qubits.
+This allows to simulate systems close to real quantum computing platforms such as neutral atoms.
+
+In general, the Hamiltonian for a set of $n$ interacting qubits can be written as
 
 $$
-\mathcal{H} = \sum_{i} \frac{\hbar\Omega}{2} \hat\sigma^x_i - \sum_{i} \hbar\delta \hat n_i  + \mathcal{H}_{\textrm{int}},
+\mathcal{H}(t) = \sum_{i=0}^{n-1}\left(\mathcal{H}^\text{d}_{i}(t) + \sum_{j<i}\mathcal{H}^\text{int}_{ij}\right),
 $$
 
-where $\Omega$ is the Rabi frequency, $\delta$ is the detuning, $\hat n = \frac{1-\hat\sigma_z}{2}$ is the number operator, and $\mathcal{H}_{\textrm{int}}$ a pair-wise interaction term. Two central operations implement this Hamiltonian as blocks:
+where $\mathcal{H}^\text{d}_{i}(t)$ is the driving Hamiltonian, describing the pulses that can be used to control single-qubit rotations, and $\mathcal{H}^\text{int}_{ij}$ is the interaction Hamiltonian, describing the natural interaction between pairs of qubits.
+
+For the purpose of digital-analog emulation in Qadence, we will consider a simplified **time-independent** driving Hamiltonian. 
+For neutral-atom systems, the driving Hamiltonian is then written as
+
+$$
+\mathcal{H}^\text{d}_{i} = \frac{\Omega}{2}\left(\cos(\phi) X_i - \sin(\phi) Y_i \right) - \delta N_i
+$$
+
+where
+
+- $\Omega$ is the effective Rabi frequency, 
+- $\delta$ is the effective detuning, 
+- $N = \frac{1-Z}{2}$ is the number operator, and $\mathcal{H}_{\textrm{int}}$ a pair-wise interaction term. Two central operations implement this Hamiltonian as blocks:
+
+$$
+\mathcal{H}^\text{int}_{i} = \frac{C_6}{2}\left(\cos(\phi) X_i - \sin(\phi) Y_i \right) - \delta N_i
+$$
+
+$$
+\mathcal{H}(t) = \frac{\hbar\Omega}{2} \sum_{i}  \hat\sigma^x_i - \sum_{i} \hbar\delta \hat n_i  + \mathcal{H}_{\textrm{int}},
+$$
 
 - [`WaitBlock`][qadence.blocks.analog.WaitBlock] by free-evolving $\mathcal{H}_{\textrm{int}}$
 - [`ConstantAnalogRotation`][qadence.blocks.analog.ConstantAnalogRotation] by free-evolving $\mathcal{H}$
