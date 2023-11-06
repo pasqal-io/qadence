@@ -11,13 +11,13 @@ from hypothesis import given, settings
 from metrics import ATOL_DICT, JS_ACCEPTANCE  # type: ignore
 from torch import Tensor
 
-from qadence import BackendName, DiffMode
 from qadence.backend import BackendConfiguration
 from qadence.backends.api import backend_factory, config_factory
 from qadence.blocks import AbstractBlock, chain, kron
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import total_magnetization
 from qadence.divergences import js_divergence
+from qadence.execution import run
 from qadence.ml_tools.utils import rand_featureparameters
 from qadence.models import QuantumModel
 from qadence.operations import CPHASE, RX, RY, H, I, X
@@ -30,6 +30,7 @@ from qadence.states import (
     zero_state,
 )
 from qadence.transpile import flatten
+from qadence.types import BackendName, DiffMode
 from qadence.utils import nqubits_to_basis
 
 BACKENDS = BackendName.list()
@@ -345,3 +346,12 @@ def test_custom_transpilation_passes() -> None:
 
         assert conv.circuit.original == conv_no_transp.circuit.original
         assert conv.circuit.abstract != conv_no_transp.circuit.abstract
+
+
+def test_braket_parametric_cphase() -> None:
+    param_name = "y"
+    block = chain(X(0), H(1), CPHASE(0, 1, param_name))
+    values = {param_name: torch.rand(1)}
+    equivalent_state(
+        run(block, values=values, backend="braket"), run(block, values=values, backend="pyqtorch")
+    )
