@@ -183,7 +183,8 @@ class Backend(BackendInterface):
         error: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
-        if error is not None:
+        # Noise is ignored if measurement protocol is not provided.
+        if error is not None and measurement is None:
             logger.warning(
                 f"Noise of type {error} are not implemented for expectation yet. "
                 "This is ignored for now."
