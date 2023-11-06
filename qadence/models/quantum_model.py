@@ -64,6 +64,7 @@ class QuantumModel(nn.Module):
             measurement: Optional measurement protocol. If None, use
                 exact expectation value with a statevector simulator.
             configuration: Configuration for the backend.
+            error: A noise model to use.
 
         Raises:
             ValueError: if the `diff_mode` argument is set to None

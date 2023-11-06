@@ -26,7 +26,7 @@ from qadence.measurements import Measurements
 from qadence.parameters import stringify
 from qadence.types import BackendName, DiffMode, Endianness
 
-logger = get_logger(__name__)
+logger = get_logger(__file__)
 
 
 @dataclass

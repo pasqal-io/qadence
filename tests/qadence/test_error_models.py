@@ -167,7 +167,6 @@ def test_readout_error_backends(backend: BackendName) -> None:
         )
 
 
-# @pytest.mark.flaky(max_runs=5)
 @pytest.mark.parametrize(
     "measurement_proto, options",
     [
