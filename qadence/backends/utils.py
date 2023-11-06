@@ -122,5 +122,5 @@ def validate_pyq_state(state: torch.Tensor, n_qubits: int) -> torch.Tensor:
         return state
 
 
-def infer_batchsize(param_values: dict[str, torch.Tensor]) -> int:
-    return max([len(tensor) for tensor in param_values.values()]) if len(param_values) > 1 else 1
+def infer_batchsize(param_values: dict[str, torch.Tensor] = None) -> int:
+    return max([len(tensor) for tensor in param_values.values()]) if param_values else 1

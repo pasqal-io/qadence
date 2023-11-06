@@ -778,7 +778,7 @@ def test_batched_circuits(
     assert not torch.any(torch.isnan(wf_pyqtorch))
 
 
-@pytest.mark.parametrize("diff_mode", [DiffMode.GPSR, DiffMode.AD])
+@pytest.mark.parametrize("diff_mode", [DiffMode.GPSR, DiffMode.AD, DiffMode.ADJOINT])
 @pytest.mark.parametrize("obs", [total_magnetization, zz_hamiltonian])
 @given(st.batched_digital_circuits())
 @settings(deadline=None)

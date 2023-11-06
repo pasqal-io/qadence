@@ -13,7 +13,7 @@ from pyqtorch.matrices import _dagger
 from pyqtorch.utils import is_diag
 from torch.nn import Module
 
-from qadence.backends.utils import finitediff
+from qadence.backends.utils import finitediff, infer_batchsize
 from qadence.blocks import (
     AbstractBlock,
     AddBlock,
@@ -166,7 +166,7 @@ class PyQComposedBlock(pyq.QuantumCircuit):
     def forward(
         self, state: torch.Tensor, values: dict[str, torch.Tensor] | None = None
     ) -> torch.Tensor:
-        batch_size = state.size(-1)
+        batch_size = infer_batchsize(values)
         return apply_operator(
             state, self.unitary(values, batch_size), self.qubits, self.n_qubits, batch_size
         )
