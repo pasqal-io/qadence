@@ -70,17 +70,17 @@ def make_sequence(circ: QuantumCircuit, config: Configuration) -> Sequence:
         raise ValueError("Specified device is not supported.")
 
     max_amp = device.channels["rydberg_global"].max_amp
-    min_duration = device.channels["rydberg_global"].min_duration
 
     if config.spacing is not None:
         spacing = config.spacing
     elif max_amp is not None:
         spacing = DEFAULT_SPACING
-        # TODO: Clarify why this is needed
+        # TODO: Fix this more consistently so both pulser and
+        # pyqtorch get the spacing from the same place
         # Ideal spacing for entanglement gate
         # since Pulser's QutipEmulator doesn't allow simulation of sequences
         # with total duration < 4ns
-        # spacing = WEAK_COUPLING_CONST * device.rydberg_blockade_radius(max_amp)  # type: ignore
+        spacing = WEAK_COUPLING_CONST * device.rydberg_blockade_radius(max_amp)  # type: ignore
     else:
         spacing = DEFAULT_SPACING
 
@@ -89,16 +89,6 @@ def make_sequence(circ: QuantumCircuit, config: Configuration) -> Sequence:
     sequence = Sequence(pulser_register, device)
     sequence.declare_channel(GLOBAL_CHANNEL, "rydberg_global")
     sequence.declare_channel(LOCAL_CHANNEL, "rydberg_local", initial_target=0)
-
-    # TODO: Clarify why this is needed
-    # add a minimum duration pulse omega=0 pulse at the beginning for simulation convergence reasons
-    # zero_pulse = Pulse.ConstantPulse(
-    #    duration=max(sequence.device.channels["rydberg_global"].min_duration, 4),
-    #    amplitude=0.0,
-    #    detuning=0.0,
-    #    phase=0.0,
-    # )
-    # sequence.add(zero_pulse, GLOBAL_CHANNEL, "wait-for-all")
 
     add_pulses(sequence, circ.block, config, circ.register, spacing)
     sequence.measure()
