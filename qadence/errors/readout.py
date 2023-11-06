@@ -69,19 +69,23 @@ def bs_corruption(
     err_idx: list,
     sample: np.array,
 ) -> Counter:
-    all_bitstrings = []
-    for i in range(n_shots):
-        all_bitstrings.append(
-            [
-                bit_flip(sample[i, n])
-                if err_idx[i, n]  # type: ignore[call-overload]
-                else sample[i, n]
-                for n in range(n_qubits)
-            ]
-        )
-    all_bitstrings = np.array(all_bitstrings)
+
+    def vflip(sample: int, err_idx: bool, idx: int) -> np.array:
+        if err_idx:
+            return bit_flip(sample)
+        else:
+            return sample
+
+    vbit_ind = np.vectorize(vflip)
+
     return Counter(
-        ["".join(i) for i in all_bitstrings.astype(str).tolist()]  # type: ignore[attr-defined]
+        [
+            "".join(k)
+            for k in map(
+                lambda i: vbit_ind(sample[i], err_idx[i], range(n_qubits)).astype(str).tolist(),
+                range(n_shots),
+            )
+        ]
     )
 
 
@@ -126,9 +130,9 @@ def error(
             noise_matrix.shape[0] == noise_matrix.shape[1]
         ), "The error probabilities matrix needs to be square."
         assert noise_matrix.shape == (
-            2**n_qubits,
-            2**n_qubits,
-        ), "The error probabilities matrix needs to be 2 ^ n_qubits x 2 ^ n_qubits."
+            n_qubits,
+            n_qubits,
+        ), "The error probabilities matrix needs to be n_qubits x n_qubits."
 
     # the simplest approach - en event occurs if its probability is higher than expected
     # by random chance
