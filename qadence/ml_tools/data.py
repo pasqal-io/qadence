@@ -32,7 +32,7 @@ class InfiniteTensorDataset(IterableDataset):
         Examples:
         ```python exec="on" source="above" result="json"
         import torch
-        from flow.data import InfiniteTensorDataset
+        from qadence.ml_tools.data import InfiniteTensorDataset
 
         x_data, y_data = torch.rand(5,2), torch.ones(5,1)
         # The dataset accepts any number of tensors with the same batch dimension
@@ -53,9 +53,29 @@ class InfiniteTensorDataset(IterableDataset):
             yield tuple(t[idx] for t in self.tensors)
 
 
-def to_dataloader(x: Tensor, y: Tensor, batch_size: int = 1, infinite: bool = False) -> DataLoader:
-    """Convert two torch tensors x and y to a Dataloader."""
-    ds = InfiniteTensorDataset(x, y) if infinite else TensorDataset(x, y)
+def to_dataloader(*tensors: Tensor, batch_size: int = 1, infinite: bool = False) -> DataLoader:
+    """Convert torch tensors an (infinite) Dataloader.
+
+    Arguments:
+        *tensors: Torch tensors to use in the dataloader.
+        batch_size: batch size of sampled tensors
+        infinite: if `True`, the dataloader will keep sampling indefinitely even after the whole
+            dataset was sampled once
+
+    Examples:
+
+    ```python exec="on" source="above" result="json"
+    import torch
+    from qadence.ml_tools import to_dataloader
+
+    (x, y, z) = [torch.rand(10) for _ in range(3)]
+    loader = iter(to_dataloader(x, y, z, batch_size=5, infinite=True))
+    print(next(loader))
+    print(next(loader))
+    print(next(loader))
+    ```
+    """
+    ds = InfiniteTensorDataset(*tensors) if infinite else TensorDataset(*tensors)
     return DataLoader(ds, batch_size=batch_size)
 
 
