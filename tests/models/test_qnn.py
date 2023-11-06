@@ -140,8 +140,9 @@ def test_qnn_multiple_outputs(n_qubits: int = 4) -> None:
         tmp = torch.div(e, factors * e[0])
         assert torch.allclose(tmp, torch.ones(n_obs))
 
-@pytest.mark.parametrize('diff_mode', ["ad", "adjoint"])
-def test_multiparam_qnn_training(diff_mode:str) -> None:
+
+@pytest.mark.parametrize("diff_mode", ["ad", "adjoint"])
+def test_multiparam_qnn_training(diff_mode: str) -> None:
     backend = BackendName.PYQTORCH
     n_qubits = 2
     n_epochs = 5
