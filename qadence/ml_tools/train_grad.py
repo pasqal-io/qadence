@@ -63,10 +63,10 @@ def train(
     from pathlib import Path
     import torch
     from itertools import count
-    from qadence.constructors import hamiltonian_factory, hea, feature_map
-    from qadence import chain, Parameter, QuantumCircuit, Z
+    from qadence import Parameter, QuantumCircuit, Z
+    from qadence import hamiltonian_factory, hea, feature_map, chain
     from qadence.models import QNN
-    from qadence.ml_tools import train_with_grad, TrainConfig
+    from qadence.ml_tools import TrainConfig, train_with_grad, to_dataloader
 
     n_qubits = 2
     fm = feature_map(n_qubits)
@@ -91,19 +91,20 @@ def train(
         out = model(x)
         loss = criterion(out, y)
         return loss, {}
+
     tmp_path = Path("/tmp")
     n_epochs = 5
+    batch_size = 25
     config = TrainConfig(
         folder=tmp_path,
         max_iter=n_epochs,
         checkpoint_every=100,
         write_every=100,
-        batch_size=batch_size,
     )
-    batch_size = 25
     x = torch.linspace(0, 1, batch_size).reshape(-1, 1)
     y = torch.sin(x)
-    train_with_grad(model, (x, y), optimizer, config, loss_fn=loss_fn)
+    data = to_dataloader(x, y, batch_size=batch_size, infinite=True)
+    train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
     ```
     """
 
