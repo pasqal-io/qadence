@@ -108,8 +108,6 @@ def train(
     ```
     """
 
-    assert loss_fn is not None, "Provide a valid loss function"
-
     # Move model to device before optimizer is loaded
     model = model.to(device)
 
@@ -147,7 +145,10 @@ def train(
                     loss, metrics = optimize_step(model, optimizer, loss_fn, data)
 
                 else:
-                    raise NotImplementedError(f"Unsupported dataloader type: {type(dataloader)}")
+                    raise NotImplementedError(
+                        f"Unsupported dataloader type: {type(dataloader)}. "
+                        "You can use e.g. `qadence.ml_tools.to_dataloader` to build a dataloader."
+                    )
 
                 if iteration % config.print_every == 0 and config.verbose:
                     print_metrics(loss, metrics, iteration)
