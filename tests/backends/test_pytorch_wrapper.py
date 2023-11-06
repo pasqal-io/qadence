@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from typing import Callable
-
 import numpy as np
 import pytest
 import sympy
 import torch
 
 from qadence.backends.api import backend_factory
+from qadence.backends.utils import finitediff
 from qadence.blocks import AbstractBlock, add, chain, kron
 from qadence.circuit import QuantumCircuit
 from qadence.operations import CNOT, RX, RZ, Z
@@ -157,9 +156,6 @@ def test_expval_differentiation(batch_size: int, diff_mode: str) -> None:
 
     # FIXME: higher order
     torch.autograd.gradcheck(func, (inputs_x, inputs_y, param_w))
-
-    def finitediff(f: Callable, x: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
-        return (f(x + eps) - f(x - eps)) / (2 * eps)  # type: ignore
 
     assert torch.allclose(
         finitediff(lambda x: func(x, inputs_y, param_w), inputs_x),
