@@ -15,10 +15,10 @@ from qadence.backends.utils import param_dict
 from qadence.blocks import AbstractBlock, PrimitiveBlock
 from qadence.blocks.utils import uuid_to_block, uuid_to_eigen
 from qadence.circuit import QuantumCircuit
-from qadence.errors import Errors
 from qadence.extensions import get_gpsr_fns
 from qadence.measurements import Measurements
 from qadence.ml_tools import promote_to_tensor
+from qadence.noise import Noise
 from qadence.types import DiffMode, Endianness
 
 
@@ -86,7 +86,7 @@ class DifferentiableExpectation:
     param_values: dict[str, Tensor]
     state: Tensor | None = None
     measurement: Measurements | None = None
-    error: Errors | None = None
+    error: Noise | None = None
     endianness: Endianness = Endianness.BIG
 
     def ad(self) -> Tensor:
@@ -236,7 +236,7 @@ class DifferentiableBackend(nn.Module):
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
-        error: Errors | None = None,
+        error: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         """Compute the expectation value of a given observable.
@@ -281,7 +281,7 @@ class DifferentiableBackend(nn.Module):
         param_values: dict[str, Tensor],
         n_shots: int = 1,
         state: Tensor | None = None,
-        error: Errors | None = None,
+        error: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         """Sample bitstring from the registered circuit.

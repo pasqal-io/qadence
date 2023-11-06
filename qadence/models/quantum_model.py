@@ -20,9 +20,9 @@ from qadence.backends import backend_factory, config_factory
 from qadence.backends.pytorch_wrapper import DiffMode
 from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
-from qadence.errors import Errors
 from qadence.logger import get_logger
 from qadence.measurements import Measurements
+from qadence.noise import Noise
 from qadence.utils import Endianness
 
 logger = get_logger(__name__)
@@ -50,7 +50,7 @@ class QuantumModel(nn.Module):
         diff_mode: DiffMode = DiffMode.AD,
         measurement: Measurements | None = None,
         configuration: BackendConfiguration | dict | None = None,
-        error: Errors | None = None,
+        error: Noise | None = None,
     ):
         """Initialize a generic QuantumModel instance.
 
@@ -166,7 +166,7 @@ class QuantumModel(nn.Module):
         values: dict[str, torch.Tensor] = {},
         n_shots: int = 1000,
         state: torch.Tensor | None = None,
-        error: Errors | None = None,
+        error: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         params = self.embedding_fn(self._params, values)
@@ -182,7 +182,7 @@ class QuantumModel(nn.Module):
         observable: list[ConvertedObservable] | ConvertedObservable | None = None,
         state: Optional[Tensor] = None,
         measurement: Measurements | None = None,
-        error: Errors | None = None,
+        error: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         """Compute expectation using the given backend.

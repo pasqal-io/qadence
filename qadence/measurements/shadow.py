@@ -21,7 +21,7 @@ from qadence.blocks.composite import CompositeBlock
 from qadence.blocks.primitive import PrimitiveBlock
 from qadence.blocks.utils import get_pauli_blocks, unroll_block_with_scaling
 from qadence.circuit import QuantumCircuit
-from qadence.errors import Errors
+from qadence.noise import Noise
 from qadence.operations import X, Y, Z, chain, kron
 from qadence.states import one_state, zero_state
 from qadence.types import Endianness
@@ -129,7 +129,7 @@ def classical_shadow(
     state: Tensor | None = None,
     backend_name: BackendName = BackendName.PYQTORCH,
     # FIXME: Changed below from Little to Big, double-check when Roland is back
-    error: Errors | None = None,
+    error: Noise | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> list:
     shadow: list = []
@@ -260,7 +260,7 @@ def estimations(
     confidence: float = 0.1,
     state: Tensor | None = None,
     backend_name: BackendName = BackendName.PYQTORCH,
-    error: Errors | None = None,
+    error: Noise | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
     """Compute expectation values for all local observables using median of means."""
@@ -313,7 +313,7 @@ def compute_expectation(
     options: dict,
     state: Tensor | None = None,
     backend_name: BackendName = BackendName.PYQTORCH,
-    error: Errors | None = None,
+    error: Noise | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
     """

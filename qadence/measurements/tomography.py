@@ -12,7 +12,7 @@ from qadence.backends import backend_factory
 from qadence.blocks import AbstractBlock, PrimitiveBlock
 from qadence.blocks.utils import unroll_block_with_scaling
 from qadence.circuit import QuantumCircuit
-from qadence.errors import Errors
+from qadence.noise import Noise
 from qadence.operations import H, SDagger, X, Y, Z, chain
 from qadence.parameters import evaluate
 from qadence.utils import Endianness
@@ -84,7 +84,7 @@ def iterate_pauli_decomposition(
     n_shots: int,
     state: Tensor | None = None,
     backend_name: BackendName = BackendName.PYQTORCH,
-    error: Errors | None = None,
+    error: Noise | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
     """Estimate total expectation value by averaging all Pauli terms."""
@@ -131,7 +131,7 @@ def compute_expectation(
     options: dict,
     state: Tensor | None = None,
     backend_name: BackendName = BackendName.PYQTORCH,
-    error: Errors | None = None,
+    error: Noise | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
     """Basic tomography protocol with rotations

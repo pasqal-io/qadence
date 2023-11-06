@@ -20,9 +20,9 @@ from qadence.blocks import (
 )
 from qadence.blocks.analog import ConstantAnalogRotation, WaitBlock
 from qadence.circuit import QuantumCircuit
-from qadence.errors import Errors
 from qadence.logger import get_logger
 from qadence.measurements import Measurements
+from qadence.noise import Noise
 from qadence.parameters import stringify
 from qadence.types import BackendName, DiffMode, Endianness
 
@@ -229,7 +229,7 @@ class Backend(ABC):
         param_values: dict[str, Tensor] = {},
         n_shots: int = 1000,
         state: Tensor | None = None,
-        error: Errors | None = None,
+        error: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         """Sample bit strings.
@@ -276,7 +276,7 @@ class Backend(ABC):
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
-        error: Errors | None = None,
+        error: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         """Compute the expectation value of the `circuit` with the given `observable`.

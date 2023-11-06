@@ -5,13 +5,13 @@ from dataclasses import dataclass
 from typing import Callable, cast
 
 PROTOCOL_TO_MODULE = {
-    "readout": "qadence.errors.readout",
+    "readout": "qadence.noise.readout",
 }
 
 
 # TODO: make this a StrEnum to keep consistency with the rest of the interface
 @dataclass
-class Errors:
+class Noise:
     READOUT = "readout"
 
     def __init__(self, protocol: str, options: dict = dict()) -> None:
@@ -30,7 +30,7 @@ class Errors:
         return {"protocol": self.protocol, "options": self.options}
 
     @classmethod
-    def _from_dict(cls, d: dict) -> Errors | None:
+    def _from_dict(cls, d: dict) -> Noise | None:
         if d:
             return cls(d["protocol"], **d["options"])
         return None

@@ -15,9 +15,9 @@ from qadence.backend import BackendName, ConvertedCircuit, ConvertedObservable
 from qadence.backends.utils import to_list_of_dicts
 from qadence.blocks import AbstractBlock, block_to_tensor
 from qadence.circuit import QuantumCircuit
-from qadence.errors import Errors
 from qadence.logger import get_logger
 from qadence.measurements import Measurements
+from qadence.noise import Noise
 from qadence.overlap import overlap_exact
 from qadence.transpile import transpile
 from qadence.utils import Endianness
@@ -130,7 +130,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         n_shots: int = 1,
         state: Tensor | None = None,
-        error: Errors | None = None,
+        error: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         """Execute the circuit and return samples of the resulting wavefunction."""
@@ -173,12 +173,12 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
-        error: Errors | None = None,
+        error: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         if error is not None:
             logger.warning(
-                f"Errors of type {error} are not implemented for expectation yet. "
+                f"Noise of type {error} are not implemented for expectation yet. "
                 "This is ignored for now."
             )
         # Do not flip endianness here because then we would have to reverse the observable

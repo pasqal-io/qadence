@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .protocols import Errors
+from .protocols import Noise
 
 # Modules to be automatically added to the qadence namespace
-__all__ = ["Errors"]
+__all__ = ["Noise"]

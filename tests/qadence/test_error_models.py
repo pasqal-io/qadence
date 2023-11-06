@@ -17,10 +17,10 @@ from qadence.blocks import (
 from qadence.circuit import QuantumCircuit
 from qadence.constructors.hamiltonians import hamiltonian_factory
 from qadence.divergences import js_divergence
-from qadence.errors import Errors
-from qadence.errors.readout import WhiteNoise, bs_corruption, create_noise_matrix, sample_to_matrix
 from qadence.measurements.protocols import Measurements
 from qadence.models import QuantumModel
+from qadence.noise import Noise
+from qadence.noise.readout import WhiteNoise, bs_corruption, create_noise_matrix, sample_to_matrix
 from qadence.operations import (
     CNOT,
     RX,
@@ -137,7 +137,7 @@ def test_readout_error_quantum_model(
 
     noisy_samples: list[Counter] = QuantumModel(
         QuantumCircuit(block.n_qubits, block), backend=backend, diff_mode=diff_mode
-    ).sample(error=Errors(protocol=Errors.READOUT), n_shots=n_shots)
+    ).sample(error=Noise(protocol=Noise.READOUT), n_shots=n_shots)
 
     # breakpoint()
     for noiseless, noisy in zip(noiseless_samples, noisy_samples):
@@ -159,9 +159,9 @@ def test_readout_error_backends(backend: BackendName) -> None:
     inputs = {"phi": torch.rand(1)}
     # sample
     samples = qd.sample(feature_map, n_shots=1000, values=inputs, backend=backend, error=None)
-    # introduce errors
+    # introduce noise
     options = {"error_probability": error_probability}
-    error = Errors(protocol=Errors.READOUT, options=options).get_error_fn()
+    error = Noise(protocol=Noise.READOUT, options=options).get_error_fn()
     noisy_samples = error(counters=samples, n_qubits=n_qubits)
     # compare that the results are with an error of 10% (the default error_probability)
     for sample, noisy_sample in zip(samples, noisy_samples):
@@ -196,7 +196,7 @@ def test_readout_error_with_measurements(
     model = QuantumModel(circuit=circuit, observable=observable, diff_mode=DiffMode.GPSR)
     # model.backend.backend.config._use_gate_params = True
 
-    error = Errors(protocol=Errors.READOUT)
+    error = Noise(protocol=Noise.READOUT)
     measurement = Measurements(protocol=str(measurement_proto), options=options)
 
     # measured = model.expectation(values=inputs, measurement=measurement)

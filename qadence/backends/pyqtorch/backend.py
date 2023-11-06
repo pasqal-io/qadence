@@ -14,9 +14,9 @@ from qadence.backend import BackendName, ConvertedCircuit, ConvertedObservable
 from qadence.backends.utils import to_list_of_dicts
 from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
-from qadence.errors import Errors
 from qadence.logger import get_logger
 from qadence.measurements import Measurements
+from qadence.noise import Noise
 from qadence.overlap import overlap_exact
 from qadence.states import zero_state
 from qadence.transpile import (
@@ -128,7 +128,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
-        error: Errors | None = None,
+        error: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         state = self.run(
@@ -153,7 +153,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
-        error: Errors | None = None,
+        error: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         state = zero_state(circuit.abstract.n_qubits, batch_size=1) if state is None else state
@@ -180,12 +180,12 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
-        error: Errors | None = None,
+        error: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         if error is not None:
             logger.warning(
-                f"Errors of type {error} are not implemented for expectation yet. "
+                f"Noise of type {error} are not implemented for expectation yet. "
                 "This is ignored for now."
             )
         fn = self._looped_expectation if self.config.loop_expectation else self._batched_expectation
@@ -205,7 +205,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         n_shots: int = 1,
         state: Tensor | None = None,
-        error: Errors | None = None,
+        error: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         if n_shots < 1:
