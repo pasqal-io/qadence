@@ -81,7 +81,6 @@ def test_analog_rxyz_run(n_qubits: int, spacing: float, rot_op: AbstractBlock) -
 
 
 # PREVIOUS COMPARISON TESTS, MOVED HERE
-# TO BE REVIEWED
 
 
 @pytest.mark.parametrize(
