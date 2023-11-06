@@ -9,7 +9,7 @@ repos:
         args: ['--maxkb=600']
 
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.0.291"
+    rev: "v0.1.2"
     hooks:
       - id: ruff
         args: [--fix, --show-fixes, --show-source, --exclude, examples/draw.py]
