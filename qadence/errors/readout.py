@@ -27,22 +27,54 @@ class WhiteNoise(Enum):
 
 
 def bitstring_to_array(bitstring: str) -> np.array:
-    """A helper function to convert bit strings to numpy arrays."""
+    """
+    A helper function to convert bit strings to numpy arrays.
+
+    Args:
+        bitstring:  A str format of a bit string.
+
+    Returns:
+        A numpy array out of the input bit string.
+    """
     return np.array(list(bitstring)).astype(int)
 
 
 def array_to_bitstring(bitstring: np.array) -> str:
-    """A helper function to convert numpy arrays to bit strings."""
+    """
+    A helper function to convert numpy arrays to bit strings.
+
+    Args:
+        bitstring: A numpy array format of a bit string.
+
+    Returns:
+        A str out of the input bit string.
+    """
     return "".join(bitstring.astype("str"))
 
 
-def bit_flip(qubit: int) -> int:
-    """A helper function that reverses the states 0 and 1 in the bit string."""
-    return 1 if qubit == 0 else 0
+def bit_flip(bit: int) -> int:
+    """
+    A helper function that reverses the states 0 and 1 in the bit string.
+
+    Args:
+        bit: A integer-value bit in a bitstring to be inverted.
+
+    Returns:
+        The inverse value of the input bit
+    """
+    return 1 if bit == 0 else 0
 
 
 def sample_to_matrix(sample: dict) -> np.array:
-    """A helper function that maps a sample dict to a bit string array."""
+    """
+    A helper function that maps a sample dict to a bit string array.
+
+    Args:
+        sample: A dictionary with bit stings as keys and values
+        as their counts.
+
+    Returns: A numpy array (matrix) of bit strings n_shots x n_qubits.
+    """
     return np.array(
         [
             i
@@ -56,8 +88,18 @@ def sample_to_matrix(sample: dict) -> np.array:
 def create_noise_matrix(
     noise_distribution: torch.distributions, n_shots: int, n_qubits: int
 ) -> np.array:
-    """A helper function that creates a noise matrix for bit string corruption.
+    """
+    A helper function that creates a noise matrix for bit string corruption.
     NB: The noise matrix is not square, as all bits are considered independent.
+
+    Args:
+        noise_distribution: Torch statistical distribution one of Gaussian,
+        Uniform, of Poisson.
+        n_shots: Number of shots/samples.
+        n_qubits: Number of qubits
+
+    Returns:
+        A sample out of the requested distribution given the number of shots/samples.
     """
     # the noise_matrix should be available to the user if they want to do error correction
     return noise_distribution.sample([n_shots, n_qubits])
@@ -69,6 +111,19 @@ def bs_corruption(
     err_idx: list,
     sample: np.array,
 ) -> Counter:
+    """
+    A function that incorporates the expected readout error in a sample of bit strings
+    given a noise matrix.
+
+    Args:
+        n_qubits: Number of qubits in the bit string.
+        n_shots: Number of shots to sample.
+        err_idx: A Boolean array of bit string indices that need to be corrupted.
+        sample: A matrix of bit strings n_shots x n_qubits.
+
+    Returns:
+        A counter of bit strings after readout corruption.
+    """
 
     def vflip(sample: int, err_idx: bool, idx: int) -> np.array:
         if err_idx:
@@ -134,7 +189,7 @@ def error(
             n_qubits,
         ), "The error probabilities matrix needs to be n_qubits x n_qubits."
 
-    # the simplest approach - en event occurs if its probability is higher than expected
+    # the simplest approach - an event occurs if its probability is higher than expected
     # by random chance
     err_idx = np.array([(item).numpy() for i, item in enumerate(noise_matrix < error_probability)])
 
