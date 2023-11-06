@@ -12,6 +12,7 @@ from qadence.logger import get_logger
 from qadence.measurements import Measurements
 from qadence.ml_tools import promote_to_tensor
 from qadence.models import QNN, QuantumModel
+from qadence.noise import Noise
 from qadence.utils import Endianness
 
 logger = get_logger(__name__)
@@ -200,6 +201,7 @@ class TransformedModule(torch.nn.Module):
         values: dict[str, torch.Tensor],
         n_shots: int = 1000,
         state: torch.Tensor | None = None,
+        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         return self.model.sample(  # type: ignore[no-any-return]
@@ -207,6 +209,7 @@ class TransformedModule(torch.nn.Module):
             n_shots=n_shots,
             state=state,
             endianness=endianness,
+            noise=noise,
         )
 
     def expectation(
@@ -215,6 +218,7 @@ class TransformedModule(torch.nn.Module):
         observable: List[ConvertedObservable] | ConvertedObservable | None = None,
         state: torch.Tensor | None = None,
         measurement: Measurements | None = None,
+        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         """
@@ -229,6 +233,7 @@ class TransformedModule(torch.nn.Module):
             observable=observable if observable is not None else self.model._observable,
             state=state,
             measurement=measurement,
+            noise=noise,
             endianness=endianness,
         )
         return self._output_scaling * exp + self._output_shifting
