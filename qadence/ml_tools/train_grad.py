@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from typing import Callable
+from typing import Callable, Union
 
 from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, TimeRemainingColumn
-from torch import Tensor
 from torch.nn import Module
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
@@ -11,7 +10,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from qadence.logger import get_logger
 from qadence.ml_tools.config import TrainConfig
-from qadence.ml_tools.data import DictDataLoader
+from qadence.ml_tools.data import DictDataLoader, data_to_device
 from qadence.ml_tools.optimize_step import optimize_step
 from qadence.ml_tools.printing import print_metrics, write_tensorboard
 from qadence.ml_tools.saveload import load_checkpoint, write_checkpoint
@@ -21,7 +20,7 @@ logger = get_logger(__name__)
 
 def train(
     model: Module,
-    dataloader: DictDataLoader | DataLoader | list[Tensor] | tuple[Tensor, Tensor] | None,
+    dataloader: Union[None, DataLoader, DictDataLoader],
     optimizer: Optimizer,
     config: TrainConfig,
     loss_fn: Callable,
@@ -64,10 +63,10 @@ def train(
     from pathlib import Path
     import torch
     from itertools import count
-    from qadence.constructors import hamiltonian_factory, hea, feature_map
-    from qadence import chain, Parameter, QuantumCircuit, Z
+    from qadence import Parameter, QuantumCircuit, Z
+    from qadence import hamiltonian_factory, hea, feature_map, chain
     from qadence.models import QNN
-    from qadence.ml_tools import train_with_grad, TrainConfig
+    from qadence.ml_tools import TrainConfig, train_with_grad, to_dataloader
 
     n_qubits = 2
     fm = feature_map(n_qubits)
@@ -92,23 +91,22 @@ def train(
         out = model(x)
         loss = criterion(out, y)
         return loss, {}
+
     tmp_path = Path("/tmp")
     n_epochs = 5
+    batch_size = 25
     config = TrainConfig(
         folder=tmp_path,
         max_iter=n_epochs,
         checkpoint_every=100,
         write_every=100,
-        batch_size=batch_size,
     )
-    batch_size = 25
     x = torch.linspace(0, 1, batch_size).reshape(-1, 1)
     y = torch.sin(x)
-    train_with_grad(model, (x, y), optimizer, config, loss_fn=loss_fn)
+    data = to_dataloader(x, y, batch_size=batch_size, infinite=True)
+    train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
     ```
     """
-
-    assert loss_fn is not None, "Provide a valid loss function"
 
     # Move model to device before optimizer is loaded
     model = model.to(device)
@@ -128,14 +126,9 @@ def train(
         TaskProgressColumn(),
         TimeRemainingColumn(elapsed_when_finished=True),
     )
-    if isinstance(dataloader, (list, tuple)):
-        from qadence.ml_tools.data import to_dataloader
 
-        assert len(dataloader) == 2, "Please provide exactly two torch tensors."
-        x, y = dataloader
-        dataloader = to_dataloader(x=x, y=y, batch_size=config.batch_size)
     with progress:
-        dl_iter = iter(dataloader) if isinstance(dataloader, DictDataLoader) else None
+        dl_iter = iter(dataloader) if dataloader is not None else None
 
         # outer epoch loop
         for iteration in progress.track(range(init_iter, init_iter + config.max_iter)):
@@ -144,38 +137,18 @@ def train(
                 # this is the case, for example, of quantum models
                 # which do not have classical input data (e.g. chemistry)
                 if dataloader is None:
-                    loss, metrics = optimize_step(
-                        model, optimizer, loss_fn, dataloader, device=device
-                    )
+                    loss, metrics = optimize_step(model, optimizer, loss_fn, None)
                     loss = loss.item()
 
-                # single epoch with DictDataloader using a single iteration method
-                # DictDataloader returns a single sample of the data
-                # with a given batch size decided when the dataloader is defined
-                elif isinstance(dataloader, DictDataLoader):
-                    # resample all the time from the dataloader
-                    # by creating a fresh iterator if the dataloader
-                    # does not support automatically iterating datasets
-                    if not dataloader.has_automatic_iter:
-                        dl_iter = iter(dataloader)
-                    data = next(dl_iter)  # type: ignore[arg-type]
-                    loss, metrics = optimize_step(model, optimizer, loss_fn, data, device=device)
-
-                elif isinstance(dataloader, DataLoader):
-                    # single-epoch with standard DataLoader
-                    # otherwise a standard PyTorch DataLoader behavior
-                    # is assumed with optional mini-batches
-                    running_loss = 0.0
-                    for i, data in enumerate(dataloader):
-                        # TODO: make sure to average metrics as well
-                        loss, metrics = optimize_step(
-                            model, optimizer, loss_fn, data, device=device
-                        )
-                        running_loss += loss.item()
-                    loss = running_loss / (i + 1)
+                elif isinstance(dataloader, (DictDataLoader, DataLoader)):
+                    data = data_to_device(next(dl_iter), device)  # type: ignore[arg-type]
+                    loss, metrics = optimize_step(model, optimizer, loss_fn, data)
 
                 else:
-                    raise NotImplementedError("Unsupported dataloader type!")
+                    raise NotImplementedError(
+                        f"Unsupported dataloader type: {type(dataloader)}. "
+                        "You can use e.g. `qadence.ml_tools.to_dataloader` to build a dataloader."
+                    )
 
                 if iteration % config.print_every == 0 and config.verbose:
                     print_metrics(loss, metrics, iteration)
