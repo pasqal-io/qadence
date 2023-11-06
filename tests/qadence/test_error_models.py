@@ -139,7 +139,6 @@ def test_readout_error_quantum_model(
         QuantumCircuit(block.n_qubits, block), backend=backend, diff_mode=diff_mode
     ).sample(noise=Noise(protocol=Noise.READOUT), n_shots=n_shots)
 
-    # breakpoint()
     for noiseless, noisy in zip(noiseless_samples, noisy_samples):
         assert sum(noiseless.values()) == sum(noisy.values()) == n_shots
         assert js_divergence(noiseless, noisy) > 0.0
