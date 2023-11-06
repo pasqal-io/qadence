@@ -240,7 +240,10 @@ class Backend(BackendInterface):
         if error is not None:
             error_fn = error.get_error_fn()
             corrupted_counters: list = error_fn(
-                counters=counters, n_qubits=circuit.abstract.n_qubits, options=error.options
+                counters=counters,
+                n_qubits=circuit.abstract.n_qubits,
+                options=error.options,
+                n_shots=n_shots,
             )
             return corrupted_counters
         else:

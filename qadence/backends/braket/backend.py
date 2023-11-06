@@ -157,7 +157,12 @@ class Backend(BackendInterface):
             samples = invert_endianness(samples)
         if error is not None:
             error_fn = error.get_error_fn()
-            return error_fn(counters=samples, n_qubits=circuit.abstract.n_qubits)  # type: ignore
+            return error_fn(  # type: ignore[no-any-return]
+                counters=samples,
+                n_qubits=circuit.abstract.n_qubits,
+                options=error.options,
+                n_shots=n_shots,
+            )
         else:
             return samples
 

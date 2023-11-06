@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from collections import Counter
-from itertools import chain
 
+import numpy as np
 import pytest
 import torch
 from sympy import acos
@@ -18,7 +18,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.constructors.hamiltonians import hamiltonian_factory
 from qadence.divergences import js_divergence
 from qadence.errors import Errors
-from qadence.errors.readout import bs_corruption
+from qadence.errors.readout import WhiteNoise, bs_corruption, create_noise_matrix, sample_to_matrix
 from qadence.measurements.protocols import Measurements
 from qadence.models import QuantumModel
 from qadence.operations import (
@@ -54,18 +54,25 @@ from qadence.types import DiffMode
 def test_bitstring_corruption(
     error_probability: float, counters: list, exp_corrupted_counters: list, n_qubits: int
 ) -> None:
-    corrupted_bitstrings = [
-        bs_corruption(
-            bitstring=bitstring,
-            n_shots=n_shots,
-            error_probability=error_probability,
-            n_qubits=n_qubits,
-        )
-        for bitstring, n_shots in counters[0].items()
-    ]
+    # corrupted_bitstrings = [
+    #     bs_corruption(
+    #         bitstring=bitstring,
+    #         n_shots=n_shots,
+    #         error_probability=error_probability,
+    #         n_qubits=n_qubits,
+    #     )
+    #     for bitstring, n_shots in counters[0].items()
+    # ]
 
-    corrupted_counters = [Counter(chain(*corrupted_bitstrings))]
-    assert sum(corrupted_counters[0].values()) == 100
+    # corrupted_counters = [Counter(chain(*corrupted_bitstrings))]
+    n_shots = 100
+    noise_matrix = create_noise_matrix(WhiteNoise.UNIFORM, n_shots, n_qubits)
+    err_idx = np.array([(item).numpy() for i, item in enumerate(noise_matrix < error_probability)])
+    sample = sample_to_matrix(counters[0])
+    corrupted_counters = [
+        bs_corruption(n_shots=n_shots, err_idx=err_idx, sample=sample, n_qubits=n_qubits)
+    ]
+    assert sum(corrupted_counters[0].values()) == n_shots
     assert corrupted_counters == exp_corrupted_counters
     assert torch.allclose(
         torch.tensor(1.0 - js_divergence(corrupted_counters[0], counters[0])),
