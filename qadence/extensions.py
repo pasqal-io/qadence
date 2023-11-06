@@ -60,6 +60,14 @@ def _validate_diff_mode(backend: Backend, diff_mode: DiffMode) -> None:
         raise TypeError(f"Backend {backend.name} does not support diff_mode {DiffMode.ADJOINT}.")
 
 
+def _validate_backend_config(backend: Backend) -> None:
+    if backend.config.use_gradient_checkpointing:
+        raise PendingDeprecationWarning(
+            "use_gradient_checkpointing will soon be deprecated.\
+                                        To save memory, try diff_mode=DiffMode.ADJOINT instead."
+        )
+
+
 def _set_backend_config(backend: Backend, diff_mode: DiffMode) -> None:
     """_summary_
 
@@ -69,6 +77,7 @@ def _set_backend_config(backend: Backend, diff_mode: DiffMode) -> None:
     """
 
     _validate_diff_mode(backend, diff_mode)
+    _validate_backend_config(backend)
 
     # (1) When using PSR with any backend or (2) we use the backends Pulser or Braket,
     # we have to use gate-level parameters
