@@ -82,7 +82,8 @@ def test_input_nd(dim: int) -> None:
     assert res.size()[0] == batch_size
 
 
-def test_qnn_expectation(n_qubits: int = 4) -> None:
+@pytest.mark.parametrize("diff_mode", ["ad", "adjoint"])
+def test_qnn_expectation(diff_mode: str, n_qubits: int = 2) -> None:
     theta0 = Parameter("theta0", trainable=True)
     theta1 = Parameter("theta1", trainable=True)
 
@@ -91,14 +92,14 @@ def test_qnn_expectation(n_qubits: int = 4) -> None:
 
     fm = chain(ry0, ry1)
 
-    ansatz = hea(2, 2, param_prefix="eps")
+    ansatz = hea(n_qubits, depth=2, param_prefix="eps")
 
     block = chain(fm, ansatz)
 
     qc = QuantumCircuit(n_qubits, block)
     uni_state = uniform_state(n_qubits)
     obs = total_magnetization(n_qubits)
-    model = QNN(circuit=qc, observable=obs, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD)
+    model = QNN(circuit=qc, observable=obs, backend=BackendName.PYQTORCH, diff_mode=diff_mode)
 
     exp = model(values={}, state=uni_state)
     assert not torch.any(torch.isnan(exp))

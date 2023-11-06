@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass
-from math import prod
 from typing import Any
 
 import pyqtorch as pyq
@@ -11,7 +10,13 @@ from torch import Tensor
 
 from qadence.backend import Backend as BackendInterface
 from qadence.backend import BackendName, ConvertedCircuit, ConvertedObservable
-from qadence.backends.utils import to_list_of_dicts
+from qadence.backends.utils import (
+    infer_batchsize,
+    pyqify,
+    to_list_of_dicts,
+    unpyqify,
+    validate_pyq_state,
+)
 from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
@@ -80,37 +85,17 @@ class Backend(BackendInterface):
         unpyqify_state: bool = True,
     ) -> Tensor:
         n_qubits = circuit.abstract.n_qubits
-
-        if state is not None:
-            if pyqify_state:
-                if (state.ndim != 2) or (state.size(1) != 2**n_qubits):
-                    raise ValueError(
-                        "The initial state must be composed of tensors of size "
-                        f"(batch_size, 2**n_qubits). Found: {state.size() = }."
-                    )
-
-                # PyQ expects a column vector for the initial state
-                # where each element is of dim=2.
-                state = state.T.reshape([2] * n_qubits + [state.size(0)])
-            else:
-                if prod(state.size()[:-1]) != 2**n_qubits:
-                    raise ValueError(
-                        "A pyqified initial state must be composed of tensors of size "
-                        f"(2, 2, ..., batch_size). Found: {state.size() = }."
-                    )
+        if state is None:
+            # If no state is passed, we infer the batch_size through the length
+            # of the individual parameter value tensors.
+            state = circuit.native.init_state(batch_size=infer_batchsize(param_values))
         else:
-            # infer batch_size without state
-            if len(param_values) == 0:
-                batch_size = 1
-            else:
-                batch_size = max([len(tensor) for tensor in param_values.values()])
-            state = circuit.native.init_state(batch_size=batch_size)
+            # pyqtorch expects input shape [2] * n_qubits + [batch_size]
+            state = pyqify(state, n_qubits) if pyqify_state else validate_pyq_state(state, n_qubits)
         state = circuit.native.run(state, param_values)
-
         # make sure that the batch dimension is the first one, as standard
         # for PyTorch, and not the last one as done in PyQ
-        if unpyqify_state:
-            state = torch.flatten(state, start_dim=0, end_dim=-2).t()
+        state = unpyqify(state) if unpyqify_state else state
 
         if endianness != self.native_endianness:
             from qadence.transpile import invert_endianness

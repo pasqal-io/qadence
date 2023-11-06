@@ -115,13 +115,24 @@ class DifferentiableExpectation:
 
     def adjoint(self) -> Tensor:
         from qadence.backends.adjoint import AdjointExpectation
+        from qadence.backends.utils import infer_batchsize, pyqify, validate_pyq_state
 
         self.observable = (
             self.observable if isinstance(self.observable, list) else [self.observable]
         )
         if len(self.observable) > 1:
-            raise NotImplementedError("AdjointExpectation only supports one observable.")
+            raise NotImplementedError("AdjointExpectation currently only supports one observable.")
 
+        n_qubits = self.circuit.abstract.n_qubits
+        if self.state is None:
+            self.state = self.circuit.native.init_state(
+                batch_size=infer_batchsize(self.param_values)
+            )
+        else:
+            try:
+                validate_pyq_state(self.state, n_qubits)
+            except ValueError:
+                self.state = pyqify(self.state, n_qubits)
         return promote_to_tensor(
             AdjointExpectation.apply(
                 self.circuit.native,

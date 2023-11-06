@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
+from math import log2, prod
 from typing import Callable, Sequence
 
 import numpy as np
@@ -94,3 +95,32 @@ def to_list_of_dicts(param_values: dict[str, Tensor]) -> list[dict[str, float]]:
 
 def finitediff(f: Callable, x: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
     return (f(x + eps) - f(x - eps)) / (2 * eps)  # type: ignore
+
+
+def pyqify(state: torch.Tensor, n_qubits: int = None) -> torch.Tensor:
+    if n_qubits is None:
+        n_qubits = int(log2(state.shape[1]))
+    if (state.ndim != 2) or (state.size(1) != 2**n_qubits):
+        raise ValueError(
+            "The initial state must be composed of tensors of size "
+            f"(batch_size, 2**n_qubits). Found: {state.size() = }."
+        )
+    return state.T.reshape([2] * n_qubits + [state.size(0)])
+
+
+def unpyqify(state: torch.Tensor) -> torch.Tensor:
+    return torch.flatten(state, start_dim=0, end_dim=-2).t()
+
+
+def validate_pyq_state(state: torch.Tensor, n_qubits: int) -> torch.Tensor:
+    if prod(state.size()[:-1]) != 2**n_qubits:
+        raise ValueError(
+            "A pyqified initial state must be composed of tensors of size "
+            f"(2, 2, ..., batch_size). Found: {state.size() = }."
+        )
+    else:
+        return state
+
+
+def infer_batchsize(param_values: dict[str, torch.Tensor]) -> int:
+    return max([len(tensor) for tensor in param_values.values()]) if len(param_values) > 1 else 1
