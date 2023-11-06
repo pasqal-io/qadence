@@ -5,7 +5,7 @@ from itertools import count
 from pathlib import Path
 
 import torch
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader
 
 from qadence.ml_tools import (
     TrainConfig,
@@ -13,10 +13,10 @@ from qadence.ml_tools import (
     train_with_grad,
     write_checkpoint,
 )
+from qadence.ml_tools.data import to_dataloader
 from qadence.ml_tools.models import TransformedModule
 from qadence.ml_tools.parameters import get_parameters, set_parameters
 from qadence.ml_tools.utils import rand_featureparameters
-from qadence.ml_tools.data import to_dataloader
 from qadence.models import QNN, QuantumModel
 
 
