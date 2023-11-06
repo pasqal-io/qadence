@@ -137,7 +137,7 @@ def test_readout_error_quantum_model(
 
     noisy_samples: list[Counter] = QuantumModel(
         QuantumCircuit(block.n_qubits, block), backend=backend, diff_mode=diff_mode
-    ).sample(error=Noise(protocol=Noise.READOUT), n_shots=n_shots)
+    ).sample(noise=Noise(protocol=Noise.READOUT), n_shots=n_shots)
 
     # breakpoint()
     for noiseless, noisy in zip(noiseless_samples, noisy_samples):
@@ -158,11 +158,11 @@ def test_readout_error_backends(backend: BackendName) -> None:
     feature_map = qd.kron(RX(i, 2 * acos(fp)) for i in range(n_qubits))
     inputs = {"phi": torch.rand(1)}
     # sample
-    samples = qd.sample(feature_map, n_shots=1000, values=inputs, backend=backend, error=None)
+    samples = qd.sample(feature_map, n_shots=1000, values=inputs, backend=backend, noise=None)
     # introduce noise
     options = {"error_probability": error_probability}
-    error = Noise(protocol=Noise.READOUT, options=options).get_error_fn()
-    noisy_samples = error(counters=samples, n_qubits=n_qubits)
+    noise = Noise(protocol=Noise.READOUT, options=options).get_noise_fn()
+    noisy_samples = noise(counters=samples, n_qubits=n_qubits)
     # compare that the results are with an error of 10% (the default error_probability)
     for sample, noisy_sample in zip(samples, noisy_samples):
         assert sum(sample.values()) == sum(noisy_sample.values())
@@ -196,11 +196,11 @@ def test_readout_error_with_measurements(
     model = QuantumModel(circuit=circuit, observable=observable, diff_mode=DiffMode.GPSR)
     # model.backend.backend.config._use_gate_params = True
 
-    error = Noise(protocol=Noise.READOUT)
+    noise = Noise(protocol=Noise.READOUT)
     measurement = Measurements(protocol=str(measurement_proto), options=options)
 
     # measured = model.expectation(values=inputs, measurement=measurement)
-    noisy = model.expectation(values=inputs, measurement=measurement, error=error)
+    noisy = model.expectation(values=inputs, measurement=measurement, noise=noise)
     exact = model.expectation(values=inputs)
     if exact.numel() > 1:
         for noisy_value, exact_value in zip(noisy, exact):

@@ -249,7 +249,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         n_shots: int = 1,
         state: Tensor | None = None,
-        error: Noise | None = None,
+        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         if n_shots < 1:
@@ -267,12 +267,12 @@ class Backend(BackendInterface):
             from qadence.transpile import invert_endianness
 
             samples = invert_endianness(samples)
-        if error is not None:
-            error_fn = error.get_error_fn()
-            return error_fn(  # type: ignore[no-any-return]
+        if noise is not None:
+            noise_fn = noise.get_noise_fn()
+            return noise_fn(  # type: ignore[no-any-return]
                 counters=samples,
                 n_qubits=circuit.abstract.n_qubits,
-                options=error.options,
+                options=noise.options,
                 n_shots=n_shots,
             )
         else:
@@ -285,12 +285,12 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
-        error: Noise | None = None,
+        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
-        if error is not None:
+        if noise is not None:
             logger.warning(
-                f"Noise of type {error} are not implemented for expectation yet. "
+                f"Noise of type {noise} are not implemented for expectation yet. "
                 "This is ignored for now."
             )
 

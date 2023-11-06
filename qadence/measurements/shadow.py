@@ -129,7 +129,7 @@ def classical_shadow(
     state: Tensor | None = None,
     backend_name: BackendName = BackendName.PYQTORCH,
     # FIXME: Changed below from Little to Big, double-check when Roland is back
-    error: Noise | None = None,
+    noise: Noise | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> list:
     shadow: list = []
@@ -155,7 +155,7 @@ def classical_shadow(
             param_values=param_values,
             n_shots=1,
             state=state,
-            error=error,
+            noise=noise,
             endianness=endianness,
         )
         batched_shadow = []
@@ -260,7 +260,7 @@ def estimations(
     confidence: float = 0.1,
     state: Tensor | None = None,
     backend_name: BackendName = BackendName.PYQTORCH,
-    error: Noise | None = None,
+    noise: Noise | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
     """Compute expectation values for all local observables using median of means."""
@@ -276,7 +276,7 @@ def estimations(
         param_values=param_values,
         state=state,
         backend_name=backend_name,
-        error=error,
+        noise=noise,
         endianness=endianness,
     )
     estimations = []
@@ -313,7 +313,7 @@ def compute_expectation(
     options: dict,
     state: Tensor | None = None,
     backend_name: BackendName = BackendName.PYQTORCH,
-    error: Noise | None = None,
+    noise: Noise | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
     """
@@ -329,7 +329,7 @@ def compute_expectation(
             Here, shadow_size (int), accuracy (float) and confidence (float) are supported.
         state (Tensor | None): an initial input state.
         backend_name (BackendName): a backend name to retrieve computations from.
-        error: A noise model to use.
+        noise: A noise model to use.
         endianness: Endianness of the observable estimate.
 
     Returns:
@@ -360,6 +360,6 @@ def compute_expectation(
         confidence=confidence,
         state=state,
         backend_name=backend_name,
-        error=error,
+        noise=noise,
         endianness=endianness,
     )

@@ -106,7 +106,7 @@ def sample(
     n_shots: int = 100,
     backend: BackendName = BackendName.PYQTORCH,
     endianness: Endianness = Endianness.BIG,
-    error: Union[Noise, None] = None,
+    noise: Union[Noise, None] = None,
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> list[Counter]:
     """Convenience wrapper for the `QuantumModel.sample` method.  This is a
@@ -121,7 +121,7 @@ def sample(
         n_shots: Number of shots per element in the batch.
         backend: Name of the backend to run on.
         endianness: The target device endianness.
-        error: The error model to use if any.
+        noise: The noise model to use if any.
         configuration: The backend configuration.
 
     Returns:
@@ -137,7 +137,7 @@ def _(
     state: Union[Tensor, None] = None,
     n_shots: int = 100,
     backend: BackendName = BackendName.PYQTORCH,
-    error: Union[Noise, None] = None,
+    noise: Union[Noise, None] = None,
     endianness: Endianness = Endianness.BIG,
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> list[Counter]:
@@ -148,7 +148,7 @@ def _(
         param_values=conv.embedding_fn(conv.params, values),
         n_shots=n_shots,
         state=state,
-        error=error,
+        noise=noise,
         endianness=endianness,
     )
 
@@ -177,7 +177,7 @@ def expectation(
     state: Tensor = None,
     backend: BackendName = BackendName.PYQTORCH,
     diff_mode: Union[DiffMode, str, None] = None,
-    error: Union[Noise, None] = None,
+    noise: Union[Noise, None] = None,
     endianness: Endianness = Endianness.BIG,
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> Tensor:
@@ -231,7 +231,7 @@ def _(
     state: Tensor = None,
     backend: BackendName = BackendName.PYQTORCH,
     diff_mode: Union[DiffMode, str, None] = None,
-    error: Union[Noise, None] = None,
+    noise: Union[Noise, None] = None,
     endianness: Endianness = Endianness.BIG,
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> Tensor:
@@ -245,7 +245,7 @@ def _(
             observable=conv.observable,  # type: ignore[arg-type]
             param_values=conv.embedding_fn(conv.params, values),
             state=state,
-            error=error,
+            noise=noise,
             endianness=endianness,
         )
 

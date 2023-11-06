@@ -229,7 +229,7 @@ class Backend(ABC):
         param_values: dict[str, Tensor] = {},
         n_shots: int = 1000,
         state: Tensor | None = None,
-        error: Noise | None = None,
+        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         """Sample bit strings.
@@ -240,7 +240,7 @@ class Backend(ABC):
                 [`embedding`][qadence.blocks.embedding.embedding] for more info.
             n_shots: Number of shots to sample.
             state: Initial state.
-            error: A noise model to use.
+            noise: A noise model to use.
             endianness: Endianness of the resulting bit strings.
         """
         raise NotImplementedError
@@ -276,7 +276,7 @@ class Backend(ABC):
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
-        error: Noise | None = None,
+        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         """Compute the expectation value of the `circuit` with the given `observable`.
@@ -288,7 +288,7 @@ class Backend(ABC):
             state: Initial state.
             measurement: Optional measurement protocol. If None, use
                 exact expectation value with a statevector simulator.
-            error: A noise model to use.
+            noise: A noise model to use.
             endianness: Endianness of the resulting bit strings.
         """
         raise NotImplementedError

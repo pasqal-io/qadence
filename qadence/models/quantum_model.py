@@ -50,7 +50,7 @@ class QuantumModel(nn.Module):
         diff_mode: DiffMode = DiffMode.AD,
         measurement: Measurements | None = None,
         configuration: BackendConfiguration | dict | None = None,
-        error: Noise | None = None,
+        noise: Noise | None = None,
     ):
         """Initialize a generic QuantumModel instance.
 
@@ -64,7 +64,7 @@ class QuantumModel(nn.Module):
             measurement: Optional measurement protocol. If None, use
                 exact expectation value with a statevector simulator.
             configuration: Configuration for the backend.
-            error: A noise model to use.
+            noise: A noise model to use.
 
         Raises:
             ValueError: if the `diff_mode` argument is set to None
@@ -96,7 +96,7 @@ class QuantumModel(nn.Module):
         self._backend_name = backend
         self._diff_mode = diff_mode
         self._measurement = measurement
-        self._error = error
+        self._noise = noise
 
         self._params = nn.ParameterDict(
             {
@@ -166,14 +166,14 @@ class QuantumModel(nn.Module):
         values: dict[str, torch.Tensor] = {},
         n_shots: int = 1000,
         state: torch.Tensor | None = None,
-        error: Noise | None = None,
+        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         params = self.embedding_fn(self._params, values)
-        if error is None:
-            error = self._error
+        if noise is None:
+            noise = self._noise
         return self.backend.sample(
-            self._circuit, params, n_shots=n_shots, state=state, error=error, endianness=endianness
+            self._circuit, params, n_shots=n_shots, state=state, noise=noise, endianness=endianness
         )
 
     def expectation(
@@ -182,7 +182,7 @@ class QuantumModel(nn.Module):
         observable: list[ConvertedObservable] | ConvertedObservable | None = None,
         state: Optional[Tensor] = None,
         measurement: Measurements | None = None,
-        error: Noise | None = None,
+        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         """Compute expectation using the given backend.
@@ -202,15 +202,15 @@ class QuantumModel(nn.Module):
         params = self.embedding_fn(self._params, values)
         if measurement is None:
             measurement = self._measurement
-        if error is None:
-            error = self._error
+        if noise is None:
+            noise = self._noise
         return self.backend.expectation(
             circuit=self._circuit,
             observable=observable,
             param_values=params,
             state=state,
             measurement=measurement,
-            error=error,
+            noise=noise,
             endianness=endianness,
         )
 

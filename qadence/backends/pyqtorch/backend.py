@@ -128,7 +128,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
-        error: Noise | None = None,
+        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         state = self.run(
@@ -153,7 +153,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
-        error: Noise | None = None,
+        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         state = zero_state(circuit.abstract.n_qubits, batch_size=1) if state is None else state
@@ -180,12 +180,12 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
-        error: Noise | None = None,
+        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
-        if error is not None:
+        if noise is not None:
             logger.warning(
-                f"Noise of type {error} are not implemented for expectation yet. "
+                f"Noise of type {noise} are not implemented for expectation yet. "
                 "This is ignored for now."
             )
         fn = self._looped_expectation if self.config.loop_expectation else self._batched_expectation
@@ -195,7 +195,7 @@ class Backend(BackendInterface):
             param_values=param_values,
             state=state,
             measurement=measurement,
-            error=error,
+            noise=noise,
             endianness=endianness,
         )
 
@@ -205,7 +205,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         n_shots: int = 1,
         state: Tensor | None = None,
-        error: Noise | None = None,
+        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         if n_shots < 1:
@@ -237,12 +237,12 @@ class Backend(BackendInterface):
                 probs,
             )
         )
-        if error is not None:
-            error_fn = error.get_error_fn()
-            corrupted_counters: list = error_fn(
+        if noise is not None:
+            noise_fn = noise.get_noise_fn()
+            corrupted_counters: list = noise_fn(
                 counters=counters,
                 n_qubits=circuit.abstract.n_qubits,
-                options=error.options,
+                options=noise.options,
                 n_shots=n_shots,
             )
             return corrupted_counters

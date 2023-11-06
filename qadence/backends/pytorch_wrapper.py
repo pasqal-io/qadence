@@ -86,7 +86,7 @@ class DifferentiableExpectation:
     param_values: dict[str, Tensor]
     state: Tensor | None = None
     measurement: Measurements | None = None
-    error: Noise | None = None
+    noise: Noise | None = None
     endianness: Endianness = Endianness.BIG
 
     def ad(self) -> Tensor:
@@ -101,7 +101,7 @@ class DifferentiableExpectation:
                 param_values=self.param_values,
                 options=self.measurement.options,
                 state=self.state,
-                error=self.error,
+                noise=self.noise,
                 endianness=self.endianness,
             )
         else:
@@ -110,7 +110,7 @@ class DifferentiableExpectation:
                 observable=self.observable,
                 param_values=self.param_values,
                 state=self.state,
-                error=self.error,
+                noise=self.noise,
                 endianness=self.endianness,
             )
         return promote_to_tensor(
@@ -135,7 +135,7 @@ class DifferentiableExpectation:
                 observables=[obs.original for obs in self.observable],
                 options=self.measurement.options,
                 state=self.state,
-                error=self.error,
+                noise=self.noise,
                 endianness=self.endianness,
             )
         else:
@@ -144,7 +144,7 @@ class DifferentiableExpectation:
                 circuit=self.circuit,
                 observable=self.observable,
                 state=self.state,
-                error=self.error,
+                noise=self.noise,
                 endianness=self.endianness,
             )
         # PSR only applies to parametric circuits.
@@ -236,7 +236,7 @@ class DifferentiableBackend(nn.Module):
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
-        error: Noise | None = None,
+        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         """Compute the expectation value of a given observable.
@@ -260,7 +260,7 @@ class DifferentiableBackend(nn.Module):
             param_values=param_values,
             state=state,
             measurement=measurement,
-            error=error,
+            noise=noise,
             endianness=endianness,
         )
 
@@ -281,7 +281,7 @@ class DifferentiableBackend(nn.Module):
         param_values: dict[str, Tensor],
         n_shots: int = 1,
         state: Tensor | None = None,
-        error: Noise | None = None,
+        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         """Sample bitstring from the registered circuit.
@@ -304,7 +304,7 @@ class DifferentiableBackend(nn.Module):
                 state=state,
                 n_shots=n_shots,
                 endianness=endianness,
-                error=error,
+                noise=noise,
             )
 
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:

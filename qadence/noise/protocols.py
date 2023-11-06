@@ -18,7 +18,7 @@ class Noise:
         self.protocol: str = protocol
         self.options: dict = options
 
-    def get_error_fn(self) -> Callable:
+    def get_noise_fn(self) -> Callable:
         try:
             module = importlib.import_module(PROTOCOL_TO_MODULE[self.protocol])
         except KeyError:
