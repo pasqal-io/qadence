@@ -25,7 +25,7 @@ from qadence.utils import Endianness
 from .config import Configuration, default_passes
 from .convert_ops import convert_block
 
-logger = get_logger(__name__)
+logger = get_logger(__file__)
 
 
 def promote_parameters(parameters: dict[str, Tensor | float]) -> dict[str, float]:
@@ -176,7 +176,8 @@ class Backend(BackendInterface):
         error: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
-        if error is not None:
+        # Noise is ignored if measurement protocol is not provided.
+        if error is not None and measurement is None:
             logger.warning(
                 f"Noise of type {error} are not implemented for expectation yet. "
                 "This is ignored for now."
