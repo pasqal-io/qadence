@@ -75,6 +75,7 @@ class QNN(QuantumModel):
             diff_mode=diff_mode,
             measurement=measurement,
             configuration=configuration,
+            noise=noise
         )
 
         if self.out_features is None:
@@ -121,6 +122,8 @@ class QNN(QuantumModel):
             values = self._format_to_dict(values)
         if measurement is None:
             measurement = self._measurement
+        if noise is None:
+            noise = self._noise
 
         return self.transform(
             self.expectation(
