@@ -24,3 +24,8 @@ repos:
     hooks:
       - id: mypy
         exclude: examples|docs
+
+-   repo: https://github.com/DanielNoord/pydocstringformatter
+    rev: v0.7.3
+    hooks:
+      - id: pydocstringformatter

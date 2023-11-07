@@ -78,6 +78,7 @@ dependencies = [
   "black",
   "isort",
   "ruff",
+  "pydocstringformatter",
 ]
 features = ["all"]
 
