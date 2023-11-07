@@ -5,19 +5,19 @@ from typing import Type
 import sympy
 
 import qadence as qd
-from qadence import Parameter
-from qadence.blocks import add, chain
+from qadence.blocks import AddBlock, ChainBlock, add, chain
 from qadence.constructors import hamiltonian_factory
-from qadence.parameters import VariationalParameter
+from qadence.operations import N, X, Y, Z
+from qadence.parameters import Parameter, VariationalParameter
 
-TPauliOp = Type[qd.X] | Type[qd.Y] | Type[qd.Z] | Type[qd.N]
+TPauliOp = Type[X] | Type[Y] | Type[Z] | Type[N]
 
 
 def _amplitude_map(
     n_qubits: int,
     pauli_op: TPauliOp,
     weights: list[Parameter] | list[float] | None = None,
-) -> qd.blocks.AddBlock:
+) -> AddBlock:
     """Create an generator equivalent to a laser amplitude mapping on the device
 
     Basically, given a certain quantum operation `pauli_op`, this routine constructs
@@ -51,7 +51,7 @@ def rydberg_hea_layer(
     detunings: list[Parameter] | list[float] | None = None,
     drives: list[Parameter] | list[float] | None = None,
     drive_scaling: float = 1.0,
-) -> qd.blocks.ChainBlock:
+) -> ChainBlock:
     """A single layer of the Rydberg hardware efficient ansatz
 
     Args:
