@@ -294,7 +294,7 @@ $\mathcal{H}^\text{int}$, equivalent to setting $\Omega = \delta = \phi = 0$. To
 function `wait` which does exactly this.
 
 ```python exec="on" source="material-block" result="json" session="rx"
-From qadence import wait, run
+from qadence import wait, run
 
 dx = 8.0
 reg = Register.from_coordinates([(dx, 0), (2*dx, 0), (3*dx, 0)])
