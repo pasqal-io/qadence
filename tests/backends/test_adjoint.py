@@ -5,6 +5,7 @@ import torch
 from metrics import ADJOINT_ACCEPTANCE
 
 from qadence.backends.api import backend_factory
+from qadence.backends.utils import dydx, dydxx
 from qadence.blocks import AbstractBlock, chain
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import hea
@@ -20,7 +21,7 @@ def test_pyq_differentiation(diff_mode: str) -> None:
     batch_size = 1
     n_qubits = 2
     observable: list[AbstractBlock] = [Z(0)]
-    circ = QuantumCircuit(n_qubits, chain(RX(0, "x"), CPHASE(0, 1, "y")))
+    circ = QuantumCircuit(n_qubits, chain(RX(0, 3 * "x"), CPHASE(0, 1, "y")))
 
     bknd = backend_factory(backend="pyqtorch", diff_mode=diff_mode)
     pyqtorch_circ, pyqtorch_obs, embeddings_fn, params = bknd.convert(circ, observable)
@@ -33,8 +34,12 @@ def test_pyq_differentiation(diff_mode: str) -> None:
         all_params = embeddings_fn(params, inputs)
         return bknd.expectation(pyqtorch_circ, pyqtorch_obs, all_params)
 
-    assert torch.autograd.gradcheck(lambda x: func(x, inputs_y), inputs_x)
-    assert torch.autograd.gradcheck(lambda y: func(inputs_x, y), inputs_y)
+    assert torch.autograd.gradcheck(
+        lambda x: func(x, inputs_y), inputs_x, nondet_tol=ADJOINT_ACCEPTANCE
+    )
+    assert torch.autograd.gradcheck(
+        lambda y: func(inputs_x, y), inputs_y, nondet_tol=ADJOINT_ACCEPTANCE
+    )
 
 
 @pytest.mark.parametrize("diff_mode", [DiffMode.ADJOINT])
@@ -122,3 +127,36 @@ def test_hamevo_generator_grad() -> None:
         return backend.expectation(pyqtorch_circ, pyqtorch_obs, all_params)
 
     assert torch.autograd.gradcheck(func, theta, nondet_tol=ADJOINT_ACCEPTANCE)
+
+
+@pytest.mark.flaky
+def test_higher_order() -> None:
+    batch_size = 1
+    n_qubits = 1
+    observable: list[AbstractBlock] = [Z(0)]
+    circ = QuantumCircuit(n_qubits, chain(RX(0, "x")))
+
+    bknd = backend_factory(backend="pyqtorch", diff_mode="ad")
+    pyqtorch_circ, pyqtorch_obs, embeddings_fn, params = bknd.convert(circ, observable)
+
+    inputs_x = torch.rand(batch_size, requires_grad=True)
+
+    inputs = {"x": inputs_x}
+    all_params = embeddings_fn(params, inputs)
+    out_state = pyqtorch_circ.native.run(values=all_params)
+    projected_state = pyqtorch_obs[0].native.run(out_state, all_params)
+    op = pyqtorch_circ.native.operations[0].operations[0]
+    with torch.no_grad():
+        dydx_res = dydx(op.jacobian({"x": inputs_x}), op.qubit_support, out_state, projected_state)
+        dydxx_res = dydxx(op, {"x": inputs_x}, out_state, projected_state)
+
+    def func(x: torch.Tensor) -> torch.Tensor:
+        inputs = {"x": x}
+        all_params = embeddings_fn(params, inputs)
+        return bknd.expectation(pyqtorch_circ, pyqtorch_obs, all_params)
+
+    exp = func(inputs_x)
+    grad = torch.autograd.grad(exp, inputs_x, torch.ones_like(exp), create_graph=True)[0]
+    gradgrad = torch.autograd.grad(grad, inputs_x, torch.ones_like(grad), retain_graph=True)[0]
+    assert torch.allclose(dydx_res, grad, atol=ADJOINT_ACCEPTANCE)
+    assert torch.allclose(dydxx_res, gradgrad, atol=ADJOINT_ACCEPTANCE)

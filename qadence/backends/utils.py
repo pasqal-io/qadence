@@ -6,6 +6,9 @@ from typing import Callable, Sequence
 
 import numpy as np
 import torch
+from pyqtorch.apply import apply_operator
+from pyqtorch.parametric import Parametric as PyQParametric
+from pyqtorch.utils import overlap
 from torch import Tensor
 
 from qadence.utils import Endianness, int_to_basis
@@ -94,8 +97,50 @@ def to_list_of_dicts(param_values: dict[str, Tensor]) -> list[dict[str, float]]:
     return [{k: v[i] for k, v in batched_values.items()} for i in range(max_batch_size)]
 
 
+def finitediff_sampling(
+    f: Callable, x: torch.Tensor, eps: float = FINITE_DIFF_EPS, num_samples: int = 10
+) -> torch.Tensor:
+    def _finitediff(val: torch.Tensor) -> torch.Tensor:
+        return (f(x + val) - f(x - val)) / (2 * val)  # type: ignore
+
+    with torch.no_grad():
+        return torch.mean(
+            torch.cat([_finitediff(val) for val in torch.rand(1) for _ in range(num_samples)])
+        )
+
+
 def finitediff(f: Callable, x: torch.Tensor, eps: float = FINITE_DIFF_EPS) -> torch.Tensor:
     return (f(x + eps) - f(x - eps)) / (2 * eps)  # type: ignore
+
+
+def dydx(
+    jacobian: torch.Tensor,
+    qubit_support: tuple,
+    out_state: torch.Tensor,
+    projected_state: torch.Tensor,
+) -> torch.Tensor:
+    return 2 * overlap(
+        projected_state,
+        apply_operator(
+            state=out_state,
+            operator=jacobian,
+            qubits=qubit_support,
+        ),
+    )
+
+
+def dydxx(
+    op: PyQParametric,
+    values: dict[str, torch.Tensor],
+    out_state: torch.Tensor,
+    projected_state: torch.Tensor,
+) -> torch.Tensor:
+    return 2 * finitediff_sampling(
+        lambda val: dydx(
+            op.jacobian({op.param_name: val}), op.qubit_support, out_state, projected_state
+        ),
+        values[op.param_name],
+    )
 
 
 def pyqify(state: torch.Tensor, n_qubits: int = None) -> torch.Tensor:
