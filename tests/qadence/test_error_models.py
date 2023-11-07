@@ -96,8 +96,8 @@ def test_bitstring_corruption_mixed_bitflips(
     corrupted_counters = [
         bs_corruption(n_shots=n_shots, err_idx=err_idx, sample=sample, n_qubits=n_qubits)
     ]
-    assert sum(corrupted_counters[0].values()) == n_shots
     for noiseless, noisy in zip(counters, corrupted_counters):
+        assert sum(noisy.values()) == n_shots
         assert js_divergence(noiseless, noisy) > 0.0
 
 
@@ -193,6 +193,7 @@ def test_readout_error_backends(backend: BackendName) -> None:
         )
 
 
+# TODO: Use strategies to test against randomly generated circuits.
 @pytest.mark.parametrize(
     "measurement_proto, options",
     [
@@ -200,25 +201,18 @@ def test_readout_error_backends(backend: BackendName) -> None:
         (Measurements.SHADOW, {"accuracy": 0.1, "confidence": 0.1}),
     ],
 )
-# @given(st.restricted_batched_circuits())
-# @settings(deadline=None)
 def test_readout_error_with_measurements(
     measurement_proto: Measurements,
     options: dict,
-    # circ_and_vals: tuple[QuantumCircuit, dict[str, Tensor]]
 ) -> None:
-    # circuit, inputs = circ_and_vals
     circuit = QuantumCircuit(2, kron(H(0), Z(1)))
     inputs: dict = dict()
     observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
 
     model = QuantumModel(circuit=circuit, observable=observable, diff_mode=DiffMode.GPSR)
-    # model.backend.backend.config._use_gate_params = True
-
     noise = Noise(protocol=Noise.READOUT)
     measurement = Measurements(protocol=str(measurement_proto), options=options)
 
-    # measured = model.expectation(values=inputs, measurement=measurement)
     noisy = model.expectation(values=inputs, measurement=measurement, noise=noise)
     exact = model.expectation(values=inputs)
     if exact.numel() > 1:
@@ -226,7 +220,6 @@ def test_readout_error_with_measurements(
             exact_val = torch.abs(exact_value).item()
             atol = exact_val / 3.0 if exact_val != 0.0 else 0.33
             assert torch.allclose(noisy_value, exact_value, atol=atol)
-
     else:
         exact_value = torch.abs(exact).item()
         atol = exact_value / 3.0 if exact_value != 0.0 else 0.33
