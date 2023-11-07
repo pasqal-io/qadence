@@ -6,7 +6,6 @@ from typing import Callable, Iterable, Type
 
 import sympy
 
-from qadence import SWAP, I
 from qadence.blocks import (
     AbstractBlock,
     AddBlock,
@@ -28,6 +27,7 @@ from qadence.blocks.utils import (
     parameters,
 )
 from qadence.logger import get_logger
+from qadence.operations import SWAP, I
 from qadence.parameters import Parameter
 
 logger = get_logger(__name__)
