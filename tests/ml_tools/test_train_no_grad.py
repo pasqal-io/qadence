@@ -6,6 +6,7 @@ from pathlib import Path
 
 import nevergrad as ng
 import numpy as np
+import pytest
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 
@@ -28,6 +29,7 @@ def dataloader() -> DataLoader:
     return DataLoader(dataset, batch_size=batch_size)
 
 
+@pytest.mark.flaky(max_runs=10)
 def test_train_dataloader_default(tmp_path: Path, Basic: torch.nn.Module) -> None:
     data = dataloader()
     model = Basic

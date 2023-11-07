@@ -64,18 +64,16 @@ from qadence import rydberg_hea
 
 n_qubits = 4
 n_layers = 2
-
-# determine the interaction
 register = qd.Register.line(n_qubits)
 
 # ansatz constructor
 # the evolution time is parametrized for each layer of the evolution
 ansatz = rydberg_hea(
-    register,  # define the interaction term
+    register,
     n_layers=n_layers,  # number of subsequent layers of Hamiltonian evolution
-    addressable_detuning=detunings,  # make the local detuning weights w_i^{det} as variational parameters
-    addressable_drive=drives, # make the local drive weights w_i^{drv} as variational parameters
-    tunable_phase=phase, # make the phase \phi as a variational parameter
+    addressable_detuning=True,  # make the local detuning weights w_i^{det} as variational parameters
+    addressable_drive=True, # make the local drive weights w_i^{drv} as variational parameters
+    tunable_phase=True, # make the phase \phi as a variational parameter
 )
 
 # alternatively, a single ansatz layer can also be created for
