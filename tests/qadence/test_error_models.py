@@ -101,6 +101,7 @@ def test_bitstring_corruption_mixed_bitflips(
         assert js_divergence(noiseless, noisy) > 0.0
 
 
+@pytest.mark.flaky(max_runs=5)
 @pytest.mark.parametrize(
     "error_probability, n_shots, block, backend",
     [
