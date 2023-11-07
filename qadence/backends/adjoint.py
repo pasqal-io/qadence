@@ -42,7 +42,7 @@ class AdjointExpectation(Function):
         param_values = ctx.saved_tensors
         values = param_dict(ctx.param_names, param_values)
 
-        def _apply_adjoint(ctx: Any, op: nn.Module, grad_out: Tensor = tensor([1.0])) -> list:
+        def _apply_adjoint(ctx: Any, op: nn.Module) -> list:
             grads: list = []
             if isinstance(op, (PyQHamiltonianEvolution)):
                 generator = op.block.generator
@@ -57,10 +57,10 @@ class AdjointExpectation(Function):
                     mu = apply_operator(
                         ctx.out_state, op.jacobian_generator(values), op.qubit_support
                     )
-                    grads.append(grad_out * 2 * overlap(ctx.projected_state, mu))
+                    grads.append(2 * overlap(ctx.projected_state, mu))
                 elif time_param.requires_grad:
                     mu = apply_operator(ctx.out_state, op.jacobian_time(values), op.qubit_support)
-                    grads.append(grad_out * 2 * overlap(ctx.projected_state, mu))
+                    grads.append(2 * overlap(ctx.projected_state, mu))
                 ctx.projected_state = apply_operator(
                     ctx.projected_state, op.dagger(values), op.qubit_support
                 )
@@ -76,17 +76,15 @@ class AdjointExpectation(Function):
                         scaled_pyq_op.jacobian(values),
                         scaled_pyq_op.qubit_support,
                     )
-                    grads.append(grad_out * 2 * overlap(ctx.projected_state, mu))
+                    grads.append(2 * overlap(ctx.projected_state, mu))
 
                 if values[op.param_name].requires_grad:
-                    grads.append(grad_out * 2 * -values[op.param_name])
+                    grads.append(2 * -values[op.param_name])
                 ctx.projected_state = apply_operator(
                     ctx.projected_state, op.dagger(values), op.qubit_support
                 )
             elif isinstance(op, PyQCircuit):
-                grads = [
-                    grad_out * g for sub_op in op.reverse() for g in _apply_adjoint(ctx, sub_op)
-                ]
+                grads = [g for sub_op in op.reverse() for g in _apply_adjoint(ctx, sub_op)]
             elif isinstance(op, (PyQPrimitive)):
                 ctx.out_state = apply_operator(ctx.out_state, op.dagger(values), op.qubit_support)
                 if isinstance(op, (PyQParametric)) and values[op.param_name].requires_grad:
@@ -95,7 +93,7 @@ class AdjointExpectation(Function):
                         op.jacobian(values),
                         op.qubit_support,
                     )
-                    grads.append(grad_out * 2 * overlap(ctx.projected_state, mu))
+                    grads.append(2 * overlap(ctx.projected_state, mu))
                 ctx.projected_state = apply_operator(
                     ctx.projected_state, op.dagger(values), op.qubit_support
                 )
