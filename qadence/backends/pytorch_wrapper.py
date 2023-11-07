@@ -291,7 +291,7 @@ class DifferentiableBackend(nn.Module):
             param_values: The values of the parameters after embedding
             n_shots: The number of shots. Defaults to 1.
             state: Initial state.
-            error: A noise model to use.
+            noise: A noise model to use.
             endianness: Endianness of the resulting bitstrings.
 
         Returns:
