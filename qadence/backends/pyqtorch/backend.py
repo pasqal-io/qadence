@@ -186,7 +186,7 @@ class Backend(BackendInterface):
         # Noise is ignored if measurement protocol is not provided.
         if noise is not None and measurement is None:
             logger.warning(
-                f"Error of type {noise} are not implemented for expectation yet. "
+                f"Errors of type {noise} are not implemented for expectation yet. "
                 "This is ignored for now."
             )
         fn = self._looped_expectation if self.config.loop_expectation else self._batched_expectation
