@@ -40,8 +40,9 @@ def _set_fixed_operation(
 
 class TransformedModule(torch.nn.Module):
     """
-    This class accepts a torch.nn.Module or a QuantumModel/QNN and wraps it with
-    either non-trainble or trainable scaling and shifting parameters for both input and output.
+    This class accepts a torch.nn.Module or a QuantumModel/QNN.
+
+    Wraps it with either non-trainble or trainable scaling and shifting parameters for both input and output.
     When given a torch.nn.Module, in_features and out_features need to be passed.
 
     Args:
@@ -138,7 +139,7 @@ class TransformedModule(torch.nn.Module):
             self._output_shifting = output_shifting
 
     def _format_to_dict(self, values: Tensor) -> dict[str, Tensor]:
-        """Format an input tensor into the format required by the forward pass
+        """Format an input tensor into the format required by the forward pass.
 
         The tensor is assumed to have dimensions: n_batches x in_features where in_features
         corresponds to the number of input features of the QNN
@@ -158,7 +159,8 @@ class TransformedModule(torch.nn.Module):
 
     def _transform_x(self, x: dict[str, torch.Tensor] | Tensor) -> dict[str, Tensor] | Tensor:
         """
-        x can either be a torch Tensor in when using torch.nn.Module, or a standard values dict.
+        X can either be a torch Tensor in when using torch.nn.Module, or a standard values dict.
+
         Scales and shifts the tensors in the values dict, containing Featureparameters.
         Transformation of inputs can be used to speed up training and avoid potential issues
         with numerical stability that can arise due to differing feature scales.
@@ -169,7 +171,6 @@ class TransformedModule(torch.nn.Module):
 
         Returns:
             A Tensor or dict containing transformed (scaled and/or shifted) Featureparameters.
-
         """
 
         if isinstance(self.model, (QuantumModel, QNN)):
@@ -218,11 +219,12 @@ class TransformedModule(torch.nn.Module):
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         """
-        Computes standard expectation, however scales and shifts the output tensor
-        of the underlying model. If none are provided, it uses 0. for shifting and 1. for scaling.
+        Computes standard expectation.
+
+        However, scales and shifts the output tensor of the underlying model.
+        If none are provided, it uses 0. for shifting and 1. for scaling.
         Transformation of ouputs can be used if the magnitude
         of the targets exceeds the domain (-1,1).
-
         """
         exp = self.model.expectation(
             values=self._transform_x(values),

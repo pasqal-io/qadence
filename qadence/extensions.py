@@ -59,7 +59,7 @@ def _validate_diff_mode(backend: Backend, diff_mode: DiffMode) -> None:
 
 
 def _set_backend_config(backend: Backend, diff_mode: DiffMode) -> None:
-    """_summary_
+    """_summary_.
 
     Args:
         backend (Backend): _description_

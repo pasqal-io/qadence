@@ -10,9 +10,7 @@ from .themes import BaseTheme, Black, Dark, Light, White
 
 
 class QuantumCircuitDiagram:
-    """
-    This class plots a quantum circuit using Graphviz.
-    """
+    """This class plots a quantum circuit using Graphviz."""
 
     __valid_layouts = ["LR", "TB"]
     __themes = {"light": Light, "dark": Dark, "black": Black, "white": White}
@@ -83,9 +81,7 @@ class QuantumCircuitDiagram:
         return wire
 
     def _validate_wires_couple(self, wire1: int, wire2: int) -> Tuple[int, int]:
-        """
-        This helps to ensure we are not creating a swap gate or a control gate on the same wire.
-        """
+        """This helps to ensure we are not creating a swap gate or a control gate on the same wire."""
         wire1 = self._validate_wire(wire1)
         wire2 = self._validate_wire(wire2)
         if wire1 == wire2:
@@ -184,9 +180,7 @@ class QuantumCircuitDiagram:
         node2: Node,
         **kwargs: str,
     ) -> None:
-        """
-        It creates an edge between node1 and node2
-        """
+        """It creates an edge between node1 and node2."""
         edge_attr = self.theme.get_edge_attr()
         edge_attr.update(kwargs)
         if (
@@ -208,8 +202,9 @@ class QuantumCircuitDiagram:
         **kwargs: Any,
     ) -> None:
         """
-        A control gate consists of a node in a wire, and a list of nodes on other different wires,
-        all connected with vertical edges between them.
+        A control gate consists of a node in a wire, and a list of nodes on other different wires.
+
+        All wires are connected with vertical edges between them.
         """
         for to_wire in to_wires:
             from_wire, to_wire = self._validate_wires_couple(from_wire, to_wire)
@@ -226,7 +221,9 @@ class QuantumCircuitDiagram:
         parent: Optional[Union[QuantumCircuitDiagram, Cluster]] = None,
     ) -> None:
         """
-        A swap consists in 4 invisible nodes, 2 invisible edges on the same wire, and 2 dotted
+        A swap gate.
+
+        It consists in 4 invisible nodes, 2 invisible edges on the same wire, and 2 dotted
         edges on the destination wires, empty edges on the others
         """
         wire_1, wire_2 = self._validate_wires_couple(wire_1, wire_2)
@@ -242,9 +239,7 @@ class QuantumCircuitDiagram:
         append: bool = True,
         **kwargs: Union[str, Node, None],
     ) -> Node:
-        """
-        It creates a node on the specified wire for the Quantum Circuit Diagram or for a cluster
-        """
+        """It creates a node on the specified wire for the Quantum Circuit Diagram or for a cluster."""
         self._validate_wire(wire)
         node = Node(wire, self if parent is None else parent, **kwargs)
         if append:
@@ -275,7 +270,9 @@ class QuantumCircuitDiagram:
         **kwargs: Any,
     ) -> Cluster:
         """
-        A cluster is a tagged sub diagram of the Quantum Circuit Diagram. It's implemented using
+        A cluster is a tagged sub diagram of the Quantum Circuit Diagram.
+
+        It's implemented using
         Graphviz's sub graphs.
         """
         cluster = Cluster(

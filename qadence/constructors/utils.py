@@ -11,9 +11,7 @@ from qadence.parameters import FeatureParameter, Parameter
 
 
 def generator_prefactor(spectrum: str, qubit_index: int) -> float | int:
-    """
-    Converts a spectrum string (e.g., tower or exponential) to the correct generator prefactor.
-    """
+    """Converts a spectrum string (e.g., tower or exponential) to the correct generator prefactor."""
     spectrum = spectrum.lower()
     conversion_dict: dict[str, float | int] = {
         "simple": 1,
@@ -70,7 +68,7 @@ def build_idx_fms(
 
 
 def get_fm_qubits(fm_strategy: str, i: int, n_qubits: int, n_features: int) -> Iterable:
-    """Returns the list of target qubits for the given feature map strategy and feature index
+    """Returns the list of target qubits for the given feature map strategy and feature index.
 
     Args:
         fm_strategy (str): The feature map strategy to be used. Possible values

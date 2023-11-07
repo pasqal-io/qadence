@@ -93,7 +93,9 @@ class AnalogBlock(AbstractBlock):
 @dataclass(eq=False, repr=False)
 class WaitBlock(AnalogBlock):
     """
-    Waits. In real interacting quantum devices, it means letting the system evolve freely according
+    Waits.
+
+    In real interacting quantum devices, it means letting the system evolve freely according
     to the time-dependent Schrodinger equation. With emulators, this block is translated to an
     appropriate interaction Hamiltonian, for example, an Ising interaction
 
@@ -132,7 +134,7 @@ class WaitBlock(AnalogBlock):
 
 @dataclass(eq=False, repr=False)
 class ConstantAnalogRotation(AnalogBlock):
-    """Implements a constant analog rotation with interaction dictated by the chosen Hamiltonian
+    """Implements a constant analog rotation with interaction dictated by the chosen Hamiltonian.
 
         H/h = ∑ᵢ(Ω/2 cos(φ)*Xᵢ - sin(φ)*Yᵢ - δnᵢ) + Hᵢₙₜ.
 
@@ -237,7 +239,9 @@ class AnalogComposite(AnalogBlock):
 @dataclass(eq=False, repr=False, init=False)
 class AnalogChain(AnalogComposite):
     def __init__(self, blocks: Tuple[AnalogBlock, ...]):
-        """A chain of analog blocks. Needed because analog blocks require
+        """A chain of analog blocks.
+
+        Needed because analog blocks require
         stricter validation than the general `ChainBlock`.
 
         `AnalogChain`s can only be constructed from `AnalogKron` blocks or
@@ -271,7 +275,9 @@ class AnalogChain(AnalogComposite):
 @dataclass(eq=False, repr=False, init=False)
 class AnalogKron(AnalogComposite):
     def __init__(self, blocks: Tuple[AnalogBlock, ...], interaction: Interaction = Interaction.NN):
-        """Stack analog blocks vertically (i.e. in time). Needed because analog require
+        """Stack analog blocks vertically (i.e. in time).
+
+        Needed because analog require
         stricter validation than the general `KronBlock`.
 
         `AnalogKron`s can only be constructed from _**non-global**_, analog blocks

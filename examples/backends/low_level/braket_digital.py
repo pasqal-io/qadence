@@ -42,7 +42,7 @@ from qadence.backends.pytorch_wrapper import DiffMode
 
 
 def circuit(n_qubits):
-    """Helper function to make an example circuit"""
+    """Helper function to make an example circuit."""
 
     x = Parameter("x", trainable=False)
     y = Parameter("y", trainable=False)

@@ -60,7 +60,9 @@ def hamiltonian_factory(
     force_update: bool = False,
 ) -> AbstractBlock:
     """
-    General Hamiltonian creation function. Can be used to create Hamiltonians with 2-qubit
+    General Hamiltonian creation function.
+
+    Can be used to create Hamiltonians with 2-qubit
     interactions and single-qubit detunings, both with arbitrary strength or parameterized.
 
     Arguments:

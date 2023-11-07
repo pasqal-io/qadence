@@ -14,7 +14,7 @@ from qadence.operations import RX, RY, AnalogRot, AnalogRX, wait
 
 
 def circuit(circ_id: int) -> QuantumCircuit:
-    """Helper function to make an example circuit"""
+    """Helper function to make an example circuit."""
 
     x = Parameter("x", trainable=False)
 

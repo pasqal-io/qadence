@@ -59,7 +59,7 @@ def _rand_haar_fast(n_qubits: int) -> Tensor:
 
 def _rand_haar_slow(n_qubits: int) -> Tensor:
     """
-    Detailed in https://arxiv.org/pdf/math-ph/0609050.pdf
+    Detailed in https://arxiv.org/pdf/math-ph/0609050.pdf.
 
     Textbook implementation, but very expensive. For 12 qubits it takes several seconds.
     For 1 qubit it seems to produce the same distribution as the measure above.
@@ -307,7 +307,6 @@ def random_state(
 
     ### We have the following options:
     print([g.value for g in StateGeneratorType])
-
 
     n_qubits = 2
     # The default is StateGeneratorType.HAAR_MEASURE_FAST
