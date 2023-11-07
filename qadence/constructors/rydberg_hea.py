@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Type
+from typing import Type, Union
 
 import sympy
 
@@ -10,7 +10,7 @@ from qadence.constructors import hamiltonian_factory
 from qadence.operations import N, X, Y, Z
 from qadence.parameters import Parameter, VariationalParameter
 
-TPauliOp = Type[X] | Type[Y] | Type[Z] | Type[N]
+TPauliOp = Union[Type[X], Type[Y], Type[Z], Type[N]]
 
 
 def _amplitude_map(
