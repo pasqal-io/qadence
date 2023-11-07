@@ -6,18 +6,27 @@ paradigm[^1], based on two primary computations:
 - Fast single-qubit operations (digital).
 - Multi-partite entangling operations acting on all qubits (analog).
 
-The DAQC paradigm is typically implemented on quantum computing hardware based on neutral-atoms where both these computations are realizable.
+The DAQC paradigm is typically implemented on compatible quantum computing hardware such
+as neutral atom quantum computers where the computing paradigm is realizable.
 
 ## Digital-analog emulation
 
-Qadence simplifies the execution of DAQC programs on either emulated or real neutral-atom devices
+Qadence simplifies the execution of DAQC programs on either emulated or real devices
 by providing a simplified interface for customizing interactions and interfacing
 with pulse-level programming in `Pulser`[^3].
 
 ## Digital-analog transformation
 
-Furthermore, the essence of digital-analog computation is the ability to represent any analog operation, _i.e._ any arbitrary Hamiltonian, using an
-auxiliary device-amenable Hamiltonian, such as the ubiquitous Ising model[^2]. This is at the core of the DAQC implementation in Qadence.
+Furthermore, the essence of digital-analog computation is the ability to represent any
+analog operation, _i.e._ any arbitrary Hamiltonian, using an
+auxiliary device-amenable Hamiltonian, such as the ubiquitous Ising model[^2].
+This is at the core of the DAQC implementation in Qadence.
+
+## Execution on Rydberg atom arrays with restriced addressability
+
+Finally, Qadence offers some convenience constructors and interfaces to execute
+programs compatible with neutral atom quantum computers with only restricted access
+to individual qubit addressability which is instead required by DAQC.
 
 ## References
 
