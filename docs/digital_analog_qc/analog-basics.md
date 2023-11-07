@@ -1,10 +1,10 @@
 !!! note
-    The digital-analog emulation framework is under construction and significant changes to the interface 
-    should be expected in the near-future. Nevertheless, the currest version serves as a prototype of the 
+    The digital-analog emulation framework is under construction and significant changes to the interface
+    should be expected in the near-future. Nevertheless, the currest version serves as a prototype of the
     functionality, and any feedback is greatly appreciated.
 
 Qadence includes primitives for the construction of programs implemented on a set of interacting qubits.
-The goal is to build digital-analog programs that better represent the reality of interacting qubit 
+The goal is to build digital-analog programs that better represent the reality of interacting qubit
 platforms, such as neutral-atoms, while maintaining a simplified interface for users coming from
 a digital quantum computing background that may not be as familiar with pulse-level programming.
 
@@ -15,12 +15,12 @@ $$
 \mathcal{H} = \sum_{i=0}^{n-1}\left(\mathcal{H}^\text{d}_{i}(t) + \sum_{j<i}\mathcal{H}^\text{int}_{ij}\right),
 $$
 
-where the *driving Hamiltonian* $\mathcal{H}^\text{d}_{i}$ describes the pulses used to control single-qubit rotations, 
+where the *driving Hamiltonian* $\mathcal{H}^\text{d}_{i}$ describes the pulses used to control single-qubit rotations,
 and the *interaction Hamiltonian* $\mathcal{H}^\text{int}_{ij}$ describes the natural interaction between qubits.
 
 ## Rydberg atoms
 
-For the purpose of digital-analog emulation of neutral-atom systems in Qadence, we now consider a 
+For the purpose of digital-analog emulation of neutral-atom systems in Qadence, we now consider a
 simplified **time-independent global** driving Hamiltonian, written as
 
 $$
@@ -48,9 +48,7 @@ $$
 U(t, \Omega, \delta, \phi) = \exp(-i\mathcal{H}t)
 $$
 
-where we specify the final parameter $t$, the duration of the operation. As specified in the equation above, the point of
-the emulated analog interface in Qadence is exactly is to simplify the inclusion of the interaction term in
-a set of standard "digital-like" operations.
+where we specify the final parameter $t$, the duration of the operation.
 
 Qadence uses the following units for user-specified parameters:
 
@@ -62,7 +60,7 @@ Qadence uses the following units for user-specified parameters:
 
 ## In practice
 
-Given the Hamiltonian description in the previous section, we will now go over a 
+Given the Hamiltonian description in the previous section, we will now go over a
 few examples of the standard operations available in Qadence.
 
 ### Arbitrary rotation
@@ -79,7 +77,7 @@ Below, we create a line register of three qubits.
     are passed to both the pyqtorch and Pulser backends. The interface will be unified soon.
 
 ```python exec="on" source="material-block" session="emu"
-from qadence import Register  
+from qadence import Register
 
 dx = 8.0
 
@@ -91,7 +89,7 @@ essentially implements $U(t, \Omega, \delta, \phi)$ defined above.
 
 ```python exec="on" source="material-block" session="emu"
 import torch
-from qadence import AnalogRot  
+from qadence import AnalogRot
 
 rot_op = AnalogRot(
     duration = 1000., # [ns]
@@ -101,7 +99,7 @@ rot_op = AnalogRot(
 )
 ```
 
-Note that in the code above we have not defined a qubit support. By default this operation
+Note that in the code above a specific qubit support is not defined. By default this operation
 applies a *global* rotation on all qubits. We can define a circuit using the 3-qubit register
 and run it in the pyqtorch backend:
 
@@ -111,19 +109,215 @@ from qadence import QuantumCircuit, QuantumModel, BackendName
 circuit = QuantumCircuit(reg, rot_op)
 model = QuantumModel(circuit, backend = BackendName.PYQTORCH)
 wf = model.run()
+
 print(wf)
 ```
 
+<details>
+    <summary>Under the hood of AnalogRot</summary>
+
+    To be fully explicit about what goes on under the hood of `AnalogRot`, we can look at the example
+    code below.
+
+    ```python exec="on" source="material-block" result="json"
+    from qadence import QuantumCircuit, QuantumModel, BackendName
+    from qadence import HamEvo, X, Y, N, add
+    from qadence.analog.utils import C6_DICT
+    import math
+    import torch
+
+    # Following the 3-qubit register above
+    n_qubits = 3
+    dx = 8.0
+
+    # Parameters used in the AnalogRot
+    duration = 1000.
+    omega = torch.pi
+    delta = torch.pi
+    phase = torch.pi
+
+    # Building the terms in the driving Hamiltonian
+    h_x = (omega / 2) * math.cos(phase) * add(X(i) for i in range(n_qubits))
+    h_y = (-1.0 * omega / 2) * math.sin(phase) * add(Y(i) for i in range(n_qubits))
+    h_n = -1.0 * delta * add(N(i) for i in range(n_qubits))
+
+    # Building the interaction Hamiltonian
+
+    # Dictionary of coefficient values for each Rydberg level, which is 60 by default
+    c_6 = C6_DICT[60]
+
+    h_int = c_6 * (
+        1/(dx**6) * (N(0)@N(1)) +
+        1/(dx**6) * (N(1)@N(2)) +
+        1/((2*dx)**6) * (N(0)@N(2))
+    )
+
+    h_d = h_x + h_y + h_n + h_int
+
+    # Convert duration to µs due to the units of the Hamiltonian
+    explicit_rot = HamEvo(h_d, duration / 1000)
+
+    circuit = QuantumCircuit(n_qubits, explicit_rot)
+    model = QuantumModel(circuit, backend = BackendName.PYQTORCH)
+    wf = model.run()
+
+    # We get the same final wavefunction
+    print(wf)
+    ```
+</details>
+
+When sending the `AnalogRot` operation to the pyqtorch backend, Qadence
+automatically builds the correct Hamiltonian and the corresponding `HamEvo`
+operation with the added qubit interactions, as shown explicitly in the
+minimized section above. However, this operation is also supported in the
+Pulser backend, where the correct pulses are automatically created.
+
+!!! warning
+    When using the Pulser backend it is currently advised to always explicitly pass
+    the register spacing in the `configuration` dictionary, which is a constant that
+    multiplies the coordinates of the register. The passing of register spacing
+    will soon be unified.
 
 
+```python exec="on" source="material-block" result="json" session="emu"
+from qadence import DiffMode
 
+diff_mode = DiffMode.GPSR  # We have to explicitly change the diff mode for the pulser backend
+config = {"spacing": 1.0}  # This ensures the register passed to Pulser is not re-scaled
 
+model = QuantumModel(
+    circuit,
+    backend = BackendName.PULSER,
+    diff_mode = diff_mode,
+    configuration = config
+    )
 
+wf = model.run()
 
+print(wf)
+```
 
+### RX / RY / RZ rotations
 
+The `AnalogRot` provides full control over the parameters of $\mathcal{H}^\text{d}$, but users coming from
+a digital quantum computing background may be more familiar with the standard `RX`, `RY` and `RZ` rotations, also available in Qadence. For the emulated analog interface, Qadence provides alternative
+`AnalogRX`, `AnalogRY` and `AnalogRZ` operations which call `AnalogRot` under the hood to represent
+the rotations accross the respective axes.
 
-## PREVIOUS STUFF:
+For a given angle of rotation $\theta$ provided to each of these operations, currently a set of hardcoded assumptions are made on the tunable Hamiltonian parameters:
+
+$$
+\begin{aligned}
+\text{RX}:& \quad \Omega = \pi, \quad \delta = 0, \quad \phi = 0, \quad t = (\theta/\Omega)\times 10^3 \\
+\text{RY}:& \quad \Omega = \pi, \quad \delta = 0, \quad \phi = -\pi/2, \quad t = (\theta/\Omega)\times 10^3 \\
+\text{RZ}:& \quad \Omega = 0, \quad \delta = \pi, \quad \phi = 0, \quad t = (\theta/\delta)\times 10^3 \\
+\end{aligned}
+$$
+
+Note that the $\text{RZ}$ operation as defined above includes a global phase compared to the
+standard $\text{RZ}$ rotation since it evolves $\exp\left(-i\frac{\theta}{2}\frac{I-Z}{2}\right)$ instead of $\exp\left(-i\frac{\theta}{2}Z\right)$ given the detuning operator in $\mathcal{H}^\text{d}$.
+
+!!! note
+    As shown above, the values of $\Omega$ and $\delta$ are hardcoded in these operators, and the
+    effective angle of rotations is controlled by varying the duration of the evolution. Currently,
+    the best way to overcome this is to use `AnalogRot` directly, but a more convenient interface
+    will be provided soon.
+
+Below we exemplify the usage of `AnalogRX`
+
+```python exec="on" source="material-block" result="json" session="rx"
+import torch
+
+from qadence import Register, QuantumCircuit, QuantumModel, BackendName, DiffMode
+from qadence import AnalogRX, random_state, equivalent_state, kron, RX
+
+dx = 8.0
+
+reg = Register.from_coordinates([(dx, 0), (2*dx, 0), (3*dx, 0)])
+n_qubits = 3
+
+# Rotation angle
+theta = torch.pi
+
+# Analog rotation using the Rydberg Hamiltonian
+rot_analog = AnalogRX(angle = theta)
+
+# Equivalent full-digital global rotation
+rot_digital = kron(RX(i, theta) for i in range(n_qubits))
+
+circuit_analog = QuantumCircuit(reg, rot_analog)
+circuit_digital = QuantumCircuit(reg, rot_digital)
+
+model_analog_pyq = QuantumModel(circuit_analog, backend = BackendName.PYQTORCH)
+model_digital_pyq = QuantumModel(circuit_digital, backend = BackendName.PYQTORCH)
+
+# Some random initial state
+init_state = random_state(n_qubits)
+
+# Compare the final state using the full digital and the AnalogRX
+wf_analog_pyq = model_analog_pyq.run(state = init_state)
+wf_digital_pyq = model_digital_pyq.run(state = init_state)
+
+bool_equiv = equivalent_state(wf_analog_pyq, wf_digital_pyq, atol = 1e-03)
+
+print("States equivalent: ", bool_equiv)
+```
+
+As we can see, running a global `RX` or the `AnalogRX` does not result in equivalent states at the end, given
+that the digital `RX` operation does not include the interaction between the qubits. By setting `dx` very high
+in the code above the interaction will be less significant and the results will match.
+
+However, if we compare with the Pulser backend, we see that the results for `AnalogRX` are consistent with
+the expected results from a real device:
+
+```python exec="on" source="material-block" result="json" session="rx"
+config = {"spacing": 1.0}
+
+model_analog_pulser = QuantumModel(
+    circuit_analog,
+    backend = BackendName.PULSER,
+    diff_mode = DiffMode.GPSR,
+    configuration = config
+)
+
+wf_analog_pulser = model_analog_pulser.run(state = init_state)
+
+bool_equiv = equivalent_state(wf_analog_pyq, wf_analog_pulser, atol = 1e-03)
+
+print("States equivalent: ", bool_equiv)
+```
+
+### Evolving the interaction term
+
+Finally, besides applying specific qubit rotations, we can also choose to evolve only the interaction term
+$\mathcal{H}^\text{int}$, equivalent to setting $\Omega = \delta = \phi = 0$. To do so, Qadence provides the
+function `wait` which does exactly this.
+
+```python exec="on" source="material-block" result="json" session="rx"
+From qadence import wait, run
+
+dx = 8.0
+reg = Register.from_coordinates([(dx, 0), (2*dx, 0), (3*dx, 0)])
+n_qubits = 3
+
+duration = 1000.
+op = wait(duration = duration)
+
+init_state = random_state(n_qubits)
+
+wf_pyq = run(reg, op, state = init_state, backend = BackendName.PYQTORCH)
+wf_pulser = run(reg, op, state = init_state, backend = BackendName.PULSER, configuration = {"spacing": 1.0})
+
+bool_equiv = equivalent_state(wf_pyq, wf_pulser, atol = 1e-03)
+
+print("States equivalent: ", bool_equiv)
+```
+
+## Some technical details
+
+To be added.
+
+<!-- PREVIOUS STUFF, KEPT TEMPORARILY:
 
 - [`WaitBlock`][qadence.blocks.analog.WaitBlock] by free-evolving $\mathcal{H}_{\textrm{int}}$
 - [`ConstantAnalogRotation`][qadence.blocks.analog.ConstantAnalogRotation] by free-evolving $\mathcal{H}$
@@ -204,111 +398,4 @@ print(f"Analog Kron block = {analog_kron}") # markdown-exec: hide
 !!! note "Composing digital & analog blocks"
     It is possible to compose digital and analog blocks where the additional restrictions for `chain` and `kron`
     only apply to composite blocks which contain analog blocks only. For further details, see
-    [`AnalogChain`][qadence.blocks.analog.AnalogChain] and [`AnalogKron`][qadence.blocks.analog.AnalogKron].
-
-## Fitting a simple function
-
-Analog blocks can be parametrized in the usual Qadence manner. Like any other parameters, they can be optimized. The next snippet examplifies the creation of an analog and paramertized ansatze to fit a sine function. First, define an ansatz block and an observable:
-
-```python exec="on" source="material-block" session="sin"
-import torch
-from qadence import Register, FeatureParameter, VariationalParameter
-from qadence import AnalogRX, AnalogRZ, Z
-from qadence import wait, chain, add
-
-pi = torch.pi
-
-# A two qubit register.
-reg = Register.from_coordinates([(0, 0), (0, 12)])
-
-# An analog ansatz with an input time parameter.
-t = FeatureParameter("t")
-
-block = chain(
-    AnalogRX(pi/2.),
-    AnalogRZ(t),
-    wait(1000 * VariationalParameter("theta", value=0.5)),
-    AnalogRX(pi/2),
-)
-
-# Total magnetization observable.
-obs = add(Z(i) for i in range(reg.n_qubits))
-```
-
-??? note "Plotting functions `plot` and `scatter`"
-    ```python exec="on" session="sin" source="material-block"
-    def plot(ax, x, y, **kwargs):
-        xnp = x.detach().cpu().numpy().flatten()
-        ynp = y.detach().cpu().numpy().flatten()
-        ax.plot(xnp, ynp, **kwargs)
-
-    def scatter(ax, x, y, **kwargs):
-        xnp = x.detach().cpu().numpy().flatten()
-        ynp = y.detach().cpu().numpy().flatten()
-        ax.scatter(xnp, ynp, **kwargs)
-    ```
-
-Next, define the dataset to train on and plot the initial prediction. The differentiation mode can be set to either `DiffMode.AD` or `DiffMode.GPSR`.
-
-```python exec="on" source="material-block" html="1" result="json" session="sin"
-import matplotlib.pyplot as plt
-from qadence import QuantumCircuit, QuantumModel, DiffMode
-
-# Define a quantum model including digital-analog emulation.
-circ = QuantumCircuit(reg, block)
-model = QuantumModel(circ, obs, diff_mode=DiffMode.GPSR)
-
-# Time support dataset.
-x_train = torch.linspace(0, 6, steps=30)
-# Function to fit.
-y_train = -0.64 * torch.sin(x_train + 0.33) + 0.1
-# Initial prediction.
-y_pred_initial = model.expectation({"t": x_train})
-
-fig, ax = plt.subplots() # markdown-exec: hide
-plt.xlabel("Time [μs]") # markdown-exec: hide
-plt.ylabel("Sin [arb.]") # markdown-exec: hide
-scatter(ax, x_train, y_train, label="Training points", marker="o", color="green") # markdown-exec: hide
-plot(ax, x_train, y_pred_initial, label="Initial prediction") # markdown-exec: hide
-plt.legend() # markdown-exec: hide
-from docs import docsutils # markdown-exec: hide
-print(docsutils.fig_to_html(fig)) # markdown-exec: hide
-```
-
-Finally, the classical optimization part is handled by PyTorch:
-
-```python exec="on" source="material-block" html="1" result="json" session="sin"
-
-# Use PyTorch built-in functionality.
-mse_loss = torch.nn.MSELoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=5e-2)
-
-# Define a loss function.
-def loss_fn(x_train, y_train):
-    return mse_loss(model.expectation({"t": x_train}).squeeze(), y_train)
-
-# Number of epochs to train over.
-n_epochs = 200
-
-# Optimization loop.
-for i in range(n_epochs):
-    optimizer.zero_grad()
-
-    loss = loss_fn(x_train, y_train)
-    loss.backward()
-    optimizer.step()
-
-# Get and visualize the final prediction.
-y_pred = model.expectation({"t": x_train})
-
-fig, ax = plt.subplots() # markdown-exec: hide
-plt.xlabel("Time [μs]") # markdown-exec: hide
-plt.ylabel("Sin [arb.]") # markdown-exec: hide
-scatter(ax, x_train, y_train, label="Training points", marker="o", color="green") # markdown-exec: hide
-plot(ax, x_train, y_pred_initial, label="Initial prediction") # markdown-exec: hide
-plot(ax, x_train, y_pred, label="Final prediction") # markdown-exec: hide
-plt.legend() # markdown-exec: hide
-from docs import docsutils # markdown-exec: hide
-print(docsutils.fig_to_html(fig)) # markdown-exec: hide
-assert loss_fn(x_train, y_train) < 0.05 # markdown-exec: hide
-```
+    [`AnalogChain`][qadence.blocks.analog.AnalogChain] and [`AnalogKron`][qadence.blocks.analog.AnalogKron]. -->

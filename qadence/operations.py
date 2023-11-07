@@ -1254,7 +1254,7 @@ def AnalogRZ(
     alpha = _cast(Parameter, angle)
     delta = np.pi
     duration = alpha / delta * 1000
-    ps = ParamMap(alpha=alpha, duration=duration, omega=0, delta=delta, phase=np.pi / 2)
+    ps = ParamMap(alpha=alpha, duration=duration, omega=0, delta=delta, phase=0.0)
     return ConstantAnalogRotation(qubit_support=q, parameters=ps)
 
 
