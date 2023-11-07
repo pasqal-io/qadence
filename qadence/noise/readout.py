@@ -155,13 +155,15 @@ def error(
     corruption.
 
     Args:
-        counters: Samples of bit string as Counters.
+        counters (list): Samples of bit string as Counters.
         n_qubits: Number of qubits in the bit string.
         n_shots: Number of shots to sample.
-        seed: Random seed value if any.
-        error_probability: Uniform error probability of wrong readout at any position
-        in the bit strings.
-        noise_distribution: Noise distribution.
+        options: A dict of options:
+          seed: Random seed value if any.
+          error_probability: Uniform error probability of wrong readout at any position
+            in the bit strings.
+          noise_distribution: Noise distribution.
+          noise_matrix: An input noise matrix if known.
 
     Returns:
         Samples of corrupted bit strings as list[Counter].
