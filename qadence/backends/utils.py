@@ -10,6 +10,7 @@ from torch import Tensor
 
 from qadence.utils import Endianness, int_to_basis
 
+FINITE_DIFF_EPS = 1e-06
 # Dict of NumPy dtype -> torch dtype (when the correspondence exists)
 numpy_to_torch_dtype_dict = {
     np.bool_: torch.bool,
@@ -93,7 +94,7 @@ def to_list_of_dicts(param_values: dict[str, Tensor]) -> list[dict[str, float]]:
     return [{k: v[i] for k, v in batched_values.items()} for i in range(max_batch_size)]
 
 
-def finitediff(f: Callable, x: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
+def finitediff(f: Callable, x: torch.Tensor, eps: float = FINITE_DIFF_EPS) -> torch.Tensor:
     return (f(x + eps) - f(x - eps)) / (2 * eps)  # type: ignore
 
 
