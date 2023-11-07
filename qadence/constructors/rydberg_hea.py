@@ -5,16 +5,18 @@ from typing import Type
 import sympy
 
 import qadence as qd
+from qadence import Parameter
 from qadence.blocks import add, chain
 from qadence.constructors import hamiltonian_factory
 from qadence.parameters import VariationalParameter
-from qadence.types import TParameter
+
+TPauliOp = Type[qd.X] | Type[qd.Y] | Type[qd.Z] | Type[qd.N]
 
 
 def _amplitude_map(
     n_qubits: int,
-    pauli_op: Type[qd.AbstractBlock],
-    weights: list[TParameter] | None = None,
+    pauli_op: TPauliOp,
+    weights: list[Parameter] | list[float] | None = None,
 ) -> qd.blocks.AddBlock:
     """Create an generator equivalent to a laser amplitude mapping on the device
 
@@ -37,17 +39,17 @@ def _amplitude_map(
         return add(pauli_op(j) for j in range(n_qubits))
     else:
         assert len(weights) <= n_qubits, "Wrong weights supplied"
-        return add(w * pauli_op(j) for j, w in enumerate(weights))
+        return add(w * pauli_op(j) for j, w in enumerate(weights))  # type:ignore [operator]
 
 
 def rydberg_hea_layer(
     register: qd.Register,
-    tevo_drive: TParameter,
-    tevo_det: TParameter,
-    tevo_wait: TParameter,
-    phase: TParameter | None = None,
-    detunings: list[TParameter] | None = None,
-    drives: list[TParameter] | None = None,
+    tevo_drive: Parameter | float,
+    tevo_det: Parameter | float,
+    tevo_wait: Parameter | float,
+    phase: Parameter | float | None = None,
+    detunings: list[Parameter] | list[float] | None = None,
+    drives: list[Parameter] | list[float] | None = None,
     drive_scaling: float = 1.0,
 ) -> qd.blocks.ChainBlock:
     """A single layer of the Rydberg hardware efficient ansatz
@@ -89,13 +91,14 @@ def rydberg_hea_layer(
         )
     else:
         generator = drive_scaling * drive_x + interaction
-    seq = qd.HamEvo(generator, tevo_drive)
 
-    # detuning and interaction are commuting, so they
-    # can be ordered arbitrarily and treated separately
-    seq *= qd.HamEvo(interaction, tevo_wait)
-    seq *= qd.HamEvo(detuning, tevo_det)
-    return seq
+    return chain(
+        qd.HamEvo(generator, tevo_drive),
+        # detuning and interaction are commuting, so they
+        # can be ordered arbitrarily and treated separately
+        qd.HamEvo(interaction, tevo_wait),
+        qd.HamEvo(detuning, tevo_det),
+    )
 
 
 def rydberg_hea(
