@@ -7,7 +7,7 @@ from pyqtorch.circuit import QuantumCircuit as PyQCircuit
 from pyqtorch.parametric import Parametric as PyQParametric
 from pyqtorch.primitive import Primitive as PyQPrimitive
 from pyqtorch.utils import overlap, param_dict
-from torch import Tensor, tensor
+from torch import Tensor, no_grad, tensor
 from torch.autograd import Function
 
 from qadence.backends.pyqtorch.convert_ops import PyQHamiltonianEvolution, ScalePyQOperation
@@ -15,6 +15,7 @@ from qadence.blocks.abstract import AbstractBlock
 
 
 class AdjointExpectation(Function):
+    @no_grad()
     @staticmethod
     def forward(
         ctx: Any,
@@ -35,6 +36,7 @@ class AdjointExpectation(Function):
         ctx.save_for_backward(*param_values)
         return overlap(ctx.out_state, ctx.projected_state)
 
+    @no_grad()
     @staticmethod
     def backward(ctx: Any, grad_out: Tensor) -> tuple:
         def _apply_adjoint(ctx: Any, circuit: PyQCircuit, grad_out: Tensor = tensor([1])) -> Any:
