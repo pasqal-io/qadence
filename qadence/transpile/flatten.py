@@ -4,7 +4,6 @@ from copy import deepcopy
 from functools import reduce, singledispatch
 from typing import Generator, Type, overload
 
-from qadence import QuantumCircuit
 from qadence.blocks import (
     AbstractBlock,
     AddBlock,
@@ -14,6 +13,7 @@ from qadence.blocks import (
     ScaleBlock,
 )
 from qadence.blocks.utils import _construct
+from qadence.circuit import QuantumCircuit
 
 
 def _flat_blocks(block: AbstractBlock, T: Type) -> Generator:

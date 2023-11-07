@@ -8,8 +8,8 @@ from typing import Any, overload
 import numpy as np
 from torch import Tensor, tensor
 
-from qadence import QuantumCircuit
 from qadence.blocks import AbstractBlock
+from qadence.circuit import QuantumCircuit
 
 
 def reassign(block: AbstractBlock, qubit_map: dict[int, int]) -> AbstractBlock:
