@@ -78,6 +78,16 @@ def _qubitposition(register: Register, i: int) -> tuple[int, int]:
 def ising_interaction(
     register: Register, pairs: list[tuple[int, int]], rydberg_level: int = 60
 ) -> AbstractBlock:
+    """
+    Computes the Rydberg Ising interaction Hamiltonian for a register of qubits.
+
+    H_int = ∑_(j<i) (C_6 / R**6) * kron(N_i, N_j)
+
+    Args:
+        register: the register of qubits.
+        pairs: a list of all pairs of interacting qubits.
+        rydberg_level: determines the value of C_6
+    """
     c6 = C6_DICT[rydberg_level]
 
     def term(i: int, j: int) -> AbstractBlock:
@@ -91,6 +101,17 @@ def ising_interaction(
 def xy_interaction(
     register: Register, pairs: list[tuple[int, int]], c3: float = 3700.0
 ) -> AbstractBlock:
+    """
+    Computes the Rydberg XY interaction Hamiltonian for a register of qubits.
+
+    H_int = ∑_(j<i) (C_3 / R**3) * (kron(X_i, X_j) + kron(Y_i, Y_j))
+
+    Args:
+        register: the register of qubits.
+        pairs: a list of all pairs of interacting qubits.
+        c3: the coefficient value of C_3 in units of [rad . µm^3 / µs]
+    """
+
     def term(i: int, j: int) -> AbstractBlock:
         qi, qj = _qubitposition(register, i), _qubitposition(register, j)
         rij = euclidean_distance(qi, qj)
