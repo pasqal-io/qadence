@@ -11,6 +11,10 @@ from qadence.blocks.analog import (
 from qadence.operations import N, X, Y, add, kron
 from qadence.register import Register
 
+# Ising coupling coefficient depending on the Rydberg level
+# Include a normalization to the Planck constant hbar
+# In units of [rad . µm^6 / µs]
+
 C6_DICT = {
     50: 96120.72,
     51: 122241.6,
