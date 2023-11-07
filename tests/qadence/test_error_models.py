@@ -5,6 +5,7 @@ from collections import Counter
 import numpy as np
 import pytest
 import torch
+from numpy.random import rand
 from sympy import acos
 
 import qadence as qd
@@ -51,7 +52,7 @@ from qadence.types import DiffMode
         ),
     ],
 )
-def test_bitstring_corruption(
+def test_bitstring_corruption_all_bitflips(
     error_probability: float, counters: list, exp_corrupted_counters: list, n_qubits: int
 ) -> None:
     n_shots = 100
@@ -68,6 +69,36 @@ def test_bitstring_corruption(
         torch.ones(1),
         atol=1e-3,
     )
+
+
+@pytest.mark.parametrize(
+    "error_probability, counters, n_qubits",
+    [
+        (
+            rand(),
+            [Counter({"00": 27, "01": 23, "10": 24, "11": 26})],
+            2,
+        ),
+        (
+            rand(),
+            [Counter({"001": 27, "010": 23, "101": 24, "110": 26})],
+            3,
+        ),
+    ],
+)
+def test_bitstring_corruption_mixed_bitflips(
+    error_probability: float, counters: list, n_qubits: int
+) -> None:
+    n_shots = 100
+    noise_matrix = create_noise_matrix(WhiteNoise.UNIFORM, n_shots, n_qubits)
+    err_idx = np.array([(item).numpy() for i, item in enumerate(noise_matrix < error_probability)])
+    sample = sample_to_matrix(counters[0])
+    corrupted_counters = [
+        bs_corruption(n_shots=n_shots, err_idx=err_idx, sample=sample, n_qubits=n_qubits)
+    ]
+    assert sum(corrupted_counters[0].values()) == n_shots
+    for noiseless, noisy in zip(counters, corrupted_counters):
+        assert js_divergence(noiseless, noisy) > 0.0
 
 
 @pytest.mark.parametrize(
