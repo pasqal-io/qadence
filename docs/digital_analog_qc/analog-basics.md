@@ -88,14 +88,14 @@ Currently, the most general rotation operation uses the `AnalogRot` operation, w
 essentially implements $U(t, \Omega, \delta, \phi)$ defined above.
 
 ```python exec="on" source="material-block" session="emu"
-import torch
+from math import pi
 from qadence import AnalogRot
 
 rot_op = AnalogRot(
-    duration = 1000., # [ns]
-    omega = torch.pi, # [rad/μs]
-    delta = torch.pi, # [rad/μs]
-    phase = torch.pi, # [rad]
+    duration = 500., # [ns]
+    omega = pi, # [rad/μs]
+    delta = pi, # [rad/μs]
+    phase = pi, # [rad]
 )
 ```
 
@@ -123,8 +123,7 @@ print(wf)
     from qadence import QuantumCircuit, QuantumModel, BackendName
     from qadence import HamEvo, X, Y, N, add
     from qadence.analog.utils import C6_DICT
-    import math
-    import torch
+    from math import pi, cos, sin
 
     # Following the 3-qubit register above
     n_qubits = 3
@@ -132,13 +131,13 @@ print(wf)
 
     # Parameters used in the AnalogRot
     duration = 1000.
-    omega = torch.pi
-    delta = torch.pi
-    phase = torch.pi
+    omega = pi
+    delta = pi
+    phase = pi
 
     # Building the terms in the driving Hamiltonian
-    h_x = (omega / 2) * math.cos(phase) * add(X(i) for i in range(n_qubits))
-    h_y = (-1.0 * omega / 2) * math.sin(phase) * add(Y(i) for i in range(n_qubits))
+    h_x = (omega / 2) * cos(phase) * add(X(i) for i in range(n_qubits))
+    h_y = (-1.0 * omega / 2) * sin(phase) * add(Y(i) for i in range(n_qubits))
     h_n = -1.0 * delta * add(N(i) for i in range(n_qubits))
 
     # Building the interaction Hamiltonian
@@ -226,10 +225,9 @@ standard $\text{RZ}$ rotation since it evolves $\exp\left(-i\frac{\theta}{2}\fra
 Below we exemplify the usage of `AnalogRX`
 
 ```python exec="on" source="material-block" result="json" session="rx"
-import torch
-
 from qadence import Register, QuantumCircuit, QuantumModel, BackendName, DiffMode
 from qadence import AnalogRX, random_state, equivalent_state, kron, RX
+from math import pi
 
 dx = 8.0
 
@@ -237,7 +235,7 @@ reg = Register.from_coordinates([(dx, 0), (2*dx, 0), (3*dx, 0)])
 n_qubits = 3
 
 # Rotation angle
-theta = torch.pi
+theta = pi
 
 # Analog rotation using the Rydberg Hamiltonian
 rot_analog = AnalogRX(angle = theta)

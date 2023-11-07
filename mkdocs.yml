@@ -21,7 +21,7 @@ nav:
 
   - Digital-analog quantum computing:
     - digital_analog_qc/index.md
-    - Basic operations: digital_analog_qc/analog-basics.md
+    - Basic operations on neutral-atoms: digital_analog_qc/analog-basics.md
     - Fitting a function: digital_analog_qc/analog-qcl.md
     - Pulse-level programming with Pulser: digital_analog_qc/pulser-basic.md
     - Solve a QUBO problem: digital_analog_qc/analog-qubo.md

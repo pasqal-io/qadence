@@ -67,7 +67,7 @@ from qadence import Register, AnalogRX, sample
 block = AnalogRX(pi)
 
 # Almost non-interacting qubits as too far apart.
-register = Register.from_coordinates([(0,0), (0,15)])  # Dimensionless.
+register = Register.from_coordinates([(0,0), (0,15)])
 samples = sample(register, block)
 print(f"distance = 15: {samples = }") # markdown-exec: hide
 from collections import Counter # markdown-exec: hide
