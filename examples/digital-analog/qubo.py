@@ -18,7 +18,7 @@ from qadence import (
     add_interaction,
     chain,
 )
-from qadence.transpile.emulate import ising_interaction
+from qadence.analog.utils import ising_interaction
 
 SHOW_PLOTS = False
 torch.manual_seed(0)

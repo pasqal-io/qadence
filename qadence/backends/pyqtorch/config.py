@@ -3,10 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable
 
+from qadence.analog import add_interaction
 from qadence.backend import BackendConfiguration
 from qadence.logger import get_logger
 from qadence.transpile import (
-    add_interaction,
     blockfn_to_circfn,
     chain_single_qubit_ops,
     flatten,

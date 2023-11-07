@@ -3,7 +3,12 @@ from __future__ import annotations
 import numpy as np
 import pytest
 import torch
-from metrics import ATOL_DICT, JS_ACCEPTANCE, LARGE_SPACING, SMALL_SPACING  # type: ignore
+from metrics import (
+    ATOL_DICT,
+    JS_ACCEPTANCE,
+    LARGE_SPACING,
+    SMALL_SPACING,
+)
 
 from qadence import BackendName, Register, add_interaction
 from qadence.backends.pulser.devices import Device
@@ -12,15 +17,75 @@ from qadence.circuit import QuantumCircuit
 from qadence.constructors import ising_hamiltonian, total_magnetization
 from qadence.divergences import js_divergence
 from qadence.models import QuantumModel
-from qadence.operations import CNOT, RX, RY, RZ, AnalogRX, AnalogRY, H, X, Z, entangle
+from qadence.operations import (
+    CNOT,
+    RX,
+    RY,
+    RZ,
+    AnalogRot,
+    AnalogRX,
+    AnalogRY,
+    AnalogRZ,
+    H,
+    X,
+    Z,
+    entangle,
+    wait,
+)
 from qadence.parameters import FeatureParameter
-from qadence.states import random_state
+from qadence.states import equivalent_state, random_state
 from qadence.types import DiffMode
 
 
-# "Compare" Pulser and PyQ
-# NOTE: Since they are use different concepts, here only equivalent
-# circuits/pulses are used.
+@pytest.mark.flaky(max_runs=5)
+@pytest.mark.parametrize("n_qubits", [2, 3, 4])
+@pytest.mark.parametrize("spacing", [6.0, 8.0, 15.0])
+@pytest.mark.parametrize("op", [AnalogRX, AnalogRY, AnalogRZ, AnalogRot, wait])
+def test_analog_op_run(n_qubits: int, spacing: float, op: AbstractBlock) -> None:
+    init_state = random_state(n_qubits)
+    batch_size = 3
+
+    if op in [AnalogRX, AnalogRY, AnalogRZ]:
+        phi = FeatureParameter("phi")
+        block = op(phi)  # type: ignore [operator]
+        values = {"phi": 1.0 + torch.rand(batch_size)}
+    elif op == AnalogRot:
+        t = 5.0
+        omega = 1.0 + torch.rand(1)
+        delta = 1.0 + torch.rand(1)
+        phase = 1.0 + torch.rand(1)
+        block = op(t, omega, delta, phase)  # type: ignore [operator]
+        values = {}
+    else:
+        t = FeatureParameter("t")
+        block = op(t)  # type: ignore [operator]
+        values = {"t": 10.0 * (1.0 + torch.rand(batch_size))}
+
+    register = Register.line(n_qubits)
+    circuit = QuantumCircuit(register, block)
+
+    circuit_pyqtorch = add_interaction(circuit, spacing=spacing)
+
+    model_pyqtorch = QuantumModel(circuit_pyqtorch, backend=BackendName.PYQTORCH)
+
+    conf = {"spacing": spacing}
+
+    model_pulser = QuantumModel(
+        circuit,
+        backend=BackendName.PULSER,
+        diff_mode=DiffMode.GPSR,
+        configuration=conf,
+    )
+
+    wf_pyq = model_pyqtorch.run(values=values, state=init_state)
+    wf_pulser = model_pulser.run(values=values, state=init_state)
+
+    assert equivalent_state(wf_pyq, wf_pulser, atol=ATOL_DICT[BackendName.PULSER])
+
+
+# PREVIOUS COMPARISON TESTS, MOVED HERE
+
+
 @pytest.mark.parametrize(
     "pyqtorch_circuit,pulser_circuit",
     [
@@ -80,9 +145,7 @@ def test_compatibility_pyqtorch_pulser_digital_rot(obs: AbstractBlock) -> None:
         configuration=conf,
     )
 
-    # TODO: Change batch_size back to 5 when respective `pyqtorch` bug is fixed:
-    # https://github.com/pasqal-io/qadence/issues/148
-    batch_size = 1
+    batch_size = 5
     values = {
         "phi": torch.rand(batch_size),
         "psi": torch.rand(batch_size),
