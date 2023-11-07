@@ -83,31 +83,15 @@ def train(
         TimeRemainingColumn(elapsed_when_finished=True),
     )
     with progress:
-        dl_iter = iter(dataloader) if isinstance(dataloader, DictDataLoader) else None
+        dl_iter = iter(dataloader) if dataloader is not None else None
 
         for iteration in progress.track(range(init_iter, init_iter + config.max_iter)):
             if dataloader is None:
                 loss, metrics, ng_params = _update_parameters(None, ng_params)
 
-            elif isinstance(dataloader, DictDataLoader):
-                # resample all the time from the dataloader
-                # by creating a fresh iterator if the dataloader
-                # does not support automatically iterating datasets
-                if not dataloader.has_automatic_iter:
-                    dl_iter = iter(dataloader)
-
+            elif isinstance(dataloader, (DictDataLoader, DataLoader)):
                 data = next(dl_iter)  # type: ignore[arg-type]
                 loss, metrics, ng_params = _update_parameters(data, ng_params)
-
-            elif isinstance(dataloader, DataLoader):
-                # single-epoch with standard DataLoader
-                # otherwise a standard PyTorch DataLoader behavior
-                # is assumed with optional mini-batches
-                running_loss = 0.0
-                for i, data in enumerate(dataloader):
-                    loss, metrics, ng_params = _update_parameters(data, ng_params)
-                    running_loss += loss
-                loss = running_loss / (i + 1)
 
             else:
                 raise NotImplementedError("Unsupported dataloader type!")

@@ -30,33 +30,36 @@ from qadence.operations import (
     X,
     Z,
     entangle,
+    wait,
 )
 from qadence.parameters import FeatureParameter
 from qadence.states import equivalent_state, random_state
 from qadence.types import DiffMode
 
-# NEW TEST
-
 
 @pytest.mark.flaky(max_runs=5)
 @pytest.mark.parametrize("n_qubits", [2, 3, 4])
-@pytest.mark.parametrize("spacing", [4.0, 8.0, 15.0])
-@pytest.mark.parametrize("rot_op", [AnalogRX, AnalogRY, AnalogRZ, AnalogRot])
-def test_analog_rxyz_run(n_qubits: int, spacing: float, rot_op: AbstractBlock) -> None:
+@pytest.mark.parametrize("spacing", [6.0, 8.0, 15.0])
+@pytest.mark.parametrize("op", [AnalogRX, AnalogRY, AnalogRZ, AnalogRot, wait])
+def test_analog_op_run(n_qubits: int, spacing: float, op: AbstractBlock) -> None:
     init_state = random_state(n_qubits)
-    batch_size = 5
+    batch_size = 3
 
-    if rot_op != AnalogRot:
+    if op in [AnalogRX, AnalogRY, AnalogRZ]:
         phi = FeatureParameter("phi")
-        block = rot_op(phi)  # type: ignore [operator]
+        block = op(phi)  # type: ignore [operator]
         values = {"phi": 1.0 + torch.rand(batch_size)}
-    else:
+    elif op == AnalogRot:
         t = 5.0
         omega = 1.0 + torch.rand(1)
         delta = 1.0 + torch.rand(1)
         phase = 1.0 + torch.rand(1)
-        block = rot_op(t, omega, delta, phase)  # type: ignore [operator]
+        block = op(t, omega, delta, phase)  # type: ignore [operator]
         values = {}
+    else:
+        t = FeatureParameter("t")
+        block = op(t)  # type: ignore [operator]
+        values = {"t": 10.0 * (1.0 + torch.rand(batch_size))}
 
     register = Register.line(n_qubits)
     circuit = QuantumCircuit(register, block)
