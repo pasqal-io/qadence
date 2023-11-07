@@ -81,7 +81,7 @@ class QuantumCircuitDiagram:
         return wire
 
     def _validate_wires_couple(self, wire1: int, wire2: int) -> Tuple[int, int]:
-        """This helps to ensure we are not creating a swap gate or a control gate on the same wire."""
+        """Helper to ensure we are not creating a swap gate or a control gate on the same wire."""
         wire1 = self._validate_wire(wire1)
         wire2 = self._validate_wire(wire2)
         if wire1 == wire2:
@@ -239,7 +239,7 @@ class QuantumCircuitDiagram:
         append: bool = True,
         **kwargs: Union[str, Node, None],
     ) -> Node:
-        """It creates a node on the specified wire for the Quantum Circuit Diagram or for a cluster."""
+        """Create a node on the specified wire for the Quantum Circuit Diagram or for a cluster."""
         self._validate_wire(wire)
         node = Node(wire, self if parent is None else parent, **kwargs)
         if append:

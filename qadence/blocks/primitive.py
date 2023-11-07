@@ -25,7 +25,8 @@ class PrimitiveBlock(AbstractBlock):
     """
     Primitive blocks represent elementary unitary operations.
 
-    Examples are single/multi-qubit gates or Hamiltonian evolution. See [`qadence.operations`](/qadence/operations.md) for a full list of
+    Examples are single/multi-qubit gates or Hamiltonian evolution.
+    See [`qadence.operations`](/qadence/operations.md) for a full list of
     primitive blocks.
     """
 

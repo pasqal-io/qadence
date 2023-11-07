@@ -42,8 +42,9 @@ class TransformedModule(torch.nn.Module):
     """
     This class accepts a torch.nn.Module or a QuantumModel/QNN.
 
-    Wraps it with either non-trainble or trainable scaling and shifting parameters for both input and output.
-    When given a torch.nn.Module, in_features and out_features need to be passed.
+    Wraps it with either non-trainble or trainable scaling and shifting parameters
+    for both input and output. When given a torch.nn.Module,
+    in_features and out_features need to be passed.
 
     Args:
         model: The original model to transform.

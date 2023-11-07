@@ -11,7 +11,10 @@ from qadence.parameters import FeatureParameter, Parameter
 
 
 def generator_prefactor(spectrum: str, qubit_index: int) -> float | int:
-    """Converts a spectrum string (e.g., tower or exponential) to the correct generator prefactor."""
+    """Converts a spectrum string, e.g. tower or exponential.
+
+    The result is the correct generator prefactor.
+    """
     spectrum = spectrum.lower()
     conversion_dict: dict[str, float | int] = {
         "simple": 1,

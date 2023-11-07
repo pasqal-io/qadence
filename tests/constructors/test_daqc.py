@@ -74,7 +74,10 @@ def test_daqc_local(
     int_build: Interaction,
     int_target: Interaction,
 ) -> None:
-    """Tests the DAQC transformation works for a local target hamiltonian using a global random one."""
+    """Tests the DAQC transformation works for a local target hamiltonian.
+
+    Uses a global random one.
+    """
     gen_build = hamiltonian_factory(n_qubits, interaction=int_build, random_strength=True)
     register_target = Register.line(2)
     gen_target = hamiltonian_factory(register_target, interaction=int_target, random_strength=True)
