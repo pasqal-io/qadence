@@ -74,7 +74,6 @@ def make_sequence(circ: QuantumCircuit, config: Configuration) -> Sequence:
     if config.spacing is not None:
         spacing = config.spacing
     elif max_amp is not None:
-        spacing = DEFAULT_SPACING
         # TODO: Fix this more consistently so both pulser and
         # pyqtorch get the spacing from the same place
         # Ideal spacing for entanglement gate

@@ -75,9 +75,8 @@ def add_pulses(
         if block.qubit_support.is_global:
             (uuid, duration) = block.parameters.uuid_param("duration")
             t = evaluate(duration) if duration.is_number else sequence.declare_variable(uuid)
-            # pulse = Pulse.ConstantPulse(duration=t, amplitude=0, detuning=0, phase=0)
-            # sequence.add(pulse, GLOBAL_CHANNEL, "wait-for-all")
-            sequence.delay(t, GLOBAL_CHANNEL)
+            pulse = Pulse.ConstantPulse(duration=t, amplitude=0, detuning=0, phase=0)
+            sequence.add(pulse, GLOBAL_CHANNEL, "wait-for-all")
 
         # do nothing if its a non-global wait, because that means we are doing a rotation
         # on other qubits
