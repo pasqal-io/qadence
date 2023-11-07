@@ -20,7 +20,7 @@ nav:
     - Backends: tutorials/backends.md
 
   - Digital-analog quantum computing:
-    - digital_analog_qc/daqc-basics.md
+    - digital_analog_qc/index.md
     - Digital-analog emulation: digital_analog_qc/analog-basics.md
     - Pulse-level programming with Pulser: digital_analog_qc/pulser-basic.md
     - Solve a QUBO problem: digital_analog_qc/analog-qubo.md

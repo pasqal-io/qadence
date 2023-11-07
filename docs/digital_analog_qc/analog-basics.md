@@ -1,40 +1,129 @@
 !!! note
-    The digital-analog emulation framework is under construction and the interface may change in the near-future.
-    Nevertheless, the currest version serves as a prototype of the functionality. Any feedback is appreciated.
-
-## From theory to implementation
+    The digital-analog emulation framework is under construction and significant changes to the interface 
+    should be expected in the near-future. Nevertheless, the currest version serves as a prototype of the 
+    functionality, and any feedback is greatly appreciated.
 
 Qadence includes primitives for the construction of programs implemented on a set of interacting qubits.
-This allows to simulate systems close to real quantum computing platforms such as neutral atoms.
+The goal is to build digital-analog programs that better represent the reality of interacting qubit 
+platforms, such as neutral-atoms, while maintaining a simplified interface for users coming from
+a digital quantum computing background that may not be as familiar with pulse-level programming.
 
-In general, the Hamiltonian for a set of $n$ interacting qubits can be written as
+To build the intuition for the interface in Qadence, it is important to go over some of the underlying physics.
+We can write a general Hamiltonian for a set of $n$ interacting qubits as
 
 $$
-\mathcal{H}(t) = \sum_{i=0}^{n-1}\left(\mathcal{H}^\text{d}_{i}(t) + \sum_{j<i}\mathcal{H}^\text{int}_{ij}\right),
+\mathcal{H} = \sum_{i=0}^{n-1}\left(\mathcal{H}^\text{d}_{i}(t) + \sum_{j<i}\mathcal{H}^\text{int}_{ij}\right),
 $$
 
-where $\mathcal{H}^\text{d}_{i}(t)$ is the driving Hamiltonian, describing the pulses that can be used to control single-qubit rotations, and $\mathcal{H}^\text{int}_{ij}$ is the interaction Hamiltonian, describing the natural interaction between pairs of qubits.
+where the *driving Hamiltonian* $\mathcal{H}^\text{d}_{i}$ describes the pulses used to control single-qubit rotations, 
+and the *interaction Hamiltonian* $\mathcal{H}^\text{int}_{ij}$ describes the natural interaction between qubits.
 
-For the purpose of digital-analog emulation in Qadence, we will consider a simplified **time-independent** driving Hamiltonian. 
-For neutral-atom systems, the driving Hamiltonian is then written as
+## Rydberg atoms
+
+For the purpose of digital-analog emulation of neutral-atom systems in Qadence, we now consider a 
+simplified **time-independent global** driving Hamiltonian, written as
 
 $$
 \mathcal{H}^\text{d}_{i} = \frac{\Omega}{2}\left(\cos(\phi) X_i - \sin(\phi) Y_i \right) - \delta N_i
 $$
 
-where
+where $\Omega$ is the Rabi frequency, $\delta$ is the detuning, $\phi$ is the phase, $X_i$ and $Y_i$ are the standard
+Pauli operators, and $N_i=\frac{1}{2}(I_i-Z_i)$ is the number operator. This Hamiltonian allows arbitrary global single-qubit
+rotations to be written, meaning that the values set for $(\Omega,\phi,\delta)$ are the same accross the qubit support.
 
-- $\Omega$ is the effective Rabi frequency, 
-- $\delta$ is the effective detuning, 
-- $N = \frac{1-Z}{2}$ is the number operator, and $\mathcal{H}_{\textrm{int}}$ a pair-wise interaction term. Two central operations implement this Hamiltonian as blocks:
-
-$$
-\mathcal{H}^\text{int}_{i} = \frac{C_6}{2}\left(\cos(\phi) X_i - \sin(\phi) Y_i \right) - \delta N_i
-$$
+For the interaction term, Rydberg atoms typically allow both an Ising and an XY mode of operation. For now, we focus on
+the Ising interaction, where the Hamiltonian is written as
 
 $$
-\mathcal{H}(t) = \frac{\hbar\Omega}{2} \sum_{i}  \hat\sigma^x_i - \sum_{i} \hbar\delta \hat n_i  + \mathcal{H}_{\textrm{int}},
+\mathcal{H}^\text{int}_{ij} = \frac{C_6}{r_{ij}^6}N_iN_j
 $$
+
+where $r_{ij}$ is the distance between atoms $i$ and $j$, and $C_6$ is a coefficient depending on the specific Rydberg level
+of the excited state used in the computational logic states.
+
+For a given register of atoms prepared in some spatial coordinates, the Hamiltonians described will generate the dynamics
+of some unitary operation as
+
+$$
+U(t, \Omega, \delta, \phi) = \exp(-i\mathcal{H}t)
+$$
+
+where we specify the final parameter $t$, the duration of the operation. As specified in the equation above, the point of
+the emulated analog interface in Qadence is exactly is to simplify the inclusion of the interaction term in
+a set of standard "digital-like" operations.
+
+Qadence uses the following units for user-specified parameters:
+
+- Rabi frequency and detuning $\Omega$, $\delta$: $[\text{rad}/\mu \text{s}]$
+- Phase $\phi$: $[\text{rad}]$
+- Duration $t$: $[\text{ns}]$
+- Atomic coordinates: $[\mu \text{m}]$
+
+
+## In practice
+
+Given the Hamiltonian description in the previous section, we will now go over a 
+few examples of the standard operations available in Qadence.
+
+### Arbitrary rotation
+
+To start, we will exemplify the a general rotation on a set of atoms. To create an arbitrary
+register of atoms, we refer the user to the [register creation tutorial](../tutorials/register.md).
+Note that, for now, we do not use any information regarding the edges of the register graph, only
+the coordinates of each node that are used to compute the distance $r_{ij}$ in the interaction term.
+Below, we create a line register of three qubits.
+
+!!! note
+    For now we will create registers directly from the coordinates to maintain full control over
+    the coordinates and spacing between the atoms. This avoids inconsistencies on how register spacings
+    are passed to both the pyqtorch and Pulser backends. The interface will be unified soon.
+
+```python exec="on" source="material-block" session="emu"
+from qadence import Register  
+
+dx = 8.0
+
+reg = Register.from_coordinates([(dx, 0), (2*dx, 0), (3*dx, 0)])
+```
+
+Currently, the most general rotation operation uses the `AnalogRot` operation, which
+essentially implements $U(t, \Omega, \delta, \phi)$ defined above.
+
+```python exec="on" source="material-block" session="emu"
+import torch
+from qadence import AnalogRot  
+
+rot_op = AnalogRot(
+    duration = 1000., # [ns]
+    omega = torch.pi, # [rad/μs]
+    delta = torch.pi, # [rad/μs]
+    phase = torch.pi, # [rad]
+)
+```
+
+Note that in the code above we have not defined a qubit support. By default this operation
+applies a *global* rotation on all qubits. We can define a circuit using the 3-qubit register
+and run it in the pyqtorch backend:
+
+```python exec="on" source="material-block" result="json" session="emu"
+from qadence import QuantumCircuit, QuantumModel, BackendName
+
+circuit = QuantumCircuit(reg, rot_op)
+model = QuantumModel(circuit, backend = BackendName.PYQTORCH)
+wf = model.run()
+print(wf)
+```
+
+
+
+
+
+
+
+
+
+
+## PREVIOUS STUFF:
 
 - [`WaitBlock`][qadence.blocks.analog.WaitBlock] by free-evolving $\mathcal{H}_{\textrm{int}}$
 - [`ConstantAnalogRotation`][qadence.blocks.analog.ConstantAnalogRotation] by free-evolving $\mathcal{H}$
