@@ -291,7 +291,7 @@ class Backend(BackendInterface):
         # Noise is ignored if measurement protocol is not provided.
         if noise is not None and measurement is None:
             logger.warning(
-                f"Noise of type {noise} are not implemented for expectation yet. "
+                f"Error of type {noise} are not implemented for expectation yet. "
                 "This is ignored for now."
             )
 
