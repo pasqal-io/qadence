@@ -17,6 +17,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.logger import get_logger
 from qadence.measurements import Measurements
 from qadence.noise import Noise
+from qadence.noise.protocols import apply
 from qadence.overlap import overlap_exact
 from qadence.states import zero_state
 from qadence.transpile import (
@@ -227,7 +228,7 @@ class Backend(BackendInterface):
 
         wf = self.run(circuit=circuit, param_values=param_values, state=state)
         probs = torch.abs(torch.pow(wf, 2))
-        counters = list(
+        samples = list(
             map(
                 lambda _probs: _sample(
                     _probs=_probs,
@@ -239,16 +240,8 @@ class Backend(BackendInterface):
             )
         )
         if noise is not None:
-            noise_fn = noise.get_noise_fn()
-            corrupted_counters: list = noise_fn(
-                counters=counters,
-                n_qubits=circuit.abstract.n_qubits,
-                options=noise.options,
-                n_shots=n_shots,
-            )
-            return corrupted_counters
-        else:
-            return counters
+            samples = apply(noise=noise, samples=samples)
+        return samples
 
     def assign_parameters(self, circuit: ConvertedCircuit, param_values: dict[str, Tensor]) -> Any:
         raise NotImplementedError

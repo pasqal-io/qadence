@@ -54,17 +54,6 @@ from qadence.types import DiffMode
 def test_bitstring_corruption(
     error_probability: float, counters: list, exp_corrupted_counters: list, n_qubits: int
 ) -> None:
-    # corrupted_bitstrings = [
-    #     bs_corruption(
-    #         bitstring=bitstring,
-    #         n_shots=n_shots,
-    #         error_probability=error_probability,
-    #         n_qubits=n_qubits,
-    #     )
-    #     for bitstring, n_shots in counters[0].items()
-    # ]
-
-    # corrupted_counters = [Counter(chain(*corrupted_bitstrings))]
     n_shots = 100
     noise_matrix = create_noise_matrix(WhiteNoise.UNIFORM, n_shots, n_qubits)
     err_idx = np.array([(item).numpy() for i, item in enumerate(noise_matrix < error_probability)])
