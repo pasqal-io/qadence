@@ -75,7 +75,7 @@ class QNN(QuantumModel):
             diff_mode=diff_mode,
             measurement=measurement,
             configuration=configuration,
-            noise=noise
+            noise=noise,
         )
 
         if self.out_features is None:
