@@ -8,7 +8,7 @@ State Preparation and Measurement (SPAM) in the hardware is a major source of no
 quantum programs. Qadence offers to simulate readout errors with the `Noise` protocol to corrupt the output
 samples of a simulation, through execution via a `QuantumModel`:
 
-```python exec="on" source="material-block" result="json"
+```python exec="on" source="material-block" session="noise" result="json"
 from qadence import QuantumModel, QuantumCircuit, kron, H, Z
 from qadence import hamiltonian_factory
 from qadence.noise import Noise
@@ -43,19 +43,8 @@ uniform distribution. The `option` dictionary argument accepts the following opt
 Noisy simulations go hand-in-hand with measurement protocols discussed in the previous [section](measurements.md), to assess the impact of noise on expectation values. In this case, both measurement and noise protocols have to be defined appropriately. Please note that a noise protocol without a measurement protocol will be ignored for expectation values computations.
 
 
-```python exec="on" source="material-block" result="json"
-from qadence import QuantumModel, QuantumCircuit, kron, H, Z
-from qadence import hamiltonian_factory
-from qadence.noise import Noise
+```python exec="on" source="material-block" session="noise" result="json"
 from qadence.measurements import Measurements
-
-# Simple circuit and observable construction.
-block = kron(H(0), Z(1))
-circuit = QuantumCircuit(2, block)
-observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
-
-# Construct a quantum model.
-model = QuantumModel(circuit=circuit, observable=observable)
 
 # Define a noise model with options.
 options = {"error_probability": 0.01}
