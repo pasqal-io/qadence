@@ -10,6 +10,7 @@ from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.models.quantum_model import QuantumModel
+from qadence.noise import Noise
 from qadence.utils import Endianness
 
 
@@ -47,6 +48,7 @@ class QNN(QuantumModel):
         backend: BackendName = BackendName.PYQTORCH,
         diff_mode: DiffMode = DiffMode.AD,
         measurement: Measurements | None = None,
+        noise: Noise | None = None,
         configuration: BackendConfiguration | dict | None = None,
     ):
         """Initialize the QNN
@@ -62,6 +64,7 @@ class QNN(QuantumModel):
             diff_mode: The differentiation engine to use. Choices 'gpsr' or 'ad'.
             measurement: optional measurement protocol. If None,
                 use exact expectation value with a statevector simulator
+            noise: A noise model to use.
             configuration: optional configuration for the backend
 
         """
@@ -84,6 +87,7 @@ class QNN(QuantumModel):
         values: dict[str, Tensor] | Tensor = None,
         state: Tensor | None = None,
         measurement: Measurements | None = None,
+        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         """Forward pass of the model
@@ -101,6 +105,11 @@ class QNN(QuantumModel):
 
         Args:
             values (dict[str, Tensor] | Tensor): the values of the feature parameters
+            state: Initial state.
+            measurement: optional measurement protocol. If None,
+                use exact expectation value with a statevector simulator
+            noise: A noise model to use.
+            endianness: Endianness of the resulting bit strings.
 
         Returns:
             Tensor: a tensor with the expectation value of the observables passed
@@ -115,7 +124,11 @@ class QNN(QuantumModel):
 
         return self.transform(
             self.expectation(
-                values=values, state=state, measurement=measurement, endianness=endianness
+                values=values,
+                state=state,
+                measurement=measurement,
+                endianness=endianness,
+                noise=noise,
             )
         )
 
