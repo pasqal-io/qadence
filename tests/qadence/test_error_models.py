@@ -5,6 +5,7 @@ from collections import Counter
 import numpy as np
 import pytest
 import torch
+from numpy.random import rand
 from sympy import acos
 
 import qadence as qd
@@ -51,20 +52,9 @@ from qadence.types import DiffMode
         ),
     ],
 )
-def test_bitstring_corruption(
+def test_bitstring_corruption_all_bitflips(
     error_probability: float, counters: list, exp_corrupted_counters: list, n_qubits: int
 ) -> None:
-    # corrupted_bitstrings = [
-    #     bs_corruption(
-    #         bitstring=bitstring,
-    #         n_shots=n_shots,
-    #         error_probability=error_probability,
-    #         n_qubits=n_qubits,
-    #     )
-    #     for bitstring, n_shots in counters[0].items()
-    # ]
-
-    # corrupted_counters = [Counter(chain(*corrupted_bitstrings))]
     n_shots = 100
     noise_matrix = create_noise_matrix(WhiteNoise.UNIFORM, n_shots, n_qubits)
     err_idx = np.array([(item).numpy() for i, item in enumerate(noise_matrix < error_probability)])
@@ -79,6 +69,36 @@ def test_bitstring_corruption(
         torch.ones(1),
         atol=1e-3,
     )
+
+
+@pytest.mark.parametrize(
+    "error_probability, counters, n_qubits",
+    [
+        (
+            rand(),
+            [Counter({"00": 27, "01": 23, "10": 24, "11": 26})],
+            2,
+        ),
+        (
+            rand(),
+            [Counter({"001": 27, "010": 23, "101": 24, "110": 26})],
+            3,
+        ),
+    ],
+)
+def test_bitstring_corruption_mixed_bitflips(
+    error_probability: float, counters: list, n_qubits: int
+) -> None:
+    n_shots = 100
+    noise_matrix = create_noise_matrix(WhiteNoise.UNIFORM, n_shots, n_qubits)
+    err_idx = np.array([(item).numpy() for i, item in enumerate(noise_matrix < error_probability)])
+    sample = sample_to_matrix(counters[0])
+    corrupted_counters = [
+        bs_corruption(n_shots=n_shots, err_idx=err_idx, sample=sample, n_qubits=n_qubits)
+    ]
+    for noiseless, noisy in zip(counters, corrupted_counters):
+        assert sum(noisy.values()) == n_shots
+        assert js_divergence(noiseless, noisy) > 0.0
 
 
 @pytest.mark.parametrize(
@@ -173,6 +193,7 @@ def test_readout_error_backends(backend: BackendName) -> None:
         )
 
 
+# TODO: Use strategies to test against randomly generated circuits.
 @pytest.mark.parametrize(
     "measurement_proto, options",
     [
@@ -180,25 +201,18 @@ def test_readout_error_backends(backend: BackendName) -> None:
         (Measurements.SHADOW, {"accuracy": 0.1, "confidence": 0.1}),
     ],
 )
-# @given(st.restricted_batched_circuits())
-# @settings(deadline=None)
 def test_readout_error_with_measurements(
     measurement_proto: Measurements,
     options: dict,
-    # circ_and_vals: tuple[QuantumCircuit, dict[str, Tensor]]
 ) -> None:
-    # circuit, inputs = circ_and_vals
     circuit = QuantumCircuit(2, kron(H(0), Z(1)))
     inputs: dict = dict()
     observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
 
     model = QuantumModel(circuit=circuit, observable=observable, diff_mode=DiffMode.GPSR)
-    # model.backend.backend.config._use_gate_params = True
-
     noise = Noise(protocol=Noise.READOUT)
     measurement = Measurements(protocol=str(measurement_proto), options=options)
 
-    # measured = model.expectation(values=inputs, measurement=measurement)
     noisy = model.expectation(values=inputs, measurement=measurement, noise=noise)
     exact = model.expectation(values=inputs)
     if exact.numel() > 1:
@@ -206,7 +220,6 @@ def test_readout_error_with_measurements(
             exact_val = torch.abs(exact_value).item()
             atol = exact_val / 3.0 if exact_val != 0.0 else 0.33
             assert torch.allclose(noisy_value, exact_value, atol=atol)
-
     else:
         exact_value = torch.abs(exact).item()
         atol = exact_value / 3.0 if exact_value != 0.0 else 0.33

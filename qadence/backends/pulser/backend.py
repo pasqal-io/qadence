@@ -22,6 +22,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.logger import get_logger
 from qadence.measurements import Measurements
 from qadence.noise import Noise
+from qadence.noise.protocols import apply
 from qadence.overlap import overlap_exact
 from qadence.register import Register
 from qadence.transpile import transpile
@@ -268,15 +269,8 @@ class Backend(BackendInterface):
 
             samples = invert_endianness(samples)
         if noise is not None:
-            noise_fn = noise.get_noise_fn()
-            return noise_fn(  # type: ignore[no-any-return]
-                counters=samples,
-                n_qubits=circuit.abstract.n_qubits,
-                options=noise.options,
-                n_shots=n_shots,
-            )
-        else:
-            return samples
+            samples = apply(noise=noise, samples=samples)
+        return samples
 
     def expectation(
         self,
