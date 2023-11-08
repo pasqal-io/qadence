@@ -4,13 +4,12 @@ from typing import Callable
 
 from torch import Tensor
 
-from qadence.backend import BackendConfiguration, BackendName
-from qadence.backends.pytorch_wrapper import DiffMode
-from qadence.blocks import AbstractBlock
+from qadence.backend import BackendConfiguration
+from qadence.blocks.abstract import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.models.quantum_model import QuantumModel
-from qadence.utils import Endianness
+from qadence.types import BackendName, DiffMode, Endianness
 
 
 class QNN(QuantumModel):

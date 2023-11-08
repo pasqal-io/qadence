@@ -7,16 +7,16 @@ import numpy as np
 import torch
 from torch import Tensor
 
-from qadence.backend import BackendConfiguration, BackendName
-from qadence.backends.pytorch_wrapper import DiffMode
-from qadence.blocks import AbstractBlock, chain, kron, tag
+from qadence.backend import BackendConfiguration
+from qadence.blocks.abstract import AbstractBlock
+from qadence.blocks.utils import chain, kron, tag
 from qadence.circuit import QuantumCircuit
 from qadence.divergences import js_divergence
 from qadence.measurements import Measurements
-from qadence.models import QuantumModel
+from qadence.models.quantum_model import QuantumModel
 from qadence.operations import SWAP, H, I, S, Z
 from qadence.transpile import reassign
-from qadence.types import OverlapMethod
+from qadence.types import BackendName, DiffMode, OverlapMethod
 
 # Modules to be automatically added to the qadence namespace
 __all__ = ["Overlap", "OverlapMethod"]
