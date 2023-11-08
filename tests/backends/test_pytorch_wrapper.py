@@ -107,10 +107,10 @@ def test_embeddings() -> None:
         embed(params, {"x": torch.ones(batch_size)})
 
 
-def test_expval_differentiation_all_diffmodes() -> None:
+@pytest.mark.parametrize("batch_size", [1, 5])
+def test_expval_differentiation_all_diffmodes(batch_size: int) -> None:
     grads = {}
     for diff_mode in ["adjoint", "ad", "gpsr"]:
-        batch_size = 1
         n_qubits = 4
         observable: list[AbstractBlock] = [kron(Z(i) for i in range(n_qubits))]
         circ = parametric_circuit(n_qubits)
