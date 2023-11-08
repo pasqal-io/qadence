@@ -120,7 +120,7 @@ def create_noise_matrix(
 
 
 def bs_corruption(
-    err_idx: list,
+    err_idx: torch.Tensor,
     sample: torch.Tensor,
 ) -> Counter:
     """
