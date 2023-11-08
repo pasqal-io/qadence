@@ -327,7 +327,7 @@ rot_1 = AnalogRY(angle = 2.0, qubit_support = (1,))
 try:
     block = kron(rot_0, rot_1)
 except ValueError as error:
-    print(error)
+    print("Error:", error)
 
 # Works:
 rot_0 = AnalogRX(angle = 1.0, qubit_support = (0,))
