@@ -1,4 +1,4 @@
-!!! note
+!!! warning
     The digital-analog emulation framework is under construction and significant changes to the interface
     should be expected in the near-future. Nevertheless, the currest version serves as a prototype of the
     functionality, and any feedback is greatly appreciated.
@@ -55,7 +55,7 @@ Qadence uses the following units for user-specified parameters:
 - Rabi frequency and detuning $\Omega$, $\delta$: $[\text{rad}/\mu \text{s}]$
 - Phase $\phi$: $[\text{rad}]$
 - Duration $t$: $[\text{ns}]$
-- Atomic coordinates: $[\mu \text{m}]$
+- Atom coordinates: $[\mu \text{m}]$
 
 
 ## In practice
@@ -67,21 +67,16 @@ few examples of the standard operations available in Qadence.
 
 To start, we will exemplify the a general rotation on a set of atoms. To create an arbitrary
 register of atoms, we refer the user to the [register creation tutorial](../tutorials/register.md).
-Note that, for now, we do not use any information regarding the edges of the register graph, only
+In this tutorial we do not use any information regarding the edges of the register graph, only
 the coordinates of each node that are used to compute the distance $r_{ij}$ in the interaction term.
-Below, we create a line register of three qubits.
-
-!!! note
-    For now we will create registers directly from the coordinates to maintain full control over
-    the coordinates and spacing between the atoms. This avoids inconsistencies on how register spacings
-    are passed to both the pyqtorch and Pulser backends. The interface will be unified soon.
+Below, we create a line register of three qubits directly from the coordinates.
 
 ```python exec="on" source="material-block" session="emu"
 from qadence import Register
 
 dx = 8.0
 
-reg = Register.from_coordinates([(dx, 0), (2*dx, 0), (3*dx, 0)])
+reg = Register.from_coordinates([(0, 0), (dx, 0), (2*dx, 0)])
 ```
 
 Currently, the most general rotation operation uses the `AnalogRot` operation, which
@@ -104,11 +99,9 @@ applies a *global* rotation on all qubits. We can define a circuit using the 3-q
 and run it in the pyqtorch backend:
 
 ```python exec="on" source="material-block" result="json" session="emu"
-from qadence import QuantumCircuit, QuantumModel, BackendName
+from qadence import BackendName, run
 
-circuit = QuantumCircuit(reg, rot_op)
-model = QuantumModel(circuit, backend = BackendName.PYQTORCH)
-wf = model.run()
+wf = run(reg, rot_op, backend = BackendName.PYQTORCH)
 
 print(wf)
 ```
@@ -120,8 +113,7 @@ print(wf)
     code below.
 
     ```python exec="on" source="material-block" result="json"
-    from qadence import QuantumCircuit, QuantumModel, BackendName
-    from qadence import HamEvo, X, Y, N, add
+    from qadence import BackendName, HamEvo, X, Y, N, add, run
     from qadence.analog.utils import C6_DICT
     from math import pi, cos, sin
 
@@ -156,9 +148,7 @@ print(wf)
     # Convert duration to µs due to the units of the Hamiltonian
     explicit_rot = HamEvo(h_d, duration / 1000)
 
-    circuit = QuantumCircuit(n_qubits, explicit_rot)
-    model = QuantumModel(circuit, backend = BackendName.PYQTORCH)
-    wf = model.run()
+    wf = run(n_qubits, explicit_rot, backend = BackendName.PYQTORCH)
 
     # We get the same final wavefunction
     print(wf)
@@ -175,23 +165,18 @@ Pulser backend, where the correct pulses are automatically created.
     When using the Pulser backend it is currently advised to always explicitly pass
     the register spacing in the `configuration` dictionary, which is a constant that
     multiplies the coordinates of the register. The passing of register spacing
-    will soon be unified.
+    between PyQTorch and Pulser backends is currently inconsistent, and will soon be unified.
+    By disregarding it in PyQTorch and setting it to 1 in Pulser, results should be consistent.
 
 
 ```python exec="on" source="material-block" result="json" session="emu"
-from qadence import DiffMode
 
-diff_mode = DiffMode.GPSR  # We have to explicitly change the diff mode for the pulser backend
-config = {"spacing": 1.0}  # This ensures the register passed to Pulser is not re-scaled
-
-model = QuantumModel(
-    circuit,
+wf = run(
+    reg,
+    rot_op,
     backend = BackendName.PULSER,
-    diff_mode = diff_mode,
-    configuration = config
-    )
-
-wf = model.run()
+    configuration = {"spacing": 1.0}  # Ensures the register is not re-scaled
+)
 
 print(wf)
 ```
@@ -216,22 +201,21 @@ $$
 Note that the $\text{RZ}$ operation as defined above includes a global phase compared to the
 standard $\text{RZ}$ rotation since it evolves $\exp\left(-i\frac{\theta}{2}\frac{I-Z}{2}\right)$ instead of $\exp\left(-i\frac{\theta}{2}Z\right)$ given the detuning operator in $\mathcal{H}^\text{d}$.
 
-!!! note
-    As shown above, the values of $\Omega$ and $\delta$ are hardcoded in these operators, and the
+!!! warning
+    As shown above, the values of $\Omega$ and $\delta$ are currently hardcoded in these operators, and the
     effective angle of rotations is controlled by varying the duration of the evolution. Currently,
-    the best way to overcome this is to use `AnalogRot` directly, but a more convenient interface
-    will be provided soon.
+    the best way to overcome this is to use `AnalogRot` directly, but more general and convenient options
+    will be provided soon in an improved interface.
 
 Below we exemplify the usage of `AnalogRX`
 
 ```python exec="on" source="material-block" result="json" session="rx"
-from qadence import Register, QuantumCircuit, QuantumModel, BackendName, DiffMode
-from qadence import AnalogRX, random_state, equivalent_state, kron, RX
+from qadence import Register, RX, AnalogRX, random_state, equivalent_state, kron, run
 from math import pi
 
 dx = 8.0
 
-reg = Register.from_coordinates([(dx, 0), (2*dx, 0), (3*dx, 0)])
+reg = Register.from_coordinates([(0, 0), (dx, 0), (2*dx, 0)])
 n_qubits = 3
 
 # Rotation angle
@@ -243,18 +227,24 @@ rot_analog = AnalogRX(angle = theta)
 # Equivalent full-digital global rotation
 rot_digital = kron(RX(i, theta) for i in range(n_qubits))
 
-circuit_analog = QuantumCircuit(reg, rot_analog)
-circuit_digital = QuantumCircuit(reg, rot_digital)
-
-model_analog_pyq = QuantumModel(circuit_analog, backend = BackendName.PYQTORCH)
-model_digital_pyq = QuantumModel(circuit_digital, backend = BackendName.PYQTORCH)
-
 # Some random initial state
 init_state = random_state(n_qubits)
 
 # Compare the final state using the full digital and the AnalogRX
-wf_analog_pyq = model_analog_pyq.run(state = init_state)
-wf_digital_pyq = model_digital_pyq.run(state = init_state)
+wf_analog_pyq = run(
+    reg,
+    rot_analog,
+    state = init_state,
+    backend = BackendName.PYQTORCH
+    )
+
+
+wf_digital_pyq = run(
+    reg,
+    rot_digital,
+    state = init_state,
+    backend = BackendName.PYQTORCH
+    )
 
 bool_equiv = equivalent_state(wf_analog_pyq, wf_digital_pyq, atol = 1e-03)
 
@@ -269,16 +259,14 @@ However, if we compare with the Pulser backend, we see that the results for `Ana
 the expected results from a real device:
 
 ```python exec="on" source="material-block" result="json" session="rx"
-config = {"spacing": 1.0}
 
-model_analog_pulser = QuantumModel(
-    circuit_analog,
+wf_analog_pulser = run(
+    reg,
+    rot_analog,
+    state = init_state,
     backend = BackendName.PULSER,
-    diff_mode = DiffMode.GPSR,
-    configuration = config
-)
-
-wf_analog_pulser = model_analog_pulser.run(state = init_state)
+    configuration = {"spacing": 1.0}
+    )
 
 bool_equiv = equivalent_state(wf_analog_pyq, wf_analog_pulser, atol = 1e-03)
 
@@ -313,87 +301,61 @@ print("States equivalent: ", bool_equiv)
 
 ## Some technical details
 
-To be added.
+!!! warning
+    The details described here are relevant in the current version but are under
+    revision for the next version of the emulated analog interface.
 
-<!-- PREVIOUS STUFF, KEPT TEMPORARILY:
+In the previous section we have exemplified the main ingredients of the current user-facing functionalities
+of the emulated analog interface, and in the next tutorial on Quantum Circuit Learning we will exmplify its usage
+in a simple QML example. Here we specify some extra details of this interface.
 
-- [`WaitBlock`][qadence.blocks.analog.WaitBlock] by free-evolving $\mathcal{H}_{\textrm{int}}$
-- [`ConstantAnalogRotation`][qadence.blocks.analog.ConstantAnalogRotation] by free-evolving $\mathcal{H}$
+In the block system, all the Analog rotation operators initialize a [`ConstantAnalogRotation`][qadence.blocks.analog.ConstantAnalogRotation]
+block, while the `wait` operation initializes a [`WaitBlock`][qadence.blocks.analog.WaitBlock]. As we have shown, by default,
+these blocks use a global qubit support, which can be passed explicitly by setting `qubit_support = "global"`. However, the blocks do support
+local qubit supports, with some constraints. The main constraint is that using `kron` on operators with different durations is not allowed.
 
-The `wait` operation can be emulated with an $ZZ$- (Ising) or an $XY$-interaction:
+```python exec="on" source="material-block" result="json" session="details"
+from qadence import AnalogRX, AnalogRY, Register, kron
 
-```python exec="on" source="material-block" result="json"
-from qadence import Register, wait, add_interaction, run, Interaction
+dx = 8.0
+reg = Register.from_coordinates([(0, 0), (dx, 0)])
 
-block = wait(duration=3000)
-print(f"block = {block} \n") # markdown-exec: hide
+# Does not work (the angle affects the duration, as seen above):
+rot_0 = AnalogRX(angle = 1.0, qubit_support = (0,))
+rot_1 = AnalogRY(angle = 2.0, qubit_support = (1,))
 
-reg = Register.from_coordinates([(0,0), (0,5)])  # Dimensionless.
-emulated = add_interaction(reg, block, interaction=Interaction.XY)  # or Interaction.ZZ for Ising.
+try:
+    block = kron(rot_0, rot_1)
+except ValueError as error:
+    print(error)
 
-print("emulated.generator = \n") # markdown-exec: hide
-print(emulated.generator) # markdown-exec: hide
+# Works:
+rot_0 = AnalogRX(angle = 1.0, qubit_support = (0,))
+rot_1 = AnalogRY(angle = 1.0, qubit_support = (1,))
+
+block = kron(rot_0, rot_1)
 ```
 
-The `AnalogRot` constructor can be used to create a fully customizable `ConstantAnalogRotation` instances:
+Using `chain` is only supported between analog blocks with global qubit support:
 
-```python exec="on" source="material-block" result="json"
-import torch
-from qadence import AnalogRot, AnalogRX
+```python exec="on" source="material-block" result="json" session="details"
+from qadence import chain
 
-# Implement a global RX rotation by setting all parameters.
-block = AnalogRot(
-    duration=1000., # [ns]
-    omega=torch.pi, # [rad/μs]
-    delta=0,        # [rad/μs]
-    phase=0,        # [rad]
-)
-print(f"AnalogRot = {block}\n") # markdown-exec: hide
+rot_0 = AnalogRX(angle = 1.0, qubit_support = "global")
+rot_1 = AnalogRY(angle = 2.0, qubit_support = "global")
 
-# Or use the shortcut.
-block = AnalogRX(torch.pi)
-print(f"AnalogRX = {block}") # markdown-exec: hide
+block = chain(rot_0, rot_1)
 ```
 
-!!! note "Automatic emulation in the PyQTorch backend"
+The restrictions above only apply to the analog blocks, and global and digital blocks can currently be composed.
 
-    All analog blocks are automatically translated to their emulated version when running them
-    with the PyQTorch backend:
+```python exec="on" source="material-block" result="json" session="details"
+from qadence import RX
 
-    ```python exec="on" source="material-block" result="json"
-    import torch
-    from qadence import Register, AnalogRX, sample
+rot_0 = AnalogRX(angle = 1.0, qubit_support = "global")
+rot_1 = AnalogRY(angle = 2.0, qubit_support = (0,))
+rot_digital = RX(1, 1.0)
 
-    reg = Register.from_coordinates([(0,0), (0,5)])
-	sample = sample(reg, AnalogRX(torch.pi))
-    print(f"sample = {sample}") # markdown-exec: hide
-    ```
-
-To compose analog blocks, the regular `chain` and `kron` operations can be used under the following restrictions:
-
-- The resulting [`AnalogChain`][qadence.blocks.analog.AnalogChain] type can only be constructed from `AnalogKron` blocks
-  or _**globally supported**_ primitive analog blocks.
-- The resulting [`AnalogKron`][qadence.blocks.analog.AnalogKron] type can only be constructed from _**non-global**_
-  analog blocks with the _**same duration**_.
-
-```python exec="on" source="material-block" result="json"
-import torch
-from qadence import AnalogRot, kron, chain, wait
-
-# Only analog blocks with a global qubit support can be composed
-# using chain.
-analog_chain = chain(wait(duration=200), AnalogRot(duration=300, omega=2.0))
-print(f"Analog Chain block = {analog_chain}") # markdown-exec: hide
-
-# Only blocks with the same `duration` can be composed using kron.
-analog_kron = kron(
-    wait(duration=1000, qubit_support=(0,1)),
-    AnalogRot(duration=1000, omega=2.0, qubit_support=(2,3))
-)
-print(f"Analog Kron block = {analog_kron}") # markdown-exec: hide
+block_0 = chain(rot_0, rot_digital)
+block_1 = kron(rot_1, rot_digital)
 ```
-
-!!! note "Composing digital & analog blocks"
-    It is possible to compose digital and analog blocks where the additional restrictions for `chain` and `kron`
-    only apply to composite blocks which contain analog blocks only. For further details, see
-    [`AnalogChain`][qadence.blocks.analog.AnalogChain] and [`AnalogKron`][qadence.blocks.analog.AnalogKron]. -->
