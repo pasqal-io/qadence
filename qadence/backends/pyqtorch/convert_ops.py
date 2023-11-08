@@ -42,7 +42,10 @@ from .config import Configuration
 
 # Tdagger is not supported currently
 supported_gates = list(set(OpName.list()) - set([OpName.TDAGGER]))
-"""The set of supported gates. Tdagger is currently not supported."""
+"""The set of supported gates.
+
+Tdagger is currently not supported.
+"""
 
 
 def is_single_qubit_chain(block: AbstractBlock) -> bool:
@@ -160,8 +163,10 @@ class PyQComposedBlock(Module):
         n_qubits: int,
         config: Configuration = None,
     ):
-        """Compose a chain of single qubit operations on the same qubit into a single
-        call to _apply_batch_gate."""
+        """Compose a chain of single qubit operations on the same qubit.
+
+        The result is a single call to _apply_batch_gate.
+        """
         super().__init__()
         self.operations = ops
         self.qubits = qubits

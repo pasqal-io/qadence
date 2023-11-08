@@ -221,7 +221,7 @@ def test_composite_hamevo_edge_cases(generator: AbstractBlock) -> None:
 
 
 def open_chem_obs() -> AbstractBlock:
-    """A tiny helper function"""
+    """A tiny helper function."""
     directory = os.getcwd()
     with open(os.path.join(directory, "tests/test_files/h4.json"), "r") as js:
         obs = loads(js.read())

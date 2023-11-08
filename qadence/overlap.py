@@ -196,8 +196,9 @@ def overlap_jensen_shannon(bras: list[Counter], kets: list[Counter]) -> Tensor:
 
 
 def overlap_compute_uncompute(bras: Tensor | list[Counter]) -> Tensor:
-    """Calculate overlap using compute-uncompute method from full wavefunctions or
-    bitstring counts.
+    """Calculate overlap using compute-uncompute method.
+
+    From full wavefunctions or bitstring counts.
 
     Args:
         bras (Tensor | list[Counter]): full bra wavefunctions or bitstring counts
@@ -219,8 +220,9 @@ def overlap_compute_uncompute(bras: Tensor | list[Counter]) -> Tensor:
 
 
 def overlap_swap_test(bras: Tensor | list[Counter]) -> Tensor:
-    """Calculate overlap using swap test method from full wavefunctions or
-    bitstring counts.
+    """Calculate overlap using swap test method.
+
+    From full wavefunctions or bitstring counts.
 
     Args:
         bras (Tensor | list[Counter]): full bra wavefunctions or bitstring counts
@@ -261,8 +263,9 @@ def overlap_swap_test(bras: Tensor | list[Counter]) -> Tensor:
 def overlap_hadamard_test(
     bras_re: Tensor | list[Counter], bras_im: Tensor | list[Counter]
 ) -> Tensor:
-    """Calculate overlap using Hadamard test method from full wavefunctions or
-    bitstring counts.
+    """Calculate overlap using Hadamard test method.
+
+    From full wavefunctions or bitstring counts.
 
     Args:
         bras_re (Tensor | list[Counter]): full bra wavefunctions or bitstring counts

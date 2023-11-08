@@ -86,7 +86,8 @@ def number_of_samples(
     observables: list[AbstractBlock], accuracy: float, confidence: float
 ) -> tuple[int, ...]:
     """
-    Estimate an optimal shot budget and a shadow partition size
+    Estimate an optimal shot budget and a shadow partition size.
+
     to guarantee given accuracy on all observables expectation values
     within 1 - confidence range.
 
@@ -216,7 +217,8 @@ def estimators(
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
     """
-    Return estimators (traces of observable times mean density matrix)
+    Return estimators (traces of observable times mean density matrix).
+
     for K equally-sized shadow partitions.
 
     See https://arxiv.org/pdf/2002.08953.pdf

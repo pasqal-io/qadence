@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader, IterableDataset, TensorDataset
 
 @dataclass
 class DictDataLoader:
-    """This class only holds a dictionary of `DataLoader`s and samples from them"""
+    """This class only holds a dictionary of `DataLoader`s and samples from them."""
 
     dataloaders: dict[str, DataLoader]
 
@@ -26,6 +26,7 @@ class DictDataLoader:
 class InfiniteTensorDataset(IterableDataset):
     def __init__(self, *tensors: Tensor):
         """Randomly sample points from the first dimension of the given tensors.
+
         Behaves like a normal torch `Dataset` just that we can sample from it as
         many times as we want.
 

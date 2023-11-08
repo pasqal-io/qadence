@@ -19,7 +19,7 @@ from qadence.register import Register
 
 
 def circuit_psr(n_qubits: int) -> QuantumCircuit:
-    """Helper function to make an example circuit"""
+    """Helper function to make an example circuit."""
 
     x = Parameter("x", trainable=False)
     theta = Parameter("theta")
@@ -34,7 +34,7 @@ def circuit_psr(n_qubits: int) -> QuantumCircuit:
 
 
 def circuit_gpsr(n_qubits: int) -> QuantumCircuit:
-    """Helper function to make an example circuit"""
+    """Helper function to make an example circuit."""
 
     x = Parameter("x", trainable=False)
     theta = Parameter("theta")
@@ -56,7 +56,7 @@ def circuit_gpsr(n_qubits: int) -> QuantumCircuit:
 
 
 def circuit_hamevo_tensor_gpsr(n_qubits: int) -> QuantumCircuit:
-    """Helper function to make an example circuit"""
+    """Helper function to make an example circuit."""
 
     x = Parameter("x", trainable=False)
     theta = Parameter("theta")
@@ -83,7 +83,7 @@ def circuit_hamevo_tensor_gpsr(n_qubits: int) -> QuantumCircuit:
 
 
 def circuit_hamevo_block_gpsr(n_qubits: int) -> QuantumCircuit:
-    """Helper function to make an example circuit"""
+    """Helper function to make an example circuit."""
 
     x = Parameter("x", trainable=False)
     theta = Parameter("theta")

@@ -134,7 +134,7 @@ def compute_expectation(
     noise: Noise | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
-    """Basic tomography protocol with rotations
+    """Basic tomography protocol with rotations.
 
     Given a circuit and a list of observables, apply basic tomography protocol to estimate
     the expectation values.

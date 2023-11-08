@@ -18,8 +18,9 @@ __all__ = ["QuantumCircuit"]
 
 @dataclass(eq=False)  # Avoid unhashability errors due to mutable attributes.
 class QuantumCircuit:
-    """A QuantumCircuit instance is completely abstract and it needs to be passed to a quantum
-    backend in order to be executed.
+    """Am abstract QuantumCircuit instance.
+
+    It needs to be passed to a quantum backend for execution.
     """
 
     block: AbstractBlock
@@ -28,6 +29,7 @@ class QuantumCircuit:
     def __init__(self, support: int | Register, *blocks: AbstractBlock):
         """
         Arguments:
+
             support: `Register` or number of qubits. If an integer is provided, a register is
                 constructed with `Register.all_to_all(x)`
             *blocks: (Possibly multiple) blocks to construct the circuit from.
@@ -77,7 +79,7 @@ class QuantumCircuit:
 
     @property
     def unique_parameters(self) -> list[Parameter]:
-        """Return the unique parameters in the circuit
+        """Return the unique parameters in the circuit.
 
         These parameters are the actual user-facing parameters which
         can be assigned by the user. Multiple gates can contain the
@@ -103,7 +105,7 @@ class QuantumCircuit:
         return len(self.parameters())
 
     def parameters(self) -> list[Parameter | Basic] | list[tuple[Parameter | Basic, ...]]:
-        """Extract all parameters for primitive blocks in the circuit
+        """Extract all parameters for primitive blocks in the circuit.
 
         Notice that this function returns all the unique Parameters used
         in the quantum circuit. These can correspond to constants too.
@@ -120,7 +122,7 @@ class QuantumCircuit:
         return QuantumCircuit(self.n_qubits, self.block.dagger())
 
     def get_blocks_by_tag(self, tag: str) -> list[AbstractBlock]:
-        """Extract one or more blocks using the human-readable tag
+        """Extract one or more blocks using the human-readable tag.
 
         This function recursively explores all composite blocks to find
         all the occurrences of a certain tag in the blocks.

@@ -28,7 +28,7 @@ def train(
     config: TrainConfig,
     loss_fn: Callable,
 ) -> tuple[Module, NGOptimizer]:
-    """Runs the training loop with a gradient-free optimizer
+    """Runs the training loop with a gradient-free optimizer.
 
     Assumes that `loss_fn` returns a tuple of (loss, metrics: dict), where
     `metrics` is a dict of scalars. Loss and metrics are written to

@@ -16,5 +16,7 @@ default_passes: list[Callable] = [fill_identities, digitalize]
 class Configuration(BackendConfiguration):
     # FIXME: currently not used
     cloud_credentials: dict = field(default_factory=dict)
-    """Credentials for connecting to the cloud
-    and executing on the QPUs available on Amazon Braket"""
+    """Credentials for connecting to the cloud.
+
+    Execution on the QPUs available on Amazon Braket.
+    """

@@ -11,7 +11,7 @@ torch.manual_seed(42)
 
 
 def circuit(n_qubits):
-    """Helper function to make an example circuit"""
+    """Helper function to make an example circuit."""
 
     x = Parameter("x", trainable=False)
     y = Parameter("y", trainable=False)

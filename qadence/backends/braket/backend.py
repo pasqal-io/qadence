@@ -190,7 +190,7 @@ class Backend(BackendInterface):
     def assign_parameters(
         self, circuit: ConvertedCircuit, param_values: dict[str, Tensor | float]
     ) -> BraketCircuit:
-        """Assign numerical values to the circuit parameters"""
+        """Assign numerical values to the circuit parameters."""
         if param_values is None:
             return circuit.native()
 

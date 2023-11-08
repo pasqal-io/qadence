@@ -15,7 +15,7 @@ from qadence.utils import Endianness
 
 
 class QNN(QuantumModel):
-    """Quantum neural network model for n-dimensional inputs
+    """Quantum neural network model for n-dimensional inputs.
 
     Examples:
     ```python exec="on" source="material-block" result="json"
@@ -51,7 +51,7 @@ class QNN(QuantumModel):
         noise: Noise | None = None,
         configuration: BackendConfiguration | dict | None = None,
     ):
-        """Initialize the QNN
+        """Initialize the QNN.
 
         The number of inputs is determined by the feature parameters in the input
         quantum circuit while the number of outputs is determined by how many
@@ -66,7 +66,6 @@ class QNN(QuantumModel):
                 use exact expectation value with a statevector simulator
             noise: A noise model to use.
             configuration: optional configuration for the backend
-
         """
         super().__init__(
             circuit=circuit,
@@ -91,7 +90,7 @@ class QNN(QuantumModel):
         noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
-        """Forward pass of the model
+        """Forward pass of the model.
 
         This returns the (differentiable) expectation value of the given observable
         operator defined in the constructor. Differently from the base QuantumModel
@@ -136,7 +135,7 @@ class QNN(QuantumModel):
         )
 
     def _format_to_dict(self, values: Tensor) -> dict[str, Tensor]:
-        """Format an input tensor into the format required by the forward pass
+        """Format an input tensor into the format required by the forward pass.
 
         The tensor is assumed to have dimensions: n_batches x in_features where in_features
         corresponds to the number of input features of the QNN

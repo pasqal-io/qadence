@@ -44,7 +44,9 @@ def _construct(
 
 
 def chain(*args: Union[AbstractBlock, Generator, List[AbstractBlock]]) -> ChainBlock:
-    """Chain blocks sequentially. On digital backends this can be interpreted
+    """Chain blocks sequentially.
+
+    On digital backends this can be interpreted
     loosely as a matrix mutliplication of blocks. In the analog case it chains
     blocks in time.
 
@@ -74,7 +76,9 @@ def chain(*args: Union[AbstractBlock, Generator, List[AbstractBlock]]) -> ChainB
 
 
 def kron(*args: Union[AbstractBlock, Generator]) -> KronBlock:
-    """Stack blocks vertically. On digital backends this can be intepreted
+    """Stack blocks vertically.
+
+    On digital backends this can be intepreted
     loosely as a kronecker product of blocks. In the analog case it executes
     blocks parallel in time.
 
@@ -141,6 +145,7 @@ def put(block: AbstractBlock, min_qubit: int, max_qubit: int) -> PutBlock:
 
 def primitive_blocks(block: AbstractBlock) -> List[PrimitiveBlock]:
     """Extract the primitive blocks from a `CompositeBlock`.
+
     In the case of an `AddBlock`, the `AddBlock` is considered primitive.
 
     Args:
@@ -163,7 +168,7 @@ def primitive_blocks(block: AbstractBlock) -> List[PrimitiveBlock]:
 
 
 def get_pauli_blocks(block: AbstractBlock, raises: bool = False) -> List[PrimitiveBlock]:
-    """Extract Pauli operations from an arbitrary input block
+    """Extract Pauli operations from an arbitrary input block.
 
     Args:
         block (AbstractBlock): The input block to extract Pauli operations from
@@ -188,7 +193,7 @@ def get_pauli_blocks(block: AbstractBlock, raises: bool = False) -> List[Primiti
 
 
 def parameters(block: AbstractBlock) -> list[Parameter | Basic]:
-    """Extract the Parameters of a block"""
+    """Extract the Parameters of a block."""
     params = []
     exprs = uuid_to_expression(block).values()
     for expr in exprs:
@@ -241,8 +246,7 @@ def uuid_to_expression(block: AbstractBlock) -> dict[str, Basic]:
 
 
 def expression_to_uuids(block: AbstractBlock) -> dict[Expr, list[str]]:
-    """Creates a mapping between unique expressions and gate-level param_ids
-    of blocks using that expression."""
+    """Creates a mapping between unique expressions and gate-level param_ids."""
 
     uuid_to_expr = uuid_to_expression(block)
     expr_to_uuid: dict[Expr, list[str]] = {}
@@ -254,6 +258,7 @@ def expression_to_uuids(block: AbstractBlock) -> dict[Expr, list[str]]:
 
 def uuid_to_eigen(block: AbstractBlock) -> dict[str, Tensor]:
     """Creates a mapping between a parametric block's param_id and its' eigenvalues.
+
     This method is needed for constructing the PSR rules for a given block.
 
     !!! warn
@@ -275,8 +280,10 @@ def uuid_to_eigen(block: AbstractBlock) -> dict[str, Tensor]:
 
 def expressions(block: AbstractBlock) -> list[Basic]:
     """Extract the expressions sitting in the 'parameters' field of a ParametricBlock.
+
     Each element of 'parameters' is a sympy expression which can be a constant,
-    a single parameter or an expression consisting of both symbols and constants."""
+    a single parameter or an expression consisting of both symbols and constants.
+    """
     return list(set(uuid_to_expression(block).values()))
 
 
@@ -324,7 +331,7 @@ def _check_commutation(block: AbstractBlock, support: dict[int, set[str]] | None
 
 
 def block_is_commuting_hamiltonian(block: AbstractBlock) -> bool:
-    """Check whether a Pauli block is composed by commuting set of operators
+    """Check whether a Pauli block is composed by commuting set of operators.
 
     Args:
         block (AbstractBlock): The Pauli block
@@ -354,7 +361,7 @@ def get_blocks_by_expression(
 
 
 def has_duplicate_vparams(block: AbstractBlock) -> bool:
-    """Check if the given block has duplicated variational parameters
+    """Check if the given block has duplicated variational parameters.
 
     Args:
         block (AbstractBlock): The block to check
@@ -373,7 +380,7 @@ def has_duplicate_vparams(block: AbstractBlock) -> bool:
 def unroll_block_with_scaling(
     block: AbstractBlock, block_list: list[AbstractBlock] = None
 ) -> list[tuple[AbstractBlock, Basic]]:
-    """Extract a set of terms in the given block with corresponding scales
+    """Extract a set of terms in the given block with corresponding scales.
 
     This function takes an input block and extracts a list of operations
     with corresponding scaling factors.

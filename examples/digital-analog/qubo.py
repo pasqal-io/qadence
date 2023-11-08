@@ -40,8 +40,10 @@ def qubo_register_coords(Q):
     print(sort_zipped[:3])
 
     def evaluate_mapping(new_coords, *args):
-        """Cost function to minimize. Ideally, the pairwise
-        distances are conserved"""
+        """Cost function to minimize.
+
+        Ideally, the pairwise distances are conserved.
+        """
         Q, shape = args
         new_coords = np.reshape(new_coords, shape)
         new_Q = squareform(Chadoq2.interaction_coeff / pdist(new_coords) ** 6)

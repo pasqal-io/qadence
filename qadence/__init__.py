@@ -31,9 +31,9 @@ DEFAULT_FLOAT_DTYPE = torchfloat64
 DEFAULT_COMPLEX_DTYPE = cdouble
 set_default_dtype(DEFAULT_FLOAT_DTYPE)
 
-"""
-The imports above fetch the functions defined in the __all__ of each sub-module
-to the qadence name space. Make sure each added submodule has the respective definition:
+"""Fetch the functions defined in the __all__ of each sub-module.
+
+Import to the qadence name space. Make sure each added submodule has the respective definition:
 
     - `__all__ = ["function0", "function1", ...]`
 

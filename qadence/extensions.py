@@ -16,6 +16,7 @@ backends_namespace = Template("qadence.backends.$name")
 
 
 def _available_backends() -> dict:
+    """Fallback function for native Qadence available backends if extensions is not present."""
     res = {}
     for backend in BackendName.list():
         module_path = f"qadence.backends.{backend}.backend"
@@ -30,6 +31,7 @@ def _available_backends() -> dict:
 
 
 def _supported_gates(name: BackendName | str) -> list[TAbstractBlock]:
+    """Fallback function for native Qadence backend supported gates if extensions is not present."""
     from qadence import operations
 
     name = str(BackendName(name).name.lower())
@@ -47,6 +49,7 @@ def _supported_gates(name: BackendName | str) -> list[TAbstractBlock]:
 
 
 def _gpsr_fns() -> dict:
+    """Fallback function for native Qadence GPSR functions if extensions is not present."""
     # avoid circular import
     from qadence.backends.gpsr import general_psr
 
@@ -54,16 +57,17 @@ def _gpsr_fns() -> dict:
 
 
 def _validate_diff_mode(backend: Backend, diff_mode: DiffMode) -> None:
+    """Fallback function for native Qadence diff_mode if extensions is not present."""
     if not backend.supports_ad and diff_mode == DiffMode.AD:
         raise TypeError(f"Backend {backend.name} does not support diff_mode {DiffMode.AD}.")
 
 
 def _set_backend_config(backend: Backend, diff_mode: DiffMode) -> None:
-    """_summary_
+    """Fallback function for native Qadence backends if extensions is not present.
 
     Args:
-        backend (Backend): _description_
-        diff_mode (DiffMode): _description_
+        backend (Backend): A backend for execution.
+        diff_mode (DiffMode): A differentiation mode.
     """
 
     _validate_diff_mode(backend, diff_mode)
