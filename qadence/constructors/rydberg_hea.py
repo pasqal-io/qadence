@@ -18,7 +18,7 @@ def _amplitude_map(
     pauli_op: TPauliOp,
     weights: list[Parameter] | list[float] | None = None,
 ) -> AddBlock:
-    """Create an generator equivalent to a laser amplitude mapping on the device
+    """Create an generator equivalent to a laser amplitude mapping on the device.
 
     Basically, given a certain quantum operation `pauli_op`, this routine constructs
     the following generator:
@@ -52,7 +52,7 @@ def rydberg_hea_layer(
     drives: list[Parameter] | list[float] | None = None,
     drive_scaling: float = 1.0,
 ) -> ChainBlock:
-    """A single layer of the Rydberg hardware efficient ansatz
+    """A single layer of the Rydberg hardware efficient ansatz.
 
     Args:
         register: the input register with atomic coordinates needed to build the interaction.
@@ -67,7 +67,7 @@ def rydberg_hea_layer(
             both sigma^x and sigma^y terms will be present
         detunings: a list of parameters with the weights of the locally addressed
             detuning terms. These are variational parameters which are tuned by the optimizer
-        amplitudes: a list of parameters with the weights of the locally addressed
+        drives: a list of parameters with the weights of the locally addressed
             drive terms. These are variational parameters which are tuned by the optimizer
         drive_scaling: a scaling term to be added to the drive Hamiltonian generator
 
@@ -109,7 +109,7 @@ def rydberg_hea(
     tunable_phase: bool = False,
     additional_prefix: str = None,
 ) -> qd.blocks.ChainBlock:
-    """Hardware efficient ansatz for neutral atom (Rydberg) platforms
+    """Hardware efficient ansatz for neutral atom (Rydberg) platforms.
 
     This constructor implements a variational ansatz which is very close to
     what is implementable on 2nd generation PASQAL quantum devices. In particular,

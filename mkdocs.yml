@@ -23,7 +23,7 @@ nav:
     - digital_analog_qc/index.md
     - Basic operations on neutral-atoms: digital_analog_qc/analog-basics.md
     - Fitting a simple function: digital_analog_qc/analog-qcl.md
-    - Hardware efficient ansatz with restricted addressability: digital_analog_qc/rydbgerg-hea.md
+    - Hardware efficient ansatz with restricted addressability: digital_analog_qc/rydberg-hea.md
     - Pulse-level programming with Pulser: digital_analog_qc/pulser-basic.md
     - Solve a QUBO problem: digital_analog_qc/analog-qubo.md
     - Pulse-level programming with Pulser: digital_analog_qc/pulser-basic.md
