@@ -19,7 +19,7 @@ expected_pi2 = torch.tensor([[0.5, 0.0], [0.5, 0.0]])
 
 
 def parametric_circuit(n_qubits: int) -> QuantumCircuit:
-    """Helper function to make an example circuit"""
+    """Helper function to make an example circuit."""
 
     x = Parameter("x", trainable=False)
     y = Parameter("y", trainable=False)

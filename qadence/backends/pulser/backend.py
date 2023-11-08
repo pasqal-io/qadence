@@ -140,7 +140,7 @@ def simulate_sequence(
 
 @dataclass(frozen=True, eq=True)
 class Backend(BackendInterface):
-    """The Pulser backend"""
+    """The Pulser backend."""
 
     name: BackendName = BackendName.PULSER
     supports_ad: bool = False

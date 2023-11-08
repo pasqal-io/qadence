@@ -25,8 +25,10 @@ def _scale_node_positions(graph: nx.Graph, scale: float) -> None:
 
 class Register:
     def __init__(self, support: nx.Graph | int):
-        """A 2D register of qubits which includes their coordinates (needed for e.g. analog
-        computing). The coordinates are ignored in backends that don't need them. The easiest
+        """A 2D register of qubits which includes their coordinates.
+
+        It is needed for e.g. analog computing.
+        The coordinates are ignored in backends that don't need them. The easiest
         way to construct a register is via its classmethods like `Register.triangular_lattice`.
 
         Arguments:

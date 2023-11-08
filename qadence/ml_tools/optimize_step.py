@@ -13,7 +13,7 @@ def optimize_step(
     loss_fn: Callable,
     xs: dict | list | torch.Tensor | None,
 ) -> tuple[torch.Tensor | float, dict | None]:
-    """Default Torch optimize step with closure
+    """Default Torch optimize step with closure.
 
     This is the default optimization step which should work for most
     of the standard use cases of optimization of Torch models

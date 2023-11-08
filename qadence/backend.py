@@ -44,7 +44,7 @@ class BackendConfiguration:
             logger.warning("Custom transpilation passes cannot be serialized in JSON format!")
 
     def available_options(self) -> str:
-        """Return as a string the available fields with types of the configuration
+        """Return as a string the available fields with types of the configuration.
 
         Returns:
             str: a string with all the available fields, one per line
@@ -71,8 +71,11 @@ class BackendConfiguration:
         return cls(**init_data)
 
     def get_param_name(self, blk: AbstractBlock) -> Tuple[str, ...]:
-        """Return parameter names for the current backend. Depending on which backend is in use this
-        function returns either UUIDs or expressions of parameters."""
+        """Return parameter names for the current backend.
+
+        Depending on which backend is in use this
+        function returns either UUIDs or expressions of parameters.
+        """
         param_ids: Tuple
         # FIXME: better type hiearchy?
         types = (TimeEvolutionBlock, ParametricBlock, ConstantAnalogRotation, WaitBlock)
@@ -88,7 +91,7 @@ class BackendConfiguration:
 
 @dataclass(frozen=True, eq=True)
 class Backend(ABC):
-    """The abstract class that defines the interface for the backends
+    """The abstract class that defines the interface for the backends.
 
     Attributes:
         name: backend unique string identifier
@@ -148,7 +151,8 @@ class Backend(ABC):
 
     @abstractmethod
     def observable(self, observable: AbstractBlock, n_qubits: int) -> ConvertedObservable:
-        """Converts an abstract observable (which is just an `AbstractBlock`) to the native backend
+        """Converts an abstract observable (which is just an `AbstractBlock`) to the native backend.
+
         representation.
 
         Arguments:
@@ -164,7 +168,8 @@ class Backend(ABC):
     def convert(
         self, circuit: QuantumCircuit, observable: list[AbstractBlock] | AbstractBlock | None = None
     ) -> Converted:
-        """Convert an abstract circuit (and optionally and observable) to their native
+        """Convert an abstract circuit (and optionally and observable) to their native.
+
         representation. Additionally this function constructs an embedding function which maps from
         user-facing parameters to device parameters (read more on parameter embedding
         [here][qadence.blocks.embedding.embedding]).

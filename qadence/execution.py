@@ -41,7 +41,9 @@ def run(
     endianness: Endianness = Endianness.BIG,
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> Tensor:
-    """Convenience wrapper for the `QuantumModel.run` method.  This is a
+    """Convenience wrapper for the `QuantumModel.run` method.
+
+     This is a
     `functools.singledispatch`ed function so it can be called with a number of different arguments.
     See the examples of the [`expectation`][qadence.execution.expectation] function. This function
     works exactly the same.
@@ -107,7 +109,9 @@ def sample(
     endianness: Endianness = Endianness.BIG,
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> list[Counter]:
-    """Convenience wrapper for the `QuantumModel.sample` method.  This is a
+    """Convenience wrapper for the `QuantumModel.sample` method.
+
+     This is a
     `functools.singledispatch`ed function so it can be called with a number of different arguments.
     See the examples of the [`expectation`][qadence.execution.expectation] function. This function
     works exactly the same.
@@ -175,7 +179,9 @@ def expectation(
     endianness: Endianness = Endianness.BIG,
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> Tensor:
-    """Convenience wrapper for the `QuantumModel.expectation` method.  This is a
+    """Convenience wrapper for the `QuantumModel.expectation` method.
+
+     This is a
     `functools.singledispatch`ed function so it can be called with a number of different arguments
     (see in the examples).
 
@@ -191,7 +197,6 @@ def expectation(
 
     Returns:
         A wavefunction
-
 
     ```python exec="on" source="material-block"
     from qadence import RX, Z, Register, QuantumCircuit, expectation
@@ -212,7 +217,8 @@ def expectation(
 
     # Or a register and block
     expectation(reg, block, observable)
-    ```"""
+    ```
+    """
 
     raise ValueError(f"Cannot execute {type(x)}")
 

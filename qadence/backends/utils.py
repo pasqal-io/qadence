@@ -52,7 +52,7 @@ def promote_to_tensor(
     dtype: torch.dtype = torch.complex128,
     requires_grad: bool = True,
 ) -> Tensor:
-    """Convert the given type inco a torch.Tensor"""
+    """Convert the given type into a torch.Tensor."""
     if isinstance(x, float):
         return torch.tensor([[x]], dtype=dtype, requires_grad=requires_grad)
     elif isinstance(x, np.ndarray):
