@@ -13,7 +13,7 @@ from pyqtorch.matrices import _dagger
 from pyqtorch.utils import is_diag
 from torch.nn import Module
 
-from qadence.backends.utils import finitediff, infer_batchsize
+from qadence.backends.utils import finitediff, infer_batchsize, pyqify, unpyqify
 from qadence.blocks import (
     AbstractBlock,
     AddBlock,
@@ -215,8 +215,7 @@ class PyQObservable(Module):
             def sparse_operation(
                 state: torch.Tensor, values: dict[str, torch.Tensor] = None
             ) -> torch.Tensor:
-                state = state.reshape(2**self.n_qubits, state.size(-1))
-                return (diag * state.T).T.reshape([2] * self.n_qubits + [state.size(-1)])
+                return pyqify(diag * unpyqify(state), n_qubits=self.n_qubits)
 
             self.operation = sparse_operation
         else:

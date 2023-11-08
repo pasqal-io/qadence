@@ -13,8 +13,6 @@ from qadence.operations import CPHASE, RX, HamEvo, X, Z
 from qadence.parameters import VariationalParameter
 from qadence.types import DiffMode
 
-torch.use_deterministic_algorithms(True)
-
 
 @pytest.mark.parametrize("diff_mode", [DiffMode.ADJOINT])
 def test_pyq_differentiation(diff_mode: str) -> None:

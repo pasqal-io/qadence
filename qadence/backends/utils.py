@@ -164,6 +164,8 @@ def validate_pyq_state(state: torch.Tensor, n_qubits: int) -> torch.Tensor:
             "A pyqified initial state must be composed of tensors of size "
             f"(2, 2, ..., batch_size). Found: {state.size() = }."
         )
+    elif state.dtype != torch.complex128:
+        raise TypeError("Expected type torch.complex128.")
     else:
         return state
 
