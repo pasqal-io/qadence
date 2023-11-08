@@ -8,19 +8,13 @@ import pytest
 import torch
 from torch import Tensor
 
-from qadence import (
-    BackendName,
-    DiffMode,
-    Parameter,
-    QuantumCircuit,
-    QuantumModel,
-    backend_factory,
-    expectation,
-)
+from qadence.backends.api import backend_factory
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.block_to_tensor import IMAT
 from qadence.blocks.utils import add, chain, kron
+from qadence.circuit import QuantumCircuit
 from qadence.constructors import ising_hamiltonian, total_magnetization
+from qadence.execution import expectation
 from qadence.measurements import Measurements
 from qadence.measurements.shadow import (
     PROJECTOR_MATRICES,
@@ -32,8 +26,11 @@ from qadence.measurements.shadow import (
     local_shadow,
     number_of_samples,
 )
+from qadence.models.quantum_model import QuantumModel
 from qadence.operations import RX, RY, H, I, X, Y, Z
+from qadence.parameters import Parameter
 from qadence.serialization import deserialize
+from qadence.types import BackendName, DiffMode
 
 
 @pytest.mark.parametrize(
