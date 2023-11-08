@@ -18,7 +18,7 @@ def numpy_to_tensor(
 
 
 def promote_to_tensor(x: Tensor | np.ndarray | float, requires_grad: bool = True) -> Tensor:
-    """Convert the given type into a torch.Tensor"""
+    """Convert the given type into a torch.Tensor."""
     if isinstance(x, float):
         return torch.tensor([[x]], requires_grad=requires_grad)
     elif isinstance(x, np.ndarray):

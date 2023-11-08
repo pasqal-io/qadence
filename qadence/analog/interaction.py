@@ -51,8 +51,9 @@ def add_interaction(
     interaction: Interaction | Callable = Interaction.NN,
     spacing: float = 1.0,
 ) -> QuantumCircuit | AbstractBlock:
-    """Turns blocks or circuits into (a chain of) `HamEvo` blocks including a
-    chosen interaction term.
+    """Turns blocks or circuits into (a chain of) `HamEvo` blocks.
+
+    This includes a chosen interaction term.
 
     This is a `@singledipatch`ed function which can be called in three ways:
 

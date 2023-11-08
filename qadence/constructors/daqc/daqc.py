@@ -25,8 +25,9 @@ def daqc_transform(
     ignore_global_phases: bool = False,
 ) -> AbstractBlock:
     """
-    Implements the DAQC transform for representing an arbitrary 2-body Hamiltonian
-    with another fixed 2-body Hamiltonian.
+    Implements the DAQC transform for representing an arbitrary 2-body Hamiltonian.
+
+    The result is another fixed 2-body Hamiltonian.
 
     Reference for universality of 2-body Hamiltonians:
 
@@ -98,7 +99,6 @@ def daqc_transform(
 
         - A warning will be issued for evolution times larger than `1/sqrt(zero_tol)`. Evolution
         times smaller than `zero_tol` will not be represented.
-
 
     Examples:
         ```python exec="on" source="material-block" result="json"
