@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections import Counter
 from enum import Enum
-from typing import Any
 
 import numpy as np
 import torch
@@ -62,7 +61,7 @@ def tensor_to_bitstring(bitstring: torch.Tensor | np.array, output_type: str = "
     )
 
 
-def bit_flip(bit: int) -> int:
+def bit_flip(bit: torch.Tensor, cond: torch.Tensor) -> torch.Tensor:
     """
     A helper function that reverses the states 0 and 1 in the bit string.
 
@@ -72,7 +71,7 @@ def bit_flip(bit: int) -> int:
     Returns:
         The inverse value of the input bit
     """
-    return 1 if bit == 0 else 0
+    return torch.where(cond, torch.where(bit == 0, 1, 0), bit)
 
 
 def sample_to_matrix(sample: dict) -> torch.Tensor:
@@ -140,21 +139,9 @@ def bs_corruption(
         A counter of bit strings after readout corruption.
     """
 
-    def vflip(sample: torch.Tensor, err_idx: torch.Tensor) -> int | Any:
-        return bit_flip(sample.item()) if err_idx.item() else sample.item()
+    func = torch.func.vmap(bit_flip)
 
-    return Counter(
-        [
-            "".join(list(map(str, k)))
-            for k in map(
-                lambda j: map(
-                    lambda i: vflip(sample[j][i], err_idx[j][i]),
-                    range(n_qubits),
-                ),
-                range(n_shots),
-            )
-        ]
-    )
+    return Counter([tensor_to_bitstring(k) for k in func(sample, err_idx)])
 
 
 def error(
