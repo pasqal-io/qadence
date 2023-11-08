@@ -74,8 +74,7 @@ Below, we create a line register of three qubits directly from the coordinates.
 ```python exec="on" source="material-block" session="emu"
 from qadence import Register
 
-dx = 8.0
-
+dx = 8.0  # Atom spacing in μm
 reg = Register.from_coordinates([(0, 0), (dx, 0), (2*dx, 0)])
 ```
 
@@ -122,7 +121,7 @@ print(wf)
     dx = 8.0
 
     # Parameters used in the AnalogRot
-    duration = 1000.
+    duration = 500.
     omega = pi
     delta = pi
     phase = pi
@@ -143,10 +142,10 @@ print(wf)
         1/((2*dx)**6) * (N(0)@N(2))
     )
 
-    h_d = h_x + h_y + h_n + h_int
+    hamiltonian = h_x + h_y + h_n + h_int
 
     # Convert duration to µs due to the units of the Hamiltonian
-    explicit_rot = HamEvo(h_d, duration / 1000)
+    explicit_rot = HamEvo(hamiltonian, duration / 1000)
 
     wf = run(n_qubits, explicit_rot, backend = BackendName.PYQTORCH)
 
@@ -184,11 +183,13 @@ print(wf)
 ### RX / RY / RZ rotations
 
 The `AnalogRot` provides full control over the parameters of $\mathcal{H}^\text{d}$, but users coming from
-a digital quantum computing background may be more familiar with the standard `RX`, `RY` and `RZ` rotations, also available in Qadence. For the emulated analog interface, Qadence provides alternative
+a digital quantum computing background may be more familiar with the standard `RX`, `RY` and `RZ` rotations,
+also available in Qadence. For the emulated analog interface, Qadence provides alternative
 `AnalogRX`, `AnalogRY` and `AnalogRZ` operations which call `AnalogRot` under the hood to represent
-the rotations accross the respective axes.
+the rotations accross the respective axis.
 
-For a given angle of rotation $\theta$ provided to each of these operations, currently a set of hardcoded assumptions are made on the tunable Hamiltonian parameters:
+For a given angle of rotation $\theta$ provided to each of these operations, currently a set of hardcoded
+assumptions are made on the tunable Hamiltonian parameters:
 
 $$
 \begin{aligned}
@@ -199,15 +200,16 @@ $$
 $$
 
 Note that the $\text{RZ}$ operation as defined above includes a global phase compared to the
-standard $\text{RZ}$ rotation since it evolves $\exp\left(-i\frac{\theta}{2}\frac{I-Z}{2}\right)$ instead of $\exp\left(-i\frac{\theta}{2}Z\right)$ given the detuning operator in $\mathcal{H}^\text{d}$.
+standard $\text{RZ}$ rotation since it evolves $\exp\left(-i\frac{\theta}{2}\frac{I-Z}{2}\right)$
+instead of $\exp\left(-i\frac{\theta}{2}Z\right)$ given the detuning operator in $\mathcal{H}^\text{d}$.
 
 !!! warning
     As shown above, the values of $\Omega$ and $\delta$ are currently hardcoded in these operators, and the
-    effective angle of rotations is controlled by varying the duration of the evolution. Currently,
+    effective angle of rotation is controlled by varying the duration of the evolution. Currently,
     the best way to overcome this is to use `AnalogRot` directly, but more general and convenient options
     will be provided soon in an improved interface.
 
-Below we exemplify the usage of `AnalogRX`
+Below we exemplify the usage of `AnalogRX`:
 
 ```python exec="on" source="material-block" result="json" session="rx"
 from qadence import Register, BackendName
@@ -237,7 +239,7 @@ wf_analog_pyq = run(
     rot_analog,
     state = init_state,
     backend = BackendName.PYQTORCH
-    )
+)
 
 
 wf_digital_pyq = run(
@@ -245,7 +247,7 @@ wf_digital_pyq = run(
     rot_digital,
     state = init_state,
     backend = BackendName.PYQTORCH
-    )
+)
 
 bool_equiv = equivalent_state(wf_analog_pyq, wf_digital_pyq, atol = 1e-03)
 
@@ -267,7 +269,7 @@ wf_analog_pulser = run(
     state = init_state,
     backend = BackendName.PULSER,
     configuration = {"spacing": 1.0}
-    )
+)
 
 bool_equiv = equivalent_state(wf_analog_pyq, wf_analog_pulser, atol = 1e-03)
 
@@ -284,7 +286,7 @@ function `wait` which does exactly this.
 from qadence import Register, BackendName, random_state, equivalent_state, wait, run
 
 dx = 8.0
-reg = Register.from_coordinates([(dx, 0), (2*dx, 0), (3*dx, 0)])
+reg = Register.from_coordinates([(0, 0), (dx, 0), (2*dx, 0)])
 n_qubits = 3
 
 duration = 1000.
@@ -348,7 +350,7 @@ rot_1 = AnalogRY(angle = 2.0, qubit_support = "global")
 block = chain(rot_0, rot_1)
 ```
 
-The restrictions above only apply to the analog blocks, and global and digital blocks can currently be composed.
+The restrictions above only apply to the analog blocks, and analog and digital blocks can currently be composed.
 
 ```python exec="on" source="material-block" session="details"
 from qadence import RX

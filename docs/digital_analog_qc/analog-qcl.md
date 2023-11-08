@@ -5,10 +5,11 @@ to fit a simple function. First, define a register and feature map block:
 ```python exec="on" source="material-block" session="qcl"
 from qadence import Register, FeatureParameter, chain
 from qadence import AnalogRX, AnalogRY, AnalogRZ, wait
+from sympy import acos
 
 # Line register
 n_qubits = 2
-dx = 8.0
+dx = 8.0  # Atom spacing in μm
 coordinates = [(i*dx, 0) for i in range(n_qubits)]
 register = Register.from_coordinates(coordinates)
 
@@ -23,7 +24,7 @@ fm = chain(
 )
 ```
 
-Next, we define the ansatz with parameterized rotations and
+Next, we define the ansatz with parameterized rotations.
 
 ```python exec="on" source="material-block" session="qcl"
 from qadence import hamiltonian_factory, Z
@@ -51,7 +52,7 @@ ansatz = chain(
 )
 ```
 
-For the result we define the measured observable as the total magnetization, and build the `QuantumModel`.
+We define the measured observable as the total magnetization, and build the `QuantumModel`.
 
 ```python exec="on" source="material-block" session="qcl"
 # Total magnetization observable
