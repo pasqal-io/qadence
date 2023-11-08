@@ -6,7 +6,6 @@ import torch
 from openfermion import QubitOperator, get_sparse_operator
 from torch.linalg import eigvals
 
-from qadence import block_to_tensor
 from qadence.blocks import (
     AbstractBlock,
     AddBlock,
@@ -17,6 +16,7 @@ from qadence.blocks import (
     kron,
     to_openfermion,
 )
+from qadence.blocks.block_to_tensor import block_to_tensor
 from qadence.operations import (
     CNOT,
     CPHASE,

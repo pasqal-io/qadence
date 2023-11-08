@@ -8,13 +8,12 @@ import torch
 from torch import Tensor, concat
 from torch.distributions import Categorical, Distribution
 
-from qadence import BackendName
 from qadence.backends.api import backend_factory
 from qadence.blocks import ChainBlock, KronBlock, PrimitiveBlock, chain, kron
 from qadence.circuit import QuantumCircuit
 from qadence.operations import CNOT, RX, RY, RZ, H, I, X
 from qadence.overlap import fidelity
-from qadence.types import Endianness, StateGeneratorType
+from qadence.types import BackendName, Endianness, StateGeneratorType
 from qadence.utils import basis_to_int
 
 # Modules to be automatically added to the qadence namespace
@@ -302,7 +301,7 @@ def random_state(
     ```python exec="on" source="material-block" result="json"
     from qadence.states import random_state, StateGeneratorType
     from qadence.states import random_state, is_normalized, pmf
-    from qadence.backend import BackendName
+    from qadence.types import BackendName
     from torch.distributions import Distribution
 
     ### We have the following options:

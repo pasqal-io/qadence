@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import torch
 
-from qadence import BackendName, DiffMode, QuantumCircuit
+from qadence.circuit import QuantumCircuit
 from qadence.constructors import feature_map, hea, total_magnetization
 from qadence.ml_tools.parameters import get_parameters, num_parameters, set_parameters
 from qadence.models import QNN
+from qadence.types import BackendName, DiffMode
 
 
 def test_get_parameters(Basic: torch.nn.Module) -> None:
