@@ -5,9 +5,9 @@ import pytest
 import torch
 from pulser_simulation.simconfig import SimConfig
 
-from qadence import QuantumCircuit
 from qadence.backends.pulser import Backend
 from qadence.blocks.utils import chain
+from qadence.circuit import QuantumCircuit
 from qadence.divergences import js_divergence
 from qadence.operations import RY, entangle
 from qadence.register import Register

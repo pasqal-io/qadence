@@ -4,10 +4,10 @@ import numpy as np
 import pytest
 import torch
 
-from qadence import QuantumCircuit as QC
 from qadence.backends.api import DiffMode
 from qadence.blocks import MatrixBlock, ParametricBlock, PrimitiveBlock, chain
 from qadence.blocks.block_to_tensor import OPERATIONS_DICT, block_to_tensor
+from qadence.circuit import QuantumCircuit as QC
 from qadence.constructors import hea
 from qadence.execution import run
 from qadence.models import QuantumModel as QM
