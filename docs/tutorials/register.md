@@ -91,8 +91,9 @@ print(docsutils.fig_to_html(fig)) # markdown-exec: hide
 
 !!! warning "Units for qubit coordinates"
     In general, Qadence makes no assumption about the units given to qubit coordinates.
-    However, if used in the context of a Hamiltonian coefficient, the quantity $Ht$
-    must be **dimensionless** for exponentiation in the PyQTorch backend, where it is assumed that $\hbar = 1$.
+    However, if used in the context of a Hamiltonian coefficient, the quantity $H.t$
+    must be **dimensionless** for exponentiation in the PyQTorch backend, where it is assumed that $\hbar = 1$
+    (consistent ).
 	For registers passed to the [Pulser](https://github.com/pasqal-io/Pulser) backend, coordinates are in $\mu \textrm{m}$.
 
 ## Connectivity graphs
