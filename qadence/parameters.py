@@ -73,7 +73,7 @@ class Parameter(Symbol):
 
         Example:
         ```python exec="on" source="material-block" result="json"
-        from qadence import Parameter, VariationalParameter
+        from qadence.parameters import Parameter, VariationalParameter
 
         theta = Parameter("theta")
         print(f"{theta}: trainable={theta.trainable} value={theta.value}")

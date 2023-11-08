@@ -8,13 +8,15 @@ from hypothesis import given, settings
 from metrics import JS_ACCEPTANCE  # type: ignore
 from torch import Tensor, allclose, rand
 
-from qadence import RX, QuantumCircuit, Z, expectation, run, sample, total_magnetization
-from qadence.backend import BackendName
 from qadence.blocks import AbstractBlock
+from qadence.circuit import QuantumCircuit
+from qadence.constructors import total_magnetization
 from qadence.divergences import js_divergence
+from qadence.execution import expectation, run, sample
+from qadence.operations import RX, Z
 from qadence.register import Register
 from qadence.states import equivalent_state
-from qadence.types import DiffMode
+from qadence.types import BackendName, DiffMode
 
 BACKENDS = [BackendName.PYQTORCH, BackendName.BRAKET]
 

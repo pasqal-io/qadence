@@ -16,7 +16,6 @@ from pyqtorch.circuit import QuantumCircuit as PyQQuantumCircuit
 from sympy import acos
 from torch import Tensor
 
-from qadence import BackendName, DiffMode
 from qadence.backends import backend_factory
 from qadence.backends.pyqtorch.backend import Backend
 from qadence.backends.pyqtorch.config import Configuration as PyqConfig
@@ -57,6 +56,7 @@ from qadence.operations import (
 )
 from qadence.parameters import FeatureParameter, Parameter
 from qadence.transpile import set_trainable
+from qadence.types import BackendName, DiffMode
 
 
 def custom_obs() -> AbstractBlock:

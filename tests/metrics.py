@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from qadence import BackendName
+from qadence.types import BackendName
 
 ATOL_64 = 1e-14  # 64 bit precision
 ATOL_32 = 1e-07  # 32 bit precision
