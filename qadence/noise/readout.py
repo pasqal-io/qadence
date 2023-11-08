@@ -141,10 +141,7 @@ def bs_corruption(
     """
 
     def vflip(sample: torch.Tensor, err_idx: torch.Tensor) -> int | Any:
-        if err_idx.item():
-            return bit_flip(sample.item())
-        else:
-            return sample.item()
+        return bit_flip(sample.item()) if err_idx.item() else sample.item()
 
     return Counter(
         [
