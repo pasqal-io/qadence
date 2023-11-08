@@ -13,7 +13,7 @@ dx = 8.0  # Atom spacing in μm
 coordinates = [(i*dx, 0) for i in range(n_qubits)]
 register = Register.from_coordinates(coordinates)
 
-# The input feature parameter
+# The input feature x for the circuit to learn f(x)
 x = FeatureParameter("x")
 
 # Feature map with a few global analog rotations
