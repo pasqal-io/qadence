@@ -10,7 +10,7 @@ from metrics import (
     SMALL_SPACING,
 )
 
-from qadence import BackendName, Register, add_interaction
+from qadence.analog.interaction import add_interaction
 from qadence.backends.pulser.devices import Device
 from qadence.blocks import AbstractBlock, chain, kron
 from qadence.circuit import QuantumCircuit
@@ -33,8 +33,9 @@ from qadence.operations import (
     wait,
 )
 from qadence.parameters import FeatureParameter
+from qadence.register import Register
 from qadence.states import equivalent_state, random_state
-from qadence.types import DiffMode
+from qadence.types import BackendName, DiffMode
 
 
 @pytest.mark.flaky(max_runs=5)
