@@ -67,6 +67,7 @@ def bit_flip(bit: torch.Tensor, cond: torch.Tensor) -> torch.Tensor:
 
     Args:
         bit: A integer-value bit in a bitstring to be inverted.
+        cond: A Bool value of whether or not a bit should be flipped.
 
     Returns:
         The inverse value of the input bit
