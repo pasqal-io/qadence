@@ -162,7 +162,7 @@ class QubitSupportType(StrEnum):
 
 class Interaction(StrEnum):
     """Interaction types used in
-    - [`add_interaction`][qadence.transpile.emulate.add_interaction].
+    - `add_interaction`.
     - [`hamiltonian_factory`][qadence.constructors.hamiltonians.hamiltonian_factory].
     """
 
