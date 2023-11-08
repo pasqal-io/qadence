@@ -338,7 +338,7 @@ block = kron(rot_0, rot_1)
 
 Using `chain` is only supported between analog blocks with global qubit support:
 
-```python exec="on" source="material-block" result="json" session="details"
+```python exec="on" source="material-block" session="details"
 from qadence import chain
 
 rot_0 = AnalogRX(angle = 1.0, qubit_support = "global")
@@ -349,7 +349,7 @@ block = chain(rot_0, rot_1)
 
 The restrictions above only apply to the analog blocks, and global and digital blocks can currently be composed.
 
-```python exec="on" source="material-block" result="json" session="details"
+```python exec="on" source="material-block" session="details"
 from qadence import RX
 
 rot_0 = AnalogRX(angle = 1.0, qubit_support = "global")

@@ -1,109 +1,128 @@
-## Fitting a simple function
+Analog blocks can be parametrized in the usual Qadence manner. Like any other parameters,
+they can be optimized. The next snippet examplifies the creation of an analog and parameterized ansatz
+to fit a simple function. First, define a register and feature map block:
 
-!!! warning
-    Tutorial to be updated
+```python exec="on" source="material-block" session="qcl"
+from qadence import Register, FeatureParameter, chain
+from qadence import AnalogRX, AnalogRY, AnalogRZ, wait
 
-Analog blocks can be parametrized in the usual Qadence manner. Like any other parameters, they can be optimized. The next snippet examplifies the creation of an analog and paramertized ansatze to fit a sine function. First, define an ansatz block and an observable:
+# Line register
+n_qubits = 2
+dx = 8.0
+coordinates = [(i*dx, 0) for i in range(n_qubits)]
+register = Register.from_coordinates(coordinates)
 
-```python exec="on" source="material-block" session="sin"
-import torch
-from qadence import Register, FeatureParameter, VariationalParameter
-from qadence import AnalogRX, AnalogRZ, Z
-from qadence import wait, chain, add
+# The input feature parameter
+x = FeatureParameter("x")
 
-pi = torch.pi
-
-# A two qubit register.
-reg = Register.from_coordinates([(0, 0), (0, 12)])
-
-# An analog ansatz with an input time parameter.
-t = FeatureParameter("t")
-
-block = chain(
-    AnalogRX(pi/2.),
-    AnalogRZ(t),
-    wait(1000 * VariationalParameter("theta", value=0.5)),
-    AnalogRX(pi/2),
+# Feature map with a few global analog rotations
+fm = chain(
+    AnalogRX(x),
+    AnalogRY(2*x),
+    AnalogRZ(3*x),
 )
-
-# Total magnetization observable.
-obs = add(Z(i) for i in range(reg.n_qubits))
 ```
 
-??? note "Plotting functions `plot` and `scatter`"
-    ```python exec="on" session="sin" source="material-block"
-    def plot(ax, x, y, **kwargs):
-        xnp = x.detach().cpu().numpy().flatten()
-        ynp = y.detach().cpu().numpy().flatten()
-        ax.plot(xnp, ynp, **kwargs)
+Next, we define the ansatz with parameterized rotations and
 
-    def scatter(ax, x, y, **kwargs):
-        xnp = x.detach().cpu().numpy().flatten()
-        ynp = y.detach().cpu().numpy().flatten()
-        ax.scatter(xnp, ynp, **kwargs)
-    ```
+```python exec="on" source="material-block" session="qcl"
+from qadence import hamiltonian_factory, Z
+from qadence import QuantumCircuit, QuantumModel, BackendName, DiffMode
+from qadence import VariationalParameter
 
-Next, define the dataset to train on and plot the initial prediction. The differentiation mode can be set to either `DiffMode.AD` or `DiffMode.GPSR`.
+t_0 = 1000. * VariationalParameter("t_0")
+t_1 = 1000. * VariationalParameter("t_1")
+t_2 = 1000. * VariationalParameter("t_2")
 
-```python exec="on" source="material-block" html="1" result="json" session="sin"
+# Creating the ansatz with parameterized rotations and wait time
+ansatz = chain(
+    AnalogRX("tht_0"),
+    AnalogRY("tht_1"),
+    AnalogRZ("tht_2"),
+    wait(t_0),
+    AnalogRX("tht_3"),
+    AnalogRY("tht_4"),
+    AnalogRZ("tht_5"),
+    wait(t_1),
+    AnalogRX("tht_6"),
+    AnalogRY("tht_7"),
+    AnalogRZ("tht_8"),
+    wait(t_2),
+)
+```
+
+For the result we define the measured observable as the total magnetization, and build the `QuantumModel`.
+
+```python exec="on" source="material-block" session="qcl"
+# Total magnetization observable
+observable = hamiltonian_factory(n_qubits, detuning = Z)
+
+# Defining the circuit and observable
+circuit = QuantumCircuit(register, fm, ansatz)
+
+model = QuantumModel(
+    circuit,
+    observable = observable,
+    backend = BackendName.PYQTORCH,
+    diff_mode = DiffMode.AD
+)
+```
+
+Now we can define the function to fit as well as our training and test data.
+
+```python exec="on" source="material-block" session="qcl"
+import torch
 import matplotlib.pyplot as plt
-from qadence import QuantumCircuit, QuantumModel, DiffMode
 
-# Define a quantum model including digital-analog emulation.
-circ = QuantumCircuit(reg, block)
-model = QuantumModel(circ, obs, diff_mode=DiffMode.GPSR)
+# Function to fit:
+def f(x):
+    return x**2
 
-# Time support dataset.
-x_train = torch.linspace(0, 6, steps=30)
-# Function to fit.
-y_train = -0.64 * torch.sin(x_train + 0.33) + 0.1
-# Initial prediction.
-y_pred_initial = model.expectation({"t": x_train})
+x_test = torch.linspace(-1.0, 1.0, steps=100)
+y_test = f(x_test)
 
-fig, ax = plt.subplots() # markdown-exec: hide
-plt.xlabel("Time [μs]") # markdown-exec: hide
-plt.ylabel("Sin [arb.]") # markdown-exec: hide
-scatter(ax, x_train, y_train, label="Training points", marker="o", color="green") # markdown-exec: hide
-plot(ax, x_train, y_pred_initial, label="Initial prediction") # markdown-exec: hide
-plt.legend() # markdown-exec: hide
-from docs import docsutils # markdown-exec: hide
-print(docsutils.fig_to_html(fig)) # markdown-exec: hide
+x_train = torch.linspace(-1.0, 1.0, steps=10)
+y_train = f(x_train)
+
+# Initial prediction from the model, to be visualized later
+y_pred_initial = model.expectation({"x": x_test}).detach()
 ```
 
-Finally, the classical optimization part is handled by PyTorch:
+Finally we define a simple loss function and training loop.
 
-```python exec="on" source="material-block" html="1" result="json" session="sin"
-
-# Use PyTorch built-in functionality.
+```python exec="on" source="material-block" session="qcl"
 mse_loss = torch.nn.MSELoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=5e-2)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
 
-# Define a loss function.
 def loss_fn(x_train, y_train):
-    return mse_loss(model.expectation({"t": x_train}).squeeze(), y_train)
+    out = model.expectation({"x": x_train})
+    loss = mse_loss(out.squeeze(), y_train)
+    return loss
 
-# Number of epochs to train over.
 n_epochs = 200
 
-# Optimization loop.
 for i in range(n_epochs):
     optimizer.zero_grad()
-
     loss = loss_fn(x_train, y_train)
     loss.backward()
     optimizer.step()
+```
 
-# Get and visualize the final prediction.
-y_pred = model.expectation({"t": x_train})
+And with the model trained we can plot the final results.
 
-fig, ax = plt.subplots() # markdown-exec: hide
-plt.xlabel("Time [μs]") # markdown-exec: hide
-plt.ylabel("Sin [arb.]") # markdown-exec: hide
-scatter(ax, x_train, y_train, label="Training points", marker="o", color="green") # markdown-exec: hide
-plot(ax, x_train, y_pred_initial, label="Initial prediction") # markdown-exec: hide
-plot(ax, x_train, y_pred, label="Final prediction") # markdown-exec: hide
-plt.legend() # markdown-exec: hide
+```python exec="on" source="material-block" html="1" session="qcl"
+y_pred_final = model.expectation({"x": x_test}).detach()
+
+plt.clf()  # markdown-exec: hide
+plt.plot(x_test, y_pred_initial, label = "Initial prediction")
+plt.plot(x_test, y_pred_final, label = "Final prediction")
+plt.scatter(x_train, y_train, label = "Training points")
+plt.xlabel("Feature x")  # markdown-exec: hide
+plt.ylabel("f(x)")  # markdown-exec: hide
+plt.xlim((-1.1, 1.1))  # markdown-exec: hide
+plt.ylim((-0.1, 1.1))  # markdown-exec: hide
+plt.legend()  # markdown-exec: hide
+
 from docs import docsutils # markdown-exec: hide
-print(docsutils.fig_to_html(fig)) # markdown-exec: hide
-assert loss_fn(x_train, y_train) < 0.05 # markdown-exec: hide
+print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
 ```
