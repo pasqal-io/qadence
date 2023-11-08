@@ -25,8 +25,7 @@ class MatrixBlock(PrimitiveBlock):
         import torch
 
     from qadence import QuantumCircuit
-    from qadence.backend import BackendName
-    from qadence.backends.api import DiffMode
+    from qadence.types import BackendName, DiffMode
     from qadence.blocks.matrix import MatrixBlock
     from qadence.models import QuantumModel
     from qadence.operations import X, Z

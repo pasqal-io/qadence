@@ -7,12 +7,14 @@ import pytest
 import torch
 from metrics import LOW_ACCEPTANCE
 
-from qadence import BackendName, Overlap, OverlapMethod, QuantumCircuit, backend_factory
+from qadence.backends.api import backend_factory
 from qadence.blocks import chain, kron, tag
 from qadence.blocks.primitive import PrimitiveBlock
+from qadence.circuit import QuantumCircuit
 from qadence.operations import RX, RY, H, I, S, T, Z
+from qadence.overlap import Overlap, OverlapMethod
 from qadence.parameters import FeatureParameter, VariationalParameter
-from qadence.types import DiffMode
+from qadence.types import BackendName, DiffMode
 
 torch.manual_seed(42)
 

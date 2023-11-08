@@ -301,7 +301,7 @@ def random_state(
     ```python exec="on" source="material-block" result="json"
     from qadence.states import random_state, StateGeneratorType
     from qadence.states import random_state, is_normalized, pmf
-    from qadence.backend import BackendName
+    from qadence.types import BackendName
     from torch.distributions import Distribution
 
     ### We have the following options:
