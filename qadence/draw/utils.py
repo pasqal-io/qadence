@@ -302,8 +302,10 @@ def _make_cluster(
     qcd: QuantumCircuitDiagram, labels: list[str], start: int, stop: int, attrs: dict
 ) -> None:
     """Construct a cluster with the list of labels centered vertically (in terms of wires).
+
     If there are fewer wires than labels, plot all lables in one line, assuming that the first
-    element in `labels` is the block type."""
+    element in `labels` is the block type.
+    """
     N = stop - start
 
     # draw labels line by line

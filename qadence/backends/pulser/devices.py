@@ -68,10 +68,10 @@ RealisticDevice = PulserDevice(
 
 
 class Device(StrEnum):
-    """Supported types of devices for Pulser backend"""
+    """Supported types of devices for Pulser backend."""
 
     IDEALIZED = IdealDevice
-    "idealized device, least realistic"
+    """Idealized device, least realistic."""
 
     REALISTIC = RealisticDevice
-    "device with realistic specs"
+    """Device with realistic specs."""

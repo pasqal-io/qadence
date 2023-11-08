@@ -61,7 +61,8 @@ class PSRExpectation(Function):
 
         def vjp(psr: Callable, name: str) -> Tensor:
             """
-            !!! warn
+            !!! warn.
+
                 Sums over gradients corresponding to different observables.
             """
             return (grad_out * psr(expectation_fn, params, name)).sum(dim=1)
@@ -189,7 +190,7 @@ class DifferentiableExpectation:
 
 
 class DifferentiableBackend(nn.Module):
-    """A class to abstract the operations done by the autodiff engine
+    """A class to abstract the operations done by the autodiff engine.
 
     Arguments:
         backend: An instance of the QuantumBackend type perform execution.

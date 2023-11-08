@@ -28,7 +28,9 @@ def unique(x: Iterable) -> List:
 def embedding(
     block: AbstractBlock, to_gate_params: bool = False
 ) -> tuple[StrTensorDict, Callable[[StrTensorDict, StrTensorDict], StrTensorDict],]:
-    """Construct embedding function which maps user-facing parameters to either *expression-level*
+    """Construct embedding function.
+
+    It maps user-facing parameters to either *expression-level*
     parameters or *gate-level* parameters. The construced embedding function has the signature:
 
          embedding_fn(params: StrTensorDict, inputs: StrTensorDict) -> StrTensorDict:

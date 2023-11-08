@@ -97,7 +97,7 @@ __all__ = [
 
 
 class X(PrimitiveBlock):
-    """The X gate"""
+    """The X gate."""
 
     name = OpName.X
 
@@ -121,7 +121,7 @@ class X(PrimitiveBlock):
 
 
 class Y(PrimitiveBlock):
-    """The Y gate"""
+    """The Y gate."""
 
     name = OpName.Y
 
@@ -145,7 +145,7 @@ class Y(PrimitiveBlock):
 
 
 class Z(PrimitiveBlock):
-    """The Z gate"""
+    """The Z gate."""
 
     name = OpName.Z
 
@@ -169,7 +169,7 @@ class Z(PrimitiveBlock):
 
 
 class N(PrimitiveBlock):
-    """The N = (1/2)(I-Z) operator"""
+    """The N = (1/2)(I-Z) operator."""
 
     name = OpName.N
 
@@ -193,7 +193,7 @@ class N(PrimitiveBlock):
 
 
 class S(PrimitiveBlock):
-    """The S / Phase gate"""
+    """The S / Phase gate."""
 
     name = OpName.S
 
@@ -214,7 +214,7 @@ class S(PrimitiveBlock):
 
 
 class SDagger(PrimitiveBlock):
-    """The Hermitian adjoint/conjugate transpose of the S / Phase gate"""
+    """The Hermitian adjoint/conjugate transpose of the S / Phase gate."""
 
     name = OpName.SDAGGER
 
@@ -235,7 +235,7 @@ class SDagger(PrimitiveBlock):
 
 
 class PHASE(ParametricBlock):
-    """The Parametric Phase / S gate"""
+    """The Parametric Phase / S gate."""
 
     name = OpName.PHASE
 
@@ -259,7 +259,7 @@ class PHASE(ParametricBlock):
 
 
 class I(PrimitiveBlock):
-    """The identity gate"""
+    """The identity gate."""
 
     name = OpName.I
 
@@ -303,7 +303,7 @@ TPauliBlock = Union[X, Y, Z, I, N]
 
 
 class H(PrimitiveBlock):
-    """The Hadamard or H gate"""
+    """The Hadamard or H gate."""
 
     name = OpName.H
 
@@ -367,7 +367,7 @@ class Zero(PrimitiveBlock):
 
 
 class RX(ParametricBlock):
-    """The Rx gate"""
+    """The Rx gate."""
 
     name = OpName.RX
 
@@ -395,7 +395,7 @@ class RX(ParametricBlock):
 
 
 class RY(ParametricBlock):
-    """The Ry gate"""
+    """The Ry gate."""
 
     name = OpName.RY
 
@@ -422,7 +422,7 @@ class RY(ParametricBlock):
 
 
 class RZ(ParametricBlock):
-    """The Rz gate"""
+    """The Rz gate."""
 
     name = OpName.RZ
 
@@ -449,9 +449,10 @@ class RZ(ParametricBlock):
 
 
 class U(ParametricBlock):
-    """Arbitrary one-qubit rotation in the Bloch sphere
+    """Arbitrary one-qubit rotation in the Bloch sphere.
 
-    This operation accepts 3 parameters (phi, theta, omega)"""
+    This operation accepts 3 parameters (phi, theta, omega)
+    """
 
     name = OpName.U
 
@@ -497,6 +498,7 @@ class U(ParametricBlock):
 class HamEvo(TimeEvolutionBlock):
     """
     A block implementing the Hamiltonian evolution operation H where:
+
         H = exp(-iG, t)
     where G represents a square generator and t represents the time parameter
     which can be parametrized.
@@ -596,7 +598,7 @@ class HamEvo(TimeEvolutionBlock):
         return HamEvo(deepcopy(self.generator), -extract_original_param_entry(p))
 
     def digital_decomposition(self, approximation: LTSOrder = LTSOrder.ST4) -> AbstractBlock:
-        """Decompose the Hamiltonian evolution into digital gates
+        """Decompose the Hamiltonian evolution into digital gates.
 
         Args:
             approximation (str, optional): Choose the type of decomposition. Defaults to "st4".
@@ -660,7 +662,7 @@ class HamEvo(TimeEvolutionBlock):
 
 
 class CNOT(ControlBlock):
-    """The CNot, or CX, gate"""
+    """The CNot, or CX, gate."""
 
     name = OpName.CNOT
 
@@ -726,7 +728,7 @@ class MCZ(ControlBlock):
 
 
 class CZ(MCZ):
-    """The CZ gate"""
+    """The CZ gate."""
 
     name = OpName.CZ
 
@@ -767,7 +769,7 @@ class MCRX(ParametricControlBlock):
 
 
 class CRX(MCRX):
-    """The CRX gate"""
+    """The CRX gate."""
 
     name = OpName.CRX
 
@@ -810,7 +812,7 @@ class MCRY(ParametricControlBlock):
 
 
 class CRY(MCRY):
-    """The CRY gate"""
+    """The CRY gate."""
 
     name = OpName.CRY
 
@@ -853,7 +855,7 @@ class MCRZ(ParametricControlBlock):
 
 
 class CRZ(MCRZ):
-    """The CRZ gate"""
+    """The CRZ gate."""
 
     name = OpName.CRZ
 
@@ -908,7 +910,7 @@ class CSWAP(ControlBlock):
 
 
 class T(PrimitiveBlock):
-    """The T gate"""
+    """The T gate."""
 
     name = OpName.T
 
@@ -933,7 +935,7 @@ class T(PrimitiveBlock):
 
 
 class TDagger(PrimitiveBlock):
-    """The Hermitian adjoint/conjugate transpose of the T gate"""
+    """The Hermitian adjoint/conjugate transpose of the T gate."""
 
     # FIXME: this gate is not support by any backend
     name = "T_dagger"
@@ -959,7 +961,7 @@ class TDagger(PrimitiveBlock):
 
 
 class SWAP(PrimitiveBlock):
-    """The SWAP gate"""
+    """The SWAP gate."""
 
     name = OpName.SWAP
 
@@ -997,7 +999,8 @@ class SWAP(PrimitiveBlock):
 
 class AnalogSWAP(HamEvo):
     """
-    Single time-independent Hamiltonian evolution over a Rydberg Ising
+    Single time-independent Hamiltonian evolution over a Rydberg Ising.
+
     hamiltonian yielding a SWAP (up to global phase).
 
     Derived from
@@ -1061,7 +1064,7 @@ class MCPHASE(ParametricControlBlock):
 
 
 class CPHASE(MCPHASE):
-    """The CPHASE gate"""
+    """The CPHASE gate."""
 
     name = OpName.CPHASE
 
@@ -1203,7 +1206,9 @@ def AnalogRX(
     angle: float | str | Parameter,
     qubit_support: str | QubitSupport | Tuple = "global",
 ) -> ConstantAnalogRotation:
-    """Analog X rotation. Shorthand for [`AnalogRot`][qadence.operations.AnalogRot]:
+    """Analog X rotation.
+
+    Shorthand for [`AnalogRot`][qadence.operations.AnalogRot]:
 
     ```python
     φ=2.4; Ω=π; t = φ/Ω * 1000
@@ -1224,7 +1229,9 @@ def AnalogRY(
     angle: float | str | Parameter,
     qubit_support: str | QubitSupport | Tuple = "global",
 ) -> ConstantAnalogRotation:
-    """Analog Y rotation. Shorthand for [`AnalogRot`][qadence.operations.AnalogRot]:
+    """Analog Y rotation.
+
+    Shorthand for [`AnalogRot`][qadence.operations.AnalogRot]:
 
     ```python
     φ=2.4; Ω=π; t = φ/Ω * 1000

@@ -9,7 +9,9 @@ from typing import Callable, Optional
 
 @dataclass
 class TrainConfig:
-    """Default config for the train function. The default value of
+    """Default config for the train function.
+
+    The default value of
     each field can be customized with the constructor:
 
     ```python exec="on" source="material-block" result="json"
@@ -24,20 +26,22 @@ class TrainConfig:
     print_every: int = 1000
     """Print loss/metrics."""
     write_every: int = 50
-    """Write tensorboard logs"""
+    """Write tensorboard logs."""
     checkpoint_every: int = 5000
-    """Write model/optimizer checkpoint"""
+    """Write model/optimizer checkpoint."""
     folder: Optional[Path] = None
-    """Checkpoint/tensorboard logs folder"""
+    """Checkpoint/tensorboard logs folder."""
     create_subfolder_per_run: bool = False
     """Checkpoint/tensorboard logs stored in subfolder with name `<timestamp>_<PID>`.
-    Prevents continuing from previous checkpoint, useful for fast prototyping."""
+
+    Prevents continuing from previous checkpoint, useful for fast prototyping.
+    """
     checkpoint_best_only: bool = False
-    """Write model/optimizer checkpoint only if a metric has improved"""
+    """Write model/optimizer checkpoint only if a metric has improved."""
     validation_criterion: Optional[Callable] = None
-    """A boolean function which evaluates a given validation metric is satisfied"""
+    """A boolean function which evaluates a given validation metric is satisfied."""
     trainstop_criterion: Optional[Callable] = None
-    """A boolean function which evaluates a given training stopping metric is satisfied"""
+    """A boolean function which evaluates a given training stopping metric is satisfied."""
     batch_size: int = 1
     """The batch_size to use when passing a list/tuple of torch.Tensors."""
     verbose: bool = True

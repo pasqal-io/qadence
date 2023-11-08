@@ -28,7 +28,7 @@ def train(
     optimize_step: Callable = optimize_step,
     write_tensorboard: Callable = write_tensorboard,
 ) -> tuple[Module, Optimizer]:
-    """Runs the training loop with gradient-based optimizer
+    """Runs the training loop with gradient-based optimizer.
 
     Assumes that `loss_fn` returns a tuple of (loss,
     metrics: dict), where `metrics` is a dict of scalars. Loss and metrics are

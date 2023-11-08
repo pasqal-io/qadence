@@ -21,7 +21,7 @@ def qft(
     gen_build: AbstractBlock | None = None,
 ) -> AbstractBlock:
     """
-    The Quantum Fourier Transform
+    The Quantum Fourier Transform.
 
     Depending on the application, user should be careful with qubit ordering
     in the input and output. This can be controlled with reverse_in and swaps_out
@@ -96,8 +96,9 @@ def _qft_layer_digital(
     gen_build: AbstractBlock | None = None,
 ) -> AbstractBlock:
     """
-    Applies the Hadamard gate followed by CPHASE gates
-    corresponding to one layer of the QFT.
+    Apply the Hadamard gate followed by CPHASE gates.
+
+    This corresponds to one layer of the QFT.
     """
     qubit_range_layer = (
         reversed(range(layer + 1, n_qubits)) if inverse else range(layer + 1, n_qubits)
@@ -120,12 +121,12 @@ def _qft_layer_digital(
 
 
 def _theta(k: int) -> float:
-    """Eq. (16) from [1]"""
+    """Equation (16) from [1]."""
     return float(torch.pi / (2 ** (k + 1)))
 
 
 def _alpha(c: int, m: int, k: int) -> float:
-    """Eq. (16) from [1]"""
+    """Equation (16) from [1]."""
     if c == m:
         return float(torch.pi / (2 ** (k - m + 2)))
     else:
@@ -133,8 +134,7 @@ def _alpha(c: int, m: int, k: int) -> float:
 
 
 def _sqg_gen(n_qubits: int, support: tuple[int, ...], m: int, inverse: bool) -> list[AbstractBlock]:
-    """
-    Eq. (13) from [1]
+    """Equation (13) from [1].
 
     Creates the generator corresponding to single-qubit rotations coming
     out of the CPHASE decomposition. The paper also includes the generator
@@ -154,8 +154,7 @@ def _sqg_gen(n_qubits: int, support: tuple[int, ...], m: int, inverse: bool) -> 
 
 
 def _tqg_gen(n_qubits: int, support: tuple[int, ...], m: int, inverse: bool) -> list[AbstractBlock]:
-    """
-    Eq. (14) from [1]
+    """Equation (14) from [1].
 
     Creates the generator corresponding to the two-qubit ZZ
     interactions coming out of the CPHASE decomposition.

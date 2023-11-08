@@ -8,12 +8,12 @@ logger = get_logger(__name__)
 
 
 def _k_d(a: int, b: int) -> int:
-    """Kronecker delta"""
+    """Kronecker delta."""
     return int(a == b)
 
 
 def _ix_map(n: int, a: int, b: int) -> int:
-    """Maps `(a, b)` with `b` in [1, n] and `a < b` to range [1, n(n-1)/2]"""
+    """Maps `(a, b)` with `b` in [1, n] and `a < b` to range [1, n(n-1)/2]."""
     return int(n * (a - 1) - 0.5 * a * (a + 1) + b)
 
 

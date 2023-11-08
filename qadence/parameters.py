@@ -45,13 +45,18 @@ ParameterJSONSchema = {
 
 class Parameter(Symbol):
     """
-    A wrapper on top of `sympy.Symbol` to include two additional keywords: `trainable` and
-    `value`. This class is to define both feature parameter and variational parameters.
+    A wrapper on top of `sympy.Symbol`.
+
+    Includes two additional keywords: `trainable` and `value`.
+    This class is to define both feature parameter and variational parameters.
     """
 
     trainable: bool
-    """Trainable parameters are *variational* parameters. Non-trainable parameters are *feature*
-    parameters."""
+    """Trainable parameters are *variational* parameters.
+
+    Non-trainable parameters are *feature*
+    parameters.
+    """
     value: TNumber
     """(Initial) value of the parameter."""
 
@@ -60,6 +65,7 @@ class Parameter(Symbol):
     ) -> Parameter | Basic | Expr | Array:
         """
         Arguments:
+
             name: When given a string only, the class
                 constructs a trainable Parameter with a a randomly initialized value.
             **assumptions: are passed on to the parent class `sympy.Symbol`. Two new assumption
@@ -175,7 +181,8 @@ def extract_original_param_entry(
     param: Expr,
 ) -> TNumber | Tensor | Expr:
     """
-    Given an Expression, what was the original "param" given by the user? It is either
+    Given an Expression, what was the original "param" given by the user? It is either.
+
     going to be a numeric value, or a sympy Expression (in case a string was given,
     it was converted via Parameter("string").
     """
@@ -185,6 +192,7 @@ def extract_original_param_entry(
 def torchify(expr: Expr) -> SymPyModule:
     """
     Arguments:
+
         expr: An expression consisting of Parameters.
 
     Returns:
@@ -204,6 +212,7 @@ def sympy_to_numeric(expr: Basic) -> TNumber:
 def evaluate(expr: Expr, values: dict = {}, as_torch: bool = False) -> TNumber | Tensor:
     """
     Arguments:
+
         expr: An expression consisting of Parameters.
         values: values dict which contains values for the Parameters,
             if empty, Parameter.value will be used.
@@ -266,7 +275,9 @@ def stringify(expr: Basic) -> str:
 
 
 class ParamMap:
-    """Connects UUIDs of parameters to their expressions and names. This class is not user-facing
+    """Connects UUIDs of parameters to their expressions and names.
+
+    This class is not user-facing
     and only needed for more complex block definitions. It provides convenient access to
     expressions/UUIDs/names needed in different backends.
 
