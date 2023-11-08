@@ -7,14 +7,14 @@ from qadence.types import BackendName, DiffMode
 
 class ExperimentComposer(BaseModel):
     BACKEND: BackendName
-    DIFFMODE: DiffMode
+    DIFF_MODE: DiffMode
 
     @validator("BACKEND")
     @classmethod
     def validate_backend(cls, value: BackendName) -> BackendName:
         return BackendName(value)
 
-    @validator("DIFFMODE")
+    @validator("DIFF_MODE")
     @classmethod
     def validate_diffmode(cls, value: DiffMode, values: dict) -> DiffMode:
         validated_diffmode = DiffMode(value)

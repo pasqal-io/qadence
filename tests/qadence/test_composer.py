@@ -13,9 +13,9 @@ from qadence.types import BackendName, DiffMode
 def test_composer_validation_for_all_backends_and_gpsr(
     backend: BackendName, diff_mode: DiffMode = DiffMode.GPSR
 ) -> None:
-    composer = ExperimentComposer(BACKEND=backend, DIFFMODE=diff_mode)
+    composer = ExperimentComposer(BACKEND=backend, DIFF_MODE=diff_mode)
     assert composer.BACKEND == backend
-    assert composer.DIFFMODE == diff_mode
+    assert composer.DIFF_MODE == diff_mode
 
 
 @pytest.mark.parametrize(
@@ -26,4 +26,4 @@ def test_composer_raise_error_for_backend_not_supporting_ad(
     backend: BackendName, diff_mode: DiffMode = DiffMode.AD
 ) -> None:
     with pytest.raises(ValueError):
-        ExperimentComposer(BACKEND=backend, DIFFMODE=diff_mode)
+        ExperimentComposer(BACKEND=backend, DIFF_MODE=diff_mode)
