@@ -210,7 +210,8 @@ standard $\text{RZ}$ rotation since it evolves $\exp\left(-i\frac{\theta}{2}\fra
 Below we exemplify the usage of `AnalogRX`
 
 ```python exec="on" source="material-block" result="json" session="rx"
-from qadence import Register, RX, AnalogRX, random_state, equivalent_state, kron, run
+from qadence import Register, BackendName
+from qadence import RX, AnalogRX, random_state, equivalent_state, kron, run
 from math import pi
 
 dx = 8.0
@@ -279,8 +280,8 @@ Finally, besides applying specific qubit rotations, we can also choose to evolve
 $\mathcal{H}^\text{int}$, equivalent to setting $\Omega = \delta = \phi = 0$. To do so, Qadence provides the
 function `wait` which does exactly this.
 
-```python exec="on" source="material-block" result="json" session="rx"
-from qadence import wait, run
+```python exec="on" source="material-block" result="json" session="int"
+from qadence import Register, BackendName, random_state, equivalent_state, wait, run
 
 dx = 8.0
 reg = Register.from_coordinates([(dx, 0), (2*dx, 0), (3*dx, 0)])
