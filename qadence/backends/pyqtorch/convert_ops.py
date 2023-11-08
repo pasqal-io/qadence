@@ -161,8 +161,10 @@ class PyQComposedBlock(pyq.QuantumCircuit):
         n_qubits: int,
         config: Configuration = None,
     ):
-        """Compose a chain of single qubit operations on the same qubit into a single
-        call to _apply_batch_gate."""
+        """Compose a chain of single qubit operations on the same qubit into a single.
+
+        call to _apply_batch_gate.
+        """
         super().__init__(n_qubits, ops)
         self.qubits = qubits
 
