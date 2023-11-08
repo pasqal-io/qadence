@@ -9,7 +9,6 @@ import torch
 from hypothesis import given, settings
 from metrics import HIGH_ACCEPTANCE, LOW_ACCEPTANCE, MIDDLE_ACCEPTANCE  # type: ignore
 
-from qadence import BackendName, BasisSet, DiffMode
 from qadence.backends import backend_factory
 from qadence.blocks import (
     AbstractBlock,
@@ -40,6 +39,7 @@ from qadence.ml_tools.utils import rand_featureparameters
 from qadence.models import QNN, QuantumModel
 from qadence.operations import RX, RY, H, SDagger, X, Y, Z
 from qadence.parameters import Parameter
+from qadence.types import BackendName, BasisSet, DiffMode
 
 torch.manual_seed(1)
 

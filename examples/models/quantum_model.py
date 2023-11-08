@@ -14,8 +14,7 @@ from qadence import (
     chain,
     total_magnetization,
 )
-from qadence.backend import BackendName
-from qadence.backends.pytorch_wrapper import DiffMode
+from qadence.types import BackendName, DiffMode
 
 torch.manual_seed(42)
 

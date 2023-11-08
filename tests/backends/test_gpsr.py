@@ -9,17 +9,17 @@ import torch
 from metrics import GPSR_ACCEPTANCE, PSR_ACCEPTANCE
 
 from qadence import DifferentiableBackend, DiffMode, Parameter, QuantumCircuit
+from qadence.analog import add_interaction
 from qadence.backends.pyqtorch import Backend as PyQBackend
 from qadence.blocks import add, chain
 from qadence.constructors import total_magnetization
 from qadence.operations import CNOT, CRX, CRY, RX, RY, ConstantAnalogRotation, HamEvo, X, Y, Z
 from qadence.parameters import ParamMap
 from qadence.register import Register
-from qadence.transpile import add_interaction
 
 
 def circuit_psr(n_qubits: int) -> QuantumCircuit:
-    """Helper function to make an example circuit"""
+    """Helper function to make an example circuit."""
 
     x = Parameter("x", trainable=False)
     theta = Parameter("theta")
@@ -34,7 +34,7 @@ def circuit_psr(n_qubits: int) -> QuantumCircuit:
 
 
 def circuit_gpsr(n_qubits: int) -> QuantumCircuit:
-    """Helper function to make an example circuit"""
+    """Helper function to make an example circuit."""
 
     x = Parameter("x", trainable=False)
     theta = Parameter("theta")
@@ -56,7 +56,7 @@ def circuit_gpsr(n_qubits: int) -> QuantumCircuit:
 
 
 def circuit_hamevo_tensor_gpsr(n_qubits: int) -> QuantumCircuit:
-    """Helper function to make an example circuit"""
+    """Helper function to make an example circuit."""
 
     x = Parameter("x", trainable=False)
     theta = Parameter("theta")
@@ -83,7 +83,7 @@ def circuit_hamevo_tensor_gpsr(n_qubits: int) -> QuantumCircuit:
 
 
 def circuit_hamevo_block_gpsr(n_qubits: int) -> QuantumCircuit:
-    """Helper function to make an example circuit"""
+    """Helper function to make an example circuit."""
 
     x = Parameter("x", trainable=False)
     theta = Parameter("theta")

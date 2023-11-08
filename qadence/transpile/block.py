@@ -6,7 +6,6 @@ from typing import Callable, Iterable, Type
 
 import sympy
 
-from qadence import SWAP, I
 from qadence.blocks import (
     AbstractBlock,
     AddBlock,
@@ -28,6 +27,7 @@ from qadence.blocks.utils import (
     parameters,
 )
 from qadence.logger import get_logger
+from qadence.operations import SWAP, I
 from qadence.parameters import Parameter
 
 logger = get_logger(__name__)
@@ -44,7 +44,7 @@ def repeat(
 def set_trainable(
     blocks: AbstractBlock | list[AbstractBlock], value: bool = True, inplace: bool = True
 ) -> AbstractBlock | list[AbstractBlock]:
-    """Set the trainability of all parameters in a block to a given value
+    """Set the trainability of all parameters in a block to a given value.
 
     Args:
         blocks (AbstractBlock | list[AbstractBlock]): Block or list of blocks for which
@@ -77,8 +77,9 @@ def set_trainable(
 
 
 def validate(block: AbstractBlock) -> AbstractBlock:
-    """Moves a block from global to local qubit numbers by adding PutBlocks and reassigning
-    qubit locations approriately.
+    """Moves a block from global to local qubit numbers by adding PutBlocks.
+
+    Reassigns qubit locations appropriately.
 
     # Example
     ```python exec="on" source="above" result="json"
@@ -130,8 +131,9 @@ def validate(block: AbstractBlock) -> AbstractBlock:
 
 @singledispatch
 def scale_primitive_blocks_only(block: AbstractBlock, scale: sympy.Basic = None) -> AbstractBlock:
-    """When given a scaled CompositeBlock consisting of several PrimitiveBlocks,
-    move the scale all the way down into the leaves of the block tree.
+    """Push the scale all the way down into the leaves of the block tree.
+
+    When given a scaled CompositeBlock consisting of several PrimitiveBlocks.
 
     Arguments:
         block: The block to be transpiled.

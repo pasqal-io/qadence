@@ -7,7 +7,6 @@ import numpy as np
 import torch
 from torch import Tensor
 
-from qadence import BackendName, DiffMode
 from qadence.backends import backend_factory
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.block_to_tensor import (
@@ -19,11 +18,11 @@ from qadence.blocks.block_to_tensor import (
 )
 from qadence.blocks.composite import CompositeBlock
 from qadence.blocks.primitive import PrimitiveBlock
-from qadence.blocks.utils import get_pauli_blocks, unroll_block_with_scaling
+from qadence.blocks.utils import chain, get_pauli_blocks, kron, unroll_block_with_scaling
 from qadence.circuit import QuantumCircuit
-from qadence.operations import X, Y, Z, chain, kron
+from qadence.operations import X, Y, Z
 from qadence.states import one_state, zero_state
-from qadence.types import Endianness
+from qadence.types import BackendName, DiffMode, Endianness
 
 pauli_gates = [X, Y, Z]
 
@@ -85,7 +84,8 @@ def number_of_samples(
     observables: list[AbstractBlock], accuracy: float, confidence: float
 ) -> tuple[int, ...]:
     """
-    Estimate an optimal shot budget and a shadow partition size
+    Estimate an optimal shot budget and a shadow partition size.
+
     to guarantee given accuracy on all observables expectation values
     within 1 - confidence range.
 
@@ -213,7 +213,8 @@ def estimators(
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
     """
-    Return estimators (traces of observable times mean density matrix)
+    Return estimators (traces of observable times mean density matrix).
+
     for K equally-sized shadow partitions.
 
     See https://arxiv.org/pdf/2002.08953.pdf

@@ -8,9 +8,9 @@ import nevergrad as ng
 import numpy as np
 import pytest
 import torch
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader
 
-from qadence.ml_tools import TrainConfig, num_parameters, train_gradient_free
+from qadence.ml_tools import TrainConfig, num_parameters, to_dataloader, train_gradient_free
 
 # ensure reproducibility
 SEED = 42
@@ -20,13 +20,10 @@ np.random.seed(SEED)
 torch.manual_seed(SEED)
 
 
-def dataloader() -> DataLoader:
-    batch_size = 25
+def dataloader(batch_size: int = 25) -> DataLoader:
     x = torch.linspace(0, 1, batch_size).reshape(-1, 1)
     y = torch.cos(x)
-
-    dataset = TensorDataset(x, y)
-    return DataLoader(dataset, batch_size=batch_size)
+    return to_dataloader(x, y, batch_size=batch_size, infinite=True)
 
 
 @pytest.mark.flaky(max_runs=10)

@@ -3,10 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable
 
+from qadence.analog import add_interaction
 from qadence.backend import BackendConfiguration
 from qadence.logger import get_logger
 from qadence.transpile import (
-    add_interaction,
     blockfn_to_circfn,
     chain_single_qubit_ops,
     flatten,
@@ -30,13 +30,16 @@ def default_passes(config: Configuration) -> list[Callable]:
 @dataclass
 class Configuration(BackendConfiguration):
     algo_hevo: AlgoHEvo = AlgoHEvo.EXP
-    """Determine which kind of Hamiltonian evolution algorithm to use"""
+    """Determine which kind of Hamiltonian evolution algorithm to use."""
 
     n_steps_hevo: int = 100
-    """Default number of steps for the Hamiltonian evolution"""
+    """Default number of steps for the Hamiltonian evolution."""
 
     use_gradient_checkpointing: bool = False
-    """Use gradient checkpointing. Recommended for higher-order optimization tasks."""
+    """Use gradient checkpointing.
+
+    Recommended for higher-order optimization tasks.
+    """
 
     use_single_qubit_composition: bool = False
     """Composes chains of single qubit gates into a single matmul if possible."""
@@ -45,5 +48,7 @@ class Configuration(BackendConfiguration):
     """Digital-analog emulation interaction that is used for `AnalogBlock`s."""
 
     loop_expectation: bool = False
-    """When computing batches of expectation values, only allocate one wavefunction and loop over
-    the batch of parameters to only allocate a single wavefunction at any given time."""
+    """When computing batches of expectation values, only allocate one wavefunction.
+
+    Loop over the batch of parameters to only allocate a single wavefunction at any given time.
+    """

@@ -20,9 +20,11 @@ nav:
     - Backends: tutorials/backends.md
 
   - Digital-analog quantum computing:
-    - digital_analog_qc/daqc-basics.md
+    - digital_analog_qc/index.md
+    - Basic operations on neutral-atoms: digital_analog_qc/analog-basics.md
+    - Fitting a simple function: digital_analog_qc/analog-qcl.md
     - Hardware efficient ansatz with restricted addressability: digital_analog_qc/rydbgerg-hea.md
-    - Digital-analog emulation: digital_analog_qc/analog-basics.md
+    - Pulse-level programming with Pulser: digital_analog_qc/pulser-basic.md
     - Solve a QUBO problem: digital_analog_qc/analog-qubo.md
     - Pulse-level programming with Pulser: digital_analog_qc/pulser-basic.md
     - CNOT with interacting qubits: digital_analog_qc/daqc-cnot.md

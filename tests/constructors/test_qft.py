@@ -19,7 +19,7 @@ from qadence.types import Strategy
 
 def test_qft() -> None:
     def qft_matrix(N: int) -> torch.Tensor:
-        """Textbook QFT unitary matrix to compare to the circuit solution"""
+        """Textbook QFT unitary matrix to compare to the circuit solution."""
         matrix = torch.zeros((N, N), dtype=torch.cdouble)
         w = torch.exp(torch.tensor(2.0j * torch.pi / N, dtype=torch.cdouble))
         for i in range(N):

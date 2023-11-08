@@ -6,16 +6,28 @@ from typing import Any, Union
 
 from torch import Tensor, no_grad
 
-from qadence import backend_factory
-from qadence.backend import BackendConfiguration, BackendName
+from qadence.backend import BackendConfiguration
+from qadence.backends.api import backend_factory
 from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
+from qadence.qubit_support import QubitSupport
 from qadence.register import Register
-from qadence.types import DiffMode
-from qadence.utils import Endianness
+from qadence.types import BackendName, DiffMode, Endianness
 
 # Modules to be automatically added to the qadence namespace
 __all__ = ["run", "sample", "expectation"]
+
+
+def _n_qubits_block(block: AbstractBlock) -> int:
+    if isinstance(block.qubit_support, QubitSupport) and block.qubit_support.is_global:
+        raise ValueError(
+            "You cannot determine the number of qubits for"
+            "a block with global qubit support. Use a QuantumCircuit"
+            "instead and explicitly supply the number of qubits as follows: "
+            "\nn_qubits = 4\nQuantumCircuit(n_qubits, block)"
+        )
+    else:
+        return block.n_qubits
 
 
 @singledispatch
@@ -28,7 +40,9 @@ def run(
     endianness: Endianness = Endianness.BIG,
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> Tensor:
-    """Convenience wrapper for the `QuantumModel.run` method.  This is a
+    """Convenience wrapper for the `QuantumModel.run` method.
+
+     This is a
     `functools.singledispatch`ed function so it can be called with a number of different arguments.
     See the examples of the [`expectation`][qadence.execution.expectation] function. This function
     works exactly the same.
@@ -79,7 +93,8 @@ def _(n_qubits: int, block: AbstractBlock, **kwargs: Any) -> Tensor:
 
 @run.register
 def _(block: AbstractBlock, **kwargs: Any) -> Tensor:
-    return run(Register(block.n_qubits), block, **kwargs)
+    n_qubits = _n_qubits_block(block)
+    return run(Register(n_qubits), block, **kwargs)
 
 
 @singledispatch
@@ -93,7 +108,9 @@ def sample(
     endianness: Endianness = Endianness.BIG,
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> list[Counter]:
-    """Convenience wrapper for the `QuantumModel.sample` method.  This is a
+    """Convenience wrapper for the `QuantumModel.sample` method.
+
+     This is a
     `functools.singledispatch`ed function so it can be called with a number of different arguments.
     See the examples of the [`expectation`][qadence.execution.expectation] function. This function
     works exactly the same.
@@ -146,8 +163,8 @@ def _(n_qubits: int, block: AbstractBlock, **kwargs: Any) -> Tensor:
 
 @sample.register
 def _(block: AbstractBlock, **kwargs: Any) -> Tensor:
-    reg = Register(block.n_qubits)
-    return sample(reg, block, **kwargs)
+    n_qubits = _n_qubits_block(block)
+    return sample(Register(n_qubits), block, **kwargs)
 
 
 @singledispatch
@@ -161,7 +178,9 @@ def expectation(
     endianness: Endianness = Endianness.BIG,
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> Tensor:
-    """Convenience wrapper for the `QuantumModel.expectation` method.  This is a
+    """Convenience wrapper for the `QuantumModel.expectation` method.
+
+     This is a
     `functools.singledispatch`ed function so it can be called with a number of different arguments
     (see in the examples).
 
@@ -177,7 +196,6 @@ def expectation(
 
     Returns:
         A wavefunction
-
 
     ```python exec="on" source="material-block"
     from qadence import RX, Z, Register, QuantumCircuit, expectation
@@ -198,7 +216,8 @@ def expectation(
 
     # Or a register and block
     expectation(reg, block, observable)
-    ```"""
+    ```
+    """
 
     raise ValueError(f"Cannot execute {type(x)}")
 
@@ -215,7 +234,7 @@ def _(
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> Tensor:
     observable = observable if isinstance(observable, list) else [observable]
-    bknd = backend_factory(backend, configuration=configuration)
+    bknd = backend_factory(backend, configuration=configuration, diff_mode=diff_mode)
     conv = bknd.convert(circuit, observable)
 
     def _expectation() -> Tensor:
@@ -260,5 +279,5 @@ def _(
 def _(
     block: AbstractBlock, observable: Union[list[AbstractBlock], AbstractBlock], **kwargs: Any
 ) -> Tensor:
-    reg = Register(block.n_qubits)
-    return expectation(QuantumCircuit(reg, block), observable, **kwargs)
+    n_qubits = _n_qubits_block(block)
+    return expectation(QuantumCircuit(Register(n_qubits), block), observable, **kwargs)

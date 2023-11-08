@@ -8,9 +8,8 @@ from openfermion import QubitOperator
 from pytest import fixture  # type: ignore
 from sympy import Expr
 
-from qadence import BackendName, DiffMode
-from qadence.blocks import AbstractBlock, chain, kron
-from qadence.blocks.utils import unroll_block_with_scaling
+from qadence.blocks.abstract import AbstractBlock
+from qadence.blocks.utils import chain, kron, unroll_block_with_scaling
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import feature_map, hea, total_magnetization
 from qadence.ml_tools.models import TransformedModule
@@ -18,6 +17,7 @@ from qadence.models import QNN, QuantumModel
 from qadence.operations import CNOT, RX, RY, X, Y, Z
 from qadence.parameters import Parameter
 from qadence.register import Register
+from qadence.types import BackendName, DiffMode
 
 BASIC_NQUBITS = 4
 FM_NQUBITS = 2

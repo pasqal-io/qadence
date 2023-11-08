@@ -7,9 +7,12 @@ import pytest
 import torch
 from metrics import JS_ACCEPTANCE
 
-from qadence import QuantumCircuit, QuantumModel, run, sample
+from qadence.analog import add_interaction
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.analog import AnalogBlock
+from qadence.circuit import QuantumCircuit
+from qadence.execution import run, sample
+from qadence.models.quantum_model import QuantumModel
 from qadence.operations import (
     RX,
     RY,
@@ -27,7 +30,6 @@ from qadence.operations import (
 from qadence.overlap import js_divergence
 from qadence.register import Register
 from qadence.states import equivalent_state, random_state
-from qadence.transpile import add_interaction
 
 
 def layer(Op: Any, n_qubits: int, angle: float) -> AbstractBlock:

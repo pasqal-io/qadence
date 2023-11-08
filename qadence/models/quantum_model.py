@@ -16,13 +16,12 @@ from qadence.backend import (
     ConvertedCircuit,
     ConvertedObservable,
 )
-from qadence.backends import backend_factory, config_factory
-from qadence.backends.pytorch_wrapper import DiffMode
-from qadence.blocks import AbstractBlock
+from qadence.backends.api import backend_factory, config_factory
+from qadence.blocks.abstract import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.logger import get_logger
 from qadence.measurements import Measurements
-from qadence.utils import Endianness
+from qadence.types import DiffMode, Endianness
 
 logger = get_logger(__name__)
 
@@ -107,7 +106,7 @@ class QuantumModel(nn.Module):
 
     @property
     def vals_vparams(self) -> Tensor:
-        """Dictionary with parameters which are actually updated during optimization"""
+        """Dictionary with parameters which are actually updated during optimization."""
         vals = torch.tensor([v for v in self._params.values() if v.requires_grad])
         vals.requires_grad = False
         return vals.flatten()
@@ -119,12 +118,12 @@ class QuantumModel(nn.Module):
 
     @property
     def out_features(self) -> int | None:
-        """Number of outputs"""
+        """Number of outputs."""
         return 0 if self._observable is None else len(self._observable)
 
     @property
     def num_vparams(self) -> int:
-        """The number of variational parameters"""
+        """The number of variational parameters."""
         return len(self.vals_vparams)
 
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:
@@ -134,7 +133,7 @@ class QuantumModel(nn.Module):
         return self.backend.observable(observable, n_qubits)
 
     def reset_vparams(self, values: Sequence) -> None:
-        """Reset all the variational parameters with a given list of values"""
+        """Reset all the variational parameters with a given list of values."""
         current_vparams = OrderedDict({k: v for k, v in self._params.items() if v.requires_grad})
 
         assert (
@@ -281,6 +280,6 @@ class QuantumModel(nn.Module):
         return cls._from_dict(qm_pt, as_torch)
 
     def assign_parameters(self, values: dict[str, Tensor]) -> Any:
-        """Return the final, assigned circuit that is used in e.g. `backend.run`"""
+        """Return the final, assigned circuit that is used in e.g. `backend.run`."""
         params = self.embedding_fn(self._params, values)
         return self.backend.assign_parameters(self._circuit, params)

@@ -112,9 +112,7 @@ class TensorType(StrEnum):
 
 
 class LTSOrder(StrEnum):
-    """
-    Lie-Trotter-Suzuki approximation order.
-    """
+    """Lie-Trotter-Suzuki approximation order."""
 
     BASIC = "BASIC"
     """Basic."""
@@ -161,19 +159,20 @@ class QubitSupportType(StrEnum):
 
 
 class Interaction(StrEnum):
-    """Interaction types used in
-    - [`add_interaction`][qadence.transpile.emulate.add_interaction].
+    """Interaction types used in.
+
+    - `add_interaction`.
     - [`hamiltonian_factory`][qadence.constructors.hamiltonians.hamiltonian_factory].
     """
 
     ZZ = "ZZ"
-    """ZZ-Ising Interaction"""
+    """ZZ-Ising Interaction."""
     NN = "NN"
-    """NN-Ising Interaction, N=(I-Z)/2"""
+    """NN-Ising Interaction, N=(I-Z)/2."""
     XY = "XY"
-    """XY Interaction"""
+    """XY Interaction."""
     XYZ = "XYZ"
-    """XYZ Interaction"""
+    """XYZ Interaction."""
 
 
 class _BackendName(StrEnum):
@@ -296,7 +295,7 @@ class OpName(StrEnum):
     Z = "Z"
     """The Z gate."""
     N = "N"
-    """The N = (1/2)(I-Z) operator"""
+    """The N = (1/2)(I-Z) operator."""
     H = "H"
     """The Hadamard gate."""
     I = "I"  # noqa

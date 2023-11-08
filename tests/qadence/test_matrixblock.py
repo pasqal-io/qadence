@@ -4,16 +4,16 @@ import numpy as np
 import pytest
 import torch
 
-from qadence import QuantumCircuit as QC
-from qadence.backend import BackendName
 from qadence.backends.api import DiffMode
 from qadence.blocks import MatrixBlock, ParametricBlock, PrimitiveBlock, chain
 from qadence.blocks.block_to_tensor import OPERATIONS_DICT, block_to_tensor
+from qadence.circuit import QuantumCircuit as QC
 from qadence.constructors import hea
 from qadence.execution import run
 from qadence.models import QuantumModel as QM
 from qadence.operations import CNOT, RX, RY, RZ, H, I, S, T, U, X, Y, Z
 from qadence.states import random_state
+from qadence.types import BackendName
 
 
 @pytest.mark.parametrize("gate", [I, X, Y, Z, H, T, S])
