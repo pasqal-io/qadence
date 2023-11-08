@@ -17,13 +17,13 @@ class WhiteNoise(Enum):
     """White noise distributions."""
 
     UNIFORM = staticmethod(uniform.Uniform(low=0.0, high=1.0))
-    "Uniform white noise."
+    """Uniform white noise."""
 
     GAUSSIAN = staticmethod(normal.Normal(loc=0.0, scale=1.0))
-    "Gaussian white noise."
+    """Gaussian white noise."""
 
     POISSON = staticmethod(poisson.Poisson(rate=0.1))
-    "Poisson white noise."
+    """Poisson white noise."""
 
 
 def bitstring_to_array(bitstring: str) -> np.array:
@@ -90,6 +90,7 @@ def create_noise_matrix(
 ) -> np.array:
     """
     A helper function that creates a noise matrix for bit string corruption.
+
     NB: The noise matrix is not square, as all bits are considered independent.
 
     Args:
@@ -112,7 +113,8 @@ def bs_corruption(
     sample: np.array,
 ) -> Counter:
     """
-    A function that incorporates the expected readout error in a sample of bit strings
+    A function that incorporates the expected readout error in a sample of bit strings.
+
     given a noise matrix.
 
     Args:
@@ -151,7 +153,8 @@ def error(
     options: dict = dict(),
 ) -> list[Counter]:
     """
-    Implements a simple uniform readout error model for position-independent bit string
+    Implements a simple uniform readout error model for position-independent bit string.
+
     corruption.
 
     Args:

@@ -168,7 +168,7 @@ class Backend(ABC):
     def convert(
         self, circuit: QuantumCircuit, observable: list[AbstractBlock] | AbstractBlock | None = None
     ) -> Converted:
-        """Convert an abstract circuit (and optionally and observable) to their native representation.
+        """Convert an abstract circuit and an optional observable to their native representation.
 
         Additionally this function constructs an embedding function which maps from
         user-facing parameters to device parameters (read more on parameter embedding

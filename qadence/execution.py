@@ -113,7 +113,6 @@ def sample(
 ) -> list[Counter]:
     """Convenience wrapper for the `QuantumModel.sample` method.
 
-
     Arguments:
         x: Circuit, block, or (register+block) to run.
         values: User-facing parameter dict.
@@ -182,7 +181,6 @@ def expectation(
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> Tensor:
     """Convenience wrapper for the `QuantumModel.expectation` method.
-
 
     Arguments:
         x: Circuit, block, or (register+block) to run.
