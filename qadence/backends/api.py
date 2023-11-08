@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from qadence.backend import Backend, BackendConfiguration
-from qadence.backends.pytorch_wrapper import DifferentiableBackend, DiffMode
+from qadence.backends.pytorch_wrapper import DifferentiableBackend
 from qadence.extensions import available_backends, set_backend_config
-from qadence.types import BackendName
+from qadence.types import BackendName, DiffMode
 
 __all__ = ["backend_factory", "config_factory"]
 

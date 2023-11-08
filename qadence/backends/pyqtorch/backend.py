@@ -9,22 +9,21 @@ import torch
 from torch import Tensor
 
 from qadence.backend import Backend as BackendInterface
-from qadence.backend import BackendName, ConvertedCircuit, ConvertedObservable
+from qadence.backend import ConvertedCircuit, ConvertedObservable
 from qadence.backends.utils import (
     to_list_of_dicts,
 )
 from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
-from qadence.overlap import overlap_exact
-from qadence.states import zero_state
 from qadence.transpile import (
     chain_single_qubit_ops,
     flatten,
     scale_primitive_blocks_only,
     transpile,
 )
-from qadence.utils import Endianness, int_to_basis
+from qadence.types import BackendName, Endianness
+from qadence.utils import int_to_basis
 
 from .config import Configuration, default_passes
 from .convert_ops import (
@@ -139,7 +138,10 @@ class Backend(BackendInterface):
         protocol: Measurements | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
-        state = zero_state(circuit.abstract.n_qubits, batch_size=1) if state is None else state
+        if state is None:
+            from qadence.states import zero_state
+
+            state = zero_state(circuit.abstract.n_qubits, batch_size=1)
         if state.size(0) != 1:
             raise ValueError(
                 "Looping expectation does not make sense with batched initial state. "
@@ -218,6 +220,8 @@ class Backend(BackendInterface):
 
     @staticmethod
     def _overlap(bras: Tensor, kets: Tensor) -> Tensor:
+        from qadence.overlap import overlap_exact
+
         return overlap_exact(bras, kets)
 
     @staticmethod

@@ -7,8 +7,9 @@ from pyqtorch.circuit import QuantumCircuit as PyQCircuit
 from pyqtorch.parametric import Parametric as PyQParametric
 from pyqtorch.primitive import Primitive as PyQPrimitive
 from pyqtorch.utils import overlap, param_dict
-from torch import Tensor, nn, no_grad, tensor
+from torch import Tensor, no_grad, tensor
 from torch.autograd import Function
+from torch.nn import Module
 
 from qadence.backends.pyqtorch.convert_ops import PyQHamiltonianEvolution, ScalePyQOperation
 from qadence.blocks.abstract import AbstractBlock
@@ -42,7 +43,7 @@ class AdjointExpectation(Function):
         param_values = ctx.saved_tensors
         values = param_dict(ctx.param_names, param_values)
 
-        def _apply_adjoint(ctx: Any, op: nn.Module) -> list:
+        def _apply_adjoint(ctx: Any, op: Module) -> list:
             grads: list = []
             if isinstance(op, (PyQHamiltonianEvolution)):
                 generator = op.block.generator

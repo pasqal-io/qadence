@@ -6,13 +6,21 @@ from functools import partial
 from typing import Any, Callable, Sequence
 
 import torch
-from torch import Tensor, nn
+from torch import Tensor
 from torch.autograd import Function
+from torch.nn import Module
 
 from qadence.backend import Backend as QuantumBackend
 from qadence.backend import Converted, ConvertedCircuit, ConvertedObservable
+from qadence.backends.adjoint import AdjointExpectation
+from qadence.backends.pyqtorch.convert_ops import (
+    infer_batchsize,
+    pyqify,
+    validate_pyq_state,
+)
 from qadence.backends.utils import param_dict
-from qadence.blocks import AbstractBlock, PrimitiveBlock
+from qadence.blocks.abstract import AbstractBlock
+from qadence.blocks.primitive import PrimitiveBlock
 from qadence.blocks.utils import uuid_to_block, uuid_to_eigen
 from qadence.circuit import QuantumCircuit
 from qadence.extensions import get_gpsr_fns
@@ -115,13 +123,6 @@ class DifferentiableExpectation:
         )
 
     def adjoint(self) -> Tensor:
-        from qadence.backends.adjoint import AdjointExpectation
-        from qadence.backends.pyqtorch.convert_ops import (
-            infer_batchsize,
-            pyqify,
-            validate_pyq_state,
-        )
-
         self.observable = (
             self.observable if isinstance(self.observable, list) else [self.observable]
         )
@@ -138,14 +139,12 @@ class DifferentiableExpectation:
                 validate_pyq_state(self.state, n_qubits)
             except ValueError:
                 self.state = pyqify(self.state, n_qubits)
-        return promote_to_tensor(
-            AdjointExpectation.apply(
-                self.circuit.native,
-                self.observable[0].native,
-                self.state,
-                self.param_values.keys(),
-                *self.param_values.values(),
-            )
+        return AdjointExpectation.apply(
+            self.circuit.native,
+            self.observable[0].native,
+            self.state,
+            self.param_values.keys(),
+            *self.param_values.values(),
         )
 
     def psr(self, psr_fn: Callable, **psr_args: int | float | None) -> Tensor:
@@ -223,7 +222,7 @@ class DifferentiableExpectation:
         return param_to_psr
 
 
-class DifferentiableBackend(nn.Module):
+class DifferentiableBackend(Module):
     """A class to abstract the operations done by the autodiff engine.
 
     Arguments:

@@ -16,13 +16,12 @@ from qadence.backend import (
     ConvertedCircuit,
     ConvertedObservable,
 )
-from qadence.backends import backend_factory, config_factory
-from qadence.backends.pytorch_wrapper import DiffMode
-from qadence.blocks import AbstractBlock
+from qadence.backends.api import backend_factory, config_factory
+from qadence.blocks.abstract import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.logger import get_logger
 from qadence.measurements import Measurements
-from qadence.utils import Endianness
+from qadence.types import DiffMode, Endianness
 
 logger = get_logger(__name__)
 
