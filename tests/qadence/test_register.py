@@ -7,7 +7,7 @@ import networkx as nx
 import numpy as np
 from pytest import approx
 
-from qadence import Register
+from qadence.register import Register
 
 
 def calc_dist(graph: nx.Graph) -> np.ndarray:

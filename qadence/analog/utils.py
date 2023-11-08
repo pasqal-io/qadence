@@ -8,7 +8,8 @@ from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.analog import (
     ConstantAnalogRotation,
 )
-from qadence.operations import N, X, Y, add, kron
+from qadence.blocks.utils import add, kron
+from qadence.operations import N, X, Y
 from qadence.register import Register
 
 # Ising coupling coefficient depending on the Rydberg level

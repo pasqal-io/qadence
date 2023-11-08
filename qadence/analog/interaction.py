@@ -19,9 +19,9 @@ from qadence.blocks.analog import (
 )
 from qadence.blocks.composite import CompositeBlock
 from qadence.blocks.primitive import PrimitiveBlock, ScaleBlock
-from qadence.blocks.utils import _construct
+from qadence.blocks.utils import _construct, add, chain, kron
 from qadence.circuit import QuantumCircuit
-from qadence.operations import HamEvo, I, add, chain, kron, wait
+from qadence.operations import HamEvo, I, wait
 from qadence.qubit_support import QubitSupport
 from qadence.register import Register
 from qadence.transpile.transpile import blockfn_to_circfn

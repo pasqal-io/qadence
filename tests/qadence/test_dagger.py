@@ -7,9 +7,9 @@ import strategies as st
 from hypothesis import given, settings
 from sympy import acos
 
-from qadence import Parameter, QuantumCircuit
-from qadence.blocks import AbstractBlock, chain, kron
-from qadence.blocks.utils import assert_same_block, put
+from qadence.blocks.abstract import AbstractBlock
+from qadence.blocks.utils import assert_same_block, chain, kron, put
+from qadence.circuit import QuantumCircuit
 from qadence.constructors import hea
 from qadence.operations import (
     CNOT,
@@ -38,6 +38,7 @@ from qadence.operations import (
     Z,
     Zero,
 )
+from qadence.parameters import Parameter
 
 
 @pytest.mark.parametrize(

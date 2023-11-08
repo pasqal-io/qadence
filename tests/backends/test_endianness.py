@@ -10,7 +10,6 @@ from metrics import ATOL_DICT, JS_ACCEPTANCE  # type: ignore
 from torch import Tensor, allclose, pi, tensor
 
 from qadence import QuantumCircuit, block_to_tensor, run, sample
-from qadence.backend import BackendName
 from qadence.backends.api import backend_factory
 from qadence.blocks import AbstractBlock, MatrixBlock, chain, kron
 from qadence.divergences import js_divergence
@@ -19,7 +18,7 @@ from qadence.operations import CNOT, RX, RY, H, HamEvo, I, X, Z
 from qadence.register import Register
 from qadence.states import equivalent_state, product_state
 from qadence.transpile import invert_endianness
-from qadence.types import Endianness, ResultType
+from qadence.types import BackendName, Endianness, ResultType
 from qadence.utils import (
     basis_to_int,
     nqubits_to_basis,

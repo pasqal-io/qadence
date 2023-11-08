@@ -14,7 +14,7 @@ from pulser_simulation.simulation import QutipEmulator
 from torch import Tensor
 
 from qadence.backend import Backend as BackendInterface
-from qadence.backend import BackendName, ConvertedCircuit, ConvertedObservable
+from qadence.backend import ConvertedCircuit, ConvertedObservable
 from qadence.backends.utils import to_list_of_dicts
 from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
@@ -22,6 +22,7 @@ from qadence.measurements import Measurements
 from qadence.overlap import overlap_exact
 from qadence.register import Register
 from qadence.transpile import transpile
+from qadence.types import BackendName
 from qadence.utils import Endianness, get_logger
 
 from .channels import GLOBAL_CHANNEL, LOCAL_CHANNEL
