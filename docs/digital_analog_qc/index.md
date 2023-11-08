@@ -6,7 +6,7 @@ paradigm[^1], based on two primary computations:
 - Fast single-qubit operations (digital).
 - Multi-partite entangling operations acting on all qubits (analog).
 
-The DAQC paradigm is typically implemented on quantum computing hardware based on neutral-atoms where both these computations are realizable.
+A promising quantum computing platform for the implementation of the DAQC paradigm is neutral-atoms, where both these computations are realizable.
 
 ## Digital-analog emulation
 
