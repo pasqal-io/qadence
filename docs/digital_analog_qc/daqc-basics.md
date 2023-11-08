@@ -25,8 +25,9 @@ This is at the core of the DAQC implementation in Qadence.
 ## Execution on Rydberg atom arrays with restriced addressability
 
 Finally, Qadence offers some convenience constructors and interfaces to execute
-programs compatible with neutral atom quantum computers with only restricted access
-to individual qubit addressability which is instead required by DAQC.
+programs compatible with a DAQC flavor featuring only a restricted access
+to individual qubit addressability with always-on interaction. This regime is common
+in currently available neutral atom quantum computers.
 
 ## References
 
