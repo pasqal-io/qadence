@@ -116,7 +116,11 @@ class DifferentiableExpectation:
 
     def adjoint(self) -> Tensor:
         from qadence.backends.adjoint import AdjointExpectation
-        from qadence.backends.utils import infer_batchsize, pyqify, validate_pyq_state
+        from qadence.backends.pyqtorch.convert_ops import (
+            infer_batchsize,
+            pyqify,
+            validate_pyq_state,
+        )
 
         self.observable = (
             self.observable if isinstance(self.observable, list) else [self.observable]

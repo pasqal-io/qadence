@@ -2,18 +2,19 @@ from __future__ import annotations
 
 from functools import reduce
 from itertools import chain as flatten
+from math import log2, prod
 from operator import add
-from typing import Sequence, Tuple
+from typing import Callable, Sequence, Tuple
 
 import pyqtorch as pyq
 import sympy
 import torch
 from pyqtorch.apply import apply_operator
 from pyqtorch.matrices import _dagger
+from pyqtorch.parametric import Parametric as PyQParametric
 from pyqtorch.utils import is_diag
 from torch.nn import Module
 
-from qadence.backends.utils import finitediff, infer_batchsize, pyqify, unpyqify
 from qadence.blocks import (
     AbstractBlock,
     AddBlock,
@@ -48,6 +49,84 @@ supported_gates = list(set(OpName.list()) - set([OpName.TDAGGER]))
 
 Tdagger is currently not supported.
 """
+FINITE_DIFF_EPS = 1e-06
+
+
+def finitediff_sampling(
+    f: Callable, x: torch.Tensor, eps: float = FINITE_DIFF_EPS, num_samples: int = 10
+) -> torch.Tensor:
+    def _finitediff(val: torch.Tensor) -> torch.Tensor:
+        return (f(x + val) - f(x - val)) / (2 * val)  # type: ignore
+
+    with torch.no_grad():
+        return torch.mean(
+            torch.cat([_finitediff(val) for val in torch.rand(1) for _ in range(num_samples)])
+        )
+
+
+def finitediff(f: Callable, x: torch.Tensor, eps: float = FINITE_DIFF_EPS) -> torch.Tensor:
+    return (f(x + eps) - f(x - eps)) / (2 * eps)  # type: ignore
+
+
+def dydx(
+    jacobian: torch.Tensor,
+    qubit_support: tuple,
+    out_state: torch.Tensor,
+    projected_state: torch.Tensor,
+) -> torch.Tensor:
+    return 2 * pyq.overlap(
+        projected_state,
+        apply_operator(
+            state=out_state,
+            operator=jacobian,
+            qubits=qubit_support,
+        ),
+    )
+
+
+def dydxx(
+    op: PyQParametric,
+    values: dict[str, torch.Tensor],
+    out_state: torch.Tensor,
+    projected_state: torch.Tensor,
+) -> torch.Tensor:
+    return 2 * finitediff_sampling(
+        lambda val: dydx(
+            op.jacobian({op.param_name: val}), op.qubit_support, out_state, projected_state
+        ),
+        values[op.param_name],
+    )
+
+
+def pyqify(state: torch.Tensor, n_qubits: int = None) -> torch.Tensor:
+    if n_qubits is None:
+        n_qubits = int(log2(state.shape[1]))
+    if (state.ndim != 2) or (state.size(1) != 2**n_qubits):
+        raise ValueError(
+            "The initial state must be composed of tensors of size "
+            f"(batch_size, 2**n_qubits). Found: {state.size() = }."
+        )
+    return state.T.reshape([2] * n_qubits + [state.size(0)])
+
+
+def unpyqify(state: torch.Tensor) -> torch.Tensor:
+    return torch.flatten(state, start_dim=0, end_dim=-2).t()
+
+
+def validate_pyq_state(state: torch.Tensor, n_qubits: int) -> torch.Tensor:
+    if prod(state.size()[:-1]) != 2**n_qubits:
+        raise ValueError(
+            "A pyqified initial state must be composed of tensors of size "
+            f"(2, 2, ..., batch_size). Found: {state.size() = }."
+        )
+    elif state.dtype != torch.complex128:
+        raise TypeError("Expected type torch.complex128.")
+    else:
+        return state
+
+
+def infer_batchsize(param_values: dict[str, torch.Tensor] = None) -> int:
+    return max([len(tensor) for tensor in param_values.values()]) if param_values else 1
 
 
 def is_single_qubit_chain(block: AbstractBlock) -> bool:

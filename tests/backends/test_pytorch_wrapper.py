@@ -6,7 +6,7 @@ import sympy
 import torch
 
 from qadence.backends.api import backend_factory
-from qadence.backends.utils import finitediff
+from qadence.backends.pyqtorch.convert_ops import finitediff
 from qadence.blocks import AbstractBlock, add, chain, kron
 from qadence.circuit import QuantumCircuit
 from qadence.operations import CNOT, RX, RZ, Z
