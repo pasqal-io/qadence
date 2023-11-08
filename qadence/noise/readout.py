@@ -120,8 +120,6 @@ def create_noise_matrix(
 
 
 def bs_corruption(
-    n_shots: int,
-    n_qubits: int,
     err_idx: list,
     sample: torch.Tensor,
 ) -> Counter:
@@ -131,8 +129,6 @@ def bs_corruption(
     given a noise matrix.
 
     Args:
-        n_qubits: Number of qubits in the bit string.
-        n_shots: Number of shots to sample.
         err_idx: A Boolean array of bit string indices that need to be corrupted.
         sample: A torch.Tensor of bit strings n_shots x n_qubits.
 
@@ -200,7 +196,5 @@ def error(
     corrupted_bitstrings = []
     for counter in counters:
         sample = sample_to_matrix(counter)
-        corrupted_bitstrings.append(
-            bs_corruption(n_shots=n_shots, err_idx=err_idx, sample=sample, n_qubits=n_qubits)
-        )
+        corrupted_bitstrings.append(bs_corruption(err_idx=err_idx, sample=sample))
     return corrupted_bitstrings

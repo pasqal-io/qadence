@@ -58,9 +58,7 @@ def test_bitstring_corruption_all_bitflips(
     noise_matrix = create_noise_matrix(WhiteNoise.UNIFORM, n_shots, n_qubits)
     err_idx = torch.as_tensor(noise_matrix < error_probability)
     sample = sample_to_matrix(counters[0])
-    corrupted_counters = [
-        bs_corruption(n_shots=n_shots, err_idx=err_idx, sample=sample, n_qubits=n_qubits)
-    ]
+    corrupted_counters = [bs_corruption(err_idx=err_idx, sample=sample)]
     assert sum(corrupted_counters[0].values()) == n_shots
     assert corrupted_counters == exp_corrupted_counters
     assert torch.allclose(
@@ -92,9 +90,7 @@ def test_bitstring_corruption_mixed_bitflips(
     noise_matrix = create_noise_matrix(WhiteNoise.UNIFORM, n_shots, n_qubits)
     err_idx = torch.as_tensor(noise_matrix < error_probability)
     sample = sample_to_matrix(counters[0])
-    corrupted_counters = [
-        bs_corruption(n_shots=n_shots, err_idx=err_idx, sample=sample, n_qubits=n_qubits)
-    ]
+    corrupted_counters = [bs_corruption(err_idx=err_idx, sample=sample)]
     for noiseless, noisy in zip(counters, corrupted_counters):
         assert sum(noisy.values()) == n_shots
         assert js_divergence(noiseless, noisy) > 0.0
