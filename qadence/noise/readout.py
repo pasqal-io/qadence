@@ -5,6 +5,7 @@ from enum import Enum
 
 import numpy as np
 import torch
+from torch import Tensor
 from torch.distributions import normal, poisson, uniform
 
 from qadence.logger import get_logger
@@ -25,7 +26,7 @@ class WhiteNoise(Enum):
     """Poisson white noise."""
 
 
-def bitstring_to_tensor(bitstring: str, output_type: str = "torch") -> np.array | torch.Tensor:
+def bitstring_to_tensor(bitstring: str, output_type: str = "torch") -> np.array | Tensor:
     """
     A helper function to convert bit strings to torch.Tensor or numpy.array.
 
@@ -44,7 +45,7 @@ def bitstring_to_tensor(bitstring: str, output_type: str = "torch") -> np.array 
     )
 
 
-def tensor_to_bitstring(bitstring: torch.Tensor | np.array, output_type: str = "torch") -> str:
+def tensor_to_bitstring(bitstring: Tensor | np.array, output_type: str = "torch") -> str:
     """
     A helper function to convert torch.Tensor or numpy.array to bit strings.
 
@@ -61,7 +62,7 @@ def tensor_to_bitstring(bitstring: torch.Tensor | np.array, output_type: str = "
     )
 
 
-def bit_flip(bit: torch.Tensor, cond: torch.Tensor) -> torch.Tensor:
+def bit_flip(bit: Tensor, cond: Tensor) -> Tensor:
     """
     A helper function that reverses the states 0 and 1 in the bit string.
 
@@ -75,7 +76,7 @@ def bit_flip(bit: torch.Tensor, cond: torch.Tensor) -> torch.Tensor:
     return torch.where(cond, torch.where(bit == 0, 1, 0), bit)
 
 
-def sample_to_matrix(sample: dict) -> torch.Tensor:
+def sample_to_matrix(sample: dict) -> Tensor:
     """
     A helper function that maps a sample dict to a bit string array.
 
@@ -100,7 +101,7 @@ def sample_to_matrix(sample: dict) -> torch.Tensor:
 
 def create_noise_matrix(
     noise_distribution: torch.distributions, n_shots: int, n_qubits: int
-) -> torch.Tensor:
+) -> Tensor:
     """
     A helper function that creates a noise matrix for bit string corruption.
 
@@ -120,8 +121,8 @@ def create_noise_matrix(
 
 
 def bs_corruption(
-    err_idx: torch.Tensor,
-    sample: torch.Tensor,
+    err_idx: Tensor,
+    sample: Tensor,
 ) -> Counter:
     """
     A function that incorporates the expected readout error in a sample of bit strings.
