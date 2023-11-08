@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import Counter
 from enum import Enum
-from itertools import chain
+from typing import Any
 
 import numpy as np
 import torch
@@ -26,30 +26,40 @@ class WhiteNoise(Enum):
     """Poisson white noise."""
 
 
-def bitstring_to_array(bitstring: str) -> np.array:
+def bitstring_to_tensor(bitstring: str, output_type: str = "torch") -> np.array | torch.Tensor:
     """
-    A helper function to convert bit strings to numpy arrays.
+    A helper function to convert bit strings to torch.Tensor or numpy.array.
 
     Args:
         bitstring:  A str format of a bit string.
+        output_type: A str torch | numpy for the type of the output.
+        Default torch.
 
     Returns:
-        A numpy array out of the input bit string.
+        A torch.Tensor or np.array out of the input bit string.
     """
-    return np.array(list(bitstring)).astype(int)
+    return (
+        torch.as_tensor(list(map(int, bitstring)))
+        if output_type == "torch"
+        else np.array(list(bitstring)).astype(int)
+    )
 
 
-def array_to_bitstring(bitstring: np.array) -> str:
+def tensor_to_bitstring(bitstring: torch.Tensor | np.array, output_type: str = "torch") -> str:
     """
-    A helper function to convert numpy arrays to bit strings.
+    A helper function to convert torch.Tensor or numpy.array to bit strings.
 
     Args:
-        bitstring: A numpy array format of a bit string.
+        bitstring: A torch.Tensor or numpy.array format of a bit string.
 
     Returns:
         A str out of the input bit string.
     """
-    return "".join(bitstring.astype("str"))
+    return (
+        "".join(list(map(str, bitstring.detach().tolist())))
+        if output_type == "torch"
+        else "".join(bitstring.astype("str"))
+    )
 
 
 def bit_flip(bit: int) -> int:
@@ -65,7 +75,7 @@ def bit_flip(bit: int) -> int:
     return 1 if bit == 0 else 0
 
 
-def sample_to_matrix(sample: dict) -> np.array:
+def sample_to_matrix(sample: dict) -> torch.Tensor:
     """
     A helper function that maps a sample dict to a bit string array.
 
@@ -73,21 +83,24 @@ def sample_to_matrix(sample: dict) -> np.array:
         sample: A dictionary with bit stings as keys and values
         as their counts.
 
-    Returns: A numpy array (matrix) of bit strings n_shots x n_qubits.
+    Returns: A torch.Tensor of bit strings n_shots x n_qubits.
     """
-    return np.array(
-        [
-            i
-            for i in chain.from_iterable(
-                [sample[bitstring] * [bitstring_to_array(bitstring)] for bitstring in sample.keys()]
+
+    return torch.concatenate(
+        list(
+            map(
+                lambda bitstring: torch.broadcast_to(
+                    bitstring_to_tensor(bitstring), [sample[bitstring], len(bitstring)]
+                ),
+                sample.keys(),
             )
-        ]
+        )
     )
 
 
 def create_noise_matrix(
     noise_distribution: torch.distributions, n_shots: int, n_qubits: int
-) -> np.array:
+) -> torch.Tensor:
     """
     A helper function that creates a noise matrix for bit string corruption.
 
@@ -110,7 +123,7 @@ def bs_corruption(
     n_shots: int,
     n_qubits: int,
     err_idx: list,
-    sample: np.array,
+    sample: torch.Tensor,
 ) -> Counter:
     """
     A function that incorporates the expected readout error in a sample of bit strings.
@@ -121,25 +134,26 @@ def bs_corruption(
         n_qubits: Number of qubits in the bit string.
         n_shots: Number of shots to sample.
         err_idx: A Boolean array of bit string indices that need to be corrupted.
-        sample: A matrix of bit strings n_shots x n_qubits.
+        sample: A torch.Tensor of bit strings n_shots x n_qubits.
 
     Returns:
         A counter of bit strings after readout corruption.
     """
 
-    def vflip(sample: int, err_idx: bool, idx: int) -> np.array:
-        if err_idx:
-            return bit_flip(sample)
+    def vflip(sample: torch.Tensor, err_idx: torch.Tensor) -> int | Any:
+        if err_idx.item():
+            return bit_flip(sample.item())
         else:
-            return sample
-
-    vbit_ind = np.vectorize(vflip)
+            return sample.item()
 
     return Counter(
         [
-            "".join(k)
+            "".join(list(map(str, k)))
             for k in map(
-                lambda i: vbit_ind(sample[i], err_idx[i], range(n_qubits)).astype(str).tolist(),
+                lambda j: map(
+                    lambda i: vflip(sample[j][i], err_idx[j][i]),
+                    range(n_qubits),
+                ),
                 range(n_shots),
             )
         ]
@@ -196,7 +210,7 @@ def error(
 
     # the simplest approach - an event occurs if its probability is higher than expected
     # by random chance
-    err_idx = np.array([(item).numpy() for i, item in enumerate(noise_matrix < error_probability)])
+    err_idx = torch.as_tensor(noise_matrix < error_probability)
 
     corrupted_bitstrings = []
     for counter in counters:

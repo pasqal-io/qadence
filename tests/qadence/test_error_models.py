@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections import Counter
 
-import numpy as np
 import pytest
 import torch
 from numpy.random import rand
@@ -57,7 +56,7 @@ def test_bitstring_corruption_all_bitflips(
 ) -> None:
     n_shots = 100
     noise_matrix = create_noise_matrix(WhiteNoise.UNIFORM, n_shots, n_qubits)
-    err_idx = np.array([(item).numpy() for i, item in enumerate(noise_matrix < error_probability)])
+    err_idx = torch.as_tensor(noise_matrix < error_probability)
     sample = sample_to_matrix(counters[0])
     corrupted_counters = [
         bs_corruption(n_shots=n_shots, err_idx=err_idx, sample=sample, n_qubits=n_qubits)
@@ -91,7 +90,7 @@ def test_bitstring_corruption_mixed_bitflips(
 ) -> None:
     n_shots = 100
     noise_matrix = create_noise_matrix(WhiteNoise.UNIFORM, n_shots, n_qubits)
-    err_idx = np.array([(item).numpy() for i, item in enumerate(noise_matrix < error_probability)])
+    err_idx = torch.as_tensor(noise_matrix < error_probability)
     sample = sample_to_matrix(counters[0])
     corrupted_counters = [
         bs_corruption(n_shots=n_shots, err_idx=err_idx, sample=sample, n_qubits=n_qubits)
