@@ -16,6 +16,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.constructors import hea, total_magnetization
 from qadence.divergences import js_divergence
 from qadence.ml_tools.utils import rand_featureparameters
+from qadence.models import QuantumModel
 from qadence.models.quantum_model import QuantumModel
 from qadence.operations import MCRX, RX, HamEvo, I, Toffoli, X, Z
 from qadence.parameters import FeatureParameter, VariationalParameter
@@ -144,11 +145,6 @@ def test_expectation_for_different_backends(circuit: QuantumCircuit) -> None:
 
 
 def test_negative_scale_qm() -> None:
-    from qadence.blocks import kron
-    from qadence.circuit import QuantumCircuit
-    from qadence.models import QuantumModel
-    from qadence.operations import HamEvo, Z
-
     hamilt = kron(Z(0), Z(1)) - 10 * Z(0)
     circ = QuantumCircuit(2, HamEvo(hamilt, 3))
     model = QuantumModel(circ, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD)
@@ -169,11 +165,6 @@ def test_save_load_qm_pyq(BasicQuantumModel: QuantumModel, tmp_path: Path) -> No
 
 
 def test_hamevo_qm() -> None:
-    from qadence.circuit import QuantumCircuit
-    from qadence.models import QuantumModel
-    from qadence.operations import HamEvo, X, Z
-    from qadence.parameters import VariationalParameter
-
     obs = [Z(0) for _ in range(np.random.randint(1, 4))]
     block = HamEvo(VariationalParameter("theta") * X(1), 1, (0, 1))
     circ = QuantumCircuit(2, block)
@@ -189,10 +180,6 @@ def test_hamevo_qm() -> None:
     ],
 )
 def test_correct_order(backend: BackendName) -> None:
-    from qadence.circuit import QuantumCircuit
-    from qadence.models import QuantumModel
-    from qadence.operations import X, Z
-
     circ = QuantumCircuit(3, X(0))
     obs = [Z(0) for _ in range(np.random.randint(1, 5))]
     n_obs = len(obs)

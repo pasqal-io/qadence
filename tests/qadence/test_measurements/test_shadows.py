@@ -17,8 +17,9 @@ from qadence import (
     backend_factory,
     expectation,
 )
-from qadence.blocks import AbstractBlock
+from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.block_to_tensor import IMAT
+from qadence.blocks.utils import add, chain, kron
 from qadence.constructors import ising_hamiltonian, total_magnetization
 from qadence.measurements import Measurements
 from qadence.measurements.shadow import (
@@ -31,7 +32,7 @@ from qadence.measurements.shadow import (
     local_shadow,
     number_of_samples,
 )
-from qadence.operations import RX, RY, H, I, X, Y, Z, add, chain, kron
+from qadence.operations import RX, RY, H, I, X, Y, Z
 from qadence.serialization import deserialize
 
 
