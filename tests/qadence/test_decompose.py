@@ -9,7 +9,6 @@ import pytest
 import torch
 from metrics import ATOL_32, DIGITAL_DECOMP_ACCEPTANCE_HIGH, DIGITAL_DECOMP_ACCEPTANCE_LOW
 
-from qadence import BackendName, DiffMode
 from qadence.blocks import (
     AbstractBlock,
     add,
@@ -37,7 +36,7 @@ from qadence.operations import (
 )
 from qadence.parameters import Parameter, VariationalParameter, evaluate
 from qadence.serialization import deserialize
-from qadence.types import LTSOrder
+from qadence.types import BackendName, DiffMode, LTSOrder
 
 
 @no_type_check
@@ -221,7 +220,7 @@ def test_composite_hamevo_edge_cases(generator: AbstractBlock) -> None:
 
 
 def open_chem_obs() -> AbstractBlock:
-    """A tiny helper function"""
+    """A tiny helper function."""
     directory = os.getcwd()
     with open(os.path.join(directory, "tests/test_files/h4.json"), "r") as js:
         obs = loads(js.read())

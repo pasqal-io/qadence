@@ -93,6 +93,7 @@ FORMAT_DICT = {
 def serialize(obj: SUPPORTED_TYPES, save_params: bool = False) -> dict:
     """
     Supported Types:
+
     AbstractBlock | QuantumCircuit | QuantumModel | TransformedModule | Register | Module
     Serializes a qadence object to a dictionary.
 
@@ -154,6 +155,7 @@ def serialize(obj: SUPPORTED_TYPES, save_params: bool = False) -> dict:
 def deserialize(d: dict, as_torch: bool = False) -> SUPPORTED_TYPES:
     """
     Supported Types:
+
     AbstractBlock | QuantumCircuit | QuantumModel | TransformedModule | Register | Module
     Deserializes a dict to one of the supported types.
 
@@ -245,6 +247,7 @@ def save(
 ) -> None:
     """
     Same as serialize/deserialize but for storing/loading files.
+
     Supported types:
     AbstractBlock | QuantumCircuit | QuantumModel | TransformedModule | Register | torch.nn.Module
     Saves a qadence object to a json/.pt.
@@ -302,6 +305,7 @@ def save(
 def load(file_path: str | Path, map_location: str = "cpu") -> SUPPORTED_TYPES:
     """
     Same as serialize/deserialize but for storing/loading files.
+
     Supported types: AbstractBlock | QuantumCircuit | QuantumModel | TransformedModule | Register
     Loads a .json or .pt file to one of the supported types.
 

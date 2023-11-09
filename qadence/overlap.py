@@ -7,16 +7,16 @@ import numpy as np
 import torch
 from torch import Tensor
 
-from qadence.backend import BackendConfiguration, BackendName
-from qadence.backends.pytorch_wrapper import DiffMode
-from qadence.blocks import AbstractBlock, chain, kron, tag
+from qadence.backend import BackendConfiguration
+from qadence.blocks.abstract import AbstractBlock
+from qadence.blocks.utils import chain, kron, tag
 from qadence.circuit import QuantumCircuit
 from qadence.divergences import js_divergence
 from qadence.measurements import Measurements
-from qadence.models import QuantumModel
+from qadence.models.quantum_model import QuantumModel
 from qadence.operations import SWAP, H, I, S, Z
 from qadence.transpile import reassign
-from qadence.types import OverlapMethod
+from qadence.types import BackendName, DiffMode, OverlapMethod
 
 # Modules to be automatically added to the qadence namespace
 __all__ = ["Overlap", "OverlapMethod"]
@@ -196,8 +196,9 @@ def overlap_jensen_shannon(bras: list[Counter], kets: list[Counter]) -> Tensor:
 
 
 def overlap_compute_uncompute(bras: Tensor | list[Counter]) -> Tensor:
-    """Calculate overlap using compute-uncompute method from full wavefunctions or
-    bitstring counts.
+    """Calculate overlap using compute-uncompute method.
+
+    From full wavefunctions or bitstring counts.
 
     Args:
         bras (Tensor | list[Counter]): full bra wavefunctions or bitstring counts
@@ -219,8 +220,9 @@ def overlap_compute_uncompute(bras: Tensor | list[Counter]) -> Tensor:
 
 
 def overlap_swap_test(bras: Tensor | list[Counter]) -> Tensor:
-    """Calculate overlap using swap test method from full wavefunctions or
-    bitstring counts.
+    """Calculate overlap using swap test method.
+
+    From full wavefunctions or bitstring counts.
 
     Args:
         bras (Tensor | list[Counter]): full bra wavefunctions or bitstring counts
@@ -261,8 +263,9 @@ def overlap_swap_test(bras: Tensor | list[Counter]) -> Tensor:
 def overlap_hadamard_test(
     bras_re: Tensor | list[Counter], bras_im: Tensor | list[Counter]
 ) -> Tensor:
-    """Calculate overlap using Hadamard test method from full wavefunctions or
-    bitstring counts.
+    """Calculate overlap using Hadamard test method.
+
+    From full wavefunctions or bitstring counts.
 
     Args:
         bras_re (Tensor | list[Counter]): full bra wavefunctions or bitstring counts
@@ -317,7 +320,7 @@ class Overlap(QuantumModel):
         ket_circuit: QuantumCircuit,
         backend: BackendName = BackendName.PYQTORCH,
         diff_mode: DiffMode = DiffMode.AD,
-        protocol: Measurements | None = None,
+        measurement: Measurements | None = None,
         configuration: BackendConfiguration | dict | None = None,
         method: OverlapMethod = OverlapMethod.EXACT,
     ):
@@ -333,7 +336,7 @@ class Overlap(QuantumModel):
             bra_circuit,
             backend=backend,
             diff_mode=diff_mode,
-            protocol=protocol,
+            measurement=measurement,
             configuration=configuration,
         )
         self.bra_feat_param_names = set([inp.name for inp in self.inputs])
@@ -343,7 +346,7 @@ class Overlap(QuantumModel):
                 ket_circuit,
                 backend=backend,
                 diff_mode=diff_mode,
-                protocol=protocol,
+                measurement=measurement,
                 configuration=configuration,
             )
             self.ket_feat_param_names = set([inp.name for inp in self.ket_model.inputs])

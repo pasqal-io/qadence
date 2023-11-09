@@ -9,6 +9,7 @@ import torch
 from qadence import (
     AnalogRX,
     AnalogRZ,
+    DiffMode,
     FeatureParameter,
     QuantumCircuit,
     QuantumModel,
@@ -20,7 +21,6 @@ from qadence import (
     expectation,
     wait,
 )
-from qadence.backends.pytorch_wrapper import DiffMode
 
 pi = torch.pi
 SHOW_PLOTS = sys.argv[1] == "show" if len(sys.argv) == 2 else False

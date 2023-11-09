@@ -24,7 +24,9 @@ def transpile(
 
 
 def transpile(*fs: Callable) -> Callable:
-    """`AbstractBlock` or `QuantumCircuit` transpilation. Compose functions that
+    """`AbstractBlock` or `QuantumCircuit` transpilation.
+
+    Compose functions that
     accept a circuit/block and returns a circuit/block.
 
     Arguments:
@@ -34,7 +36,6 @@ def transpile(*fs: Callable) -> Callable:
 
     Returns:
         Composed function.
-
 
     Examples:
 

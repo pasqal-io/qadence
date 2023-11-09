@@ -11,7 +11,6 @@ from numpy import pi
 from sympy import Basic, Expr, acos, asin, atan, cos, sin, tan
 from torch import Tensor
 
-from qadence.backend import BackendName
 from qadence.blocks import (
     AbstractBlock,
     ParametricBlock,
@@ -32,7 +31,7 @@ from qadence.operations import (
     two_qubit_gateset,
 )
 from qadence.parameters import FeatureParameter, Parameter, VariationalParameter
-from qadence.types import ParameterType, TNumber
+from qadence.types import BackendName, ParameterType, TNumber
 
 PARAM_NAME_LENGTH = 1
 MIN_SYMBOLS = 1

@@ -20,7 +20,8 @@ def _parse_generator(
     zero_tol: float,
 ) -> torch.Tensor:
     """
-    Parses the input generator to extract the `g_jk` weights
+    Parses the input generator to extract the `g_jk` weights.
+
     of the Ising model and the respective target qubits `(j, k)`.
     """
 
@@ -104,8 +105,9 @@ def _check_compatibility(
     zero_tol: float,
 ) -> bool:
     """
-    Checks if the build Hamiltonian is missing any interactions needed
-    for the transformation into the requested target Hamiltonian.
+    Checks if the build Hamiltonian is missing any interactions.
+
+    Needed for the transformation into the requested target Hamiltonian.
     """
     for g_t, g_b in zip(g_jk_target, g_jk_build):
         if abs(g_t) > zero_tol and abs(g_b) <= zero_tol:

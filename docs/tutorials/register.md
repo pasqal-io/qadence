@@ -90,14 +90,17 @@ print(docsutils.fig_to_html(fig)) # markdown-exec: hide
 ```
 
 !!! warning "Units for qubit coordinates"
-    Qubits coordinates in Qadence are *dimensionless* but converted to the required unit when executed on a backend.
-	For instance, [Pulser](https://github.com/pasqal-io/Pulser) uses $\mu \textrm{m}$.
+    In general, Qadence makes no assumption about the units given to qubit coordinates.
+    However, if used in the context of a Hamiltonian coefficient, the quantity $H.t$
+    must be **dimensionless** for exponentiation in the PyQTorch backend, where it is assumed that $\hbar = 1$
+    (consistent ).
+	For registers passed to the [Pulser](https://github.com/pasqal-io/Pulser) backend, coordinates are in $\mu \textrm{m}$.
 
 ## Connectivity graphs
 
-Register topology is often assumed in simulations to be an all-to-all qubit connectivity.
-When running on real devices that enable the [digital-analog](../digital_analog_qc/daqc-basics.md) computing paradigm,
-qubit interaction must be specified either by specifying distances between qubits,
+Register topology is often assumed in digital simulations to be an all-to-all qubit connectivity.
+When running on real devices that enable the [digital-analog](../digital_analog_qc/index.md) computing paradigm,
+qubit interactions must be specified either by specifying distances between qubits,
 or by defining edges in the register connectivity graph.
 
 It is possible to access the abstract graph nodes and edges to work with if needed as in the [perfect state
@@ -111,7 +114,7 @@ print(f"{reg.nodes = }") # markdown-exec: hide
 print(f"{reg.edges = }") # markdown-exec: hide
 ```
 
-It is possible to customize qubit interaction through the [`add_interaction`][qadence.transpile.emulate.add_interaction] method.
+It is possible to customize qubit interaction through the `add_interaction` method.
 In that case, `Register.coords` are accessible from the concrete graph:
 
 ```python exec="on" source="material-block" result="json" session="reg-usage"

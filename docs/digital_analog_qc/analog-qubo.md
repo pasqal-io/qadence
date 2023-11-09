@@ -1,3 +1,6 @@
+!!! warning
+    Tutorial to be updated
+
 In this notebook we solve a quadratic unconstrained optimization problem with
 Qadence emulated analog interface using the QAOA variational algorithm. The
 problem is detailed in the Pulser documentation
@@ -109,7 +112,7 @@ embedding Hamiltonian in the QAOA algorithm. Subsequently, there is an Ising int
 emulate the analog circuit. Please note that the Rydberg level is set to 70.
 
 ```python exec="on" source="material-block" result="json" session="qubo"
-from qadence.transpile.emulate import ising_interaction
+from qadence.analog.utils import ising_interaction
 
 layers = 2
 block = chain(*[AnalogRX(f"t{i}") * AnalogRZ(f"s{i}") for i in range(layers)])
