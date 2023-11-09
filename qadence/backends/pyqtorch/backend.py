@@ -34,19 +34,32 @@ from .convert_ops import convert_block, convert_observable
 logger = get_logger(__name__)
 
 
-@dataclass(frozen=True, eq=True)
+@dataclass(eq=True)
 class Backend(BackendInterface):
     """PyQTorch backend."""
 
-    # set standard interface parameters
-    name: BackendName = BackendName.PYQTORCH
-    supports_ad: bool = True
-    support_bp: bool = True
-    is_remote: bool = False
-    with_measurements: bool = True
-    with_noise: bool = False
-    native_endianness: Endianness = Endianness.BIG
-    config: Configuration = Configuration()
+    def __init__(
+        self,
+        name: BackendName = BackendName.PYQTORCH,
+        supports_ad: bool = True,
+        support_bp: bool = True,
+        is_remote: bool = False,
+        with_measurements: bool = True,
+        with_noise: bool = False,
+        native_endianness: Endianness = Endianness.BIG,
+        config: Configuration | None = None,
+    ):
+        self.name = name
+        self.supports_ad = supports_ad
+        self.support_bp = support_bp
+        self.is_remote = is_remote
+        self.with_measurements = with_measurements
+        self.with_noise = with_noise
+        self.native_endianness = native_endianness
+        if config is None:
+            self.config = Configuration()
+        else:
+            self.config = config
 
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:
         passes = self.config.transpilation_passes

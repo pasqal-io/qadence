@@ -41,21 +41,36 @@ def promote_parameters(parameters: dict[str, Tensor | float]) -> dict[str, float
     return float_params
 
 
-@dataclass(frozen=True, eq=True)
+@dataclass(eq=True)
 class Backend(BackendInterface):
     # set standard interface parameters
-    name: BackendName = BackendName.BRAKET
-    supports_ad: bool = False
-    support_bp: bool = False
-    is_remote: bool = False
-    with_measurements: bool = True
-    with_noise: bool = False
-    native_endianness: Endianness = Endianness.BIG
-    config: Configuration = Configuration()
 
-    # braket specifics
-    # TODO: include it in the configuration?
-    _device: LocalSimulator = LocalSimulator()
+    def __init__(
+        self,
+        name: BackendName = BackendName.BRAKET,
+        supports_ad: bool = False,
+        support_bp: bool = False,
+        is_remote: bool = False,
+        with_measurements: bool = True,
+        with_noise: bool = False,
+        native_endianness: Endianness = Endianness.BIG,
+        config: Configuration | None = None,
+    ):
+        self.name = name
+        self.supports_ad = supports_ad
+        self.support_bp = support_bp
+        self.is_remote = is_remote
+        self.with_measurements = with_measurements
+        self.with_noise = with_noise
+        self.native_endianness = native_endianness
+        if config is None:
+            self.config = Configuration()
+        else:
+            self.config = config
+
+        # braket specifics
+        # TODO: include it in the configuration?
+        self._device: LocalSimulator = LocalSimulator()
 
     def __post_init__(self) -> None:
         if self.is_remote:

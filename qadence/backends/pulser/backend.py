@@ -141,18 +141,32 @@ def simulate_sequence(
             return sim_result
 
 
-@dataclass(frozen=True, eq=True)
+@dataclass(eq=True)
 class Backend(BackendInterface):
     """The Pulser backend."""
 
-    name: BackendName = BackendName.PULSER
-    supports_ad: bool = False
-    support_bp: bool = False
-    is_remote: bool = False
-    with_measurements: bool = True
-    with_noise: bool = False
-    native_endianness: Endianness = Endianness.BIG
-    config: Configuration = Configuration()
+    def __init__(
+        self,
+        name: BackendName = BackendName.PULSER,
+        supports_ad: bool = False,
+        support_bp: bool = False,
+        is_remote: bool = False,
+        with_measurements: bool = True,
+        with_noise: bool = False,
+        native_endianness: Endianness = Endianness.BIG,
+        config: Configuration | None = None,
+    ):
+        self.name = name
+        self.supports_ad = supports_ad
+        self.support_bp = support_bp
+        self.is_remote = is_remote
+        self.with_measurements = with_measurements
+        self.with_noise = with_noise
+        self.native_endianness = native_endianness
+        if config is None:
+            self.config = Configuration()
+        else:
+            self.config = config
 
     def circuit(self, circ: QuantumCircuit) -> Sequence:
         passes = self.config.transpilation_passes
