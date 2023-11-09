@@ -5,9 +5,8 @@ from collections import Counter
 import numpy as np
 import numpy.typing as npt
 import pytest
-import torch
 from braket.circuits import Circuit
-from torch import Tensor
+from torch import Tensor, allclose, tensor
 
 from qadence.backends import backend_factory
 from qadence.backends.braket import Backend
@@ -51,7 +50,7 @@ def test_expectation_value(parametric_circuit: QuantumCircuit, observable: Abstr
 
 def test_expectation_value_list_of_obs(parametric_circuit: QuantumCircuit) -> None:
     batch_size = 1
-    values = {"x": 0.5}  # torch.rand(batch_size)}
+    values = {"x": 0.5}  # rand(batch_size)}
     observables = [ising_hamiltonian(4), total_magnetization(4), single_z(0)]
     n_obs = len(observables)
 
@@ -59,15 +58,15 @@ def test_expectation_value_list_of_obs(parametric_circuit: QuantumCircuit) -> No
     bra_circ, bra_obs, embed, params = bkd.convert(parametric_circuit, observables)
     expval = bkd.expectation(bra_circ, bra_obs, embed(params, values))
 
-    assert isinstance(expval, torch.Tensor)
+    assert isinstance(expval, Tensor)
     assert expval.shape == (batch_size, n_obs)
 
 
 @pytest.mark.parametrize(
     "observable, result",
     [
-        ([total_magnetization(4) for _ in range(4)], torch.tensor([4.0 for _ in range(4)])),
-        ([Z(k) for k in range(4)], torch.tensor([1.0 for _ in range(4)])),
+        ([total_magnetization(4) for _ in range(4)], tensor([4.0 for _ in range(4)])),
+        ([Z(k) for k in range(4)], tensor([1.0 for _ in range(4)])),
     ],
 )
 def test_list_observables(observable: AbstractBlock, result: Tensor) -> None:
@@ -77,7 +76,7 @@ def test_list_observables(observable: AbstractBlock, result: Tensor) -> None:
     bkd = backend_factory(backend="braket", diff_mode=None)
     bra_circ, bra_obs, embed, params = bkd.convert(circuit, observable)
     expval = bkd.expectation(bra_circ, bra_obs, embed(params, values))
-    assert torch.allclose(expval, result)
+    assert allclose(expval, result)
 
 
 @pytest.mark.parametrize(
