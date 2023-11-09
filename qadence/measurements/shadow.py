@@ -18,9 +18,10 @@ from qadence.blocks.block_to_tensor import (
 )
 from qadence.blocks.composite import CompositeBlock
 from qadence.blocks.primitive import PrimitiveBlock
-from qadence.blocks.utils import chain, get_pauli_blocks, kron, unroll_block_with_scaling
+from qadence.blocks.utils import get_pauli_blocks, unroll_block_with_scaling
 from qadence.circuit import QuantumCircuit
-from qadence.operations import X, Y, Z
+from qadence.noise import Noise
+from qadence.operations import X, Y, Z, chain, kron
 from qadence.states import one_state, zero_state
 from qadence.types import BackendName, DiffMode, Endianness
 
@@ -128,6 +129,7 @@ def classical_shadow(
     state: Tensor | None = None,
     backend_name: BackendName = BackendName.PYQTORCH,
     # FIXME: Changed below from Little to Big, double-check when Roland is back
+    noise: Noise | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> list:
     shadow: list = []
@@ -153,6 +155,7 @@ def classical_shadow(
             param_values=param_values,
             n_shots=1,
             state=state,
+            noise=noise,
             endianness=endianness,
         )
         batched_shadow = []
@@ -258,6 +261,7 @@ def estimations(
     confidence: float = 0.1,
     state: Tensor | None = None,
     backend_name: BackendName = BackendName.PYQTORCH,
+    noise: Noise | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
     """Compute expectation values for all local observables using median of means."""
@@ -273,6 +277,7 @@ def estimations(
         param_values=param_values,
         state=state,
         backend_name=backend_name,
+        noise=noise,
         endianness=endianness,
     )
     estimations = []
@@ -309,6 +314,7 @@ def compute_expectation(
     options: dict,
     state: Tensor | None = None,
     backend_name: BackendName = BackendName.PYQTORCH,
+    noise: Noise | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
     """
@@ -324,6 +330,8 @@ def compute_expectation(
             Here, shadow_size (int), accuracy (float) and confidence (float) are supported.
         state (Tensor | None): an initial input state.
         backend_name (BackendName): a backend name to retrieve computations from.
+        noise: A noise model to use.
+        endianness: Endianness of the observable estimate.
 
     Returns:
         expectations (Tensor): an estimation of the expectation values.
@@ -353,5 +361,6 @@ def compute_expectation(
         confidence=confidence,
         state=state,
         backend_name=backend_name,
+        noise=noise,
         endianness=endianness,
     )

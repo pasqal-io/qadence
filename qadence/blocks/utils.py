@@ -23,7 +23,7 @@ from qadence.blocks import (
 from qadence.blocks.analog import AnalogBlock, AnalogComposite, ConstantAnalogRotation, WaitBlock
 from qadence.blocks.analog import chain as analog_chain
 from qadence.blocks.analog import kron as analog_kron
-from qadence.errors import NotPauliBlockError
+from qadence.exceptions import NotPauliBlockError
 from qadence.logger import get_logger
 from qadence.parameters import Parameter
 

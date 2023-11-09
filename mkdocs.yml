@@ -40,6 +40,12 @@ nav:
     - Quantum circuits differentiation: advanced_tutorials/differentiability.md
     - Custom quantum models: advanced_tutorials/custom-models.md
 
+  - Realistic simulations:
+    - realistic_sims/index.md
+    - Measurement protocols: realistic_sims/measurements.md
+    - Simulated errors: realistic_sims/noise.md
+    - Error mitigation: realistic_sims/mitigation.md
+
   - API:
     - Block system: qadence/blocks.md
     - Operations: qadence/operations.md

@@ -18,12 +18,14 @@ from qadence.backend import ConvertedCircuit, ConvertedObservable
 from qadence.backends.utils import to_list_of_dicts
 from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
+from qadence.logger import get_logger
 from qadence.measurements import Measurements
+from qadence.noise import Noise
+from qadence.noise.protocols import apply
 from qadence.overlap import overlap_exact
 from qadence.register import Register
 from qadence.transpile import transpile
-from qadence.types import BackendName
-from qadence.utils import Endianness, get_logger
+from qadence.types import BackendName, Endianness
 
 from .channels import GLOBAL_CHANNEL, LOCAL_CHANNEL
 from .cloud import get_client
@@ -240,6 +242,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         n_shots: int = 1,
         state: Tensor | None = None,
+        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         if n_shots < 1:
@@ -257,6 +260,8 @@ class Backend(BackendInterface):
             from qadence.transpile import invert_endianness
 
             samples = invert_endianness(samples)
+        if noise is not None:
+            samples = apply(noise=noise, samples=samples)
         return samples
 
     def expectation(
@@ -265,9 +270,17 @@ class Backend(BackendInterface):
         observable: list[ConvertedObservable] | ConvertedObservable,
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
-        protocol: Measurements | None = None,
+        measurement: Measurements | None = None,
+        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
+        # Noise is ignored if measurement protocol is not provided.
+        if noise is not None and measurement is None:
+            logger.warning(
+                f"Errors of type {noise} are not implemented for exact expectation yet. "
+                "This is ignored for now."
+            )
+
         state = self.run(circuit, param_values=param_values, state=state, endianness=endianness)
 
         observables = observable if isinstance(observable, list) else [observable]
