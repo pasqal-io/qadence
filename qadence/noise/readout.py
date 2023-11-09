@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections import Counter
 from enum import Enum
 
-import numpy as np
 import torch
 from torch import Tensor
 from torch.distributions import normal, poisson, uniform
@@ -26,42 +25,30 @@ class WhiteNoise(Enum):
     """Poisson white noise."""
 
 
-def bitstring_to_tensor(bitstring: str, output_type: str = "torch") -> np.array | Tensor:
+def bitstring_to_tensor(bitstring: str) -> Tensor:
     """
-    A helper function to convert bit strings to torch.Tensor or numpy.array.
+    A helper function to convert bit strings to torch.Tensor.
 
     Args:
         bitstring:  A str format of a bit string.
-        output_type: A str torch | numpy for the type of the output.
-        Default torch.
 
     Returns:
-        A torch.Tensor or np.array out of the input bit string.
+        A torch.Tensor out of the input bit string.
     """
-    return (
-        torch.as_tensor(list(map(int, bitstring)))
-        if output_type == "torch"
-        else np.array(list(bitstring)).astype(int)
-    )
+    return torch.as_tensor(list(map(int, bitstring)))
 
 
-def tensor_to_bitstring(bitstring: Tensor | np.array, output_type: str = "torch") -> str:
+def tensor_to_bitstring(bitstring: Tensor) -> str:
     """
-    A helper function to convert torch.Tensor or numpy.array to bit strings.
+    A helper function to convert torch.Tensor to bit strings.
 
     Args:
-        bitstring: A torch.Tensor or numpy.array format of a bit string.
-        output_type: A str torch | numpy for the type of the output.
-        Default torch.
+        bitstring: A torch.Tensor format of a bit string.
 
     Returns:
         A str out of the input bit string.
     """
-    return (
-        "".join(list(map(str, bitstring.detach().tolist())))
-        if output_type == "torch"
-        else "".join(bitstring.astype("str"))
-    )
+    return "".join(list(map(str, bitstring.detach().tolist())))
 
 
 def bit_flip(bit: Tensor, cond: Tensor) -> Tensor:
