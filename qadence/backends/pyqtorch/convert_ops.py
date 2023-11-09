@@ -8,11 +8,11 @@ from typing import Callable, Sequence, Tuple
 
 import pyqtorch as pyq
 import sympy
-import torch
 from pyqtorch.apply import apply_operator
 from pyqtorch.matrices import _dagger
 from pyqtorch.parametric import Parametric as PyQParametric
 from pyqtorch.utils import is_diag
+from torch import Tensor, argsort, bmm, cdouble, permute, tensor
 from torch.nn import Module
 
 from qadence.blocks import (
@@ -338,8 +338,8 @@ class PyQHamiltonianEvolution(Module):
             hmat = hmat.permute(1, 2, 0)
             self._hamiltonian = lambda x: hmat
 
-        elif isinstance(block.generator, torch.Tensor):
-            m = block.generator.to(dtype=torch.cdouble)
+        elif isinstance(block.generator, Tensor):
+            m = block.generator.to(dtype=cdouble)
             hmat = block_to_tensor(
                 MatrixBlock(m, qubit_support=block.qubit_support),
                 qubit_support=self.qubit_support,
@@ -465,7 +465,7 @@ class ScalePyQOperation(pyq.QuantumCircuit):
     def forward(self, state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
         return apply_operator(state, self.unitary(values), self.qubit_support, self.n_qubits)
 
-    def unitary(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
+    def unitary(self, values: dict[str, Tensor]) -> Tensor:
         thetas = values[self.param_name]
         return thetas * self.operations[0].unitary(values)
 

@@ -4,10 +4,9 @@ from typing import Counter
 
 import pytest
 import strategies as st  # type: ignore
-import torch
 from hypothesis import given, settings
 from metrics import ATOL_DICT, JS_ACCEPTANCE  # type: ignore
-from torch import Tensor, allclose, pi, tensor
+from torch import Tensor, allclose, cdouble, pi, tensor
 
 from qadence import QuantumCircuit, block_to_tensor, run, sample
 from qadence.backends.api import backend_factory
@@ -107,28 +106,28 @@ def test_state_endianness() -> None:
 @pytest.mark.parametrize(
     "circ, truth",
     [
-        (QuantumCircuit(3), torch.tensor([[1, 0, 0, 0, 0, 0, 0, 0]], dtype=torch.cdouble)),
-        (QuantumCircuit(3, X(0)), torch.tensor([[0, 0, 0, 0, 1, 0, 0, 0]], dtype=torch.cdouble)),
-        (QuantumCircuit(3, X(1)), torch.tensor([[0, 0, 1, 0, 0, 0, 0, 0]], dtype=torch.cdouble)),
+        (QuantumCircuit(3), tensor([[1, 0, 0, 0, 0, 0, 0, 0]], dtype=cdouble)),
+        (QuantumCircuit(3, X(0)), tensor([[0, 0, 0, 0, 1, 0, 0, 0]], dtype=cdouble)),
+        (QuantumCircuit(3, X(1)), tensor([[0, 0, 1, 0, 0, 0, 0, 0]], dtype=cdouble)),
         (
             QuantumCircuit(3, chain(X(0), X(1))),
-            torch.tensor([[0, 0, 0, 0, 0, 0, 1, 0]], dtype=torch.cdouble),
+            tensor([[0, 0, 0, 0, 0, 0, 1, 0]], dtype=cdouble),
         ),
-        (QuantumCircuit(3, X(2)), torch.tensor([[0, 1, 0, 0, 0, 0, 0, 0]], dtype=torch.cdouble)),
+        (QuantumCircuit(3, X(2)), tensor([[0, 1, 0, 0, 0, 0, 0, 0]], dtype=cdouble)),
         (
             QuantumCircuit(3, chain(X(0), X(2))),
-            torch.tensor([[0, 0, 0, 0, 0, 1, 0, 0]], dtype=torch.cdouble),
+            tensor([[0, 0, 0, 0, 0, 1, 0, 0]], dtype=cdouble),
         ),
         (
             QuantumCircuit(3, chain(X(1), X(2))),
-            torch.tensor([[0, 0, 0, 1, 0, 0, 0, 0]], dtype=torch.cdouble),
+            tensor([[0, 0, 0, 1, 0, 0, 0, 0]], dtype=cdouble),
         ),
         (
             QuantumCircuit(3, chain(X(0), X(1), X(2))),
-            torch.tensor([[0, 0, 0, 0, 0, 0, 0, 1]], dtype=torch.cdouble),
+            tensor([[0, 0, 0, 0, 0, 0, 0, 1]], dtype=cdouble),
         ),
-        (QuantumCircuit(2, RY(0, torch.pi)), torch.tensor([[0, 0, 1, 0]], dtype=torch.cdouble)),
-        (QuantumCircuit(2, RY(1, torch.pi)), torch.tensor([[0, 1, 0, 0]], dtype=torch.cdouble)),
+        (QuantumCircuit(2, RY(0, pi)), tensor([[0, 0, 1, 0]], dtype=cdouble)),
+        (QuantumCircuit(2, RY(1, pi)), tensor([[0, 1, 0, 0]], dtype=cdouble)),
     ],
 )
 @pytest.mark.parametrize("backend", BACKENDS)
@@ -143,9 +142,9 @@ def test_backend_wf_endianness(circ: QuantumCircuit, truth: Tensor, backend: Bac
 @pytest.mark.parametrize(
     "circ, truth",
     [
-        (QuantumCircuit(3, RX(0, torch.pi)), Counter({"100": 100})),
-        (QuantumCircuit(3, RX(1, torch.pi)), Counter({"010": 100})),
-        (QuantumCircuit(3, RX(2, torch.pi)), Counter({"001": 100})),
+        (QuantumCircuit(3, RX(0, pi)), Counter({"100": 100})),
+        (QuantumCircuit(3, RX(1, pi)), Counter({"010": 100})),
+        (QuantumCircuit(3, RX(2, pi)), Counter({"001": 100})),
     ],
 )
 @pytest.mark.parametrize("backend", BACKENDS + [BackendName.PULSER])
@@ -165,9 +164,9 @@ def test_backend_sample_endianness(
 @pytest.mark.parametrize(
     "block",
     [
-        RX(0, torch.pi),
-        RX(1, torch.pi),
-        RX(2, torch.pi),
+        RX(0, pi),
+        RX(1, pi),
+        RX(2, pi),
     ],
 )
 def test_pulser_run_endianness(
@@ -192,13 +191,13 @@ def test_pulser_run_endianness(
         (
             X(0),
             2,
-            torch.tensor([[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]]),
+            tensor([[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]]),
             [Counter({"10": N_SHOTS})],
         ),
         (
             X(1),
             2,
-            torch.tensor([[0, 1, 0, 0], [1, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]]),
+            tensor([[0, 1, 0, 0], [1, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]]),
             [Counter({"01": N_SHOTS})],
         ),
     ],
@@ -211,7 +210,7 @@ def test_matrix_endianness(
     matblock = MatrixBlock(mat, block.qubit_support)
     samples = sample(n_qubits, matblock, n_shots=N_SHOTS)
 
-    assert torch.allclose(
+    assert allclose(
         block_to_tensor(block, {}, tuple([i for i in range(n_qubits)])).squeeze(0).to(dtype=int),
         expected_mat,
     )
@@ -224,11 +223,11 @@ def test_matrix_endianness(
     [
         (
             Endianness.BIG,
-            torch.tensor([[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]]),
+            tensor([[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]]),
         ),
         (
             Endianness.LITTLE,
-            torch.tensor([[0, 1, 0, 0], [1, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]]),
+            tensor([[0, 1, 0, 0], [1, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]]),
         ),
     ],
 )
@@ -238,7 +237,7 @@ def test_block_to_tensor_endianness(
 ) -> None:
     block = X(0)
     n_qubits = 2
-    assert torch.allclose(
+    assert allclose(
         block_to_tensor(
             block=block,
             values={},

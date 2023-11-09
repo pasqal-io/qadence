@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import torch
 from sympy import Expr
+from torch import isclose
 
 from qadence import QuantumCircuit
 from qadence.blocks import AbstractBlock, KronBlock
@@ -50,13 +50,13 @@ def test_qm_serialization(tmp_path: Path, BasicQuantumModel: QuantumModel) -> No
         d = serialize(_m, save_params)
         qm_ser = deserialize(d, save_params)  # type: ignore[assignment]
         exp_ser = qm_ser.expectation(inputs)  # type: ignore[union-attr]
-        assert torch.isclose(exp, exp_ser)  # type: ignore[union-attr]
+        assert isclose(exp, exp_ser)  # type: ignore[union-attr]
     for FORMAT in SerializationFormat:
         save(_m, tmp_path, "obj", FORMAT)
         suffix, _, _, _ = FORMAT_DICT[FORMAT]
         qm = load(tmp_path / Path("obj" + suffix))
         exp_l = qm.expectation(inputs)  # type: ignore[union-attr]
-        assert torch.isclose(exp, exp_l)
+        assert isclose(exp, exp_l)
 
 
 def test_qnn_serialization(tmp_path: Path, BasicQNN: QNN) -> None:
@@ -67,13 +67,13 @@ def test_qnn_serialization(tmp_path: Path, BasicQNN: QNN) -> None:
         d = serialize(_m, save_params)
         qm_ser = deserialize(d, save_params)  # type: ignore[assignment]
         exp_ser = qm_ser.expectation(inputs)  # type: ignore[union-attr]
-        assert torch.isclose(exp, exp_ser)  # type: ignore[union-attr]
+        assert isclose(exp, exp_ser)  # type: ignore[union-attr]
     for FORMAT in SerializationFormat:
         save(_m, tmp_path, "obj", FORMAT)
         suffix, _, _, _ = FORMAT_DICT[FORMAT]
         qm = load(tmp_path / Path("obj" + suffix))
         exp_l = qm.expectation(inputs)  # type: ignore[union-attr]
-        assert torch.isclose(exp, exp_l)
+        assert isclose(exp, exp_l)
 
 
 def test_tm_serialization(tmp_path: Path, BasicTransformedModule: TransformedModule) -> None:
@@ -84,10 +84,10 @@ def test_tm_serialization(tmp_path: Path, BasicTransformedModule: TransformedMod
         d = serialize(_m, save_params)
         qm_ser = deserialize(d, save_params)  # type: ignore[assignment]
         exp_ser = qm_ser.expectation(inputs)  # type: ignore[union-attr]
-        assert torch.isclose(exp, exp_ser)  # type: ignore[union-attr]
+        assert isclose(exp, exp_ser)  # type: ignore[union-attr]
     for FORMAT in SerializationFormat:
         save(_m, tmp_path, "obj", FORMAT)
         suffix, _, _, _ = FORMAT_DICT[FORMAT]
         qm = load(tmp_path / Path("obj" + suffix))
         exp_l = qm.expectation(inputs)  # type: ignore[union-attr]
-        assert torch.isclose(exp, exp_l)
+        assert isclose(exp, exp_l)

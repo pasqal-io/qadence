@@ -3,11 +3,10 @@ from __future__ import annotations
 from typing import Callable
 
 import pytest
-import torch
 
-from qadence.circuit import QuantumCircuit
+from qadence.execution import run
 from qadence.states import (
-    _run_state,
+    equivalent_state,
     ghz_block,
     ghz_state,
     is_normalized,
@@ -40,10 +39,10 @@ def test_base_states(n_qubits: int, state_generators: tuple[Callable, Callable])
     state_func, block_func = state_generators
     state_direct = state_func(n_qubits)
     block = block_func(n_qubits)
-    state_block = _run_state(QuantumCircuit(n_qubits, block), "pyqtorch")
+    state_block = run(block)
     assert is_normalized(state_direct)
     assert is_normalized(state_block)
-    assert torch.allclose(state_direct, state_block)
+    assert equivalent_state(state_direct, state_block)
 
 
 @pytest.mark.parametrize(
@@ -54,7 +53,7 @@ def test_product_state(n_qubits: int) -> None:
     bitstring = rand_bitstring(n_qubits)
     state_direct = product_state(bitstring)
     block = product_block(bitstring)
-    state_block = _run_state(QuantumCircuit(n_qubits, block), "pyqtorch")
+    state_block = run(block)
     assert is_normalized(state_direct)
     assert is_normalized(state_block)
-    assert torch.allclose(state_direct, state_block)
+    assert equivalent_state(state_direct, state_block)
