@@ -19,8 +19,6 @@ from qadence.logger import get_logger
 from qadence.measurements import Measurements
 from qadence.noise import Noise
 from qadence.noise.protocols import apply
-from qadence.overlap import overlap_exact
-from qadence.states import zero_state
 from qadence.transpile import (
     chain_single_qubit_ops,
     flatten,
