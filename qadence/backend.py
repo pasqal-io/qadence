@@ -170,7 +170,7 @@ class Backend(ABC):
     ) -> Converted:
         """Convert an abstract circuit and an optional observable to their native representation.
 
-        Additionally this function constructs an embedding function which maps from
+        Additionally, this function constructs an embedding function which maps from
         user-facing parameters to device parameters (read more on parameter embedding
         [here][qadence.blocks.embedding.embedding]).
         """

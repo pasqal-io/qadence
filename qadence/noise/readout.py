@@ -51,6 +51,8 @@ def tensor_to_bitstring(bitstring: Tensor | np.array, output_type: str = "torch"
 
     Args:
         bitstring: A torch.Tensor or numpy.array format of a bit string.
+        output_type: A str torch | numpy for the type of the output.
+        Default torch.
 
     Returns:
         A str out of the input bit string.
