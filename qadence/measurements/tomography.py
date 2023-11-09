@@ -9,7 +9,7 @@ from torch import Tensor
 
 from qadence.backends import backend_factory
 from qadence.blocks import AbstractBlock, PrimitiveBlock
-from qadence.blocks.utils import chain, unroll_block_with_scaling
+from qadence.blocks.utils import unroll_block_with_scaling
 from qadence.circuit import QuantumCircuit
 from qadence.noise import Noise
 from qadence.operations import H, SDagger, X, Y, Z, chain

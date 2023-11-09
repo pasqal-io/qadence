@@ -25,8 +25,7 @@ from qadence.noise.protocols import apply
 from qadence.overlap import overlap_exact
 from qadence.register import Register
 from qadence.transpile import transpile
-from qadence.types import BackendName
-from qadence.utils import Endianness, get_logger
+from qadence.types import BackendName, Endianness
 
 from .channels import GLOBAL_CHANNEL, LOCAL_CHANNEL
 from .cloud import get_client

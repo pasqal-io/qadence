@@ -18,7 +18,7 @@ from qadence.blocks.block_to_tensor import (
 )
 from qadence.blocks.composite import CompositeBlock
 from qadence.blocks.primitive import PrimitiveBlock
-from qadence.blocks.utils import chain, get_pauli_blocks, kron, unroll_block_with_scaling
+from qadence.blocks.utils import get_pauli_blocks, unroll_block_with_scaling
 from qadence.circuit import QuantumCircuit
 from qadence.noise import Noise
 from qadence.operations import X, Y, Z, chain, kron
