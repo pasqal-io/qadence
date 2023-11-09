@@ -34,7 +34,7 @@ from .convert_ops import convert_observable
 from .devices import Device, IdealDevice, RealisticDevice
 from .pulses import add_pulses
 
-logger = get_logger(__name__)
+logger = get_logger(__file__)
 
 WEAK_COUPLING_CONST = 1.2
 
