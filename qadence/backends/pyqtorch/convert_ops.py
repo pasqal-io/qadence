@@ -12,7 +12,26 @@ from pyqtorch.apply import apply_operator
 from pyqtorch.matrices import _dagger
 from pyqtorch.parametric import Parametric as PyQParametric
 from pyqtorch.utils import is_diag
-from torch import Tensor, argsort, bmm, cdouble, permute, tensor
+from torch import (
+    Tensor,
+    argsort,
+    bmm,
+    cat,
+    cdouble,
+    complex128,
+    diag_embed,
+    diagonal,
+    exp,
+    linalg,
+    mean,
+    no_grad,
+    ones_like,
+    permute,
+    rand,
+    tensor,
+    transpose,
+)
+from torch import flatten as torchflatten
 from torch.nn import Module
 
 from qadence.blocks import (
@@ -53,27 +72,25 @@ FINITE_DIFF_EPS = 1e-06
 
 
 def finitediff_sampling(
-    f: Callable, x: torch.Tensor, eps: float = FINITE_DIFF_EPS, num_samples: int = 10
-) -> torch.Tensor:
-    def _finitediff(val: torch.Tensor) -> torch.Tensor:
+    f: Callable, x: Tensor, eps: float = FINITE_DIFF_EPS, num_samples: int = 10
+) -> Tensor:
+    def _finitediff(val: Tensor) -> Tensor:
         return (f(x + val) - f(x - val)) / (2 * val)  # type: ignore
 
-    with torch.no_grad():
-        return torch.mean(
-            torch.cat([_finitediff(val) for val in torch.rand(1) for _ in range(num_samples)])
-        )
+    with no_grad():
+        return mean(cat([_finitediff(val) for val in rand(1) for _ in range(num_samples)]))
 
 
-def finitediff(f: Callable, x: torch.Tensor, eps: float = FINITE_DIFF_EPS) -> torch.Tensor:
+def finitediff(f: Callable, x: Tensor, eps: float = FINITE_DIFF_EPS) -> Tensor:
     return (f(x + eps) - f(x - eps)) / (2 * eps)  # type: ignore
 
 
 def dydx(
-    jacobian: torch.Tensor,
+    jacobian: Tensor,
     qubit_support: tuple,
-    out_state: torch.Tensor,
-    projected_state: torch.Tensor,
-) -> torch.Tensor:
+    out_state: Tensor,
+    projected_state: Tensor,
+) -> Tensor:
     return 2 * pyq.overlap(
         projected_state,
         apply_operator(
@@ -86,10 +103,10 @@ def dydx(
 
 def dydxx(
     op: PyQParametric,
-    values: dict[str, torch.Tensor],
-    out_state: torch.Tensor,
-    projected_state: torch.Tensor,
-) -> torch.Tensor:
+    values: dict[str, Tensor],
+    out_state: Tensor,
+    projected_state: Tensor,
+) -> Tensor:
     return 2 * finitediff_sampling(
         lambda val: dydx(
             op.jacobian({op.param_name: val}), op.qubit_support, out_state, projected_state
@@ -98,7 +115,7 @@ def dydxx(
     )
 
 
-def pyqify(state: torch.Tensor, n_qubits: int = None) -> torch.Tensor:
+def pyqify(state: Tensor, n_qubits: int = None) -> Tensor:
     if n_qubits is None:
         n_qubits = int(log2(state.shape[1]))
     if (state.ndim != 2) or (state.size(1) != 2**n_qubits):
@@ -109,23 +126,23 @@ def pyqify(state: torch.Tensor, n_qubits: int = None) -> torch.Tensor:
     return state.T.reshape([2] * n_qubits + [state.size(0)])
 
 
-def unpyqify(state: torch.Tensor) -> torch.Tensor:
-    return torch.flatten(state, start_dim=0, end_dim=-2).t()
+def unpyqify(state: Tensor) -> Tensor:
+    return torchflatten(state, start_dim=0, end_dim=-2).t()
 
 
-def validate_pyq_state(state: torch.Tensor, n_qubits: int) -> torch.Tensor:
+def validate_pyq_state(state: Tensor, n_qubits: int) -> Tensor:
     if prod(state.size()[:-1]) != 2**n_qubits:
         raise ValueError(
             "A pyqified initial state must be composed of tensors of size "
             f"(2, 2, ..., batch_size). Found: {state.size() = }."
         )
-    elif state.dtype != torch.complex128:
-        raise TypeError("Expected type torch.complex128.")
+    elif state.dtype != complex128:
+        raise TypeError("Expected type complex128.")
     else:
         return state
 
 
-def infer_batchsize(param_values: dict[str, torch.Tensor] = None) -> int:
+def infer_batchsize(param_values: dict[str, Tensor] = None) -> int:
     return max([len(tensor) for tensor in param_values.values()]) if param_values else 1
 
 
@@ -228,7 +245,7 @@ class PyQMatrixBlock(Module):
         self.qubits = block.qubit_support
         self.register_buffer("mat", block.matrix.unsqueeze(2))
 
-    def forward(self, state: torch.Tensor, _: dict[str, torch.Tensor] = None) -> torch.Tensor:
+    def forward(self, state: Tensor, _: dict[str, Tensor] = None) -> Tensor:
         return apply_operator(state, self.mat, self.qubits, self.n_qubits)
 
 
@@ -247,19 +264,17 @@ class PyQComposedBlock(pyq.QuantumCircuit):
         super().__init__(n_qubits, ops)
         self.qubits = qubits
 
-    def forward(
-        self, state: torch.Tensor, values: dict[str, torch.Tensor] | None = None
-    ) -> torch.Tensor:
+    def forward(self, state: Tensor, values: dict[str, Tensor] | None = None) -> Tensor:
         batch_size = infer_batchsize(values)
         return apply_operator(
             state, self.unitary(values, batch_size), self.qubits, self.n_qubits, batch_size
         )
 
-    def unitary(self, values: dict[str, torch.Tensor] | None, batch_size: int) -> torch.Tensor:
+    def unitary(self, values: dict[str, Tensor] | None, batch_size: int) -> Tensor:
         batch_first_perm = (2, 0, 1)
-        undo_perm = tuple(torch.argsort(torch.tensor(batch_first_perm)))
+        undo_perm = tuple(argsort(tensor(batch_first_perm)))
 
-        def _expand(m: torch.Tensor) -> torch.Tensor:
+        def _expand(m: Tensor) -> Tensor:
             if len(m.size()) == 2:
                 m = m.unsqueeze(2).repeat(
                     1, 1, batch_size
@@ -268,11 +283,11 @@ class PyQComposedBlock(pyq.QuantumCircuit):
                 m = m.repeat(1, 1, batch_size)  # In case a tensor is 3D doesnt have batch_size.
             return m
 
-        def _batch_first(m: torch.Tensor) -> torch.Tensor:
-            return torch.permute(m, batch_first_perm)  # This returns shape (batch_size, 2, 2)
+        def _batch_first(m: Tensor) -> Tensor:
+            return permute(m, batch_first_perm)  # This returns shape (batch_size, 2, 2)
 
-        def _batch_last(m: torch.Tensor) -> torch.Tensor:
-            return torch.permute(
+        def _batch_last(m: Tensor) -> Tensor:
+            return permute(
                 m, undo_perm
             )  # We need to undo the permute since PyQ expects (2, 2, batch_size).
 
@@ -280,7 +295,7 @@ class PyQComposedBlock(pyq.QuantumCircuit):
 
         return _batch_last(
             reduce(
-                torch.bmm,
+                bmm,
                 (_batch_first(_expand(op.unitary(values))) for op in reversed(self.operations)),
             )
         )
@@ -296,9 +311,7 @@ class PyQObservable(Module):
             diag = block_to_diagonal(block, tuple(range(n_qubits)))
             self.register_buffer("diag", diag)
 
-            def sparse_operation(
-                state: torch.Tensor, values: dict[str, torch.Tensor] = None
-            ) -> torch.Tensor:
+            def sparse_operation(state: Tensor, values: dict[str, Tensor] = None) -> Tensor:
                 return pyqify(diag * unpyqify(state), n_qubits=self.n_qubits)
 
             self.operation = sparse_operation
@@ -308,10 +321,10 @@ class PyQObservable(Module):
                 convert_block(block, n_qubits, config),
             )
 
-    def forward(self, state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
+    def forward(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
         return pyq.overlap(state, self.operation(state, values))
 
-    def run(self, state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
+    def run(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
         return self.operation(state, values)
 
 
@@ -355,7 +368,7 @@ class PyQHamiltonianEvolution(Module):
             # FIXME Why are we squeezing
         else:
 
-            def _hamiltonian(values: dict[str, torch.Tensor]) -> torch.Tensor:
+            def _hamiltonian(values: dict[str, Tensor]) -> Tensor:
                 hmat = _block_to_tensor_embedded(
                     block.generator,  # type: ignore[arg-type]
                     values=values,
@@ -368,44 +381,36 @@ class PyQHamiltonianEvolution(Module):
 
         self._time_evolution = lambda values: values[self.param_names[0]]
 
-    def _unitary(self, hamiltonian: torch.Tensor, time_evolution: torch.Tensor) -> torch.Tensor:
+    def _unitary(self, hamiltonian: Tensor, time_evolution: Tensor) -> Tensor:
         self.batch_size = max(hamiltonian.size()[2], len(time_evolution))
-        diag_check = torch.tensor(
-            [is_diag(hamiltonian[..., i]) for i in range(hamiltonian.size()[2])]
-        )
+        diag_check = tensor([is_diag(hamiltonian[..., i]) for i in range(hamiltonian.size()[2])])
 
-        def _evolve_diag_operator(
-            hamiltonian: torch.Tensor, time_evolution: torch.Tensor
-        ) -> torch.Tensor:
-            evol_operator = torch.diagonal(hamiltonian) * (-1j * time_evolution).view((-1, 1))
-            evol_operator = torch.diag_embed(torch.exp(evol_operator))
-            return torch.transpose(evol_operator, 0, -1)
+        def _evolve_diag_operator(hamiltonian: Tensor, time_evolution: Tensor) -> Tensor:
+            evol_operator = diagonal(hamiltonian) * (-1j * time_evolution).view((-1, 1))
+            evol_operator = diag_embed(exp(evol_operator))
+            return transpose(evol_operator, 0, -1)
 
-        def _evolve_matrixexp_operator(
-            hamiltonian: torch.Tensor, time_evolution: torch.Tensor
-        ) -> torch.Tensor:
-            evol_operator = torch.transpose(hamiltonian, 0, -1) * (-1j * time_evolution).view(
-                (-1, 1, 1)
-            )
-            evol_operator = torch.linalg.matrix_exp(evol_operator)
-            return torch.transpose(evol_operator, 0, -1)
+        def _evolve_matrixexp_operator(hamiltonian: Tensor, time_evolution: Tensor) -> Tensor:
+            evol_operator = transpose(hamiltonian, 0, -1) * (-1j * time_evolution).view((-1, 1, 1))
+            evol_operator = linalg.matrix_exp(evol_operator)
+            return transpose(evol_operator, 0, -1)
 
         evolve_operator = (
-            _evolve_diag_operator if bool(torch.prod(diag_check)) else _evolve_matrixexp_operator
+            _evolve_diag_operator if bool(prod(diag_check)) else _evolve_matrixexp_operator
         )
         return evolve_operator(hamiltonian, time_evolution)
 
-    def unitary(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
+    def unitary(self, values: dict[str, Tensor]) -> Tensor:
         return self._unitary(self._hamiltonian(values), self._time_evolution(values))
 
-    def jacobian_time(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
+    def jacobian_time(self, values: dict[str, Tensor]) -> Tensor:
         return finitediff(
             lambda t: self._unitary(time_evolution=t, hamiltonian=self._hamiltonian(values)),
             values[self.param_names[0]],
         )
 
-    def jacobian_generator(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
-        def _generator(val: torch.Tensor) -> torch.Tensor:
+    def jacobian_generator(self, values: dict[str, Tensor]) -> Tensor:
+        def _generator(val: Tensor) -> Tensor:
             val_copy = values.copy()
             val_copy[self.param_names[1]] = val
             hmat = _block_to_tensor_embedded(
@@ -423,14 +428,14 @@ class PyQHamiltonianEvolution(Module):
             values[self.param_names[1]],
         )
 
-    def dagger(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
+    def dagger(self, values: dict[str, Tensor]) -> Tensor:
         return _dagger(self.unitary(values))
 
     def forward(
         self,
-        state: torch.Tensor,
-        values: dict[str, torch.Tensor],
-    ) -> torch.Tensor:
+        state: Tensor,
+        values: dict[str, Tensor],
+    ) -> Tensor:
         return apply_operator(
             state,
             self.unitary(values),
@@ -444,7 +449,7 @@ class AddPyQOperation(pyq.QuantumCircuit):
     def __init__(self, n_qubits: int, operations: list[Module]):
         super().__init__(n_qubits=n_qubits, operations=operations)
 
-    def forward(self, state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
+    def forward(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
         return reduce(add, (op(state, values) for op in self.operations))
 
 
@@ -462,15 +467,15 @@ class ScalePyQOperation(pyq.QuantumCircuit):
         (self.param_name,) = config.get_param_name(block)
         self.qubit_support = self.operations[0].qubit_support
 
-    def forward(self, state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
+    def forward(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
         return apply_operator(state, self.unitary(values), self.qubit_support, self.n_qubits)
 
     def unitary(self, values: dict[str, Tensor]) -> Tensor:
         thetas = values[self.param_name]
         return thetas * self.operations[0].unitary(values)
 
-    def dagger(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
+    def dagger(self, values: dict[str, Tensor]) -> Tensor:
         return _dagger(self.unitary(values))
 
-    def jacobian(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
-        return values[self.param_name] * torch.ones_like(self.unitary(values))
+    def jacobian(self, values: dict[str, Tensor]) -> Tensor:
+        return values[self.param_name] * ones_like(self.unitary(values))
