@@ -24,6 +24,6 @@ class ExperimentComposer(BaseModel):
         ):
             raise ValueError(
                 f"Backend {backend} does not support diff_mode {validated_diffmode}."
-                "Please choose {DiffMode.GPSR} instead."
+                f"Please choose {DiffMode.GPSR} instead."
             )
         return validated_diffmode
