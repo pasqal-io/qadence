@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import math
-import warnings
 from collections import Counter
 from typing import Any
 
@@ -19,12 +18,6 @@ __all__ = []  # type: ignore
 
 
 logger = get_logger(__name__)
-
-
-def bitstring_to_int(bstring: str, endianness: Endianness = Endianness.BIG) -> int:
-    # FIXME: Remove in v1.0.0
-    warnings.warn("Deprecated function bitstring_to_int. Please use basis_to_int.", FutureWarning)
-    return basis_to_int(bstring, endianness)
 
 
 def basis_to_int(basis: str, endianness: Endianness = Endianness.BIG) -> int:

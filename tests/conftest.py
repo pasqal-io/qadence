@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import networkx as nx
 import numpy as np
-import torch
 import torch.nn as nn
 from openfermion import QubitOperator
 from pytest import fixture  # type: ignore
 from sympy import Expr
+from torch import Tensor, rand, tensor
 
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.utils import chain, kron, unroll_block_with_scaling
@@ -75,17 +75,17 @@ class BasicNetwork(nn.Module):
         self.network = nn.Sequential(*network)
         self.n_neurons = n_neurons
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         return self.network(x)
 
 
 class BasicNetworkNoInput(nn.Module):
     def __init__(self) -> None:
         super().__init__()
-        self.x = nn.Parameter(torch.tensor([1.0]))
-        self.scale = nn.Parameter(torch.tensor([1.0]))
+        self.x = nn.Parameter(tensor([1.0]))
+        self.scale = nn.Parameter(tensor([1.0]))
 
-    def forward(self) -> torch.Tensor:
+    def forward(self) -> Tensor:
         res = self.scale * (self.x - 2.0) ** 2
         return res
 
@@ -203,8 +203,8 @@ def BasicTransformedModule(BasicQNN: QNN) -> TransformedModule:
         BasicQNN,
         None,
         None,
-        input_scaling=torch.rand(1),
-        output_scaling=torch.rand(1),
-        input_shifting=torch.rand(1),
-        output_shifting=torch.rand(1),
+        input_scaling=rand(1),
+        output_scaling=rand(1),
+        input_shifting=rand(1),
+        output_shifting=rand(1),
     )

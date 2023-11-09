@@ -4,7 +4,7 @@ from collections import Counter
 from functools import singledispatch
 from typing import Any, Union
 
-from torch import Tensor, no_grad
+from torch import Tensor, concat, no_grad
 
 from qadence.backend import BackendConfiguration
 from qadence.backends.api import backend_factory
@@ -96,6 +96,14 @@ def _(n_qubits: int, block: AbstractBlock, **kwargs: Any) -> Tensor:
 def _(block: AbstractBlock, **kwargs: Any) -> Tensor:
     n_qubits = _n_qubits_block(block)
     return run(Register(n_qubits), block, **kwargs)
+
+
+@run.register
+def _(circs: list, **kwargs: Any) -> Tensor:  # type: ignore[misc]
+    results = ()
+    for c in circs:
+        results += run(c, **kwargs)  # type:ignore[assignment]
+    return concat(results, dim=0)
 
 
 @singledispatch
