@@ -11,7 +11,7 @@ from braket.devices import LocalSimulator
 from torch import Tensor
 
 from qadence.backend import Backend as BackendInterface
-from qadence.backend import BackendName, ConvertedCircuit, ConvertedObservable
+from qadence.backend import ConvertedCircuit, ConvertedObservable
 from qadence.backends.utils import to_list_of_dicts
 from qadence.blocks import AbstractBlock, block_to_tensor
 from qadence.circuit import QuantumCircuit
@@ -21,6 +21,7 @@ from qadence.noise import Noise
 from qadence.noise.protocols import apply
 from qadence.overlap import overlap_exact
 from qadence.transpile import transpile
+from qadence.types import BackendName
 from qadence.utils import Endianness
 
 from .config import Configuration, default_passes

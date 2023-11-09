@@ -6,15 +6,14 @@ from typing import Any, Union
 
 from torch import Tensor, no_grad
 
-from qadence import backend_factory
-from qadence.backend import BackendConfiguration, BackendName
+from qadence.backend import BackendConfiguration
+from qadence.backends.api import backend_factory
 from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.noise import Noise
 from qadence.qubit_support import QubitSupport
 from qadence.register import Register
-from qadence.types import DiffMode
-from qadence.utils import Endianness
+from qadence.types import BackendName, DiffMode, Endianness
 
 # Modules to be automatically added to the qadence namespace
 __all__ = ["run", "sample", "expectation"]

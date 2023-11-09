@@ -6,17 +6,18 @@ import numpy as np
 import pytest
 import torch
 
-from qadence import BackendName, DiffMode, FeatureParameter, QuantumCircuit
 from qadence.blocks import (
     chain,
     kron,
     tag,
 )
+from qadence.circuit import QuantumCircuit
 from qadence.constructors import hea, ising_hamiltonian, total_magnetization
 from qadence.models import QNN
 from qadence.operations import RX, RY
-from qadence.parameters import Parameter
+from qadence.parameters import FeatureParameter, Parameter
 from qadence.states import uniform_state
+from qadence.types import BackendName, DiffMode
 
 
 def build_circuit(n_qubits_per_feature: int, n_features: int, depth: int = 2) -> QuantumCircuit:

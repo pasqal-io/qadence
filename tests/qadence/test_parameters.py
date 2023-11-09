@@ -6,7 +6,6 @@ import sympy
 import torch
 from torch import allclose
 
-from qadence import BackendName, DiffMode
 from qadence.backends.pyqtorch import Backend as PyQBackend
 from qadence.blocks import ParametricBlock, chain
 from qadence.blocks.utils import expressions
@@ -22,6 +21,7 @@ from qadence.parameters import (
 )
 from qadence.serialization import deserialize, serialize
 from qadence.states import one_state, uniform_state, zero_state
+from qadence.types import BackendName, DiffMode
 
 
 def test_param_initialization(parametric_circuit: QuantumCircuit) -> None:

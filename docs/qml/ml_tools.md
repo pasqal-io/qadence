@@ -209,3 +209,76 @@ for i in range(n_epochs):
     loss.backward()
     optimizer.step()
 ```
+
+
+## Custom `train` loop
+
+If you need custom training functionality that goes beyon what is available in
+`qadence.ml_tools.train_with_grad` and `qadence.ml_tools.train_gradient_free` you can write your own
+training loop based on the building blocks that are available in Qadence.
+
+A simplified version of Qadence's train loop is defined below. Feel free to copy it and modify at
+will.
+
+```python
+from typing import Callable, Union
+
+from torch.nn import Module
+from torch.optim import Optimizer
+from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
+
+from qadence.ml_tools.config import TrainConfig
+from qadence.ml_tools.data import DictDataLoader, data_to_device
+from qadence.ml_tools.optimize_step import optimize_step
+from qadence.ml_tools.printing import print_metrics, write_tensorboard
+from qadence.ml_tools.saveload import load_checkpoint, write_checkpoint
+
+
+def train(
+    model: Module,
+    data: DataLoader,
+    optimizer: Optimizer,
+    config: TrainConfig,
+    loss_fn: Callable,
+    device: str = "cpu",
+    optimize_step: Callable = optimize_step,
+    write_tensorboard: Callable = write_tensorboard,
+) -> tuple[Module, Optimizer]:
+
+    # Move model to device before optimizer is loaded
+    model = model.to(device)
+
+    # load available checkpoint
+    init_iter = 0
+    if config.folder:
+        model, optimizer, init_iter = load_checkpoint(config.folder, model, optimizer)
+
+    # initialize tensorboard
+    writer = SummaryWriter(config.folder, purge_step=init_iter)
+
+    dl_iter = iter(dataloader)
+
+    # outer epoch loop
+    for iteration in range(init_iter, init_iter + config.max_iter):
+        data = data_to_device(next(dl_iter), device)
+        loss, metrics = optimize_step(model, optimizer, loss_fn, data)
+
+        if iteration % config.print_every == 0 and config.verbose:
+            print_metrics(loss, metrics, iteration)
+
+        if iteration % config.write_every == 0:
+            write_tensorboard(writer, loss, metrics, iteration)
+
+        if config.folder:
+            if iteration % config.checkpoint_every == 0:
+                write_checkpoint(config.folder, model, optimizer, iteration)
+
+    # Final writing and checkpointing
+    if config.folder:
+        write_checkpoint(config.folder, model, optimizer, iteration)
+    write_tensorboard(writer, loss, metrics, iteration)
+    writer.close()
+
+    return model, optimizer
+```
