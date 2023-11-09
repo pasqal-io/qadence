@@ -6,11 +6,10 @@ from uuid import uuid4
 import jsonschema
 import numpy as np
 import sympy
-import torch
 from sympy import *
 from sympy import Array, Basic, Expr, Symbol, sympify
 from sympytorch import SymPyModule
-from torch import Tensor
+from torch import Tensor, rand, tensor
 
 from qadence.logger import get_logger
 from qadence.types import TNumber
@@ -120,7 +119,7 @@ class Parameter(Symbol):
             p.trainable = assumptions.get("trainable", True)
             p.value = assumptions.get("value", None)
             if p.value is None:
-                p.value = torch.rand(1).item()
+                p.value = rand(1).item()
             return p
         else:
             raise TypeError(f"Parameter does not support type {type(name)}")
@@ -243,7 +242,7 @@ def evaluate(expr: Expr, values: dict = {}, as_torch: bool = False) -> TNumber |
     res_value: TNumber | Tensor
     query: dict[Parameter, TNumber | Tensor] = {}
     if isinstance(expr, Array):
-        return torch.Tensor(expr.tolist())
+        return Tensor(expr.tolist())
     else:
         if not expr.is_number:
             for s in expr.free_symbols:
@@ -254,7 +253,7 @@ def evaluate(expr: Expr, values: dict = {}, as_torch: bool = False) -> TNumber |
                 else:
                     raise ValueError(f"No value provided for symbol {s.name}")
         if as_torch:
-            res_value = torchify(expr)(**{s.name: torch.tensor(v) for s, v in query.items()})
+            res_value = torchify(expr)(**{s.name: tensor(v) for s, v in query.items()})
         else:
             res = expr.subs(query)
             res_value = sympy_to_numeric(res)

@@ -8,9 +8,9 @@ import torch
 from torch import Tensor, concat
 from torch.distributions import Categorical, Distribution
 
-from qadence.backends.api import backend_factory
 from qadence.blocks import ChainBlock, KronBlock, PrimitiveBlock, chain, kron
 from qadence.circuit import QuantumCircuit
+from qadence.execution import run
 from qadence.operations import CNOT, RX, RY, RZ, H, I, X
 from qadence.overlap import fidelity
 from qadence.types import BackendName, Endianness, StateGeneratorType
@@ -71,27 +71,6 @@ def _rand_haar_slow(n_qubits: int) -> Tensor:
     Lambda = torch.diag(torch.diag(R) / torch.diag(R).abs())
     haar_unitary = torch.matmul(Q, Lambda)
     return torch.matmul(haar_unitary, zero_state(n_qubits).squeeze(0)).unsqueeze(0)
-
-
-@singledispatch
-def _run_state(circ: QuantumCircuit, backend: str) -> Tensor:
-    if backend != BackendName.PYQTORCH:
-        raise ValueError("Only pyqtorch supports custom states.")
-    bknd = backend_factory(backend=backend, diff_mode="ad")
-    conv = bknd.convert(circ)
-    return bknd.run(conv.circuit, conv.embedding_fn(conv.params, {}))
-
-
-@_run_state.register
-def _(circs: list, backend: str) -> Tensor:  # type: ignore[misc]
-    bknd = backend_factory(backend=backend, diff_mode="ad")
-    results = ()
-    for c in circs:
-        conv = bknd.convert(c)
-        results += (
-            bknd.run(conv.circuit, conv.embedding_fn(conv.params, {})),
-        )  # type:ignore[assignment]
-    return concat(results, dim=0)
 
 
 def _from_op(op: type[PrimitiveBlock], n_qubits: int) -> KronBlock:
@@ -323,7 +302,7 @@ def random_state(
     elif type == StateGeneratorType.HAAR_MEASURE_SLOW:
         state = concat(tuple(_rand_haar_slow(n_qubits) for _ in range(batch_size)), dim=0)
     elif type == StateGeneratorType.RANDOM_ROTATIONS:
-        state = _run_state(_abstract_random_state(n_qubits, batch_size), backend)  # type: ignore
+        state = run(_abstract_random_state(n_qubits, batch_size))  # type: ignore
     assert all(list(map(is_normalized, state)))
     return state
 
