@@ -173,7 +173,7 @@ class Backend(BackendInterface):
         # Noise is ignored if measurement protocol is not provided.
         if noise is not None and measurement is None:
             logger.warning(
-                f"Errors of type {noise} are not implemented for expectation yet. "
+                f"Errors of type {noise} are not implemented for exact expectation yet. "
                 "This is ignored for now."
             )
         # Do not flip endianness here because then we would have to reverse the observable

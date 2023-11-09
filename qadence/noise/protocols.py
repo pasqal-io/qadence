@@ -22,7 +22,7 @@ class Noise:
             module = importlib.import_module(PROTOCOL_TO_MODULE[self.protocol])
         except KeyError:
             ImportError(f"The module corresponding to the protocol {self.protocol} is not found.")
-        fn = getattr(module, "error")
+        fn = getattr(module, "add_noise")
         return cast(Callable, fn)
 
     def _to_dict(self) -> dict:

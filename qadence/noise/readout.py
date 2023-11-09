@@ -142,7 +142,7 @@ def bs_corruption(
     return Counter([tensor_to_bitstring(k) for k in func(sample, err_idx)])
 
 
-def error(
+def add_noise(
     counters: list[Counter],
     n_qubits: int,
     n_shots: int = 1000,
