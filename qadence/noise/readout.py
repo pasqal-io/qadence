@@ -73,7 +73,15 @@ def bit_flip(bit: Tensor, cond: Tensor) -> Tensor:
     Returns:
         The inverse value of the input bit
     """
-    return torch.where(cond, torch.where(bit == 0, 1, 0), bit)
+    return torch.where(
+        cond,
+        torch.where(
+            bit == torch.zeros(1, dtype=torch.int64),
+            torch.ones(1, dtype=torch.int64),
+            torch.zeros(1, dtype=torch.int64),
+        ),
+        bit,
+    )
 
 
 def sample_to_matrix(sample: dict) -> Tensor:
