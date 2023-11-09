@@ -11,11 +11,12 @@ from .backends import *
 from .blocks import *
 from .circuit import *
 from .constructors import *
-from .errors import *
+from .exceptions import *
 from .execution import *
 from .measurements import *
 from .ml_tools import *
 from .models import *
+from .noise import *
 from .operations import *
 from .overlap import *
 from .parameters import *
@@ -46,7 +47,8 @@ list_of_submodules = [
     ".blocks",
     ".circuit",
     ".constructors",
-    ".errors",
+    ".noise",
+    ".exceptions",
     ".execution",
     ".measurements",
     ".ml_tools",

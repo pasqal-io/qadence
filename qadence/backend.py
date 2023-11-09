@@ -22,10 +22,11 @@ from qadence.blocks.analog import ConstantAnalogRotation, WaitBlock
 from qadence.circuit import QuantumCircuit
 from qadence.logger import get_logger
 from qadence.measurements import Measurements
+from qadence.noise import Noise
 from qadence.parameters import stringify
 from qadence.types import BackendName, DiffMode, Endianness
 
-logger = get_logger(__name__)
+logger = get_logger(__file__)
 
 
 @dataclass
@@ -168,9 +169,9 @@ class Backend(ABC):
     def convert(
         self, circuit: QuantumCircuit, observable: list[AbstractBlock] | AbstractBlock | None = None
     ) -> Converted:
-        """Convert an abstract circuit (and optionally and observable) to their native.
+        """Convert an abstract circuit and an optional observable to their native representation.
 
-        representation. Additionally this function constructs an embedding function which maps from
+        Additionally, this function constructs an embedding function which maps from
         user-facing parameters to device parameters (read more on parameter embedding
         [here][qadence.blocks.embedding.embedding]).
         """
@@ -234,6 +235,7 @@ class Backend(ABC):
         param_values: dict[str, Tensor] = {},
         n_shots: int = 1000,
         state: Tensor | None = None,
+        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         """Sample bit strings.
@@ -244,7 +246,8 @@ class Backend(ABC):
                 [`embedding`][qadence.blocks.embedding.embedding] for more info.
             n_shots: Number of shots to sample.
             state: Initial state.
-            endianness: Endianness of the resulting bitstrings.
+            noise: A noise model to use.
+            endianness: Endianness of the resulting bit strings.
         """
         raise NotImplementedError
 
@@ -278,7 +281,8 @@ class Backend(ABC):
         observable: list[ConvertedObservable] | ConvertedObservable,
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
-        protocol: Measurements | None = None,
+        measurement: Measurements | None = None,
+        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         """Compute the expectation value of the `circuit` with the given `observable`.
@@ -288,7 +292,10 @@ class Backend(ABC):
             param_values: _**Already embedded**_ parameters of the circuit. See
                 [`embedding`][qadence.blocks.embedding.embedding] for more info.
             state: Initial state.
-            endianness: Endianness of the resulting bitstrings.
+            measurement: Optional measurement protocol. If None, use
+                exact expectation value with a statevector simulator.
+            noise: A noise model to use.
+            endianness: Endianness of the resulting bit strings.
         """
         raise NotImplementedError
 

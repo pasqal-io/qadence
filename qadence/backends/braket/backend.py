@@ -15,7 +15,10 @@ from qadence.backend import ConvertedCircuit, ConvertedObservable
 from qadence.backends.utils import to_list_of_dicts
 from qadence.blocks import AbstractBlock, block_to_tensor
 from qadence.circuit import QuantumCircuit
+from qadence.logger import get_logger
 from qadence.measurements import Measurements
+from qadence.noise import Noise
+from qadence.noise.protocols import apply
 from qadence.overlap import overlap_exact
 from qadence.transpile import transpile
 from qadence.types import BackendName
@@ -23,6 +26,8 @@ from qadence.utils import Endianness
 
 from .config import Configuration, default_passes
 from .convert_ops import convert_block
+
+logger = get_logger(__file__)
 
 
 def promote_parameters(parameters: dict[str, Tensor | float]) -> dict[str, float]:
@@ -128,6 +133,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         n_shots: int = 1,
         state: Tensor | None = None,
+        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         """Execute the circuit and return samples of the resulting wavefunction."""
@@ -142,6 +148,7 @@ class Backend(BackendInterface):
             raise NotImplementedError
 
         # loop over all values in the batch
+
         samples = []
         for vals in to_list_of_dicts(param_values):
             final_circuit = self.assign_parameters(circuit, vals)
@@ -151,6 +158,8 @@ class Backend(BackendInterface):
             from qadence.transpile import invert_endianness
 
             samples = invert_endianness(samples)
+        if noise is not None:
+            samples = apply(noise=noise, samples=samples)
         return samples
 
     def expectation(
@@ -159,9 +168,16 @@ class Backend(BackendInterface):
         observable: list[ConvertedObservable] | ConvertedObservable,
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
-        protocol: Measurements | None = None,
+        measurement: Measurements | None = None,
+        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
+        # Noise is ignored if measurement protocol is not provided.
+        if noise is not None and measurement is None:
+            logger.warning(
+                f"Errors of type {noise} are not implemented for exact expectation yet. "
+                "This is ignored for now."
+            )
         # Do not flip endianness here because then we would have to reverse the observable
         wfs = self.run(circuit, param_values, state=state, endianness=Endianness.BIG)
 

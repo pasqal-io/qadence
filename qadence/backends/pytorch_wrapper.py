@@ -26,6 +26,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.extensions import get_gpsr_fns
 from qadence.measurements import Measurements
 from qadence.ml_tools import promote_to_tensor
+from qadence.noise import Noise
 from qadence.types import DiffMode, Endianness
 
 
@@ -93,21 +94,23 @@ class DifferentiableExpectation:
     observable: list[ConvertedObservable] | ConvertedObservable
     param_values: dict[str, Tensor]
     state: Tensor | None = None
-    protocol: Measurements | None = None
+    measurement: Measurements | None = None
+    noise: Noise | None = None
     endianness: Endianness = Endianness.BIG
 
     def ad(self) -> Tensor:
         self.observable = (
             self.observable if isinstance(self.observable, list) else [self.observable]
         )
-        if self.protocol:
-            expectation_fn = self.protocol.get_measurement_fn()
+        if self.measurement:
+            expectation_fn = self.measurement.get_measurement_fn()
             expectations = expectation_fn(
                 circuit=self.circuit.original,
                 observables=[obs.original for obs in self.observable],
                 param_values=self.param_values,
-                options=self.protocol.options,
+                options=self.measurement.options,
                 state=self.state,
+                noise=self.noise,
                 endianness=self.endianness,
             )
         else:
@@ -116,6 +119,7 @@ class DifferentiableExpectation:
                 observable=self.observable,
                 param_values=self.param_values,
                 state=self.state,
+                noise=self.noise,
                 endianness=self.endianness,
             )
         return promote_to_tensor(
@@ -151,20 +155,21 @@ class DifferentiableExpectation:
         # wrapper which unpacks the parameters
         # as pytorch grads can only calculated w.r.t tensors
         # so we unpack the params, feed in the names separately
-        # as apply doesnt take keyword arguments
+        # as apply doesn't take keyword arguments
         # We also fold in the observable into the backend which makes
         # life easier in the custom autodiff.
         self.observable = (
             self.observable if isinstance(self.observable, list) else [self.observable]
         )
 
-        if self.protocol is not None:
+        if self.measurement is not None:
             expectation_fn = partial(
-                self.protocol.get_measurement_fn(),
+                self.measurement.get_measurement_fn(),
                 circuit=self.circuit.original,
                 observables=[obs.original for obs in self.observable],
-                options=self.protocol.options,
+                options=self.measurement.options,
                 state=self.state,
+                noise=self.noise,
                 endianness=self.endianness,
             )
         else:
@@ -173,6 +178,7 @@ class DifferentiableExpectation:
                 circuit=self.circuit,
                 observable=self.observable,
                 state=self.state,
+                noise=self.noise,
                 endianness=self.endianness,
             )
         # PSR only applies to parametric circuits.
@@ -263,7 +269,8 @@ class DifferentiableBackend(Module):
         observable: list[ConvertedObservable] | ConvertedObservable,
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
-        protocol: Measurements | None = None,
+        measurement: Measurements | None = None,
+        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         """Compute the expectation value of a given observable.
@@ -273,7 +280,7 @@ class DifferentiableBackend(Module):
             observable: A backend native observable to compute the expectation value from.
             param_values: A dict of values for symbolic substitution.
             state: An initial state.
-            protocol: A shot-based measurement protocol.
+            measurement: A shot-based measurement protocol.
             endianness: Endianness of the state.
 
         Returns:
@@ -286,7 +293,8 @@ class DifferentiableBackend(Module):
             observable=observable,
             param_values=param_values,
             state=state,
-            protocol=protocol,
+            measurement=measurement,
+            noise=noise,
             endianness=endianness,
         )
 
@@ -307,8 +315,9 @@ class DifferentiableBackend(Module):
         self,
         circuit: ConvertedCircuit,
         param_values: dict[str, Tensor],
-        state: Tensor | None = None,
         n_shots: int = 1,
+        state: Tensor | None = None,
+        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         """Sample bitstring from the registered circuit.
@@ -317,6 +326,9 @@ class DifferentiableBackend(Module):
             circuit: A backend native quantum circuit to be executed.
             param_values: The values of the parameters after embedding
             n_shots: The number of shots. Defaults to 1.
+            state: Initial state.
+            noise: A noise model to use.
+            endianness: Endianness of the resulting bitstrings.
 
         Returns:
             An iterable with all the sampled bitstrings
@@ -328,6 +340,7 @@ class DifferentiableBackend(Module):
                 state=state,
                 n_shots=n_shots,
                 endianness=endianness,
+                noise=noise,
             )
 
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:

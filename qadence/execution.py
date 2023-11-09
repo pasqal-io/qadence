@@ -10,6 +10,7 @@ from qadence.backend import BackendConfiguration
 from qadence.backends.api import backend_factory
 from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
+from qadence.noise import Noise
 from qadence.qubit_support import QubitSupport
 from qadence.register import Register
 from qadence.types import BackendName, DiffMode, Endianness
@@ -114,14 +115,10 @@ def sample(
     n_shots: int = 100,
     backend: BackendName = BackendName.PYQTORCH,
     endianness: Endianness = Endianness.BIG,
+    noise: Union[Noise, None] = None,
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> list[Counter]:
     """Convenience wrapper for the `QuantumModel.sample` method.
-
-     This is a
-    `functools.singledispatch`ed function so it can be called with a number of different arguments.
-    See the examples of the [`expectation`][qadence.execution.expectation] function. This function
-    works exactly the same.
 
     Arguments:
         x: Circuit, block, or (register+block) to run.
@@ -130,6 +127,7 @@ def sample(
         n_shots: Number of shots per element in the batch.
         backend: Name of the backend to run on.
         endianness: The target device endianness.
+        noise: The noise model to use if any.
         configuration: The backend configuration.
 
     Returns:
@@ -145,6 +143,7 @@ def _(
     state: Union[Tensor, None] = None,
     n_shots: int = 100,
     backend: BackendName = BackendName.PYQTORCH,
+    noise: Union[Noise, None] = None,
     endianness: Endianness = Endianness.BIG,
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> list[Counter]:
@@ -155,6 +154,7 @@ def _(
         param_values=conv.embedding_fn(conv.params, values),
         n_shots=n_shots,
         state=state,
+        noise=noise,
         endianness=endianness,
     )
 
@@ -183,14 +183,11 @@ def expectation(
     state: Tensor = None,
     backend: BackendName = BackendName.PYQTORCH,
     diff_mode: Union[DiffMode, str, None] = None,
+    noise: Union[Noise, None] = None,
     endianness: Endianness = Endianness.BIG,
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> Tensor:
     """Convenience wrapper for the `QuantumModel.expectation` method.
-
-     This is a
-    `functools.singledispatch`ed function so it can be called with a number of different arguments
-    (see in the examples).
 
     Arguments:
         x: Circuit, block, or (register+block) to run.
@@ -238,6 +235,7 @@ def _(
     state: Tensor = None,
     backend: BackendName = BackendName.PYQTORCH,
     diff_mode: Union[DiffMode, str, None] = None,
+    noise: Union[Noise, None] = None,
     endianness: Endianness = Endianness.BIG,
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> Tensor:
@@ -251,6 +249,7 @@ def _(
             observable=conv.observable,  # type: ignore[arg-type]
             param_values=conv.embedding_fn(conv.params, values),
             state=state,
+            noise=noise,
             endianness=endianness,
         )
 

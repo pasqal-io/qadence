@@ -24,7 +24,7 @@ from braket.circuits.instruction import Instruction
 from braket.parametric import FreeParameter
 
 from qadence.blocks import AbstractBlock, CompositeBlock, PrimitiveBlock
-from qadence.errors import NotSupportedError
+from qadence.exceptions import NotSupportedError
 from qadence.operations import OpName
 from qadence.parameters import evaluate
 
