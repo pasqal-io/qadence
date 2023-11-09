@@ -4,7 +4,7 @@ import warnings
 from typing import List, Tuple, Type, Union
 
 import numpy as np
-import torch
+from torch import Tensor, double, ones, rand
 
 from qadence.blocks import AbstractBlock, add
 from qadence.logger import get_logger
@@ -43,7 +43,7 @@ INTERACTION_DICT = {
 }
 
 
-ARRAYS = (list, np.ndarray, torch.Tensor)
+ARRAYS = (list, np.ndarray, Tensor)
 
 DETUNINGS = (N, X, Y, Z)
 
@@ -185,10 +185,10 @@ def _preprocess_strengths(
     # Next we process the strength given in the input arguments
     if strength is None:
         if random_strength:
-            strength = 2 * torch.rand(len(data), dtype=torch.double) - 1
+            strength = 2 * rand(len(data), dtype=double) - 1
         else:
             # None defaults to constant = 1.0
-            strength = torch.ones(len(data), dtype=torch.double)
+            strength = ones(len(data), dtype=double)
     elif isinstance(strength, ARRAYS):
         # If array is given, checks it has the correct length
         if len(strength) != len(data):

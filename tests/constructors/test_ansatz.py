@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import pytest
-import torch
+from torch import Size
 
 from qadence import (
     CNOT,
@@ -95,4 +95,4 @@ def test_hea_forward(n_qubits: int, depth: int, strategy: Strategy) -> None:
     model = QuantumModel(circuit)
 
     wf = model.run({})
-    assert wf.shape == torch.Size([1, 2**n_qubits])
+    assert wf.shape == Size([1, 2**n_qubits])

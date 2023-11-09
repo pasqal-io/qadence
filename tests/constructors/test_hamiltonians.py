@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import networkx as nx
 import pytest
-import torch
+from torch import rand
 
 from qadence import (
     Interaction,
@@ -38,8 +38,8 @@ def test_hamiltonian_factory_creation(
             detuning_strength = "x"
             interaction_strength = "y"
         elif strength_type == "numeric":
-            detuning_strength = torch.rand(n_qubits)
-            interaction_strength = torch.rand(int(0.5 * n_qubits * (n_qubits - 1)))
+            detuning_strength = rand(n_qubits)
+            interaction_strength = rand(int(0.5 * n_qubits * (n_qubits - 1)))
         elif strength_type == "random":
             random_strength = True
 
