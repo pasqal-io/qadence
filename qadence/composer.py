@@ -22,5 +22,8 @@ class ExperimentComposer(BaseModel):
             validated_diffmode == DiffMode.AD
             and (backend := values["BACKEND"]) != BackendName.PYQTORCH
         ):
-            raise ValueError(f"Backend {backend} does not support diff_mode {validated_diffmode}.")
+            raise ValueError(
+                f"Backend {backend} does not support diff_mode {validated_diffmode}."
+                "Please choose {DiffMode.GPSR} instead."
+            )
         return validated_diffmode

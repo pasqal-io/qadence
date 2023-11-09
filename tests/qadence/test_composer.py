@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from qadence.composer.composer import ExperimentComposer
+from qadence.composer import ExperimentComposer
 from qadence.types import BackendName, DiffMode
 
 
