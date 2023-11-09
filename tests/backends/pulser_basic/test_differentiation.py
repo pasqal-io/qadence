@@ -37,7 +37,6 @@ def circuit(circ_id: int) -> QuantumCircuit:
     return circ
 
 
-@pytest.mark.xfail(reason="Unrelated to this MR? fixme")
 @pytest.mark.slow
 @pytest.mark.parametrize(
     "circ_id",

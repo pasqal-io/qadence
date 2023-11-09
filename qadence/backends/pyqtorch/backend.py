@@ -58,7 +58,9 @@ class Backend(BackendInterface):
         self.native_endianness = native_endianness
         if config is None:
             self.config = Configuration()
-        else:
+        elif isinstance(config, dict):
+            self.config = Configuration(**config)
+        elif isinstance(config, Configuration):
             self.config = config
 
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:
