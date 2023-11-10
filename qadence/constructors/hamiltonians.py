@@ -58,6 +58,7 @@ def hamiltonian_factory(
     detuning_strength: TArray | str | None = None,
     random_strength: bool = False,
     force_update: bool = False,
+    use_complete_graph: bool = False,
 ) -> AbstractBlock:
     """
     General Hamiltonian creation function.
@@ -80,6 +81,9 @@ def hamiltonian_factory(
             detuning for each qubit, each labelled as `"x_i"`.
         random_strength: set random interaction and detuning strengths between -1 and 1.
         force_update: force override register detuning and interaction strengths.
+        use_complete_graph: computes an interaction for every edge in a complete graph,
+            independent of the edges in the register. Useful for defining Hamiltonians
+            where the interaction strength decays with the distance.
 
     Examples:
         ```python exec="on" source="material-block" result="json"
@@ -133,15 +137,17 @@ def hamiltonian_factory(
     has_detuning_strength, detuning_strength = _preprocess_strengths(
         register, detuning_strength, "nodes", force_update, random_strength
     )
+
+    edge_str = "all_edges" if use_complete_graph else "edges"
     has_interaction_strength, interaction_strength = _preprocess_strengths(
-        register, interaction_strength, "edges", force_update, random_strength
+        register, interaction_strength, edge_str, force_update, random_strength
     )
 
     if (not has_detuning_strength) or force_update:
         register = _update_detuning_strength(register, detuning_strength)
 
     if (not has_interaction_strength) or force_update:
-        register = _update_interaction_strength(register, interaction_strength)
+        register = _update_interaction_strength(register, interaction_strength, use_complete_graph)
 
     # Create single-qubit detunings:
     single_qubit_terms: List[AbstractBlock] = []
@@ -153,10 +159,11 @@ def hamiltonian_factory(
 
     # Create two-qubit interactions:
     two_qubit_terms: List[AbstractBlock] = []
+    edge_data = register.all_edges if use_complete_graph else register.edges
     if interaction is not None:
-        for edge in register.edges:
+        for edge in edge_data:
             block_tq = int_fn(*edge)  # type: ignore [operator]
-            strength_tq = register.edges[edge]["strength"]
+            strength_tq = edge_data[edge]["strength"]
             two_qubit_terms.append(strength_tq * block_tq)
 
     return add(*single_qubit_terms, *two_qubit_terms)
@@ -218,13 +225,14 @@ def _update_detuning_strength(register: Register, detuning_strength: TArray | st
 
 
 def _update_interaction_strength(
-    register: Register, interaction_strength: TArray | str
+    register: Register, interaction_strength: TArray | str, use_complete_graph: bool
 ) -> Register:
-    for idx, edge in enumerate(register.edges):
+    edge_data = register.all_edges if use_complete_graph else register.edges
+    for idx, edge in enumerate(edge_data):
         if isinstance(interaction_strength, str):
-            register.edges[edge]["strength"] = interaction_strength + f"_{edge[0]}{edge[1]}"
+            edge_data[edge]["strength"] = interaction_strength + f"_{edge[0]}{edge[1]}"
         elif isinstance(interaction_strength, ARRAYS):
-            register.edges[edge]["strength"] = interaction_strength[idx]
+            edge_data[edge]["strength"] = interaction_strength[idx]
     return register
 
 
