@@ -28,6 +28,10 @@ from qadence.qubit_support import QubitSupport
 from qadence.register import Register
 from qadence.transpile.transpile import blockfn_to_circfn
 
+##########################################################
+## FILE KEPT TEMPORARILY BUT WILL BE REMOVED IN THIS MR ##
+##########################################################
+
 
 def _qubitposition(register: Register, i: int) -> tuple[int, int]:
     (x, y) = list(register.coords.values())[i]
