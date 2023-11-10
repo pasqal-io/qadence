@@ -19,7 +19,7 @@ logger = get_logger(__name__)
 
 def default_passes(config: Configuration) -> list[Callable]:
     return [
-        lambda circ: add_interaction(circ, interaction=config.interaction),
+        lambda circ: add_interaction(circ, interaction=config.interaction, spacing=config.spacing),
         lambda circ: blockfn_to_circfn(chain_single_qubit_ops)(circ)
         if config.use_single_qubit_composition
         else blockfn_to_circfn(flatten)(circ),
@@ -46,6 +46,9 @@ class Configuration(BackendConfiguration):
 
     interaction: Interaction = Interaction.NN
     """Digital-analog emulation interaction that is used for `AnalogBlock`s."""
+
+    spacing: float = 1.0
+    """Spacing to re-scale qubit registers when running `AnalogBlock`s."""
 
     loop_expectation: bool = False
     """When computing batches of expectation values, only allocate one wavefunction.

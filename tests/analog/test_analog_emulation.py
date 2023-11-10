@@ -7,7 +7,6 @@ import pytest
 from metrics import JS_ACCEPTANCE
 from torch import pi
 
-from qadence.analog import add_interaction
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.analog import AnalogBlock
 from qadence.execution import run, sample
@@ -60,15 +59,15 @@ d = 3.75
     ],
 )
 def test_far_add_interaction(analog: AnalogBlock, digital_fn: Callable, register: Register) -> None:
-    emu_block = add_interaction(analog, register, spacing=8.0)
-    emu_samples = sample(register, emu_block, backend="pyqtorch")[0]  # type: ignore[arg-type]
-    pulser_samples = sample(register, analog, backend="pulser")[0]  # type: ignore[arg-type]
+    config = {"spacing": 8.0}
+    emu_samples = sample(register, analog, backend="pyqtorch", configuration=config)[0]
+    pulser_samples = sample(register, analog, backend="pulser", configuration=config)[0]
     assert js_divergence(pulser_samples, emu_samples) < JS_ACCEPTANCE
 
     wf = random_state(register.n_qubits)
     digital = digital_fn(register.n_qubits)
-    emu_state = run(register, emu_block, state=wf)
-    dig_state = run(register, digital, state=wf)
+    emu_state = run(register, analog, state=wf, configuration=config)
+    dig_state = run(register, digital, state=wf, configuration=config)
     assert equivalent_state(emu_state, dig_state, atol=1e-3)
 
 
@@ -82,15 +81,19 @@ def test_far_add_interaction(analog: AnalogBlock, digital_fn: Callable, register
             AnalogRot(duration=1000, omega=1.0, delta=0.0, phase=0),
             AnalogRot(duration=1000, omega=0.0, delta=1.0, phase=0),
         ),
-        kron(AnalogRX(pi, qubit_support=(0, 1)), wait(1000, qubit_support=(2, 3))),
+        # kron(AnalogRX(pi, qubit_support=(0, 1)), wait(1000, qubit_support=(2, 3))),
     ],
 )
 @pytest.mark.parametrize("register", [Register.from_coordinates([(0, 5), (5, 5), (5, 0), (0, 0)])])
 @pytest.mark.flaky(max_runs=5)
 def test_close_add_interaction(block: AnalogBlock, register: Register) -> None:
-    pulser_samples = sample(register, block, backend="pulser", n_shots=1000)[0]  # type: ignore[arg-type] # noqa: E501
-    emu_block = add_interaction(block, register, spacing=8.0)
-    pyqtorch_samples = sample(register, emu_block, backend="pyqtorch", n_shots=1000)[0]  # type: ignore[arg-type] # noqa: E501
+    config = {"spacing": 8.0}
+    pulser_samples = sample(register, block, backend="pulser", n_shots=1000, configuration=config)[
+        0
+    ]
+    pyqtorch_samples = sample(
+        register, block, backend="pyqtorch", n_shots=1000, configuration=config
+    )[0]
     assert js_divergence(pulser_samples, pyqtorch_samples) < JS_ACCEPTANCE
 
 

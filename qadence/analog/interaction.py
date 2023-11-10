@@ -39,13 +39,18 @@ def add_interaction(
     block_parsed = apply_fn_to_blocks(
         block,
         _add_interaction,
+        register,
         h_int,
     )
 
     return QuantumCircuit(register, block_parsed)
 
 
-def _add_interaction(block: AbstractBlock, h_int: AbstractBlock) -> AbstractBlock:
+def _add_interaction(
+    block: AbstractBlock, register: Register, h_int: AbstractBlock
+) -> AbstractBlock:
+    support = tuple(register.nodes)
+
     if isinstance(block, AnalogBlock):
         if isinstance(block, WaitBlock):
             # Currently hardcoding the wait to be global
@@ -58,7 +63,6 @@ def _add_interaction(block: AbstractBlock, h_int: AbstractBlock) -> AbstractBloc
             omega = block.parameters.omega
             delta = block.parameters.delta
             phase = block.parameters.phase
-            support = h_int.qubit_support
 
             x_terms = (omega / 2) * add(cos(phase) * X(i) - sin(phase) * Y(i) for i in support)
             z_terms = delta * add(N(i) for i in support)
