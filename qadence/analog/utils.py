@@ -2,15 +2,10 @@ from __future__ import annotations
 
 from math import dist as euclidean_distance
 
-from sympy import cos, sin
-
 from qadence.blocks.abstract import AbstractBlock
-from qadence.blocks.analog import (
-    ConstantAnalogRotation,
-)
-from qadence.blocks.utils import add, kron
-from qadence.operations import N, X, Y
+from qadence.constructors import hamiltonian_factory
 from qadence.register import Register
+from qadence.types import Interaction
 
 # Ising coupling coefficient depending on the Rydberg level
 # Include a normalization to the Planck constant hbar
@@ -71,62 +66,44 @@ C6_DICT = {
 }
 
 
-def _qubitposition(register: Register, i: int) -> tuple[int, int]:
-    (x, y) = list(register.coords.values())[i]
-    return (x, y)
+def _qubit_distance(register: Register, i: int, j: int) -> float:
+    return euclidean_distance(register.coords[i], register.coords[j])
 
 
-def ising_interaction(
-    register: Register, pairs: list[tuple[int, int]], rydberg_level: int = 60
-) -> AbstractBlock:
+def rydberg_interaction_hamiltonian(register: Register, interaction: Interaction) -> AbstractBlock:
     """
-    Computes the Rydberg Ising interaction Hamiltonian for a register of qubits.
+    Computes the Rydberg Ising or XY interaction Hamiltonian for a register of qubits.
 
     H_int = ∑_(j<i) (C_6 / R**6) * kron(N_i, N_j)
-
-    Args:
-        register: the register of qubits.
-        pairs: a list of all pairs of interacting qubits.
-        rydberg_level: determines the value of C_6
-    """
-    c6 = C6_DICT[rydberg_level]
-
-    def term(i: int, j: int) -> AbstractBlock:
-        qi, qj = _qubitposition(register, i), _qubitposition(register, j)
-        rij = euclidean_distance(qi, qj)
-        return (c6 / rij**6) * kron(N(i), N(j))
-
-    return add(term(i, j) for (i, j) in pairs)
-
-
-def xy_interaction(
-    register: Register, pairs: list[tuple[int, int]], c3: float = 3700.0
-) -> AbstractBlock:
-    """
-    Computes the Rydberg XY interaction Hamiltonian for a register of qubits.
 
     H_int = ∑_(j<i) (C_3 / R**3) * (kron(X_i, X_j) + kron(Y_i, Y_j))
 
     Args:
         register: the register of qubits.
-        pairs: a list of all pairs of interacting qubits.
-        c3: the coefficient value of C_3 in units of [rad . µm^3 / µs]
+        interaction: the Interaction type.
     """
 
-    def term(i: int, j: int) -> AbstractBlock:
-        qi, qj = _qubitposition(register, i), _qubitposition(register, j)
-        rij = euclidean_distance(qi, qj)
-        return (c3 / rij**3) * (kron(X(i), X(j)) + kron(Y(i), Y(j)))
+    if interaction == Interaction.NN:
+        # Currently hardcoding the rydberg level at 60
+        rydberg_level = 60
+        c6 = C6_DICT[rydberg_level]
+        strength_list = [
+            (c6 / _qubit_distance(register, *edge) ** 6) for edge in register.all_edges
+        ]
+    elif interaction == Interaction.XY:
+        # Currently hardcoding c3 xy coefficient at 3700.0
+        c3 = 3700.0
+        strength_list = [
+            (c3 / _qubit_distance(register, *edge) ** 3) for edge in register.all_edges
+        ]
+    else:
+        raise KeyError(
+            "Function `add_interaction` currently only supports Interaction.NN or Interaction.XY."
+        )
 
-    return add(term(i, j) for (i, j) in pairs)
-
-
-def rot_generator(block: ConstantAnalogRotation) -> AbstractBlock:
-    omega = block.parameters.omega
-    delta = block.parameters.delta
-    phase = block.parameters.phase
-    support = block.qubit_support
-
-    x_terms = (omega / 2) * add(cos(phase) * X(i) - sin(phase) * Y(i) for i in support)
-    z_terms = delta * add(N(i) for i in support)
-    return x_terms - z_terms  # type: ignore[no-any-return]
+    return hamiltonian_factory(
+        register,
+        interaction=interaction,
+        interaction_strength=strength_list,
+        use_complete_graph=True,
+    )
