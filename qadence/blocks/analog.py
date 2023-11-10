@@ -87,7 +87,7 @@ class AnalogBlock(AbstractBlock):
     ) -> torch.Tensor:
         from qadence import add_interaction
 
-        return add_interaction(register, block, spacing=spacing).eigenvalues_generator
+        return add_interaction(block, register, spacing=spacing).block.eigenvalues_generator
 
 
 @dataclass(eq=False, repr=False)

@@ -10,9 +10,7 @@ from torch import pi
 from qadence.analog import add_interaction
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.analog import AnalogBlock
-from qadence.circuit import QuantumCircuit
 from qadence.execution import run, sample
-from qadence.models.quantum_model import QuantumModel
 from qadence.operations import (
     RX,
     RY,
@@ -21,8 +19,6 @@ from qadence.operations import (
     AnalogRX,
     AnalogRY,
     AnalogRZ,
-    HamEvo,
-    I,
     chain,
     kron,
     wait,
@@ -64,7 +60,7 @@ d = 3.75
     ],
 )
 def test_far_add_interaction(analog: AnalogBlock, digital_fn: Callable, register: Register) -> None:
-    emu_block = add_interaction(register, analog, spacing=8.0)
+    emu_block = add_interaction(analog, register, spacing=8.0)
     emu_samples = sample(register, emu_block, backend="pyqtorch")[0]  # type: ignore[arg-type]
     pulser_samples = sample(register, analog, backend="pulser")[0]  # type: ignore[arg-type]
     assert js_divergence(pulser_samples, emu_samples) < JS_ACCEPTANCE
@@ -93,7 +89,7 @@ def test_far_add_interaction(analog: AnalogBlock, digital_fn: Callable, register
 @pytest.mark.flaky(max_runs=5)
 def test_close_add_interaction(block: AnalogBlock, register: Register) -> None:
     pulser_samples = sample(register, block, backend="pulser", n_shots=1000)[0]  # type: ignore[arg-type] # noqa: E501
-    emu_block = add_interaction(register, block, spacing=8.0)
+    emu_block = add_interaction(block, register, spacing=8.0)
     pyqtorch_samples = sample(register, emu_block, backend="pyqtorch", n_shots=1000)[0]  # type: ignore[arg-type] # noqa: E501
     assert js_divergence(pulser_samples, pyqtorch_samples) < JS_ACCEPTANCE
 
@@ -107,10 +103,11 @@ def test_mixing_digital_analog() -> None:
     assert js_divergence(sample(r, b)[0], Counter({"00": 100})) < JS_ACCEPTANCE
 
 
-def test_custom_interaction_function() -> None:
-    circuit = QuantumCircuit(2, wait(duration=100))
-    emulated = add_interaction(circuit, interaction=lambda reg, pairs: I(0))
-    assert emulated.block == HamEvo(I(0), 100 / 1000)
+# FIXME: Adapt when custom interaction functions are again supported
+# def test_custom_interaction_function() -> None:
+#     circuit = QuantumCircuit(2, wait(duration=100))
+#     emulated = add_interaction(circuit, interaction=lambda reg, pairs: I(0))
+#     assert emulated.block == HamEvo(I(0), 100 / 1000)
 
-    m = QuantumModel(circuit, configuration={"interaction": lambda reg, pairs: I(0)})
-    assert m._circuit.abstract.block == HamEvo(I(0), 100 / 1000)
+#     m = QuantumModel(circuit, configuration={"interaction": lambda reg, pairs: I(0)})
+#     assert m._circuit.abstract.block == HamEvo(I(0), 100 / 1000)

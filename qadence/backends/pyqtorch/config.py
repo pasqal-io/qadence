@@ -44,7 +44,7 @@ class Configuration(BackendConfiguration):
     use_single_qubit_composition: bool = False
     """Composes chains of single qubit gates into a single matmul if possible."""
 
-    interaction: Callable | Interaction | str = Interaction.NN
+    interaction: Interaction = Interaction.NN
     """Digital-analog emulation interaction that is used for `AnalogBlock`s."""
 
     loop_expectation: bool = False
