@@ -2,54 +2,41 @@ from __future__ import annotations
 
 from sympy import cos, sin
 
+from qadence.analog.device import RydbergDevice
 from qadence.analog.utils import rydberg_interaction_hamiltonian
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.analog import (
     AnalogBlock,
     ConstantAnalogRotation,
-    Interaction,
     WaitBlock,
 )
 from qadence.blocks.utils import add
 from qadence.circuit import QuantumCircuit
 from qadence.operations import HamEvo, N, X, Y
-from qadence.register import Register
 from qadence.transpile import apply_fn_to_blocks
 
 
 def add_interaction(
-    circuit: QuantumCircuit | AbstractBlock,
-    register: Register | None = None,
-    interaction: Interaction = Interaction.NN,
-    spacing: float = 1.0,
+    circuit: QuantumCircuit,
+    device: RydbergDevice,
 ) -> QuantumCircuit:
-    if isinstance(circuit, QuantumCircuit):
-        register = circuit.register
-        block = circuit.block
-    elif register is not None:
-        block = circuit
-    else:
-        raise ValueError("Provide a QuantumCircuit or block + register as input.")
-
-    register = register._scale_positions(spacing)
-
     # Create interaction hamiltonian
-    h_int = rydberg_interaction_hamiltonian(register, interaction)
+    h_int = rydberg_interaction_hamiltonian(device)
 
     block_parsed = apply_fn_to_blocks(
-        block,
+        circuit.block,
         _add_interaction,
-        register,
+        device,
         h_int,
     )
 
-    return QuantumCircuit(register, block_parsed)
+    return QuantumCircuit(device.register, block_parsed)
 
 
 def _add_interaction(
-    block: AbstractBlock, register: Register, h_int: AbstractBlock
+    block: AbstractBlock, device: RydbergDevice, h_int: AbstractBlock
 ) -> AbstractBlock:
-    support = tuple(register.nodes)
+    support = tuple(device.register.nodes)
 
     if isinstance(block, AnalogBlock):
         if isinstance(block, WaitBlock):

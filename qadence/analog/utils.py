@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from math import dist as euclidean_distance
 
-from torch import Tensor, tensor
+from torch import Tensor, float64, tensor
 
+from qadence.analog.device import RydbergDevice
 from qadence.blocks.abstract import AbstractBlock
 from qadence.constructors import hamiltonian_factory
 from qadence.register import Register
@@ -68,31 +69,24 @@ C6_DICT = {
 }
 
 
-def _distance_all_qubits(register: Register) -> Tensor:
+def _distance_all_qubits(r: Register) -> Tensor:
     return tensor(
-        [
-            euclidean_distance(register.coords[edge[0]], register.coords[edge[1]])
-            for edge in register.all_edges
-        ]
+        [euclidean_distance(r.coords[e[0]], r.coords[e[1]]) for e in r.all_edges], dtype=float64
     )
 
 
-def _nn_strength(register: Register) -> Tensor:
+def _nn_strength(register: Register, rydberg_level: int) -> Tensor:
     """(C_6 / R_ij**6)."""
-    # FIXME: Currently hardcoding the rydberg level at 60
-    rydberg_level = 60
     c6 = C6_DICT[rydberg_level]
     return c6 / (_distance_all_qubits(register) ** 6)
 
 
-def _xy_strength(register: Register) -> Tensor:
+def _xy_strength(register: Register, coeff_xy: float) -> Tensor:
     """(C_3 / R_ij**3)."""
-    # FIXME: Currently hardcoding c3 xy coefficient at 3700.0
-    c3 = 3700.0
-    return c3 / (_distance_all_qubits(register) ** 3)
+    return coeff_xy / (_distance_all_qubits(register) ** 3)
 
 
-def rydberg_interaction_hamiltonian(register: Register, interaction: Interaction) -> AbstractBlock:
+def rydberg_interaction_hamiltonian(device: RydbergDevice) -> AbstractBlock:
     """
     Computes the Rydberg Ising or XY interaction Hamiltonian for a register of qubits.
 
@@ -105,19 +99,14 @@ def rydberg_interaction_hamiltonian(register: Register, interaction: Interaction
         interaction: the Interaction type.
     """
 
-    if interaction == Interaction.NN:
-        strength_list = _nn_strength(register)
-    elif interaction == Interaction.XY:
-        strength_list = _xy_strength(register)
-    else:
-        # FIXME: Currently not supporting custom interaction functions.
-        raise KeyError(
-            "Function `add_interaction` currently only supports Interaction.NN or Interaction.XY."
-        )
+    if device.interaction == Interaction.NN:
+        strength_list = _nn_strength(device.register, device.rydberg_level)
+    elif device.interaction == Interaction.XY:
+        strength_list = _xy_strength(device.register, device.coeff_xy)
 
     return hamiltonian_factory(
-        register,
-        interaction=interaction,
+        device.register,
+        interaction=device.interaction,
         interaction_strength=strength_list,
         use_complete_graph=True,
     )
