@@ -144,13 +144,16 @@ def _(circuit: QuantumCircuit, *args: Any, **kwargs: Any) -> QuantumCircuitDiagr
 @make_diagram.register
 def _(model: QuantumModel, *args: Any, **kwargs: Any) -> QuantumCircuitDiagram:
     # FIXME: include measurement icon
-    if model.out_features > 1:  # type: ignore
-        raise ValueError("Cannot visualize QuantumModel with more than one observable.")
+    if model.out_features is not None:
+        if model.out_features > 1:
+            raise ValueError("Cannot visualize QuantumModel with more than one observable.")
 
-    obs = deepcopy(model._observable[0].original)  # type: ignore [index]
-    obs.tag = "Obs."
+        obs = deepcopy(model._observable[0].original)  # type: ignore [index]
+        obs.tag = "Obs."
 
-    block = chain(model._circuit.original.block, obs)
+        block: AbstractBlock = chain(model._circuit.original.block, obs)
+    else:
+        block = model._circuit.original.block
     return make_diagram(block, *args, **kwargs)
 
 
