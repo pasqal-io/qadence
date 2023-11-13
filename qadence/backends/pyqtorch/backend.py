@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from math import prod
 from typing import Any
 
@@ -14,7 +14,10 @@ from qadence.backend import BackendName, ConvertedCircuit, ConvertedObservable
 from qadence.backends.utils import to_list_of_dicts
 from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
+from qadence.logger import get_logger
 from qadence.measurements import Measurements
+from qadence.noise import Noise
+from qadence.noise.protocols import apply
 from qadence.overlap import overlap_exact
 from qadence.states import zero_state
 from qadence.transpile import (
@@ -28,12 +31,13 @@ from qadence.utils import Endianness, int_to_basis
 from .config import Configuration, default_passes
 from .convert_ops import convert_block, convert_observable
 
+logger = get_logger(__name__)
+
 
 @dataclass(frozen=True, eq=True)
 class Backend(BackendInterface):
     """PyQTorch backend."""
 
-    # set standard interface parameters
     name: BackendName = BackendName.PYQTORCH
     supports_ad: bool = True
     support_bp: bool = True
@@ -41,7 +45,7 @@ class Backend(BackendInterface):
     with_measurements: bool = True
     with_noise: bool = False
     native_endianness: Endianness = Endianness.BIG
-    config: Configuration = Configuration()
+    config: Configuration = field(default_factory=Configuration)
 
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:
         passes = self.config.transpilation_passes
@@ -123,7 +127,8 @@ class Backend(BackendInterface):
         observable: list[ConvertedObservable] | ConvertedObservable,
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
-        protocol: Measurements | None = None,
+        measurement: Measurements | None = None,
+        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         state = self.run(
@@ -147,7 +152,8 @@ class Backend(BackendInterface):
         observable: list[ConvertedObservable] | ConvertedObservable,
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
-        protocol: Measurements | None = None,
+        measurement: Measurements | None = None,
+        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         state = zero_state(circuit.abstract.n_qubits, batch_size=1) if state is None else state
@@ -173,16 +179,24 @@ class Backend(BackendInterface):
         observable: list[ConvertedObservable] | ConvertedObservable,
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
-        protocol: Measurements | None = None,
+        measurement: Measurements | None = None,
+        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
+        # Noise is ignored if measurement protocol is not provided.
+        if noise is not None and measurement is None:
+            logger.warning(
+                f"Errors of type {noise} are not implemented for exact expectation yet. "
+                "This is ignored for now."
+            )
         fn = self._looped_expectation if self.config.loop_expectation else self._batched_expectation
         return fn(
             circuit=circuit,
             observable=observable,
             param_values=param_values,
             state=state,
-            protocol=protocol,
+            measurement=measurement,
+            noise=noise,
             endianness=endianness,
         )
 
@@ -192,6 +206,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         n_shots: int = 1,
         state: Tensor | None = None,
+        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         if n_shots < 1:
@@ -212,7 +227,7 @@ class Backend(BackendInterface):
 
         wf = self.run(circuit=circuit, param_values=param_values, state=state)
         probs = torch.abs(torch.pow(wf, 2))
-        return list(
+        samples = list(
             map(
                 lambda _probs: _sample(
                     _probs=_probs,
@@ -223,6 +238,9 @@ class Backend(BackendInterface):
                 probs,
             )
         )
+        if noise is not None:
+            samples = apply(noise=noise, samples=samples)
+        return samples
 
     def assign_parameters(self, circuit: ConvertedCircuit, param_values: dict[str, Tensor]) -> Any:
         raise NotImplementedError

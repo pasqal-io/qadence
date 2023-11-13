@@ -167,11 +167,16 @@ def test_backend_sampling(circ: QuantumCircuit) -> None:
     (circ_pyqtorch, _, _, _) = bknd_pyqtorch.convert(circ)
     (circ_braket, _, embed, params) = bknd_braket.convert(circ)
 
-    # braket doesnt support custom initial states so we use state=None for the zero state
+    # braket doesn't support custom initial states, so we use state=None for the zero state
     pyqtorch_samples = bknd_pyqtorch.sample(
         circ_pyqtorch, embed(params, {}), state=None, n_shots=100
     )
-    braket_samples = bknd_braket.sample(circ_braket, embed(params, {}), state=None, n_shots=100)
+    braket_samples = bknd_braket.sample(
+        circ_braket,
+        embed(params, {}),
+        state=None,
+        n_shots=100,
+    )
 
     for pyqtorch_sample, braket_sample in zip(pyqtorch_samples, braket_samples):
         assert js_divergence(pyqtorch_sample, braket_sample) < JS_ACCEPTANCE

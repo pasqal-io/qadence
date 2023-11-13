@@ -8,12 +8,15 @@ from graphviz import Graph
 
 from .themes import BaseTheme, Black, Dark, Light, White
 
+THEMES = {"light": Light, "dark": Dark, "black": Black, "white": White}
+LAYOUTS = ["LR", "TB"]
+
 
 class QuantumCircuitDiagram:
     """This class plots a quantum circuit using Graphviz."""
 
-    __valid_layouts = ["LR", "TB"]
-    __themes = {"light": Light, "dark": Dark, "black": Black, "white": White}
+    __valid_layouts = LAYOUTS
+    __themes = THEMES
 
     __default_graph_attr = {
         "compound": "true",  # This helps to draw edges when clusters do not have to show

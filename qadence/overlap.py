@@ -320,7 +320,7 @@ class Overlap(QuantumModel):
         ket_circuit: QuantumCircuit,
         backend: BackendName = BackendName.PYQTORCH,
         diff_mode: DiffMode = DiffMode.AD,
-        protocol: Measurements | None = None,
+        measurement: Measurements | None = None,
         configuration: BackendConfiguration | dict | None = None,
         method: OverlapMethod = OverlapMethod.EXACT,
     ):
@@ -336,7 +336,7 @@ class Overlap(QuantumModel):
             bra_circuit,
             backend=backend,
             diff_mode=diff_mode,
-            protocol=protocol,
+            measurement=measurement,
             configuration=configuration,
         )
         self.bra_feat_param_names = set([inp.name for inp in self.inputs])
@@ -346,7 +346,7 @@ class Overlap(QuantumModel):
                 ket_circuit,
                 backend=backend,
                 diff_mode=diff_mode,
-                protocol=protocol,
+                measurement=measurement,
                 configuration=configuration,
             )
             self.ket_feat_param_names = set([inp.name for inp in self.ket_model.inputs])

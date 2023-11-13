@@ -230,12 +230,12 @@ def test_estimations_comparison_tomo_forward_pass(circuit: QuantumCircuit, value
     options = {"n_shots": 100000}
     estimated_exp_tomo = model.expectation(
         values=values,
-        protocol=Measurements(protocol=Measurements.TOMOGRAPHY, options=options),
+        measurement=Measurements(protocol=Measurements.TOMOGRAPHY, options=options),
     )
     new_options = {"accuracy": 0.1, "confidence": 0.1}
     estimated_exp_shadow = model.expectation(
         values=values,
-        protocol=Measurements(protocol=Measurements.SHADOW, options=new_options),
+        measurement=Measurements(protocol=Measurements.SHADOW, options=new_options),
     )  # N = 54400.
     assert torch.allclose(estimated_exp_tomo, pyq_exp_exact, atol=1.0e-2)
     assert torch.allclose(estimated_exp_shadow, pyq_exp_exact, atol=0.1)
@@ -263,7 +263,7 @@ def test_chemistry_hamiltonian_1() -> None:
     exact = model.expectation(values=param_values)
     estim = model.expectation(
         values=param_values,
-        protocol=Measurements(protocol=Measurements.SHADOW, options=kwargs),
+        measurement=Measurements(protocol=Measurements.SHADOW, options=kwargs),
     )
     assert torch.allclose(estim, exact, atol=0.3)
 
@@ -289,7 +289,7 @@ def test_chemistry_hamiltonian_2() -> None:
     exact = model.expectation(values=param_values)
     estim = model.expectation(
         values=param_values,
-        protocol=Measurements(protocol=Measurements.SHADOW, options=kwargs),
+        measurement=Measurements(protocol=Measurements.SHADOW, options=kwargs),
     )
     assert torch.allclose(estim, exact, atol=0.2)
 
@@ -318,6 +318,6 @@ def test_chemistry_hamiltonian_3() -> None:
     exact = model.expectation(values=param_values)
     estim = model.expectation(
         values=param_values,
-        protocol=Measurements(protocol=Measurements.SHADOW, options=kwargs),
+        measurement=Measurements(protocol=Measurements.SHADOW, options=kwargs),
     )
     assert torch.allclose(estim, exact, atol=0.3)

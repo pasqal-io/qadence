@@ -122,7 +122,7 @@ class AbstractBlock(ABC):
         if not isinstance(other, (get_args(TNumber), sympy.Basic)):
             raise TypeError("Cannot divide block by another block.")
         ix = 1 / other
-        return self * ix
+        return self * ix  # type: ignore [no-any-return]
 
     def __add__(self, other: AbstractBlock) -> AbstractBlock:
         from qadence.blocks.utils import add

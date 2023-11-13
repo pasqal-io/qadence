@@ -326,7 +326,7 @@ def test_basic_tomography_for_backend_forward_pass(circuit: QuantumCircuit) -> N
             qm = QuantumModel(circuit=circuit, observable=obs, backend=backend, diff_mode=diff_mode)
             exp_tomo = qm.expectation(
                 values=inputs,
-                protocol=Measurements(
+                measurement=Measurements(
                     protocol=Measurements.TOMOGRAPHY,
                     options=kwargs,
                 ),
@@ -352,7 +352,7 @@ def test_basic_tomography_for_quantum_model(circuit: QuantumCircuit) -> None:
     kwargs = {"n_shots": 100000}
     estimated_values = model.expectation(
         inputs,
-        protocol=Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs),
+        measurement=Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs),
     )
     pyqtorch_backend = backend_factory(backend=backend, diff_mode=diff_mode)
     (conv_circ, conv_obs, embed, params) = pyqtorch_backend.convert(circuit, observable)
@@ -376,7 +376,7 @@ def test_basic_list_observables_tomography_for_quantum_model(circuit: QuantumCir
     kwargs = {"n_shots": 100000}
     estimated_values = model.expectation(
         inputs,
-        protocol=Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs),
+        measurement=Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs),
     )
     pyqtorch_backend = backend_factory(BackendName.PYQTORCH, diff_mode=DiffMode.GPSR)
     (conv_circ, conv_obs, embed, params) = pyqtorch_backend.convert(
@@ -437,7 +437,7 @@ def test_basic_tomography_for_parametric_circuit_forward_pass(
     kwargs = {"n_shots": 100000}
     estimated_values = model.expectation(
         values=values,
-        protocol=Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs),
+        measurement=Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs),
     )
     pyqtorch_backend = backend_factory(BackendName.PYQTORCH, diff_mode=DiffMode.GPSR)
     (conv_circ, conv_obs, embed, params) = pyqtorch_backend.convert(circuit, observable)
@@ -483,16 +483,16 @@ def test_forward_and_backward_passes_with_qnn(observable: AbstractBlock, accepta
     circuit = QuantumCircuit(n_qubits, fm, ansatz)
     values = {"phi": rand(batch_size, requires_grad=True)}
 
-    protocol = Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs)
+    measurement = Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs)
 
     model_with_psr = QNN(circuit=circuit, observable=observable, diff_mode=DiffMode.GPSR)
     model_with_psr_and_init = QNN(
-        circuit=circuit, observable=observable, diff_mode=DiffMode.GPSR, protocol=protocol
+        circuit=circuit, observable=observable, diff_mode=DiffMode.GPSR, measurement=measurement
     )
     model_with_psr.zero_grad()
     expectation_tomo = model_with_psr.expectation(
         values=values,
-        protocol=protocol,
+        measurement=measurement,
     )
     expectation_tomo_init = model_with_psr_and_init.expectation(values=values)
     assert allclose(expectation_tomo, expectation_tomo_init, atol=acceptance)
@@ -540,7 +540,7 @@ def test_partial_derivatives_with_qnn(observable: AbstractBlock, acceptance: flo
     model_with_psr.zero_grad()
     expectation_tomo = model_with_psr.expectation(
         values=values,
-        protocol=Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs),
+        measurement=Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs),
     )
     dexpval_tomo_phi = autograd.grad(
         expectation_tomo,
@@ -636,7 +636,7 @@ def test_high_order_derivatives_with_qnn(observable: AbstractBlock, acceptance: 
     model_with_psr.zero_grad()
     expectation_tomo = model_with_psr.expectation(
         values=values,
-        protocol=Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs),
+        measurement=Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs),
     )
     dexpval_tomo_phi = autograd.grad(
         expectation_tomo,
@@ -700,6 +700,6 @@ def test_chemistry_hamiltonian() -> None:
     )
     estim = model.expectation(
         values={},
-        protocol=Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs),
+        measurement=Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs),
     )
     assert allclose(estim, exact, atol=LOW_ACCEPTANCE)
