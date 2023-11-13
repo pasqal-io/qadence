@@ -39,7 +39,7 @@ dependencies = [
     "deepdiff",
     "jsonschema",
     "nevergrad",
-    "scipy<1.11",
+    "scipy",
     "pyqtorch==1.0.1",
     "matplotlib"
 ]

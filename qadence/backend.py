@@ -90,7 +90,7 @@ class BackendConfiguration:
         return param_ids
 
 
-@dataclass(eq=True)
+@dataclass(frozen=True, eq=True)
 class Backend(ABC):
     """The abstract class that defines the interface for the backends.
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 import numpy as np
@@ -141,34 +141,18 @@ def simulate_sequence(
             return sim_result
 
 
-@dataclass(eq=True)
+@dataclass(frozen=True, eq=True)
 class Backend(BackendInterface):
     """The Pulser backend."""
 
-    def __init__(
-        self,
-        name: BackendName = BackendName.PULSER,
-        supports_ad: bool = False,
-        support_bp: bool = False,
-        is_remote: bool = False,
-        with_measurements: bool = True,
-        with_noise: bool = False,
-        native_endianness: Endianness = Endianness.BIG,
-        config: Configuration | None = None,
-    ):
-        self.name = name
-        self.supports_ad = supports_ad
-        self.support_bp = support_bp
-        self.is_remote = is_remote
-        self.with_measurements = with_measurements
-        self.with_noise = with_noise
-        self.native_endianness = native_endianness
-        if config is None:
-            self.config = Configuration()
-        elif isinstance(config, dict):
-            self.config = Configuration(**config)
-        elif isinstance(config, Configuration):
-            self.config = config
+    name: BackendName = BackendName.PULSER
+    supports_ad: bool = False
+    support_bp: bool = False
+    is_remote: bool = False
+    with_measurements: bool = True
+    with_noise: bool = False
+    native_endianness: Endianness = Endianness.BIG
+    config: Configuration = field(default_factory=Configuration)
 
     def circuit(self, circ: QuantumCircuit) -> Sequence:
         passes = self.config.transpilation_passes
