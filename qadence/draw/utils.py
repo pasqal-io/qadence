@@ -137,13 +137,11 @@ def make_diagram(
 
 @make_diagram.register
 def _(circuit: QuantumCircuit, *args: Any, **kwargs: Any) -> QuantumCircuitDiagram:
-    # FIXME: add register plot here
     return make_diagram(circuit.block, *args, nb_wires=circuit.n_qubits, **kwargs)
 
 
 @make_diagram.register
 def _(model: QuantumModel, *args: Any, **kwargs: Any) -> QuantumCircuitDiagram:
-    # FIXME: include measurement icon
     if model.out_features is not None:
         if model.out_features > 1:
             raise ValueError("Cannot visualize QuantumModel with more than one observable.")
