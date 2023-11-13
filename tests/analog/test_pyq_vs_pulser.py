@@ -10,7 +10,7 @@ from metrics import (
     SMALL_SPACING,
 )
 
-from qadence.analog.interaction import add_interaction
+from qadence.analog import RydbergDevice
 from qadence.backends.pulser.devices import Device
 from qadence.blocks import AbstractBlock, chain, kron
 from qadence.circuit import QuantumCircuit
@@ -65,17 +65,18 @@ def test_analog_op_run(n_qubits: int, spacing: float, op: AbstractBlock) -> None
     register = Register.line(n_qubits)
     circuit = QuantumCircuit(register, block)
 
-    circuit_pyqtorch = add_interaction(circuit, spacing=spacing)
+    device = RydbergDevice(register, spacing=spacing)
+    conf_pyq = {"device": device}
 
-    model_pyqtorch = QuantumModel(circuit_pyqtorch, backend=BackendName.PYQTORCH)
+    model_pyqtorch = QuantumModel(circuit, backend=BackendName.PYQTORCH, configuration=conf_pyq)
 
-    conf = {"spacing": spacing}
+    conf_pulser = {"spacing": spacing}
 
     model_pulser = QuantumModel(
         circuit,
         backend=BackendName.PULSER,
         diff_mode=DiffMode.GPSR,
-        configuration=conf,
+        configuration=conf_pulser,
     )
 
     wf_pyq = model_pyqtorch.run(values=values, state=init_state)
@@ -228,21 +229,28 @@ def test_compatibility_pyqtorch_pulser_analog_rot_int(obs: AbstractBlock) -> Non
     register = Register.line(n_qubits)
 
     b_analog = chain(AnalogRX(phi), AnalogRY(psi))
-    pyqtorch_circuit = QuantumCircuit(register, b_analog)
-    pyqtorch_circuit = add_interaction(pyqtorch_circuit, spacing=SMALL_SPACING)
 
-    pulser_circuit = QuantumCircuit(register, b_analog)
+    circuit = QuantumCircuit(register, b_analog)
+
+    device = RydbergDevice(register, spacing=SMALL_SPACING)
+
+    conf_pyq = {"device": device}
+    conf_pulser = {"spacing": SMALL_SPACING}
 
     model_pyqtorch = QuantumModel(
-        pyqtorch_circuit, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD, observable=obs
+        circuit,
+        backend=BackendName.PYQTORCH,
+        diff_mode=DiffMode.AD,
+        observable=obs,
+        configuration=conf_pyq,
     )
     conf = {"spacing": SMALL_SPACING}
     model_pulser = QuantumModel(
-        pulser_circuit,
+        circuit,
         backend=BackendName.PULSER,
         diff_mode=DiffMode.GPSR,
         observable=obs,
-        configuration=conf,
+        configuration=conf_pulser,
     )
 
     batch_size = 5

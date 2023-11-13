@@ -7,6 +7,7 @@ import pytest
 from metrics import JS_ACCEPTANCE
 from torch import pi
 
+from qadence.analog import RydbergDevice
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.analog import AnalogBlock
 from qadence.execution import run, sample
@@ -59,15 +60,20 @@ d = 3.75
     ],
 )
 def test_far_add_interaction(analog: AnalogBlock, digital_fn: Callable, register: Register) -> None:
-    config = {"spacing": 8.0}
-    emu_samples = sample(register, analog, backend="pyqtorch", configuration=config)[0]
-    pulser_samples = sample(register, analog, backend="pulser", configuration=config)[0]
+    # FIXME: Unify config device interfaces
+    spacing = 8.0
+    device = RydbergDevice(register, spacing=spacing)
+    config_pulser = {"spacing": spacing}
+    config_pyq = {"device": device}
+
+    emu_samples = sample(register, analog, backend="pyqtorch", configuration=config_pyq)[0]
+    pulser_samples = sample(register, analog, backend="pulser", configuration=config_pulser)[0]
     assert js_divergence(pulser_samples, emu_samples) < JS_ACCEPTANCE
 
     wf = random_state(register.n_qubits)
     digital = digital_fn(register.n_qubits)
-    emu_state = run(register, analog, state=wf, configuration=config)
-    dig_state = run(register, digital, state=wf, configuration=config)
+    emu_state = run(register, analog, state=wf, configuration=config_pyq)
+    dig_state = run(register, digital, state=wf, configuration=config_pyq)
     assert equivalent_state(emu_state, dig_state, atol=1e-3)
 
 
@@ -87,12 +93,16 @@ def test_far_add_interaction(analog: AnalogBlock, digital_fn: Callable, register
 @pytest.mark.parametrize("register", [Register.from_coordinates([(0, 5), (5, 5), (5, 0), (0, 0)])])
 @pytest.mark.flaky(max_runs=5)
 def test_close_add_interaction(block: AnalogBlock, register: Register) -> None:
-    config = {"spacing": 8.0}
-    pulser_samples = sample(register, block, backend="pulser", n_shots=1000, configuration=config)[
-        0
-    ]
+    # FIXME: Unify config device interfaces
+    spacing = 8.0
+    device = RydbergDevice(register, spacing=spacing)
+    config_pulser = {"spacing": spacing}
+    config_pyq = {"device": device}
+    pulser_samples = sample(
+        register, block, backend="pulser", n_shots=1000, configuration=config_pulser
+    )[0]
     pyqtorch_samples = sample(
-        register, block, backend="pyqtorch", n_shots=1000, configuration=config
+        register, block, backend="pyqtorch", n_shots=1000, configuration=config_pyq
     )[0]
     assert js_divergence(pulser_samples, pyqtorch_samples) < JS_ACCEPTANCE
 
@@ -103,7 +113,11 @@ def test_mixing_digital_analog() -> None:
     b = chain(kron(X(0), X(1)), AnalogRX(pi))
     r = Register.from_coordinates([(0, 10), (0, -10)])
 
-    assert js_divergence(sample(r, b)[0], Counter({"00": 100})) < JS_ACCEPTANCE
+    device = RydbergDevice(r)
+
+    sample_results = sample(r, b, configuration={"device": device})[0]
+
+    assert js_divergence(sample_results, Counter({"00": 100})) < JS_ACCEPTANCE
 
 
 # FIXME: Adapt when custom interaction functions are again supported

@@ -85,9 +85,13 @@ class AnalogBlock(AbstractBlock):
     def compute_eigenvalues_generator(
         self, register: Register, block: AbstractBlock, spacing: float
     ) -> torch.Tensor:
-        from qadence import add_interaction
+        # FIXME: Temporary fix, need better solution
+        from qadence import QuantumCircuit
+        from qadence.analog import RydbergDevice, add_interaction
 
-        return add_interaction(block, register, spacing=spacing).block.eigenvalues_generator
+        device = RydbergDevice(register, spacing=spacing)
+        circuit = QuantumCircuit(register, block)
+        return add_interaction(circuit, device).block.eigenvalues_generator
 
 
 @dataclass(eq=False, repr=False)
@@ -108,8 +112,6 @@ class WaitBlock(AnalogBlock):
     with `nᵢ = (1-Zᵢ)/2`.
 
     To construct this block, use the [`wait`][qadence.operations.wait] function.
-
-    Can be used with `add_interaction`.
     """
 
     _eigenvalues_generator: torch.Tensor | None = None
@@ -145,7 +147,6 @@ class ConstantAnalogRotation(AnalogBlock):
       [`AnalogRY`][qadence.operations.AnalogRY],
       [`AnalogRZ`][qadence.operations.AnalogRZ]
 
-    Can be used with `add_interaction`.
     WARNING: do not use `ConstantAnalogRotation` with `alpha` as differentiable parameter - use
     the convenience wrappers mentioned above.
     """
