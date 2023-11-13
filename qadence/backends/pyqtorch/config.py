@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable
 
-from qadence.analog import add_interaction
+from qadence.analog import RydbergDevice, add_interaction
 from qadence.backend import BackendConfiguration
 from qadence.logger import get_logger
 from qadence.transpile import (
@@ -12,14 +12,16 @@ from qadence.transpile import (
     flatten,
     scale_primitive_blocks_only,
 )
-from qadence.types import AlgoHEvo, Interaction
+from qadence.types import AlgoHEvo
 
 logger = get_logger(__name__)
 
 
 def default_passes(config: Configuration) -> list[Callable]:
     return [
-        lambda circ: add_interaction(circ, interaction=config.interaction, spacing=config.spacing),
+        lambda circ: add_interaction(circ, device=config.device)
+        if config.device is not None
+        else circ,
         lambda circ: blockfn_to_circfn(chain_single_qubit_ops)(circ)
         if config.use_single_qubit_composition
         else blockfn_to_circfn(flatten)(circ),
@@ -44,11 +46,8 @@ class Configuration(BackendConfiguration):
     use_single_qubit_composition: bool = False
     """Composes chains of single qubit gates into a single matmul if possible."""
 
-    interaction: Interaction = Interaction.NN
+    device: RydbergDevice | None = None
     """Digital-analog emulation interaction that is used for `AnalogBlock`s."""
-
-    spacing: float = 1.0
-    """Spacing to re-scale qubit registers when running `AnalogBlock`s."""
 
     loop_expectation: bool = False
     """When computing batches of expectation values, only allocate one wavefunction.
