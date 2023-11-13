@@ -60,6 +60,7 @@ nav:
     - QML tools: qadence/ml_tools.md
     - Serialization: qadence/serialization.md
     - Types: qadence/types.md
+    - Drawing: qadence/draw.md
 
     - Backends:
       - Abstract backend: backends/backend.md
