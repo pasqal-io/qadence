@@ -103,7 +103,7 @@ def rydberg_interaction_hamiltonian(register: Register, interaction: Interaction
     elif interaction == Interaction.XY:
         strength_list = _xy_strength(register)
     else:
-        # FIXME: Currently not supporting custom interaction functions
+        # FIXME: Currently not supporting custom interaction functions.
         raise KeyError(
             "Function `add_interaction` currently only supports Interaction.NN or Interaction.XY."
         )
