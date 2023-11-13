@@ -133,8 +133,7 @@ def circuit_analog_rotation_gpsr(n_qubits: int) -> QuantumCircuit:
         ),
     )
 
-    block = add_interaction(register, analog_block).block  # type: ignore [arg-type]
-    circ = QuantumCircuit(n_qubits, block)
+    circ = add_interaction(analog_block, register)
 
     return circ
 
