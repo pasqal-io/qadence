@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from math import dist as euclidean_distance
 
+from torch import Tensor, tensor
+
 from qadence.blocks.abstract import AbstractBlock
 from qadence.constructors import hamiltonian_factory
 from qadence.register import Register
@@ -66,23 +68,28 @@ C6_DICT = {
 }
 
 
-def _qubit_distance(register: Register, i: int, j: int) -> float:
-    return euclidean_distance(register.coords[i], register.coords[j])
+def _distance_all_qubits(register: Register) -> Tensor:
+    return tensor(
+        [
+            euclidean_distance(register.coords[edge[0]], register.coords[edge[1]])
+            for edge in register.all_edges
+        ]
+    )
 
 
-def _nn_strength(register: Register) -> list[float]:
+def _nn_strength(register: Register) -> Tensor:
     """(C_6 / R_ij**6)."""
     # FIXME: Currently hardcoding the rydberg level at 60
     rydberg_level = 60
     c6 = C6_DICT[rydberg_level]
-    return [c6 / _qubit_distance(register, *edge) ** 6 for edge in register.all_edges]
+    return c6 / (_distance_all_qubits(register) ** 6)
 
 
-def _xy_strength(register: Register) -> list[float]:
+def _xy_strength(register: Register) -> Tensor:
     """(C_3 / R_ij**3)."""
     # FIXME: Currently hardcoding c3 xy coefficient at 3700.0
     c3 = 3700.0
-    return [c3 / _qubit_distance(register, *edge) ** 3 for edge in register.all_edges]
+    return c3 / (_distance_all_qubits(register) ** 3)
 
 
 def rydberg_interaction_hamiltonian(register: Register, interaction: Interaction) -> AbstractBlock:
