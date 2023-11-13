@@ -71,5 +71,5 @@ def test_configuration_as_dict() -> None:
     assert not np.isclose(div, 0.0, rtol=1e-2, atol=1e-2)
 
     wrong_conf = {"wrong": "value"}
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         backend3 = Backend(config=wrong_conf)  # type: ignore[arg-type]
