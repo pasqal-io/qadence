@@ -70,6 +70,21 @@ def _qubit_distance(register: Register, i: int, j: int) -> float:
     return euclidean_distance(register.coords[i], register.coords[j])
 
 
+def _nn_strength(register: Register) -> list[float]:
+    """(C_6 / R_ij**6)."""
+    # Currently hardcoding the rydberg level at 60
+    rydberg_level = 60
+    c6 = C6_DICT[rydberg_level]
+    return [c6 / _qubit_distance(register, *edge) ** 6 for edge in register.all_edges]
+
+
+def _xy_strength(register: Register) -> list[float]:
+    """(C_3 / R_ij**3)."""
+    # Currently hardcoding c3 xy coefficient at 3700.0
+    c3 = 3700.0
+    return [c3 / _qubit_distance(register, *edge) ** 3 for edge in register.all_edges]
+
+
 def rydberg_interaction_hamiltonian(register: Register, interaction: Interaction) -> AbstractBlock:
     """
     Computes the Rydberg Ising or XY interaction Hamiltonian for a register of qubits.
@@ -84,18 +99,9 @@ def rydberg_interaction_hamiltonian(register: Register, interaction: Interaction
     """
 
     if interaction == Interaction.NN:
-        # Currently hardcoding the rydberg level at 60
-        rydberg_level = 60
-        c6 = C6_DICT[rydberg_level]
-        strength_list = [
-            (c6 / _qubit_distance(register, *edge) ** 6) for edge in register.all_edges
-        ]
+        strength_list = _nn_strength(register)
     elif interaction == Interaction.XY:
-        # Currently hardcoding c3 xy coefficient at 3700.0
-        c3 = 3700.0
-        strength_list = [
-            (c3 / _qubit_distance(register, *edge) ** 3) for edge in register.all_edges
-        ]
+        strength_list = _xy_strength(register)
     else:
         raise KeyError(
             "Function `add_interaction` currently only supports Interaction.NN or Interaction.XY."
