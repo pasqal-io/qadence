@@ -29,4 +29,3 @@ repos:
     rev: v0.7.3
     hooks:
       - id: pydocstringformatter
-
