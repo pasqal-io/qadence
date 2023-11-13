@@ -53,12 +53,12 @@ def _add_interaction(
 
     if isinstance(block, AnalogBlock):
         if isinstance(block, WaitBlock):
-            # Currently hardcoding the wait to be global
+            # FIXME: Currently hardcoding the wait to be global
             duration = block.parameters.duration
             return HamEvo(h_int, duration / 1000)
 
         if isinstance(block, ConstantAnalogRotation):
-            # Currently hardcoding the rotations to be global
+            # FIXME: Currently hardcoding the rotations to be global
             duration = block.parameters.duration
             omega = block.parameters.omega
             delta = block.parameters.delta
