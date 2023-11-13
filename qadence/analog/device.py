@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Callable, Optional
-
 from dataclasses import dataclass
 
 from qadence.register import Register
@@ -10,7 +8,6 @@ from qadence.types import Interaction
 
 @dataclass
 class QubitDevice:
-
     register: Register
 
     interaction: Interaction
@@ -24,7 +21,6 @@ class QubitDevice:
 
 @dataclass
 class RydbergDevice(QubitDevice):
-
     interaction: Interaction = Interaction.NN
 
     rydberg_level: int = 60
@@ -37,5 +33,5 @@ class RydbergDevice(QubitDevice):
             raise KeyError(
                 "RydbergDevice currently only supports Interaction.NN or Interaction.XY."
             )
-        
+
         super().__post_init__()

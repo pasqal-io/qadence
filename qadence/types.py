@@ -161,7 +161,7 @@ class QubitSupportType(StrEnum):
 class Interaction(StrEnum):
     """Interaction types used in.
 
-    - `add_interaction`.
+    - [`RydbergDevice`][qadence.analog.device.RydbergDevice].
     - [`hamiltonian_factory`][qadence.constructors.hamiltonians.hamiltonian_factory].
     """
 
