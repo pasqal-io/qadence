@@ -1,6 +1,6 @@
 from __future__ import annotations
 
 from .device import QubitDevice, RydbergDevice
-from .interaction import add_interaction
+from .parse_analog import add_background_hamiltonian
 
-__all__ = ["add_interaction", "RydbergDevice", "QubitDevice"]
+__all__ = ["RydbergDevice", "QubitDevice"]
