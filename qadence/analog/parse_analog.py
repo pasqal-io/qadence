@@ -16,25 +16,37 @@ from qadence.operations import HamEvo, N, X, Y
 from qadence.transpile import apply_fn_to_blocks
 
 
-def add_interaction(
-    circuit: QuantumCircuit,
+def add_background_hamiltonian(
+    circuit: QuantumCircuit | AbstractBlock,
     device: RydbergDevice,
-) -> QuantumCircuit:
-    # Create interaction hamiltonian
+) -> QuantumCircuit | AbstractBlock:
+    # Temporary check to allow both circuit or blocks as input
+    circuit_input = isinstance(circuit, QuantumCircuit)
+    target_block = circuit.block if circuit_input else circuit
+
+    # Create interaction hamiltonian:
     h_int = rydberg_interaction_hamiltonian(device)
 
+    # Create addressing pattern:
+    # h_addr = (...)
+
+    h_background = h_int  # + h_addr
+
     block_parsed = apply_fn_to_blocks(
-        circuit.block,
-        _add_interaction,
+        target_block,
+        _analog_to_hevo,
         device,
-        h_int,
+        h_background,
     )
 
-    return QuantumCircuit(device.register, block_parsed)
+    if circuit_input:
+        return QuantumCircuit(device.register, block_parsed)
+    else:
+        return block_parsed
 
 
-def _add_interaction(
-    block: AbstractBlock, device: RydbergDevice, h_int: AbstractBlock
+def _analog_to_hevo(
+    block: AbstractBlock, device: RydbergDevice, h_background: AbstractBlock
 ) -> AbstractBlock:
     support = tuple(device.register.nodes)
 
@@ -42,7 +54,7 @@ def _add_interaction(
         if isinstance(block, WaitBlock):
             # FIXME: Currently hardcoding the wait to be global
             duration = block.parameters.duration
-            return HamEvo(h_int, duration / 1000)
+            return HamEvo(h_background, duration / 1000)
 
         if isinstance(block, ConstantAnalogRotation):
             # FIXME: Currently hardcoding the rotations to be global
@@ -54,6 +66,6 @@ def _add_interaction(
             x_terms = (omega / 2) * add(cos(phase) * X(i) - sin(phase) * Y(i) for i in support)
             z_terms = delta * add(N(i) for i in support)
 
-            return HamEvo(x_terms - z_terms + h_int, duration / 1000)
+            return HamEvo(x_terms - z_terms + h_background, duration / 1000)
 
     return block
