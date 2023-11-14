@@ -66,9 +66,9 @@ def create_register(register: Register, spacing: float = DEFAULT_SPACING) -> Pul
 
 def make_sequence(circ: QuantumCircuit, config: Configuration) -> Sequence:
     if config.device_type == Device.IDEALIZED:
-        device = IdealDevice
+        device = IdealDevice()
     elif config.device_type == Device.REALISTIC:
-        device = RealisticDevice
+        device = RealisticDevice()
     else:
         raise ValueError("Specified device is not supported.")
 
@@ -85,6 +85,13 @@ def make_sequence(circ: QuantumCircuit, config: Configuration) -> Sequence:
         spacing = WEAK_COUPLING_CONST * device.rydberg_blockade_radius(max_amp)  # type: ignore
     else:
         spacing = DEFAULT_SPACING
+
+    # Temporary solution: overrides the device if a Qadence device is passed in the config
+    if config.device is not None:
+        device = IdealDevice(
+            config.device.rydberg_level, config.device.max_abs_detuning, config.device.max_amp
+        )
+        spacing = config.device.spacing
 
     pulser_register = create_register(circ.register, spacing)
 

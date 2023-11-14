@@ -7,8 +7,9 @@ from pasqal_cloud import TokenProvider
 from pasqal_cloud.device import EmulatorType
 from pulser_simulation.simconfig import SimConfig
 
+from qadence.analog import RydbergDevice
 from qadence.backend import BackendConfiguration
-from qadence.blocks.analog import Interaction
+from qadence.types import Interaction
 
 from .devices import Device
 
@@ -77,6 +78,9 @@ class Configuration(BackendConfiguration):
     Currently, only
     NN interaction is support. XY interaction is possible but not implemented
     """
+
+    # Temporary option while figuring out the best interface unification
+    device: RydbergDevice | None = None
 
     # configuration for cloud simulations
     cloud_configuration: Optional[CloudConfiguration] = None
