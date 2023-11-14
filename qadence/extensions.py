@@ -8,11 +8,14 @@ from qadence.backend import Backend
 from qadence.blocks import (
     AbstractBlock,
 )
+from qadence.logger import get_logger
 from qadence.types import BackendName, DiffMode
 
 TAbstractBlock = TypeVar("TAbstractBlock", bound=AbstractBlock)
 
 backends_namespace = Template("qadence.backends.$name")
+
+logger = get_logger(__name__)
 
 
 def _available_backends() -> dict:
@@ -66,10 +69,12 @@ def _validate_diff_mode(backend: Backend, diff_mode: DiffMode) -> None:
 
 def _validate_backend_config(backend: Backend) -> None:
     if backend.config.use_gradient_checkpointing:
-        raise PendingDeprecationWarning(
-            "use_gradient_checkpointing will soon be deprecated.\
+        msg = "use_gradient_checkpointing will soon be deprecated.\
                                         To save memory, try diff_mode=DiffMode.ADJOINT instead."
-        )
+        import warnings
+
+        warnings.warn(msg, UserWarning)
+        logger.warn(msg)
 
 
 def _set_backend_config(backend: Backend, diff_mode: DiffMode) -> None:
