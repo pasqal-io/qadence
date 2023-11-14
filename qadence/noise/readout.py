@@ -139,6 +139,18 @@ def bs_corruption(
     return Counter([tensor_to_bitstring(k) for k in func(sample, err_idx)])
 
 
+def create_confusion_matrices(noise_matrix: Tensor, error_probability: float) -> Tensor:
+    confusion_matrices = []
+    for i in range(noise_matrix.size()[1]):
+        column_tensor = noise_matrix[:, i]
+        flip_proba = column_tensor[column_tensor < error_probability].mean().item()
+        confusion_matrix = torch.tensor(
+            [[1.0 - flip_proba, flip_proba], [flip_proba, 1.0 - flip_proba]], dtype=torch.float64
+        )
+        confusion_matrices.append(confusion_matrix)
+    return torch.stack(confusion_matrices)
+
+
 def add_noise(
     counters: list[Counter],
     n_qubits: int,
@@ -166,7 +178,7 @@ def add_noise(
     """
 
     seed = options.get("seed", None)
-    error_probability = options.get("error_probability", 0.1)
+    error_probability = options.get("error_probability")
     noise_distribution = options.get("noise_distribution", WhiteNoise.UNIFORM)
     noise_matrix = options.get("noise_matrix")
 
@@ -174,9 +186,18 @@ def add_noise(
     if seed is not None:
         torch.manual_seed(seed)
 
+    if error_probability is None:
+        error_probability = 0.1
+        # Return the default error probability for mitigation purposes.
+        options["default_error_probability"] = error_probability
     if noise_matrix is None:
         # assumes that all bits can be flipped independently of each other
         noise_matrix = create_noise_matrix(noise_distribution, n_shots, n_qubits)
+        confusion_matrices = create_confusion_matrices(
+            noise_matrix=noise_matrix, error_probability=error_probability
+        )
+        # Return the generated noise matrix for mitigation purposes.
+        options["confusion_matrices"] = confusion_matrices
     else:
         # check noise_matrix shape and values
         assert (
