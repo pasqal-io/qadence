@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 import numpy as np
@@ -154,7 +154,7 @@ class Backend(BackendInterface):
     with_measurements: bool = True
     with_noise: bool = False
     native_endianness: Endianness = Endianness.BIG
-    config: Configuration = Configuration()
+    config: Configuration = field(default_factory=Configuration)
 
     def circuit(self, circ: QuantumCircuit) -> Sequence:
         passes = self.config.transpilation_passes

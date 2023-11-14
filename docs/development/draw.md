@@ -63,6 +63,14 @@ from qadence.draw import html_string # markdown-exec: hide
 print(html_string(block)) # markdown-exec: hide
 ```
 
+```python exec="on" source="material-block" html="1"
+from qadence import QuantumModel, QuantumCircuit, total_magnetization, hea
+
+model = QuantumModel(QuantumCircuit(3, hea(3,2)), total_magnetization(3))
+from qadence.draw import html_string # markdown-exec: hide
+print(html_string(model)) # markdown-exec: hide
+```
+
 
 ## Developer documentation
 
