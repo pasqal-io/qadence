@@ -15,8 +15,7 @@ from qadence.backend import Converted, ConvertedCircuit, ConvertedObservable
 from qadence.backends.adjoint import AdjointExpectation
 from qadence.backends.pyqtorch.convert_ops import (
     infer_batchsize,
-    pyqify,
-    validate_pyq_state,
+    parse_state,
 )
 from qadence.backends.utils import param_dict
 from qadence.blocks.abstract import AbstractBlock
@@ -134,22 +133,23 @@ class DifferentiableExpectation:
             raise NotImplementedError("AdjointExpectation currently only supports one observable.")
 
         n_qubits = self.circuit.abstract.n_qubits
+        values_batch_size = infer_batchsize(self.param_values)
         if self.state is None:
-            self.state = self.circuit.native.init_state(
-                batch_size=infer_batchsize(self.param_values)
-            )
+            self.state = self.circuit.native.init_state(batch_size=values_batch_size)
         else:
-            try:
-                validate_pyq_state(self.state, n_qubits)
-            except ValueError:
-                self.state = pyqify(self.state, n_qubits)
-        return AdjointExpectation.apply(
-            self.circuit.native,
-            self.observable[0].native,
-            self.state,
-            self.param_values.keys(),
-            *self.param_values.values(),
-        )
+            self.state = parse_state(self.state, n_qubits)
+        batch_size = max(values_batch_size, self.state.size(-1))
+        return (
+            AdjointExpectation.apply(
+                self.circuit.native,
+                self.observable[0].native,
+                self.state,
+                self.param_values.keys(),
+                *self.param_values.values(),
+            )
+            .unsqueeze(1)
+            .reshape(batch_size, 1)
+        )  # we expect (batch_size, n_observables) shape
 
     def psr(self, psr_fn: Callable, **psr_args: int | float | None) -> Tensor:
         # wrapper which unpacks the parameters

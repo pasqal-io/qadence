@@ -38,7 +38,6 @@ class AdjointExpectation(Function):
         return overlap(ctx.out_state, ctx.projected_state)
 
     @staticmethod
-    @no_grad()
     def backward(ctx: Any, grad_out: Tensor) -> tuple:
         param_values = ctx.saved_tensors
         values = param_dict(ctx.param_names, param_values)

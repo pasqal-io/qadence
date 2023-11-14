@@ -33,9 +33,9 @@ from .convert_ops import (
     convert_block,
     convert_observable,
     infer_batchsize,
+    parse_state,
     pyqify,
     unpyqify,
-    validate_pyq_state,
 )
 
 logger = get_logger(__name__)
@@ -98,7 +98,7 @@ class Backend(BackendInterface):
             state = circuit.native.init_state(batch_size=infer_batchsize(param_values))
         else:
             # pyqtorch expects input shape [2] * n_qubits + [batch_size]
-            state = pyqify(state, n_qubits) if pyqify_state else validate_pyq_state(state, n_qubits)
+            state = pyqify(state, n_qubits) if pyqify_state else parse_state(state, n_qubits)
         state = circuit.native.run(state, param_values)
         # make sure that the batch dimension is the first one, as standard
         # for PyTorch, and not the last one as done in PyQ

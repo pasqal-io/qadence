@@ -130,16 +130,28 @@ def unpyqify(state: Tensor) -> Tensor:
     return torchflatten(state, start_dim=0, end_dim=-2).t()
 
 
-def validate_pyq_state(state: Tensor, n_qubits: int) -> Tensor:
-    if prod(state.size()[:-1]) != 2**n_qubits:
-        raise ValueError(
-            "A pyqified initial state must be composed of tensors of size "
-            f"(2, 2, ..., batch_size). Found: {state.size() = }."
-        )
-    elif state.dtype != complex128:
-        raise TypeError("Expected type complex128.")
-    else:
+def is_pyq_shape(state: Tensor, n_qubits: int) -> bool:
+    return prod(state.size()[:-1]) == 2**n_qubits  # type: ignore[no-any-return]
+
+
+def is_qadence_shape(state: Tensor, n_qubits: int) -> bool:
+    return state.shape[1] == 2**n_qubits  # type: ignore[no-any-return]
+
+
+def parse_state(state: Tensor, n_qubits: int) -> Tensor:
+    if state.dtype != complex128:
+        raise TypeError(f"Expected type complex128, got {state.dtype}")
+    elif is_qadence_shape(state, n_qubits):
+        return pyqify(state, n_qubits)
+    elif is_pyq_shape(state, n_qubits):
         return state
+    else:
+        raise ValueError(
+            "Allowed formats for custom initial state are:\
+                  (1) Qadence shape: (batch_size, 2**n_qubits)\
+                  (2) Pyqtorch shape: (2 * n_qubits + [batch_size])\
+                  Found: {state.size() = }"
+        )
 
 
 def infer_batchsize(param_values: dict[str, Tensor] = None) -> int:
