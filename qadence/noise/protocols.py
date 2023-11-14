@@ -35,7 +35,7 @@ class Noise:
         return None
 
 
-def apply(noise: Noise, samples: list[Counter]) -> list[Counter]:
+def apply_noise(noise: Noise, samples: list[Counter]) -> list[Counter]:
     """Apply noise to samples."""
     error_fn = noise.get_noise_fn()
     # Get the number of qubits from the sample keys.
