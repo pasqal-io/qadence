@@ -106,7 +106,7 @@ def create_noise_matrix(
 
     Args:
         noise_distribution: Torch statistical distribution one of Gaussian,
-        Uniform, of Poisson.
+        Uniform, or Poisson.
         n_shots: Number of shots/samples.
         n_qubits: Number of qubits
 

@@ -59,8 +59,6 @@ def analog_zne(
         density_matrices = backend.run_noisy(
             circuit, param_values=param_values, state=state, endianness=endianness
         )
-        # Set the sim_config state back to original for any further use.
-        # self.config.sim_config = None
         # Convert observables to Numpy types compatible with QuTip simulations.
         # Matrices are flipped to match QuTip conventions.
         observables_np = [np.flip(block_to_tensor(obs.original).numpy()) for obs in observable]
