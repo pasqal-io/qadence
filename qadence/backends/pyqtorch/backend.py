@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
+from math import prod
 
 import pyqtorch as pyq
 import torch
@@ -45,7 +46,6 @@ logger = get_logger(__name__)
 class Backend(BackendInterface):
     """PyQTorch backend."""
 
-    # set standard interface parameters
     name: BackendName = BackendName.PYQTORCH
     supports_ad: bool = True
     support_bp: bool = True
@@ -54,7 +54,7 @@ class Backend(BackendInterface):
     with_measurements: bool = True
     with_noise: bool = False
     native_endianness: Endianness = Endianness.BIG
-    config: Configuration = Configuration()
+    config: Configuration = field(default_factory=Configuration)
 
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:
         passes = self.config.transpilation_passes

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 import numpy as np
@@ -43,7 +43,6 @@ def promote_parameters(parameters: dict[str, Tensor | float]) -> dict[str, float
 
 @dataclass(frozen=True, eq=True)
 class Backend(BackendInterface):
-    # set standard interface parameters
     name: BackendName = BackendName.BRAKET
     supports_ad: bool = False
     supports_adjoint: bool = False
@@ -52,11 +51,11 @@ class Backend(BackendInterface):
     with_measurements: bool = True
     with_noise: bool = False
     native_endianness: Endianness = Endianness.BIG
-    config: Configuration = Configuration()
+    config: Configuration = field(default_factory=Configuration)
 
     # braket specifics
     # TODO: include it in the configuration?
-    _device: LocalSimulator = LocalSimulator()
+    _device: LocalSimulator = field(default_factory=LocalSimulator)
 
     def __post_init__(self) -> None:
         if self.is_remote:
