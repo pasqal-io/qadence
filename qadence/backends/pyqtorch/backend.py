@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections import Counter
 from dataclasses import dataclass, field
 from typing import Any
-from math import prod
 
 import pyqtorch as pyq
 import torch
