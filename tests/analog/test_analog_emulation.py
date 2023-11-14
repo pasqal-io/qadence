@@ -63,17 +63,16 @@ def test_far_add_interaction(analog: AnalogBlock, digital_fn: Callable, register
     # FIXME: Unify config device interfaces
     spacing = 8.0
     device = RydbergDevice(register, spacing=spacing)
-    config_pulser = {"spacing": spacing}
-    config_pyq = {"device": device}
+    config = {"device": device}
 
-    emu_samples = sample(register, analog, backend="pyqtorch", configuration=config_pyq)[0]
-    pulser_samples = sample(register, analog, backend="pulser", configuration=config_pulser)[0]
+    emu_samples = sample(register, analog, backend="pyqtorch", configuration=config)[0]
+    pulser_samples = sample(register, analog, backend="pulser", configuration=config)[0]
     assert js_divergence(pulser_samples, emu_samples) < JS_ACCEPTANCE
 
     wf = random_state(register.n_qubits)
     digital = digital_fn(register.n_qubits)
-    emu_state = run(register, analog, state=wf, configuration=config_pyq)
-    dig_state = run(register, digital, state=wf, configuration=config_pyq)
+    emu_state = run(register, analog, state=wf, configuration=config)
+    dig_state = run(register, digital, state=wf, configuration=config)
     assert equivalent_state(emu_state, dig_state, atol=1e-3)
 
 

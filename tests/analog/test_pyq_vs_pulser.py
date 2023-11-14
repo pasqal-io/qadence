@@ -41,8 +41,11 @@ from qadence.types import BackendName, DiffMode
 @pytest.mark.flaky(max_runs=5)
 @pytest.mark.parametrize("n_qubits", [2, 3, 4])
 @pytest.mark.parametrize("spacing", [6.0, 8.0, 15.0])
+@pytest.mark.parametrize("rydberg_level", [60, 85])
 @pytest.mark.parametrize("op", [AnalogRX, AnalogRY, AnalogRZ, AnalogRot, wait])
-def test_analog_op_run(n_qubits: int, spacing: float, op: AbstractBlock) -> None:
+def test_analog_op_run(
+    n_qubits: int, spacing: float, rydberg_level: int, op: AbstractBlock
+) -> None:
     init_state = random_state(n_qubits)
     batch_size = 3
 
@@ -65,18 +68,19 @@ def test_analog_op_run(n_qubits: int, spacing: float, op: AbstractBlock) -> None
     register = Register.line(n_qubits)
     circuit = QuantumCircuit(register, block)
 
-    device = RydbergDevice(register, spacing=spacing)
-    conf_pyq = {"device": device}
+    device = RydbergDevice(register, spacing=spacing, rydberg_level=rydberg_level)
 
-    model_pyqtorch = QuantumModel(circuit, backend=BackendName.PYQTORCH, configuration=conf_pyq)
+    config = {"device": device}
 
-    conf_pulser = {"spacing": spacing}
+    model_pyqtorch = QuantumModel(
+        circuit, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD, configuration=config
+    )
 
     model_pulser = QuantumModel(
         circuit,
         backend=BackendName.PULSER,
         diff_mode=DiffMode.GPSR,
-        configuration=conf_pulser,
+        configuration=config,
     )
 
     wf_pyq = model_pyqtorch.run(values=values, state=init_state)
@@ -234,23 +238,22 @@ def test_compatibility_pyqtorch_pulser_analog_rot_int(obs: AbstractBlock) -> Non
 
     device = RydbergDevice(register, spacing=SMALL_SPACING)
 
-    conf_pyq = {"device": device}
-    conf_pulser = {"spacing": SMALL_SPACING}
+    config = {"device": device}
 
     model_pyqtorch = QuantumModel(
         circuit,
         backend=BackendName.PYQTORCH,
         diff_mode=DiffMode.AD,
         observable=obs,
-        configuration=conf_pyq,
+        configuration=config,
     )
-    conf = {"spacing": SMALL_SPACING}
+
     model_pulser = QuantumModel(
         circuit,
         backend=BackendName.PULSER,
         diff_mode=DiffMode.GPSR,
         observable=obs,
-        configuration=conf_pulser,
+        configuration=config,
     )
 
     batch_size = 5
