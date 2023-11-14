@@ -3,7 +3,7 @@ from __future__ import annotations
 from sympy import cos, sin
 
 from qadence.analog.device import RydbergDevice
-from qadence.analog.utils import rydberg_interaction_hamiltonian
+from qadence.analog.interaction_hamiltonian import rydberg_interaction_hamiltonian
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.analog import (
     AnalogBlock,
@@ -21,8 +21,8 @@ def add_background_hamiltonian(
     device: RydbergDevice,
 ) -> QuantumCircuit | AbstractBlock:
     # Temporary check to allow both circuit or blocks as input
-    circuit_input = isinstance(circuit, QuantumCircuit)
-    target_block = circuit.block if circuit_input else circuit
+    is_circuit_input = isinstance(circuit, QuantumCircuit)
+    target_block: AbstractBlock = circuit.block if is_circuit_input else circuit  # type: ignore
 
     # Create interaction hamiltonian:
     h_int = rydberg_interaction_hamiltonian(device)
@@ -39,7 +39,7 @@ def add_background_hamiltonian(
         h_background,
     )
 
-    if circuit_input:
+    if is_circuit_input:
         return QuantumCircuit(device.register, block_parsed)
     else:
         return block_parsed

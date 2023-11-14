@@ -59,8 +59,8 @@ class AnalogBlock(AbstractBlock):
     @property
     def eigenvalues_generator(self) -> torch.Tensor:
         msg = (
-            "Eigenvalues of analog blocks can be computed via "
-            "`add_interaction(register, block).eigenvalues`"
+            "Eigenvalues of for generator of analog blocks can be computed via "
+            "`add_background_hamiltonian(block, device).eigenvalues_generator`. "
         )
         raise NotImplementedError(msg)
 
@@ -68,7 +68,7 @@ class AnalogBlock(AbstractBlock):
     def eigenvalues(self) -> torch.Tensor:
         msg = (
             "Eigenvalues of analog blocks can be computed via "
-            "`add_interaction(register, block).eigenvalues`"
+            "`add_background_hamiltonian(block, device).eigenvalues`. "
         )
         raise NotImplementedError(msg)
 
@@ -85,13 +85,11 @@ class AnalogBlock(AbstractBlock):
     def compute_eigenvalues_generator(
         self, register: Register, block: AbstractBlock, spacing: float
     ) -> torch.Tensor:
-        # FIXME: Temporary fix, need better solution
-        from qadence import QuantumCircuit
-        from qadence.analog import RydbergDevice, add_interaction
+        # FIXME: Temporary fix while we keep AnalogBlocks
+        from qadence.analog import RydbergDevice, add_background_hamiltonian
 
         device = RydbergDevice(register, spacing=spacing)
-        circuit = QuantumCircuit(register, block)
-        return add_interaction(circuit, device).block.eigenvalues_generator
+        return add_background_hamiltonian(block, device).eigenvalues_generator  # type: ignore [union-attr]
 
 
 @dataclass(eq=False, repr=False)

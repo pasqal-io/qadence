@@ -6,7 +6,7 @@ import torch
 from metrics import PULSER_GPSR_ACCEPTANCE
 
 from qadence import DifferentiableBackend, DiffMode, Parameter, QuantumCircuit
-from qadence.analog import RydbergDevice, add_interaction
+from qadence.analog import RydbergDevice, add_background_hamiltonian
 from qadence.backends.pulser import Backend as PulserBackend
 from qadence.backends.pyqtorch import Backend as PyQBackend
 from qadence.blocks import chain
@@ -55,7 +55,7 @@ def test_pulser_gpsr(circ_id: int) -> None:
     # define circuits
     circ = circuit(circ_id)
     device = RydbergDevice(circ.register, spacing=spacing)
-    circ_pyq = add_interaction(circ, device=device)
+    circ_pyq = add_background_hamiltonian(circ, device=device)
 
     # create input values
     xs = torch.linspace(1, 2 * np.pi, 30, requires_grad=True)
@@ -65,7 +65,7 @@ def test_pulser_gpsr(circ_id: int) -> None:
 
     # run with pyq backend
     pyq_backend = PyQBackend()
-    conv = pyq_backend.convert(circ_pyq, obs)
+    conv = pyq_backend.convert(circ_pyq, obs)  # type: ignore [arg-type]
     pyq_circ, pyq_obs, embedding_fn, params = conv
     diff_backend = DifferentiableBackend(pyq_backend, diff_mode=DiffMode.AD)
     expval_pyq = diff_backend.expectation(pyq_circ, pyq_obs, embedding_fn(params, values))
