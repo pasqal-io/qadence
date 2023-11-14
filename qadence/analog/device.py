@@ -9,9 +9,11 @@ from qadence.types import Interaction
 @dataclass
 class QubitDevice:
     """
-    General dataclass for defining devices of interacting qubits. Can be
-    subclassed to define device-specific constants, methods and data-validations.
+    General dataclass for defining devices of interacting qubits.
+
+    Subclass it to define device-specific constants, methods and data-validations.
     """
+
     register: Register
 
     interaction: Interaction
@@ -25,9 +27,8 @@ class QubitDevice:
 
 @dataclass
 class RydbergDevice(QubitDevice):
-    """
-    Dataclass for interacting Rydberg atoms.
-    """
+    """Dataclass for interacting Rydberg atoms."""
+
     interaction: Interaction = Interaction.NN
 
     rydberg_level: int = 60
