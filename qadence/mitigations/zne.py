@@ -14,7 +14,7 @@ from qadence.backends.pulser.backend import Backend
 from qadence.blocks import block_to_tensor
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
-from qadence.types import NoiseModels
+from qadence.types import NoiseTypes
 from qadence.utils import Endianness
 
 
@@ -38,14 +38,12 @@ def analog_zne(
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
     assert mitigation
-    noise_model = mitigation.options.get("noise_model")
+    noise_model = mitigation.options.get("noise_model", None)
     if noise_model is None:
-        KeyError(f"A noise model should be choosen from {NoiseModels.list()}. Got {noise_model}.")
-    assert noise_model
-    noise_probas = mitigation.options.get("noise_probas")
+        KeyError(f"A noise model should be choosen from {NoiseTypes.list()}. Got {noise_model}.")
+    noise_probas = mitigation.options.get("noise_probas", None)
     if noise_probas is None:
         KeyError(f"A range of noise probabilies should be passed. Got {noise_probas}.")
-    noise_probas = cast(list, noise_probas)
     backend = backend_factory(backend=BackendName.PULSER, diff_mode=None)
     backend = cast(Backend, backend)  # Cast the Pulser backend.
     backend_config = backend.config
@@ -53,9 +51,9 @@ def analog_zne(
     zne_dataset = []
     for noise_proba in noise_probas:
         # Setting the backend config to account for the noise.
-        if noise_model == NoiseModels.DEPOLARIZING:
+        if noise_model == NoiseTypes.DEPOLARIZING:
             backend_config.sim_config = SimConfig(noise=noise_model, depolarizing_prob=noise_proba)
-        elif noise_model == NoiseModels.DEPHASING:
+        elif noise_model == NoiseTypes.DEPHASING:
             backend_config.sim_config = SimConfig(noise=noise_model, dephasing_prob=noise_proba)
         # Get density matrices in the noisy case.
         density_matrices = backend.run_noisy(

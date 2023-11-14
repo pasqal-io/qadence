@@ -56,7 +56,7 @@ class StrEnum(str, Enum):
         return list(map(lambda c: c.value, cls))  # type: ignore
 
 
-class NoiseModels(StrEnum):
+class NoiseTypes(StrEnum):
     DEPHASING = "dephasing"
     DEPOLARIZING = "depolarizing"
 
