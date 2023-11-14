@@ -289,6 +289,7 @@ class DifferentiableBackend(nn.Module):
         n_shots: int = 1,
         state: Tensor | None = None,
         noise: Noise | None = None,
+        mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         """Sample bitstring from the registered circuit.
@@ -299,6 +300,7 @@ class DifferentiableBackend(nn.Module):
             n_shots: The number of shots. Defaults to 1.
             state: Initial state.
             noise: A noise model to use.
+            mitigation: A mitigation protocol to apply to noisy samples.
             endianness: Endianness of the resulting bitstrings.
 
         Returns:
@@ -308,10 +310,11 @@ class DifferentiableBackend(nn.Module):
             return self.backend.sample(
                 circuit=circuit,
                 param_values=param_values,
-                state=state,
                 n_shots=n_shots,
-                endianness=endianness,
+                state=state,
                 noise=noise,
+                mitigation=mitigation,
+                endianness=endianness,
             )
 
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:
