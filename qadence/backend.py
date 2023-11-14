@@ -236,6 +236,7 @@ class Backend(ABC):
         n_shots: int = 1000,
         state: Tensor | None = None,
         noise: Noise | None = None,
+        mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         """Sample bit strings.
@@ -247,6 +248,7 @@ class Backend(ABC):
             n_shots: Number of shots to sample.
             state: Initial state.
             noise: A noise model to use.
+            mitigation: An error mitigation protocol to apply.
             endianness: Endianness of the resulting bit strings.
         """
         raise NotImplementedError

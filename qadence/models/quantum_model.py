@@ -168,13 +168,22 @@ class QuantumModel(nn.Module):
         n_shots: int = 1000,
         state: torch.Tensor | None = None,
         noise: Noise | None = None,
+        mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         params = self.embedding_fn(self._params, values)
         if noise is None:
             noise = self._noise
+        if mitigation is None:
+            mitigation = self._mitigation
         return self.backend.sample(
-            self._circuit, params, n_shots=n_shots, state=state, noise=noise, endianness=endianness
+            self._circuit,
+            params,
+            n_shots=n_shots,
+            state=state,
+            noise=noise,
+            mitigation=mitigation,
+            endianness=endianness,
         )
 
     def expectation(
