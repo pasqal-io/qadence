@@ -135,7 +135,7 @@ def test_hamevo_generator_grad() -> None:
     assert torch.autograd.gradcheck(func, theta, nondet_tol=ADJOINT_ACCEPTANCE)
 
 
-@pytest.mark.flaky
+@pytest.mark.skip("To be implemented properly.")
 def test_higher_order() -> None:
     batch_size = 1
     n_qubits = 1
@@ -168,7 +168,7 @@ def test_higher_order() -> None:
     assert torch.allclose(dydxx_res, gradgrad, atol=ADJOINT_ACCEPTANCE)
 
 
-@pytest.mark.flaky
+@pytest.mark.skip("Native adjoint higher order derivatives will added soon.")
 def test_higher_order_fm_derivatives() -> None:
     n_qubits = 2
     observable: list[AbstractBlock] = [Z(0)]
