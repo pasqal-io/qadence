@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from itertools import product
 from typing import Any
 
 import matplotlib.pyplot as plt
@@ -52,6 +53,15 @@ class Register:
 
         if scale != 1.0:
             _scale_node_positions(self.graph, scale)
+
+        # Auxiliary complete graph
+        support = self.graph.nodes
+        all_edges = list(filter(lambda x: x[0] < x[1], product(support, support)))
+        self.complete_graph = nx.Graph()
+        self.complete_graph.add_nodes_from(support)
+        self.complete_graph.add_edges_from(all_edges)
+        pos_values = nx.get_node_attributes(self.graph, "pos")
+        nx.set_node_attributes(self.complete_graph, pos_values, "pos")
 
     @property
     def n_qubits(self) -> int:
@@ -156,6 +166,10 @@ class Register:
     @property
     def edges(self) -> EdgeView:
         return self.graph.edges
+    
+    @property
+    def all_edges(self) -> EdgeView:
+        return self.complete_graph.edges
 
     @property
     def nodes(self) -> NodeView:
