@@ -14,8 +14,8 @@ from qadence.backend import Backend as QuantumBackend
 from qadence.backend import Converted, ConvertedCircuit, ConvertedObservable
 from qadence.backends.adjoint import AdjointExpectation
 from qadence.backends.pyqtorch.convert_ops import (
+    convert_state,
     infer_batchsize,
-    parse_state,
 )
 from qadence.backends.utils import param_dict
 from qadence.blocks.abstract import AbstractBlock
@@ -137,12 +137,12 @@ class DifferentiableExpectation:
         if self.state is None:
             self.state = self.circuit.native.init_state(batch_size=values_batch_size)
         else:
-            self.state = parse_state(self.state, n_qubits)
+            self.state = convert_state(self.state, n_qubits)
         batch_size = max(values_batch_size, self.state.size(-1))
         return (
             AdjointExpectation.apply(
                 self.circuit.native,
-                self.observable[0].native,
+                self.observable[0].native,  # Currently, adjoint only supports a single observable.
                 self.state,
                 self.param_values.keys(),
                 *self.param_values.values(),

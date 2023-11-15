@@ -138,7 +138,7 @@ def is_qadence_shape(state: Tensor, n_qubits: int) -> bool:
     return state.shape[1] == 2**n_qubits  # type: ignore[no-any-return]
 
 
-def parse_state(state: Tensor, n_qubits: int) -> Tensor:
+def convert_state(state: Tensor, n_qubits: int) -> Tensor:
     if state.dtype != complex128:
         raise TypeError(f"Expected type complex128, got {state.dtype}")
     elif is_qadence_shape(state, n_qubits):
