@@ -10,7 +10,7 @@ from pulser.pulse import Pulse
 from pulser.sequence.sequence import Sequence
 from pulser.waveforms import CompositeWaveform, ConstantWaveform, RampWaveform
 
-from qadence import Register
+from qadence import Parameter, Register
 from qadence.blocks import AbstractBlock, CompositeBlock
 from qadence.blocks.analog import (
     AnalogBlock,
@@ -58,8 +58,8 @@ def add_addressing_pattern(
     else:
         max_amp = 0.0
         max_det = 0.0
-        weights_amp = {i: 0.0 for i in support}
-        weights_det = {i: 0.0 for i in support}
+        weights_amp = {i: Parameter(0.0) for i in support}
+        weights_det = {i: Parameter(0.0) for i in support}
 
     for i in support:
         # declare separate local channel for each qubit

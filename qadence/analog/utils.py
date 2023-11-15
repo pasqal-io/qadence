@@ -11,7 +11,7 @@ from qadence.blocks.analog import (
     ConstantAnalogRotation,
 )
 from qadence.blocks.utils import add, kron
-from qadence.operations import N, X, Y
+from qadence.operations import I, N, X, Y, Z
 from qadence.register import Register
 
 # Ising coupling coefficient depending on the Rydberg level
@@ -148,5 +148,5 @@ def add_pattern(register: Register, pattern: Union[AddressingPattern, None]) -> 
         weights_det = {i: 0.0 for i in support}
 
     p_drive_terms = (1 / 2) * max_amp * add(X(i) * weights_amp[i] for i in support)
-    p_detuning_terms = -max_det * add(N(i) * weights_det[i] for i in support)
+    p_detuning_terms = -max_det * add(0.5 * (I(i) - Z(i)) * weights_det[i] for i in support)
     return p_drive_terms + p_detuning_terms  # type: ignore[no-any-return]

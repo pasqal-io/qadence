@@ -226,11 +226,10 @@ def _(
     from qadence import block_to_tensor
 
     w_block = wait(duration=block.duration, qubit_support=block.qubit_support)
-    i_terms = add_interaction(register, w_block, interaction=interaction)
-    p_terms = add_pattern(register, pattern)
+    i_terms = add_interaction(register, w_block, interaction=interaction, pattern=pattern)
 
     generator = add(rot_generator(b) for b in block.blocks if isinstance(b, ConstantAnalogRotation))
-    generator = generator if i_terms == I(0) else generator + i_terms.generator + p_terms  # type: ignore[attr-defined]  # noqa: E501
+    generator = generator if i_terms == I(0) else generator + i_terms.generator  # type: ignore[attr-defined]  # noqa: E501
 
     norm = torch.norm(block_to_tensor(generator)).item()
     return HamEvo(generator / norm, norm * block.duration / 1000)
