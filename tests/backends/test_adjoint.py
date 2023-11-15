@@ -14,14 +14,13 @@ from qadence.parameters import VariationalParameter
 from qadence.types import DiffMode
 
 
-@pytest.mark.parametrize("diff_mode", [DiffMode.ADJOINT])
-def test_pyq_differentiation(diff_mode: str) -> None:
+def test_pyq_differentiation() -> None:
     batch_size = 1
     n_qubits = 2
     observable: list[AbstractBlock] = [Z(0)]
     circ = QuantumCircuit(n_qubits, chain(RX(0, 3 * "x"), CPHASE(0, 1, "y")))
 
-    bknd = backend_factory(backend="pyqtorch", diff_mode=diff_mode)
+    bknd = backend_factory(backend="pyqtorch", diff_mode=DiffMode.ADJOINT)
     pyqtorch_circ, pyqtorch_obs, embeddings_fn, params = bknd.convert(circ, observable)
 
     inputs_x = torch.rand(batch_size, requires_grad=True)
@@ -40,14 +39,13 @@ def test_pyq_differentiation(diff_mode: str) -> None:
     )
 
 
-@pytest.mark.parametrize("diff_mode", [DiffMode.ADJOINT])
-def test_scale_derivatives(diff_mode: str) -> None:
+def test_adjoint_scale_derivatives() -> None:
     batch_size = 1
     n_qubits = 1
     observable: list[AbstractBlock] = [Z(0)]
     circ = QuantumCircuit(n_qubits, VariationalParameter("theta") * X(0))
 
-    bknd = backend_factory(backend="pyqtorch", diff_mode=diff_mode)
+    bknd = backend_factory(backend="pyqtorch", diff_mode=DiffMode.ADJOINT)
     pyqtorch_circ, pyqtorch_obs, embeddings_fn, params = bknd.convert(circ, observable)
 
     theta = torch.rand(batch_size, requires_grad=True)
@@ -58,44 +56,6 @@ def test_scale_derivatives(diff_mode: str) -> None:
         return bknd.expectation(pyqtorch_circ, pyqtorch_obs, all_params)
 
     assert torch.autograd.gradcheck(func, theta)
-
-
-@pytest.mark.flaky
-def test_higher_order_hea_derivatives() -> None:
-    n_qubits = 2
-    observable: list[AbstractBlock] = [Z(0)]
-    block = hea(n_qubits, 1)
-    circ = QuantumCircuit(n_qubits, block)
-    theta_0_value = torch.rand(1, requires_grad=True)
-
-    def get_grad(theta: torch.Tensor, circ: QuantumCircuit, diff_mode: str) -> torch.Tensor:
-        bknd = backend_factory(backend="pyqtorch", diff_mode=diff_mode)
-        pyqtorch_circ, pyqtorch_obs, embeddings_fn, params = bknd.convert(circ, observable)
-        param_name = "theta_0"
-        params[param_name] = theta
-
-        def func(theta: torch.Tensor) -> torch.Tensor:
-            inputs = {param_name: theta}
-            all_params = embeddings_fn(params, inputs)
-            return bknd.expectation(pyqtorch_circ, pyqtorch_obs, all_params)
-
-        exp = bknd.expectation(
-            pyqtorch_circ, pyqtorch_obs, embeddings_fn(params, {param_name: theta})
-        )
-        dydtheta = torch.autograd.grad(exp, theta, torch.ones_like(exp), create_graph=True)[0]
-        dydthetatheta = torch.autograd.grad(
-            dydtheta, theta, torch.ones_like(dydtheta), retain_graph=True, create_graph=True
-        )[0]
-        dydthetathetatheta = torch.autograd.grad(
-            dydthetatheta, theta, dydthetatheta, retain_graph=True
-        )[0]
-        return dydtheta, dydthetatheta, dydthetathetatheta
-
-    ad_grad, ad_gradgrad, ad_gradgradgrad = get_grad(theta_0_value, circ, "ad")
-    adjoint_grad, adjoint_gradgrad, adjoint_gradgradgrad = get_grad(theta_0_value, circ, "adjoint")
-    assert torch.allclose(ad_grad, adjoint_grad, atol=ADJOINT_ACCEPTANCE)
-    assert torch.allclose(ad_gradgrad, adjoint_gradgrad, atol=ADJOINT_ACCEPTANCE)
-    assert torch.allclose(ad_gradgradgrad, adjoint_gradgradgrad, atol=ADJOINT_ACCEPTANCE)
 
 
 def test_hamevo_timeevo_grad() -> None:
@@ -135,8 +95,8 @@ def test_hamevo_generator_grad() -> None:
     assert torch.autograd.gradcheck(func, theta, nondet_tol=ADJOINT_ACCEPTANCE)
 
 
-@pytest.mark.skip("To be implemented properly.")
-def test_higher_order() -> None:
+@pytest.mark.skip("To be added.")
+def test_higher_order_native_finitediff() -> None:
     batch_size = 1
     n_qubits = 1
     observable: list[AbstractBlock] = [Z(0)]
@@ -168,8 +128,8 @@ def test_higher_order() -> None:
     assert torch.allclose(dydxx_res, gradgrad, atol=ADJOINT_ACCEPTANCE)
 
 
-@pytest.mark.skip("Native adjoint higher order derivatives will added soon.")
-def test_higher_order_fm_derivatives() -> None:
+@pytest.mark.skip("To be added.")
+def test_hybrid_higher_order_fm_derivatives() -> None:
     n_qubits = 2
     observable: list[AbstractBlock] = [Z(0)]
     fm = feature_map(n_qubits)
@@ -218,4 +178,42 @@ def test_higher_order_fm_derivatives() -> None:
     )
     assert torch.allclose(ad_grad, adjoint_grad, atol=ADJOINT_ACCEPTANCE)
     assert torch.allclose(ad_gradgrad, adjoint_gradgrad, atol=ADJOINT_ACCEPTANCE)
-    # assert torch.allclose(ad_gradgradgrad, adjoint_gradgradgrad, atol=ADJOINT_ACCEPTANCE)
+    assert torch.allclose(ad_gradgradgrad, adjoint_gradgradgrad, atol=ADJOINT_ACCEPTANCE)
+
+
+@pytest.mark.skip("To be added.")
+def test_hybrid_higher_order_hea_derivatives() -> None:
+    n_qubits = 2
+    observable: list[AbstractBlock] = [Z(0)]
+    block = hea(n_qubits, 1)
+    circ = QuantumCircuit(n_qubits, block)
+    theta_0_value = torch.rand(1, requires_grad=True)
+
+    def get_grad(theta: torch.Tensor, circ: QuantumCircuit, diff_mode: str) -> torch.Tensor:
+        bknd = backend_factory(backend="pyqtorch", diff_mode=diff_mode)
+        pyqtorch_circ, pyqtorch_obs, embeddings_fn, params = bknd.convert(circ, observable)
+        param_name = "theta_0"
+        params[param_name] = theta
+
+        def func(theta: torch.Tensor) -> torch.Tensor:
+            inputs = {param_name: theta}
+            all_params = embeddings_fn(params, inputs)
+            return bknd.expectation(pyqtorch_circ, pyqtorch_obs, all_params)
+
+        exp = bknd.expectation(
+            pyqtorch_circ, pyqtorch_obs, embeddings_fn(params, {param_name: theta})
+        )
+        dydtheta = torch.autograd.grad(exp, theta, torch.ones_like(exp), create_graph=True)[0]
+        dydthetatheta = torch.autograd.grad(
+            dydtheta, theta, torch.ones_like(dydtheta), retain_graph=True, create_graph=True
+        )[0]
+        dydthetathetatheta = torch.autograd.grad(
+            dydthetatheta, theta, dydthetatheta, retain_graph=True
+        )[0]
+        return dydtheta, dydthetatheta, dydthetathetatheta
+
+    ad_grad, ad_gradgrad, ad_gradgradgrad = get_grad(theta_0_value, circ, "ad")
+    adjoint_grad, adjoint_gradgrad, adjoint_gradgradgrad = get_grad(theta_0_value, circ, "adjoint")
+    assert torch.allclose(ad_grad, adjoint_grad, atol=ADJOINT_ACCEPTANCE)
+    assert torch.allclose(ad_gradgrad, adjoint_gradgrad, atol=ADJOINT_ACCEPTANCE)
+    assert torch.allclose(ad_gradgradgrad, adjoint_gradgradgrad, atol=ADJOINT_ACCEPTANCE)
