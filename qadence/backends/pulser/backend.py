@@ -36,10 +36,6 @@ from .pulses import add_pulses
 
 logger = get_logger(__file__)
 
-WEAK_COUPLING_CONST = 1.2
-
-DEFAULT_SPACING = 8.0  # µm (standard value)
-
 
 def _convert_init_state(state: Tensor) -> np.ndarray:
     """Flip and squeeze initial state consistent with Pulser convention."""
@@ -48,12 +44,11 @@ def _convert_init_state(state: Tensor) -> np.ndarray:
     return np.flip(state.cpu().squeeze().numpy())
 
 
-def create_register(register: Register, spacing: float = DEFAULT_SPACING) -> PulserRegister:
+def create_register(register: Register) -> PulserRegister:
     """Create Pulser register instance.
 
     Args:
         register (Register): graph representing a register with accompanying coordinate data
-        spacing (float): distance between qubits in micrometers
 
     Returns:
         Register: Pulser register
@@ -61,7 +56,7 @@ def create_register(register: Register, spacing: float = DEFAULT_SPACING) -> Pul
 
     # create register from coordinates
     coords = np.array(list(register.coords.values()))
-    return PulserRegister.from_coordinates(coords * spacing)
+    return PulserRegister.from_coordinates(coords)
 
 
 def make_sequence(circ: QuantumCircuit, config: Configuration) -> Sequence:
@@ -72,27 +67,14 @@ def make_sequence(circ: QuantumCircuit, config: Configuration) -> Sequence:
     else:
         raise ValueError("Specified device is not supported.")
 
-    max_amp = device.channels["rydberg_global"].max_amp
-
-    if config.spacing is not None:
-        spacing = config.spacing
-    elif max_amp is not None:
-        # TODO: Fix this more consistently so both pulser and
-        # pyqtorch get the spacing from the same place
-        # Ideal spacing for entanglement gate
-        # since Pulser's QutipEmulator doesn't allow simulation of sequences
-        # with total duration < 4ns
-        spacing = WEAK_COUPLING_CONST * device.rydberg_blockade_radius(max_amp)  # type: ignore
-    else:
-        spacing = DEFAULT_SPACING
-
-    pulser_register = create_register(circ.register, spacing)
+    pulser_register = create_register(circ.register)
 
     sequence = Sequence(pulser_register, device)
+
     sequence.declare_channel(GLOBAL_CHANNEL, "rydberg_global")
     sequence.declare_channel(LOCAL_CHANNEL, "rydberg_local", initial_target=0)
 
-    add_pulses(sequence, circ.block, config, circ.register, spacing)
+    add_pulses(sequence, circ.block, config, circ.register)
     sequence.measure()
 
     return sequence

@@ -70,8 +70,8 @@ class Register:
         return cls(graph, scale)
 
     @classmethod
-    def line(cls, n_qubits: int) -> Register:
-        return cls(line_graph(n_qubits))
+    def line(cls, n_qubits: int, scale: float = 1.0) -> Register:
+        return cls(line_graph(n_qubits), scale)
 
     @classmethod
     def circle(cls, n_qubits: int, scale: float = 1.0) -> Register:
@@ -161,7 +161,7 @@ class Register:
     def nodes(self) -> NodeView:
         return self.graph.nodes
 
-    def _scale_positions(self, scale: float) -> Register:
+    def rescale_coords(self, scale: float) -> Register:
         g = deepcopy(self.graph)
         _scale_node_positions(g, scale)
         return Register(g)
