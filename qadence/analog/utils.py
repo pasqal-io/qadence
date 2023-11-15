@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from math import dist as euclidean_distance
+from typing import Union
 
 from sympy import cos, sin
 
+from qadence.analog.addressing import AddressingPattern
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.analog import (
     ConstantAnalogRotation,
@@ -130,3 +132,21 @@ def rot_generator(block: ConstantAnalogRotation) -> AbstractBlock:
     x_terms = (omega / 2) * add(cos(phase) * X(i) - sin(phase) * Y(i) for i in support)
     z_terms = delta * add(N(i) for i in support)
     return x_terms - z_terms  # type: ignore[no-any-return]
+
+
+def add_pattern(register: Register, pattern: Union[AddressingPattern, None]) -> AbstractBlock:
+    support = tuple(range(register.n_qubits))
+    if pattern is not None:
+        max_amp = pattern.max_amp
+        max_det = pattern.max_det
+        weights_amp = pattern.weights_amp
+        weights_det = pattern.weights_det
+    else:
+        max_amp = 0.0
+        max_det = 0.0
+        weights_amp = {i: 0.0 for i in support}
+        weights_det = {i: 0.0 for i in support}
+
+    p_drive_terms = (1 / 2) * max_amp * add(X(i) * weights_amp[i] for i in support)
+    p_detuning_terms = -max_det * add(N(i) * weights_det[i] for i in support)
+    return p_drive_terms + p_detuning_terms  # type: ignore[no-any-return]

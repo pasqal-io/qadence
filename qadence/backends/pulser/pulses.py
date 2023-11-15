@@ -42,6 +42,50 @@ supported_gates = [
 ]
 
 
+def add_addressing_pattern(
+    sequence: Sequence,
+    config: Configuration,
+) -> None:
+    total_duration = sequence.get_duration()
+    n_qubits = len(sequence.register.qubits)
+
+    support = tuple(range(n_qubits))
+    if config.addressing_pattern is not None:
+        max_amp = config.addressing_pattern.max_amp
+        max_det = config.addressing_pattern.max_det
+        weights_amp = config.addressing_pattern.weights_amp
+        weights_det = config.addressing_pattern.weights_det
+    else:
+        max_amp = 0.0
+        max_det = 0.0
+        weights_amp = {i: 0.0 for i in support}
+        weights_det = {i: 0.0 for i in support}
+
+    for i in support:
+        # declare separate local channel for each qubit
+        sequence.declare_channel(f"ch_q{i}", "rydberg_local", initial_target=0)
+
+    # add amplitude and detuning patterns
+    for i in support:
+        w_amp = (
+            evaluate(weights_amp[i])
+            if weights_amp[i].is_number  # type: ignore [union-attr]
+            else sequence.declare_variable(f"w-amp-{i}")
+        )
+        w_det = (
+            evaluate(weights_det[i])
+            if weights_det[i].is_number  # type: ignore [union-attr]
+            else sequence.declare_variable(f"w-det-{i}")
+        )
+        omega = max_amp * w_amp
+        detuning = -max_det * w_det
+        pulse = Pulse.ConstantPulse(
+            duration=total_duration, amplitude=omega, detuning=detuning, phase=0
+        )
+        sequence.target(i, f"ch_q{i}")
+        sequence.add(pulse, f"ch_q{i}", protocol="no-delay")
+
+
 def add_pulses(
     sequence: Sequence,
     block: AbstractBlock,
