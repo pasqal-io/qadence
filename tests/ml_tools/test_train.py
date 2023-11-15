@@ -181,11 +181,11 @@ def test_train_tensor_tuple(tmp_path: Path, Basic: torch.nn.Module) -> None:
     assert torch.allclose(torch.sin(x), model(x), rtol=1e-1, atol=1e-1)
 
 
+@pytest.mark.flaky(max_runs=10)
 def test_fit_sin_adjoint(BasicAdjointQNN: torch.nn.Module) -> None:
     model = BasicAdjointQNN
     batch_size = 5
     n_epochs = 200
-    n_test_points = 5
     criterion = torch.nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
 

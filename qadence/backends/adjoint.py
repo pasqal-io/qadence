@@ -38,13 +38,14 @@ class AdjointExpectation(Function):
         return overlap(ctx.out_state, ctx.projected_state)
 
     @staticmethod
+    @no_grad()
     def backward(ctx: Any, grad_out: Tensor) -> tuple:
         param_values = ctx.saved_tensors
         values = param_dict(ctx.param_names, param_values)
 
         def _apply_adjoint(ctx: Any, op: Module) -> list:
             grads: list = []
-            if isinstance(op, (PyQHamiltonianEvolution)):
+            if isinstance(op, PyQHamiltonianEvolution):
                 generator = op.block.generator
                 time_param = values[op.param_names[0]]
 
@@ -85,9 +86,9 @@ class AdjointExpectation(Function):
                 )
             elif isinstance(op, PyQCircuit):
                 grads = [g for sub_op in op.reverse() for g in _apply_adjoint(ctx, sub_op)]
-            elif isinstance(op, (PyQPrimitive)):
+            elif isinstance(op, PyQPrimitive):
                 ctx.out_state = apply_operator(ctx.out_state, op.dagger(values), op.qubit_support)
-                if isinstance(op, (PyQParametric)) and values[op.param_name].requires_grad:
+                if isinstance(op, PyQParametric) and values[op.param_name].requires_grad:
                     mu = apply_operator(
                         ctx.out_state,
                         op.jacobian(values),
