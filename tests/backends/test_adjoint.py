@@ -14,7 +14,7 @@ from qadence.parameters import VariationalParameter
 from qadence.types import DiffMode
 
 
-def test_pyq_differentiation() -> None:
+def test_gradcheck_adjoint_first_order() -> None:
     batch_size = 1
     n_qubits = 2
     observable: list[AbstractBlock] = [Z(0)]
@@ -39,7 +39,7 @@ def test_pyq_differentiation() -> None:
     )
 
 
-def test_adjoint_scale_derivatives() -> None:
+def test_gradcheck_adjoint_scale_derivatives() -> None:
     batch_size = 1
     n_qubits = 1
     observable: list[AbstractBlock] = [Z(0)]
@@ -58,7 +58,7 @@ def test_adjoint_scale_derivatives() -> None:
     assert torch.autograd.gradcheck(func, theta)
 
 
-def test_hamevo_timeevo_grad() -> None:
+def test_gradcheck_hamevo_timeevo() -> None:
     generator = X(0)
     fmx = HamEvo(generator, parameter=VariationalParameter("theta"))
 
@@ -76,7 +76,7 @@ def test_hamevo_timeevo_grad() -> None:
     assert torch.autograd.gradcheck(func, theta, nondet_tol=ADJOINT_ACCEPTANCE)
 
 
-def test_hamevo_generator_grad() -> None:
+def test_gradcheck_hamevo_generator() -> None:
     theta = VariationalParameter("theta")
     generator = RX(0, theta)
     fmx = HamEvo(generator, parameter=1.0)
@@ -93,6 +93,31 @@ def test_hamevo_generator_grad() -> None:
         return backend.expectation(pyqtorch_circ, pyqtorch_obs, all_params)
 
     assert torch.autograd.gradcheck(func, theta, nondet_tol=ADJOINT_ACCEPTANCE)
+
+
+def test_first_order_hea_derivatives() -> None:
+    n_qubits = 2
+    observable: list[AbstractBlock] = [Z(0)]
+    block = hea(n_qubits, 1)
+    circ = QuantumCircuit(n_qubits, block)
+    theta_0_value = torch.rand(1, requires_grad=True)
+
+    def get_grad(theta: torch.Tensor, circ: QuantumCircuit, diff_mode: str) -> torch.Tensor:
+        bknd = backend_factory(backend="pyqtorch", diff_mode=diff_mode)
+        pyqtorch_circ, pyqtorch_obs, embeddings_fn, params = bknd.convert(circ, observable)
+        param_name = "theta_0"
+        params[param_name] = theta
+
+        exp = bknd.expectation(
+            pyqtorch_circ, pyqtorch_obs, embeddings_fn(params, {param_name: theta})
+        )
+        dydtheta = torch.autograd.grad(exp, theta, torch.ones_like(exp), create_graph=True)[0]
+
+        return dydtheta
+
+    ad_grad = get_grad(theta_0_value, circ, "ad")
+    adjoint_grad = get_grad(theta_0_value, circ, "adjoint")
+    assert torch.allclose(ad_grad, adjoint_grad, atol=ADJOINT_ACCEPTANCE)
 
 
 @pytest.mark.skip("To be added.")
