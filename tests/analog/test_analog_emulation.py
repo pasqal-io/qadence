@@ -64,7 +64,8 @@ d = 3.75
     ],
 )
 def test_far_add_interaction(analog: AnalogBlock, digital_fn: Callable, register: Register) -> None:
-    emu_block = add_interaction(register, analog, spacing=8.0)
+    register = register.rescale_coords(scale=8.0)
+    emu_block = add_interaction(register, analog)
     emu_samples = sample(register, emu_block, backend="pyqtorch")[0]  # type: ignore[arg-type]
     pulser_samples = sample(register, analog, backend="pulser")[0]  # type: ignore[arg-type]
     assert js_divergence(pulser_samples, emu_samples) < JS_ACCEPTANCE
@@ -92,8 +93,9 @@ def test_far_add_interaction(analog: AnalogBlock, digital_fn: Callable, register
 @pytest.mark.parametrize("register", [Register.from_coordinates([(0, 5), (5, 5), (5, 0), (0, 0)])])
 @pytest.mark.flaky(max_runs=5)
 def test_close_add_interaction(block: AnalogBlock, register: Register) -> None:
+    register = register.rescale_coords(scale=8.0)
     pulser_samples = sample(register, block, backend="pulser", n_shots=1000)[0]  # type: ignore[arg-type] # noqa: E501
-    emu_block = add_interaction(register, block, spacing=8.0)
+    emu_block = add_interaction(register, block)
     pyqtorch_samples = sample(register, emu_block, backend="pyqtorch", n_shots=1000)[0]  # type: ignore[arg-type] # noqa: E501
     assert js_divergence(pulser_samples, pyqtorch_samples) < JS_ACCEPTANCE
 
