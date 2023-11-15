@@ -1,7 +1,8 @@
 Qadence offers a direct interface with Pulser[^1], an open-source pulse-level interface written in Python and
 specifically designed for programming neutral atom quantum computers.
 
-Using directly Pulser requires advanced knowledge on pulse-level programming and on how neutral atom devices work. Qadence abstracts this complexity out by using the familiar block-based interface for building pulse sequences in Pulser while leaving the possibility
+Using directly Pulser requires advanced knowledge on pulse-level programming and on how neutral atom devices work. Qadence
+abstracts this complexity out by using the familiar block-based interface for building pulse sequences in Pulser while leaving the possibility
 to directly manipulate them if required by, for instance, optimal pulse shaping.
 
 !!! note
@@ -13,7 +14,7 @@ to directly manipulate them if required by, for instance, optimal pulse shaping.
     cloud platform. In order to do so, make to have valid credentials for the PASQAL cloud platform and use
     the following configuration for the Pulser backend:
 
-    ```python exec="off" source="material-block" html="1" session="pulser-basic"
+    ```python
     config = {
         "cloud_configuration": {
             "username": "<changeme>",
@@ -82,12 +83,12 @@ import torch
 import matplotlib.pyplot as plt
 from qadence import Register, QuantumCircuit, QuantumModel
 
-register = Register(2)
+register = Register.line(2, scale = 8.0)  # Two qubits with a distance of 8µm
 circuit = QuantumCircuit(register, bell_state)
 model = QuantumModel(circuit, backend="pulser", diff_mode="gpsr")
 
 params = {
-    "t": torch.tensor([383]),  # ns
+    "t": torch.tensor([1000]),  # ns
     "y": torch.tensor([3*torch.pi/2]),
 }
 
@@ -141,7 +142,7 @@ One can use the `Configuration` of the Pulser backend to select the appropriate 
 from qadence import BackendName, DiffMode
 from qadence.backends.pulser.devices import Device
 
-register = Register(2)
+register = Register.line(2, scale = 8.0)
 circuit = QuantumCircuit(register, bell_state)
 
 # Choose a realistic device
@@ -153,7 +154,7 @@ model = QuantumModel(
 )
 
 params = {
-    "t": torch.tensor([383]),  # ns
+    "t": torch.tensor([1000]),  # ns
     "y": torch.tensor([3*torch.pi/2]),
 }
 
@@ -186,12 +187,12 @@ protocol = chain(
    RY(0, "y"),
 )
 
-register = Register(2)
+register = Register.line(2, scale = 8.0)
 circuit = QuantumCircuit(register, protocol)
 model = QuantumModel(circuit, backend=BackendName.PULSER, diff_mode=DiffMode.GPSR)
 
 params = {
-    "t": torch.tensor([383]),  # ns
+    "t": torch.tensor([500]),  # ns
     "y": torch.tensor([torch.pi / 2]),
 }
 
@@ -228,7 +229,7 @@ protocol = chain(
     AnalogRX(torch.pi/4)
 )
 
-register = Register(2)
+register = Register.line(2, scale=8.0)
 circuit = QuantumCircuit(register, protocol)
 model = QuantumModel(circuit, backend=BackendName.PULSER, diff_mode=DiffMode.GPSR)
 
