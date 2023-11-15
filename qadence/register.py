@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from itertools import product
+from math import dist
 from typing import Any
 
 import matplotlib.pyplot as plt
@@ -166,10 +167,20 @@ class Register:
     @property
     def edges(self) -> EdgeView:
         return self.graph.edges
-    
+
     @property
     def all_edges(self) -> EdgeView:
         return self.complete_graph.edges
+
+    @property
+    def distances(self) -> dict:
+        coords = self.coords
+        return {edge: dist(coords[edge[0]], coords[edge[1]]) for edge in self.edges}
+
+    @property
+    def all_distances(self) -> dict:
+        coords = self.coords
+        return {edge: dist(coords[edge[0]], coords[edge[1]]) for edge in self.all_edges}
 
     @property
     def nodes(self) -> NodeView:
