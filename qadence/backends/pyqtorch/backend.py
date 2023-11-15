@@ -11,7 +11,11 @@ from torch import Tensor
 from qadence.backend import Backend as BackendInterface
 from qadence.backend import ConvertedCircuit, ConvertedObservable
 from qadence.backends.utils import (
+    convert_state,
+    infer_batchsize,
+    pyqify,
     to_list_of_dicts,
+    unpyqify,
 )
 from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
@@ -29,14 +33,7 @@ from qadence.types import BackendName, Endianness
 from qadence.utils import int_to_basis
 
 from .config import Configuration, default_passes
-from .convert_ops import (
-    convert_block,
-    convert_observable,
-    convert_state,
-    infer_batchsize,
-    pyqify,
-    unpyqify,
-)
+from .convert_ops import convert_block, convert_observable
 
 logger = get_logger(__name__)
 

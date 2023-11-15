@@ -5,7 +5,7 @@ import torch
 from metrics import ADJOINT_ACCEPTANCE
 
 from qadence.backends.api import backend_factory
-from qadence.backends.pyqtorch.convert_ops import dydx, dydxx
+from qadence.backends.utils import dydx, dydxx
 from qadence.blocks import AbstractBlock, chain
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import feature_map, hea
