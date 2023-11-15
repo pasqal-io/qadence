@@ -232,6 +232,11 @@ def triangular_lattice_graph(n_cells_row: int, n_cells_col: int) -> nx.Graph:
 
 
 def alltoall_graph(n_qubits: int) -> nx.Graph:
+    if n_qubits == 2:
+        return line_graph(2)
+    if n_qubits == 3:
+        return triangular_lattice_graph(1, 1)
+
     graph = nx.complete_graph(n_qubits)
     # set seed to make sure the produced graphs are reproducible
     coords = nx.spring_layout(graph, seed=0)
