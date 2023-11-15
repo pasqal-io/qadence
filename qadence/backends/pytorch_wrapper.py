@@ -13,7 +13,7 @@ from torch.nn import Module
 from qadence.backend import Backend as QuantumBackend
 from qadence.backend import Converted, ConvertedCircuit, ConvertedObservable
 from qadence.backends.adjoint import AdjointExpectation
-from qadence.backends.utils import convert_state, infer_batchsize, param_dict
+from qadence.backends.utils import infer_batchsize, param_dict, validate_and_convert
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.primitive import PrimitiveBlock
 from qadence.blocks.utils import uuid_to_block, uuid_to_eigen
@@ -133,7 +133,7 @@ class DifferentiableExpectation:
         if self.state is None:
             self.state = self.circuit.native.init_state(batch_size=values_batch_size)
         else:
-            self.state = convert_state(self.state, n_qubits)
+            self.state = validate_and_convert(self.state, n_qubits)
         batch_size = max(values_batch_size, self.state.size(-1))
         return (
             AdjointExpectation.apply(

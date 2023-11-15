@@ -11,11 +11,11 @@ from torch import Tensor
 from qadence.backend import Backend as BackendInterface
 from qadence.backend import ConvertedCircuit, ConvertedObservable
 from qadence.backends.utils import (
-    convert_state,
     infer_batchsize,
     pyqify,
     to_list_of_dicts,
     unpyqify,
+    validate_and_convert,
 )
 from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
@@ -26,6 +26,7 @@ from qadence.noise.protocols import apply
 from qadence.transpile import (
     chain_single_qubit_ops,
     flatten,
+    invert_endianness,
     scale_primitive_blocks_only,
     transpile,
 )
@@ -94,16 +95,12 @@ class Backend(BackendInterface):
             state = circuit.native.init_state(batch_size=infer_batchsize(param_values))
         else:
             # pyqtorch expects input shape [2] * n_qubits + [batch_size]
-            state = pyqify(state, n_qubits) if pyqify_state else convert_state(state, n_qubits)
+            state = (
+                pyqify(state, n_qubits) if pyqify_state else validate_and_convert(state, n_qubits)
+            )
         state = circuit.native.run(state, param_values)
-        # make sure that the batch dimension is the first one, as standard
-        # for PyTorch, and not the last one as done in PyQ
         state = unpyqify(state) if unpyqify_state else state
-
-        if endianness != self.native_endianness:
-            from qadence.transpile import invert_endianness
-
-            state = invert_endianness(state)
+        state = invert_endianness(state) if endianness != self.native_endianness else state
         return state
 
     def _batched_expectation(
