@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import json
 import os
+from math import isclose
 
 import networkx as nx
 import numpy as np
+from metrics import ATOL_64
 from pytest import approx
 
 from qadence.register import Register
@@ -29,21 +31,21 @@ def test_register() -> None:
     graph.add_edge(0, 1)
     reg = Register(graph)
     assert reg.n_qubits == 2
-    assert reg.min_distance == 0.0
+    assert isclose(reg.min_distance, 0.0, rel_tol=ATOL_64)
 
     # test linear lattice node number
     spacing = 2.0
     r = Register.line(4, spacing=spacing)
     assert len(r.graph) == 4
     assert r == Register.lattice("line", 4, spacing=spacing)
-    assert sum(r.edge_distances.values()) == 3 * spacing
+    assert isclose(sum(r.edge_distances.values()), 3 * spacing, rel_tol=ATOL_64)
     assert len(r.distances) == len(r.all_edges)
 
     # test circular lattice node number
     r = Register.circle(8)
     assert len(r.graph) == 8
     assert r == Register.lattice("circle", 8)
-    assert r.min_distance == 1.0
+    assert isclose(r.min_distance, 1.0, rel_tol=ATOL_64)
 
     # test shape of circular lattice
     distances = calc_dist(r.graph)
@@ -87,11 +89,11 @@ def test_register() -> None:
     # test arbitrary lattice node number
     r = Register.from_coordinates([(0, 1), (0, 2), (0, 3), (1, 3)])
     assert len(r.graph) == 4
-    assert r.min_distance == 1.0
+    assert isclose(r.min_distance, 1.0, rel_tol=ATOL_64)
 
     # test rescale coordinates
     r = r.rescale_coords(scaling=2.0)
-    assert r.min_distance == 2.0
+    assert isclose(r.min_distance, 2.0, rel_tol=ATOL_64)
 
 
 def test_register_to_dict(BasicRegister: Register) -> None:
