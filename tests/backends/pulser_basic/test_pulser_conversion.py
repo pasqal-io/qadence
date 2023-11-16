@@ -32,7 +32,7 @@ from qadence.register import Register as QadenceRegister
 def test_single_qubit_block_conversion(Qadence_op: AbstractBlock, func: Callable) -> None:
     spacing = 10
     n_qubits = 2
-    reg = QadenceRegister(n_qubits, scale=spacing)
+    reg = QadenceRegister(n_qubits, spacing=spacing)
     circ = QuantumCircuit(reg, Qadence_op)
     config = Configuration(device_type=Device.REALISTIC)
 
@@ -61,7 +61,7 @@ def test_single_qubit_block_conversion(Qadence_op: AbstractBlock, func: Callable
 )
 def test_multiple_qubit_block_conversion(Qadence_op: AbstractBlock, func: Callable) -> None:
     spacing = 10
-    reg = QadenceRegister(2, scale=spacing)
+    reg = QadenceRegister(2, spacing=spacing)
     circ = QuantumCircuit(reg, Qadence_op)
 
     seq1 = make_sequence(circ, Configuration())

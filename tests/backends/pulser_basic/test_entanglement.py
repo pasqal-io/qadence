@@ -21,7 +21,7 @@ DEFAULT_SPACING = 8.0
 def test_entanglement(device_type: Device) -> None:
     block = chain(entangle(1000, qubit_support=(0, 1)), RY(0, 3 * torch.pi / 2))
 
-    register = Register.line(2, scale=DEFAULT_SPACING)
+    register = Register.line(2, spacing=DEFAULT_SPACING)
 
     config = {"device_type": device_type}
 

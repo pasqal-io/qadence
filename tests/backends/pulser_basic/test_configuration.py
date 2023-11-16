@@ -21,7 +21,7 @@ def test_configuration() -> None:
     np.random.seed(SEED)
 
     blocks = chain(entangle(892, qubit_support=(0, 1)), RY(0, torch.pi / 2))
-    register = Register(2, scale=DEFAULT_SPACING)
+    register = Register(2, spacing=DEFAULT_SPACING)
     circuit = QuantumCircuit(register, blocks)
 
     # first try the standard execution with default configuration
@@ -50,7 +50,7 @@ def test_configuration_as_dict() -> None:
     np.random.seed(SEED)
 
     blocks = chain(entangle(892, qubit_support=(0, 1)), RY(0, torch.pi / 2))
-    register = Register(2, scale=DEFAULT_SPACING)
+    register = Register(2, spacing=DEFAULT_SPACING)
     circuit = QuantumCircuit(register, blocks)
 
     # first try the standard execution with default configuration

@@ -51,7 +51,7 @@ def test_pulser_gpsr(block_id: int) -> None:
         spacing = 8.0
 
     # define circuits
-    register = Register.line(2, scale=spacing)
+    register = Register.line(2, spacing=spacing)
     circ = QuantumCircuit(register, block(block_id))
 
     # create input values

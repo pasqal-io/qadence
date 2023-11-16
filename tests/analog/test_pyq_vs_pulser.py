@@ -60,7 +60,7 @@ def test_analog_op_run(n_qubits: int, spacing: float, op: AbstractBlock) -> None
         block = op(t)  # type: ignore [operator]
         values = {"t": 10.0 * (1.0 + torch.rand(batch_size))}
 
-    register = Register.line(n_qubits, scale=spacing)
+    register = Register.line(n_qubits, spacing=spacing)
 
     circuit = QuantumCircuit(register, block)
 
@@ -95,7 +95,7 @@ def test_analog_op_run(n_qubits: int, spacing: float, op: AbstractBlock) -> None
 def test_compatibility_pyqtorch_pulser_entanglement(
     pyqtorch_block: AbstractBlock, pulser_block: AbstractBlock
 ) -> None:
-    register = Register.line(2, scale=8.0)
+    register = Register.line(2, spacing=8.0)
 
     pyqtorch_circuit = QuantumCircuit(register, pyqtorch_block)
     pulser_circuit = QuantumCircuit(register, pulser_block)
@@ -130,7 +130,7 @@ def test_compatibility_pyqtorch_pulser_digital_rot(obs: AbstractBlock) -> None:
     )
     pyqtorch_circuit = QuantumCircuit(n_qubits, block)
 
-    register = Register.line(n_qubits, scale=LARGE_SPACING)
+    register = Register.line(n_qubits, spacing=LARGE_SPACING)
     pulser_circuit = QuantumCircuit(register, block)
 
     model_pyqtorch = QuantumModel(
@@ -183,7 +183,7 @@ def test_compatibility_pyqtorch_pulser_analog_rot(obs: AbstractBlock) -> None:
     b_analog = chain(AnalogRX(phi), AnalogRY(psi))
     pyqtorch_circuit = QuantumCircuit(n_qubits, b_digital)
 
-    register = Register.line(n_qubits, scale=LARGE_SPACING)
+    register = Register.line(n_qubits, spacing=LARGE_SPACING)
     pulser_circuit = QuantumCircuit(register, b_analog)
 
     model_pyqtorch = QuantumModel(
@@ -224,7 +224,7 @@ def test_compatibility_pyqtorch_pulser_analog_rot_int(obs: AbstractBlock) -> Non
     psi = FeatureParameter("psi")
 
     n_qubits = 2
-    register = Register.line(n_qubits)
+    register = Register.line(n_qubits, spacing=8.0)
 
     b_analog = chain(AnalogRX(phi), AnalogRY(psi))
 
