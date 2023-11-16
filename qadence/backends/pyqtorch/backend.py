@@ -21,8 +21,9 @@ from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.logger import get_logger
 from qadence.measurements import Measurements
+from qadence.mitigations.protocols import Mitigations, apply_mitigation
 from qadence.noise import Noise
-from qadence.noise.protocols import apply
+from qadence.noise.protocols import apply_noise
 from qadence.transpile import (
     chain_single_qubit_ops,
     flatten,
@@ -165,6 +166,7 @@ class Backend(BackendInterface):
         state: Tensor | None = None,
         measurement: Measurements | None = None,
         noise: Noise | None = None,
+        mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         # Noise is ignored if measurement protocol is not provided.
@@ -191,6 +193,7 @@ class Backend(BackendInterface):
         n_shots: int = 1,
         state: Tensor | None = None,
         noise: Noise | None = None,
+        mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         if n_shots < 1:
@@ -223,7 +226,10 @@ class Backend(BackendInterface):
             )
         )
         if noise is not None:
-            samples = apply(noise=noise, samples=samples)
+            samples = apply_noise(noise=noise, samples=samples)
+        if mitigation is not None:
+            assert noise
+            samples = apply_mitigation(noise=noise, mitigation=mitigation, samples=samples)
         return samples
 
     def assign_parameters(self, circuit: ConvertedCircuit, param_values: dict[str, Tensor]) -> Any:

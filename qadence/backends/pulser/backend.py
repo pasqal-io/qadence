@@ -20,8 +20,10 @@ from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.logger import get_logger
 from qadence.measurements import Measurements
+from qadence.mitigations import Mitigations
+from qadence.mitigations.protocols import apply_mitigation
 from qadence.noise import Noise
-from qadence.noise.protocols import apply
+from qadence.noise.protocols import apply_noise
 from qadence.overlap import overlap_exact
 from qadence.register import Register
 from qadence.transpile import transpile
@@ -223,7 +225,6 @@ class Backend(BackendInterface):
                 .full()
                 .flatten()
             )
-
             # We flip the wavefunction coming out of pulser,
             # essentially changing logic 0 with logic 1 in the basis states.
             batched_wf[i] = np.flip(wf)
@@ -237,6 +238,24 @@ class Backend(BackendInterface):
 
         return batched_wf_torch
 
+    def run_dm(
+        self,
+        circuit: ConvertedCircuit,
+        param_values: dict[str, Tensor] = {},
+        state: Tensor | None = None,
+        endianness: Endianness = Endianness.BIG,
+    ) -> list:
+        vals = to_list_of_dicts(param_values)
+
+        batched_dm = []
+
+        for i, param_values_el in enumerate(vals):
+            sequence = self.assign_parameters(circuit, param_values_el)
+            sim_result = simulate_sequence(sequence, self.config, state)
+            batched_dm.append(sim_result)
+
+        return batched_dm
+
     def sample(
         self,
         circuit: ConvertedCircuit,
@@ -244,6 +263,7 @@ class Backend(BackendInterface):
         n_shots: int = 1,
         state: Tensor | None = None,
         noise: Noise | None = None,
+        mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         if n_shots < 1:
@@ -262,7 +282,10 @@ class Backend(BackendInterface):
 
             samples = invert_endianness(samples)
         if noise is not None:
-            samples = apply(noise=noise, samples=samples)
+            samples = apply_noise(noise=noise, samples=samples)
+        if mitigation is not None:
+            assert noise
+            samples = apply_mitigation(noise=noise, mitigation=mitigation, samples=samples)
         return samples
 
     def expectation(
@@ -273,6 +296,7 @@ class Backend(BackendInterface):
         state: Tensor | None = None,
         measurement: Measurements | None = None,
         noise: Noise | None = None,
+        mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         # Noise is ignored if measurement protocol is not provided.
@@ -282,15 +306,28 @@ class Backend(BackendInterface):
                 "This is ignored for now."
             )
 
-        state = self.run(circuit, param_values=param_values, state=state, endianness=endianness)
-
         observables = observable if isinstance(observable, list) else [observable]
-        support = sorted(list(circuit.abstract.register.support))
-        res_list = [obs.native(state, param_values, qubit_support=support) for obs in observables]
-
-        res = torch.transpose(torch.stack(res_list), 0, 1)
-        res = res if len(res.shape) > 0 else res.reshape(1)
-        return res.real
+        if mitigation is None:
+            state = self.run(circuit, param_values=param_values, state=state, endianness=endianness)
+            support = sorted(list(circuit.abstract.register.support))
+            res_list = [
+                obs.native(state, param_values, qubit_support=support) for obs in observables
+            ]
+            res = torch.transpose(torch.stack(res_list), 0, 1)
+            res = res if len(res.shape) > 0 else res.reshape(1)
+            return res.real
+        elif mitigation is not None:
+            mitigation_fn = mitigation.get_mitigation_fn()
+            mitigated_exp_val = mitigation_fn(
+                backend_name=self.name,
+                circuit=circuit,
+                observable=observables,
+                state=state,
+                measurement=measurement,
+                mitigation=mitigation,
+                endianness=endianness,
+            )
+            return mitigated_exp_val
 
     @staticmethod
     def _overlap(bras: Tensor, kets: Tensor) -> Tensor:

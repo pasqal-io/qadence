@@ -29,7 +29,6 @@ def _available_backends() -> dict:
             res[backend] = BackendCls
         except (ImportError, ModuleNotFoundError):
             pass
-
     return res
 
 
