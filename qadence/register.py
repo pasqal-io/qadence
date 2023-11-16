@@ -200,9 +200,10 @@ class Register:
     def nodes(self) -> NodeView:
         return self.graph.nodes
 
-    def rescale_coords(self, spacing: float) -> Register:
+    def rescale_coords(self, scaling: float) -> Register:
         g = deepcopy(self.graph)
-        return Register(g, spacing)
+        _scale_node_positions(g, min_distance=1.0, spacing=scaling)
+        return Register(g, spacing=None)
 
     def _to_dict(self) -> dict:
         return {"graph": nx.node_link_data(self.graph)}
