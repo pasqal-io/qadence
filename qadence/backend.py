@@ -280,9 +280,9 @@ class Backend(ABC):
     def run_dm(
         self,
         circuit: ConvertedCircuit,
+        noise: Noise,
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
-        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         """Run a circuit and return the resulting the density matrix.

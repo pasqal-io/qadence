@@ -130,9 +130,9 @@ class Backend(BackendInterface):
     def run_dm(
         self,
         circuit: ConvertedCircuit,
+        noise: Noise,
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
-        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         raise NotImplementedError
