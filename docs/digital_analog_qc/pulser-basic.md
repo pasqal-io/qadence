@@ -83,7 +83,7 @@ import torch
 import matplotlib.pyplot as plt
 from qadence import Register, QuantumCircuit, QuantumModel
 
-register = Register.line(2, scale = 8.0)  # Two qubits with a distance of 8µm
+register = Register.line(2, spacing = 8.0)  # Two qubits with a distance of 8µm
 circuit = QuantumCircuit(register, bell_state)
 model = QuantumModel(circuit, backend="pulser", diff_mode="gpsr")
 
@@ -142,7 +142,7 @@ One can use the `Configuration` of the Pulser backend to select the appropriate 
 from qadence import BackendName, DiffMode
 from qadence.backends.pulser.devices import Device
 
-register = Register.line(2, scale = 8.0)
+register = Register.line(2, spacing = 8.0)
 circuit = QuantumCircuit(register, bell_state)
 
 # Choose a realistic device
@@ -187,7 +187,7 @@ protocol = chain(
    RY(0, "y"),
 )
 
-register = Register.line(2, scale = 8.0)
+register = Register.line(2, spacing = 8.0)
 circuit = QuantumCircuit(register, protocol)
 model = QuantumModel(circuit, backend=BackendName.PULSER, diff_mode=DiffMode.GPSR)
 
@@ -229,7 +229,7 @@ protocol = chain(
     AnalogRX(torch.pi/4)
 )
 
-register = Register.line(2, scale=8.0)
+register = Register.line(2, spacing=8.0)
 circuit = QuantumCircuit(register, protocol)
 model = QuantumModel(circuit, backend=BackendName.PULSER, diff_mode=DiffMode.GPSR)
 

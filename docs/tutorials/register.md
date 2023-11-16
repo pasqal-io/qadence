@@ -51,7 +51,7 @@ print(docsutils.fig_to_html(fig)) # markdown-exec: hide
 
 ## Building and drawing registers
 
-Built-in topologies are directly accessible in the `Register`:
+Built-in topologies are directly accessible in the `Register` methods:
 
 ```python exec="on" source="material-block" html="1" session="register"
 from docs import docsutils # markdown-exec: hide
@@ -74,25 +74,26 @@ be accessed directly with the `coords` property.
 reg = Register.square(2)
 print(reg.coords)
 ```
-
-Register coordinates can be re-scaled with the `rescale_coords` method, or a `scale` can be
-passed directly as an optional argument at register creation.
+By default, the coords are scaled such that the minimum distance between any two qubits is 1,
+unless the register is created directly from specific coordinates as shown below. The `spacing`
+argument can be used to set the minimum spacing. The `rescale_coords` method can be used to create
+a new register by rescaling the coordinates of an already created register.
 
 ```python exec="on" source="material-block" result="json" session="register"
-scaled_reg_1 = reg.rescale_coords(scale = 2.0)
-scaled_reg_2 = Register.square(2, scale = 2.0)
+scaled_reg_1 = Register.square(2, spacing = 2.0)
+scaled_reg_2 = reg.rescale_coords(scaling = 2.0)
 print(scaled_reg_1.coords)
 print(scaled_reg_2.coords)
 ```
 
-The distance between qubits can also be directly accessed with the `distances` and `all_distances`
+The distance between qubits can also be directly accessed with the `distances` and `edge_distances`
 properties.
 
 ```python exec="on" source="material-block" result="json" session="register"
-print("Distance between qubits connected by an edge:")  # markdown-exec: hide
+print("Distance between all qubit pairs:")  # markdown-exec: hide
 print(reg.distances)
-print("Distance between all qubit pairs in the graph")  # markdown-exec: hide
-print(reg.all_distances)
+print("Distance between qubits connect by an edge in the graph")  # markdown-exec: hide
+print(reg.edge_distances)
 ```
 
 By calling the `Register` directly, either the number of nodes or a specific graph can be given as input.
@@ -141,7 +142,7 @@ print(docsutils.fig_to_html(fig)) # markdown-exec: hide
 ```
 
 !!! warning "Units for qubit coordinates"
-    In general, Qadence makes no assumption about the units given to qubit coordinates.
+    In general, Qadence makes no assumption about the units for qubit coordinates and distances.
     However, if used in the context of a Hamiltonian coefficient, care should be taken by the user to guarantee the
     quantity $H.t$ is **dimensionless** for exponentiation in the PyQTorch backend, where it is assumed that $\hbar = 1$.
 	For registers passed to the [Pulser](https://github.com/pasqal-io/Pulser) backend, coordinates are in $\mu \textrm{m}$.
@@ -165,7 +166,7 @@ print(f"{reg.nodes = }") # markdown-exec: hide
 print(f"{reg.edges = }") # markdown-exec: hide
 ```
 
-Just like the property `all_distances`, there is also an `all_edges` property for convencience:
+There is also an `all_edges` property for convencience:
 
 ```python exec="on" source="material-block" result="json" session="reg-usage"
 print(reg.all_edges)
