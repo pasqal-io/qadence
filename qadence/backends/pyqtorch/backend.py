@@ -122,6 +122,15 @@ class Backend(BackendInterface):
             state = invert_endianness(state)
         return state
 
+    def run_dm(
+        self,
+        circuit: ConvertedCircuit,
+        param_values: dict[str, Tensor] = {},
+        state: Tensor | None = None,
+        endianness: Endianness = Endianness.BIG,
+    ) -> Tensor:
+        raise NotImplementedError
+
     def _batched_expectation(
         self,
         circuit: ConvertedCircuit,
