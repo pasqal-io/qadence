@@ -179,6 +179,8 @@ def validate_state(state: Tensor, n_qubits: int) -> None:
     """Check if a custom initial state conforms to the qadence or the pyqtorch format."""
     if state.dtype != complex128:
         raise TypeError(f"Expected type complex128, got {state.dtype}")
+    elif len(state.size()) < 2:
+        raise ValueError(f"Invalid state shape. Got {state.shape}")
     elif not is_qadence_shape(state, n_qubits) and not is_pyq_shape(state, n_qubits):
         raise ValueError(
             f"Allowed formats for custom initial state are:\
