@@ -39,6 +39,10 @@ class Mitigations:
             return cls(d["protocol"], **d["options"])
         return None
 
+    @classmethod
+    def list(cls) -> list:
+        return [attr for attr in dir(cls) if not attr.startswith("__")]
+
 
 def apply_mitigation(
     noise: Noise, mitigation: Mitigations, samples: list[Counter]
