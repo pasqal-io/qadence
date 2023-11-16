@@ -49,7 +49,6 @@ def apply_mitigation(
 ) -> list[Counter]:
     """Apply mitigation to samples."""
     mitigation_fn = mitigation.get_mitigation_fn()
-    # breakpoint()
     mitigated_samples: list[Counter] = mitigation_fn(
         noise=noise, mitigation=mitigation, samples=samples
     )
