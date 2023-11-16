@@ -193,7 +193,8 @@ class Register:
 
     @property
     def min_distance(self) -> float:
-        value: float = min(self.distances.values())
+        distances = self.distances
+        value: float = min(self.distances.values()) if len(distances) > 0 else 0.0
         return value
 
     @property
