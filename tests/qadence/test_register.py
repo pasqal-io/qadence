@@ -20,24 +20,30 @@ def calc_dist(graph: nx.Graph) -> np.ndarray:
 
 def test_register() -> None:
     # create register with number of qubits only
-    reg = Register(4)
+    reg = Register(4, spacing=4.0)
     assert reg.n_qubits == 4
+    assert reg.min_distance == 4.0
 
     # create register from arbitrary graph
     graph = nx.Graph()
     graph.add_edge(0, 1)
     reg = Register(graph)
     assert reg.n_qubits == 2
+    assert reg.min_distance == 0.0
 
     # test linear lattice node number
-    r = Register.line(4)
+    spacing = 2.0
+    r = Register.line(4, spacing=spacing)
     assert len(r.graph) == 4
-    assert r == Register.lattice("line", 4)
+    assert r == Register.lattice("line", 4, spacing=spacing)
+    assert sum(r.edge_distances.values()) == 3 * spacing
+    assert len(r.distances) == len(r.all_edges)
 
     # test circular lattice node number
     r = Register.circle(8)
     assert len(r.graph) == 8
     assert r == Register.lattice("circle", 8)
+    assert r.min_distance == 1.0
 
     # test shape of circular lattice
     distances = calc_dist(r.graph)
@@ -81,6 +87,11 @@ def test_register() -> None:
     # test arbitrary lattice node number
     r = Register.from_coordinates([(0, 1), (0, 2), (0, 3), (1, 3)])
     assert len(r.graph) == 4
+    assert r.min_distance == 1.0
+
+    # test rescale coordinates
+    r = r.rescale_coords(scaling=2.0)
+    assert r.min_distance == 2.0
 
 
 def test_register_to_dict(BasicRegister: Register) -> None:
