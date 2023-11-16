@@ -160,13 +160,6 @@ operation with the added qubit interactions, as shown explicitly in the
 minimized section above. However, this operation is also supported in the
 Pulser backend, where the correct pulses are automatically created.
 
-!!! warning
-    When using the Pulser backend it is currently advised to always explicitly pass
-    the register spacing in the `configuration` dictionary, which is a constant that
-    multiplies the coordinates of the register. The passing of register spacing
-    between PyQTorch and Pulser backends is currently inconsistent, and will soon be unified.
-    By disregarding it in PyQTorch and setting it to 1 in Pulser, results should be consistent.
-
 
 ```python exec="on" source="material-block" result="json" session="emu"
 
@@ -174,7 +167,6 @@ wf = run(
     reg,
     rot_op,
     backend = BackendName.PULSER,
-    configuration = {"spacing": 1.0}  # Ensures the register is not re-scaled
 )
 
 print(wf)
@@ -268,7 +260,6 @@ wf_analog_pulser = run(
     rot_analog,
     state = init_state,
     backend = BackendName.PULSER,
-    configuration = {"spacing": 1.0}
 )
 
 bool_equiv = equivalent_state(wf_analog_pyq, wf_analog_pulser, atol = 1e-03)
@@ -295,7 +286,7 @@ op = wait(duration = duration)
 init_state = random_state(n_qubits)
 
 wf_pyq = run(reg, op, state = init_state, backend = BackendName.PYQTORCH)
-wf_pulser = run(reg, op, state = init_state, backend = BackendName.PULSER, configuration = {"spacing": 1.0})
+wf_pulser = run(reg, op, state = init_state, backend = BackendName.PULSER)
 
 bool_equiv = equivalent_state(wf_pyq, wf_pulser, atol = 1e-03)
 
