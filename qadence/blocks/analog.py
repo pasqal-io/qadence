@@ -83,12 +83,12 @@ class AnalogBlock(AbstractBlock):
         return s
 
     def compute_eigenvalues_generator(
-        self, register: Register, block: AbstractBlock, spacing: float
+        self, register: Register, block: AbstractBlock
     ) -> torch.Tensor:
         # FIXME: Temporary fix while we keep AnalogBlocks
         from qadence.analog import RydbergDevice, add_background_hamiltonian
 
-        device = RydbergDevice(register, spacing=spacing)
+        device = RydbergDevice(register)
         return add_background_hamiltonian(block, device).eigenvalues_generator  # type: ignore [union-attr]
 
 

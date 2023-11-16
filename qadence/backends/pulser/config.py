@@ -36,9 +36,6 @@ class Configuration(BackendConfiguration):
     amplitude, minimum atom spacing and other properties of the system
     """
 
-    spacing: Optional[float] = None
-    """Atomic spacing for Pulser register."""
-
     sampling_rate: float = 1.0
     """Sampling rate to be used for local simulations.
 

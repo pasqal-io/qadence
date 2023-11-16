@@ -60,19 +60,15 @@ d = 3.75
     ],
 )
 def test_far_add_interaction(analog: AnalogBlock, digital_fn: Callable, register: Register) -> None:
-    # FIXME: Unify config device interfaces
-    spacing = 8.0
-    device = RydbergDevice(register, spacing=spacing)
-    config = {"device": device}
-
-    emu_samples = sample(register, analog, backend="pyqtorch", configuration=config)[0]
-    pulser_samples = sample(register, analog, backend="pulser", configuration=config)[0]
+    register = register.rescale_coords(scaling=8.0)
+    emu_samples = sample(register, analog, backend="pyqtorch")[0]  # type: ignore[arg-type]
+    pulser_samples = sample(register, analog, backend="pulser")[0]  # type: ignore[arg-type]
     assert js_divergence(pulser_samples, emu_samples) < JS_ACCEPTANCE
 
     wf = random_state(register.n_qubits)
     digital = digital_fn(register.n_qubits)
-    emu_state = run(register, analog, state=wf, configuration=config)
-    dig_state = run(register, digital, state=wf, configuration=config)
+    emu_state = run(register, analog, state=wf)
+    dig_state = run(register, digital, state=wf)
     assert equivalent_state(emu_state, dig_state, atol=1e-3)
 
 
@@ -93,16 +89,9 @@ def test_far_add_interaction(analog: AnalogBlock, digital_fn: Callable, register
 @pytest.mark.flaky(max_runs=5)
 def test_close_add_interaction(block: AnalogBlock, register: Register) -> None:
     # FIXME: Unify config device interfaces
-    spacing = 8.0
-    device = RydbergDevice(register, spacing=spacing)
-    config_pulser = {"spacing": spacing}
-    config_pyq = {"device": device}
-    pulser_samples = sample(
-        register, block, backend="pulser", n_shots=1000, configuration=config_pulser
-    )[0]
-    pyqtorch_samples = sample(
-        register, block, backend="pyqtorch", n_shots=1000, configuration=config_pyq
-    )[0]
+    register = register.rescale_coords(scaling=8.0)
+    pulser_samples = sample(register, block, backend="pulser", n_shots=1000)[0]
+    pyqtorch_samples = sample(register, block, backend="pyqtorch", n_shots=1000)[0]
     assert js_divergence(pulser_samples, pyqtorch_samples) < JS_ACCEPTANCE
 
 

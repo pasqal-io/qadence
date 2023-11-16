@@ -20,8 +20,10 @@ from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.logger import get_logger
 from qadence.measurements import Measurements
+from qadence.mitigations import Mitigations
+from qadence.mitigations.protocols import apply_mitigation
 from qadence.noise import Noise
-from qadence.noise.protocols import apply
+from qadence.noise.protocols import apply_noise
 from qadence.overlap import overlap_exact
 from qadence.register import Register
 from qadence.transpile import transpile
@@ -36,10 +38,6 @@ from .pulses import add_pulses
 
 logger = get_logger(__file__)
 
-WEAK_COUPLING_CONST = 1.2
-
-DEFAULT_SPACING = 8.0  # µm (standard value)
-
 
 def _convert_init_state(state: Tensor) -> np.ndarray:
     """Flip and squeeze initial state consistent with Pulser convention."""
@@ -48,20 +46,10 @@ def _convert_init_state(state: Tensor) -> np.ndarray:
     return np.flip(state.cpu().squeeze().numpy())
 
 
-def create_register(register: Register, spacing: float = DEFAULT_SPACING) -> PulserRegister:
-    """Create Pulser register instance.
-
-    Args:
-        register (Register): graph representing a register with accompanying coordinate data
-        spacing (float): distance between qubits in micrometers
-
-    Returns:
-        Register: Pulser register
-    """
-
-    # create register from coordinates
+def create_register(register: Register) -> PulserRegister:
+    """Convert Qadence Register to Pulser Register."""
     coords = np.array(list(register.coords.values()))
-    return PulserRegister.from_coordinates(coords * spacing)
+    return PulserRegister.from_coordinates(coords)
 
 
 def make_sequence(circ: QuantumCircuit, config: Configuration) -> Sequence:
@@ -72,34 +60,20 @@ def make_sequence(circ: QuantumCircuit, config: Configuration) -> Sequence:
     else:
         raise ValueError("Specified device is not supported.")
 
-    max_amp = device.channels["rydberg_global"].max_amp
-
-    if config.spacing is not None:
-        spacing = config.spacing
-    elif max_amp is not None:
-        # TODO: Fix this more consistently so both pulser and
-        # pyqtorch get the spacing from the same place
-        # Ideal spacing for entanglement gate
-        # since Pulser's QutipEmulator doesn't allow simulation of sequences
-        # with total duration < 4ns
-        spacing = WEAK_COUPLING_CONST * device.rydberg_blockade_radius(max_amp)  # type: ignore
-    else:
-        spacing = DEFAULT_SPACING
-
     # Temporary solution: overrides the device if a Qadence device is passed in the config
     if config.device is not None:
         device = IdealDevice(
             config.device.rydberg_level, config.device.max_abs_detuning, config.device.max_amp
         )
-        spacing = config.device.spacing
 
-    pulser_register = create_register(circ.register, spacing)
+    pulser_register = create_register(circ.register)
 
     sequence = Sequence(pulser_register, device)
+
     sequence.declare_channel(GLOBAL_CHANNEL, "rydberg_global")
     sequence.declare_channel(LOCAL_CHANNEL, "rydberg_local", initial_target=0)
 
-    add_pulses(sequence, circ.block, config, circ.register, spacing)
+    add_pulses(sequence, circ.block, config, circ.register)
     sequence.measure()
 
     return sequence
@@ -229,7 +203,6 @@ class Backend(BackendInterface):
                 .full()
                 .flatten()
             )
-
             # We flip the wavefunction coming out of pulser,
             # essentially changing logic 0 with logic 1 in the basis states.
             batched_wf[i] = np.flip(wf)
@@ -243,6 +216,24 @@ class Backend(BackendInterface):
 
         return batched_wf_torch
 
+    def run_dm(
+        self,
+        circuit: ConvertedCircuit,
+        param_values: dict[str, Tensor] = {},
+        state: Tensor | None = None,
+        endianness: Endianness = Endianness.BIG,
+    ) -> list:
+        vals = to_list_of_dicts(param_values)
+
+        batched_dm = []
+
+        for i, param_values_el in enumerate(vals):
+            sequence = self.assign_parameters(circuit, param_values_el)
+            sim_result = simulate_sequence(sequence, self.config, state)
+            batched_dm.append(sim_result)
+
+        return batched_dm
+
     def sample(
         self,
         circuit: ConvertedCircuit,
@@ -250,6 +241,7 @@ class Backend(BackendInterface):
         n_shots: int = 1,
         state: Tensor | None = None,
         noise: Noise | None = None,
+        mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         if n_shots < 1:
@@ -268,7 +260,10 @@ class Backend(BackendInterface):
 
             samples = invert_endianness(samples)
         if noise is not None:
-            samples = apply(noise=noise, samples=samples)
+            samples = apply_noise(noise=noise, samples=samples)
+        if mitigation is not None:
+            assert noise
+            samples = apply_mitigation(noise=noise, mitigation=mitigation, samples=samples)
         return samples
 
     def expectation(
@@ -279,6 +274,7 @@ class Backend(BackendInterface):
         state: Tensor | None = None,
         measurement: Measurements | None = None,
         noise: Noise | None = None,
+        mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         # Noise is ignored if measurement protocol is not provided.
@@ -288,15 +284,28 @@ class Backend(BackendInterface):
                 "This is ignored for now."
             )
 
-        state = self.run(circuit, param_values=param_values, state=state, endianness=endianness)
-
         observables = observable if isinstance(observable, list) else [observable]
-        support = sorted(list(circuit.abstract.register.support))
-        res_list = [obs.native(state, param_values, qubit_support=support) for obs in observables]
-
-        res = torch.transpose(torch.stack(res_list), 0, 1)
-        res = res if len(res.shape) > 0 else res.reshape(1)
-        return res.real
+        if mitigation is None:
+            state = self.run(circuit, param_values=param_values, state=state, endianness=endianness)
+            support = sorted(list(circuit.abstract.register.support))
+            res_list = [
+                obs.native(state, param_values, qubit_support=support) for obs in observables
+            ]
+            res = torch.transpose(torch.stack(res_list), 0, 1)
+            res = res if len(res.shape) > 0 else res.reshape(1)
+            return res.real
+        elif mitigation is not None:
+            mitigation_fn = mitigation.get_mitigation_fn()
+            mitigated_exp_val = mitigation_fn(
+                backend_name=self.name,
+                circuit=circuit,
+                observable=observables,
+                state=state,
+                measurement=measurement,
+                mitigation=mitigation,
+                endianness=endianness,
+            )
+            return mitigated_exp_val
 
     @staticmethod
     def _overlap(bras: Tensor, kets: Tensor) -> Tensor:

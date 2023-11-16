@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from itertools import product
+from math import dist
 from typing import Any
 
 import matplotlib.pyplot as plt
@@ -16,16 +17,17 @@ from qadence.types import LatticeTopology
 __all__ = ["Register"]
 
 
-def _scale_node_positions(graph: nx.Graph, scale: float) -> None:
+def _scale_node_positions(graph: nx.Graph, min_distance: float, spacing: float) -> None:
     scaled_nodes = {}
+    scale_factor = spacing / min_distance
     for k, node in graph.nodes.items():
         (x, y) = node["pos"]
-        scaled_nodes[k] = {"pos": (x * scale, y * scale)}
+        scaled_nodes[k] = {"pos": (x * scale_factor, y * scale_factor)}
     nx.set_node_attributes(graph, scaled_nodes)
 
 
 class Register:
-    def __init__(self, support: nx.Graph | int):
+    def __init__(self, support: nx.Graph | int, spacing: float | None = 1.0):
         """A 2D register of qubits which includes their coordinates.
 
         It is needed for e.g. analog computing.
@@ -40,6 +42,7 @@ class Register:
                 don't want to build a graph manually.
                 If you pass an integer the resulting register is the same as
                 `Register.all_to_all(n_qubits)`.
+            spacing: Value set as the distance between the two closest qubits.
 
         Examples:
         ```python exec="on" source="material-block" result="json"
@@ -57,6 +60,10 @@ class Register:
         self.complete_graph = nx.Graph()
         self.complete_graph.add_nodes_from(support)
         self.complete_graph.add_edges_from(all_edges)
+
+        if spacing is not None and self.min_distance != 0.0:
+            _scale_node_positions(self.graph, self.min_distance, spacing)
+
         pos_values = nx.get_node_attributes(self.graph, "pos")
         nx.set_node_attributes(self.complete_graph, pos_values, "pos")
 
@@ -66,29 +73,31 @@ class Register:
 
     @classmethod
     def from_coordinates(
-        cls, coords: list[tuple], lattice: LatticeTopology | str = LatticeTopology.ARBITRARY
+        cls,
+        coords: list[tuple],
+        lattice: LatticeTopology | str = LatticeTopology.ARBITRARY,
+        spacing: float | None = None,
     ) -> Register:
         graph = nx.Graph()
         for i, pos in enumerate(coords):
             graph.add_node(i, pos=pos)
-        return cls(graph)
+        return cls(graph, spacing)
 
     @classmethod
-    def line(cls, n_qubits: int) -> Register:
-        return cls(line_graph(n_qubits))
+    def line(cls, n_qubits: int, spacing: float = 1.0) -> Register:
+        return cls(line_graph(n_qubits), spacing)
 
     @classmethod
-    def circle(cls, n_qubits: int, scale: float = 1.0) -> Register:
+    def circle(cls, n_qubits: int, spacing: float = 1.0) -> Register:
         graph = nx.grid_2d_graph(n_qubits, 1, periodic=True)
         graph = nx.relabel_nodes(graph, {(i, 0): i for i in range(n_qubits)})
         coords = nx.circular_layout(graph)
         values = {i: {"pos": pos} for i, pos in coords.items()}
         nx.set_node_attributes(graph, values)
-        _scale_node_positions(graph, scale)
-        return cls(graph)
+        return cls(graph, spacing)
 
     @classmethod
-    def square(cls, qubits_side: int, scale: float = 1.0) -> Register:
+    def square(cls, qubits_side: int, spacing: float = 1.0) -> Register:
         n_points = 4 * (qubits_side - 1)
 
         def gen_points() -> np.ndarray:
@@ -113,36 +122,35 @@ class Register:
         graph = nx.relabel_nodes(graph, {(i, 0): i for i in range(n_points)})
         values = {i: {"pos": point} for i, point in zip(graph.nodes, gen_points())}
         nx.set_node_attributes(graph, values)
-        _scale_node_positions(graph, scale)
-        return cls(graph)
+        return cls(graph, spacing)
 
     @classmethod
-    def all_to_all(cls, n_qubits: int) -> Register:
-        return cls(alltoall_graph(n_qubits))
+    def all_to_all(cls, n_qubits: int, spacing: float = 1.0) -> Register:
+        return cls(alltoall_graph(n_qubits), spacing)
 
     @classmethod
     def rectangular_lattice(
-        cls, qubits_row: int, qubits_col: int, side_length: float = 1.0
+        cls, qubits_row: int, qubits_col: int, spacing: float = 1.0
     ) -> Register:
         graph = nx.grid_2d_graph(qubits_col, qubits_row)
         values = {i: {"pos": node} for (i, node) in enumerate(graph.nodes)}
         graph = nx.relabel_nodes(graph, {(i, j): k for k, (i, j) in enumerate(graph.nodes)})
         nx.set_node_attributes(graph, values)
-        _scale_node_positions(graph, side_length)
-        return cls(graph)
+        return cls(graph, spacing)
 
     @classmethod
     def triangular_lattice(
-        cls, n_cells_row: int, n_cells_col: int, side_length: float = 1.0
+        cls, n_cells_row: int, n_cells_col: int, spacing: float = 1.0
     ) -> Register:
-        return cls(triangular_lattice_graph(n_cells_row, n_cells_col, side_length))
+        return cls(triangular_lattice_graph(n_cells_row, n_cells_col), spacing)
 
     @classmethod
-    def honeycomb_lattice(cls, n_cells_row: int, n_cells_col: int, scale: float = 1.0) -> Register:
+    def honeycomb_lattice(
+        cls, n_cells_row: int, n_cells_col: int, spacing: float = 1.0
+    ) -> Register:
         graph = nx.hexagonal_lattice_graph(n_cells_row, n_cells_col)
         graph = nx.relabel_nodes(graph, {(i, j): k for k, (i, j) in enumerate(graph.nodes)})
-        _scale_node_positions(graph, scale)
-        return cls(graph)
+        return cls(graph, spacing)
 
     @classmethod
     def lattice(cls, topology: LatticeTopology | str, *args: Any, **kwargs: Any) -> Register:
@@ -174,13 +182,29 @@ class Register:
         return self.complete_graph.edges
 
     @property
+    def distances(self) -> dict:
+        coords = self.coords
+        return {edge: dist(coords[edge[0]], coords[edge[1]]) for edge in self.all_edges}
+
+    @property
+    def edge_distances(self) -> dict:
+        coords = self.coords
+        return {edge: dist(coords[edge[0]], coords[edge[1]]) for edge in self.edges}
+
+    @property
+    def min_distance(self) -> float:
+        distances = self.distances
+        value: float = min(self.distances.values()) if len(distances) > 0 else 0.0
+        return value
+
+    @property
     def nodes(self) -> NodeView:
         return self.graph.nodes
 
-    def _scale_positions(self, scale: float) -> Register:
+    def rescale_coords(self, scaling: float) -> Register:
         g = deepcopy(self.graph)
-        _scale_node_positions(g, scale)
-        return Register(g)
+        _scale_node_positions(g, min_distance=1.0, spacing=scaling)
+        return Register(g, spacing=None)
 
     def _to_dict(self) -> dict:
         return {"graph": nx.node_link_data(self.graph)}
@@ -199,7 +223,7 @@ class Register:
         )
 
 
-def line_graph(n_qubits: int, spacing: float = 1.0) -> nx.Graph:
+def line_graph(n_qubits: int) -> nx.Graph:
     """Create graph representing linear lattice.
 
     Args:
@@ -210,25 +234,22 @@ def line_graph(n_qubits: int, spacing: float = 1.0) -> nx.Graph:
     """
     graph = nx.Graph()
     for i in range(n_qubits):
-        graph.add_node(i, pos=(i * spacing, 0.0))
+        graph.add_node(i, pos=(i, 0.0))
     for i, j in zip(range(n_qubits - 1), range(1, n_qubits)):
         graph.add_edge(i, j)
     return graph
 
 
-def triangular_lattice_graph(
-    n_cells_row: int, n_cells_col: int, side_length: float = 1.0
-) -> nx.Graph:
+def triangular_lattice_graph(n_cells_row: int, n_cells_col: int) -> nx.Graph:
     graph = nx.triangular_lattice_graph(n_cells_row, n_cells_col)
     graph = nx.relabel_nodes(graph, {(i, j): k for k, (i, j) in enumerate(graph.nodes)})
-    _scale_node_positions(graph, side_length)
     return graph
 
 
 def alltoall_graph(n_qubits: int) -> nx.Graph:
     if n_qubits == 2:
         return line_graph(2)
-    elif n_qubits == 3:
+    if n_qubits == 3:
         return triangular_lattice_graph(1, 1)
 
     graph = nx.complete_graph(n_qubits)

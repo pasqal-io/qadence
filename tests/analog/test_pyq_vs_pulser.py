@@ -3,12 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 import torch
-from metrics import (
-    ATOL_DICT,
-    JS_ACCEPTANCE,
-    LARGE_SPACING,
-    SMALL_SPACING,
-)
+from metrics import ATOL_DICT, JS_ACCEPTANCE, LARGE_SPACING, SMALL_SPACING
 
 from qadence.analog import RydbergDevice
 from qadence.backends.pulser.devices import Device
@@ -65,16 +60,18 @@ def test_analog_op_run(
         block = op(t)  # type: ignore [operator]
         values = {"t": 10.0 * (1.0 + torch.rand(batch_size))}
 
-    register = Register.line(n_qubits)
+    register = Register.line(n_qubits, spacing=spacing)
+
     circuit = QuantumCircuit(register, block)
 
-    device = RydbergDevice(register, spacing=spacing, rydberg_level=rydberg_level)
+    device = RydbergDevice(register, rydberg_level=rydberg_level)
 
     config = {"device": device}
 
     model_pyqtorch = QuantumModel(
         circuit, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD, configuration=config
     )
+    model_pyqtorch = QuantumModel(circuit, backend=BackendName.PYQTORCH)
 
     model_pulser = QuantumModel(
         circuit,
@@ -93,19 +90,24 @@ def test_analog_op_run(
 
 
 @pytest.mark.parametrize(
-    "pyqtorch_circuit,pulser_circuit",
+    "pyqtorch_block, pulser_block",
     [
         # Bell state generation
         (
-            QuantumCircuit(2, chain(H(0), CNOT(0, 1))),
-            QuantumCircuit(2, chain(entangle(1000, qubit_support=(0, 1)), RY(0, 3 * torch.pi / 2))),
+            chain(H(0), CNOT(0, 1)),
+            chain(entangle(1000, qubit_support=(0, 1)), RY(0, 3 * torch.pi / 2)),
         )
     ],
 )
 @pytest.mark.flaky(max_runs=5)
 def test_compatibility_pyqtorch_pulser_entanglement(
-    pyqtorch_circuit: QuantumCircuit, pulser_circuit: QuantumCircuit
+    pyqtorch_block: AbstractBlock, pulser_block: AbstractBlock
 ) -> None:
+    register = Register.line(2, spacing=8.0)
+
+    pyqtorch_circuit = QuantumCircuit(register, pyqtorch_block)
+    pulser_circuit = QuantumCircuit(register, pulser_block)
+
     model_pyqtorch = QuantumModel(
         pyqtorch_circuit, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD
     )
@@ -136,13 +138,14 @@ def test_compatibility_pyqtorch_pulser_digital_rot(obs: AbstractBlock) -> None:
     )
     pyqtorch_circuit = QuantumCircuit(n_qubits, block)
 
-    register = Register.line(n_qubits)
+    register = Register.line(n_qubits, spacing=LARGE_SPACING)
     pulser_circuit = QuantumCircuit(register, block)
 
     model_pyqtorch = QuantumModel(
         pyqtorch_circuit, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD, observable=obs
     )
-    conf = {"spacing": LARGE_SPACING, "amplitude_local": 2 * np.pi, "detuning": 2 * np.pi}
+    conf = {"amplitude_local": 2 * np.pi, "detuning": 2 * np.pi}
+
     model_pulser = QuantumModel(
         pulser_circuit,
         backend=BackendName.PULSER,
@@ -188,19 +191,18 @@ def test_compatibility_pyqtorch_pulser_analog_rot(obs: AbstractBlock) -> None:
     b_analog = chain(AnalogRX(phi), AnalogRY(psi))
     pyqtorch_circuit = QuantumCircuit(n_qubits, b_digital)
 
-    register = Register.line(n_qubits)
+    register = Register.line(n_qubits, spacing=LARGE_SPACING)
     pulser_circuit = QuantumCircuit(register, b_analog)
 
     model_pyqtorch = QuantumModel(
         pyqtorch_circuit, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD, observable=obs
     )
-    conf = {"spacing": LARGE_SPACING}
+
     model_pulser = QuantumModel(
         pulser_circuit,
         backend=BackendName.PULSER,
         observable=obs,
         diff_mode=DiffMode.GPSR,
-        configuration=conf,
     )
 
     batch_size = 5
@@ -230,22 +232,14 @@ def test_compatibility_pyqtorch_pulser_analog_rot_int(obs: AbstractBlock) -> Non
     psi = FeatureParameter("psi")
 
     n_qubits = 2
-    register = Register.line(n_qubits)
+    register = Register.line(n_qubits, spacing=SMALL_SPACING)
 
     b_analog = chain(AnalogRX(phi), AnalogRY(psi))
 
     circuit = QuantumCircuit(register, b_analog)
 
-    device = RydbergDevice(register, spacing=SMALL_SPACING)
-
-    config = {"device": device}
-
     model_pyqtorch = QuantumModel(
-        circuit,
-        backend=BackendName.PYQTORCH,
-        diff_mode=DiffMode.AD,
-        observable=obs,
-        configuration=config,
+        circuit, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD, observable=obs
     )
 
     model_pulser = QuantumModel(
@@ -253,7 +247,6 @@ def test_compatibility_pyqtorch_pulser_analog_rot_int(obs: AbstractBlock) -> Non
         backend=BackendName.PULSER,
         diff_mode=DiffMode.GPSR,
         observable=obs,
-        configuration=config,
     )
 
     batch_size = 5

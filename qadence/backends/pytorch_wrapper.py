@@ -17,6 +17,7 @@ from qadence.blocks.utils import uuid_to_block, uuid_to_eigen
 from qadence.circuit import QuantumCircuit
 from qadence.extensions import get_gpsr_fns
 from qadence.measurements import Measurements
+from qadence.mitigations import Mitigations
 from qadence.ml_tools import promote_to_tensor
 from qadence.noise import Noise
 from qadence.types import DiffMode, Endianness
@@ -88,6 +89,7 @@ class DifferentiableExpectation:
     state: Tensor | None = None
     measurement: Measurements | None = None
     noise: Noise | None = None
+    mitigation: Mitigations | None = None
     endianness: Endianness = Endianness.BIG
 
     def ad(self) -> Tensor:
@@ -112,6 +114,7 @@ class DifferentiableExpectation:
                 param_values=self.param_values,
                 state=self.state,
                 noise=self.noise,
+                mitigation=self.mitigation,
                 endianness=self.endianness,
             )
         return promote_to_tensor(
@@ -146,6 +149,7 @@ class DifferentiableExpectation:
                 observable=self.observable,
                 state=self.state,
                 noise=self.noise,
+                mitigation=self.mitigation,
                 endianness=self.endianness,
             )
         # PSR only applies to parametric circuits.
@@ -238,6 +242,7 @@ class DifferentiableBackend(nn.Module):
         state: Tensor | None = None,
         measurement: Measurements | None = None,
         noise: Noise | None = None,
+        mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         """Compute the expectation value of a given observable.
@@ -262,6 +267,7 @@ class DifferentiableBackend(nn.Module):
             state=state,
             measurement=measurement,
             noise=noise,
+            mitigation=mitigation,
             endianness=endianness,
         )
 
@@ -283,6 +289,7 @@ class DifferentiableBackend(nn.Module):
         n_shots: int = 1,
         state: Tensor | None = None,
         noise: Noise | None = None,
+        mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         """Sample bitstring from the registered circuit.
@@ -293,6 +300,7 @@ class DifferentiableBackend(nn.Module):
             n_shots: The number of shots. Defaults to 1.
             state: Initial state.
             noise: A noise model to use.
+            mitigation: A mitigation protocol to apply to noisy samples.
             endianness: Endianness of the resulting bitstrings.
 
         Returns:
@@ -302,10 +310,11 @@ class DifferentiableBackend(nn.Module):
             return self.backend.sample(
                 circuit=circuit,
                 param_values=param_values,
-                state=state,
                 n_shots=n_shots,
-                endianness=endianness,
+                state=state,
                 noise=noise,
+                mitigation=mitigation,
+                endianness=endianness,
             )
 
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:

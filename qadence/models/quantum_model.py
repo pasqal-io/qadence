@@ -21,6 +21,7 @@ from qadence.blocks.abstract import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.logger import get_logger
 from qadence.measurements import Measurements
+from qadence.mitigations import Mitigations
 from qadence.noise import Noise
 from qadence.types import DiffMode, Endianness
 
@@ -48,8 +49,9 @@ class QuantumModel(nn.Module):
         backend: BackendName | str = BackendName.PYQTORCH,
         diff_mode: DiffMode = DiffMode.AD,
         measurement: Measurements | None = None,
-        configuration: BackendConfiguration | dict | None = None,
         noise: Noise | None = None,
+        mitigation: Mitigations | None = None,
+        configuration: BackendConfiguration | dict | None = None,
     ):
         """Initialize a generic QuantumModel instance.
 
@@ -96,7 +98,7 @@ class QuantumModel(nn.Module):
         self._diff_mode = diff_mode
         self._measurement = measurement
         self._noise = noise
-
+        self._mitigation = mitigation
         self._params = nn.ParameterDict(
             {
                 str(key): nn.Parameter(val, requires_grad=val.requires_grad)
@@ -166,13 +168,22 @@ class QuantumModel(nn.Module):
         n_shots: int = 1000,
         state: torch.Tensor | None = None,
         noise: Noise | None = None,
+        mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         params = self.embedding_fn(self._params, values)
         if noise is None:
             noise = self._noise
+        if mitigation is None:
+            mitigation = self._mitigation
         return self.backend.sample(
-            self._circuit, params, n_shots=n_shots, state=state, noise=noise, endianness=endianness
+            self._circuit,
+            params,
+            n_shots=n_shots,
+            state=state,
+            noise=noise,
+            mitigation=mitigation,
+            endianness=endianness,
         )
 
     def expectation(
@@ -182,6 +193,7 @@ class QuantumModel(nn.Module):
         state: Optional[Tensor] = None,
         measurement: Measurements | None = None,
         noise: Noise | None = None,
+        mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         """Compute expectation using the given backend.
@@ -203,6 +215,8 @@ class QuantumModel(nn.Module):
             measurement = self._measurement
         if noise is None:
             noise = self._noise
+        if mitigation is None:
+            mitigation = self._mitigation
         return self.backend.expectation(
             circuit=self._circuit,
             observable=observable,
@@ -210,6 +224,7 @@ class QuantumModel(nn.Module):
             state=state,
             measurement=measurement,
             noise=noise,
+            mitigation=mitigation,
             endianness=endianness,
         )
 
