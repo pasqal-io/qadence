@@ -282,6 +282,7 @@ class Backend(ABC):
         circuit: ConvertedCircuit,
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
+        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         """Run a circuit and return the resulting the density matrix.
