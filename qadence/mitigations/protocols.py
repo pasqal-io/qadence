@@ -41,7 +41,7 @@ class Mitigations:
 
     @classmethod
     def list(cls) -> list:
-        return [attr for attr in dir(cls) if not attr.startswith("__")]
+        return list(filter(lambda el: not el.startswith("__"), dir(cls)))
 
 
 def apply_mitigation(
