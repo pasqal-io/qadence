@@ -32,7 +32,6 @@ from .utils import (
 )
 from .block_to_tensor import block_to_tensor
 from .embedding import embedding
-from .identity import identity_block
 
 # Modules to be automatically added to the qadence namespace
 __all__ = ["add", "chain", "kron", "tag", "block_to_tensor"]
