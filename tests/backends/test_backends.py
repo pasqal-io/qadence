@@ -133,7 +133,7 @@ def test_qcl_loss(backend: str) -> None:
         BackendName.PYQTORCH,
         pytest.param(
             BackendName.BRAKET,
-            marks=pytest.mark.skip(reason="state-vector initial state not implemented in Braket"),
+            marks=pytest.mark.xfail(reason="state-vector initial state not implemented in Braket"),
         ),
     ],
 )
@@ -280,7 +280,7 @@ def test_default_configuration() -> None:
         BackendName.PYQTORCH,
         pytest.param(
             BackendName.BRAKET,
-            marks=pytest.mark.skip(reason="Braket doesnt support passing custom states"),
+            marks=pytest.mark.xfail(reason="Braket doesnt support passing custom states"),
         ),
     ],
 )
