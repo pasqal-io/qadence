@@ -23,8 +23,10 @@ from qadence.utils import format_parameter
 
 class PrimitiveBlock(AbstractBlock):
     """
-    Primitive blocks represent elementary unitary operations such as single/multi-qubit gates or
-    Hamiltonian evolution. See [`qadence.operations`](/qadence/operations.md) for a full list of
+    Primitive blocks represent elementary unitary operations.
+
+    Examples are single/multi-qubit gates or Hamiltonian evolution.
+    See [`qadence.operations`](/qadence/operations.md) for a full list of
     primitive blocks.
     """
 
@@ -38,7 +40,7 @@ class PrimitiveBlock(AbstractBlock):
         return self._qubit_support
 
     def digital_decomposition(self) -> AbstractBlock:
-        """Decomposition into purely digital gates
+        """Decomposition into purely digital gates.
 
         This method returns a decomposition of the Block in a
         combination of purely digital single-qubit and two-qubit
@@ -101,7 +103,7 @@ class PrimitiveBlock(AbstractBlock):
 
 
 class ParametricBlock(PrimitiveBlock):
-    """Parameterized primitive blocks"""
+    """Parameterized primitive blocks."""
 
     name = "ParametricBlock"
 
@@ -139,7 +141,7 @@ class ParametricBlock(PrimitiveBlock):
 
     @abstractmethod
     def num_parameters(cls) -> int:
-        """The number of parameters required by the block
+        """The number of parameters required by the block.
 
         This is a class property since the number of parameters is defined
         automatically before instantiating the operation. Also, this could
@@ -330,7 +332,7 @@ class ScaleBlock(ParametricBlock):
 
 
 class TimeEvolutionBlock(ParametricBlock):
-    """Simple time evolution block with time-independent Hamiltonian
+    """Simple time evolution block with time-independent Hamiltonian.
 
     This class is just a convenience class which is used to label
     blocks which contains simple time evolution with time-independent
@@ -345,7 +347,7 @@ class TimeEvolutionBlock(ParametricBlock):
 
 
 class ControlBlock(PrimitiveBlock):
-    """The abstract ControlBlock"""
+    """The abstract ControlBlock."""
 
     name = "Control"
 
@@ -358,8 +360,7 @@ class ControlBlock(PrimitiveBlock):
 
     @property
     def _block_title(self) -> str:
-        c, t = self.qubit_support
-        s = f"{self.name}({c},{t})"
+        s = f"{self.name}{self.qubit_support}"
         return s if self.tag is None else (s + rf" \[tag: {self.tag}]")
 
     def __ascii__(self, console: Console) -> RenderableType:
@@ -392,7 +393,7 @@ class ControlBlock(PrimitiveBlock):
 
 
 class ParametricControlBlock(ParametricBlock):
-    """The abstract parametrized ControlBlock"""
+    """The abstract parametrized ControlBlock."""
 
     name = "ParameterizedControl"
 
@@ -437,3 +438,19 @@ class ParametricControlBlock(ParametricBlock):
         expr = deserialize(targetblock["parameters"])
         block = cls(control, target, expr)  # type: ignore[call-arg]
         return block
+
+    @property
+    def _block_title(self) -> str:
+        s = f"{self.name}{self.qubit_support}"
+        params_str = []
+        for p in self.parameters.expressions():
+            if p.is_number:
+                val = evaluate(p)
+                if isinstance(val, float):
+                    val = round(val, 2)
+                params_str.append(val)
+            else:
+                params_str.append(stringify(p))
+
+        s += rf" \[params: {params_str}]"
+        return s if self.tag is None else (s + rf" \[tag: {self.tag}]")

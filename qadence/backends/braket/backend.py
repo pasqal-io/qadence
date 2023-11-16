@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 import numpy as np
@@ -11,16 +11,25 @@ from braket.devices import LocalSimulator
 from torch import Tensor
 
 from qadence.backend import Backend as BackendInterface
-from qadence.backend import BackendName, ConvertedCircuit, ConvertedObservable
+from qadence.backend import ConvertedCircuit, ConvertedObservable
 from qadence.backends.utils import to_list_of_dicts
 from qadence.blocks import AbstractBlock, block_to_tensor
 from qadence.circuit import QuantumCircuit
+from qadence.logger import get_logger
 from qadence.measurements import Measurements
+from qadence.mitigations import Mitigations
+from qadence.mitigations.protocols import apply_mitigation
+from qadence.noise import Noise
+from qadence.noise.protocols import apply_noise
 from qadence.overlap import overlap_exact
+from qadence.transpile import transpile
+from qadence.types import BackendName
 from qadence.utils import Endianness
 
-from .config import Configuration
+from .config import Configuration, default_passes
 from .convert_ops import convert_block
+
+logger = get_logger(__file__)
 
 
 def promote_parameters(parameters: dict[str, Tensor | float]) -> dict[str, float]:
@@ -36,7 +45,6 @@ def promote_parameters(parameters: dict[str, Tensor | float]) -> dict[str, float
 
 @dataclass(frozen=True, eq=True)
 class Backend(BackendInterface):
-    # set standard interface parameters
     name: BackendName = BackendName.BRAKET
     supports_ad: bool = False
     support_bp: bool = False
@@ -44,24 +52,27 @@ class Backend(BackendInterface):
     with_measurements: bool = True
     with_noise: bool = False
     native_endianness: Endianness = Endianness.BIG
-    config: Configuration = Configuration()
+    config: Configuration = field(default_factory=Configuration)
 
     # braket specifics
     # TODO: include it in the configuration?
-    _device: LocalSimulator = LocalSimulator()
+    _device: LocalSimulator = field(default_factory=LocalSimulator)
 
     def __post_init__(self) -> None:
         if self.is_remote:
             raise NotImplementedError("Braket backend does not support cloud execution yet")
 
-    def circuit(self, circ: QuantumCircuit) -> ConvertedCircuit:
-        from qadence.transpile import digitalize, fill_identities, transpile
+    def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:
+        passes = self.config.transpilation_passes
+        if passes is None:
+            passes = default_passes
 
-        # make sure that we don't have empty wires. braket does not like it.
-        transpilations = [fill_identities, digitalize]
-        abstract_circ = transpile(*transpilations)(circ)  # type: ignore[call-overload]
-        native = BraketCircuit(convert_block(abstract_circ.block))
-        return ConvertedCircuit(native=native, abstract=abstract_circ, original=circ)
+        original_circ = circuit
+        if len(passes) > 0:
+            circuit = transpile(*passes)(circuit)
+
+        native = BraketCircuit(convert_block(circuit.block))
+        return ConvertedCircuit(native=native, abstract=circuit, original=original_circ)
 
     def observable(self, obs: AbstractBlock, n_qubits: int = None) -> Any:
         if n_qubits is None:
@@ -122,6 +133,8 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         n_shots: int = 1,
         state: Tensor | None = None,
+        noise: Noise | None = None,
+        mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         """Execute the circuit and return samples of the resulting wavefunction."""
@@ -136,6 +149,7 @@ class Backend(BackendInterface):
             raise NotImplementedError
 
         # loop over all values in the batch
+
         samples = []
         for vals in to_list_of_dicts(param_values):
             final_circuit = self.assign_parameters(circuit, vals)
@@ -145,6 +159,11 @@ class Backend(BackendInterface):
             from qadence.transpile import invert_endianness
 
             samples = invert_endianness(samples)
+        if noise is not None:
+            samples = apply_noise(noise=noise, samples=samples)
+        if mitigation is not None:
+            assert noise
+            samples = apply_mitigation(noise=noise, mitigation=mitigation, samples=samples)
         return samples
 
     def expectation(
@@ -153,9 +172,17 @@ class Backend(BackendInterface):
         observable: list[ConvertedObservable] | ConvertedObservable,
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
-        protocol: Measurements | None = None,
+        measurement: Measurements | None = None,
+        noise: Noise | None = None,
+        mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
+        # Noise is ignored if measurement protocol is not provided.
+        if noise is not None and measurement is None:
+            logger.warning(
+                f"Errors of type {noise} are not implemented for exact expectation yet. "
+                "This is ignored for now."
+            )
         # Do not flip endianness here because then we would have to reverse the observable
         wfs = self.run(circuit, param_values, state=state, endianness=Endianness.BIG)
 
@@ -170,7 +197,7 @@ class Backend(BackendInterface):
     def assign_parameters(
         self, circuit: ConvertedCircuit, param_values: dict[str, Tensor | float]
     ) -> BraketCircuit:
-        """Assign numerical values to the circuit parameters"""
+        """Assign numerical values to the circuit parameters."""
         if param_values is None:
             return circuit.native()
 

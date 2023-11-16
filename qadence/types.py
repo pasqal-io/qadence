@@ -6,23 +6,23 @@ from typing import Iterable, Tuple, Union
 
 import numpy as np
 import sympy
-import torch
+from torch import Tensor, pi
 
 TNumber = Union[int, float, complex]
 """Union of python number types."""
 
 TDrawColor = Tuple[float, float, float, float]
 
-TParameter = Union[TNumber, torch.Tensor, sympy.Basic, str]
+TParameter = Union[TNumber, Tensor, sympy.Basic, str]
 """Union of numbers, tensors, and parameter types."""
 
-TArray = Union[Iterable, torch.Tensor, np.ndarray]
+TArray = Union[Iterable, Tensor, np.ndarray]
 """Union of common array types."""
 
-TGenerator = Union[torch.Tensor, sympy.Array, sympy.Basic]
+TGenerator = Union[Tensor, sympy.Array, sympy.Basic]
 """Union of torch tensors and numpy arrays."""
 
-PI = torch.pi
+PI = pi
 
 # Modules to be automatically added to the qadence namespace
 __all__ = [
@@ -54,6 +54,11 @@ class StrEnum(str, Enum):
     @classmethod
     def list(cls) -> list[str]:
         return list(map(lambda c: c.value, cls))  # type: ignore
+
+
+class NoiseTypes(StrEnum):
+    DEPHASING = "dephasing"
+    DEPOLARIZING = "depolarizing"
 
 
 class Strategy(StrEnum):
@@ -112,9 +117,7 @@ class TensorType(StrEnum):
 
 
 class LTSOrder(StrEnum):
-    """
-    Lie-Trotter-Suzuki approximation order.
-    """
+    """Lie-Trotter-Suzuki approximation order."""
 
     BASIC = "BASIC"
     """Basic."""
@@ -161,19 +164,20 @@ class QubitSupportType(StrEnum):
 
 
 class Interaction(StrEnum):
-    """Interaction types used in
-    - [`add_interaction`][qadence.transpile.emulate.add_interaction].
+    """Interaction types used in.
+
+    - `add_interaction`.
     - [`hamiltonian_factory`][qadence.constructors.hamiltonians.hamiltonian_factory].
     """
 
     ZZ = "ZZ"
-    """ZZ-Ising Interaction"""
+    """ZZ-Ising Interaction."""
     NN = "NN"
-    """NN-Ising Interaction, N=(I-Z)/2"""
+    """NN-Ising Interaction, N=(I-Z)/2."""
     XY = "XY"
-    """XY Interaction"""
+    """XY Interaction."""
     XYZ = "XYZ"
-    """XYZ Interaction"""
+    """XYZ Interaction."""
 
 
 class _BackendName(StrEnum):
@@ -296,7 +300,7 @@ class OpName(StrEnum):
     Z = "Z"
     """The Z gate."""
     N = "N"
-    """The N = (1/2)(I-Z) operator"""
+    """The N = (1/2)(I-Z) operator."""
     H = "H"
     """The Hadamard gate."""
     I = "I"  # noqa

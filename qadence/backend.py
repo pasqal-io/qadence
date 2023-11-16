@@ -20,9 +20,14 @@ from qadence.blocks import (
 )
 from qadence.blocks.analog import ConstantAnalogRotation, WaitBlock
 from qadence.circuit import QuantumCircuit
+from qadence.logger import get_logger
 from qadence.measurements import Measurements
+from qadence.mitigations import Mitigations
+from qadence.noise import Noise
 from qadence.parameters import stringify
 from qadence.types import BackendName, DiffMode, Endianness
+
+logger = get_logger(__file__)
 
 
 @dataclass
@@ -31,18 +36,26 @@ class BackendConfiguration:
     use_sparse_observable: bool = False
     use_gradient_checkpointing: bool = False
     use_single_qubit_composition: bool = False
+    transpilation_passes: list[Callable] | None = None
+
+    def __post_init__(self) -> None:
+        if self.transpilation_passes is not None:
+            assert all(
+                [callable(f) for f in self.transpilation_passes]
+            ), "Wrong transpilation passes supplied"
+            logger.warning("Custom transpilation passes cannot be serialized in JSON format!")
 
     def available_options(self) -> str:
-        """Return as a string the available fields with types of the configuration
+        """Return as a string the available fields with types of the configuration.
 
         Returns:
             str: a string with all the available fields, one per line
         """
         conf_msg = ""
-        for field in fields(self):
-            if not field.name.startswith("_"):
+        for _field in fields(self):
+            if not _field.name.startswith("_"):
                 conf_msg += (
-                    f"Name: {field.name} - Type: {field.type} - Default value: {field.default}\n"
+                    f"Name: {_field.name} - Type: {_field.type} - Default value: {_field.default}\n"
                 )
         return conf_msg
 
@@ -60,8 +73,11 @@ class BackendConfiguration:
         return cls(**init_data)
 
     def get_param_name(self, blk: AbstractBlock) -> Tuple[str, ...]:
-        """Return parameter names for the current backend. Depending on which backend is in use this
-        function returns either UUIDs or expressions of parameters."""
+        """Return parameter names for the current backend.
+
+        Depending on which backend is in use this
+        function returns either UUIDs or expressions of parameters.
+        """
         param_ids: Tuple
         # FIXME: better type hiearchy?
         types = (TimeEvolutionBlock, ParametricBlock, ConstantAnalogRotation, WaitBlock)
@@ -77,7 +93,7 @@ class BackendConfiguration:
 
 @dataclass(frozen=True, eq=True)
 class Backend(ABC):
-    """The abstract class that defines the interface for the backends
+    """The abstract class that defines the interface for the backends.
 
     Attributes:
         name: backend unique string identifier
@@ -136,7 +152,8 @@ class Backend(ABC):
 
     @abstractmethod
     def observable(self, observable: AbstractBlock, n_qubits: int) -> ConvertedObservable:
-        """Converts an abstract observable (which is just an `AbstractBlock`) to the native backend
+        """Converts an abstract observable (which is just an `AbstractBlock`) to the native backend.
+
         representation.
 
         Arguments:
@@ -152,8 +169,9 @@ class Backend(ABC):
     def convert(
         self, circuit: QuantumCircuit, observable: list[AbstractBlock] | AbstractBlock | None = None
     ) -> Converted:
-        """Convert an abstract circuit (and optionally and observable) to their native
-        representation. Additionally this function constructs an embedding function which maps from
+        """Convert an abstract circuit and an optional observable to their native representation.
+
+        Additionally, this function constructs an embedding function which maps from
         user-facing parameters to device parameters (read more on parameter embedding
         [here][qadence.blocks.embedding.embedding]).
         """
@@ -217,6 +235,8 @@ class Backend(ABC):
         param_values: dict[str, Tensor] = {},
         n_shots: int = 1000,
         state: Tensor | None = None,
+        noise: Noise | None = None,
+        mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         """Sample bit strings.
@@ -227,7 +247,9 @@ class Backend(ABC):
                 [`embedding`][qadence.blocks.embedding.embedding] for more info.
             n_shots: Number of shots to sample.
             state: Initial state.
-            endianness: Endianness of the resulting bitstrings.
+            noise: A noise model to use.
+            mitigation: An error mitigation protocol to apply.
+            endianness: Endianness of the resulting bit strings.
         """
         raise NotImplementedError
 
@@ -261,7 +283,9 @@ class Backend(ABC):
         observable: list[ConvertedObservable] | ConvertedObservable,
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
-        protocol: Measurements | None = None,
+        measurement: Measurements | None = None,
+        noise: Noise | None = None,
+        mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         """Compute the expectation value of the `circuit` with the given `observable`.
@@ -271,7 +295,10 @@ class Backend(ABC):
             param_values: _**Already embedded**_ parameters of the circuit. See
                 [`embedding`][qadence.blocks.embedding.embedding] for more info.
             state: Initial state.
-            endianness: Endianness of the resulting bitstrings.
+            measurement: Optional measurement protocol. If None, use
+                exact expectation value with a statevector simulator.
+            noise: A noise model to use.
+            endianness: Endianness of the resulting bit strings.
         """
         raise NotImplementedError
 

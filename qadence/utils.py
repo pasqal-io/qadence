@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import math
-import warnings
 from collections import Counter
 from typing import Any
 
@@ -19,12 +18,6 @@ __all__ = []  # type: ignore
 
 
 logger = get_logger(__name__)
-
-
-def bitstring_to_int(bstring: str, endianness: Endianness = Endianness.BIG) -> int:
-    # FIXME: Remove in v1.0.0
-    warnings.warn("Deprecated function bitstring_to_int. Please use basis_to_int.", FutureWarning)
-    return basis_to_int(bstring, endianness)
 
 
 def basis_to_int(basis: str, endianness: Endianness = Endianness.BIG) -> int:
@@ -127,7 +120,7 @@ def nqubits_to_basis(
 
 def samples_to_integers(samples: Counter, endianness: Endianness = Endianness.BIG) -> Counter:
     """
-    Converts a Counter of basis state samples to integer values
+    Converts a Counter of basis state samples to integer values.
 
     Args:
         samples (Counter({bits: counts})): basis state sample counter.
@@ -169,8 +162,9 @@ def format_parameter(p: sympy.Basic) -> str:
 
 def print_sympy_expr(expr: sympy.Expr, num_digits: int = 3) -> str:
     """
-    Converts all numerical values in a sympy expression to
-    something with fewer digits for better readability.
+    Converts numerical values in a sympy expression.
+
+    The result is a numerical expression with fewer digits for better readability.
     """
     from qadence.parameters import sympy_to_numeric
 

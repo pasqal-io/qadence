@@ -7,13 +7,14 @@ import numpy as np
 import torch
 from torch import Tensor
 
-from qadence import BackendName, DiffMode
 from qadence.backends import backend_factory
 from qadence.blocks import AbstractBlock, PrimitiveBlock
 from qadence.blocks.utils import unroll_block_with_scaling
 from qadence.circuit import QuantumCircuit
+from qadence.noise import Noise
 from qadence.operations import H, SDagger, X, Y, Z, chain
 from qadence.parameters import evaluate
+from qadence.types import BackendName, DiffMode
 from qadence.utils import Endianness
 
 
@@ -83,6 +84,7 @@ def iterate_pauli_decomposition(
     n_shots: int,
     state: Tensor | None = None,
     backend_name: BackendName = BackendName.PYQTORCH,
+    noise: Noise | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
     """Estimate total expectation value by averaging all Pauli terms."""
@@ -110,6 +112,7 @@ def iterate_pauli_decomposition(
                 param_values=param_values,
                 n_shots=n_shots,
                 state=state,
+                noise=noise,
                 endianness=endianness,
             )
             estim_values = empirical_average(samples=samples, support=support)
@@ -128,12 +131,26 @@ def compute_expectation(
     options: dict,
     state: Tensor | None = None,
     backend_name: BackendName = BackendName.PYQTORCH,
+    noise: Noise | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
-    """Basic tomography protocol with rotations
+    """Basic tomography protocol with rotations.
 
     Given a circuit and a list of observables, apply basic tomography protocol to estimate
     the expectation values.
+
+    Args:
+        circuit (QuantumCircuit): a circuit to prepare the state.
+        observables (list[AbstractBlock]): a list of observables
+            to estimate the expectation values from.
+        param_values (dict): a dict of values to substitute the
+            symbolic parameters for.
+        options (dict): a dict of options for the measurement protocol.
+            Here, shadow_size (int), accuracy (float) and confidence (float) are supported.
+        state (Tensor | None): an initial input state.
+        backend_name (BackendName): a backend name to retrieve computations from.
+        noise: A noise model to use.
+        endianness: Endianness of the observable estimate.
     """
     if not isinstance(observables, list):
         raise TypeError(
@@ -155,6 +172,7 @@ def compute_expectation(
                 n_shots=n_shots,
                 state=state,
                 backend_name=backend_name,
+                noise=noise,
                 endianness=endianness,
             )
         )

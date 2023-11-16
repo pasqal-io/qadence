@@ -3,10 +3,10 @@ from __future__ import annotations
 from functools import singledispatch
 from typing import overload
 
-from qadence import HamEvo, QuantumCircuit
 from qadence.blocks import AbstractBlock, CompositeBlock
 from qadence.blocks.utils import _construct
-from qadence.operations import U
+from qadence.circuit import QuantumCircuit
+from qadence.operations import HamEvo, U
 from qadence.types import LTSOrder
 
 

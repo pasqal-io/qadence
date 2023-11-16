@@ -4,12 +4,15 @@ from collections import Counter
 from typing import Any, Callable
 
 import pytest
-import torch
 from metrics import JS_ACCEPTANCE
+from torch import pi
 
-from qadence import QuantumCircuit, QuantumModel, run, sample
+from qadence.analog import add_interaction
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.analog import AnalogBlock
+from qadence.circuit import QuantumCircuit
+from qadence.execution import run, sample
+from qadence.models.quantum_model import QuantumModel
 from qadence.operations import (
     RX,
     RY,
@@ -27,7 +30,6 @@ from qadence.operations import (
 from qadence.overlap import js_divergence
 from qadence.register import Register
 from qadence.states import equivalent_state, random_state
-from qadence.transpile import add_interaction
 
 
 def layer(Op: Any, n_qubits: int, angle: float) -> AbstractBlock:
@@ -45,9 +47,9 @@ d = 3.75
         # pytest.param(  # enable with next pulser release
         #     wait(duration=1), lambda n: I(n), marks=pytest.mark.xfail
         # ),
-        (AnalogRX(angle=torch.pi), lambda n: layer(RX, n, torch.pi)),
-        (AnalogRY(angle=torch.pi), lambda n: layer(RY, n, torch.pi)),
-        (AnalogRZ(angle=torch.pi), lambda n: layer(RZ, n, torch.pi)),
+        (AnalogRX(angle=pi), lambda n: layer(RX, n, pi)),
+        (AnalogRY(angle=pi), lambda n: layer(RY, n, pi)),
+        (AnalogRZ(angle=pi), lambda n: layer(RZ, n, pi)),
     ],
 )
 @pytest.mark.parametrize(
@@ -77,14 +79,14 @@ def test_far_add_interaction(analog: AnalogBlock, digital_fn: Callable, register
 @pytest.mark.parametrize(
     "block",
     [
-        AnalogRX(angle=torch.pi),
-        AnalogRY(angle=torch.pi),
-        chain(wait(duration=2000), AnalogRX(angle=torch.pi)),
+        AnalogRX(angle=pi),
+        AnalogRY(angle=pi),
+        chain(wait(duration=2000), AnalogRX(angle=pi)),
         chain(
             AnalogRot(duration=1000, omega=1.0, delta=0.0, phase=0),
             AnalogRot(duration=1000, omega=0.0, delta=1.0, phase=0),
         ),
-        kron(AnalogRX(torch.pi, qubit_support=(0, 1)), wait(1000, qubit_support=(2, 3))),
+        kron(AnalogRX(pi, qubit_support=(0, 1)), wait(1000, qubit_support=(2, 3))),
     ],
 )
 @pytest.mark.parametrize("register", [Register.from_coordinates([(0, 5), (5, 5), (5, 0), (0, 0)])])
@@ -99,7 +101,7 @@ def test_close_add_interaction(block: AnalogBlock, register: Register) -> None:
 def test_mixing_digital_analog() -> None:
     from qadence import X, chain, kron
 
-    b = chain(kron(X(0), X(1)), AnalogRX(torch.pi))
+    b = chain(kron(X(0), X(1)), AnalogRX(pi))
     r = Register.from_coordinates([(0, 10), (0, -10)])
 
     assert js_divergence(sample(r, b)[0], Counter({"00": 100})) < JS_ACCEPTANCE

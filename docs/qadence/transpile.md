@@ -5,5 +5,3 @@ Contains functions that operate on blocks and circuits to `transpile` them to ne
 ::: qadence.transpile.block
 
 ::: qadence.transpile.circuit
-
-::: qadence.transpile.emulate

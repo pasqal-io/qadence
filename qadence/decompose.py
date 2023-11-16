@@ -22,9 +22,10 @@ flatten = lambda a: list(itertools.chain(*a))  # noqa: E731
 
 
 def change_to_z_basis(block: AbstractBlock, sign: int) -> list[AbstractBlock]:
-    """A simple function to do basis transformation of blocks of X and Y
+    """A simple function to do basis transformation of blocks of X and Y.
 
-    This needs to be generalized beyond 2 terms"""
+    This needs to be generalized beyond 2 terms
+    """
 
     # import here due to circular import issue
     from qadence.operations import RX, H, X, Y
@@ -43,7 +44,8 @@ def change_to_z_basis(block: AbstractBlock, sign: int) -> list[AbstractBlock]:
 def time_discretisation(
     parameter: Parameter, max_steps: int = 10
 ) -> Tuple[Union[float, complex, Any], int]:
-    """checks and returns a numerically stable
+    """Checks and returns a numerically stable.
+
     time step that is used in the product formula
     """
     # the approximation gives better results for t -> 0
@@ -101,7 +103,7 @@ def lie_trotter_suzuki(
 
 
 def decompose_pauli_exp(block_list: list, parameter: Parameter | sympy.Expr) -> list[AbstractBlock]:
-    """A simple function to do decompositions of Pauli exponential operators into digital gates"""
+    """A simple function to do decompositions of Pauli exponential operators into digital gates."""
 
     # import here due to circular import issue
     from qadence.operations import CNOT, RZ

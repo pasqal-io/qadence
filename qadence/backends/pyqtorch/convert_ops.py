@@ -7,8 +7,8 @@ from typing import Sequence, Tuple
 
 import pyqtorch as pyq
 import sympy
-import torch
 from pyqtorch.apply import apply_operator as _apply_batch_gate
+from torch import Tensor, argsort, bmm, cdouble, permute, tensor
 from torch.nn import Module
 from torch.utils.checkpoint import checkpoint
 
@@ -42,7 +42,10 @@ from .config import Configuration
 
 # Tdagger is not supported currently
 supported_gates = list(set(OpName.list()) - set([OpName.TDAGGER]))
-"""The set of supported gates. Tdagger is currently not supported."""
+"""The set of supported gates.
+
+Tdagger is currently not supported.
+"""
 
 
 def is_single_qubit_chain(block: AbstractBlock) -> bool:
@@ -144,10 +147,10 @@ class PyQMatrixBlock(Module):
         self.qubits = block.qubit_support
         self.register_buffer("mat", block.matrix.unsqueeze(2))
 
-    def forward(self, state: torch.Tensor, _: dict[str, torch.Tensor] = None) -> torch.Tensor:
+    def forward(self, state: Tensor, _: dict[str, Tensor] = None) -> Tensor:
         return self.apply(self.mat, state)
 
-    def apply(self, matrices: torch.Tensor, state: torch.Tensor) -> torch.Tensor:
+    def apply(self, matrices: Tensor, state: Tensor) -> Tensor:
         batch_size = state.size(-1)
         return _apply_batch_gate(state, matrices, self.qubits, self.n_qubits, batch_size)
 
@@ -160,42 +163,40 @@ class PyQComposedBlock(Module):
         n_qubits: int,
         config: Configuration = None,
     ):
-        """Compose a chain of single qubit operations on the same qubit into a single
-        call to _apply_batch_gate."""
+        """Compose a chain of single qubit operations on the same qubit.
+
+        The result is a single call to _apply_batch_gate.
+        """
         super().__init__()
         self.operations = ops
         self.qubits = qubits
         self.n_qubits = n_qubits
 
-    def forward(
-        self, state: torch.Tensor, values: dict[str, torch.Tensor] | None = None
-    ) -> torch.Tensor:
+    def forward(self, state: Tensor, values: dict[str, Tensor] | None = None) -> Tensor:
         batch_size = state.size(-1)
         return self.apply(self.unitary(values, batch_size), state)
 
-    def apply(self, matrices: torch.Tensor, state: torch.Tensor) -> torch.Tensor:
+    def apply(self, matrices: Tensor, state: Tensor) -> Tensor:
         batch_size = state.size(-1)
         return _apply_batch_gate(state, matrices, self.qubits, self.n_qubits, batch_size)
 
-    def unitary(self, values: dict[str, torch.Tensor] | None, batch_size: int) -> torch.Tensor:
-        perm = (2, 0, 1)  # We permute the dims since torch.bmm expects the batch_dim at 0.
+    def unitary(self, values: dict[str, Tensor] | None, batch_size: int) -> Tensor:
+        perm = (2, 0, 1)  # We permute the dims since bmm expects the batch_dim at 0.
 
-        def _expand_mat(m: torch.Tensor) -> torch.Tensor:
+        def _expand_mat(m: Tensor) -> Tensor:
             if len(m.size()) == 2:
                 m = m.unsqueeze(2).repeat(
                     1, 1, batch_size
                 )  # Primitive gates are 2D, so we expand them.
             elif m.shape != (2, 2, batch_size):
                 m = m.repeat(1, 1, batch_size)  # In case a tensor is 3D doesnt have batch_size.
-            return torch.permute(m, perm)  # This returns shape (batch_size, 2, 2)
+            return permute(m, perm)  # This returns shape (batch_size, 2, 2)
 
         # We reverse the list of tensors here since matmul is not commutative.
-        return torch.permute(
-            reduce(
-                torch.bmm, (_expand_mat(op.unitary(values)) for op in reversed(self.operations))
-            ),
+        return permute(
+            reduce(bmm, (_expand_mat(op.unitary(values)) for op in reversed(self.operations))),
             tuple(
-                torch.argsort(torch.tensor(perm))
+                argsort(tensor(perm))
             ),  # We need to undo the permute since PyQ expects (2, 2, batch_size).
         )
 
@@ -210,9 +211,7 @@ class PyQObservable(Module):
             diag = block_to_diagonal(block, tuple(range(n_qubits)))
             self.register_buffer("diag", diag)
 
-            def sparse_operation(
-                state: torch.Tensor, values: dict[str, torch.Tensor] = None
-            ) -> torch.Tensor:
+            def sparse_operation(state: Tensor, values: dict[str, Tensor] = None) -> Tensor:
                 state = state.reshape(2**self.n_qubits, state.size(-1))
                 return (diag * state.T).T
 
@@ -225,22 +224,18 @@ class PyQObservable(Module):
 
         if config.use_gradient_checkpointing:
 
-            def _forward(
-                state: torch.Tensor, values: dict[str, torch.Tensor] = None
-            ) -> torch.Tensor:
+            def _forward(state: Tensor, values: dict[str, Tensor] = None) -> Tensor:
                 new_state = checkpoint(self.operation, state, values, use_reentrant=False)
                 return pyq.overlap(state, new_state)
 
         else:
 
-            def _forward(
-                state: torch.Tensor, values: dict[str, torch.Tensor] = None
-            ) -> torch.Tensor:
+            def _forward(state: Tensor, values: dict[str, Tensor] = None) -> Tensor:
                 return pyq.overlap(state, self.operation(state, values))
 
         self._forward = _forward
 
-    def forward(self, state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
+    def forward(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
         return self._forward(state, values)
 
 
@@ -268,12 +263,12 @@ class PyQHamiltonianEvolution(Module):
             )
             hmat = hmat.permute(1, 2, 0)
 
-            def _fwd(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
+            def _fwd(state: Tensor, values: dict[str, Tensor]) -> Tensor:
                 tevo = values[self.param_names[0]]
                 return self.operation(hmat, tevo, state)
 
-        elif isinstance(block.generator, torch.Tensor):
-            m = block.generator.to(dtype=torch.cdouble)
+        elif isinstance(block.generator, Tensor):
+            m = block.generator.to(dtype=cdouble)
             hmat = block_to_tensor(
                 MatrixBlock(m, qubit_support=block.qubit_support),
                 qubit_support=tuple(self.qubits),
@@ -281,13 +276,13 @@ class PyQHamiltonianEvolution(Module):
             )
             hmat = hmat.permute(1, 2, 0)
 
-            def _fwd(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
+            def _fwd(state: Tensor, values: dict[str, Tensor]) -> Tensor:
                 tevo = values[self.param_names[0]]
                 return self.operation(hmat, tevo, state)
 
         elif isinstance(block.generator, sympy.Basic):
 
-            def _fwd(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
+            def _fwd(state: Tensor, values: dict[str, Tensor]) -> Tensor:
                 tevo = values[self.param_names[0]]
                 hmat = values[self.param_names[1]]
                 hmat = hmat.squeeze(3)  # FIXME: why is this necessary?
@@ -296,7 +291,7 @@ class PyQHamiltonianEvolution(Module):
 
         else:
 
-            def _fwd(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
+            def _fwd(state: Tensor, values: dict[str, Tensor]) -> Tensor:
                 hmat = _block_to_tensor_embedded(
                     block.generator,  # type: ignore[arg-type]
                     values=values,
@@ -309,17 +304,17 @@ class PyQHamiltonianEvolution(Module):
 
         if config.use_gradient_checkpointing:
 
-            def _forward(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
+            def _forward(state: Tensor, values: dict[str, Tensor]) -> Tensor:
                 return checkpoint(_fwd, state, values, use_reentrant=False)
 
         else:
 
-            def _forward(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
+            def _forward(state: Tensor, values: dict[str, Tensor]) -> Tensor:
                 return _fwd(state, values)
 
         self._forward = _forward
 
-    def forward(self, state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
+    def forward(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
         return self._forward(state, values)
 
 
@@ -330,22 +325,22 @@ class AddPyQOperation(Module):
         super().__init__()
         self.operations = operations
 
-        def _fwd(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
+        def _fwd(state: Tensor, values: dict[str, Tensor]) -> Tensor:
             return reduce(add, (op(state, values) for op in self.operations))
 
         if config.use_gradient_checkpointing:
 
-            def _forward(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
+            def _forward(state: Tensor, values: dict[str, Tensor]) -> Tensor:
                 return checkpoint(_fwd, state, values, use_reentrant=False)
 
         else:
 
-            def _forward(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
+            def _forward(state: Tensor, values: dict[str, Tensor]) -> Tensor:
                 return _fwd(state, values)
 
         self._forward = _forward
 
-    def forward(self, state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
+    def forward(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
         return self._forward(state, values)
 
 
@@ -368,24 +363,24 @@ class ScalePyQOperation(Module):
             )
         self.operation = convert_block(block.block, n_qubits, config)[0]
 
-        def _fwd(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
+        def _fwd(state: Tensor, values: dict[str, Tensor]) -> Tensor:
             return values[self.param_name] * self.operation(state, values)
 
         if config.use_gradient_checkpointing:
 
-            def _forward(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
+            def _forward(state: Tensor, values: dict[str, Tensor]) -> Tensor:
                 return checkpoint(_fwd, state, values, use_reentrant=False)
 
         else:
 
-            def _forward(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
+            def _forward(state: Tensor, values: dict[str, Tensor]) -> Tensor:
                 return _fwd(state, values)
 
         self._forward = _forward
 
-    def unitary(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
+    def unitary(self, values: dict[str, Tensor]) -> Tensor:
         thetas = values[self.param_name]
         return (thetas * self.operation.unitary(values)).unsqueeze(2)
 
-    def forward(self, state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
+    def forward(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
         return self._forward(state, values)

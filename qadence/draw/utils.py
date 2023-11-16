@@ -137,22 +137,21 @@ def make_diagram(
 
 @make_diagram.register
 def _(circuit: QuantumCircuit, *args: Any, **kwargs: Any) -> QuantumCircuitDiagram:
-    # FIXME: add register plot here
     return make_diagram(circuit.block, *args, nb_wires=circuit.n_qubits, **kwargs)
 
 
 @make_diagram.register
 def _(model: QuantumModel, *args: Any, **kwargs: Any) -> QuantumCircuitDiagram:
-    raise ValueError("Not yet supported.")
+    if model.out_features is not None:
+        if model.out_features > 1:
+            raise ValueError("Cannot visualize QuantumModel with more than one observable.")
 
-    # FIXME: include measurement icon
-    if model.out_features > 1:
-        raise ValueError("Cannot visualize QuantumModel with more than one observable.")
+        obs = deepcopy(model._observable[0].original)  # type: ignore [index]
+        obs.tag = "Obs."
 
-    obs = deepcopy(model._observable[0].original)
-    obs.tag = "Obs."
-
-    block = chain(model._circuit.original.block, obs)
+        block: AbstractBlock = chain(model._circuit.original.block, obs)
+    else:
+        block = model._circuit.original.block
     return make_diagram(block, *args, **kwargs)
 
 
@@ -302,8 +301,10 @@ def _make_cluster(
     qcd: QuantumCircuitDiagram, labels: list[str], start: int, stop: int, attrs: dict
 ) -> None:
     """Construct a cluster with the list of labels centered vertically (in terms of wires).
+
     If there are fewer wires than labels, plot all lables in one line, assuming that the first
-    element in `labels` is the block type."""
+    element in `labels` is the block type.
+    """
     N = stop - start
 
     # draw labels line by line

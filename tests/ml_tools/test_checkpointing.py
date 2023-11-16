@@ -5,7 +5,7 @@ from itertools import count
 from pathlib import Path
 
 import torch
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader
 
 from qadence.ml_tools import (
     TrainConfig,
@@ -13,19 +13,17 @@ from qadence.ml_tools import (
     train_with_grad,
     write_checkpoint,
 )
+from qadence.ml_tools.data import to_dataloader
 from qadence.ml_tools.models import TransformedModule
 from qadence.ml_tools.parameters import get_parameters, set_parameters
 from qadence.ml_tools.utils import rand_featureparameters
 from qadence.models import QNN, QuantumModel
 
 
-def dataloader() -> DataLoader:
-    batch_size = 25
+def dataloader(batch_size: int = 25) -> DataLoader:
     x = torch.linspace(0, 1, batch_size).reshape(-1, 1)
     y = torch.cos(x)
-
-    dataset = TensorDataset(x, y)
-    return DataLoader(dataset, batch_size=batch_size)
+    return to_dataloader(x, y, batch_size=batch_size, infinite=True)
 
 
 def test_basic_save_load_ckpts(Basic: torch.nn.Module, tmp_path: Path) -> None:

@@ -47,7 +47,6 @@ def hea(
             analog entangling layer. Defaults to global ZZ Hamiltonian.
             Time parameter is considered variational.
 
-
     Examples:
     ```python exec="on" source="material-block" result="json"
     from qadence import RZ, RX
@@ -102,9 +101,7 @@ def _rotations_digital(
     support: tuple[int, ...] = None,
     operations: list[Type[AbstractBlock]] = [RX, RY, RX],
 ) -> list[AbstractBlock]:
-    """
-    Creates the layers of single qubit rotations in an HEA.
-    """
+    """Creates the layers of single qubit rotations in an HEA."""
     if support is None:
         support = tuple(range(n_qubits))
     iterator = itertools.count()
@@ -143,9 +140,7 @@ def _entanglers_digital(
     periodic: bool = False,
     entangler: Type[DigitalEntanglers] = CNOT,
 ) -> list[AbstractBlock]:
-    """
-    Creates the layers of digital entangling operations in an HEA.
-    """
+    """Creates the layers of digital entangling operations in an HEA."""
     if support is None:
         support = tuple(range(n_qubits))
     iterator = itertools.count()
@@ -260,8 +255,9 @@ def hea_sDAQC(
     entangler: AbstractBlock | None = None,
 ) -> AbstractBlock:
     """
-    Construct the Hardware Efficient Ansatz (HEA) with analog entangling layers
-    using step-wise digital-analog computation.
+    Construct the Hardware Efficient Ansatz (HEA) with analog entangling layers.
+
+    It uses step-wise digital-analog computation.
 
     Args:
         n_qubits (int): number of qubits in the block.
@@ -342,7 +338,7 @@ def build_qnn(
     basis: str = "fourier",
     fm_strategy: str = "parallel",
 ) -> list[AbstractBlock]:
-    """Helper function to build a qadence QNN quantum circuit
+    """Helper function to build a qadence QNN quantum circuit.
 
     Args:
         n_qubits (int): The number of qubits.

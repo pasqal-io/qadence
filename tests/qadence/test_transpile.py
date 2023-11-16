@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from qadence import chain, kron
 from qadence.blocks import AbstractBlock, AddBlock, ChainBlock, KronBlock
+from qadence.blocks.utils import chain, kron
 from qadence.operations import RX, RZ, H, HamEvo, X
 from qadence.transpile import chain_single_qubit_ops, digitalize, flatten
 from qadence.types import LTSOrder
 
 
 def test_flatten() -> None:
-    from qadence.transpile.block import _flat_blocks
+    from qadence.transpile.flatten import _flat_blocks
 
     x: AbstractBlock
 
