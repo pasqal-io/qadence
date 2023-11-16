@@ -61,7 +61,7 @@ class Register:
         self.complete_graph.add_nodes_from(support)
         self.complete_graph.add_edges_from(all_edges)
 
-        if spacing is not None:
+        if spacing is not None and self.min_distance != 0.0:
             _scale_node_positions(self.graph, self.min_distance, spacing)
 
         pos_values = nx.get_node_attributes(self.graph, "pos")
