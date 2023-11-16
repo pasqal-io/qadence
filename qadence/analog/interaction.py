@@ -49,7 +49,6 @@ def add_interaction(
     x: Register | QuantumCircuit | AbstractBlock,
     *args: Any,
     interaction: Interaction | Callable = Interaction.NN,
-    spacing: float = 1.0,
 ) -> QuantumCircuit | AbstractBlock:
     """Turns blocks or circuits into (a chain of) `HamEvo` blocks.
 
@@ -69,7 +68,6 @@ def add_interaction(
             combinations are accepted.
         interaction: Type of interaction that is added. Can also be a function that accepts a
             register and a list of edges that define which qubits interact (see the examples).
-        spacing: All qubit coordinates are multiplied by `spacing`.
 
     Examples:
     ```python exec="on" source="material-block" result="json"
@@ -130,7 +128,6 @@ def _(
     register: Register,
     block: AbstractBlock,
     interaction: Union[Interaction, Callable] = Interaction.NN,
-    spacing: float = 1.0,
 ) -> AbstractBlock:
     try:
         fn = interaction if callable(interaction) else INTERACTIONS[Interaction(interaction)]
@@ -138,8 +135,7 @@ def _(
         raise KeyError(
             "Function `add_interaction` only supports NN and XY, or a custom callable function."
         )
-    reg = register._scale_positions(spacing)
-    return _add_interaction(block, reg, fn)  # type: ignore[arg-type]
+    return _add_interaction(block, register, fn)  # type: ignore[arg-type]
 
 
 @singledispatch
