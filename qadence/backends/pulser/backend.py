@@ -47,16 +47,7 @@ def _convert_init_state(state: Tensor) -> np.ndarray:
 
 
 def create_register(register: Register) -> PulserRegister:
-    """Create Pulser register instance.
-
-    Args:
-        register (Register): graph representing a register with accompanying coordinate data
-
-    Returns:
-        Register: Pulser register
-    """
-
-    # create register from coordinates
+    """Convert Qadence Register to Pulser Register."""
     coords = np.array(list(register.coords.values()))
     return PulserRegister.from_coordinates(coords)
 
