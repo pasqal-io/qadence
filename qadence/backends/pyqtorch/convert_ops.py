@@ -340,7 +340,7 @@ class PyQHamiltonianEvolution(Module):
     def jacobian_generator(self, values: dict[str, Tensor]) -> Tensor:
         """Finite differencing to compute the partial derivatives of the generator parameter(s).
 
-           with respect to the evolved operator.
+        with respect to the evolved operator.
         """
 
         def _generator(val: Tensor) -> Tensor:

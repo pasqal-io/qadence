@@ -105,7 +105,57 @@ def to_list_of_dicts(param_values: dict[str, Tensor]) -> list[dict[str, float]]:
     return [{k: v[i] for k, v in batched_values.items()} for i in range(max_batch_size)]
 
 
-FINITE_DIFF_EPS = 1e-06
+def pyqify(state: Tensor, n_qubits: int = None) -> Tensor:
+    """Convert a state of shape (batch_size, 2**n_qubits) to [2] * n_qubits + [batch_size]."""
+    if n_qubits is None:
+        n_qubits = int(log2(state.shape[1]))
+    if (state.ndim != 2) or (state.size(1) != 2**n_qubits):
+        raise ValueError(
+            "The initial state must be composed of tensors of size "
+            f"(batch_size, 2**n_qubits). Found: {state.size() = }."
+        )
+    return state.T.reshape([2] * n_qubits + [state.size(0)])
+
+
+def unpyqify(state: Tensor) -> Tensor:
+    """Convert a state of shape [2] * n_qubits + [batch_size] to (batch_size, 2**n_qubits)."""
+    return torchflatten(state, start_dim=0, end_dim=-2).t()
+
+
+def is_pyq_shape(state: Tensor, n_qubits: int) -> bool:
+    return state.size()[:-1] == [2] * n_qubits  # type: ignore[no-any-return]
+
+
+def is_qadence_shape(state: Tensor, n_qubits: int) -> bool:
+    return state.shape[1] == 2**n_qubits  # type: ignore[no-any-return]
+
+
+def validate_state(state: Tensor, n_qubits: int) -> None:
+    """Check if a custom initial state conforms to the qadence or the pyqtorch format."""
+    if state.dtype != complex128:
+        raise TypeError(f"Expected type complex128, got {state.dtype}")
+    elif len(state.size()) < 2:
+        raise ValueError(f"Invalid state shape. Got {state.shape}")
+    elif not is_qadence_shape(state, n_qubits) and not is_pyq_shape(state, n_qubits):
+        raise ValueError(
+            f"Allowed formats for custom initial state are:\
+                  (1) Qadence shape: (batch_size, 2**n_qubits)\
+                  (2) Pyqtorch shape: (2 * n_qubits + [batch_size])\
+                  Found: {state.size() = }"
+        )
+
+
+def infer_batchsize(param_values: dict[str, Tensor] = None) -> int:
+    """Infer the batch_size through the length of the parameter tensors."""
+    return max([len(tensor) for tensor in param_values.values()]) if param_values else 1
+
+
+# The following functions can be used to compute potentially higher order gradients using pyqtorch's
+# native 'jacobian' methods.
+
+
+def finitediff(f: Callable, x: Tensor, eps: float = FINITE_DIFF_EPS) -> Tensor:
+    return (f(x + eps) - f(x - eps)) / (2 * eps)  # type: ignore
 
 
 def finitediff_sampling(
@@ -116,10 +166,6 @@ def finitediff_sampling(
 
     with no_grad():
         return mean(cat([_finitediff(val) for val in rand(1) for _ in range(num_samples)]))
-
-
-def finitediff(f: Callable, x: Tensor, eps: float = FINITE_DIFF_EPS) -> Tensor:
-    return (f(x + eps) - f(x - eps)) / (2 * eps)  # type: ignore
 
 
 def dydx(
@@ -150,45 +196,3 @@ def dydxx(
         ),
         values[op.param_name],
     )
-
-
-def pyqify(state: Tensor, n_qubits: int = None) -> Tensor:
-    if n_qubits is None:
-        n_qubits = int(log2(state.shape[1]))
-    if (state.ndim != 2) or (state.size(1) != 2**n_qubits):
-        raise ValueError(
-            "The initial state must be composed of tensors of size "
-            f"(batch_size, 2**n_qubits). Found: {state.size() = }."
-        )
-    return state.T.reshape([2] * n_qubits + [state.size(0)])
-
-
-def unpyqify(state: Tensor) -> Tensor:
-    return torchflatten(state, start_dim=0, end_dim=-2).t()
-
-
-def is_pyq_shape(state: Tensor, n_qubits: int) -> bool:
-    return state.size()[:-1] == [2] * n_qubits  # type: ignore[no-any-return]
-
-
-def is_qadence_shape(state: Tensor, n_qubits: int) -> bool:
-    return state.shape[1] == 2**n_qubits  # type: ignore[no-any-return]
-
-
-def validate_state(state: Tensor, n_qubits: int) -> None:
-    """Check if a custom initial state conforms to the qadence or the pyqtorch format."""
-    if state.dtype != complex128:
-        raise TypeError(f"Expected type complex128, got {state.dtype}")
-    elif len(state.size()) < 2:
-        raise ValueError(f"Invalid state shape. Got {state.shape}")
-    elif not is_qadence_shape(state, n_qubits) and not is_pyq_shape(state, n_qubits):
-        raise ValueError(
-            f"Allowed formats for custom initial state are:\
-                  (1) Qadence shape: (batch_size, 2**n_qubits)\
-                  (2) Pyqtorch shape: (2 * n_qubits + [batch_size])\
-                  Found: {state.size() = }"
-        )
-
-
-def infer_batchsize(param_values: dict[str, Tensor] = None) -> int:
-    return max([len(tensor) for tensor in param_values.values()]) if param_values else 1
