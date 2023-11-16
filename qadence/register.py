@@ -17,7 +17,7 @@ from qadence.types import LatticeTopology
 __all__ = ["Register"]
 
 
-def _scale_node_positions(graph: nx.Graph, min_distance, spacing: float) -> None:
+def _scale_node_positions(graph: nx.Graph, min_distance: float, spacing: float) -> None:
     scaled_nodes = {}
     scale_factor = spacing / min_distance
     for k, node in graph.nodes.items():
@@ -27,7 +27,7 @@ def _scale_node_positions(graph: nx.Graph, min_distance, spacing: float) -> None
 
 
 class Register:
-    def __init__(self, support: nx.Graph | int, spacing: float = 1.0):
+    def __init__(self, support: nx.Graph | int, spacing: float | None = 1.0):
         """A 2D register of qubits which includes their coordinates.
 
         It is needed for e.g. analog computing.
@@ -61,7 +61,8 @@ class Register:
         self.complete_graph.add_nodes_from(support)
         self.complete_graph.add_edges_from(all_edges)
 
-        _scale_node_positions(self.graph, self.min_distance, spacing)
+        if spacing is not None:
+            _scale_node_positions(self.graph, self.min_distance, spacing)
 
         pos_values = nx.get_node_attributes(self.graph, "pos")
         nx.set_node_attributes(self.complete_graph, pos_values, "pos")
@@ -75,7 +76,7 @@ class Register:
         cls,
         coords: list[tuple],
         lattice: LatticeTopology | str = LatticeTopology.ARBITRARY,
-        spacing: float = 1.0,
+        spacing: float | None = None,
     ) -> Register:
         graph = nx.Graph()
         for i, pos in enumerate(coords):
@@ -183,16 +184,17 @@ class Register:
     @property
     def distances(self) -> dict:
         coords = self.coords
-        return {edge: dist(coords[edge[0]], coords[edge[1]]) for edge in self.edges}
-
-    @property
-    def all_distances(self) -> dict:
-        coords = self.coords
         return {edge: dist(coords[edge[0]], coords[edge[1]]) for edge in self.all_edges}
 
     @property
+    def edge_distances(self) -> dict:
+        coords = self.coords
+        return {edge: dist(coords[edge[0]], coords[edge[1]]) for edge in self.edges}
+
+    @property
     def min_distance(self) -> float:
-        return min(self.all_distances.values())
+        value: float = min(self.distances.values())
+        return value
 
     @property
     def nodes(self) -> NodeView:
