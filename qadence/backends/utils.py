@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
-from math import log2, prod
+from math import log2
 from typing import Callable, Sequence
 
 import numpy as np
@@ -168,23 +168,20 @@ def unpyqify(state: Tensor) -> Tensor:
 
 
 def is_pyq_shape(state: Tensor, n_qubits: int) -> bool:
-    return prod(state.size()[:-1]) == 2**n_qubits  # type: ignore[no-any-return]
+    return state.size()[:-1] == [2] * n_qubits  # type: ignore[no-any-return]
 
 
 def is_qadence_shape(state: Tensor, n_qubits: int) -> bool:
     return state.shape[1] == 2**n_qubits  # type: ignore[no-any-return]
 
 
-def validate_and_convert(state: Tensor, n_qubits: int) -> Tensor:
+def validate_state(state: Tensor, n_qubits: int) -> None:
+    """Check if a custom initial state conforms to the qadence or the pyqtorch format."""
     if state.dtype != complex128:
         raise TypeError(f"Expected type complex128, got {state.dtype}")
-    elif is_qadence_shape(state, n_qubits):
-        return pyqify(state, n_qubits)
-    elif is_pyq_shape(state, n_qubits):
-        return state
-    else:
+    elif not is_qadence_shape(state, n_qubits) and not is_pyq_shape(state, n_qubits):
         raise ValueError(
-            "Allowed formats for custom initial state are:\
+            f"Allowed formats for custom initial state are:\
                   (1) Qadence shape: (batch_size, 2**n_qubits)\
                   (2) Pyqtorch shape: (2 * n_qubits + [batch_size])\
                   Found: {state.size() = }"
