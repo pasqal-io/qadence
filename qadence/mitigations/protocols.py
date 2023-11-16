@@ -16,7 +16,7 @@ PROTOCOL_TO_MODULE = {
 @dataclass
 class Mitigations:
     READOUT = "readout"
-    ZNE = "zne"
+    ANALOG_ZNE = "zne"
 
     def __init__(self, protocol: str, options: dict = dict()) -> None:
         self.protocol: str = protocol
