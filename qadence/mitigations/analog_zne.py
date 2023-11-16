@@ -82,17 +82,14 @@ def mitigate(
     mitigation: Mitigations | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
-    if backend_name == BackendName.PULSER:
-        mitigated_exp = analog_zne(
-            backend_name=backend_name,
-            circuit=circuit,
-            observable=observable,
-            param_values=param_values,
-            state=state,
-            measurement=measurement,
-            mitigation=mitigation,
-            endianness=endianness,
-        )
-    else:
-        raise NotImplementedError(f"ZNE is not implemented for the backend {backend_name}.")
+    mitigated_exp = analog_zne(
+        backend_name=backend_name,
+        circuit=circuit,
+        observable=observable,
+        param_values=param_values,
+        state=state,
+        measurement=measurement,
+        mitigation=mitigation,
+        endianness=endianness,
+    )
     return mitigated_exp
