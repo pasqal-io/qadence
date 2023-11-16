@@ -336,6 +336,11 @@ class PyQHamiltonianEvolution(Module):
 
     def jacobian_generator(self, values: dict[str, Tensor]) -> Tensor:
         """Approximate jacobian of the evolved operator with respect to generator parameter(s)."""
+        if len(self.param_names) > 2:
+            raise NotImplementedError(
+                "jacobian_generator does not support generators\
+                                        with more than 1 parameter."
+            )
 
         def _generator(val: Tensor) -> Tensor:
             val_copy = values.copy()

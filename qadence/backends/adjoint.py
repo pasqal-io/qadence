@@ -17,9 +17,35 @@ from qadence.blocks.abstract import AbstractBlock
 
 class AdjointExpectation(Function):
     """
-    This is a implementation of Algorithm 1 of https://arxiv.org/pdf/2009.02823.pdf.
+    The adjoint differentiation method (https://arxiv.org/pdf/2009.02823.pdf).
 
-    Limitations:
+    is able to perform a backward pass in O(P) time and maintaining
+    atmost 3 states where P is the number of parameters in a variational circuit.
+
+    Pseudo-code of the algorithm:
+
+    c: a variational circuit
+    c.gates = gate0,gate1,..gateN, where N denotes the last gate in c
+    o: a observable
+    state: an initial state
+
+    1. Forward pass.
+    for gate in c.gates: # We apply gate0, gate1 to gateN.
+        state = gate(state)
+
+    projected_state = o(state)  # Apply the observable to the state.
+    expval = overlap(state, projected_state)  # Compute the expected value.
+
+    2. Backward pass:
+    grads = []
+    for gate in reversed(c.gates): # Iterate through c.gates in "reverse", so gateN, gateN-1 etc.
+        state = dagger(gate)(state)  # 'Undo' the gate by applying its dagger.
+        if gate is Parametric:
+            mu = jacobian(gate)(state) # Compute the jacobian of the gate w.r.t its parameter.
+            grads.append(2 * overlap(mu, projected_state) # Compute the gradient.
+        projected_state = dagger(gate)(projected_state)  # 'Undo' the gate from the projected_state.
+
+    Current Limitations:
 
     (1) The adjoint method is only available in the pyqtorch backend.
     (2) Parametric observables are not supported.
@@ -60,18 +86,20 @@ class AdjointExpectation(Function):
             if isinstance(op, PyQHamiltonianEvolution):
                 generator = op.block.generator
                 time_param = values[op.param_names[0]]
-
                 ctx.out_state = apply_operator(ctx.out_state, op.dagger(values), op.qubit_support)
+                # A HamEvo can have a parametrized (1) time evolution and/or (2) generator.
                 if (
                     isinstance(generator, AbstractBlock)
                     and generator.is_parametric
                     and values[op.param_names[1]].requires_grad
                 ):
+                    # If the generator contains a trainable parameter, we compute its gradient.
                     mu = apply_operator(
                         ctx.out_state, op.jacobian_generator(values), op.qubit_support
                     )
                     grads.append(2 * overlap(ctx.projected_state, mu))
                 elif time_param.requires_grad:
+                    # If the time evolution is trainable, we compute its gradient.
                     mu = apply_operator(ctx.out_state, op.jacobian_time(values), op.qubit_support)
                     grads.append(2 * overlap(ctx.projected_state, mu))
                 ctx.projected_state = apply_operator(
@@ -127,4 +155,5 @@ class AdjointExpectation(Function):
         diff = num_params - num_grads
         grads = grads + [tensor([0]) for _ in range(diff)]
         # Set observable grads to 0
+        ctx.save_for_backward(*grads)
         return (None, None, None, None, *grads)
