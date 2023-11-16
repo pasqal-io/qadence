@@ -69,8 +69,7 @@ def _validate_diff_mode(backend: Backend, diff_mode: DiffMode) -> None:
 
 def _validate_backend_config(backend: Backend) -> None:
     if backend.config.use_gradient_checkpointing:
-        msg = "use_gradient_checkpointing will soon be deprecated.\
-                                        To save memory, try diff_mode=DiffMode.ADJOINT instead."
+        msg = "use_gradient_checkpointing is deprecated."
         import warnings
 
         warnings.warn(msg, UserWarning)
