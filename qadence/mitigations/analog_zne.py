@@ -33,7 +33,7 @@ def analog_zne(
     observable: list[ConvertedObservable] | ConvertedObservable,
     param_values: dict[str, Tensor] = {},
     state: Tensor | None = None,
-    protocol: Measurements | None = None,
+    measurement: Measurements | None = None,
     mitigation: Mitigations | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
@@ -56,7 +56,7 @@ def analog_zne(
         elif noise_model == NoiseTypes.DEPHASING:
             backend_config.sim_config = SimConfig(noise=noise_model, dephasing_prob=noise_proba)
         # Get density matrices in the noisy case.
-        density_matrices = backend.run_noisy(
+        density_matrices = backend.run_dm(
             circuit, param_values=param_values, state=state, endianness=endianness
         )
         # Convert observables to Numpy types compatible with QuTip simulations.
@@ -78,7 +78,7 @@ def mitigate(
     observable: list[ConvertedObservable] | ConvertedObservable,
     param_values: dict[str, Tensor] = {},
     state: Tensor | None = None,
-    protocol: Measurements | None = None,
+    measurement: Measurements | None = None,
     mitigation: Mitigations | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
@@ -89,7 +89,7 @@ def mitigate(
             observable=observable,
             param_values=param_values,
             state=state,
-            protocol=protocol,
+            measurement=measurement,
             mitigation=mitigation,
             endianness=endianness,
         )

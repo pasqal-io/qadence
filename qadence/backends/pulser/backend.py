@@ -237,7 +237,7 @@ class Backend(BackendInterface):
 
         return batched_wf_torch
 
-    def run_noisy(
+    def run_dm(
         self,
         circuit: ConvertedCircuit,
         param_values: dict[str, Tensor] = {},

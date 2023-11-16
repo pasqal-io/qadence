@@ -9,7 +9,7 @@ from qadence.noise.protocols import Noise
 
 PROTOCOL_TO_MODULE = {
     "readout": "qadence.mitigations.readout",
-    "zne": "qadence.mitigations.zne",
+    "zne": "qadence.mitigations.analog_zne",
 }
 
 
