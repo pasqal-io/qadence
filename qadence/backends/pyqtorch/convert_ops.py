@@ -327,12 +327,22 @@ class PyQHamiltonianEvolution(Module):
         return self._unitary(self._hamiltonian(values), self._time_evolution(values))
 
     def jacobian_time(self, values: dict[str, Tensor]) -> Tensor:
+        """
+        Finite differencing to compute the partial derivatives of the time evolution parameter.
+
+        with respect to the evolved operator.
+        """
         return finitediff(
             lambda t: self._unitary(time_evolution=t, hamiltonian=self._hamiltonian(values)),
             values[self.param_names[0]],
         )
 
     def jacobian_generator(self, values: dict[str, Tensor]) -> Tensor:
+        """Finite differencing to compute the partial derivatives of the generator parameter(s).
+
+           with respect to the evolved operator.
+        """
+
         def _generator(val: Tensor) -> Tensor:
             val_copy = values.copy()
             val_copy[self.param_names[1]] = val
@@ -352,6 +362,11 @@ class PyQHamiltonianEvolution(Module):
         )
 
     def dagger(self, values: dict[str, Tensor]) -> Tensor:
+        """
+        This computes the dagger of the evolved operator given the current parameter values.
+
+        in 'values'.
+        """
         return _dagger(self.unitary(values))
 
     def forward(

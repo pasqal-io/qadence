@@ -16,6 +16,18 @@ from qadence.blocks.abstract import AbstractBlock
 
 
 class AdjointExpectation(Function):
+    """
+    This is a implementation of Algorithm 1 of https://arxiv.org/pdf/2009.02823.pdf.
+
+    Limitations:
+
+    (1) The adjoint method is only available in the pyqtorch backend.
+    (2) Parametric observables are not supported.
+    (3) Multiple observables are not supported.
+    (4) Higher order derivatives are not natively supported.
+    (5) Only expectation values can be differentiated, not wave functions.
+    """
+
     @staticmethod
     @no_grad()
     def forward(
