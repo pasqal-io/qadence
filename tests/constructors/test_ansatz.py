@@ -133,9 +133,12 @@ def test_iia_forward(n_qubits: int, depth: int, entangler: AbstractBlock) -> Non
 @pytest.mark.parametrize("n_qubits", [2, 5])
 @pytest.mark.parametrize("depth", [2, 4])
 @pytest.mark.parametrize("entangler", [CNOT, CRX])
-def test_iia_value(n_qubits: int, depth: int, entangler: AbstractBlock) -> None:
+@pytest.mark.parametrize("ops", [[RX, RZ], [RX, RZ, RX]])
+def test_iia_value(
+    n_qubits: int, depth: int, entangler: AbstractBlock, ops: list[AbstractBlock]
+) -> None:
     iia = identity_initialized_ansatz(
-        n_qubits=n_qubits, depth=depth, rotations=[RZ, RX, RZ], entangler=entangler
+        n_qubits=n_qubits, depth=depth, rotations=ops, entangler=entangler
     )
     state = random_state(n_qubits)
     assert allclose(state, run(iia, state=state))

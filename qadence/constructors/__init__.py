@@ -10,7 +10,7 @@ from .feature_maps import (
 
 from .ansatze import hea, build_qnn
 
-from .id_init_ansatz import identity_initialized_ansatz
+from .iia import identity_initialized_ansatz
 
 from .daqc import daqc_transform
 

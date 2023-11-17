@@ -38,6 +38,7 @@ def _rotations(
         idx = lambda x: x  # noqa: E731
     elif side == "right":
         idx = lambda x: len(ops) - x - 1  # noqa: E731
+        ops = list(reversed(ops))
     else:
         raise ValueError("Please provide either 'left' or 'right'")
 
