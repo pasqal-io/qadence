@@ -2,16 +2,37 @@ from __future__ import annotations
 
 from functools import reduce
 from itertools import chain as flatten
+from math import prod
 from operator import add
 from typing import Sequence, Tuple
 
 import pyqtorch as pyq
 import sympy
-from pyqtorch.apply import apply_operator as _apply_batch_gate
-from torch import Tensor, argsort, bmm, cdouble, permute, tensor
+from pyqtorch.apply import apply_operator
+from pyqtorch.matrices import _dagger
+from pyqtorch.utils import is_diag
+from torch import (
+    Tensor,
+    argsort,
+    bmm,
+    cdouble,
+    diag_embed,
+    diagonal,
+    exp,
+    linalg,
+    ones_like,
+    permute,
+    tensor,
+    transpose,
+)
 from torch.nn import Module
-from torch.utils.checkpoint import checkpoint
 
+from qadence.backends.utils import (
+    finitediff,
+    infer_batchsize,
+    pyqify,
+    unpyqify,
+)
 from qadence.blocks import (
     AbstractBlock,
     AddBlock,
@@ -78,7 +99,7 @@ def convert_block(
 
     elif isinstance(block, AddBlock):
         ops = list(flatten(*(convert_block(b, n_qubits, config) for b in block.blocks)))
-        return [AddPyQOperation(qubit_support, n_qubits, ops, config)]
+        return [AddPyQOperation(n_qubits, ops)]
 
     elif isinstance(block, TimeEvolutionBlock):
         return [
@@ -148,14 +169,10 @@ class PyQMatrixBlock(Module):
         self.register_buffer("mat", block.matrix.unsqueeze(2))
 
     def forward(self, state: Tensor, _: dict[str, Tensor] = None) -> Tensor:
-        return self.apply(self.mat, state)
-
-    def apply(self, matrices: Tensor, state: Tensor) -> Tensor:
-        batch_size = state.size(-1)
-        return _apply_batch_gate(state, matrices, self.qubits, self.n_qubits, batch_size)
+        return apply_operator(state, self.mat, self.qubits, self.n_qubits)
 
 
-class PyQComposedBlock(Module):
+class PyQComposedBlock(pyq.QuantumCircuit):
     def __init__(
         self,
         ops: list[Module],
@@ -163,41 +180,47 @@ class PyQComposedBlock(Module):
         n_qubits: int,
         config: Configuration = None,
     ):
-        """Compose a chain of single qubit operations on the same qubit.
+        """Compose a chain of single qubit operations on the same qubit into a single.
 
-        The result is a single call to _apply_batch_gate.
+        call to _apply_batch_gate.
         """
-        super().__init__()
-        self.operations = ops
+        super().__init__(n_qubits, ops)
         self.qubits = qubits
-        self.n_qubits = n_qubits
 
     def forward(self, state: Tensor, values: dict[str, Tensor] | None = None) -> Tensor:
-        batch_size = state.size(-1)
-        return self.apply(self.unitary(values, batch_size), state)
-
-    def apply(self, matrices: Tensor, state: Tensor) -> Tensor:
-        batch_size = state.size(-1)
-        return _apply_batch_gate(state, matrices, self.qubits, self.n_qubits, batch_size)
+        batch_size = infer_batchsize(values)
+        return apply_operator(
+            state, self.unitary(values, batch_size), self.qubits, self.n_qubits, batch_size
+        )
 
     def unitary(self, values: dict[str, Tensor] | None, batch_size: int) -> Tensor:
-        perm = (2, 0, 1)  # We permute the dims since bmm expects the batch_dim at 0.
+        batch_first_perm = (2, 0, 1)
+        undo_perm = tuple(argsort(tensor(batch_first_perm)))
 
-        def _expand_mat(m: Tensor) -> Tensor:
+        def _expand(m: Tensor) -> Tensor:
             if len(m.size()) == 2:
                 m = m.unsqueeze(2).repeat(
                     1, 1, batch_size
                 )  # Primitive gates are 2D, so we expand them.
             elif m.shape != (2, 2, batch_size):
                 m = m.repeat(1, 1, batch_size)  # In case a tensor is 3D doesnt have batch_size.
-            return permute(m, perm)  # This returns shape (batch_size, 2, 2)
+            return m
+
+        def _batch_first(m: Tensor) -> Tensor:
+            return permute(m, batch_first_perm)  # This returns shape (batch_size, 2, 2)
+
+        def _batch_last(m: Tensor) -> Tensor:
+            return permute(
+                m, undo_perm
+            )  # We need to undo the permute since PyQ expects (2, 2, batch_size).
 
         # We reverse the list of tensors here since matmul is not commutative.
-        return permute(
-            reduce(bmm, (_expand_mat(op.unitary(values)) for op in reversed(self.operations))),
-            tuple(
-                argsort(tensor(perm))
-            ),  # We need to undo the permute since PyQ expects (2, 2, batch_size).
+
+        return _batch_last(
+            reduce(
+                bmm,
+                (_batch_first(_expand(op.unitary(values))) for op in reversed(self.operations)),
+            )
         )
 
 
@@ -212,8 +235,7 @@ class PyQObservable(Module):
             self.register_buffer("diag", diag)
 
             def sparse_operation(state: Tensor, values: dict[str, Tensor] = None) -> Tensor:
-                state = state.reshape(2**self.n_qubits, state.size(-1))
-                return (diag * state.T).T
+                return pyqify(diag * unpyqify(state), n_qubits=self.n_qubits)
 
             self.operation = sparse_operation
         else:
@@ -222,165 +244,171 @@ class PyQObservable(Module):
                 convert_block(block, n_qubits, config),
             )
 
-        if config.use_gradient_checkpointing:
-
-            def _forward(state: Tensor, values: dict[str, Tensor] = None) -> Tensor:
-                new_state = checkpoint(self.operation, state, values, use_reentrant=False)
-                return pyq.overlap(state, new_state)
-
-        else:
-
-            def _forward(state: Tensor, values: dict[str, Tensor] = None) -> Tensor:
-                return pyq.overlap(state, self.operation(state, values))
-
-        self._forward = _forward
-
     def forward(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
-        return self._forward(state, values)
+        return pyq.overlap(state, self.operation(state, values))
+
+    def run(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
+        return self.operation(state, values)
 
 
 class PyQHamiltonianEvolution(Module):
     def __init__(
         self,
-        qubit_support: Sequence,
+        qubit_support: Tuple[int, ...],
         n_qubits: int,
         block: TimeEvolutionBlock,
         config: Configuration,
     ):
         super().__init__()
-        self.qubits = qubit_support
+        self.qubit_support = qubit_support
         self.n_qubits = n_qubits
-        self.operation = pyq.HamiltonianEvolution(qubit_support=qubit_support, n_qubits=n_qubits)
         self.param_names = config.get_param_name(block)
-        self._has_parametric_generator: bool
         self.block = block
 
         if isinstance(block.generator, AbstractBlock) and not block.generator.is_parametric:
             hmat = block_to_tensor(
                 block.generator,
-                qubit_support=tuple(self.qubits),
+                qubit_support=self.qubit_support,
                 use_full_support=False,
             )
             hmat = hmat.permute(1, 2, 0)
-
-            def _fwd(state: Tensor, values: dict[str, Tensor]) -> Tensor:
-                tevo = values[self.param_names[0]]
-                return self.operation(hmat, tevo, state)
+            self._hamiltonian = lambda x: hmat
 
         elif isinstance(block.generator, Tensor):
             m = block.generator.to(dtype=cdouble)
             hmat = block_to_tensor(
                 MatrixBlock(m, qubit_support=block.qubit_support),
-                qubit_support=tuple(self.qubits),
+                qubit_support=self.qubit_support,
                 use_full_support=False,
             )
             hmat = hmat.permute(1, 2, 0)
-
-            def _fwd(state: Tensor, values: dict[str, Tensor]) -> Tensor:
-                tevo = values[self.param_names[0]]
-                return self.operation(hmat, tevo, state)
+            self._hamiltonian = lambda x: hmat
 
         elif isinstance(block.generator, sympy.Basic):
-
-            def _fwd(state: Tensor, values: dict[str, Tensor]) -> Tensor:
-                tevo = values[self.param_names[0]]
-                hmat = values[self.param_names[1]]
-                hmat = hmat.squeeze(3)  # FIXME: why is this necessary?
-                hmat = hmat.permute(1, 2, 0)
-                return self.operation(hmat, tevo, state)
-
+            self._hamiltonian = (
+                lambda values: values[self.param_names[1]].squeeze(3).permute(1, 2, 0)
+            )
+            # FIXME Why are we squeezing
         else:
 
-            def _fwd(state: Tensor, values: dict[str, Tensor]) -> Tensor:
+            def _hamiltonian(values: dict[str, Tensor]) -> Tensor:
                 hmat = _block_to_tensor_embedded(
                     block.generator,  # type: ignore[arg-type]
                     values=values,
-                    qubit_support=tuple(self.qubits),
+                    qubit_support=self.qubit_support,
                     use_full_support=False,
                 )
-                hmat = hmat.permute(1, 2, 0)
-                tevo = values[self.param_names[0]]
-                return self.operation(hmat, tevo, state)
+                return hmat.permute(1, 2, 0)
 
-        if config.use_gradient_checkpointing:
+            self._hamiltonian = _hamiltonian
 
-            def _forward(state: Tensor, values: dict[str, Tensor]) -> Tensor:
-                return checkpoint(_fwd, state, values, use_reentrant=False)
+        self._time_evolution = lambda values: values[self.param_names[0]]
 
-        else:
+    def _unitary(self, hamiltonian: Tensor, time_evolution: Tensor) -> Tensor:
+        self.batch_size = max(hamiltonian.size()[2], len(time_evolution))
+        diag_check = tensor([is_diag(hamiltonian[..., i]) for i in range(hamiltonian.size()[2])])
 
-            def _forward(state: Tensor, values: dict[str, Tensor]) -> Tensor:
-                return _fwd(state, values)
+        def _evolve_diag_operator(hamiltonian: Tensor, time_evolution: Tensor) -> Tensor:
+            evol_operator = diagonal(hamiltonian) * (-1j * time_evolution).view((-1, 1))
+            evol_operator = diag_embed(exp(evol_operator))
+            return transpose(evol_operator, 0, -1)
 
-        self._forward = _forward
+        def _evolve_matrixexp_operator(hamiltonian: Tensor, time_evolution: Tensor) -> Tensor:
+            evol_operator = transpose(hamiltonian, 0, -1) * (-1j * time_evolution).view((-1, 1, 1))
+            evol_operator = linalg.matrix_exp(evol_operator)
+            return transpose(evol_operator, 0, -1)
+
+        evolve_operator = (
+            _evolve_diag_operator if bool(prod(diag_check)) else _evolve_matrixexp_operator
+        )
+        return evolve_operator(hamiltonian, time_evolution)
+
+    def unitary(self, values: dict[str, Tensor]) -> Tensor:
+        """The evolved operator given current parameter values for generator and time evolution."""
+        return self._unitary(self._hamiltonian(values), self._time_evolution(values))
+
+    def jacobian_time(self, values: dict[str, Tensor]) -> Tensor:
+        """Approximate jacobian of the evolved operator with respect to time evolution."""
+        return finitediff(
+            lambda t: self._unitary(time_evolution=t, hamiltonian=self._hamiltonian(values)),
+            values[self.param_names[0]],
+        )
+
+    def jacobian_generator(self, values: dict[str, Tensor]) -> Tensor:
+        """Approximate jacobian of the evolved operator with respect to generator parameter(s)."""
+        if len(self.param_names) > 2:
+            raise NotImplementedError(
+                "jacobian_generator does not support generators\
+                                        with more than 1 parameter."
+            )
+
+        def _generator(val: Tensor) -> Tensor:
+            val_copy = values.copy()
+            val_copy[self.param_names[1]] = val
+            hmat = _block_to_tensor_embedded(
+                self.block.generator,  # type: ignore[arg-type]
+                values=val_copy,
+                qubit_support=self.qubit_support,
+                use_full_support=False,
+            )
+            return hmat.permute(1, 2, 0)
+
+        return finitediff(
+            lambda v: self._unitary(
+                time_evolution=self._time_evolution(values), hamiltonian=_generator(v)
+            ),
+            values[self.param_names[1]],
+        )
+
+    def dagger(self, values: dict[str, Tensor]) -> Tensor:
+        """Dagger of the evolved operator given the current parameter values."""
+        return _dagger(self.unitary(values))
+
+    def forward(
+        self,
+        state: Tensor,
+        values: dict[str, Tensor],
+    ) -> Tensor:
+        return apply_operator(
+            state,
+            self.unitary(values),
+            self.qubit_support,
+            self.n_qubits,
+            self.batch_size,
+        )
+
+
+class AddPyQOperation(pyq.QuantumCircuit):
+    def __init__(self, n_qubits: int, operations: list[Module]):
+        super().__init__(n_qubits=n_qubits, operations=operations)
 
     def forward(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
-        return self._forward(state, values)
+        return reduce(add, (op(state, values) for op in self.operations))
 
 
-class AddPyQOperation(Module):
-    def __init__(
-        self, qubits: Sequence, n_qubits: int, operations: list[Module], config: Configuration
-    ):
-        super().__init__()
-        self.operations = operations
-
-        def _fwd(state: Tensor, values: dict[str, Tensor]) -> Tensor:
-            return reduce(add, (op(state, values) for op in self.operations))
-
-        if config.use_gradient_checkpointing:
-
-            def _forward(state: Tensor, values: dict[str, Tensor]) -> Tensor:
-                return checkpoint(_fwd, state, values, use_reentrant=False)
-
-        else:
-
-            def _forward(state: Tensor, values: dict[str, Tensor]) -> Tensor:
-                return _fwd(state, values)
-
-        self._forward = _forward
-
-    def forward(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
-        return self._forward(state, values)
-
-
-class ScalePyQOperation(Module):
-    """
-    Computes:
-
-        M = matrix(op, theta)
-        scale * matmul(M, state)
-    """
-
+class ScalePyQOperation(pyq.QuantumCircuit):
     def __init__(self, n_qubits: int, block: ScaleBlock, config: Configuration):
-        super().__init__()
-        (self.param_name,) = config.get_param_name(block)
         if not isinstance(block.block, PrimitiveBlock):
             raise NotImplementedError(
                 "The pyqtorch backend can currently only scale `PrimitiveBlock` types.\
                 Please use the following transpile function on your circuit first:\
                 from qadence.transpile import scale_primitive_blocks_only"
             )
-        self.operation = convert_block(block.block, n_qubits, config)[0]
+        ops = convert_block(block.block, n_qubits, config)
+        assert len(ops) == 1
+        super().__init__(n_qubits, ops)
+        (self.param_name,) = config.get_param_name(block)
+        self.qubit_support = self.operations[0].qubit_support
 
-        def _fwd(state: Tensor, values: dict[str, Tensor]) -> Tensor:
-            return values[self.param_name] * self.operation(state, values)
-
-        if config.use_gradient_checkpointing:
-
-            def _forward(state: Tensor, values: dict[str, Tensor]) -> Tensor:
-                return checkpoint(_fwd, state, values, use_reentrant=False)
-
-        else:
-
-            def _forward(state: Tensor, values: dict[str, Tensor]) -> Tensor:
-                return _fwd(state, values)
-
-        self._forward = _forward
+    def forward(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
+        return apply_operator(state, self.unitary(values), self.qubit_support, self.n_qubits)
 
     def unitary(self, values: dict[str, Tensor]) -> Tensor:
         thetas = values[self.param_name]
-        return (thetas * self.operation.unitary(values)).unsqueeze(2)
+        return thetas * self.operations[0].unitary(values)
 
-    def forward(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
-        return self._forward(state, values)
+    def dagger(self, values: dict[str, Tensor]) -> Tensor:
+        return _dagger(self.unitary(values))
+
+    def jacobian(self, values: dict[str, Tensor]) -> Tensor:
+        return values[self.param_name] * ones_like(self.unitary(values))
