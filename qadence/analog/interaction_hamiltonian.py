@@ -29,7 +29,7 @@ def _xy_strength(register: Register, coeff_xy: float) -> Tensor:
     return coeff_xy / (_distance_all_qubits(register) ** 3)
 
 
-def rydberg_interaction_hamiltonian(device: RydbergDevice) -> AbstractBlock:
+def rydberg_interaction_hamiltonian(register: Register, device: RydbergDevice) -> AbstractBlock:
     """
     Computes the Rydberg Ising or XY interaction Hamiltonian for a register of qubits.
 
@@ -39,16 +39,16 @@ def rydberg_interaction_hamiltonian(device: RydbergDevice) -> AbstractBlock:
 
     Args:
         register: the register of qubits.
-        interaction: the Interaction type.
+        device: the RydbergDevice with respective specs.
     """
 
     if device.interaction == Interaction.NN:
-        strength_list = _nn_strength(device.register, device.rydberg_level)
+        strength_list = _nn_strength(register, device.rydberg_level)
     elif device.interaction == Interaction.XY:
-        strength_list = _xy_strength(device.register, device.coeff_xy)
+        strength_list = _xy_strength(register, device.coeff_xy)
 
     return hamiltonian_factory(
-        device.register,
+        register,
         interaction=device.interaction,
         interaction_strength=strength_list,
         use_complete_graph=True,

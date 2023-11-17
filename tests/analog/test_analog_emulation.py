@@ -7,7 +7,6 @@ import pytest
 from metrics import JS_ACCEPTANCE
 from torch import pi
 
-from qadence.analog import RydbergDevice
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.analog import AnalogBlock
 from qadence.execution import run, sample
@@ -101,9 +100,7 @@ def test_mixing_digital_analog() -> None:
     b = chain(kron(X(0), X(1)), AnalogRX(pi))
     r = Register.from_coordinates([(0, 10), (0, -10)])
 
-    device = RydbergDevice(r)
-
-    sample_results = sample(r, b, configuration={"device": device})[0]
+    sample_results = sample(r, b)[0]
 
     assert js_divergence(sample_results, Counter({"00": 100})) < JS_ACCEPTANCE
 

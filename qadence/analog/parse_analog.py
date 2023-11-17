@@ -13,19 +13,32 @@ from qadence.blocks.analog import (
 from qadence.blocks.utils import add
 from qadence.circuit import QuantumCircuit
 from qadence.operations import HamEvo, N, X, Y
+from qadence.register import Register
 from qadence.transpile import apply_fn_to_blocks
 
 
 def add_background_hamiltonian(
     circuit: QuantumCircuit | AbstractBlock,
-    device: RydbergDevice,
+    device: RydbergDevice | None = None,
+    register: Register | None = None,
 ) -> QuantumCircuit | AbstractBlock:
     # Temporary check to allow both circuit or blocks as input
+    # Not sure yet if we want to support abstract blocks here, but
+    # currently it's used for eigenvalue computation, which will
+    # likely have to be refactored in another MR.
+
     is_circuit_input = isinstance(circuit, QuantumCircuit)
     target_block: AbstractBlock = circuit.block if is_circuit_input else circuit  # type: ignore
+    target_register: Register = circuit.register if is_circuit_input else register  # type: ignore
+
+    if not is_circuit_input and register is None:
+        raise ValueError("Block input requires an input to the `register` argument.")
+
+    if device is None:
+        device = RydbergDevice()
 
     # Create interaction hamiltonian:
-    h_int = rydberg_interaction_hamiltonian(device)
+    h_int = rydberg_interaction_hamiltonian(target_register, device)
 
     # Create addressing pattern:
     # h_addr = (...)
@@ -35,20 +48,20 @@ def add_background_hamiltonian(
     block_parsed = apply_fn_to_blocks(
         target_block,
         _analog_to_hevo,
-        device,
+        target_register,
         h_background,
     )
 
     if is_circuit_input:
-        return QuantumCircuit(device.register, block_parsed)
+        return QuantumCircuit(target_register, block_parsed)
     else:
         return block_parsed
 
 
 def _analog_to_hevo(
-    block: AbstractBlock, device: RydbergDevice, h_background: AbstractBlock
+    block: AbstractBlock, register: Register, h_background: AbstractBlock
 ) -> AbstractBlock:
-    support = tuple(device.register.nodes)
+    support = tuple(register.nodes)
 
     if isinstance(block, AnalogBlock):
         if isinstance(block, WaitBlock):

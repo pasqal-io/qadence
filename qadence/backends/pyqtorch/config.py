@@ -19,9 +19,7 @@ logger = get_logger(__name__)
 
 def default_passes(config: Configuration) -> list[Callable]:
     return [
-        lambda circ: add_background_hamiltonian(circ, device=config.device)
-        if config.device is not None
-        else circ,
+        lambda circ: add_background_hamiltonian(circ, device=config.device),
         lambda circ: blockfn_to_circfn(chain_single_qubit_ops)(circ)
         if config.use_single_qubit_composition
         else blockfn_to_circfn(flatten)(circ),
