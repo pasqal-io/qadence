@@ -149,6 +149,8 @@ class _DiffMode(StrEnum):
     """Basic generalized parameter shift rule."""
     AD = "ad"
     """Automatic Differentiation."""
+    ADJOINT = "adjoint"
+    """Adjoint Differentiation."""
 
 
 class QubitSupportType(StrEnum):

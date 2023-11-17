@@ -189,3 +189,18 @@ ansatz = hea(
 from qadence.draw import html_string # markdown-exec: hide
 print(html_string(ansatz)) # markdown-exec: hide
 ```
+## Identity-initialized ansatz
+
+It is widely known that parametrized quantum circuits are characterized by barren plateaus, where the gradient becomes exponentially small in the number of qubits. Here we include one of many techniques that have been proposed in recent years to mitigate this effect and facilitate `QNN`s training: [Grant et al.](https://arxiv.org/abs/1903.05076) showed that initializing the weights of a `QNN` so that each block of the circuit evaluates to identity reduces the effect of barren plateaus in the initial stage of training. In a similar fashion to `hea`, such circuit can be created via calling the associated function, `identity_initialized_ansatz`:
+
+```python exec="on" source="material-block" html="1" session="ansatz"
+from qadence.constructors import identity_initialized_ansatz
+from qadence.draw import display
+
+n_qubits = 3
+depth = 2
+
+ansatz = identity_initialized_ansatz(n_qubits, depth)
+from qadence.draw import html_string # markdown-exec: hide
+print(html_string(ansatz)) # markdown-exec: hide
+```

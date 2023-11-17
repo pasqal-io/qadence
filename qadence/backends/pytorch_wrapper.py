@@ -6,13 +6,16 @@ from functools import partial
 from typing import Any, Callable, Sequence
 
 import torch
-from torch import Tensor, nn
+from torch import Tensor
 from torch.autograd import Function
+from torch.nn import Module
 
 from qadence.backend import Backend as QuantumBackend
 from qadence.backend import Converted, ConvertedCircuit, ConvertedObservable
-from qadence.backends.utils import param_dict
-from qadence.blocks import AbstractBlock, PrimitiveBlock
+from qadence.backends.adjoint import AdjointExpectation
+from qadence.backends.utils import infer_batchsize, is_pyq_shape, param_dict, pyqify, validate_state
+from qadence.blocks.abstract import AbstractBlock
+from qadence.blocks.primitive import PrimitiveBlock
 from qadence.blocks.utils import uuid_to_block, uuid_to_eigen
 from qadence.circuit import QuantumCircuit
 from qadence.extensions import get_gpsr_fns
@@ -35,7 +38,7 @@ class PSRExpectation(Function):
         *param_values: Tensor,
     ) -> Tensor:
         for param in param_values:
-            param.detach()
+            param = param.detach()
 
         ctx.expectation_fn = expectation_fn
         ctx.param_psrs = param_psrs
@@ -121,6 +124,37 @@ class DifferentiableExpectation:
             expectations if isinstance(expectations, Tensor) else torch.tensor(expectations)
         )
 
+    def adjoint(self) -> Tensor:
+        self.observable = (
+            self.observable if isinstance(self.observable, list) else [self.observable]
+        )
+        if len(self.observable) > 1:
+            raise NotImplementedError("AdjointExpectation currently only supports one observable.")
+
+        n_qubits = self.circuit.abstract.n_qubits
+        values_batch_size = infer_batchsize(self.param_values)
+        if self.state is None:
+            self.state = self.circuit.native.init_state(batch_size=values_batch_size)
+        else:
+            validate_state(self.state, n_qubits)
+            self.state = (
+                pyqify(self.state, n_qubits)
+                if not is_pyq_shape(self.state, n_qubits)
+                else self.state
+            )
+        batch_size = max(values_batch_size, self.state.size(-1))
+        return (
+            AdjointExpectation.apply(
+                self.circuit.native,
+                self.observable[0].native,  # Currently, adjoint only supports a single observable.
+                self.state,
+                self.param_values.keys(),
+                *self.param_values.values(),
+            )
+            .unsqueeze(1)
+            .reshape(batch_size, 1)
+        )  # we expect (batch_size, n_observables) shape
+
     def psr(self, psr_fn: Callable, **psr_args: int | float | None) -> Tensor:
         # wrapper which unpacks the parameters
         # as pytorch grads can only calculated w.r.t tensors
@@ -199,7 +233,7 @@ class DifferentiableExpectation:
         return param_to_psr
 
 
-class DifferentiableBackend(nn.Module):
+class DifferentiableBackend(Module):
     """A class to abstract the operations done by the autodiff engine.
 
     Arguments:
@@ -273,6 +307,8 @@ class DifferentiableBackend(nn.Module):
 
         if self.diff_mode == DiffMode.AD:
             expectation = differentiable_expectation.ad
+        elif self.diff_mode == DiffMode.ADJOINT:
+            expectation = differentiable_expectation.adjoint
         else:
             try:
                 fns = get_gpsr_fns()
