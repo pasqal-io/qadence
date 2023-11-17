@@ -98,7 +98,7 @@ class AdjointExpectation(Function):
                         ctx.out_state, op.jacobian_generator(values), op.qubit_support
                     )
                     grads.append(2 * overlap(ctx.projected_state, mu))
-                elif time_param.requires_grad:
+                if time_param.requires_grad:
                     # If the time evolution is trainable, we compute its gradient.
                     mu = apply_operator(ctx.out_state, op.jacobian_time(values), op.qubit_support)
                     grads.append(2 * overlap(ctx.projected_state, mu))
