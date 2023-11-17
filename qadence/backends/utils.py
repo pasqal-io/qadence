@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from collections import Counter
 from math import log2
-from typing import Callable, Sequence
+from typing import Any, Callable, Sequence
 
 import numpy as np
 import pyqtorch as pyq
 import torch
+from jax import device_get
+from jax.typing import ArrayLike
 from pyqtorch.apply import apply_operator
 from pyqtorch.parametric import Parametric as PyQParametric
 from torch import (
@@ -196,3 +198,7 @@ def dydxx(
         ),
         values[op.param_name],
     )
+
+
+def jarr_to_tensor(arr: ArrayLike, dtype: Any = torch.cdouble) -> torch.Tensor:
+    return torch.from_numpy(device_get(arr)).to(dtype=dtype)

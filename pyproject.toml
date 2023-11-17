@@ -41,7 +41,15 @@ dependencies = [
     "nevergrad",
     "scipy",
     "pyqtorch==1.0.1",
-    "matplotlib"
+    "matplotlib",
+    "jax",
+    "flax",
+    "optax",
+    "jaxopt",
+    "einops",
+    "numpy",
+    "sympy2jax",
+    "horqrux @ git+https://github.com/pasqal-io/horqrux"
 ]
 
 [tool.hatch.metadata]
@@ -80,7 +88,6 @@ all = [
     "einops",
     "scipy<1.11",
     "numpy"
-
 ]
 
 [tool.hatch.envs.default]
