@@ -16,13 +16,14 @@ from qadence.backend import (
     ConvertedCircuit,
     ConvertedObservable,
 )
-from qadence.backends import backend_factory, config_factory
-from qadence.backends.pytorch_wrapper import DiffMode
-from qadence.blocks import AbstractBlock
+from qadence.backends.api import backend_factory, config_factory
+from qadence.blocks.abstract import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.logger import get_logger
 from qadence.measurements import Measurements
-from qadence.utils import Endianness
+from qadence.mitigations import Mitigations
+from qadence.noise import Noise
+from qadence.types import DiffMode, Endianness
 
 logger = get_logger(__name__)
 
@@ -47,7 +48,9 @@ class QuantumModel(nn.Module):
         observable: list[AbstractBlock] | AbstractBlock | None = None,
         backend: BackendName | str = BackendName.PYQTORCH,
         diff_mode: DiffMode = DiffMode.AD,
-        protocol: Measurements | None = None,
+        measurement: Measurements | None = None,
+        noise: Noise | None = None,
+        mitigation: Mitigations | None = None,
         configuration: BackendConfiguration | dict | None = None,
     ):
         """Initialize a generic QuantumModel instance.
@@ -59,9 +62,10 @@ class QuantumModel(nn.Module):
             backend: A backend for circuit execution.
             diff_mode: A differentiability mode. Parameter shift based modes work on all backends.
                 AD based modes only on PyTorch based backends.
-            protocol: Optional measurement protocol. If None, use
+            measurement: Optional measurement protocol. If None, use
                 exact expectation value with a statevector simulator.
             configuration: Configuration for the backend.
+            noise: A noise model to use.
 
         Raises:
             ValueError: if the `diff_mode` argument is set to None
@@ -92,8 +96,9 @@ class QuantumModel(nn.Module):
         self._observable = conv.observable
         self._backend_name = backend
         self._diff_mode = diff_mode
-        self._protocol = protocol
-
+        self._measurement = measurement
+        self._noise = noise
+        self._mitigation = mitigation
         self._params = nn.ParameterDict(
             {
                 str(key): nn.Parameter(val, requires_grad=val.requires_grad)
@@ -107,7 +112,7 @@ class QuantumModel(nn.Module):
 
     @property
     def vals_vparams(self) -> Tensor:
-        """Dictionary with parameters which are actually updated during optimization"""
+        """Dictionary with parameters which are actually updated during optimization."""
         vals = torch.tensor([v for v in self._params.values() if v.requires_grad])
         vals.requires_grad = False
         return vals.flatten()
@@ -119,12 +124,12 @@ class QuantumModel(nn.Module):
 
     @property
     def out_features(self) -> int | None:
-        """Number of outputs"""
+        """Number of outputs."""
         return 0 if self._observable is None else len(self._observable)
 
     @property
     def num_vparams(self) -> int:
-        """The number of variational parameters"""
+        """The number of variational parameters."""
         return len(self.vals_vparams)
 
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:
@@ -134,7 +139,7 @@ class QuantumModel(nn.Module):
         return self.backend.observable(observable, n_qubits)
 
     def reset_vparams(self, values: Sequence) -> None:
-        """Reset all the variational parameters with a given list of values"""
+        """Reset all the variational parameters with a given list of values."""
         current_vparams = OrderedDict({k: v for k, v in self._params.items() if v.requires_grad})
 
         assert (
@@ -162,11 +167,23 @@ class QuantumModel(nn.Module):
         values: dict[str, torch.Tensor] = {},
         n_shots: int = 1000,
         state: torch.Tensor | None = None,
+        noise: Noise | None = None,
+        mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         params = self.embedding_fn(self._params, values)
+        if noise is None:
+            noise = self._noise
+        if mitigation is None:
+            mitigation = self._mitigation
         return self.backend.sample(
-            self._circuit, params, n_shots=n_shots, state=state, endianness=endianness
+            self._circuit,
+            params,
+            n_shots=n_shots,
+            state=state,
+            noise=noise,
+            mitigation=mitigation,
+            endianness=endianness,
         )
 
     def expectation(
@@ -174,7 +191,9 @@ class QuantumModel(nn.Module):
         values: dict[str, Tensor] = {},
         observable: list[ConvertedObservable] | ConvertedObservable | None = None,
         state: Optional[Tensor] = None,
-        protocol: Measurements | None = None,
+        measurement: Measurements | None = None,
+        noise: Noise | None = None,
+        mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         """Compute expectation using the given backend.
@@ -192,15 +211,20 @@ class QuantumModel(nn.Module):
             observable = self._observable
 
         params = self.embedding_fn(self._params, values)
-        if protocol is None:
-            protocol = self._protocol
-
+        if measurement is None:
+            measurement = self._measurement
+        if noise is None:
+            noise = self._noise
+        if mitigation is None:
+            mitigation = self._mitigation
         return self.backend.expectation(
             circuit=self._circuit,
             observable=observable,
             param_values=params,
             state=state,
-            protocol=protocol,
+            measurement=measurement,
+            noise=noise,
+            mitigation=mitigation,
             endianness=endianness,
         )
 
@@ -218,7 +242,7 @@ class QuantumModel(nn.Module):
             "observable": abs_obs,
             "backend": self._backend_name,
             "diff_mode": self._diff_mode,
-            "protocol": self._protocol._to_dict() if self._protocol is not None else {},
+            "measurement": self._measurement._to_dict() if self._measurement is not None else {},
             "backend_configuration": asdict(self.backend.backend.config),  # type: ignore
         }
         param_dict_conv = {}
@@ -240,7 +264,7 @@ class QuantumModel(nn.Module):
             ),
             backend=qm_dict["backend"],
             diff_mode=qm_dict["diff_mode"],
-            protocol=Measurements._from_dict(qm_dict["protocol"]),
+            measurement=Measurements._from_dict(qm_dict["measurement"]),
             configuration=config_factory(qm_dict["backend"], qm_dict["backend_configuration"]),
         )
 
@@ -281,6 +305,6 @@ class QuantumModel(nn.Module):
         return cls._from_dict(qm_pt, as_torch)
 
     def assign_parameters(self, values: dict[str, Tensor]) -> Any:
-        """Return the final, assigned circuit that is used in e.g. `backend.run`"""
+        """Return the final, assigned circuit that is used in e.g. `backend.run`."""
         params = self.embedding_fn(self._params, values)
         return self.backend.assign_parameters(self._circuit, params)

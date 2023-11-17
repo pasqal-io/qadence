@@ -1,12 +1,33 @@
 Qadence offers a direct interface with Pulser[^1], an open-source pulse-level interface written in Python and
 specifically designed for programming neutral atom quantum computers.
 
-Using directly Pulser requires advanced knowledge on pulse-level programming and on how neutral atom devices work. Qadence abstracts this complexity out by using the familiar block-based interface for building pulse sequences in Pulser while leaving the possibility
+Using directly Pulser requires advanced knowledge on pulse-level programming and on how neutral atom devices work. Qadence
+abstracts this complexity out by using the familiar block-based interface for building pulse sequences in Pulser while leaving the possibility
 to directly manipulate them if required by, for instance, optimal pulse shaping.
 
 !!! note
     The Pulser backend is still experimental and the interface might change in the future.
-	Please note that it does not support `DiffMode.AD`.
+    Please note that it does not support `DiffMode.AD`.
+
+!!! note
+    With the Pulser backend, `qadence` simulations can be executed on the cloud emulators available on the PASQAL
+    cloud platform. In order to do so, make to have valid credentials for the PASQAL cloud platform and use
+    the following configuration for the Pulser backend:
+
+    ```python
+    config = {
+        "cloud_configuration": {
+            "username": "<changeme>",
+            "password": "<changeme>",
+            "project_id": "<changeme>",  # the project should have access to emulators
+            "platform": "EMU_FREE"  # choose between `EMU_TN` and `EMU_FREE`
+        }
+    }
+    ```
+
+For inquiries and more details on the cloud credentials, please contact
+[info@pasqal.com](mailto:info@pasqal.com).
+
 
 ## Default qubit interaction
 
@@ -62,12 +83,12 @@ import torch
 import matplotlib.pyplot as plt
 from qadence import Register, QuantumCircuit, QuantumModel
 
-register = Register(2)
+register = Register.line(2, spacing = 8.0)  # Two qubits with a distance of 8µm
 circuit = QuantumCircuit(register, bell_state)
 model = QuantumModel(circuit, backend="pulser", diff_mode="gpsr")
 
 params = {
-    "t": torch.tensor([383]),  # ns
+    "t": torch.tensor([1000]),  # ns
     "y": torch.tensor([3*torch.pi/2]),
 }
 
@@ -121,7 +142,7 @@ One can use the `Configuration` of the Pulser backend to select the appropriate 
 from qadence import BackendName, DiffMode
 from qadence.backends.pulser.devices import Device
 
-register = Register(2)
+register = Register.line(2, spacing = 8.0)
 circuit = QuantumCircuit(register, bell_state)
 
 # Choose a realistic device
@@ -133,7 +154,7 @@ model = QuantumModel(
 )
 
 params = {
-    "t": torch.tensor([383]),  # ns
+    "t": torch.tensor([1000]),  # ns
     "y": torch.tensor([3*torch.pi/2]),
 }
 
@@ -166,12 +187,12 @@ protocol = chain(
    RY(0, "y"),
 )
 
-register = Register(2)
+register = Register.line(2, spacing = 8.0)
 circuit = QuantumCircuit(register, protocol)
 model = QuantumModel(circuit, backend=BackendName.PULSER, diff_mode=DiffMode.GPSR)
 
 params = {
-    "t": torch.tensor([383]),  # ns
+    "t": torch.tensor([500]),  # ns
     "y": torch.tensor([torch.pi / 2]),
 }
 
@@ -208,7 +229,7 @@ protocol = chain(
     AnalogRX(torch.pi/4)
 )
 
-register = Register(2)
+register = Register.line(2, spacing=8.0)
 circuit = QuantumCircuit(register, protocol)
 model = QuantumModel(circuit, backend=BackendName.PULSER, diff_mode=DiffMode.GPSR)
 

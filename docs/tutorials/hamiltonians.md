@@ -43,8 +43,8 @@ print(hamilt) # markdown-exec: hide
 
 !!! warning "Ordering interaction strengths matters"
 
-	When passing interaction strengths as an array, the ordering must be indentical to the one
-	obtained from the `edge` property of a Qadence [`Register`](register.md):
+	When passing interaction strengths as an array, the ordering must be identical to the one
+	obtained from the `edges` property of a Qadence [`Register`](register.md):
 
 	```python exec="on" source="material-block" result="json" session="hamiltonians"
 	from qadence import Register

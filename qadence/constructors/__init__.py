@@ -10,6 +10,8 @@ from .feature_maps import (
 
 from .ansatze import hea, build_qnn
 
+from .iia import identity_initialized_ansatz
+
 from .daqc import daqc_transform
 
 from .hamiltonians import (
@@ -19,6 +21,8 @@ from .hamiltonians import (
     total_magnetization,
     zz_hamiltonian,
 )
+
+from .rydberg_hea import rydberg_hea, rydberg_hea_layer
 
 from .qft import qft
 
@@ -30,6 +34,7 @@ __all__ = [
     "tower_feature_map",
     "exp_fourier_feature_map",
     "hea",
+    "identity_initialized_ansatz",
     "build_qnn",
     "hamiltonian_factory",
     "ising_hamiltonian",
@@ -38,4 +43,6 @@ __all__ = [
     "zz_hamiltonian",
     "qft",
     "daqc_transform",
+    "rydberg_hea",
+    "rydberg_hea_layer",
 ]

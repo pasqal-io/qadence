@@ -19,7 +19,7 @@ from qadence.blocks.analog import (
     Interaction,
     WaitBlock,
 )
-from qadence.operations import RX, RY, AnalogEntanglement, OpName
+from qadence.operations import RX, RY, RZ, AnalogEntanglement, OpName
 from qadence.parameters import evaluate
 
 from .channels import GLOBAL_CHANNEL, LOCAL_CHANNEL
@@ -32,6 +32,7 @@ supported_gates = [
     OpName.ZERO,
     OpName.RX,
     OpName.RY,
+    OpName.RZ,
     OpName.ANALOGENTANG,
     OpName.ANALOGRX,
     OpName.ANALOGRY,
@@ -46,7 +47,6 @@ def add_pulses(
     block: AbstractBlock,
     config: Configuration,
     qc_register: Register,
-    spacing: float,
 ) -> None:
     # we need this because of the case with a single type of block in a KronBlock
     # TODO: document properly
@@ -64,8 +64,9 @@ def add_pulses(
     local_channel = sequence.device.channels["rydberg_local"]
     global_channel = sequence.device.channels["rydberg_global"]
 
-    rx = partial(digital_rot_pulse, channel=local_channel, phase=0, config=config)
-    ry = partial(digital_rot_pulse, channel=local_channel, phase=np.pi / 2, config=config)
+    rx = partial(digital_xy_rot_pulse, channel=local_channel, phase=0, config=config)
+    ry = partial(digital_xy_rot_pulse, channel=local_channel, phase=np.pi / 2, config=config)
+    rz = partial(digital_z_rot_pulse, channel=local_channel, phase=np.pi / 2, config=config)
 
     # TODO: lets move those to `@singledipatch`ed functions
     if isinstance(block, WaitBlock):
@@ -96,9 +97,7 @@ def add_pulses(
         d = evaluate(detuning) if detuning.is_number else sequence.declare_variable(d_uuid)
 
         # calculate generator eigenvalues
-        block.eigenvalues_generator = block.compute_eigenvalues_generator(
-            qc_register, block, spacing
-        )
+        block.eigenvalues_generator = block.compute_eigenvalues_generator(qc_register, block)
 
         if block.qubit_support.is_global:
             pulse = analog_rot_pulse(a, w, p, d, global_channel, config)
@@ -115,16 +114,21 @@ def add_pulses(
             entangle_pulse(t, global_channel, config), GLOBAL_CHANNEL, protocol="wait-for-all"
         )
 
-    elif isinstance(block, (RX, RY)):
+    elif isinstance(block, (RX, RY, RZ)):
         (uuid, p) = block.parameters.uuid_param("parameter")
         angle = evaluate(p) if p.is_number else sequence.declare_variable(uuid)
-        pulse = rx(angle) if isinstance(block, RX) else ry(angle)
+        if isinstance(block, RX):
+            pulse = rx(angle)
+        elif isinstance(block, RY):
+            pulse = ry(angle)
+        elif isinstance(block, RZ):
+            pulse = rz(angle)
         sequence.target(qubit_support, LOCAL_CHANNEL)
         sequence.add(pulse, LOCAL_CHANNEL, protocol="wait-for-all")
 
     elif isinstance(block, CompositeBlock) or isinstance(block, AnalogComposite):
         for block in block.blocks:
-            add_pulses(sequence, block, config, qc_register, spacing)
+            add_pulses(sequence, block, config, qc_register)
 
     else:
         msg = f"The pulser backend currently does not support blocks of type: {type(block)}"
@@ -197,7 +201,7 @@ def entangle_pulse(
     return Pulse(amplitude=amplitude, detuning=detuning, phase=np.pi / 2)
 
 
-def digital_rot_pulse(
+def digital_xy_rot_pulse(
     angle: TVar | float, phase: float, channel: Channel, config: Configuration | None = None
 ) -> Pulse:
     if config is None:
@@ -214,3 +218,33 @@ def digital_rot_pulse(
     )
 
     return Pulse.ConstantDetuning(amplitude=amplitude_wf, detuning=0, phase=phase)
+
+
+def digital_z_rot_pulse(
+    angle: TVar | float, phase: float, channel: Channel, config: Configuration | None = None
+) -> Pulse:
+    if config is None:
+        max_det = channel.max_abs_detuning
+    else:
+        max_det = config.detuning if config.detuning is not None else channel.max_abs_detuning
+
+    # get pulse duration in ns
+    duration = 1000 * abs(angle) / max_det
+
+    # create amplitude waveform
+    amp_wf = SquareWaveform.from_duration(
+        duration=duration,  # type: ignore
+        max_amp=0.0,  # type: ignore[arg-type]
+        duration_steps=channel.clock_period,  # type: ignore[attr-defined]
+        min_duration=channel.min_duration,
+    )
+
+    # create detuning waveform
+    det_wf = SquareWaveform.from_duration(
+        duration=duration,  # type: ignore
+        max_amp=max_det,  # type: ignore[arg-type]
+        duration_steps=channel.clock_period,  # type: ignore[attr-defined]
+        min_duration=channel.min_duration,
+    )
+
+    return Pulse(amplitude=amp_wf, detuning=det_wf, phase=abs(phase))

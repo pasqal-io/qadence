@@ -24,7 +24,7 @@ In following are some examples of Qadence possibilites in the analog, digital-an
 ## Analog emulation of a perfect state transfer
 
 This next example showcases the construction and sampling of a system that admits a perfect state transfer between the two edge qubits of a three qubit register laid out in a
-line. This relies on time-evolving a Hamiltonian for a custom defined qubit interation until $t=\frac{\pi}{\sqrt 2}$.
+line. This relies on time-evolving a Hamiltonian for a custom defined qubit interaction until $t=\frac{\pi}{\sqrt 2}$.
 
 ```python exec="on" source="material-block" result="json"
 from torch import pi
@@ -67,7 +67,7 @@ from qadence import Register, AnalogRX, sample
 block = AnalogRX(pi)
 
 # Almost non-interacting qubits as too far apart.
-register = Register.from_coordinates([(0,0), (0,15)])  # Dimensionless.
+register = Register.from_coordinates([(0,0), (0,15)])
 samples = sample(register, block)
 print(f"distance = 15: {samples = }") # markdown-exec: hide
 from collections import Counter # markdown-exec: hide
@@ -75,7 +75,7 @@ from qadence.divergences import js_divergence # markdown-exec: hide
 js = js_divergence(samples[0], Counter({"11": 100})) # markdown-exec: hide
 assert js < 0.01 # markdown-exec: hide
 
-# Interacting qubits as close together.
+# Interacting qubits are close to each other.
 register = Register.from_coordinates([(0,0), (0,5)])
 samples = sample(register, AnalogRX(pi))
 print(f"distance =  5: {samples = }") # markdown-exec: hide

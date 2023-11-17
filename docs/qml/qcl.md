@@ -114,7 +114,7 @@ assert loss.item() < 1e-3
 ```
 
 Qadence offers some convenience functions to implement this training loop with advanced
-logging and metrics track features. You can refer to [this](../qml/qml_tools.md) for more details.
+logging and metrics track features. You can refer to [this tutorial](../qml/ml_tools.md) for more details.
 
 The quantum model is now trained on the training data points. To determine the quality of the results,
 one can check to see how well it fits the function on the test set.

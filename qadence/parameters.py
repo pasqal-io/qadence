@@ -6,12 +6,11 @@ from uuid import uuid4
 import jsonschema
 import numpy as np
 import sympy
-import torch
 from sympy import *
 from sympy import Array, Basic, Expr, Symbol, sympify
 from sympy2jax import SymbolicModule as JaxSympyModule
 from sympytorch import SymPyModule as torchSympyModule
-from torch import Tensor
+from torch import Tensor, rand, tensor
 
 from qadence.logger import get_logger
 from qadence.types import Engine, TNumber
@@ -46,13 +45,18 @@ ParameterJSONSchema = {
 
 class Parameter(Symbol):
     """
-    A wrapper on top of `sympy.Symbol` to include two additional keywords: `trainable` and
-    `value`. This class is to define both feature parameter and variational parameters.
+    A wrapper on top of `sympy.Symbol`.
+
+    Includes two additional keywords: `trainable` and `value`.
+    This class is to define both feature parameter and variational parameters.
     """
 
     trainable: bool
-    """Trainable parameters are *variational* parameters. Non-trainable parameters are *feature*
-    parameters."""
+    """Trainable parameters are *variational* parameters.
+
+    Non-trainable parameters are *feature*
+    parameters.
+    """
     value: TNumber
     """(Initial) value of the parameter."""
 
@@ -61,6 +65,7 @@ class Parameter(Symbol):
     ) -> Parameter | Basic | Expr | Array:
         """
         Arguments:
+
             name: When given a string only, the class
                 constructs a trainable Parameter with a a randomly initialized value.
             **assumptions: are passed on to the parent class `sympy.Symbol`. Two new assumption
@@ -68,7 +73,7 @@ class Parameter(Symbol):
 
         Example:
         ```python exec="on" source="material-block" result="json"
-        from qadence import Parameter, VariationalParameter
+        from qadence.parameters import Parameter, VariationalParameter
 
         theta = Parameter("theta")
         print(f"{theta}: trainable={theta.trainable} value={theta.value}")
@@ -115,7 +120,7 @@ class Parameter(Symbol):
             p.trainable = assumptions.get("trainable", True)
             p.value = assumptions.get("value", None)
             if p.value is None:
-                p.value = torch.rand(1).item()
+                p.value = rand(1).item()
             return p
         else:
             raise TypeError(f"Parameter does not support type {type(name)}")
@@ -176,7 +181,8 @@ def extract_original_param_entry(
     param: Expr,
 ) -> TNumber | Tensor | Expr:
     """
-    Given an Expression, what was the original "param" given by the user? It is either
+    Given an Expression, what was the original "param" given by the user? It is either.
+
     going to be a numeric value, or a sympy Expression (in case a string was given,
     it was converted via Parameter("string").
     """
@@ -186,6 +192,7 @@ def extract_original_param_entry(
 def torchify(expr: Expr) -> torchSympyModule:
     """
     Arguments:
+
         expr: An expression consisting of Parameters.
 
     Returns:
@@ -213,6 +220,7 @@ def sympy_to_numeric(expr: Basic) -> TNumber:
 def evaluate(expr: Expr, values: dict = {}, as_torch: bool = False) -> TNumber | Tensor:
     """
     Arguments:
+
         expr: An expression consisting of Parameters.
         values: values dict which contains values for the Parameters,
             if empty, Parameter.value will be used.
@@ -243,7 +251,7 @@ def evaluate(expr: Expr, values: dict = {}, as_torch: bool = False) -> TNumber |
     res_value: TNumber | Tensor
     query: dict[Parameter, TNumber | Tensor] = {}
     if isinstance(expr, Array):
-        return torch.Tensor(expr.tolist())
+        return Tensor(expr.tolist())
     else:
         if not expr.is_number:
             for s in expr.free_symbols:
@@ -254,7 +262,7 @@ def evaluate(expr: Expr, values: dict = {}, as_torch: bool = False) -> TNumber |
                 else:
                     raise ValueError(f"No value provided for symbol {s.name}")
         if as_torch:
-            res_value = torchify(expr)(**{s.name: torch.tensor(v) for s, v in query.items()})
+            res_value = torchify(expr)(**{s.name: tensor(v) for s, v in query.items()})
         else:
             res = expr.subs(query)
             res_value = sympy_to_numeric(res)
@@ -275,7 +283,9 @@ def stringify(expr: Basic) -> str:
 
 
 class ParamMap:
-    """Connects UUIDs of parameters to their expressions and names. This class is not user-facing
+    """Connects UUIDs of parameters to their expressions and names.
+
+    This class is not user-facing
     and only needed for more complex block definitions. It provides convenient access to
     expressions/UUIDs/names needed in different backends.
 

@@ -8,18 +8,13 @@ import pytest
 import torch
 from torch import Tensor
 
-from qadence import (
-    BackendName,
-    DiffMode,
-    Parameter,
-    QuantumCircuit,
-    QuantumModel,
-    backend_factory,
-    expectation,
-)
-from qadence.blocks import AbstractBlock
+from qadence.backends.api import backend_factory
+from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.block_to_tensor import IMAT
+from qadence.blocks.utils import add, chain, kron
+from qadence.circuit import QuantumCircuit
 from qadence.constructors import ising_hamiltonian, total_magnetization
+from qadence.execution import expectation
 from qadence.measurements import Measurements
 from qadence.measurements.shadow import (
     PROJECTOR_MATRICES,
@@ -31,8 +26,11 @@ from qadence.measurements.shadow import (
     local_shadow,
     number_of_samples,
 )
-from qadence.operations import RX, RY, H, I, X, Y, Z, add, chain, kron
+from qadence.models.quantum_model import QuantumModel
+from qadence.operations import RX, RY, H, I, X, Y, Z
+from qadence.parameters import Parameter
 from qadence.serialization import deserialize
+from qadence.types import BackendName, DiffMode
 
 
 @pytest.mark.parametrize(
@@ -232,12 +230,12 @@ def test_estimations_comparison_tomo_forward_pass(circuit: QuantumCircuit, value
     options = {"n_shots": 100000}
     estimated_exp_tomo = model.expectation(
         values=values,
-        protocol=Measurements(protocol=Measurements.TOMOGRAPHY, options=options),
+        measurement=Measurements(protocol=Measurements.TOMOGRAPHY, options=options),
     )
     new_options = {"accuracy": 0.1, "confidence": 0.1}
     estimated_exp_shadow = model.expectation(
         values=values,
-        protocol=Measurements(protocol=Measurements.SHADOW, options=new_options),
+        measurement=Measurements(protocol=Measurements.SHADOW, options=new_options),
     )  # N = 54400.
     assert torch.allclose(estimated_exp_tomo, pyq_exp_exact, atol=1.0e-2)
     assert torch.allclose(estimated_exp_shadow, pyq_exp_exact, atol=0.1)
@@ -265,7 +263,7 @@ def test_chemistry_hamiltonian_1() -> None:
     exact = model.expectation(values=param_values)
     estim = model.expectation(
         values=param_values,
-        protocol=Measurements(protocol=Measurements.SHADOW, options=kwargs),
+        measurement=Measurements(protocol=Measurements.SHADOW, options=kwargs),
     )
     assert torch.allclose(estim, exact, atol=0.3)
 
@@ -291,7 +289,7 @@ def test_chemistry_hamiltonian_2() -> None:
     exact = model.expectation(values=param_values)
     estim = model.expectation(
         values=param_values,
-        protocol=Measurements(protocol=Measurements.SHADOW, options=kwargs),
+        measurement=Measurements(protocol=Measurements.SHADOW, options=kwargs),
     )
     assert torch.allclose(estim, exact, atol=0.2)
 
@@ -320,6 +318,6 @@ def test_chemistry_hamiltonian_3() -> None:
     exact = model.expectation(values=param_values)
     estim = model.expectation(
         values=param_values,
-        protocol=Measurements(protocol=Measurements.SHADOW, options=kwargs),
+        measurement=Measurements(protocol=Measurements.SHADOW, options=kwargs),
     )
     assert torch.allclose(estim, exact, atol=0.3)

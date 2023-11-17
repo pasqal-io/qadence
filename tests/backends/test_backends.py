@@ -11,13 +11,13 @@ from hypothesis import given, settings
 from metrics import ATOL_DICT, JS_ACCEPTANCE  # type: ignore
 from torch import Tensor
 
-from qadence import BackendName, DiffMode
 from qadence.backend import BackendConfiguration
-from qadence.backends.api import backend_factory
+from qadence.backends.api import backend_factory, config_factory
 from qadence.blocks import AbstractBlock, chain, kron
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import total_magnetization
 from qadence.divergences import js_divergence
+from qadence.execution import run
 from qadence.ml_tools.utils import rand_featureparameters
 from qadence.models import QuantumModel
 from qadence.operations import CPHASE, RX, RY, H, I, X
@@ -29,6 +29,8 @@ from qadence.states import (
     random_state,
     zero_state,
 )
+from qadence.transpile import flatten
+from qadence.types import BackendName, DiffMode
 from qadence.utils import nqubits_to_basis
 
 BACKENDS = BackendName.list()
@@ -165,11 +167,16 @@ def test_backend_sampling(circ: QuantumCircuit) -> None:
     (circ_pyqtorch, _, _, _) = bknd_pyqtorch.convert(circ)
     (circ_braket, _, embed, params) = bknd_braket.convert(circ)
 
-    # braket doesnt support custom initial states so we use state=None for the zero state
+    # braket doesn't support custom initial states, so we use state=None for the zero state
     pyqtorch_samples = bknd_pyqtorch.sample(
         circ_pyqtorch, embed(params, {}), state=None, n_shots=100
     )
-    braket_samples = bknd_braket.sample(circ_braket, embed(params, {}), state=None, n_shots=100)
+    braket_samples = bknd_braket.sample(
+        circ_braket,
+        embed(params, {}),
+        state=None,
+        n_shots=100,
+    )
 
     for pyqtorch_sample, braket_sample in zip(pyqtorch_samples, braket_samples):
         assert js_divergence(pyqtorch_sample, braket_sample) < JS_ACCEPTANCE
@@ -318,3 +325,33 @@ def test_output_cphase_batching(bsize: int) -> None:
 
     assert torch.allclose(exp_list[0], exp_list[1])
     assert equivalent_state(wf_list[0], wf_list[1])
+
+
+def test_custom_transpilation_passes() -> None:
+    backend_list = [BackendName.BRAKET, BackendName.PYQTORCH, BackendName.PULSER]
+
+    block = chain(chain(chain(RX(0, np.pi / 2))), kron(kron(RX(0, np.pi / 2))))
+    circuit = QuantumCircuit(1, block)
+
+    for name in backend_list:
+        config = config_factory(name, {})
+        config.transpilation_passes = [flatten]
+        backend = backend_factory(name, configuration=config)
+        conv = backend.convert(circuit)
+
+        config = config_factory(name, {})
+        config.transpilation_passes = []
+        backend_no_transp = backend_factory(name, configuration=config)
+        conv_no_transp = backend_no_transp.convert(circuit)
+
+        assert conv.circuit.original == conv_no_transp.circuit.original
+        assert conv.circuit.abstract != conv_no_transp.circuit.abstract
+
+
+def test_braket_parametric_cphase() -> None:
+    param_name = "y"
+    block = chain(X(0), H(1), CPHASE(0, 1, param_name))
+    values = {param_name: torch.rand(1)}
+    equivalent_state(
+        run(block, values=values, backend="braket"), run(block, values=values, backend="pyqtorch")
+    )

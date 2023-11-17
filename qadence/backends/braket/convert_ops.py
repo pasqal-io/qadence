@@ -3,12 +3,28 @@ from __future__ import annotations
 from itertools import chain as flatten
 from typing import Callable, Dict, List
 
-from braket.circuits.gates import CZ, CNot, CPhaseShift, H, I, Rx, Ry, Rz, S, Swap, T, X, Y, Z
+from braket.circuits.gates import (
+    CZ,
+    CNot,
+    CPhaseShift,
+    CSwap,
+    H,
+    I,
+    Rx,
+    Ry,
+    Rz,
+    S,
+    Swap,
+    T,
+    X,
+    Y,
+    Z,
+)
 from braket.circuits.instruction import Instruction
 from braket.parametric import FreeParameter
 
 from qadence.blocks import AbstractBlock, CompositeBlock, PrimitiveBlock
-from qadence.errors import NotSupportedError
+from qadence.exceptions import NotSupportedError
 from qadence.operations import OpName
 from qadence.parameters import evaluate
 
@@ -27,6 +43,7 @@ single_qubit_parameterized: Dict[str, Callable] = {
     OpName.RZ: Rz.rz,
 }
 two_qubit: Dict[str, Callable] = {OpName.CNOT: CNot.cnot, OpName.SWAP: Swap.swap, OpName.CZ: CZ.cz}
+three_qubit: Dict[str, Callable] = {OpName.CSWAP: CSwap.cswap}
 two_qubit_parametrized: Dict[str, Callable] = {
     OpName.CPHASE: CPhaseShift.cphaseshift,
 }
@@ -36,6 +53,7 @@ ops_map = {
     **single_qubit_parameterized,
     **two_qubit,
     **two_qubit_parametrized,
+    **three_qubit,
 }
 
 supported_gates = list(ops_map.keys())
@@ -63,14 +81,23 @@ def BraketOperation(block: PrimitiveBlock) -> Instruction:
         return two_qubit[operation](block.qubit_support[0], block.qubit_support[1])
 
     elif operation in two_qubit_parametrized:
-        (expr,) = block.parameters.expressions()  # type: ignore [attr-defined]
-        angle_value = evaluate(expr)
-        return two_qubit_parametrized[operation](
-            control=block.qubit_support[0],
-            target=block.qubit_support[1],
-            angle=angle_value,
+        ((uuid, expr),) = block.parameters.items()  # type: ignore [attr-defined]
+        if expr.is_number:
+            return two_qubit_parametrized[operation](
+                control=block.qubit_support[0],
+                target=block.qubit_support[1],
+                angle=evaluate(expr),
+            )
+        else:
+            return two_qubit_parametrized[operation](
+                control=block.qubit_support[0],
+                target=block.qubit_support[1],
+                angle=FreeParameter(uuid),
+            )
+    elif operation in three_qubit:
+        return three_qubit[operation](
+            block.qubit_support[0], block.qubit_support[1], block.qubit_support[2]
         )
-
     else:
         raise NotSupportedError(
             "Operation type {} is not supported for Braket backend.".format(type(block))

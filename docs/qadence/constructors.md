@@ -8,6 +8,10 @@
 
 ### ::: qadence.constructors.qft
 
+## Hardware efficient ansatz for Rydberg atom arrays
+
+### ::: qadence.constructors.rydberg_hea
+
 ## The DAQC Transform
 
 ### ::: qadence.constructors.daqc.daqc

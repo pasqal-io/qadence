@@ -18,6 +18,7 @@ from .primitive import ParametricBlock
 
 class CompositeBlock(AbstractBlock):
     """Block which composes multiple blocks into one larger block (which can again be composed).
+
     Composite blocks are constructed via [`chain`][qadence.blocks.utils.chain],
     [`kron`][qadence.blocks.utils.kron], and [`add`][qadence.blocks.utils.add].
     """
@@ -178,7 +179,10 @@ class PutBlock(CompositeBlock):
 
 
 class ChainBlock(CompositeBlock):
-    """Chains blocks sequentially. Constructed via [`chain`][qadence.blocks.utils.chain]"""
+    """Chains blocks sequentially.
+
+    Constructed via [`chain`][qadence.blocks.utils.chain]
+    """
 
     name = "chain"
 
@@ -205,7 +209,10 @@ class ChainBlock(CompositeBlock):
 
 
 class KronBlock(CompositeBlock):
-    """Stacks blocks horizontally. Constructed via [`kron`][qadence.blocks.utils.kron]."""
+    """Stacks blocks horizontally.
+
+    Constructed via [`kron`][qadence.blocks.utils.kron].
+    """
 
     name = "kron"
 
@@ -240,7 +247,10 @@ class KronBlock(CompositeBlock):
 
 
 class AddBlock(CompositeBlock):
-    """Adds blocks. Constructed via [`add`][qadence.blocks.utils.add]."""
+    """Adds blocks.
+
+    Constructed via [`add`][qadence.blocks.utils.add].
+    """
 
     name = "add"
 

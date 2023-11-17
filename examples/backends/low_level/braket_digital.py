@@ -15,8 +15,7 @@ from qadence import (
     chain,
     total_magnetization,
 )
-from qadence.backend import BackendName
-from qadence.backends.pytorch_wrapper import DiffMode
+from qadence.types import BackendName, DiffMode
 
 # def circuit(n_qubits):
 #     # make feature map with input parameters
@@ -42,7 +41,7 @@ from qadence.backends.pytorch_wrapper import DiffMode
 
 
 def circuit(n_qubits):
-    """Helper function to make an example circuit"""
+    """Helper function to make an example circuit."""
 
     x = Parameter("x", trainable=False)
     y = Parameter("y", trainable=False)

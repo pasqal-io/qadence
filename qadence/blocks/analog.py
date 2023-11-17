@@ -83,19 +83,21 @@ class AnalogBlock(AbstractBlock):
         return s
 
     def compute_eigenvalues_generator(
-        self, register: Register, block: AbstractBlock, spacing: float
+        self, register: Register, block: AbstractBlock
     ) -> torch.Tensor:
         from qadence import add_interaction
 
-        return add_interaction(register, block, spacing=spacing).eigenvalues_generator
+        return add_interaction(register, block).eigenvalues_generator
 
 
 @dataclass(eq=False, repr=False)
 class WaitBlock(AnalogBlock):
     """
-    Waits. In real interacting quantum devices, it means letting the system evolve freely according
+    Waits.
+
+    In real interacting quantum devices, it means letting the system evolve freely according
     to the time-dependent Schrodinger equation. With emulators, this block is translated to an
-    appropriate interaction Hamiltonian, for example, an Ising interation
+    appropriate interaction Hamiltonian, for example, an Ising interaction
 
         Hᵢₙₜ = ∑ᵢⱼ C₆/rᵢⱼ⁶ nᵢnⱼ
 
@@ -107,7 +109,7 @@ class WaitBlock(AnalogBlock):
 
     To construct this block, use the [`wait`][qadence.operations.wait] function.
 
-    Can be used with [`add_interaction`][qadence.transpile.emulate.add_interaction].
+    Can be used with `add_interaction`.
     """
 
     _eigenvalues_generator: torch.Tensor | None = None
@@ -132,9 +134,9 @@ class WaitBlock(AnalogBlock):
 
 @dataclass(eq=False, repr=False)
 class ConstantAnalogRotation(AnalogBlock):
-    """Implements a constant analog rotation with interaction dictated by the chosen Hamiltonian
+    """Implements a constant analog rotation with interaction dictated by the chosen Hamiltonian.
 
-        H = ∑ᵢ(hΩ/2 sin(φ)*Xᵢ - cos(φ)*Yᵢ - hδnᵢ) + Hᵢₙₜ.
+        H/h = ∑ᵢ(Ω/2 cos(φ)*Xᵢ - sin(φ)*Yᵢ - δnᵢ) + Hᵢₙₜ.
 
     To construct this block you can use of the following convenience wrappers:
     - The general rotation operation [`AnalogRot`][qadence.operations.AnalogRot]
@@ -143,7 +145,7 @@ class ConstantAnalogRotation(AnalogBlock):
       [`AnalogRY`][qadence.operations.AnalogRY],
       [`AnalogRZ`][qadence.operations.AnalogRZ]
 
-    Can be used with [`add_interaction`][qadence.transpile.emulate.add_interaction].
+    Can be used with `add_interaction`.
     WARNING: do not use `ConstantAnalogRotation` with `alpha` as differentiable parameter - use
     the convenience wrappers mentioned above.
     """
@@ -237,7 +239,9 @@ class AnalogComposite(AnalogBlock):
 @dataclass(eq=False, repr=False, init=False)
 class AnalogChain(AnalogComposite):
     def __init__(self, blocks: Tuple[AnalogBlock, ...]):
-        """A chain of analog blocks. Needed because analog blocks require
+        """A chain of analog blocks.
+
+        Needed because analog blocks require
         stricter validation than the general `ChainBlock`.
 
         `AnalogChain`s can only be constructed from `AnalogKron` blocks or
@@ -271,7 +275,9 @@ class AnalogChain(AnalogComposite):
 @dataclass(eq=False, repr=False, init=False)
 class AnalogKron(AnalogComposite):
     def __init__(self, blocks: Tuple[AnalogBlock, ...], interaction: Interaction = Interaction.NN):
-        """Stack analog blocks vertically (i.e. in time). Needed because analog require
+        """Stack analog blocks vertically (i.e. in time).
+
+        Needed because analog require
         stricter validation than the general `KronBlock`.
 
         `AnalogKron`s can only be constructed from _**non-global**_, analog blocks

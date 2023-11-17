@@ -5,16 +5,17 @@ import pytest
 import torch
 from metrics import PULSER_GPSR_ACCEPTANCE
 
-from qadence import DifferentiableBackend, DiffMode, Parameter, QuantumCircuit, add_interaction
+from qadence import DifferentiableBackend, DiffMode, Parameter, QuantumCircuit
 from qadence.backends.pulser import Backend as PulserBackend
 from qadence.backends.pyqtorch import Backend as PyQBackend
-from qadence.blocks import chain
+from qadence.blocks import AbstractBlock, chain
 from qadence.constructors import total_magnetization
 from qadence.operations import RX, RY, AnalogRot, AnalogRX, wait
+from qadence.register import Register
 
 
-def circuit(circ_id: int) -> QuantumCircuit:
-    """Helper function to make an example circuit"""
+def block(circ_id: int) -> AbstractBlock:
+    """Helper function to make an example circuit."""
 
     x = Parameter("x", trainable=False)
 
@@ -32,28 +33,26 @@ def circuit(circ_id: int) -> QuantumCircuit:
             AnalogRX(np.pi / 2),
         )
 
-    circ = QuantumCircuit(2, block)
-
-    return circ
+    return block
 
 
 @pytest.mark.slow
 @pytest.mark.parametrize(
-    "circ_id",
+    "block_id",
     [1, 2, 3, 4],
 )
-def test_pulser_gpsr(circ_id: int) -> None:
+def test_pulser_gpsr(block_id: int) -> None:
     torch.manual_seed(42)
     np.random.seed(42)
 
-    if circ_id == 1:
+    if block_id == 1:
         spacing = 30.0
     else:
         spacing = 8.0
 
     # define circuits
-    circ = circuit(circ_id)
-    circ_pyq = add_interaction(circ, spacing=spacing)
+    register = Register.line(2, spacing=spacing)
+    circ = QuantumCircuit(register, block(block_id))
 
     # create input values
     xs = torch.linspace(1, 2 * np.pi, 30, requires_grad=True)
@@ -63,7 +62,7 @@ def test_pulser_gpsr(circ_id: int) -> None:
 
     # run with pyq backend
     pyq_backend = PyQBackend()
-    conv = pyq_backend.convert(circ_pyq, obs)
+    conv = pyq_backend.convert(circ, obs)
     pyq_circ, pyq_obs, embedding_fn, params = conv
     diff_backend = DifferentiableBackend(pyq_backend, diff_mode=DiffMode.AD)
     expval_pyq = diff_backend.expectation(pyq_circ, pyq_obs, embedding_fn(params, values))
@@ -72,7 +71,7 @@ def test_pulser_gpsr(circ_id: int) -> None:
     )[0]
 
     # run with pulser backend
-    pulser_backend = PulserBackend(config={"spacing": spacing})  # type: ignore[arg-type]
+    pulser_backend = PulserBackend()  # type: ignore[arg-type]
     conv = pulser_backend.convert(circ, obs)
     pulser_circ, pulser_obs, embedding_fn, params = conv
     diff_backend = DifferentiableBackend(pulser_backend, diff_mode=DiffMode.GPSR, shift_prefac=0.2)

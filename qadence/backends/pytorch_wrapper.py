@@ -6,18 +6,23 @@ from functools import partial
 from typing import Any, Callable, Sequence
 
 import torch
-from torch import Tensor, nn
+from torch import Tensor
 from torch.autograd import Function
+from torch.nn import Module
 
 from qadence.backend import Backend as QuantumBackend
 from qadence.backend import Converted, ConvertedCircuit, ConvertedObservable
-from qadence.backends.utils import param_dict
-from qadence.blocks import AbstractBlock, PrimitiveBlock
+from qadence.backends.adjoint import AdjointExpectation
+from qadence.backends.utils import infer_batchsize, is_pyq_shape, param_dict, pyqify, validate_state
+from qadence.blocks.abstract import AbstractBlock
+from qadence.blocks.primitive import PrimitiveBlock
 from qadence.blocks.utils import uuid_to_block, uuid_to_eigen
 from qadence.circuit import QuantumCircuit
 from qadence.extensions import get_gpsr_fns
 from qadence.measurements import Measurements
+from qadence.mitigations import Mitigations
 from qadence.ml_tools import promote_to_tensor
+from qadence.noise import Noise
 from qadence.types import DiffMode, Endianness, Engine
 
 
@@ -33,7 +38,7 @@ class PSRExpectation(Function):
         *param_values: Tensor,
     ) -> Tensor:
         for param in param_values:
-            param.detach()
+            param = param.detach()
 
         ctx.expectation_fn = expectation_fn
         ctx.param_psrs = param_psrs
@@ -61,7 +66,8 @@ class PSRExpectation(Function):
 
         def vjp(psr: Callable, name: str) -> Tensor:
             """
-            !!! warn
+            !!! warn.
+
                 Sums over gradients corresponding to different observables.
             """
             return (grad_out * psr(expectation_fn, params, name)).sum(dim=1)
@@ -84,7 +90,9 @@ class DifferentiableExpectation:
     observable: list[ConvertedObservable] | ConvertedObservable
     param_values: dict[str, Tensor]
     state: Tensor | None = None
-    protocol: Measurements | None = None
+    measurement: Measurements | None = None
+    noise: Noise | None = None
+    mitigation: Mitigations | None = None
     endianness: Endianness = Endianness.BIG
     engine: Engine = Engine.TORCH
 
@@ -92,14 +100,15 @@ class DifferentiableExpectation:
         self.observable = (
             self.observable if isinstance(self.observable, list) else [self.observable]
         )
-        if self.protocol:
-            expectation_fn = self.protocol.get_measurement_fn()
+        if self.measurement:
+            expectation_fn = self.measurement.get_measurement_fn()
             expectations = expectation_fn(
                 circuit=self.circuit.original,
                 observables=[obs.original for obs in self.observable],
                 param_values=self.param_values,
-                options=self.protocol.options,
+                options=self.measurement.options,
                 state=self.state,
+                noise=self.noise,
                 endianness=self.endianness,
             )
         else:
@@ -108,30 +117,64 @@ class DifferentiableExpectation:
                 observable=self.observable,
                 param_values=self.param_values,
                 state=self.state,
+                noise=self.noise,
+                mitigation=self.mitigation,
                 endianness=self.endianness,
             )
         return promote_to_tensor(
             expectations if isinstance(expectations, Tensor) else torch.tensor(expectations)
         )
 
+    def adjoint(self) -> Tensor:
+        self.observable = (
+            self.observable if isinstance(self.observable, list) else [self.observable]
+        )
+        if len(self.observable) > 1:
+            raise NotImplementedError("AdjointExpectation currently only supports one observable.")
+
+        n_qubits = self.circuit.abstract.n_qubits
+        values_batch_size = infer_batchsize(self.param_values)
+        if self.state is None:
+            self.state = self.circuit.native.init_state(batch_size=values_batch_size)
+        else:
+            validate_state(self.state, n_qubits)
+            self.state = (
+                pyqify(self.state, n_qubits)
+                if not is_pyq_shape(self.state, n_qubits)
+                else self.state
+            )
+        batch_size = max(values_batch_size, self.state.size(-1))
+        return (
+            AdjointExpectation.apply(
+                self.circuit.native,
+                self.observable[0].native,  # Currently, adjoint only supports a single observable.
+                self.state,
+                self.param_values.keys(),
+                *self.param_values.values(),
+            )
+            .unsqueeze(1)
+            .reshape(batch_size, 1)
+        )  # we expect (batch_size, n_observables) shape
+
     def psr(self, psr_fn: Callable, **psr_args: int | float | None) -> Tensor:
         # wrapper which unpacks the parameters
         # as pytorch grads can only calculated w.r.t tensors
         # so we unpack the params, feed in the names separately
-        # as apply doesnt take keyword arguments
+        # as apply doesn't take keyword arguments
         # We also fold in the observable into the backend which makes
         # life easier in the custom autodiff.
         self.observable = (
             self.observable if isinstance(self.observable, list) else [self.observable]
         )
 
-        if self.protocol is not None:
+        if self.measurement is not None:
             expectation_fn = partial(
-                self.protocol.get_measurement_fn(),
+                self.measurement.get_measurement_fn(),
                 circuit=self.circuit.original,
                 observables=[obs.original for obs in self.observable],
-                options=self.protocol.options,
+                options=self.measurement.options,
                 state=self.state,
+                noise=self.noise,
                 endianness=self.endianness,
             )
         else:
@@ -140,6 +183,8 @@ class DifferentiableExpectation:
                 circuit=self.circuit,
                 observable=self.observable,
                 state=self.state,
+                noise=self.noise,
+                mitigation=self.mitigation,
                 endianness=self.endianness,
             )
         # PSR only applies to parametric circuits.
@@ -189,8 +234,8 @@ class DifferentiableExpectation:
         return param_to_psr
 
 
-class DifferentiableBackend(nn.Module):
-    """A class to abstract the operations done by the autodiff engine
+class DifferentiableBackend(Module):
+    """A class to abstract the operations done by the autodiff engine.
 
     Arguments:
         backend: An instance of the QuantumBackend type perform execution.
@@ -231,7 +276,9 @@ class DifferentiableBackend(nn.Module):
         observable: list[ConvertedObservable] | ConvertedObservable,
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
-        protocol: Measurements | None = None,
+        measurement: Measurements | None = None,
+        noise: Noise | None = None,
+        mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         """Compute the expectation value of a given observable.
@@ -241,7 +288,7 @@ class DifferentiableBackend(nn.Module):
             observable: A backend native observable to compute the expectation value from.
             param_values: A dict of values for symbolic substitution.
             state: An initial state.
-            protocol: A shot-based measurement protocol.
+            measurement: A shot-based measurement protocol.
             endianness: Endianness of the state.
 
         Returns:
@@ -254,12 +301,16 @@ class DifferentiableBackend(nn.Module):
             observable=observable,
             param_values=param_values,
             state=state,
-            protocol=protocol,
+            measurement=measurement,
+            noise=noise,
+            mitigation=mitigation,
             endianness=endianness,
         )
 
         if self.diff_mode == DiffMode.AD:
             expectation = differentiable_expectation.ad
+        elif self.diff_mode == DiffMode.ADJOINT:
+            expectation = differentiable_expectation.adjoint
         else:
             try:
                 fns = get_gpsr_fns()
@@ -273,8 +324,10 @@ class DifferentiableBackend(nn.Module):
         self,
         circuit: ConvertedCircuit,
         param_values: dict[str, Tensor],
-        state: Tensor | None = None,
         n_shots: int = 1,
+        state: Tensor | None = None,
+        noise: Noise | None = None,
+        mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         """Sample bitstring from the registered circuit.
@@ -283,6 +336,10 @@ class DifferentiableBackend(nn.Module):
             circuit: A backend native quantum circuit to be executed.
             param_values: The values of the parameters after embedding
             n_shots: The number of shots. Defaults to 1.
+            state: Initial state.
+            noise: A noise model to use.
+            mitigation: A mitigation protocol to apply to noisy samples.
+            endianness: Endianness of the resulting bitstrings.
 
         Returns:
             An iterable with all the sampled bitstrings
@@ -291,8 +348,10 @@ class DifferentiableBackend(nn.Module):
             return self.backend.sample(
                 circuit=circuit,
                 param_values=param_values,
-                state=state,
                 n_shots=n_shots,
+                state=state,
+                noise=noise,
+                mitigation=mitigation,
                 endianness=endianness,
             )
 
@@ -317,13 +376,16 @@ class DifferentiableBackend(nn.Module):
         observable: list[AbstractBlock] | AbstractBlock | None = None,
     ) -> Converted:
         if self.diff_mode != DiffMode.AD and observable is not None:
+            msg = (
+                f"Differentiation mode '{self.diff_mode}' does not support parametric observables."
+            )
             if isinstance(observable, list):
                 for obs in observable:
                     if obs.is_parametric:
-                        raise ValueError("PSR cannot be applied to a parametric observable.")
+                        raise ValueError(msg)
             else:
                 if observable.is_parametric:
-                    raise ValueError("PSR cannot be applied to a parametric observable.")
+                    raise ValueError(msg)
         return self.backend.convert(circuit, observable)
 
     def assign_parameters(self, circuit: ConvertedCircuit, param_values: dict[str, Tensor]) -> Any:

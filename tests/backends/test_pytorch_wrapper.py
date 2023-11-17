@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from typing import Callable
-
 import numpy as np
 import pytest
 import sympy
 import torch
 
 from qadence.backends.api import backend_factory
+from qadence.backends.pyqtorch.convert_ops import finitediff
 from qadence.blocks import AbstractBlock, add, chain, kron
 from qadence.circuit import QuantumCircuit
 from qadence.operations import CNOT, RX, RZ, Z
@@ -20,7 +19,7 @@ expected_pi2 = torch.tensor([[0.5, 0.0], [0.5, 0.0]])
 
 
 def parametric_circuit(n_qubits: int) -> QuantumCircuit:
-    """Helper function to make an example circuit"""
+    """Helper function to make an example circuit."""
 
     x = Parameter("x", trainable=False)
     y = Parameter("y", trainable=False)
@@ -108,6 +107,33 @@ def test_embeddings() -> None:
         embed(params, {"x": torch.ones(batch_size)})
 
 
+@pytest.mark.parametrize("batch_size", [1, 5])
+def test_expval_differentiation_all_diffmodes(batch_size: int) -> None:
+    grads = {}
+    for diff_mode in ["adjoint", "ad", "gpsr"]:
+        n_qubits = 4
+        observable: list[AbstractBlock] = [kron(Z(i) for i in range(n_qubits))]
+        circ = parametric_circuit(n_qubits)
+
+        bknd = backend_factory(backend="pyqtorch", diff_mode=diff_mode)
+        pyqtorch_circ, pyqtorch_obs, embeddings_fn, params = bknd.convert(circ, observable)
+
+        inputs_x = torch.rand(batch_size, requires_grad=True)
+        inputs_y = torch.rand(batch_size, requires_grad=True)
+
+        def func(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+            inputs = {"x": x, "y": y}
+            all_params = embeddings_fn(params, inputs)
+            return bknd.expectation(pyqtorch_circ, pyqtorch_obs, all_params)
+
+        exp = func(inputs_x, inputs_y)
+        grad = torch.autograd.grad(exp, inputs_x, torch.ones_like(exp))[0]
+        grads[diff_mode] = grad.detach()
+
+    for k, v in grads.items():
+        assert torch.allclose(grads["ad"], v)
+
+
 @pytest.mark.parametrize(
     "batch_size",
     [
@@ -130,7 +156,7 @@ def test_embeddings() -> None:
         ),
     ],
 )
-def test_expval_differentiation(batch_size: int, diff_mode: str) -> None:
+def test_parametricobs_expval_differentiation(batch_size: int, diff_mode: str) -> None:
     torch.manual_seed(42)
     n_qubits = 4
     observable: list[AbstractBlock] = [add(Z(i) * Parameter(f"o_{i}") for i in range(n_qubits))]
@@ -152,14 +178,8 @@ def test_expval_differentiation(batch_size: int, diff_mode: str) -> None:
         return ad_backend.expectation(pyqtorch_circ, pyqtorch_obs, all_params)
 
     expval = func(inputs_x, inputs_y, param_w)
-    # if expval.numel() > 1:
-    #     assert expval.shape == (batch_size, n_obs)
-
-    # FIXME: higher order
-    torch.autograd.gradcheck(func, (inputs_x, inputs_y, param_w))
-
-    def finitediff(f: Callable, x: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
-        return (f(x + eps) - f(x - eps)) / (2 * eps)  # type: ignore
+    assert torch.autograd.gradcheck(func, (inputs_x, inputs_y, param_w))
+    assert torch.autograd.gradgradcheck(func, (inputs_x, inputs_y, param_w))
 
     assert torch.allclose(
         finitediff(lambda x: func(x, inputs_y, param_w), inputs_x),

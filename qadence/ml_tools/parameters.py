@@ -6,7 +6,7 @@ from torch.nn import Module
 
 
 def get_parameters(model: Module) -> Tensor:
-    """Retrieve all trainable model parameters in a single vector
+    """Retrieve all trainable model parameters in a single vector.
 
     Args:
         model (Module): the input PyTorch model
@@ -19,7 +19,7 @@ def get_parameters(model: Module) -> Tensor:
 
 
 def set_parameters(model: Module, theta: Tensor) -> None:
-    """Set all trainable parameters of a model from a single vector
+    """Set all trainable parameters of a model from a single vector.
 
     Notice that this function assumes prior knowledge of right number
     of parameters in the model
@@ -42,5 +42,5 @@ def set_parameters(model: Module, theta: Tensor) -> None:
 
 
 def num_parameters(model: Module) -> int:
-    """Return the total number of parameters of the given model"""
+    """Return the total number of parameters of the given model."""
     return len(get_parameters(model))

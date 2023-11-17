@@ -8,17 +8,16 @@ from typing import Any, overload
 import numpy as np
 from torch import Tensor, tensor
 
-from qadence import QuantumCircuit
 from qadence.blocks import AbstractBlock
+from qadence.circuit import QuantumCircuit
 
 
 def reassign(block: AbstractBlock, qubit_map: dict[int, int]) -> AbstractBlock:
-    """Update the support of a given block
+    """Update the support of a given block.
 
     Args:
         block (AbstractBlock): _description_
         qubit_map (dict[int, int]): _description_
-
     """
     from qadence.blocks import CompositeBlock, ControlBlock, ParametricControlBlock, ScaleBlock
     from qadence.blocks.utils import _construct
@@ -138,7 +137,7 @@ def _(cntrs: list) -> list:
 
 @invert_endianness.register(QuantumCircuit)  # type: ignore[attr-defined]
 def _(circuit: QuantumCircuit) -> QuantumCircuit:
-    """This method inverts a circuit "vertically"
+    """This method inverts a circuit "vertically".
 
     All gates are same but qubit indices are ordered inversely,
     such that bitstrings 00111 become 11100 when measured. Handy for

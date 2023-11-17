@@ -24,9 +24,8 @@ class MatrixBlock(PrimitiveBlock):
     ```python exec="on" source="material-block" result="json"
         import torch
 
-    from qadence import QuantumCircuit
-    from qadence.backend import BackendName
-    from qadence.backends.api import DiffMode
+    from qadence.circuit import QuantumCircuit
+    from qadence.types import BackendName, DiffMode
     from qadence.blocks.matrix import MatrixBlock
     from qadence.models import QuantumModel
     from qadence.operations import X, Z

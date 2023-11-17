@@ -6,17 +6,18 @@ import numpy as np
 import pytest
 import torch
 
-from qadence import BackendName, DiffMode, FeatureParameter, QuantumCircuit
 from qadence.blocks import (
     chain,
     kron,
     tag,
 )
+from qadence.circuit import QuantumCircuit
 from qadence.constructors import hea, ising_hamiltonian, total_magnetization
 from qadence.models import QNN
 from qadence.operations import RX, RY
-from qadence.parameters import Parameter
+from qadence.parameters import FeatureParameter, Parameter
 from qadence.states import uniform_state
+from qadence.types import BackendName, DiffMode
 
 
 def build_circuit(n_qubits_per_feature: int, n_features: int, depth: int = 2) -> QuantumCircuit:
@@ -82,7 +83,8 @@ def test_input_nd(dim: int) -> None:
     assert res.size()[0] == batch_size
 
 
-def test_qnn_expectation(n_qubits: int = 4) -> None:
+@pytest.mark.parametrize("diff_mode", ["ad", "adjoint"])
+def test_qnn_expectation(diff_mode: str, n_qubits: int = 2) -> None:
     theta0 = Parameter("theta0", trainable=True)
     theta1 = Parameter("theta1", trainable=True)
 
@@ -91,14 +93,14 @@ def test_qnn_expectation(n_qubits: int = 4) -> None:
 
     fm = chain(ry0, ry1)
 
-    ansatz = hea(2, 2, param_prefix="eps")
+    ansatz = hea(n_qubits, depth=2, param_prefix="eps")
 
     block = chain(fm, ansatz)
 
     qc = QuantumCircuit(n_qubits, block)
     uni_state = uniform_state(n_qubits)
     obs = total_magnetization(n_qubits)
-    model = QNN(circuit=qc, observable=obs, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD)
+    model = QNN(circuit=qc, observable=obs, backend=BackendName.PYQTORCH, diff_mode=diff_mode)
 
     exp = model(values={}, state=uni_state)
     assert not torch.any(torch.isnan(exp))
@@ -141,7 +143,8 @@ def test_qnn_multiple_outputs(n_qubits: int = 4) -> None:
         assert torch.allclose(tmp, torch.ones(n_obs))
 
 
-def test_multiparam_qnn_training() -> None:
+@pytest.mark.parametrize("diff_mode", ["ad", "adjoint"])
+def test_multiparam_qnn_training(diff_mode: str) -> None:
     backend = BackendName.PYQTORCH
     n_qubits = 2
     n_epochs = 5
@@ -160,7 +163,7 @@ def test_multiparam_qnn_training() -> None:
     block = chain(fm, ansatz)
     qc = QuantumCircuit(n_qubits, block)
     obs = total_magnetization(n_qubits)
-    qnn = QNN(qc, observable=obs, diff_mode=DiffMode.AD, backend=backend)
+    qnn = QNN(qc, observable=obs, diff_mode=diff_mode, backend=backend)
 
     optimizer = torch.optim.Adam(qnn.parameters(), lr=1e-1)
 

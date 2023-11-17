@@ -48,7 +48,7 @@ circuit_block = tag(hea(n_qubits, depth = 2), "Circuit block")
 
 qc_with_state_prep = QuantumCircuit(n_qubits, state_prep_block, circuit_block)
 from qadence.draw import html_string # markdown-exec: hide
-print(html_string(qc_with_state_prep), size="4,4") # markdown-exec: hide
+print(html_string(qc_with_state_prep)) # markdown-exec: hide
 ```
 Several standard quantum states can be conveniently initialized in Qadence, both in statevector form as well as in block form as shown in following.
 
