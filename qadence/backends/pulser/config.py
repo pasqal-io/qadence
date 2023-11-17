@@ -42,6 +42,13 @@ class Configuration(BackendConfiguration):
     to avoid any interpolation in the solving procedure
     """
 
+    spacing: Optional[float] = None
+    """Spacing that multiplies the coordinates of the register.
+
+    FIXME: This is deprecated, spacing is now controlled in the Register,
+    as detailed in the register tutorial.
+    """
+
     method_solv: str = "adams"
     """Solver method to pass to the Qutip solver."""
 
