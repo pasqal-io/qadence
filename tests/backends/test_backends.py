@@ -13,6 +13,7 @@ from torch import Tensor
 
 from qadence.backend import BackendConfiguration
 from qadence.backends.api import backend_factory, config_factory
+from qadence.backends.utils import jarr_to_tensor
 from qadence.blocks import AbstractBlock, chain, kron
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import total_magnetization
@@ -132,6 +133,10 @@ def test_qcl_loss(backend: str) -> None:
     [
         BackendName.PYQTORCH,
         pytest.param(
+            BackendName.HORQRUX,
+            marks=pytest.mark.xfail(reason="horqrux doesnt support batching of states."),
+        ),
+        pytest.param(
             BackendName.BRAKET,
             marks=pytest.mark.xfail(reason="state-vector initial state not implemented in Braket"),
         ),
@@ -198,6 +203,8 @@ def test_run_for_random_circuit(backend: BackendName, circuit: QuantumCircuit) -
     inputs = rand_featureparameters(circuit, 1)
     wf_pyqtorch = bknd_pyqtorch.run(circ_pyqtorch, embed_pyqtorch(params_pyqtorch, inputs))
     wf = bknd.run(circ, embed(params, inputs))
+    if backend == BackendName.HORQRUX:
+        wf = jarr_to_tensor(wf)
     assert equivalent_state(wf_pyqtorch, wf, atol=ATOL_DICT[backend])
 
 
@@ -242,6 +249,8 @@ def test_expectation_for_random_circuit(
         circ_pyqtorch, obs_pyqtorch, embed_pyqtorch(params_pyqtorch, inputs)
     )[0]
     expectation = bknd.expectation(circ, obs, embed(params, inputs))[0]
+    if backend == BackendName.HORQRUX:
+        expectation = jarr_to_tensor(expectation, dtype=torch.double)
     assert torch.allclose(pyqtorch_expectation, expectation, atol=ATOL_DICT[backend])
 
 

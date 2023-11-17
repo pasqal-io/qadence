@@ -35,7 +35,7 @@ def concretize_parameter(value: TNumber, requires_grad: bool, engine: Engine) ->
         else:
             return np.array(value)
     else:
-        return torch.tensor(value, requires_grad=requires_grad)
+        return torch.tensor([value], requires_grad=requires_grad)
 
 
 def unique(x: Iterable) -> List:

@@ -12,7 +12,7 @@ from torch import Tensor
 
 from qadence.backend import Backend as BackendInterface
 from qadence.backend import ConvertedCircuit, ConvertedObservable
-from qadence.backends.utils import jarr_to_tensor
+from qadence.backends.utils import infer_batchsize, jarr_to_tensor, pyqify, tensor_to_jnp
 from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
@@ -70,17 +70,19 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         state: Any = None,
         endianness: Endianness = Endianness.BIG,
+        horqify_state: bool = True,
         unhorqify_state: bool = True,
     ) -> ArrayLike:
         n_qubits = circuit.abstract.n_qubits
-
         param_values = self.values_to_jax(param_values)
         if state is None:
             state = prepare_state(n_qubits, "0" * n_qubits)
+        else:
+            state = tensor_to_jnp(pyqify(state)) if horqify_state else state
         state = circuit.native(state, param_values)
         batch_size = 1  # FIXME : add batching
         if unhorqify_state:
-            state = jnp.reshape(state, (batch_size, 2**circuit.abstract.n_qubits))
+            state = jarr_to_tensor(jnp.reshape(state, (batch_size, 2**circuit.abstract.n_qubits)))
         if endianness != self.native_endianness:
             state = jnp.reshape(state, (batch_size, 2**circuit.abstract.n_qubits))
             state = invert_endianness(jarr_to_tensor(state))
@@ -97,11 +99,14 @@ class Backend(BackendInterface):
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> ArrayLike:
+        batch_size = infer_batchsize(param_values)
+        n_obs = len(observable)
         if state is None:
             state = prepare_state(circuit.abstract.n_qubits, "0" * circuit.abstract.n_qubits)
         param_values = self.values_to_jax(param_values)
         wf = circuit.native(state, param_values)
-        return jnp.expand_dims(observable[0].native(wf, param_values), axis=0)
+        exp_vals = jnp.array([obs.native(wf, param_values) for obs in observable])
+        return jnp.reshape(exp_vals, (batch_size, n_obs))
 
     def sample(
         self,
@@ -156,6 +161,8 @@ class Backend(BackendInterface):
             param_values=param_values,
             state=state,
             endianness=self.native_endianness,
+            horqify_state=True,
+            unhorqify_state=False,
         )
         probs = jnp.abs(jnp.float_power(wf, 2.0)).ravel()
         samples = [

@@ -9,6 +9,7 @@ import jax.numpy as jnp
 from horqrux.gates import NOT, H, I, Rx, Ry, Rz, X, Y, Z
 from horqrux.ops import apply_gate
 from horqrux.types import Gate
+from horqrux.utils import overlap
 from jax import Array
 from jax.typing import ArrayLike
 from torch import Tensor
@@ -235,19 +236,13 @@ class HorQObservable(QdHorQGate):
         self.ops = ops
         self.n_qubits = n_qubits
 
-    def overlap(self, state: ArrayLike, other: ArrayLike) -> ArrayLike:
-        batch_size = 1
-        state = state.reshape((2**self.n_qubits, batch_size))
-        other = other.reshape((2**self.n_qubits, batch_size))
-        return jnp.sum(jnp.conj(state) * other).real
-
     def _forward(self, state: ArrayLike, values: dict) -> ArrayLike:
         for op in self.ops:
             state = op.forward(state, values)
         return state
 
     def forward(self, state: ArrayLike, values: dict) -> ArrayLike:
-        return self.overlap(self._forward(state, values), state)
+        return overlap(state, self._forward(state, values))
 
 
 def convert_observable(
