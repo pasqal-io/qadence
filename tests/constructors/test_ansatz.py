@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import pytest
-from torch import Size
+from torch import Size, allclose
 
 from qadence import (
     CNOT,
@@ -18,6 +18,8 @@ from qadence import (
     hea,
     identity_initialized_ansatz,
     kron,
+    random_state,
+    run,
 )
 from qadence.blocks import AbstractBlock, has_duplicate_vparams
 from qadence.types import Strategy
@@ -126,3 +128,14 @@ def test_iia_forward(n_qubits: int, depth: int, entangler: AbstractBlock) -> Non
 
     wf = model.run({})
     assert wf.shape == Size([1, 2**n_qubits])
+
+
+@pytest.mark.parametrize("n_qubits", [2, 5])
+@pytest.mark.parametrize("depth", [2, 4])
+@pytest.mark.parametrize("entangler", [CNOT, CRX])
+def test_iia_value(n_qubits: int, depth: int, entangler: AbstractBlock) -> None:
+    iia = identity_initialized_ansatz(
+        n_qubits=n_qubits, depth=depth, rotations=[RZ, RX, RZ], entangler=entangler
+    )
+    state = random_state(n_qubits)
+    assert allclose(state, run(iia, state=state))
