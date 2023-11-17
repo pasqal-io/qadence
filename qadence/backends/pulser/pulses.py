@@ -47,7 +47,6 @@ def add_pulses(
     block: AbstractBlock,
     config: Configuration,
     qc_register: Register,
-    spacing: float,
 ) -> None:
     # we need this because of the case with a single type of block in a KronBlock
     # TODO: document properly
@@ -98,9 +97,7 @@ def add_pulses(
         d = evaluate(detuning) if detuning.is_number else sequence.declare_variable(d_uuid)
 
         # calculate generator eigenvalues
-        block.eigenvalues_generator = block.compute_eigenvalues_generator(
-            qc_register, block, spacing
-        )
+        block.eigenvalues_generator = block.compute_eigenvalues_generator(qc_register, block)
 
         if block.qubit_support.is_global:
             pulse = analog_rot_pulse(a, w, p, d, global_channel, config)
@@ -131,7 +128,7 @@ def add_pulses(
 
     elif isinstance(block, CompositeBlock) or isinstance(block, AnalogComposite):
         for block in block.blocks:
-            add_pulses(sequence, block, config, qc_register, spacing)
+            add_pulses(sequence, block, config, qc_register)
 
     else:
         msg = f"The pulser backend currently does not support blocks of type: {type(block)}"
