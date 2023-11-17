@@ -22,14 +22,14 @@ from qadence.backends.pyqtorch.backend import Backend as PyqBackend
 
 
 @pytest.mark.parametrize(
-    "max_amp,max_det",
+    "amp,det",
     [(0.0, 10.0), (15.0, 0.0), (15.0, 9.0)],
 )
 @pytest.mark.parametrize(
     "spacing",
     [8.0, 30.0],
 )
-def test_pulser_pyq_addressing(max_amp: float, max_det: float, spacing: float) -> None:
+def test_pulser_pyq_addressing(amp: float, det: float, spacing: float) -> None:
     n_qubits = 3
     block = AnalogRX("x")
     circ = QuantumCircuit(n_qubits, block)
@@ -43,8 +43,8 @@ def test_pulser_pyq_addressing(max_amp: float, max_det: float, spacing: float) -
     w_det = {i: rand_weights_det[i] for i in range(n_qubits)}
     p = AddressingPattern(
         n_qubits=n_qubits,
-        max_det=max_det,
-        max_amp=max_amp,
+        det=det,
+        amp=amp,
         weights_det=w_det,
         weights_amp=w_amp,
     )
@@ -80,12 +80,12 @@ def test_addressing_training() -> None:
     # define training parameters
     w_amp = {i: Parameter(f"w_amp{i}", trainable=True) for i in range(n_qubits)}
     w_det = {i: Parameter(f"w_det{i}", trainable=True) for i in range(n_qubits)}
-    max_amp = Parameter("max_amp", trainable=True)
-    max_det = Parameter("max_det", trainable=True)
+    amp = Parameter("amp", trainable=True)
+    det = Parameter("det", trainable=True)
     p = AddressingPattern(
         n_qubits=n_qubits,
-        max_det=max_det,
-        max_amp=max_amp,
+        det=det,
+        amp=amp,
         weights_det=w_det,  # type: ignore [arg-type]
         weights_amp=w_amp,  # type: ignore [arg-type]
     )
@@ -116,10 +116,14 @@ def test_addressing_training() -> None:
     # get final results
     f_value_model = model.expectation({}).detach()
 
-    assert torch.all(
-        torch.tensor(list(p.evaluate(p.weights_amp, model.vparams).values())) > 0.0
-    ) and torch.all(torch.tensor(list(p.evaluate(p.weights_amp, model.vparams).values())) < 1.0)
-    assert torch.all(
-        torch.tensor(list(p.evaluate(p.weights_det, model.vparams).values())) > 0.0
-    ) and torch.all(torch.tensor(list(p.evaluate(p.weights_det, model.vparams).values())) < 1.0)
+    weights_amp = torch.tensor(list(p.evaluate(p.weights_amp, model.vparams).values()))
+    weights_amp_mask = weights_amp.abs() < 0.001
+    weights_amp[weights_amp_mask] = 0.0
+
+    weights_det = torch.tensor(list(p.evaluate(p.weights_det, model.vparams).values()))
+    weights_det_mask = weights_det.abs() < 0.001
+    weights_det[weights_det_mask] = 0.0
+
+    assert torch.all(weights_amp >= 0.0) and torch.all(weights_amp <= 1.0)
+    assert torch.all(weights_det >= 0.0) and torch.all(weights_det <= 1.0)
     assert torch.isclose(f_value, f_value_model, atol=ATOL_DICT[BackendName.PULSER])

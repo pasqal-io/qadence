@@ -51,15 +51,23 @@ def add_addressing_pattern(
 
     support = tuple(range(n_qubits))
     if config.addressing_pattern is not None:
-        max_amp = config.addressing_pattern.max_amp
-        max_det = config.addressing_pattern.max_det
+        amp = config.addressing_pattern.amp
+        det = config.addressing_pattern.det
         weights_amp = config.addressing_pattern.weights_amp
         weights_det = config.addressing_pattern.weights_det
+        local_constr_amp = config.addressing_pattern.local_constr_amp
+        local_constr_det = config.addressing_pattern.local_constr_det
+        global_constr_amp = config.addressing_pattern.global_constr_amp
+        global_constr_det = config.addressing_pattern.global_constr_det
     else:
-        max_amp = 0.0
-        max_det = 0.0
+        amp = 0.0
+        det = 0.0
         weights_amp = {i: Parameter(0.0) for i in support}
         weights_det = {i: Parameter(0.0) for i in support}
+        local_constr_amp = {i: Parameter(0.0) for i in support}
+        local_constr_det = {i: Parameter(0.0) for i in support}
+        global_constr_amp = 0.0
+        global_constr_det = 0.0
 
     for i in support:
         # declare separate local channel for each qubit
@@ -77,8 +85,8 @@ def add_addressing_pattern(
             if weights_det[i].is_number  # type: ignore [union-attr]
             else sequence.declare_variable(f"w-det-{i}")
         )
-        omega = max_amp * w_amp
-        detuning = -max_det * w_det
+        omega = amp * w_amp
+        detuning = -det * w_det
         pulse = Pulse.ConstantPulse(
             duration=total_duration, amplitude=omega, detuning=detuning, phase=0
         )

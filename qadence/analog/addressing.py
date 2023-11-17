@@ -10,8 +10,10 @@ from numpy import pi
 from qadence.parameters import Parameter, evaluate
 from qadence.types import StrEnum
 
-DEFAULT_MAX_AMPLITUDE = 2 * pi * 3
-DEFAULT_MAX_DETUNING = 2 * pi * 20
+GLOBAL_MAX_AMPLITUDE = 300
+GLOBAL_MAX_DETUNING = 2 * pi * 2000
+LOCAL_MAX_AMPLITUDE = 3
+LOCAL_MAX_DETUNING = 2 * pi * 20
 
 
 class WeightConstraint(StrEnum):
@@ -39,93 +41,116 @@ class AddressingPattern:
     # list of weights for fixed detuning pattern that cannot be changed during the execution
     weights_det: dict[int, float | torch.Tensor | Parameter]
 
-    # maximum amplitude can also be chosen as a variational parameter if needed
-    max_amp: float | torch.Tensor | Parameter = DEFAULT_MAX_AMPLITUDE
+    # amplitude can also be chosen as a variational parameter if needed
+    amp: float | torch.Tensor | Parameter = LOCAL_MAX_AMPLITUDE
 
-    # maximum detuning can also be chosen as a variational parameter if needed
-    max_det: float | torch.Tensor | Parameter = DEFAULT_MAX_DETUNING
+    # detuning can also be chosen as a variational parameter if needed
+    det: float | torch.Tensor | Parameter = LOCAL_MAX_DETUNING
 
-    # weight constraint
-    weight_constraint: WeightConstraint = WeightConstraint.NORMALIZE
+    def _validate_weights(
+        self,
+        weights: dict[int, float | torch.Tensor | Parameter],
+    ) -> None:
+        for v in weights.values():
+            if not isinstance(v, Parameter):
+                if not (v >= 0.0 and v <= 1.0):
+                    raise ValueError("Addressing pattern weights must sum fall in range [0.0, 1.0]")
 
-    def _normalize_weights(self) -> None:
-        self.weights_amp = {
-            k: Parameter(v) if not isinstance(v, Parameter) else abs(v)
-            for k, v in self.weights_amp.items()
-        }
-        sum_weights_amp = sum(list(self.weights_amp.values()))
-        self.weights_amp = {k: v / sum_weights_amp for k, v in self.weights_amp.items()}
-
-        self.weights_det = {
-            k: Parameter(v) if not isinstance(v, Parameter) else abs(v)
-            for k, v in self.weights_det.items()
-        }
-        sum_weights_det = sum(list(self.weights_det.values()))
-        self.weights_det = {k: v / sum_weights_det for k, v in self.weights_det.items()}
-
-    def _restrict_weights(self) -> None:
-        self.weights_amp = {
-            k: v * (sigmoid(v, 20, 0.0) - sigmoid(v, 20.0, -1.0))
-            for k, v in self.weights_amp.items()
-        }
-        self.weights_det = {
-            k: v * (sigmoid(v, 20.0, 0.0) - sigmoid(v, 20.0, -1.0))
-            for k, v in self.weights_det.items()
+    def _constrain_weights(
+        self,
+        weights: dict[int, float | torch.Tensor | Parameter],
+    ) -> dict:
+        # augment weight dict if needed
+        weights = {
+            i: Parameter(0.0)
+            if i not in weights
+            else (Parameter(weights[i]) if not isinstance(weights[i], Parameter) else weights[i])
+            for i in range(self.n_qubits)
         }
 
-    def _restrict_max_vals(self) -> None:
-        self.max_amp = self.max_amp * (
-            sympy.Heaviside(self.max_amp) - sympy.Heaviside(self.max_amp - DEFAULT_MAX_AMPLITUDE)
+        # restrict weights to [0, 1] range
+        weights = {
+            k: abs(v * (sigmoid(v, 20, 1.0) - sigmoid(v, 20.0, -1.0))) for k, v in weights.items()
+        }
+
+        return weights
+
+    def _constrain_max_vals(self) -> None:
+        # enforce constraints:
+        # 0 <= amp <= GLOBAL_MAX_AMPLITUDE
+        # 0 <= abs(det) <= GLOBAL_MAX_DETUNING
+        self.amp = abs(
+            self.amp
+            * (
+                sympy.Heaviside(self.amp + GLOBAL_MAX_AMPLITUDE)
+                - sympy.Heaviside(self.amp - GLOBAL_MAX_AMPLITUDE)
+            )
         )
-        self.max_det = self.max_det * (
-            sympy.Heaviside(self.max_det) - sympy.Heaviside(self.max_det - DEFAULT_MAX_DETUNING)
+        self.det = -abs(
+            self.det
+            * (
+                sympy.Heaviside(self.det + GLOBAL_MAX_DETUNING)
+                - sympy.Heaviside(self.det - GLOBAL_MAX_DETUNING)
+            )
         )
+
+    def _create_local_constraint(self, val: sympy.Expr, weights: dict, max_val: float) -> dict:
+        # enforce local constraints:
+        # amp * w_amp_i < LOCAL_MAX_AMPLITUDE or
+        # abs(det) * w_det_i < LOCAL_MAX_DETUNING
+        local_constr = {k: val * v for k, v in weights.items()}
+        local_constr = {
+            k: sympy.Heaviside(v) - sympy.Heaviside(v - max_val) for k, v in local_constr.items()
+        }
+
+        return local_constr
+
+    def _create_global_constraint(
+        self, val: sympy.Expr, weights: dict, max_val: float
+    ) -> sympy.Expr:
+        # enforce global constraints:
+        # amp * sum(w_amp_0, w_amp_1, ...) < GLOBAL_MAX_AMPLITUDE or
+        # abs(det) * sum(w_det_0, w_det_1, ...) < GLOBAL_MAX_DETUNING
+        weighted_vals_global = val * sum([v for v in weights.values()])
+        weighted_vals_global = sympy.Heaviside(weighted_vals_global) - sympy.Heaviside(
+            weighted_vals_global - max_val
+        )
+
+        return weighted_vals_global
 
     def __post_init__(self) -> None:
-        # validate weights
-        if all([not isinstance(v, Parameter) for v in self.weights_amp.values()]):
-            if not torch.isclose(
-                torch.tensor(list(self.weights_amp.values())).sum(),
-                torch.tensor(1.0),
-                atol=1e-3,
-            ):
-                raise ValueError("Amplitude addressing pattern weights must sum to 1.0")
-        if all([not isinstance(v, Parameter) for v in self.weights_det.values()]):
-            if not torch.isclose(
-                torch.tensor(list(self.weights_det.values())).sum(),
-                torch.tensor(1.0),
-                atol=1e-3,
-            ):
-                raise ValueError("Detuning addressing pattern weights must sum to 1.0")
+        # validate amplitude/detuning weights
+        self._validate_weights(self.weights_amp)
+        self._validate_weights(self.weights_det)
 
-        # validate detuning value
-        if not isinstance(self.max_amp, Parameter):
-            if self.max_amp > DEFAULT_MAX_AMPLITUDE:
+        # validate maximum global amplitude/detuning values
+        if not isinstance(self.amp, Parameter):
+            if self.amp > GLOBAL_MAX_AMPLITUDE:
                 warn("Maximum absolute value of amplitude is exceeded")
-        if not isinstance(self.max_det, Parameter):
-            if self.max_det > DEFAULT_MAX_DETUNING:
+        if not isinstance(self.det, Parameter):
+            if abs(self.det) > GLOBAL_MAX_DETUNING:
                 warn("Maximum absolute value of detuning is exceeded")
 
-        # augment weight dicts if needed
-        self.weights_amp = {
-            i: Parameter(0.0) if i not in self.weights_amp else self.weights_amp[i]
-            for i in range(self.n_qubits)
-        }
-        self.weights_det = {
-            i: Parameter(0.0) if i not in self.weights_det else self.weights_det[i]
-            for i in range(self.n_qubits)
-        }
+        # constrain amplitude/detuning parameterized weights to [0.0, 1.0] interval
+        self.weights_amp = self._constrain_weights(self.weights_amp)
+        self.weights_det = self._constrain_weights(self.weights_det)
 
-        # apply weight constraint
-        if self.weight_constraint == WeightConstraint.NORMALIZE:
-            self._normalize_weights()
-        elif self.weight_constraint == WeightConstraint.RESTRICT:
-            self._restrict_weights()
-        else:
-            raise ValueError("Weight constraint type not found.")
+        # constrain max global amplitude and detuning to strict interval
+        self._constrain_max_vals()
 
-        # restrict max amplitude and detuning to strict interval
-        self._restrict_max_vals()
+        # create additional local and global constraints for amplitude/detuning masks
+        self.local_constr_amp = self._create_local_constraint(
+            self.amp, self.weights_amp, LOCAL_MAX_AMPLITUDE
+        )
+        self.local_constr_det = self._create_local_constraint(
+            -self.det, self.weights_det, LOCAL_MAX_DETUNING
+        )
+        self.global_constr_amp = self._create_global_constraint(
+            self.amp, self.weights_amp, GLOBAL_MAX_AMPLITUDE
+        )
+        self.global_constr_det = self._create_global_constraint(
+            -self.det, self.weights_det, GLOBAL_MAX_DETUNING
+        )
 
         # validate number of qubits in mask
         if max(list(self.weights_amp.keys())) >= self.n_qubits:
