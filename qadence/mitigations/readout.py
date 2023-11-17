@@ -1,16 +1,16 @@
+from __future__ import annotations
+
 from collections import Counter
 from functools import reduce
 
-import torch
-
 import numpy as np
 import numpy.typing as npt
-from scipy.optimize import minimize, LinearConstraint
+import torch
 from scipy.linalg import norm
+from scipy.optimize import LinearConstraint, minimize
 
 from qadence.mitigations.protocols import Mitigations
 from qadence.noise.protocols import Noise
-from qadence.noise.readout import bs_corruption, sample_to_matrix
 
 
 def corrected_probas(p_corr: npt.NDArray, T: npt.NDArray, p_raw: npt.NDArray) -> np.double:
@@ -26,23 +26,29 @@ def renormalize_counts(corrected_counts: npt.NDArray, n_shots: int) -> npt.NDArr
         corrected_counts = np.where(corrected_counts < 0, 0, corrected_counts)
         sum_corrected_counts = sum(corrected_counts)
         if sum_corrected_counts < n_shots:
-            renormalization_factor = max(sum_corrected_counts, n_shots) / min(sum_corrected_counts, n_shots)
+            renormalization_factor = max(sum_corrected_counts, n_shots) / min(
+                sum_corrected_counts, n_shots
+            )
         else:
-            renormalization_factor = min(sum_corrected_counts, n_shots) / max(sum_corrected_counts, n_shots)
+            renormalization_factor = min(sum_corrected_counts, n_shots) / max(
+                sum_corrected_counts, n_shots
+            )
         corrected_counts = np.rint(corrected_counts * renormalization_factor).astype(int)
     return corrected_counts
 
 
-def mitigation_minimization(noise: Noise, mitigation: Mitigations, samples: list[Counter]) -> None:
+def mitigation_minimization(
+    noise: Noise, mitigation: Mitigations, samples: list[Counter]
+) -> list[Counter]:
     """Minimize a correction matrix subjected to stochasticity constraints.
 
     See Equation (5) in https://arxiv.org/pdf/2001.09980.pdf.
     """
-    corrected_counters = []
+    corrected_counters: list[Counter] = []
     for sample in samples:
         n_qubits = len(list(sample.keys())[0])
         n_shots = sum(sample.values())
-        bitstring_length = 2 ** n_qubits
+        bitstring_length = 2**n_qubits
         noise_matrices = noise.options.get("noise_matrix", noise.options["confusion_matrices"])
         # Build the whole T matrix.
         T_matrix = reduce(torch.kron, noise_matrices).detach().numpy()
@@ -54,8 +60,12 @@ def mitigation_minimization(noise: Noise, mitigation: Mitigations, samples: list
         # Initial random guess in [0,1].
         p_corr0 = np.random.rand(bitstring_length)
         # Stochasticity constraints.
-        normality_constraint = LinearConstraint(np.ones(bitstring_length).astype(int), lb=1., ub=1.)
-        positivity_constraint = LinearConstraint(np.eye(bitstring_length).astype(int), lb=0., ub=1.)
+        normality_constraint = LinearConstraint(
+            np.ones(bitstring_length).astype(int), lb=1.0, ub=1.0
+        )
+        positivity_constraint = LinearConstraint(
+            np.eye(bitstring_length).astype(int), lb=0.0, ub=1.0
+        )
         constraints = [normality_constraint, positivity_constraint]
         # Minimize the corrected probabilities.
         res = minimize(corrected_probas, p_corr0, args=(T_matrix, p_raw), constraints=constraints)
@@ -69,10 +79,15 @@ def mitigation_minimization(noise: Noise, mitigation: Mitigations, samples: list
             count_diff = sum(corrected_counts) - n_shots
             max_count_bs = np.argmax(corrected_counts)
             corrected_counts[max_count_bs] -= count_diff
-        assert corrected_counts.sum() == n_shots, f"Corrected counts sum: {corrected_counts.sum()}, n_shots: {n_shots}"
-        corrected_counters.append(Counter({bs:count for bs, count in zip(ordered_bitstrings, corrected_counts) if count > 0}))
+        assert (
+            corrected_counts.sum() == n_shots
+        ), f"Corrected counts sum: {corrected_counts.sum()}, n_shots: {n_shots}"
+        corrected_counters.append(
+            Counter(
+                {bs: count for bs, count in zip(ordered_bitstrings, corrected_counts) if count > 0}
+            )
+        )
     return corrected_counters
-    
 
 
 def mitigate(noise: Noise, mitigation: Mitigations, samples: list[Counter]) -> list[Counter]:

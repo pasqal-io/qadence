@@ -1,23 +1,29 @@
+from __future__ import annotations
+
 from collections import Counter
+
 import numpy as np
+import pytest
+import torch
 from numpy.typing import NDArray
 
-import pytest
-from qadence.noise.protocols import Noise
-from qadence.types import _BackendName, DiffMode
-import torch
-
-from qadence import QuantumCircuit, QuantumModel
-from qadence import AbstractBlock, AnalogRX, AnalogRZ, entangle
-from qadence import chain, hamiltonian_factory, Mitigations
-from qadence import QuantumCircuit, QuantumModel
+from qadence import (
+    AbstractBlock,
+    AnalogRX,
+    AnalogRZ,
+    Mitigations,
+    QuantumCircuit,
+    QuantumModel,
+    chain,
+    entangle,
+    hamiltonian_factory,
+)
 from qadence.divergences import js_divergence
-from qadence.noise import Noise
-from qadence.operations import add, kron, RX, RY, RZ, X, Y, Z, CNOT, HamEvo
-from qadence.types import BackendName
+from qadence.noise.protocols import Noise
+from qadence.operations import CNOT, RX, RY, RZ, HamEvo, X, Y, Z, add, kron
+from qadence.types import BackendName, DiffMode
 
 pi = torch.pi
-
 
 
 @pytest.mark.parametrize(
@@ -70,27 +76,26 @@ def test_readout_mitigation_quantum_model(
 ) -> None:
     diff_mode = "ad" if backend == BackendName.PYQTORCH else "gpsr"
     circuit = QuantumCircuit(block.n_qubits, block)
-    model = QuantumModel(
-        circuit=circuit, backend=backend, diff_mode=diff_mode
-    )
+    model = QuantumModel(circuit=circuit, backend=backend, diff_mode=diff_mode)
 
     noise = Noise(protocol=Noise.READOUT)
     mitigation = Mitigations(protocol=Mitigations.READOUT)
     noiseless_samples: list[Counter] = model.sample(n_shots=n_shots)
     noisy_samples: list[Counter] = model.sample(noise=noise, n_shots=n_shots)
-    mitigated_samples: list[Counter] = model.sample(noise=noise, mitigation=mitigation, n_shots=n_shots)
+    mitigated_samples: list[Counter] = model.sample(
+        noise=noise, mitigation=mitigation, n_shots=n_shots
+    )
 
     js_mitigated = js_divergence(mitigated_samples[0], noiseless_samples[0])
     js_noisy = js_divergence(noisy_samples[0], noiseless_samples[0])
     assert js_mitigated < js_noisy
 
 
-
 @pytest.mark.parametrize(
     "analog_block, observable, noise_probas, noise_type",
     [
         (
-            chain(AnalogRX(pi/2.), AnalogRZ(pi)),
+            chain(AnalogRX(pi / 2.0), AnalogRZ(pi)),
             [Z(0) + Z(1)],
             np.linspace(0.1, 0.5, 8),
             Noise.DEPOLARIZING,
@@ -98,21 +103,25 @@ def test_readout_mitigation_quantum_model(
         (
             # Hardcoded time and angle for Bell state preparation.
             chain(
-                entangle(383, qubit_support=(0,1)),
-                RY(0, 3.*pi/2.),   
+                entangle(383, qubit_support=(0, 1)),
+                RY(0, 3.0 * pi / 2.0),
             ),
             [hamiltonian_factory(2, detuning=Z)],
             np.linspace(0.1, 0.5, 8),
-            Noise.DEPHASING
-        )
-    ]
+            Noise.DEPHASING,
+        ),
+    ],
 )
-def test_analog_zne_with_pulser(analog_block: AbstractBlock, observable: AbstractBlock, noise_probas: NDArray, noise_type: Noise) -> None:
+def test_analog_zne_with_pulser(
+    analog_block: AbstractBlock, observable: AbstractBlock, noise_probas: NDArray, noise_type: str
+) -> None:
     circuit = QuantumCircuit(2, analog_block)
-    model = QuantumModel(circuit=circuit, observable=observable, backend=BackendName.PULSER, diff_mode=DiffMode.GPSR)
+    model = QuantumModel(
+        circuit=circuit, observable=observable, backend=BackendName.PULSER, diff_mode=DiffMode.GPSR
+    )
     options = {"noise_probas": noise_probas}
     noise = Noise(protocol=noise_type, options=options)
     mitigation = Mitigations(protocol=Mitigations.ANALOG_ZNE)
     noisy_expectation = model.expectation(noise=noise, mitigation=mitigation)
     exact_expectation = model.expectation()
-    assert torch.allclose(noisy_expectation, exact_expectation, atol=1.e-2)
+    assert torch.allclose(noisy_expectation, exact_expectation, atol=1.0e-2)
