@@ -45,7 +45,8 @@ def unique(x: Iterable) -> List:
 def embedding(
     block: AbstractBlock, to_gate_params: bool = False, engine: Engine = Engine.TORCH
 ) -> tuple[ParamDictType, Callable[[ParamDictType, ParamDictType], ParamDictType],]:
-    """Construct embedding function which maps user-facing parameters to either *expression-level*
+    """Construct embedding function which maps user-facing parameters to either *expression-level*.
+
     parameters or *gate-level* parameters. The construced embedding function has the signature:
 
          embedding_fn(params: ParamDictType, inputs: ParamDictType) -> ParamDictType:

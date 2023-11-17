@@ -22,9 +22,8 @@ from qadence.mitigations.protocols import apply_mitigation
 from qadence.noise import Noise
 from qadence.noise.protocols import apply_noise
 from qadence.overlap import overlap_exact
-from qadence.types import Engine
 from qadence.transpile import transpile
-from qadence.types import BackendName
+from qadence.types import BackendName, Engine
 from qadence.utils import Endianness
 
 from .config import Configuration, default_passes

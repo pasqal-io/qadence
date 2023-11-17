@@ -31,8 +31,7 @@ from qadence.transpile import (
     scale_primitive_blocks_only,
     transpile,
 )
-from qadence.types import Engine
-from qadence.types import BackendName, Endianness
+from qadence.types import BackendName, Endianness, Engine
 from qadence.utils import int_to_basis
 
 from .config import Configuration, default_passes
