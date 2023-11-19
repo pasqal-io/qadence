@@ -85,6 +85,7 @@ __all__ = [
     "CPHASE",
     "CSWAP",
     "MCPHASE",
+    "Toffoli",
     "wait",
     "entangle",
     "AnalogEntanglement",
