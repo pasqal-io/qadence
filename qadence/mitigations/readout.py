@@ -45,8 +45,8 @@ def mitigation_minimization(
     See Equation (5) in https://arxiv.org/pdf/2001.09980.pdf.
     """
     noise_matrices = noise.options.get("noise_matrix", noise.options["confusion_matrices"])
-    n_qubits = len(list(sample.keys())[0])
-    n_shots = sum(sample.values())
+    n_qubits = len(list(samples[0].keys())[0])
+    n_shots = sum(samples[0].values())
     # Build the whole T matrix.
     T_matrix = reduce(torch.kron, noise_matrices).detach().numpy()
     corrected_counters: list[Counter] = []
