@@ -19,7 +19,7 @@ from qadence.extensions import get_gpsr_fns
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.noise import Noise
-from qadence.types import DiffMode, Endianness
+from qadence.types import DiffMode, Endianness, ParamDictType, ReturnType
 
 
 class TorchBackend(DifferentiableBackend):
@@ -46,8 +46,8 @@ class TorchBackend(DifferentiableBackend):
     def run(
         self,
         circuit: ConvertedCircuit,
-        param_values: dict = {},
-        state: Tensor | None = None,
+        param_values: ParamDictType = {},
+        state: ReturnType | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         """Run on the underlying backend."""
@@ -59,13 +59,13 @@ class TorchBackend(DifferentiableBackend):
         self,
         circuit: ConvertedCircuit,
         observable: list[ConvertedObservable] | ConvertedObservable,
-        param_values: dict[str, Tensor] = {},
-        state: Tensor | None = None,
+        param_values: ParamDictType = {},
+        state: ReturnType | None = None,
         measurement: Measurements | None = None,
         noise: Noise | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
-    ) -> Tensor:
+    ) -> ReturnType:
         """Compute the expectation value of a given observable.
 
         Arguments:
@@ -108,9 +108,9 @@ class TorchBackend(DifferentiableBackend):
     def sample(
         self,
         circuit: ConvertedCircuit,
-        param_values: dict[str, Tensor],
+        param_values: ParamDictType = {},
         n_shots: int = 1,
-        state: Tensor | None = None,
+        state: ReturnType | None = None,
         noise: Noise | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
@@ -173,5 +173,5 @@ class TorchBackend(DifferentiableBackend):
                     raise ValueError(msg)
         return self.backend.convert(circuit, observable)
 
-    def assign_parameters(self, circuit: ConvertedCircuit, param_values: dict[str, Tensor]) -> Any:
+    def assign_parameters(self, circuit: ConvertedCircuit, param_values: ParamDictType) -> Any:
         return self.backend.assign_parameters(circuit, param_values)

@@ -25,7 +25,7 @@ from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.noise import Noise
 from qadence.parameters import stringify
-from qadence.types import BackendName, DiffMode, Endianness, Engine
+from qadence.types import BackendName, DiffMode, Endianness, Engine, ParamDictType, ReturnType
 
 logger = get_logger(__file__)
 
@@ -236,7 +236,7 @@ class Backend(ABC):
         circuit: ConvertedCircuit,
         param_values: dict[str, Tensor] = {},
         n_shots: int = 1000,
-        state: Tensor | None = None,
+        state: ReturnType | None = None,
         noise: Noise | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
@@ -259,10 +259,10 @@ class Backend(ABC):
     def run(
         self,
         circuit: ConvertedCircuit,
-        param_values: dict[str, Tensor] = {},
-        state: Tensor | None = None,
+        param_values: dict[str, ReturnType] = {},
+        state: ReturnType | None = None,
         endianness: Endianness = Endianness.BIG,
-    ) -> Tensor:
+    ) -> ReturnType:
         """Run a circuit and return the resulting wave function.
 
         Arguments:
@@ -283,13 +283,13 @@ class Backend(ABC):
         self,
         circuit: ConvertedCircuit,
         observable: list[ConvertedObservable] | ConvertedObservable,
-        param_values: dict[str, Tensor] = {},
-        state: Tensor | None = None,
+        param_values: ParamDictType = {},
+        state: ReturnType | None = None,
         measurement: Measurements | None = None,
         noise: Noise | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
-    ) -> Tensor:
+    ) -> ReturnType:
         """Compute the expectation value of the `circuit` with the given `observable`.
 
         Arguments:
@@ -346,7 +346,7 @@ class Converted:
     circuit: ConvertedCircuit
     observable: list[ConvertedObservable] | ConvertedObservable | None
     embedding_fn: Callable
-    params: dict[str, Tensor]
+    params: ParamDictType
 
     def __iter__(self) -> Iterator:
         yield self.circuit

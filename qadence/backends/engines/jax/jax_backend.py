@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
-from typing import Any, Callable
+from typing import Any
 
 from jax import Array
 
@@ -15,7 +15,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.noise import Noise
-from qadence.types import DiffMode, Endianness
+from qadence.types import DiffMode, Endianness, ParamDictType, ReturnType
 
 
 class JaxBackend(DifferentiableBackend):
@@ -36,16 +36,14 @@ class JaxBackend(DifferentiableBackend):
         super().__init__(backend=backend, engine=backend.engine)
         self.diff_mode = diff_mode
         self.psr_args = psr_args
-        # TODO: Add differentiable overlap calculation
-        self._overlap: Callable = None  # type: ignore [assignment]
 
     def run(
         self,
         circuit: ConvertedCircuit,
-        param_values: dict = {},
+        param_values: ParamDictType = {},
         state: Array | None = None,
         endianness: Endianness = Endianness.BIG,
-    ) -> Array:
+    ) -> ReturnType:
         """Run on the underlying backend."""
         return self.backend.run(
             circuit=circuit, param_values=param_values, state=state, endianness=endianness
@@ -55,13 +53,13 @@ class JaxBackend(DifferentiableBackend):
         self,
         circuit: ConvertedCircuit,
         observable: list[ConvertedObservable] | ConvertedObservable,
-        param_values: dict[str, Array] = {},
+        param_values: ParamDictType = {},
         state: Array | None = None,
         measurement: Measurements | None = None,
         noise: Noise | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
-    ) -> Array:
+    ) -> ReturnType:
         """Compute the expectation value of a given observable.
 
         Arguments:
@@ -81,9 +79,9 @@ class JaxBackend(DifferentiableBackend):
     def sample(
         self,
         circuit: ConvertedCircuit,
-        param_values: dict[str, Array],
-        n_shots: int = 1,
-        state: Array | None = None,
+        param_values: ParamDictType = {},
+        n_shots: int = 100,
+        state: ReturnType | None = None,
         noise: Noise | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
@@ -146,5 +144,5 @@ class JaxBackend(DifferentiableBackend):
                     raise ValueError(msg)
         return self.backend.convert(circuit, observable)
 
-    def assign_parameters(self, circuit: ConvertedCircuit, param_values: dict[str, Tensor]) -> Any:
+    def assign_parameters(self, circuit: ConvertedCircuit, param_values: dict[str, Array]) -> Any:
         return self.backend.assign_parameters(circuit, param_values)

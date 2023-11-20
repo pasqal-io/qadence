@@ -17,6 +17,7 @@ from qadence.backend import (
     ConvertedObservable,
 )
 from qadence.backends.api import backend_factory, config_factory
+from qadence.backends.differentiable_backend import DifferentiableBackend
 from qadence.blocks.abstract import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.logger import get_logger
@@ -36,7 +37,7 @@ class QuantumModel(nn.Module):
     [here](/advanced_tutorials/custom-models.md).
     """
 
-    backend: Backend
+    backend: Backend | DifferentiableBackend
     embedding_fn: Callable
     _params: nn.ParameterDict
     _circuit: ConvertedCircuit

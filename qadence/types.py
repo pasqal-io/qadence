@@ -6,6 +6,7 @@ from typing import Iterable, Tuple, Union
 
 import numpy as np
 import sympy
+from jax import Array
 from torch import Tensor, pi
 
 TNumber = Union[int, float, complex]
@@ -381,3 +382,9 @@ class Engine(StrEnum):
     TORCH = "torch"
     JAX = "jax"
     NONE = "none"
+
+
+ReturnType = Union[Tensor, Array]
+
+
+ParamDictType = dict[str, ReturnType]

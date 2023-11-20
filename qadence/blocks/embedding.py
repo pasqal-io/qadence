@@ -8,8 +8,6 @@ import sympy
 import sympy2jax as s2j
 import sympytorch  # type: ignore [import]
 import torch
-from jax.typing import ArrayLike
-from torch import Tensor
 
 from qadence.blocks import (
     AbstractBlock,
@@ -20,15 +18,10 @@ from qadence.blocks.utils import (
     uuid_to_expression,
 )
 from qadence.parameters import evaluate, make_differentiable, stringify
-from qadence.types import Engine, TNumber
-
-StrTensorDict = dict[str, Tensor]
-StrArrayDict = dict[str, ArrayLike]
-
-ParamDictType = StrArrayDict | StrArrayDict
+from qadence.types import Engine, ParamDictType, ReturnType, TNumber
 
 
-def concretize_parameter(value: TNumber, requires_grad: bool, engine: Engine) -> Tensor | ArrayLike:
+def concretize_parameter(value: TNumber, requires_grad: bool, engine: Engine) -> ReturnType:
     if engine == Engine.JAX:
         if requires_grad:
             return jnp.array(value)
@@ -102,9 +95,9 @@ def embedding(
     uuid_to_expr = uuid_to_expression(block)
 
     def embedding_fn(params: ParamDictType, inputs: ParamDictType) -> ParamDictType:
-        embedded_params: dict[sympy.Expr, Tensor | ArrayLike] = {}
+        embedded_params: dict[sympy.Expr, ReturnType] = {}
         for expr, fn in embeddings.items():
-            angle: Tensor
+            angle: ReturnType
             values = {}
             for symbol in expr.free_symbols:
                 if symbol.name in inputs:
@@ -137,7 +130,7 @@ def embedding(
         else:
             return {stringify(k): v for k, v in embedded_params.items()}
 
-    params: StrTensorDict
+    params: ParamDictType
     params = {p.name: concretize_parameter(p.value, True, engine) for p in trainable_symbols}
     params.update(
         {
