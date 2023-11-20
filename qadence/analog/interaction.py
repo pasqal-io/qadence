@@ -242,4 +242,6 @@ def _(
     interaction: Callable,
     pattern: Union[AddressingPattern, None],
 ) -> AbstractBlock:
-    return chain(add_interaction(register, b, interaction=interaction) for b in block.blocks)
+    return chain(
+        add_interaction(register, b, interaction=interaction, pattern=pattern) for b in block.blocks
+    )
