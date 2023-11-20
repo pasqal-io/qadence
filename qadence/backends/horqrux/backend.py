@@ -100,6 +100,7 @@ class Backend(BackendInterface):
         endianness: Endianness = Endianness.BIG,
     ) -> ArrayLike:
         batch_size = infer_batchsize(param_values)
+        # TODO vmap circ over batch of values
         n_obs = len(observable)
         if state is None:
             state = prepare_state(circuit.abstract.n_qubits, "0" * circuit.abstract.n_qubits)

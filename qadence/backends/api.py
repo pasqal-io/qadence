@@ -3,7 +3,7 @@ from __future__ import annotations
 from qadence.backend import Backend, BackendConfiguration
 from qadence.backends.pytorch_wrapper import DifferentiableBackend
 from qadence.extensions import available_backends, set_backend_config
-from qadence.types import BackendName, DiffMode
+from qadence.types import BackendName, DiffMode, Engine
 
 __all__ = ["backend_factory", "config_factory"]
 
@@ -46,7 +46,11 @@ def backend_factory(
     set_backend_config(backend_inst, diff_mode)
 
     if diff_mode is not None:
-        backend_inst = DifferentiableBackend(backend_inst, DiffMode(diff_mode))
+        from qadence.backends.engines.jax.jax_backend import JaxBackend
+        from qadence.backends.engines.torch.torch_backend import TorchBackend
+
+        diff_backend = TorchBackend if backend_inst.engine == Engine.TORCH else JaxBackend
+        backend_inst = diff_backend(backend_inst, DiffMode(diff_mode))
     return backend_inst
 
 
