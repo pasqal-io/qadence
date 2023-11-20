@@ -19,7 +19,7 @@ from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.noise import Noise
 from qadence.transpile import invert_endianness
-from qadence.types import BackendName, Endianness, Engine
+from qadence.types import BackendName, Endianness, Engine, ParamDictType, ReturnType
 from qadence.utils import int_to_basis
 
 from .config import Configuration
@@ -67,12 +67,12 @@ class Backend(BackendInterface):
     def run(
         self,
         circuit: ConvertedCircuit,
-        param_values: dict[str, Tensor] = {},
+        param_values: ParamDictType = {},
         state: Any = None,
         endianness: Endianness = Endianness.BIG,
         horqify_state: bool = True,
         unhorqify_state: bool = True,
-    ) -> ArrayLike:
+    ) -> ReturnType:
         n_qubits = circuit.abstract.n_qubits
         param_values = self.values_to_jax(param_values)
         if state is None:
@@ -92,13 +92,13 @@ class Backend(BackendInterface):
         self,
         circuit: ConvertedCircuit,
         observable: list[ConvertedObservable] | ConvertedObservable,
-        param_values: dict[str, Tensor] = {},
-        state: Any | Tensor | None = None,
+        param_values: ParamDictType = {},
+        state: ReturnType | None = None,
         measurement: Measurements | None = None,
         noise: Noise | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
-    ) -> ArrayLike:
+    ) -> ReturnType:
         batch_size = infer_batchsize(param_values)
         # TODO vmap circ over batch of values
         n_obs = len(observable)
@@ -112,9 +112,9 @@ class Backend(BackendInterface):
     def sample(
         self,
         circuit: ConvertedCircuit,
-        param_values: dict[str, Tensor] = {},
+        param_values: ParamDictType = {},
         n_shots: int = 1,
-        state: Tensor | None = None,
+        state: ReturnType | None = None,
         noise: Noise | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
@@ -181,11 +181,11 @@ class Backend(BackendInterface):
 
         return samples
 
-    def assign_parameters(self, circuit: ConvertedCircuit, param_values: dict[str, Tensor]) -> Any:
+    def assign_parameters(self, circuit: ConvertedCircuit, param_values: ParamDictType) -> Any:
         raise NotImplementedError
 
     @staticmethod
-    def _overlap(bras: Tensor, kets: Tensor) -> Tensor:
+    def _overlap(bras: ReturnType, kets: ReturnType) -> ReturnType:
         # TODO
         raise NotImplementedError
 
