@@ -150,6 +150,7 @@ class Backend(BackendInterface):
 
     name: BackendName = BackendName.PULSER
     supports_ad: bool = False
+    supports_adjoint: bool = False
     support_bp: bool = False
     is_remote: bool = False
     with_measurements: bool = True

@@ -47,6 +47,8 @@ def promote_parameters(parameters: dict[str, Tensor | float]) -> dict[str, float
 class Backend(BackendInterface):
     name: BackendName = BackendName.BRAKET
     supports_ad: bool = False
+    supports_adjoint: bool = False
+    # TODO Use native braket adjoint differentiation.
     support_bp: bool = False
     is_remote: bool = False
     with_measurements: bool = True

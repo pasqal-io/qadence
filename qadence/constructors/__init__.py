@@ -10,6 +10,8 @@ from .feature_maps import (
 
 from .ansatze import hea, build_qnn
 
+from .iia import identity_initialized_ansatz
+
 from .daqc import daqc_transform
 
 from .hamiltonians import (
@@ -32,6 +34,7 @@ __all__ = [
     "tower_feature_map",
     "exp_fourier_feature_map",
     "hea",
+    "identity_initialized_ansatz",
     "build_qnn",
     "hamiltonian_factory",
     "ising_hamiltonian",

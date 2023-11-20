@@ -8,11 +8,14 @@ from qadence.backend import Backend
 from qadence.blocks import (
     AbstractBlock,
 )
+from qadence.logger import get_logger
 from qadence.types import BackendName, DiffMode
 
 TAbstractBlock = TypeVar("TAbstractBlock", bound=AbstractBlock)
 
 backends_namespace = Template("qadence.backends.$name")
+
+logger = get_logger(__name__)
 
 
 def _available_backends() -> dict:
@@ -59,6 +62,17 @@ def _validate_diff_mode(backend: Backend, diff_mode: DiffMode) -> None:
     """Fallback function for native Qadence diff_mode if extensions is not present."""
     if not backend.supports_ad and diff_mode == DiffMode.AD:
         raise TypeError(f"Backend {backend.name} does not support diff_mode {DiffMode.AD}.")
+    elif not backend.supports_adjoint and diff_mode == DiffMode.ADJOINT:
+        raise TypeError(f"Backend {backend.name} does not support diff_mode {DiffMode.ADJOINT}.")
+
+
+def _validate_backend_config(backend: Backend) -> None:
+    if backend.config.use_gradient_checkpointing:
+        msg = "use_gradient_checkpointing is deprecated."
+        import warnings
+
+        warnings.warn(msg, UserWarning)
+        logger.warn(msg)
 
 
 def _set_backend_config(backend: Backend, diff_mode: DiffMode) -> None:
@@ -70,17 +84,17 @@ def _set_backend_config(backend: Backend, diff_mode: DiffMode) -> None:
     """
 
     _validate_diff_mode(backend, diff_mode)
+    _validate_backend_config(backend)
 
     # (1) When using PSR with any backend or (2) we use the backends Pulser or Braket,
     # we have to use gate-level parameters
-    if not backend.supports_ad or diff_mode != DiffMode.AD:
-        backend.config._use_gate_params = True
+
+    # We can use expression-level parameters for AD.
+    if backend.name == BackendName.PYQTORCH:
+        backend.config.use_single_qubit_composition = True
+        backend.config._use_gate_params = diff_mode != "ad"
     else:
-        assert diff_mode == DiffMode.AD
-        backend.config._use_gate_params = False
-        # We can use expression-level parameters for AD.
-        if backend.name == BackendName.PYQTORCH:
-            backend.config.use_single_qubit_composition = True
+        backend.config._use_gate_params = True
 
 
 # if proprietary qadence_plus is available import the

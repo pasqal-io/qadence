@@ -198,6 +198,16 @@ def BasicQNN(BasicFMQuantumCircuit: QuantumCircuit, BasicObservable: AbstractBlo
 
 
 @fixture
+def BasicAdjointQNN(BasicFMQuantumCircuit: QuantumCircuit, BasicObservable: AbstractBlock) -> QNN:
+    return QNN(
+        BasicFMQuantumCircuit,
+        total_magnetization(FM_NQUBITS),
+        backend=BackendName.PYQTORCH,
+        diff_mode=DiffMode.ADJOINT,
+    )
+
+
+@fixture
 def BasicTransformedModule(BasicQNN: QNN) -> TransformedModule:
     return TransformedModule(
         BasicQNN,

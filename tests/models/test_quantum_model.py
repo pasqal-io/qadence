@@ -9,7 +9,7 @@ import strategies as st  # type: ignore
 import sympy
 import torch
 from hypothesis import given, settings
-from metrics import ATOL_DICT, JS_ACCEPTANCE  # type: ignore
+from metrics import ADJOINT_ACCEPTANCE, ATOL_DICT, JS_ACCEPTANCE  # type: ignore
 
 from qadence.blocks import AbstractBlock, chain, kron
 from qadence.circuit import QuantumCircuit
@@ -213,41 +213,48 @@ def test_qc_obs_different_support_0() -> None:
     assert torch.isclose(model_sup1.expectation(query_dict), model_sup2.expectation(query_dict))
 
 
-def test_qc_obs_different_support_1() -> None:
+@pytest.mark.parametrize("diff_mode", ["ad", "adjoint", "gpsr"])
+def test_qc_obs_different_support_1(diff_mode: str) -> None:
     model_obs0_id_0 = QuantumModel(
         QuantumCircuit(1, I(0)),
         observable=Z(0),
         backend=BackendName.PYQTORCH,
-        diff_mode=DiffMode.AD,
+        diff_mode=diff_mode,
     )
 
     model_obs0_rot1 = QuantumModel(
         QuantumCircuit(2, RX(1, FeatureParameter("x"))),
         observable=Z(0),
         backend=BackendName.PYQTORCH,
-        diff_mode=DiffMode.AD,
+        diff_mode=diff_mode,
     )
 
     model_obs01_rot1 = QuantumModel(
         QuantumCircuit(2, RX(1, FeatureParameter("x"))),
         observable=Z(0) + Z(1),
         backend=BackendName.PYQTORCH,
-        diff_mode=DiffMode.AD,
+        diff_mode=diff_mode,
     )
 
     model_obs1_rot1 = QuantumModel(
         QuantumCircuit(2, RX(1, FeatureParameter("x"))),
         observable=I(0) + Z(1),
         backend=BackendName.PYQTORCH,
-        diff_mode=DiffMode.AD,
+        diff_mode=diff_mode,
     )
-
-    query_dict = {"x": torch.tensor([2.1])}
+    x = torch.tensor([2.1], requires_grad=True)
+    query_dict = {"x": x}
 
     assert torch.isclose(model_obs0_rot1.expectation(query_dict), model_obs0_id_0.expectation({}))
     assert torch.isclose(
         model_obs01_rot1.expectation(query_dict), model_obs1_rot1.expectation(query_dict)
     )
+
+    def fn(model: QuantumModel, x: torch.Tensor) -> torch.Tensor:
+        return model.expectation({"x": x})
+
+    for m in [model_obs0_rot1, model_obs1_rot1, model_obs01_rot1]:
+        assert torch.autograd.gradcheck(lambda x: fn(m, x), x, nondet_tol=ADJOINT_ACCEPTANCE)
 
 
 def test_distinct_obs_invert() -> None:
