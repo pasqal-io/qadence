@@ -44,19 +44,18 @@ def mitigation_minimization(
 
     See Equation (5) in https://arxiv.org/pdf/2001.09980.pdf.
     """
+    noise_matrices = noise.options.get("noise_matrix", noise.options["confusion_matrices"])
+    n_qubits = len(list(sample.keys())[0])
+    n_shots = sum(sample.values())
+    # Build the whole T matrix.
+    T_matrix = reduce(torch.kron, noise_matrices).detach().numpy()
     corrected_counters: list[Counter] = []
     for sample in samples:
-        n_qubits = len(list(sample.keys())[0])
-        n_shots = sum(sample.values())
         bitstring_length = 2**n_qubits
-        noise_matrices = noise.options.get("noise_matrix", noise.options["confusion_matrices"])
-        # Build the whole T matrix.
-        T_matrix = reduce(torch.kron, noise_matrices).detach().numpy()
         # List of bitstrings in lexicographical order.
         ordered_bitstrings = [f"{i:0{n_qubits}b}" for i in range(bitstring_length)]
-        # Tensor of raw probabilites.
-        p_raw = torch.tensor([sample[bs] for bs in ordered_bitstrings]) / n_shots
-        p_raw = p_raw.detach().numpy()
+        # Array of raw probabilites.
+        p_raw = np.array([sample[bs] for bs in ordered_bitstrings]) / n_shots
         # Initial random guess in [0,1].
         p_corr0 = np.random.rand(bitstring_length)
         # Stochasticity constraints.
