@@ -5,7 +5,7 @@ import pytest
 import torch
 from metrics import ATOL_DICT, JS_ACCEPTANCE, LARGE_SPACING, SMALL_SPACING
 
-from qadence.analog import RydbergDevice
+from qadence.analog import RealisticDevice, RydbergDevice
 from qadence.blocks import AbstractBlock, chain, kron
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import ising_hamiltonian, total_magnetization
@@ -29,7 +29,7 @@ from qadence.operations import (
 from qadence.parameters import FeatureParameter
 from qadence.register import Register
 from qadence.states import equivalent_state, random_state
-from qadence.types import BackendName, DeviceType, DiffMode
+from qadence.types import BackendName, DiffMode
 
 
 @pytest.mark.flaky(max_runs=5)
@@ -110,7 +110,8 @@ def test_compatibility_pyqtorch_pulser_entanglement(
     model_pyqtorch = QuantumModel(
         pyqtorch_circuit, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD
     )
-    config = {"device_type": DeviceType.REALISTIC}
+
+    config = {"device": RealisticDevice()}
     model_pulser = QuantumModel(
         pulser_circuit, backend=BackendName.PULSER, diff_mode=DiffMode.GPSR, configuration=config
     )
