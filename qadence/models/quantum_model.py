@@ -77,7 +77,9 @@ class QuantumModel(nn.Module):
                 f"The circuit should be of type '<class QuantumCircuit>'. Got {type(circuit)}."
             )
 
-        self.inputs = [p for p in circuit.unique_parameters if not p.trainable and not p.is_number]
+        self.domain_vars = [
+            p for p in circuit.unique_parameters if not p.trainable and not p.is_number
+        ]
         if diff_mode is None:
             raise ValueError("`diff_mode` cannot be `None` in a `QuantumModel`.")
 
@@ -120,7 +122,7 @@ class QuantumModel(nn.Module):
     @property
     def in_features(self) -> int:
         """Number of inputs."""
-        return len(self.inputs)
+        return len(self.domain_vars)
 
     @property
     def out_features(self) -> int | None:

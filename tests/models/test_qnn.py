@@ -74,7 +74,7 @@ def test_input_nd(dim: int) -> None:
     observable = total_magnetization(n_qubits_per_feature * dim)
     circuit = build_circuit(n_qubits_per_feature, dim)
     a = torch.rand(batch_size, dim)
-    qnn = QNN(circuit, observable, inputs=[f"x{i}" for i in range(dim)])
+    qnn = QNN(circuit, observable, domain_vars=[f"x{i}" for i in range(dim)])
     assert qnn.in_features == dim
 
     res: torch.Tensor = qnn(a)

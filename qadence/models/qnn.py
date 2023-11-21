@@ -20,22 +20,25 @@ class QNN(QuantumModel):
     Examples:
     ```python exec="on" source="material-block" result="json"
     import torch
-    from qadence import QuantumCircuit, QNN
-    from qadence import hea, feature_map, hamiltonian_factory, Z
+    from qadence import QuantumCircuit, QNN, Z
+    from qadence import hea, feature_map, hamiltonian_factory, kron
 
     # create the circuit
     n_qubits, depth = 2, 4
-    fm = feature_map(n_qubits)
+    fm = kron(
+        feature_map(1, support=(0,), param="x"),
+        feature_map(1, support=(1,), param="y")
+    )
     ansatz = hea(n_qubits=n_qubits, depth=depth)
     circuit = QuantumCircuit(n_qubits, fm, ansatz)
-    obs_base = hamiltonian_factory(n_qubits, detuning = Z)
+    obs_base = hamiltonian_factory(n_qubits, detuning=Z)
 
     # the QNN will yield two outputs
     obs = [2.0 * obs_base, 4.0 * obs_base]
 
     # initialize and use the model
-    qnn = QNN(circuit, obs, diff_mode="ad", backend="pyqtorch")
-    y = qnn.expectation({"phi": torch.rand(3)})
+    qnn = QNN(circuit, obs, domain_vars=["x", "y"])
+    y = qnn(torch.rand(3, 2))
     print(str(y)) # markdown-exec: hide
     ```
     """
@@ -44,7 +47,7 @@ class QNN(QuantumModel):
         self,
         circuit: QuantumCircuit,
         observable: list[AbstractBlock] | AbstractBlock,
-        inputs: list[sympy.Basic | str] | None = None,
+        domain_vars: list[sympy.Basic | str] | None = None,
         transform: Callable[[Tensor], Tensor] = None,  # transform output of the QNN
         backend: BackendName = BackendName.PYQTORCH,
         diff_mode: DiffMode = DiffMode.AD,
@@ -61,9 +64,9 @@ class QNN(QuantumModel):
         Args:
             circuit: The quantum circuit to use for the QNN.
             transform: A transformation applied to the output of the QNN.
-            inputs: Tuple that indicates the order of variables of the tensors that are passed to
-                the model. Given input tensors `xs = torch.rand(batch_size, input_size:=2)` a QNN
-                with `inputs=("t", "x")` will assign `t, x = xs[:,0], xs[:,1]`.
+            domain_vars: Tuple that indicates the order of variables of the tensors that are passed
+                to the model. Given input tensors `xs = torch.rand(batch_size, input_size:=2)` a QNN
+                with `domain_vars=("t", "x")` will assign `t, x = xs[:,0], xs[:,1]`.
             backend: The chosen quantum backend.
             diff_mode: The differentiation engine to use. Choices 'gpsr' or 'ad'.
             measurement: optional measurement protocol. If None,
@@ -86,7 +89,7 @@ class QNN(QuantumModel):
 
         self.transform = transform if transform else lambda x: x
 
-        if len(self.inputs) > 1 and inputs is None:
+        if len(self.domain_vars) > 1 and domain_vars is None:
             raise ValueError(
                 """
                 Your QNN has more than one input. Please provide a list of inputs in the order of
@@ -96,8 +99,8 @@ class QNN(QuantumModel):
                 symbols.
             """
             )
-        elif len(self.inputs) > 1:
-            self.inputs = [sympy.symbols(x) if isinstance(x, str) else x for x in inputs]  # type: ignore[union-attr]
+        elif len(self.domain_vars) > 1:
+            self.domain_vars = [sympy.symbols(x) if isinstance(x, str) else x for x in domain_vars]  # type: ignore[union-attr]
 
     def forward(
         self,
@@ -163,4 +166,4 @@ class QNN(QuantumModel):
         assert len(values.size()) == 2, msg
         assert values.size()[1] == self.in_features, msg
 
-        return {var.name: values[:, self.inputs.index(var)] for var in self.inputs}
+        return {var.name: values[:, self.domain_vars.index(var)] for var in self.domain_vars}
