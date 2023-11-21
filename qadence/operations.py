@@ -192,13 +192,13 @@ class Projector(ProjectorBlock):
         raise ValueError("Property `eigenvalues_generator` not available for non-unitary operator.")
 
 
-class N(PrimitiveBlock):
+class N(Projector):
     """The N = (1/2)(I-Z) operator."""
 
     name = OpName.N
 
     def __init__(self, target: int):
-        super().__init__((target,))
+        super().__init__("1", "1", (target,))
 
     @property
     def generator(self) -> None:
@@ -1105,9 +1105,7 @@ class Toffoli(ControlBlock):
     name = OpName.TOFFOLI
 
     def __init__(self, control: tuple[int, ...], target: int) -> None:
-        self.generator = kron(
-            *[(I(qubit) - Z(qubit)) * 0.5 for qubit in control], X(target) - I(target)
-        )
+        self.generator = kron(*[N(qubit) for qubit in control], X(target) - I(target))
         super().__init__(control, X(target))
 
     def dagger(self) -> Toffoli:
