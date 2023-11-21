@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 import torch
 from openfermion import QubitOperator, get_sparse_operator
+from torch import Tensor
 from torch.linalg import eigvals
 
 from qadence.blocks import (
@@ -36,6 +37,7 @@ from qadence.operations import (
     HamEvo,
     I,
     N,
+    Projector,
     S,
     T,
     Toffoli,
@@ -88,6 +90,31 @@ def crz_eigenvals(p: float, n_qubits: int = 2) -> torch.Tensor:
 
 def cphase_eigenvals(p: float, n_qubits: int = 2) -> torch.Tensor:
     return torch.cat((torch.ones(2**n_qubits - 1), eigenval(2.0 * p).conj()))
+
+
+@pytest.mark.parametrize(
+    "projector, exp_projector_mat",
+    [
+        (
+            Projector(bra="1", ket="1", qubit_support=0),
+            torch.tensor([[0.0 + 0.0j, 0.0 + 0.0j], [0.0 + 0.0j, 1.0 + 0.0j]]),
+        ),
+        (
+            Projector(bra="10", ket="01", qubit_support=(2, 3)),
+            torch.tensor(
+                [
+                    [0.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j],
+                    [0.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j],
+                    [0.0 + 0.0j, 1.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j],
+                    [0.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j],
+                ]
+            ),
+        ),
+    ],
+)
+def test_projector(projector: Projector, exp_projector_mat: Tensor) -> None:
+    projector_mat = block_to_tensor(projector)
+    assert torch.allclose(projector_mat, exp_projector_mat)
 
 
 @pytest.mark.parametrize(
