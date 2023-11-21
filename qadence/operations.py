@@ -31,6 +31,7 @@ from qadence.blocks.analog import (
     WaitBlock,
 )
 from qadence.blocks.block_to_tensor import block_to_tensor
+from qadence.blocks.primitive import ProjectorBlock
 from qadence.blocks.utils import (
     add,  # noqa
     block_is_commuting_hamiltonian,
@@ -167,6 +168,28 @@ class Z(PrimitiveBlock):
 
     def dagger(self) -> Z:
         return self
+
+
+class Projector(ProjectorBlock):
+    """The projector operator."""
+
+    name = OpName.PROJ
+
+    def __init__(
+        self,
+        bra: str,
+        ket: str,
+        qubit_support: int | tuple[int, ...],
+    ):
+        super().__init__(bra, ket, qubit_support)
+
+    @property
+    def generator(self) -> None:
+        raise ValueError("Property `generator` not available for non-unitary operator.")
+
+    @property
+    def eigenvalues_generator(self) -> None:
+        raise ValueError("Property `eigenvalues_generator` not available for non-unitary operator.")
 
 
 class N(PrimitiveBlock):
