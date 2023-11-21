@@ -65,8 +65,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
-from qadence import add_interaction, chain
-from qadence import QuantumModel, QuantumCircuit, AnalogRZ, AnalogRX, Register
+from qadence import chain
+from qadence import QuantumModel, QuantumCircuit, Register,
+from qadence import RydbergDevice, AnalogRZ, AnalogRX, Register
 
 seed = 0
 np.random.seed(seed)
@@ -112,14 +113,11 @@ embedding Hamiltonian in the QAOA algorithm. Subsequently, there is an Ising int
 emulate the analog circuit. Please note that the Rydberg level is set to 70.
 
 ```python exec="on" source="material-block" result="json" session="qubo"
-from qadence.analog.utils import ising_interaction
-
 layers = 2
 block = chain(*[AnalogRX(f"t{i}") * AnalogRZ(f"s{i}") for i in range(layers)])
 
-emulated = add_interaction(
-    reg, block, interaction=lambda r, ps: ising_interaction(r, ps, rydberg_level=70)
-)
+device = RydbergDevice(rydberg_level = 70)
+
 print(f"emulated = \n") # markdown-exec: hide
 print(emulated) # markdown-exec: hide
 ```
