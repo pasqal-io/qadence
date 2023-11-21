@@ -177,11 +177,11 @@ class Projector(ProjectorBlock):
 
     def __init__(
         self,
-        bra: str,
         ket: str,
+        bra: str,
         qubit_support: int | tuple[int, ...],
     ):
-        super().__init__(bra, ket, qubit_support)
+        super().__init__(ket=ket, bra=bra, qubit_support=qubit_support)
 
     @property
     def generator(self) -> None:
@@ -198,7 +198,7 @@ class N(Projector):
     name = OpName.N
 
     def __init__(self, target: int):
-        super().__init__("1", "1", (target,))
+        super().__init__(ket="1", bra="1", qubit_support=(target,))
 
     @property
     def generator(self) -> None:

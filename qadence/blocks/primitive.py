@@ -463,8 +463,8 @@ class ProjectorBlock(PrimitiveBlock):
 
     def __init__(
         self,
-        bra: str,
         ket: str,
+        bra: str,
         qubit_support: int | tuple[int, ...],
     ) -> None:
         if isinstance(qubit_support, int):
@@ -482,6 +482,6 @@ class ProjectorBlock(PrimitiveBlock):
                     " in the 'ProjectorBlock' definition."
                 )
 
-        self.bra = bra
         self.ket = ket
+        self.bra = bra
         super().__init__(qubit_support)
