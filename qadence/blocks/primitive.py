@@ -454,3 +454,34 @@ class ParametricControlBlock(ParametricBlock):
 
         s += rf" \[params: {params_str}]"
         return s if self.tag is None else (s + rf" \[tag: {self.tag}]")
+
+
+class ProjectorBlock(PrimitiveBlock):
+    """The abstract ProjectorBlock."""
+
+    name = "ProjectorBlock"
+
+    def __init__(
+        self,
+        bra: str,
+        ket: str,
+        qubit_support: int | tuple[int, ...],
+    ) -> None:
+        if isinstance(qubit_support, int):
+            qubit_support = (qubit_support,)
+        if len(bra) != len(ket):
+            raise ValueError(
+                "Bra and ket must be bitstrings of same length in the 'Projector' definition."
+            )
+        elif len(bra) != len(qubit_support):
+            raise ValueError("Bra or ket must be of same length as the 'qubit_support'")
+        for wf in [bra, ket]:
+            if not all(int(item) == 0 or int(item) == 1 for item in wf):
+                raise ValueError(
+                    "All qubits must be either in the '0' or '1' state"
+                    " in the 'ProjectorBlock' definition."
+                )
+
+        self.bra = bra
+        self.ket = ket
+        super().__init__(qubit_support)
