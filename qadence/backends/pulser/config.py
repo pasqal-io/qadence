@@ -7,7 +7,7 @@ from pasqal_cloud import TokenProvider
 from pasqal_cloud.device import EmulatorType
 from pulser_simulation.simconfig import SimConfig
 
-from qadence.analog import RydbergDevice
+from qadence.analog import IdealDevice, RydbergDevice
 from qadence.backend import BackendConfiguration
 from qadence.types import DeviceType, Interaction
 
@@ -26,12 +26,14 @@ class CloudConfiguration:
 
 @dataclass
 class Configuration(BackendConfiguration):
+    device: RydbergDevice = IdealDevice()
+    """The device including the specs to initialize the backend Pulser Device."""
+
     device_type: DeviceType = DeviceType.IDEALIZED
     """The type of quantum Device to use in the simulations.
 
-    Choose
-    between IDEALIZED and REALISTIC. This influences pulse duration, max
-    amplitude, minimum atom spacing and other properties of the system
+    FIXME: This is deprecated, the device_type is now controlled in the
+    Qadence Device, as detailed in the documentation.
     """
 
     sampling_rate: float = 1.0
@@ -80,9 +82,6 @@ class Configuration(BackendConfiguration):
     Currently, only
     NN interaction is support. XY interaction is possible but not implemented
     """
-
-    # Temporary option while figuring out the best interface unification
-    device: RydbergDevice | None = None
 
     # configuration for cloud simulations
     cloud_configuration: Optional[CloudConfiguration] = None
