@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable
 
-from qadence.analog import RydbergDevice, add_background_hamiltonian
+from qadence.analog import IdealDevice, RydbergDevice, add_background_hamiltonian
 from qadence.backend import BackendConfiguration
 from qadence.logger import get_logger
 from qadence.transpile import (
@@ -44,8 +44,8 @@ class Configuration(BackendConfiguration):
     use_single_qubit_composition: bool = False
     """Composes chains of single qubit gates into a single matmul if possible."""
 
-    device: RydbergDevice | None = None
-    """Digital-analog emulation interaction that is used for `AnalogBlock`s."""
+    device: RydbergDevice = IdealDevice()
+    """The device including the specs for the emulated-analog interface."""
 
     loop_expectation: bool = False
     """When computing batches of expectation values, only allocate one wavefunction.

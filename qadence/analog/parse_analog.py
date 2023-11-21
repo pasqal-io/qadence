@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from sympy import cos, sin
 
-from qadence.analog.device import RydbergDevice
+from qadence.analog.device import IdealDevice, RydbergDevice
 from qadence.analog.interaction_hamiltonian import rydberg_interaction_hamiltonian
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.analog import (
@@ -35,7 +35,7 @@ def add_background_hamiltonian(
         raise ValueError("Block input requires an input to the `register` argument.")
 
     if device is None:
-        device = RydbergDevice()
+        device = IdealDevice()
 
     # Create interaction hamiltonian:
     h_int = rydberg_interaction_hamiltonian(target_register, device)

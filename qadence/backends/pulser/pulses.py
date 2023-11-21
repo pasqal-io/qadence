@@ -97,7 +97,9 @@ def add_pulses(
         d = evaluate(detuning) if detuning.is_number else sequence.declare_variable(d_uuid)
 
         # calculate generator eigenvalues
-        block.eigenvalues_generator = block.compute_eigenvalues_generator(qc_register, block)
+        block.eigenvalues_generator = block.compute_eigenvalues_generator(
+            block, config.device, qc_register
+        )
 
         if block.qubit_support.is_global:
             pulse = analog_rot_pulse(a, w, p, d, global_channel, config)
