@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import jax.numpy as jnp
 import pytest
 import torch
 
@@ -22,17 +23,12 @@ from qadence.backends.utils import jarr_to_tensor
 from qadence.blocks import AbstractBlock
 from qadence.constructors import hea
 
-# def test_psr() -> None:
-#     bla = expectation(RX(0, "theta"), Z(0), backend="horqrux", diff_mode="gpsr")
 
-#     breakpoint()
-
-
-# def test_scale_block_to_jax() -> None:
-#     block = "theta" * X(12)
-#     hq_block = convert_block(block)
-#     mat = block_to_jax(hq_block)
-#     breakpoint()
+def test_psr() -> None:
+    values = {"theta": torch.tensor([torch.pi])}
+    psr = expectation(RX(0, "theta"), Z(0), values=values, backend="horqrux", diff_mode="gpsr")
+    ad = expectation(RX(0, "theta"), Z(0), values=values, backend="horqrux", diff_mode="ad")
+    assert jnp.allclose(psr[0], ad[0])
 
 
 @pytest.mark.parametrize("block", [RX(0, 1.0), RY(0, 3.0), RZ(0, 4.0), X(0), Y(0), Z(0)])

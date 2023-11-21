@@ -8,7 +8,7 @@ from jax import Array
 from qadence.backend import Backend as QuantumBackend
 from qadence.backend import Converted, ConvertedCircuit, ConvertedObservable
 from qadence.backends.differentiable_backend import DifferentiableBackend
-from qadence.backends.engines.jax.jax_psr_expectation import JaxDifferentiableExpectation
+from qadence.backends.engines.jax.jax_expectation import JaxDifferentiableExpectation
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.primitive import PrimitiveBlock
 from qadence.blocks.utils import uuid_to_block
@@ -77,7 +77,6 @@ class JaxBackend(DifferentiableBackend):
                 mitigation=mitigation,
                 endianness=endianness,
             ).psr()
-        # breakpoint()
         return expectation
 
     def sample(

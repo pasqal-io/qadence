@@ -53,6 +53,9 @@ class QdHorQGate(Gate):
     gates: Callable | list[Callable] | Gate | list[Gate]
     target: int | list[int]
     control: int | list[int] | None
+    O: Any = None  # type: ignore
+    target_idx: int = 0
+    control_idx: int = 1  # Hotfix for horqrux native for now
 
 
 @register_pytree_node_class

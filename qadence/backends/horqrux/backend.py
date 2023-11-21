@@ -48,13 +48,13 @@ class Backend(BackendInterface):
 
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:
         ops = convert_block(circuit.block, n_qubits=circuit.n_qubits, config=self.config)
-        hq_circ = jax.jit(HorqruxCircuit(ops).forward)
-        return ConvertedCircuit(native=hq_circ, abstract=circuit, original=circuit)
+        # hq_circ = jax.jit(HorqruxCircuit(ops).forward)
+        return ConvertedCircuit(native=HorqruxCircuit(ops), abstract=circuit, original=circuit)
 
     def observable(self, observable: AbstractBlock, n_qubits: int) -> ConvertedObservable:
         hq_obs = convert_observable(observable, n_qubits=n_qubits, config=self.config)
-        comp_circ = jax.jit(hq_obs.forward)
-        return ConvertedObservable(native=comp_circ, abstract=observable, original=observable)
+        # comp_circ = jax.jit(hq_obs.forward)
+        return ConvertedObservable(native=hq_obs, abstract=observable, original=observable)
 
     def run(
         self,
@@ -71,7 +71,7 @@ class Backend(BackendInterface):
             state = prepare_state(n_qubits, "0" * n_qubits)
         else:
             state = tensor_to_jnp(pyqify(state)) if horqify_state else state
-        state = circuit.native(state, param_values)
+        state = circuit.native.forward(state, param_values)
         batch_size = 1  # FIXME : add batching
         if unhorqify_state:
             state = jarr_to_tensor(jnp.reshape(state, (batch_size, 2**circuit.abstract.n_qubits)))
@@ -97,9 +97,13 @@ class Backend(BackendInterface):
         if state is None:
             state = prepare_state(circuit.abstract.n_qubits, "0" * circuit.abstract.n_qubits)
         param_values = values_to_jax(param_values)
-        wf = circuit.native(state, param_values)
-        exp_vals = jnp.array([obs.native(wf, param_values) for obs in observable])
-        return jnp.reshape(exp_vals, (batch_size, n_obs))
+
+        def _expectation(state: ArrayLike, param_values: ParamDictType) -> ArrayLike:
+            wf = circuit.native.forward(state, param_values)
+            return observable[0].native.forward(wf, param_values)
+            # return jnp.reshape(exp_vals, (batch_size, n_obs))
+
+        return jax.jit(jax.value_and_grad(_expectation))(state, param_values)
 
     def sample(
         self,
