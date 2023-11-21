@@ -17,7 +17,7 @@ from qadence.blocks import (
     kron,
     to_openfermion,
 )
-from qadence.blocks.block_to_tensor import block_to_tensor
+from qadence.blocks.block_to_tensor import IMAT, ZMAT, block_to_tensor
 from qadence.operations import (
     CNOT,
     CPHASE,
@@ -110,10 +110,104 @@ def cphase_eigenvals(p: float, n_qubits: int = 2) -> torch.Tensor:
                 ]
             ),
         ),
+        (
+            N(0),
+            (IMAT - ZMAT) / 2.0,
+        ),
+        (
+            Toffoli((0, 1), 2),
+            torch.tensor(
+                [
+                    [
+                        [
+                            1.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                        ],
+                        [
+                            0.0 + 0.0j,
+                            1.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                        ],
+                        [
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            1.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                        ],
+                        [
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            1.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                        ],
+                        [
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            1.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                        ],
+                        [
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            1.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                        ],
+                        [
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            1.0 + 0.0j,
+                        ],
+                        [
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            1.0 + 0.0j,
+                            0.0 + 0.0j,
+                        ],
+                    ]
+                ]
+            ),
+        ),
     ],
 )
 def test_projector(projector: Projector, exp_projector_mat: Tensor) -> None:
     projector_mat = block_to_tensor(projector)
+    breakpoint()
     assert torch.allclose(projector_mat, exp_projector_mat)
 
 
