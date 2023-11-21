@@ -34,7 +34,6 @@ def finitediff(
         return (finitediff(f, x + ev, di) - finitediff(f, x - ev, di)) * _eps / 2
     elif len(derivative_indices) == 3:
         return (f(x + 2 * ev) - 2 * f(x + ev) + 2 * f(x - ev) - f(x - 2 * ev)) * _eps**3 / 2
-        # (u(x + 2 * ε ) - 2 * u(x + ε ) + 2 * u(x - ε)  - u(x - 2 * ε )) * _eps^3 ./ 2
     elif len(derivative_indices) == 2:
         return (f(x + ev) + f(x - ev) - 2 * f(x)) * _eps**2
     elif len(derivative_indices) == 1:
