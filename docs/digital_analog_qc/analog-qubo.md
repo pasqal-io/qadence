@@ -66,8 +66,8 @@ import numpy as np
 import torch
 
 from qadence import chain
-from qadence import QuantumModel, QuantumCircuit, Register,
-from qadence import RydbergDevice, AnalogRZ, AnalogRX, Register
+from qadence import QuantumModel, QuantumCircuit, Register
+from qadence import RydbergDevice, AnalogRZ, AnalogRX
 
 seed = 0
 np.random.seed(seed)
@@ -117,15 +117,14 @@ layers = 2
 block = chain(*[AnalogRX(f"t{i}") * AnalogRZ(f"s{i}") for i in range(layers)])
 
 device = RydbergDevice(rydberg_level = 70)
-
-print(f"emulated = \n") # markdown-exec: hide
-print(emulated) # markdown-exec: hide
 ```
 
 Next, an initial solution is computed by sampling the model:
 
 ```python exec="on" source="material-block" result="json" session="qubo"
-model = QuantumModel(QuantumCircuit(reg, emulated), backend="pyqtorch", diff_mode='gpsr')
+model = QuantumModel(
+    QuantumCircuit(reg, block),
+    backend="pyqtorch", diff_mode='gpsr', configuration = {"device": device})
 initial_counts = model.sample({}, n_shots=1000)[0]
 
 print(f"initial_counts = {initial_counts}") # markdown-exec: hide
