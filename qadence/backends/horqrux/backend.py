@@ -8,11 +8,16 @@ import jax
 import jax.numpy as jnp
 from horqrux.utils import prepare_state
 from jax.typing import ArrayLike
-from torch import Tensor
 
 from qadence.backend import Backend as BackendInterface
 from qadence.backend import ConvertedCircuit, ConvertedObservable
-from qadence.backends.utils import infer_batchsize, jarr_to_tensor, pyqify, tensor_to_jnp
+from qadence.backends.utils import (
+    infer_batchsize,
+    jarr_to_tensor,
+    pyqify,
+    tensor_to_jnp,
+    values_to_jax,
+)
 from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
@@ -23,7 +28,7 @@ from qadence.types import BackendName, Endianness, Engine, ParamDictType, Return
 from qadence.utils import int_to_basis
 
 from .config import Configuration
-from .convert_ops import convert_block, convert_observable
+from .convert_ops import HorqruxCircuit, convert_block, convert_observable
 
 
 @dataclass(frozen=True, eq=True)
@@ -43,26 +48,13 @@ class Backend(BackendInterface):
 
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:
         ops = convert_block(circuit.block, n_qubits=circuit.n_qubits, config=self.config)
-
-        def horq_circ(state: ArrayLike, values: dict) -> ArrayLike:
-            for op in ops:
-                state = op.forward(state, values)
-            return state
-
-        comp_circ = jax.jit(horq_circ)
-        return ConvertedCircuit(native=comp_circ, abstract=circuit, original=circuit)
+        hq_circ = jax.jit(HorqruxCircuit(ops).forward)
+        return ConvertedCircuit(native=hq_circ, abstract=circuit, original=circuit)
 
     def observable(self, observable: AbstractBlock, n_qubits: int) -> ConvertedObservable:
-        op = convert_observable(observable, n_qubits=n_qubits, config=self.config)
-
-        def horq_obs(state: ArrayLike, values: dict) -> ArrayLike:
-            return op.forward(state, values)
-
-        comp_circ = jax.jit(horq_obs)
+        hq_obs = convert_observable(observable, n_qubits=n_qubits, config=self.config)
+        comp_circ = jax.jit(hq_obs.forward)
         return ConvertedObservable(native=comp_circ, abstract=observable, original=observable)
-
-    def values_to_jax(self, param_values: dict[str, Tensor]) -> dict[str, ArrayLike]:
-        return {key: jnp.array(value.detach().numpy()) for key, value in param_values.items()}
 
     def run(
         self,
@@ -74,7 +66,7 @@ class Backend(BackendInterface):
         unhorqify_state: bool = True,
     ) -> ReturnType:
         n_qubits = circuit.abstract.n_qubits
-        param_values = self.values_to_jax(param_values)
+        param_values = values_to_jax(param_values)
         if state is None:
             state = prepare_state(n_qubits, "0" * n_qubits)
         else:
@@ -104,7 +96,7 @@ class Backend(BackendInterface):
         n_obs = len(observable)
         if state is None:
             state = prepare_state(circuit.abstract.n_qubits, "0" * circuit.abstract.n_qubits)
-        param_values = self.values_to_jax(param_values)
+        param_values = values_to_jax(param_values)
         wf = circuit.native(state, param_values)
         exp_vals = jnp.array([obs.native(wf, param_values) for obs in observable])
         return jnp.reshape(exp_vals, (batch_size, n_obs))

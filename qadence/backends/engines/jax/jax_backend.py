@@ -8,6 +8,7 @@ from jax import Array
 from qadence.backend import Backend as QuantumBackend
 from qadence.backend import Converted, ConvertedCircuit, ConvertedObservable
 from qadence.backends.differentiable_backend import DifferentiableBackend
+from qadence.backends.engines.jax.jax_psr_expectation import JaxDifferentiableExpectation
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.primitive import PrimitiveBlock
 from qadence.blocks.utils import uuid_to_block
@@ -60,21 +61,24 @@ class JaxBackend(DifferentiableBackend):
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> ReturnType:
-        """Compute the expectation value of a given observable.
-
-        Arguments:
-            circuit: A backend native quantum circuit to be executed.
-            observable: A backend native observable to compute the expectation value from.
-            param_values: A dict of values for symbolic substitution.
-            state: An initial state.
-            measurement: A shot-based measurement protocol.
-            endianness: Endianness of the state.
-
-        Returns:
-            A tensor of expectation values.
-        """
         observable = observable if isinstance(observable, list) else [observable]
-        return self.backend.expectation(circuit, observable, param_values, state)
+
+        if self.diff_mode == DiffMode.AD:
+            expectation = self.backend.expectation(circuit, observable, param_values, state)
+        else:
+            expectation = JaxDifferentiableExpectation(
+                backend=self.backend,
+                circuit=circuit,
+                observable=observable,
+                param_values=param_values,
+                state=state,
+                measurement=measurement,
+                noise=noise,
+                mitigation=mitigation,
+                endianness=endianness,
+            ).psr()
+        # breakpoint()
+        return expectation
 
     def sample(
         self,

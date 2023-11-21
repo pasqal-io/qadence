@@ -206,4 +206,12 @@ def jarr_to_tensor(arr: ArrayLike, dtype: Any = torch.cdouble) -> torch.Tensor:
 
 
 def tensor_to_jnp(tensor: torch.Tensor, dtype: Any = jnp.complex128) -> ArrayLike:
-    return jnp.array(tensor.numpy(), dtype=dtype)
+    return (
+        jnp.array(tensor.numpy(), dtype=dtype)
+        if not tensor.requires_grad
+        else jnp.array(tensor.detach().numpy(), dtype=dtype)
+    )
+
+
+def values_to_jax(param_values: dict[str, Tensor]) -> dict[str, ArrayLike]:
+    return {key: jnp.array(value.detach().numpy()) for key, value in param_values.items()}
