@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Callable
 
 from torch import Tensor
+import sympy
 
 from qadence.backend import BackendConfiguration
 from qadence.blocks.abstract import AbstractBlock
@@ -43,6 +44,7 @@ class QNN(QuantumModel):
         self,
         circuit: QuantumCircuit,
         observable: list[AbstractBlock] | AbstractBlock,
+        inputs: tuple[sympy.Basic | str, ...] | None = None,
         transform: Callable[[Tensor], Tensor] = None,  # transform output of the QNN
         backend: BackendName = BackendName.PYQTORCH,
         diff_mode: DiffMode = DiffMode.AD,
@@ -59,6 +61,9 @@ class QNN(QuantumModel):
         Args:
             circuit: The quantum circuit to use for the QNN.
             transform: A transformation applied to the output of the QNN.
+            inputs: Tuple that indicates the order of variables of the tensors that are passed to
+                the model. Given input tensors `xs = torch.rand(batch_size, input_size:=2)` a QNN
+                with `inputs=("t", "x")` will assign `t, x = xs[:,0], xs[:,1]`.
             backend: The chosen quantum backend.
             diff_mode: The differentiation engine to use. Choices 'gpsr' or 'ad'.
             measurement: optional measurement protocol. If None,
@@ -67,7 +72,7 @@ class QNN(QuantumModel):
             configuration: optional configuration for the backend
         """
         super().__init__(
-            circuit=circuit,
+            circuit,
             observable=observable,
             backend=backend,
             diff_mode=diff_mode,
@@ -81,9 +86,20 @@ class QNN(QuantumModel):
 
         self.transform = transform if transform else lambda x: x
 
+        if len(self.inputs) > 1 and inputs is None:
+            raise ValueError("""
+                Your QNN has more than one input. Please provide a tuple of inputs in the order of
+                your domain. For example, if you want to pass
+                `xs = torch.rand(batch_size, input_size:=3)` to the QNN `svars = ("t", "x", "y")`
+                will make the QNN use `t = xs[:,0]`, etc. You can also pass a tuple of sympy
+                symbols.
+            """)
+        elif len(self.inputs) > 1:
+            self.inputs = tuple(sympy.symbols(x) if isinstance(x, str) else x for x in inputs)
+
     def forward(
         self,
-        values: dict[str, Tensor] | Tensor = None,
+        values: Tensor,
         state: Tensor | None = None,
         measurement: Measurements | None = None,
         noise: Noise | None = None,
@@ -103,7 +119,7 @@ class QNN(QuantumModel):
         is instead `n_batches x n_observables`
 
         Args:
-            values (dict[str, Tensor] | Tensor): the values of the feature parameters
+            values: the values of the feature parameters
             state: Initial state.
             measurement: optional measurement protocol. If None,
                 use exact expectation value with a statevector simulator
@@ -114,10 +130,6 @@ class QNN(QuantumModel):
             Tensor: a tensor with the expectation value of the observables passed
                 in the constructor of the model
         """
-        if values is None:
-            values = {}
-        if not isinstance(values, dict):
-            values = self._format_to_dict(values)
         if measurement is None:
             measurement = self._measurement
         if noise is None:
@@ -125,7 +137,7 @@ class QNN(QuantumModel):
 
         return self.transform(
             self.expectation(
-                values=values,
+                values=self._format_to_dict(values),
                 state=state,
                 measurement=measurement,
                 endianness=endianness,
@@ -139,6 +151,9 @@ class QNN(QuantumModel):
         The tensor is assumed to have dimensions: n_batches x in_features where in_features
         corresponds to the number of input features of the QNN
         """
+        # for backwards compat...
+        if isinstance(values, dict):
+            return values
 
         if len(values.size()) == 1:
             values = values.reshape(-1, 1)
@@ -146,10 +161,4 @@ class QNN(QuantumModel):
         assert len(values.size()) == 2, msg
         assert values.size()[1] == self.in_features, msg
 
-        names = [p.name for p in self.inputs]
-        res = {}
-        for i, name in enumerate(names):
-            res[name] = values[:, i]
-        return res
-
-    # TODO: Implement derivatives w.r.t. to inputs
+        return {var.name: values[:, self.inputs.index(var)] for var in self.inputs}

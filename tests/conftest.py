@@ -202,6 +202,7 @@ def BasicAdjointQNN(BasicFMQuantumCircuit: QuantumCircuit, BasicObservable: Abst
     return QNN(
         BasicFMQuantumCircuit,
         total_magnetization(FM_NQUBITS),
+        inputs=("phi",),
         backend=BackendName.PYQTORCH,
         diff_mode=DiffMode.ADJOINT,
     )
