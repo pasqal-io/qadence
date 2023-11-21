@@ -10,7 +10,7 @@ def finitediff(
     f: Callable,
     x: Tensor,
     derivative_indices: tuple[int, ...],
-    eps: float = 1e-6,
+    eps: float = None,
 ) -> Tensor:
     """
     Arguments:
@@ -20,6 +20,11 @@ def finitediff(
         derivative_indices: which *input* to differentiate (i.e. which variable x[:,i])
         eps: finite difference spacing
     """
+
+    if eps is None:
+        order = len(derivative_indices)
+        # FIXME: this is the float64 machine epsilon, should probably be fixed for float32
+        eps = 2.220446049250313e-16 ** (1/(2+order))
 
     # compute derivative direction vector(s)
     eps = torch.as_tensor(eps, dtype=x.dtype)
