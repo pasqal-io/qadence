@@ -11,7 +11,7 @@ from pulser_simulation.simulation import QutipEmulator
 
 from qadence.backends.pulser.backend import make_sequence
 from qadence.backends.pulser.config import Configuration
-from qadence.backends.pulser.devices import Device, RealisticDevice
+from qadence.backends.pulser.devices import RealisticDevice
 from qadence.backends.pulser.pulses import digital_xy_rot_pulse, digital_z_rot_pulse, entangle_pulse
 from qadence.blocks import AbstractBlock
 from qadence.blocks.analog import Interaction
@@ -19,6 +19,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.divergences import js_divergence
 from qadence.operations import RX, RY, RZ, entangle
 from qadence.register import Register as QadenceRegister
+from qadence.types import DeviceType
 
 
 @pytest.mark.parametrize(
@@ -34,7 +35,7 @@ def test_single_qubit_block_conversion(Qadence_op: AbstractBlock, func: Callable
     n_qubits = 2
     reg = QadenceRegister(n_qubits, spacing=spacing)
     circ = QuantumCircuit(reg, Qadence_op)
-    config = Configuration(device_type=Device.REALISTIC)
+    config = Configuration(device_type=DeviceType.REALISTIC)
 
     seq1 = make_sequence(circ, config)
     sim1 = QutipEmulator.from_sequence(seq1)
@@ -42,7 +43,7 @@ def test_single_qubit_block_conversion(Qadence_op: AbstractBlock, func: Callable
     sample1 = res1.sample_final_state(500)
 
     reg = PulserRegister.rectangle(1, n_qubits, spacing=spacing)
-    seq2 = Sequence(reg, RealisticDevice)
+    seq2 = Sequence(reg, RealisticDevice())
     seq2.declare_channel("local", "rydberg_local")
     seq2.target(Qadence_op.qubit_support, "local")
     pulse = func(seq2.device.channels["rydberg_local"])
@@ -70,7 +71,7 @@ def test_multiple_qubit_block_conversion(Qadence_op: AbstractBlock, func: Callab
     sample1 = res1.sample_final_state(500)
 
     reg = PulserRegister.rectangle(1, 2, spacing=spacing)
-    seq2 = Sequence(reg, RealisticDevice)
+    seq2 = Sequence(reg, RealisticDevice())
     seq2.declare_channel("global", "rydberg_global")
     seq2.add(func(seq2.device.channels["rydberg_global"]), "global")
     sim2 = QutipEmulator.from_sequence(seq2)

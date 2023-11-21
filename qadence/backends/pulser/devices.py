@@ -6,8 +6,6 @@ from pulser.channels.eom import RydbergBeam, RydbergEOM
 from pulser.devices._device_datacls import Device as PulserDevice
 from pulser.devices._device_datacls import VirtualDevice
 
-from qadence.types import StrEnum
-
 
 # Idealized virtual device
 def IdealDevice(
@@ -41,7 +39,7 @@ def RealisticDevice(
         channel_objects=(
             Rydberg.Global(
                 max_abs_detuning=max_abs_detuning,
-                max_amp=max_amp,
+                max_amp=max_amp * 0.5,
                 clock_period=4,
                 min_duration=16,
                 max_duration=4000,
@@ -72,13 +70,3 @@ def RealisticDevice(
             ),
         ),
     )
-
-
-class Device(StrEnum):
-    """Supported types of devices for Pulser backend."""
-
-    IDEALIZED = IdealDevice
-    """Idealized device, least realistic."""
-
-    REALISTIC = RealisticDevice
-    """Device with realistic specs."""

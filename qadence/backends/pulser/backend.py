@@ -28,13 +28,13 @@ from qadence.noise.protocols import apply_noise
 from qadence.overlap import overlap_exact
 from qadence.register import Register
 from qadence.transpile import transpile
-from qadence.types import BackendName, Endianness
+from qadence.types import BackendName, DeviceType, Endianness
 
 from .channels import GLOBAL_CHANNEL, LOCAL_CHANNEL
 from .cloud import get_client
 from .config import Configuration
 from .convert_ops import convert_observable
-from .devices import Device, IdealDevice, RealisticDevice
+from .devices import IdealDevice, RealisticDevice
 from .pulses import add_pulses
 
 logger = get_logger(__file__)
@@ -54,18 +54,16 @@ def create_register(register: Register) -> PulserRegister:
 
 
 def make_sequence(circ: QuantumCircuit, config: Configuration) -> Sequence:
-    if config.device_type == Device.IDEALIZED:
-        device = IdealDevice()
-    elif config.device_type == Device.REALISTIC:
-        device = RealisticDevice()
-    else:
-        raise ValueError("Specified device is not supported.")
-
-    # Temporary solution: overrides the device if a Qadence device is passed in the config
-    if config.device is not None:
+    if config.device.device_type == DeviceType.IDEALIZED:
         device = IdealDevice(
             config.device.rydberg_level, config.device.max_abs_detuning, config.device.max_amp
         )
+    elif config.device.device_type == DeviceType.REALISTIC:
+        device = RealisticDevice(
+            config.device.rydberg_level, config.device.max_abs_detuning, config.device.max_amp
+        )
+    else:
+        raise ValueError("Specified device type is not supported.")
 
     ########
     # FIXME: Remove the block below in V1.1.0

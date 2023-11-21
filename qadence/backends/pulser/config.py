@@ -9,9 +9,7 @@ from pulser_simulation.simconfig import SimConfig
 
 from qadence.analog import RydbergDevice
 from qadence.backend import BackendConfiguration
-from qadence.types import Interaction
-
-from .devices import Device
+from qadence.types import DeviceType, Interaction
 
 DEFAULT_CLOUD_ENV = "prod"
 
@@ -28,7 +26,7 @@ class CloudConfiguration:
 
 @dataclass
 class Configuration(BackendConfiguration):
-    device_type: Device = Device.IDEALIZED
+    device_type: DeviceType = DeviceType.IDEALIZED
     """The type of quantum Device to use in the simulations.
 
     Choose

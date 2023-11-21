@@ -39,6 +39,7 @@ __all__ = [
     "DiffMode",
     "BackendName",
     "Interaction",
+    "DeviceType",
     "OverlapMethod",
     "AlgoHEvo",
     "SerializationFormat",
@@ -175,6 +176,16 @@ class Interaction(StrEnum):
     """XY Interaction."""
     XYZ = "XYZ"
     """XYZ Interaction."""
+
+
+class DeviceType(StrEnum):
+    """Supported types of devices for Pulser backend."""
+
+    IDEALIZED = "IdealDevice"
+    """Idealized device, least realistic."""
+
+    REALISTIC = "RealisticDevice"
+    """Device with realistic specs."""
 
 
 class _BackendName(StrEnum):

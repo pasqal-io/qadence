@@ -8,17 +8,17 @@ from metrics import JS_ACCEPTANCE
 
 from qadence import sample
 from qadence.backend import BackendName
-from qadence.backends.pulser.devices import Device
 from qadence.blocks import chain
 from qadence.divergences import js_divergence
 from qadence.operations import RY, entangle
 from qadence.register import Register
+from qadence.types import DeviceType
 
 DEFAULT_SPACING = 8.0
 
 
-@pytest.mark.parametrize("device_type", [Device.IDEALIZED, Device.REALISTIC])
-def test_entanglement(device_type: Device) -> None:
+@pytest.mark.parametrize("device_type", [DeviceType.IDEALIZED, DeviceType.REALISTIC])
+def test_entanglement(device_type: DeviceType) -> None:
     block = chain(entangle(1000, qubit_support=(0, 1)), RY(0, 3 * torch.pi / 2))
 
     register = Register.line(2, spacing=DEFAULT_SPACING)
