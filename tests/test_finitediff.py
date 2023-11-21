@@ -32,7 +32,7 @@ def _torch_derivative(
         (1, 1, 1),
         (0, 1, 0),
         (1, 1, 0),
-        pytest.param((1, 0, 1, 0), marks=pytest.mark.xfail) # needs better epsilon?
+        pytest.param((1, 0, 1, 0), marks=pytest.mark.xfail),  # needs better epsilon?
     ],
 )
 def test_finitediff(idxs: tuple) -> None:

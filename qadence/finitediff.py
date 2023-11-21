@@ -24,11 +24,11 @@ def finitediff(
     if eps is None:
         order = len(derivative_indices)
         # FIXME: this is the float64 machine epsilon, should probably be fixed for float32
-        eps = 2.220446049250313e-16 ** (1/(2+order))
+        eps = 2.220446049250313e-16 ** (1 / (2 + order))
 
     # compute derivative direction vector(s)
     eps = torch.as_tensor(eps, dtype=x.dtype)
-    _eps = 1 / eps
+    _eps = 1 / eps  # type: ignore[operator]
     ev = torch.zeros_like(x)
     i = derivative_indices[0]
     ev[:, i] += eps
