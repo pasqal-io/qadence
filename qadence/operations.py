@@ -691,7 +691,7 @@ class CNOT(ControlBlock):
     name = OpName.CNOT
 
     def __init__(self, control: int, target: int) -> None:
-        self.generator = kron((I(control) - Z(control)) * 0.5, X(target) - I(target))
+        self.generator = kron(N(control), X(target) - I(target))
         super().__init__((control,), X(target))
 
     @property
@@ -722,9 +722,7 @@ class MCZ(ControlBlock):
     name = OpName.MCZ
 
     def __init__(self, control: tuple[int, ...], target: int) -> None:
-        self.generator = kron(
-            *[(I(qubit) - Z(qubit)) * 0.5 for qubit in control], Z(target) - I(target)
-        )
+        self.generator = kron(*[N(qubit) for qubit in control], Z(target) - I(target))
         super().__init__(control, Z(target))
 
     @property
@@ -772,7 +770,7 @@ class MCRX(ParametricControlBlock):
         target: int,
         parameter: Parameter | TNumber | sympy.Expr | str,
     ) -> None:
-        self.generator = kron(*[(I(qubit) - Z(qubit)) * 0.5 for qubit in control], X(target))
+        self.generator = kron(*[N(qubit) for qubit in control], X(target))
         super().__init__(control, RX(target, parameter))
 
     @classmethod
@@ -815,7 +813,7 @@ class MCRY(ParametricControlBlock):
         target: int,
         parameter: Parameter | TNumber | sympy.Expr | str,
     ) -> None:
-        self.generator = kron(*[(I(qubit) - Z(qubit)) * 0.5 for qubit in control], Y(target))
+        self.generator = kron(*[N(qubit) for qubit in control], Y(target))
         super().__init__(control, RY(target, parameter))
 
     @classmethod
@@ -858,7 +856,7 @@ class MCRZ(ParametricControlBlock):
         target: int,
         parameter: Parameter | TNumber | sympy.Expr | str,
     ) -> None:
-        self.generator = kron(*[(I(qubit) - Z(qubit)) * 0.5 for qubit in control], Z(target))
+        self.generator = kron(*[N(qubit) for qubit in control], Z(target))
         super().__init__(control, RZ(target, parameter))
 
     @classmethod
@@ -901,9 +899,9 @@ class CSWAP(ControlBlock):
         if isinstance(control, tuple):
             control = control[0]
 
-        a00m = 0.5 * (Z(control) - I(control))
+        a00m = -N(control)
         a00p = -0.5 * (Z(control) + I(control))
-        a11 = 0.5 * (Z(target1) - I(target1))
+        a11 = -N(target1)
         a22 = -0.5 * (Z(target2) + I(target2))
         a12 = 0.5 * (chain(X(target1), Z(target1)) + X(target1))
         a21 = 0.5 * (chain(Z(target2), X(target2)) + X(target2))
@@ -1054,9 +1052,7 @@ class MCPHASE(ParametricControlBlock):
         target: int,
         parameter: Parameter | TNumber | sympy.Expr | str,
     ) -> None:
-        self.generator = kron(
-            *[(I(qubit) - Z(qubit)) * 0.5 for qubit in control], Z(target) - I(target)
-        )
+        self.generator = kron(*[N(qubit) for qubit in control], Z(target) - I(target))
         super().__init__(control, PHASE(target, parameter))
 
     @classmethod
