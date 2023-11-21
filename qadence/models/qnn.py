@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Callable
 
-from torch import Tensor
 import sympy
+from torch import Tensor
 
 from qadence.backend import BackendConfiguration
 from qadence.blocks.abstract import AbstractBlock
@@ -44,7 +44,7 @@ class QNN(QuantumModel):
         self,
         circuit: QuantumCircuit,
         observable: list[AbstractBlock] | AbstractBlock,
-        inputs: tuple[sympy.Basic | str, ...] | None = None,
+        inputs: list[sympy.Basic | str] | None = None,
         transform: Callable[[Tensor], Tensor] = None,  # transform output of the QNN
         backend: BackendName = BackendName.PYQTORCH,
         diff_mode: DiffMode = DiffMode.AD,
@@ -87,15 +87,17 @@ class QNN(QuantumModel):
         self.transform = transform if transform else lambda x: x
 
         if len(self.inputs) > 1 and inputs is None:
-            raise ValueError("""
-                Your QNN has more than one input. Please provide a tuple of inputs in the order of
+            raise ValueError(
+                """
+                Your QNN has more than one input. Please provide a list of inputs in the order of
                 your domain. For example, if you want to pass
                 `xs = torch.rand(batch_size, input_size:=3)` to the QNN `svars = ("t", "x", "y")`
-                will make the QNN use `t = xs[:,0]`, etc. You can also pass a tuple of sympy
+                will make the QNN use `t = xs[:,0]`, etc. You can also pass a list of sympy
                 symbols.
-            """)
+            """
+            )
         elif len(self.inputs) > 1:
-            self.inputs = tuple(sympy.symbols(x) if isinstance(x, str) else x for x in inputs)
+            self.inputs = [sympy.symbols(x) if isinstance(x, str) else x for x in inputs]  # type: ignore[union-attr]
 
     def forward(
         self,
