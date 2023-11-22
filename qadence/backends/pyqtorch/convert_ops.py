@@ -29,7 +29,6 @@ from torch.nn import Module
 
 from qadence.backends.utils import (
     finitediff,
-    infer_batchsize,
     pyqify,
     unpyqify,
 )
@@ -58,6 +57,7 @@ from qadence.operations import (
     three_qubit_gateset,
     two_qubit_gateset,
 )
+from qadence.utils import infer_batchsize
 
 from .config import Configuration
 

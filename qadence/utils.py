@@ -205,3 +205,31 @@ def _round_complex(t: torch.Tensor, decimals: int = 4) -> torch.Tensor:
 
     fn = torch.vmap(_round)
     return fn(t)
+
+
+def is_qadence_shape(state: torch.Tensor, n_qubits: int) -> bool:
+    return state.shape[1] == 2**n_qubits  # type: ignore[no-any-return]
+
+
+def infer_batchsize(param_values: dict[str, torch.Tensor] = None) -> int:
+    """Infer the batch_size through the length of the parameter tensors."""
+    return max([len(tensor) for tensor in param_values.values()]) if param_values else 1
+
+
+def validate_values_and_state(
+    state: torch.Tensor | None, n_qubits: int, param_values: dict[str, torch.Tensor] = None
+) -> None:
+    if state:
+        batch_size_state = (
+            state.shape[0] if is_qadence_shape(state, n_qubits=n_qubits) else state.size(-1)
+        )
+        batch_size_values = infer_batchsize(param_values)
+        if batch_size_state != batch_size_values and (
+            batch_size_values > 1 and batch_size_state > 1
+        ):
+            raise ValueError(
+                "Batching of parameter values and states is only valid for the cases:\
+                            (1) batch_size_values == batch_size_state\
+                            (2) batch_size_values == 1 and batch_size_state > 1\
+                            (3) batch_size_values > 1 and batch_size_state == 1."
+            )
