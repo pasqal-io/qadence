@@ -162,7 +162,7 @@ def convert_block(
     elif isinstance(block, ParametricBlock):
         native_op = ops_map[block.name]
         if len(block.parameters._uuid_dict) > 1:
-            raise NotImplementedError("Only 1 parameter operations are supported.")
+            raise NotImplementedError("Only single-parameter operations are supported.")
         param_name = config.get_param_name(block)[0]
 
         ops = [
@@ -179,7 +179,7 @@ def convert_block(
         ops = [HorqPrimitiveGate(gate=native_op, qubit=qubit)]
 
     else:
-        raise NotImplementedError(f"Non supported operation of type {type(block)}")
+        raise NotImplementedError(f"Non-supported operation of type {type(block)}.")
 
     return ops
 
