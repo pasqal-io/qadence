@@ -487,9 +487,8 @@ def cphase_eigenvals(p: float, n_qubits: int = 2) -> torch.Tensor:
         ),
     ],
 )
-def test_projector(projector: Projector, exp_projector_mat: Tensor) -> None:
+def test_projector(projector: AbstractBlock, exp_projector_mat: Tensor) -> None:
     projector_mat = block_to_tensor(projector)
-    # breakpoint()
     assert torch.allclose(projector_mat, exp_projector_mat, atol=1.0e-4)
 
 
