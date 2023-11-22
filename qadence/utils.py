@@ -219,7 +219,7 @@ def infer_batchsize(param_values: dict[str, torch.Tensor] = None) -> int:
 def validate_values_and_state(
     state: torch.Tensor | None, n_qubits: int, param_values: dict[str, torch.Tensor] = None
 ) -> None:
-    if state:
+    if state is not None:
         batch_size_state = (
             state.shape[0] if is_qadence_shape(state, n_qubits=n_qubits) else state.size(-1)
         )
