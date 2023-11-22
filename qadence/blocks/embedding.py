@@ -23,10 +23,7 @@ from qadence.types import Engine, ParamDictType, ReturnType, TNumber
 
 def concretize_parameter(value: TNumber, requires_grad: bool, engine: Engine) -> ReturnType:
     if engine == Engine.JAX:
-        if requires_grad:
-            return jnp.array(value)
-        else:
-            return np.array(value)
+        return jnp.array([value], dtype=jnp.float64)
     else:
         return torch.tensor([value], requires_grad=requires_grad)
 

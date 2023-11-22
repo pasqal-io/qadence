@@ -28,7 +28,6 @@ def test_psr() -> None:
     values = {"theta": torch.tensor([torch.pi])}
     psr = expectation(hea(2, 1), Z(0), values=values, backend="horqrux", diff_mode="gpsr")
     ad = expectation(hea(2, 1), Z(0), values=values, backend="horqrux", diff_mode="ad")
-    breakpoint()
     assert jnp.allclose(psr[0], ad[0])
 
 

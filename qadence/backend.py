@@ -199,7 +199,7 @@ class Backend(ABC):
 
         conv_circ = self.circuit(circuit)
         circ_params, circ_embedding_fn = embedding(
-            conv_circ.abstract.block, self.config._use_gate_params
+            conv_circ.abstract.block, self.config._use_gate_params, self.engine
         )
         params = circ_params
         if observable is not None:
@@ -211,7 +211,7 @@ class Backend(ABC):
                 obs = check_observable(obs)
                 c_obs = self.observable(obs, max(circuit.n_qubits, obs.n_qubits))
                 obs_params, obs_embedding_fn = embedding(
-                    c_obs.abstract, self.config._use_gate_params
+                    c_obs.abstract, self.config._use_gate_params, self.engine
                 )
                 params.update(obs_params)
                 obs_embedding_fn_list.append(obs_embedding_fn)

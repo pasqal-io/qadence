@@ -12,11 +12,9 @@ from jax.typing import ArrayLike
 from qadence.backend import Backend as BackendInterface
 from qadence.backend import ConvertedCircuit, ConvertedObservable
 from qadence.backends.utils import (
-    infer_batchsize,
     jarr_to_tensor,
     pyqify,
     tensor_to_jnp,
-    values_to_jax,
 )
 from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
@@ -66,7 +64,6 @@ class Backend(BackendInterface):
         unhorqify_state: bool = True,
     ) -> ReturnType:
         n_qubits = circuit.abstract.n_qubits
-        param_values = values_to_jax(param_values)
         if state is None:
             state = prepare_state(n_qubits, "0" * n_qubits)
         else:
@@ -101,12 +98,11 @@ class Backend(BackendInterface):
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> ReturnType:
-        batch_size = infer_batchsize(param_values)
+        # batch_size = infer_batchsize(param_values)
         # TODO vmap circ over batch of values
         n_obs = len(observable)
         if state is None:
             state = prepare_state(circuit.abstract.n_qubits, "0" * circuit.abstract.n_qubits)
-        param_values = values_to_jax(param_values)
 
         def _expectation(state: ArrayLike, param_values: ParamDictType) -> ArrayLike:
             wf = circuit.native.forward(state, param_values)
@@ -114,7 +110,7 @@ class Backend(BackendInterface):
 
         # FIXME reshape, n_obs > 1
         # return jnp.reshape(exp_vals, (batch_size, n_obs))
-        return jax.jit(jax.value_and_grad(_expectation))(state, param_values)
+        return _expectation(state, param_values)
 
     def sample(
         self,
