@@ -7,9 +7,8 @@ from typing import Iterable
 
 from sympy import Array, Basic
 
-from qadence.blocks import AbstractBlock, AnalogBlock, CompositeBlock
+from qadence.blocks import AbstractBlock, AnalogBlock, CompositeBlock, chain
 from qadence.blocks.utils import parameters, primitive_blocks
-from qadence.operations import chain
 from qadence.parameters import Parameter
 from qadence.register import Register
 
