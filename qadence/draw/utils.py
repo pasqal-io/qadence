@@ -168,7 +168,7 @@ def _(
         from qadence.transpile import transpile
 
         block = transpile(
-            lambda b: fill_identities(b, 0, b.n_qubits-1),
+            lambda b: fill_identities(b, 0, b.n_qubits - 1),
             # FIXME: enabling flatten can sometimes prevent wires from bending
             # but flatten currently gets rid of some tags... fix that and comment in:
             # flatten

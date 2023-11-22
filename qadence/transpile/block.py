@@ -236,7 +236,7 @@ def fill_identities(block: AbstractBlock, start: int, stop: int) -> AbstractBloc
 
 @fill_identities.register
 def _(block: PrimitiveBlock, start: int, stop: int) -> AbstractBlock:
-    full_support = tuple(range(start, stop+1))
+    full_support = tuple(range(start, stop + 1))
     if block.qubit_support == full_support:
         return block
     tag = block.tag
@@ -249,7 +249,7 @@ def _(block: PrimitiveBlock, start: int, stop: int) -> AbstractBlock:
 
 @fill_identities.register
 def _(block: SWAP, start: int, stop: int) -> AbstractBlock:
-    full_support = tuple(range(start, stop+1))
+    full_support = tuple(range(start, stop + 1))
     if block.qubit_support == full_support:
         return block
     tag = block.tag
@@ -290,7 +290,7 @@ def _fill_kron(block: KronBlock, start: int, stop: int) -> list[AbstractBlock]:
     bs = [fill_identities(b, min(b.qubit_support), max(b.qubit_support)) for b in block]
     max_len = length(bs)
     bs = [append_ids(b, max_len) for b in bs]
-    bs += [id_chain(i, max_len) for i in (set(range(start, stop+1)) - set(block.qubit_support))]
+    bs += [id_chain(i, max_len) for i in (set(range(start, stop + 1)) - set(block.qubit_support))]
     return sorted(bs, key=lambda x: x.qubit_support)
 
 
