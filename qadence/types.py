@@ -369,3 +369,4 @@ class OpName(StrEnum):
     WAIT = "wait"
     """The wait operation."""
     PROJ = "Projector"
+    """The projector operation."""
