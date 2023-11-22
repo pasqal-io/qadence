@@ -1305,4 +1305,4 @@ analog_gateset = [
     entangle,
     wait,
 ]
-non_unitary_gateset = [Zero, N]
+non_unitary_gateset = [Zero, N, Projector]
