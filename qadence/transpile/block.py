@@ -287,10 +287,16 @@ def _fill_kron(block: KronBlock, start: int, stop: int) -> list[AbstractBlock]:
     def id_chain(i: int, max_len: int) -> AbstractBlock:
         return chain(I(i) for _ in range(max_len))
 
+    # fill subblocks with identities
     bs = [fill_identities(b, min(b.qubit_support), max(b.qubit_support)) for b in block]
+
+    # make all subblocks equally "long" horizontally
     max_len = length(bs)
     bs = [append_ids(b, max_len) for b in bs]
+
+    # fill potentially completely empty wires
     bs += [id_chain(i, max_len) for i in (set(range(start, stop + 1)) - set(block.qubit_support))]
+
     return sorted(bs, key=lambda x: x.qubit_support)
 
 
