@@ -25,6 +25,7 @@ from qadence.types import BackendName, DiffMode
 
 pi = torch.pi
 
+
 @pytest.mark.flaky(max_runs=5)
 @pytest.mark.parametrize(
     "error_probability, n_shots, block, backend",
