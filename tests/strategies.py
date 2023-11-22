@@ -155,62 +155,65 @@ def rand_digital_blocks(gate_list: list[AbstractBlock]) -> Callable:
         ]
         pool_nq_param = list(set(pool_nq) - set(pool_nq_fixed))
 
-        for _ in range(draw(depth)):
-            if total_qubits == 1:
-                gate = draw(st.sampled_from(pool_1q))
-            elif total_qubits >= 2:
-                gate = draw(st.sampled_from(gate_list))
+        while not gates_list:
+            for _ in range(draw(depth)):
+                if total_qubits == 1:
+                    gate = draw(st.sampled_from(pool_1q))
+                elif total_qubits >= 2:
+                    gate = draw(st.sampled_from(gate_list))
 
-            qubit = draw(st.integers(min_value=0, max_value=total_qubits - 1))
-            qubit_indices = qubit_indices.union({qubit})
+                qubit = draw(st.integers(min_value=0, max_value=total_qubits - 1))
+                qubit_indices = qubit_indices.union({qubit})
 
-            if gate in pool_1q:
-                if gate in pool_1q_fixed:
-                    gates_list.append(gate(qubit))
-                elif gate in pool_1q_param:
-                    angles = [rand_expression(draw) for _ in range(gate.num_parameters())]
-                    gates_list.append(gate(qubit, *angles))
+                if gate in pool_1q:
+                    if gate in pool_1q_fixed:
+                        gates_list.append(gate(qubit))
+                    elif gate in pool_1q_param:
+                        angles = [rand_expression(draw) for _ in range(gate.num_parameters())]
+                        gates_list.append(gate(qubit, *angles))
 
-            elif gate in pool_2q:
-                target = draw(
-                    st.integers(min_value=0, max_value=total_qubits - 1).filter(
-                        lambda x: x != qubit
+                elif gate in pool_2q:
+                    target = draw(
+                        st.integers(min_value=0, max_value=total_qubits - 1).filter(
+                            lambda x: x != qubit
+                        )
                     )
-                )
-                qubit_indices = qubit_indices.union({target})
-                if gate in pool_2q_fixed:
-                    gates_list.append(gate(qubit, target))
-                elif gate in pool_2q_param:
-                    gates_list.append(gate(qubit, target, rand_expression(draw)))
+                    qubit_indices = qubit_indices.union({target})
+                    if gate in pool_2q_fixed:
+                        gates_list.append(gate(qubit, target))
+                    elif gate in pool_2q_param:
+                        gates_list.append(gate(qubit, target, rand_expression(draw)))
 
-            elif gate in pool_3q:
-                target1 = draw(
-                    st.integers(min_value=0, max_value=total_qubits - 1).filter(
-                        lambda x: x != qubit
+                elif gate in pool_3q:
+                    target1 = draw(
+                        st.integers(min_value=0, max_value=total_qubits - 1).filter(
+                            lambda x: x != qubit
+                        )
                     )
-                )
-                target2 = draw(
-                    st.integers(min_value=0, max_value=total_qubits - 1).filter(
-                        lambda x: x != qubit and x != target1
+                    target2 = draw(
+                        st.integers(min_value=0, max_value=total_qubits - 1).filter(
+                            lambda x: x != qubit and x != target1
+                        )
                     )
-                )
-                gates_list.append(gate(qubit, target1, target2))
+                    gates_list.append(gate(qubit, target1, target2))
 
-            elif gate in pool_nq:
-                target1 = draw(
-                    st.integers(min_value=0, max_value=total_qubits - 1).filter(
-                        lambda x: x != qubit
+                elif gate in pool_nq:
+                    target1 = draw(
+                        st.integers(min_value=0, max_value=total_qubits - 1).filter(
+                            lambda x: x != qubit
+                        )
                     )
-                )
-                target2 = draw(
-                    st.integers(min_value=0, max_value=total_qubits - 1).filter(
-                        lambda x: x != qubit and x != target1
+                    target2 = draw(
+                        st.integers(min_value=0, max_value=total_qubits - 1).filter(
+                            lambda x: x != qubit and x != target1
+                        )
                     )
-                )
-                if gate in pool_nq_fixed:
-                    gates_list.append(gate((qubit, target1), target2))
-                elif gate in pool_nq_param:
-                    gates_list.append(gate((qubit, target1), target2, rand_expression(draw)))
+                    if gate in pool_nq_fixed:
+                        gates_list.append(gate((qubit, target1), target2))
+                    elif gate in pool_nq_param:
+                        gates_list.append(gate((qubit, target1), target2, rand_expression(draw)))
+                if gates_list:
+                    break
 
         return chain(*gates_list)
 
