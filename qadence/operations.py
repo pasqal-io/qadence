@@ -197,8 +197,8 @@ class N(Projector):
 
     name = OpName.N
 
-    def __init__(self, target: int):
-        super().__init__(ket="1", bra="1", qubit_support=(target,))
+    def __init__(self, target: int, state: str = "1"):
+        super().__init__(ket=state, bra=state, qubit_support=(target,))
 
     @property
     def generator(self) -> None:
@@ -899,10 +899,10 @@ class CSWAP(ControlBlock):
         if isinstance(control, tuple):
             control = control[0]
 
-        a00m = -N(control)
-        a00p = -0.5 * (Z(control) + I(control))
-        a11 = -N(target1)
-        a22 = -0.5 * (Z(target2) + I(target2))
+        a00m = -N(target=control)
+        a00p = -N(target=control, state="0")
+        a11 = -N(target=target1)
+        a22 = -N(target=target2, state="0")
         a12 = 0.5 * (chain(X(target1), Z(target1)) + X(target1))
         a21 = 0.5 * (chain(Z(target2), X(target2)) + X(target2))
         no_effect = kron(a00m, I(target1), I(target2))
