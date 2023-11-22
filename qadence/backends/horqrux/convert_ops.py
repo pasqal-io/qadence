@@ -207,7 +207,8 @@ class HorqCNOTGate(QdHorQGate):
 
 
 @register_pytree_node_class
-class HorqKronParametric(HorqruxCircuit):
+@dataclass
+class HorqKronParametric:
     def __init__(self, gates: list[Gate], param_names: list[str], target: list[int]):
         self.operators: list[Gate] = gates
         self.target: list[int] = target
@@ -220,7 +221,6 @@ class HorqKronParametric(HorqruxCircuit):
     def tree_unflatten(cls, children: Any, aux_data: Any) -> Any:
         operators = children
         param_names, target = aux_data
-
         return cls(operators, param_names, target)
 
     def forward(self, state: ArrayLike, values: ParamDictType) -> ArrayLike:
