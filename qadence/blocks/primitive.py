@@ -467,6 +467,13 @@ class ProjectorBlock(PrimitiveBlock):
         bra: str,
         qubit_support: int | tuple[int, ...],
     ) -> None:
+        """
+        Arguments:
+
+            ket (str): The ket given as a bitstring.
+            bra (str): The bra given as a bitstring.
+            qubit_support (int | tuple[int]): The qubit_support of the block.
+        """
         if isinstance(qubit_support, int):
             qubit_support = (qubit_support,)
         if len(bra) != len(ket):
