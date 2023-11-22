@@ -10,11 +10,11 @@ from torch import Tensor
 from qadence.backend import Backend as QuantumBackend
 from qadence.backend import Converted, ConvertedCircuit, ConvertedObservable
 from qadence.backends.differentiable_backend import DifferentiableBackend
-from qadence.backends.engines.torch.torch_expectation import DifferentiableExpectation
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.primitive import PrimitiveBlock
 from qadence.blocks.utils import uuid_to_block
 from qadence.circuit import QuantumCircuit
+from qadence.engines.torch.differentiable_expectation import TorchDifferentiableExpectation
 from qadence.extensions import get_gpsr_fns
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
@@ -80,7 +80,7 @@ class TorchBackend(DifferentiableBackend):
             A tensor of expectation values.
         """
         observable = observable if isinstance(observable, list) else [observable]
-        differentiable_expectation = DifferentiableExpectation(
+        differentiable_expectation = TorchDifferentiableExpectation(
             backend=self.backend,
             circuit=circuit,
             observable=observable,

@@ -31,11 +31,10 @@ Measurement = Array
 
 
 def is_leaf(subtree: Any) -> bool:
-    match subtree:
-        case Gate():
-            return True
-        case _:
-            return False
+    if isinstance(subtree, Gate):
+        return True
+    else:
+        return False
 
 
 def single_gap_psr(
@@ -120,7 +119,7 @@ class JaxDifferentiableExpectation:
                 grad = spectral_gap * (f_plus - f_min) / (4 * jnp.sin(spectral_gap * shift / 2))
                 grads.append(v * grad)
             grads = jax.tree_unflatten(
-                jax.tree_structure(self.circuit.native.operators, is_leaf=lambda x: True), grads
+                jax.tree_structure(self.circuit.native.operators, is_leaf=is_leaf), grads
             )
             return *grads, None
 

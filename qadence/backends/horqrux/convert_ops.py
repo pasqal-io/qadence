@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from functools import reduce
 from itertools import chain as flatten
 from operator import add
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, Tuple
 
 import jax.numpy as jnp
 from horqrux.gates import NOT, H, I, Rx, Ry, Rz, X, Y, Z
@@ -207,26 +207,36 @@ class HorqCNOTGate(QdHorQGate):
 
 
 @register_pytree_node_class
-class HorqKronParametric(QdHorQGate):
+class HorqKronParametric(HorqruxCircuit):
     def __init__(self, gates: list[Gate], param_names: list[str], target: list[int]):
-        self.gates: list[Gate] = gates
+        self.operators: list[Gate] = gates
         self.target: list[int] = target
         self.param_names: list[str] = param_names
+
+    def tree_flatten(self) -> Tuple[Any, ...]:
+        return (self.operators, (self.param_names, self.target))
+
+    @classmethod
+    def tree_unflatten(cls, children: Any, aux_data: Any) -> Any:
+        operators = children
+        param_names, target = aux_data
+
+        return cls(operators, param_names, target)
 
     def forward(self, state: ArrayLike, values: ParamDictType) -> ArrayLike:
         return apply_gate(
             state,
             tuple(
                 gate(values[param_name], target)
-                for gate, target, param_name in zip(self.gates, self.target, self.param_names)
+                for gate, target, param_name in zip(self.operators, self.target, self.param_names)
             ),
         )
 
 
 @register_pytree_node_class
-class HorqKronCNOT(QdHorQGate):
+class HorqKronCNOT(HorqruxCircuit):
     def __init__(self, gates: list[Gate], target: list[int], control: list[int]):
-        self.gates: list[Gate] = gates
+        self.operators: list[Gate] = gates
         self.target: list[int] = target
         self.control: list[int] = control
 
@@ -235,7 +245,7 @@ class HorqKronCNOT(QdHorQGate):
             state,
             tuple(
                 gate(target, control)
-                for gate, target, control in zip(self.gates, self.target, self.control)
+                for gate, target, control in zip(self.operators, self.target, self.control)
             ),
         )
 
@@ -259,12 +269,12 @@ class HorqParametricGate(QdHorQGate):
 
 
 @register_pytree_node_class
-class HorqAddGate(QdHorQGate):
+class HorqAddGate(HorqruxCircuit):
     def __init__(self, operations: list[QdHorQGate]):
-        self.operations = operations
+        self.operators = operations
 
     def forward(self, state: ArrayLike, values: ParamDictType = {}) -> Array:
-        return reduce(add, (op.forward(state, values) for op in self.operations))
+        return reduce(add, (op.forward(state, values) for op in self.operators))
 
 
 @register_pytree_node_class

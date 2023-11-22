@@ -381,7 +381,6 @@ class OpName(StrEnum):
 class Engine(StrEnum):
     TORCH = "torch"
     JAX = "jax"
-    NONE = "none"
 
 
 ReturnType = Union[Tensor, Array]

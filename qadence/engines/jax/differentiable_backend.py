@@ -8,11 +8,11 @@ from jax import Array
 from qadence.backend import Backend as QuantumBackend
 from qadence.backend import Converted, ConvertedCircuit, ConvertedObservable
 from qadence.backends.differentiable_backend import DifferentiableBackend
-from qadence.backends.engines.jax.jax_expectation import JaxDifferentiableExpectation
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.primitive import PrimitiveBlock
 from qadence.blocks.utils import uuid_to_block
 from qadence.circuit import QuantumCircuit
+from qadence.engines.jax.differentiable_expectation import JaxDifferentiableExpectation
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.noise import Noise

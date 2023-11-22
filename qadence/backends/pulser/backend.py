@@ -151,7 +151,7 @@ class Backend(BackendInterface):
     with_noise: bool = False
     native_endianness: Endianness = Endianness.BIG
     config: Configuration = field(default_factory=Configuration)
-    engine: Engine = Engine.NONE
+    engine: Engine = Engine.TORCH
 
     def circuit(self, circ: QuantumCircuit) -> Sequence:
         passes = self.config.transpilation_passes
