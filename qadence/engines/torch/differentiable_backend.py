@@ -9,11 +9,11 @@ from torch import Tensor
 
 from qadence.backend import Backend as QuantumBackend
 from qadence.backend import Converted, ConvertedCircuit, ConvertedObservable
-from qadence.backends.differentiable_backend import DifferentiableBackend
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.primitive import PrimitiveBlock
 from qadence.blocks.utils import uuid_to_block
 from qadence.circuit import QuantumCircuit
+from qadence.engines.differentiable_backend import DifferentiableBackend
 from qadence.engines.torch.differentiable_expectation import TorchDifferentiableExpectation
 from qadence.extensions import get_gpsr_fns
 from qadence.measurements import Measurements

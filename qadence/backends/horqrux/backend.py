@@ -80,6 +80,16 @@ class Backend(BackendInterface):
             state = invert_endianness(jarr_to_tensor(state))
         return state
 
+    def run_dm(
+        self,
+        circuit: ConvertedCircuit,
+        noise: Noise,
+        param_values: ParamDictType = {},
+        state: ReturnType | None = None,
+        endianness: Endianness = Endianness.BIG,
+    ) -> ReturnType:
+        raise NotImplementedError
+
     def expectation(
         self,
         circuit: ConvertedCircuit,

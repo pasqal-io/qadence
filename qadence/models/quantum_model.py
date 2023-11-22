@@ -17,9 +17,9 @@ from qadence.backend import (
     ConvertedObservable,
 )
 from qadence.backends.api import backend_factory, config_factory
-from qadence.backends.differentiable_backend import DifferentiableBackend
 from qadence.blocks.abstract import AbstractBlock
 from qadence.circuit import QuantumCircuit
+from qadence.engines.differentiable_backend import DifferentiableBackend
 from qadence.logger import get_logger
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations

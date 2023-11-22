@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from qadence.backend import Backend, BackendConfiguration
-from qadence.backends.differentiable_backend import DifferentiableBackend
+from qadence.engines.differentiable_backend import DifferentiableBackend
 from qadence.engines.jax.differentiable_backend import JaxBackend
 from qadence.engines.torch.differentiable_backend import TorchBackend
 from qadence.extensions import available_backends, set_backend_config
