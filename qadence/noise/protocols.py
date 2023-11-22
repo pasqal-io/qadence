@@ -11,6 +11,8 @@ PROTOCOL_TO_MODULE = {
 
 @dataclass
 class Noise:
+    DEPHASING = "dephasing"
+    DEPOLARIZING = "depolarizing"
     READOUT = "readout"
 
     def __init__(self, protocol: str, options: dict = dict()) -> None:
@@ -33,6 +35,10 @@ class Noise:
         if d:
             return cls(d["protocol"], **d["options"])
         return None
+
+    @classmethod
+    def list(cls) -> list:
+        return list(filter(lambda el: not el.startswith("__"), dir(cls)))
 
 
 def apply_noise(noise: Noise, samples: list[Counter]) -> list[Counter]:

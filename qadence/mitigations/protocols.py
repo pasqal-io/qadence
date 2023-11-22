@@ -16,7 +16,7 @@ PROTOCOL_TO_MODULE = {
 @dataclass
 class Mitigations:
     READOUT = "readout"
-    ZNE = "zne"
+    ANALOG_ZNE = "zne"
 
     def __init__(self, protocol: str, options: dict = dict()) -> None:
         self.protocol: str = protocol
@@ -39,13 +39,16 @@ class Mitigations:
             return cls(d["protocol"], **d["options"])
         return None
 
+    @classmethod
+    def list(cls) -> list:
+        return list(filter(lambda el: not el.startswith("__"), dir(cls)))
+
 
 def apply_mitigation(
     noise: Noise, mitigation: Mitigations, samples: list[Counter]
 ) -> list[Counter]:
     """Apply mitigation to samples."""
     mitigation_fn = mitigation.get_mitigation_fn()
-    # breakpoint()
     mitigated_samples: list[Counter] = mitigation_fn(
         noise=noise, mitigation=mitigation, samples=samples
     )

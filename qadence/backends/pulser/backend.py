@@ -9,6 +9,7 @@ import qutip
 import torch
 from pulser import Register as PulserRegister
 from pulser import Sequence
+from pulser_simulation import SimConfig
 from pulser_simulation.simresults import SimulationResults
 from pulser_simulation.simulation import QutipEmulator
 from torch import Tensor
@@ -237,20 +238,30 @@ class Backend(BackendInterface):
     def run_dm(
         self,
         circuit: ConvertedCircuit,
+        noise: Noise,
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list:
         vals = to_list_of_dicts(param_values)
+        noise_probas = noise.options.get("noise_probas", None)
+        if noise_probas is None:
+            KeyError(f"A range of noise probabilies should be passed. Got {noise_probas}.")
 
-        batched_dm = []
+        noisy_batched_dm = []
 
-        for i, param_values_el in enumerate(vals):
-            sequence = self.assign_parameters(circuit, param_values_el)
-            sim_result = simulate_sequence(sequence, self.config, state)
-            batched_dm.append(sim_result)
+        for noise_proba in noise_probas:
+            batched_dm = []
+            sim_config = {"noise": noise.protocol, noise.protocol + "_prob": noise_proba}
+            self.config.sim_config = SimConfig(**sim_config)
 
-        return batched_dm
+            for i, param_values_el in enumerate(vals):
+                sequence = self.assign_parameters(circuit, param_values_el)
+                sim_result = simulate_sequence(sequence, self.config, state)
+                batched_dm.append(sim_result)
+            noisy_batched_dm.append(batched_dm)
+
+        return noisy_batched_dm
 
     def sample(
         self,
@@ -295,13 +306,6 @@ class Backend(BackendInterface):
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
-        # Noise is ignored if measurement protocol is not provided.
-        if noise is not None and measurement is None:
-            logger.warning(
-                f"Errors of type {noise} are not implemented for exact expectation yet. "
-                "This is ignored for now."
-            )
-
         observables = observable if isinstance(observable, list) else [observable]
         if mitigation is None:
             state = self.run(circuit, param_values=param_values, state=state, endianness=endianness)
@@ -320,6 +324,7 @@ class Backend(BackendInterface):
                 observable=observables,
                 state=state,
                 measurement=measurement,
+                noise=noise,
                 mitigation=mitigation,
                 endianness=endianness,
             )

@@ -104,6 +104,16 @@ class Backend(BackendInterface):
         state = invert_endianness(state) if endianness != self.native_endianness else state
         return state
 
+    def run_dm(
+        self,
+        circuit: ConvertedCircuit,
+        noise: Noise,
+        param_values: dict[str, Tensor] = {},
+        state: Tensor | None = None,
+        endianness: Endianness = Endianness.BIG,
+    ) -> Tensor:
+        raise NotImplementedError
+
     def _batched_expectation(
         self,
         circuit: ConvertedCircuit,
