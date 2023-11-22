@@ -112,7 +112,7 @@ class Backend(BackendInterface):
             wf = circuit.native.forward(state, param_values)
             return observable[0].native.forward(wf, param_values)
             # return jnp.reshape(exp_vals, (batch_size, n_obs))
-
+        #FIXME reshape, n_obs > 1
         return jax.jit(jax.value_and_grad(_expectation))(state, param_values)
 
     def sample(

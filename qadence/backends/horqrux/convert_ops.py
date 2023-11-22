@@ -20,6 +20,7 @@ from qadence.blocks import (
     AbstractBlock,
     AddBlock,
     ChainBlock,
+    CompositeBlock,
     KronBlock,
     ParametricBlock,
     PrimitiveBlock,
@@ -98,7 +99,7 @@ def convert_observable(
     block: AbstractBlock, n_qubits: int, config: Configuration
 ) -> HorqruxObservable:
     _ops = convert_block(block, n_qubits, config)
-    return HorqruxObservable(_ops, n_qubits)  # type: ignore [arg-type]
+    return HorqruxObservable(_ops, n_qubits)
 
 
 def convert_block(
@@ -106,36 +107,34 @@ def convert_block(
 ) -> list:
     if n_qubits is None:
         n_qubits = max(block.qubit_support) + 1
-
-    ops: list
-
-    if isinstance(block, AddBlock):
-        _ops = list(flatten(*(convert_block(b, n_qubits, config) for b in block.blocks)))
-        ops = [HorqAddGate(_ops)]  # type: ignore [arg-type]
-
-    elif isinstance(block, ChainBlock):
+    ops = []
+    if isinstance(block, CompositeBlock):
         ops = list(flatten(*(convert_block(b, n_qubits, config) for b in block.blocks)))
-    elif isinstance(block, KronBlock):
-        if all([isinstance(b, ParametricBlock) for b in block.blocks]):
-            param_names = [config.get_param_name(b)[0] for b in block.blocks if b.is_parametric]
-            ops = [
-                HorqKronParametric(
-                    gates=[ops_map[b.name] for b in block.blocks],
-                    target=[b.qubit_support[0] for b in block.blocks],
-                    param_names=param_names,
-                )
-            ]
+        if isinstance(block, AddBlock):
+            ops = [HorqAddGate(ops)]
+        elif isinstance(block, ChainBlock):
+            ops = ops
+        elif isinstance(block, KronBlock):
+            if all([isinstance(b, ParametricBlock) for b in block.blocks]):
+                param_names = [config.get_param_name(b)[0] for b in block.blocks if b.is_parametric]
+                ops = [
+                    HorqKronParametric(
+                        gates=[ops_map[b.name] for b in block.blocks],
+                        target=[b.qubit_support[0] for b in block.blocks],
+                        param_names=param_names,
+                    )
+                ]
 
-        elif all([b.name == "CNOT" for b in block.blocks]):
-            ops = [
-                HorqKronCNOT(
-                    gates=[ops_map[b.name] for b in block.blocks],
-                    target=[b.qubit_support[1] for b in block.blocks],
-                    control=[b.qubit_support[0] for b in block.blocks],
-                )
-            ]
-        else:
-            ops = list(flatten(*(convert_block(b, n_qubits, config) for b in block.blocks)))
+            elif all([b.name == "CNOT" for b in block.blocks]):
+                ops = [
+                    HorqKronCNOT(
+                        gates=[ops_map[b.name] for b in block.blocks],
+                        target=[b.qubit_support[1] for b in block.blocks],
+                        control=[b.qubit_support[0] for b in block.blocks],
+                    )
+                ]
+            else:
+                ops = ops
 
     elif isinstance(block, CNOT):
         native_op = ops_map[block.name]
@@ -158,12 +157,12 @@ def convert_block(
     elif isinstance(block, ScaleBlock):
         op = convert_block(block.block, n_qubits, config=config)[0]
         param_name = config.get_param_name(block)[0]
-        ops = [HorqScaleGate(op, param_name)]  # type: ignore [list-item, arg-type]
+        ops = [HorqScaleGate(op, param_name)]
 
     elif isinstance(block, ParametricBlock):
         native_op = ops_map[block.name]
-        # if len(block.parameters) != 1:
-        #     raise NotImplementedError("Only 1 parameter operations are implemented")
+        if len(block.parameters._uuid_dict) > 1:
+            raise NotImplementedError("Only 1 parameter operations are supported.")
         param_name = config.get_param_name(block)[0]
 
         ops = [
@@ -182,7 +181,7 @@ def convert_block(
     else:
         raise NotImplementedError(f"Non supported operation of type {type(block)}")
 
-    return ops  # type: ignore [return-value]
+    return ops
 
 
 @register_pytree_node_class
@@ -258,13 +257,8 @@ class HorqParametricGate(QdHorQGate):
         self.parameter: str = parameter_name
         self.control: int | None = control
 
-    def forward(self, state: ArrayLike, values: ParamDictType) -> Array:  # type: ignore [override]
-        if isinstance(values, dict):
-            val = jnp.array(values[self.parameter])
-
-        else:
-            raise
-
+    def forward(self, state: ArrayLike, values: ParamDictType) -> Array:
+        val = jnp.array(values[self.parameter])
         return apply_gate(state, self.gates(val, self.target, self.control))
 
 
@@ -283,9 +277,7 @@ class HorqScaleGate(QdHorQGate):
         self.op: QdHorQGate = op
         self.parameter: str = parameter_name
 
-    def forward(  # type: ignore [override]
-        self, state: ArrayLike, values: ParamDictType
-    ) -> ArrayLike:
+    def forward(self, state: ArrayLike, values: ParamDictType) -> ArrayLike:
         if isinstance(values, dict):
             val = jnp.array(values[self.parameter])
 
