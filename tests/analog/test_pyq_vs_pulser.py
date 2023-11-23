@@ -59,16 +59,16 @@ def test_analog_op_run(
         block = op(t)  # type: ignore [operator]
         values = {"t": 10.0 * (1.0 + torch.rand(batch_size))}
 
-    register = Register.line(n_qubits, spacing=spacing)
+    device = RydbergDevice(rydberg_level=rydberg_level)
+
+    register = Register.line(n_qubits, spacing=spacing, device_specs=device)
 
     circuit = QuantumCircuit(register, block)
 
-    device = RydbergDevice(rydberg_level=rydberg_level)
-
-    config = {"device": device}
-
     model_pyqtorch = QuantumModel(
-        circuit, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD, configuration=config
+        circuit,
+        backend=BackendName.PYQTORCH,
+        diff_mode=DiffMode.AD,
     )
     model_pyqtorch = QuantumModel(circuit, backend=BackendName.PYQTORCH)
 
@@ -76,7 +76,6 @@ def test_analog_op_run(
         circuit,
         backend=BackendName.PULSER,
         diff_mode=DiffMode.GPSR,
-        configuration=config,
     )
 
     wf_pyq = model_pyqtorch.run(values=values, state=init_state)
@@ -102,7 +101,7 @@ def test_analog_op_run(
 def test_compatibility_pyqtorch_pulser_entanglement(
     pyqtorch_block: AbstractBlock, pulser_block: AbstractBlock
 ) -> None:
-    register = Register.line(2, spacing=8.0)
+    register = Register.line(2, spacing=8.0, device_specs=RealisticDevice())
 
     pyqtorch_circuit = QuantumCircuit(register, pyqtorch_block)
     pulser_circuit = QuantumCircuit(register, pulser_block)
@@ -111,10 +110,7 @@ def test_compatibility_pyqtorch_pulser_entanglement(
         pyqtorch_circuit, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD
     )
 
-    config = {"device": RealisticDevice()}
-    model_pulser = QuantumModel(
-        pulser_circuit, backend=BackendName.PULSER, diff_mode=DiffMode.GPSR, configuration=config
-    )
+    model_pulser = QuantumModel(pulser_circuit, backend=BackendName.PULSER, diff_mode=DiffMode.GPSR)
     pyqtorch_samples = model_pyqtorch.sample({}, n_shots=500)
     pulser_samples = model_pulser.sample({}, n_shots=500)
     for pyqtorch_sample, pulser_sample in zip(pyqtorch_samples, pulser_samples):

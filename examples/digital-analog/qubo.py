@@ -103,12 +103,10 @@ Q = np.array(
 
 
 LAYERS = 2
-reg = Register.from_coordinates(qubo_register_coords(Q))
 block = chain(*[AnalogRX(f"t{i}") * AnalogRZ(f"s{i}") for i in range(LAYERS)])
 device = RydbergDevice(rydberg_level=70)
-model = QuantumModel(
-    QuantumCircuit(reg, block), diff_mode=DiffMode.GPSR, configuration={"device": device}
-)
+reg = Register.from_coordinates(qubo_register_coords(Q), device_specs=device)
+model = QuantumModel(QuantumCircuit(reg, block), diff_mode=DiffMode.GPSR)
 cnts = model.sample({}, n_shots=1000)[0]
 
 plot_distribution(cnts, ax=ax[0])

@@ -104,19 +104,29 @@ Now, build a weighted register graph from the QUBO definition similarly to what 
 done in Pulser.
 
 ```python exec="on" source="material-block" session="qubo"
-reg = Register.from_coordinates(qubo_register_coords(Q))
+
 ```
 
 The analog circuit is composed of two global rotations per layer.  The first
 rotation corresponds to the mixing Hamiltonian and the second one to the
-embedding Hamiltonian in the QAOA algorithm. Subsequently, there is an Ising interaction term to
-emulate the analog circuit. Please note that the Rydberg level is set to 70.
+embedding Hamiltonian in the QAOA algorithm. Subsequently, there is an Ising interaction
+term to emulate the analog circuit. Please note that the Rydberg level is set to 70. We
+initialize the weighted register graph from the QUBO definition similarly to what is
+done in Pulser, and set the device specs with the updated Rydberg level.
 
 ```python exec="on" source="material-block" result="json" session="qubo"
-layers = 2
-block = chain(*[AnalogRX(f"t{i}") * AnalogRZ(f"s{i}") for i in range(layers)])
-
+# Register with device specs
 device = RydbergDevice(rydberg_level = 70)
+
+reg = Register.from_coordinates(
+    qubo_register_coords(Q),
+    device_specs = device
+)
+
+# Analog circuit
+layers = 2
+
+block = chain(*[AnalogRX(f"t{i}") * AnalogRZ(f"s{i}") for i in range(layers)])
 ```
 
 Next, an initial solution is computed by sampling the model:
@@ -124,7 +134,7 @@ Next, an initial solution is computed by sampling the model:
 ```python exec="on" source="material-block" result="json" session="qubo"
 model = QuantumModel(
     QuantumCircuit(reg, block),
-    backend="pyqtorch", diff_mode='gpsr', configuration = {"device": device})
+    backend="pyqtorch", diff_mode='gpsr')
 initial_counts = model.sample({}, n_shots=1000)[0]
 
 print(f"initial_counts = {initial_counts}") # markdown-exec: hide
