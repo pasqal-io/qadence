@@ -213,7 +213,10 @@ def is_qadence_shape(state: torch.Tensor, n_qubits: int) -> bool:
 
 def infer_batchsize(param_values: dict[str, torch.Tensor] = None) -> int:
     """Infer the batch_size through the length of the parameter tensors."""
-    return max([len(tensor) for tensor in param_values.values()]) if param_values else 1
+    try:
+        return max([len(tensor) for tensor in param_values.values()]) if param_values else 1
+    except Exception:
+        return 1
 
 
 def validate_values_and_state(
