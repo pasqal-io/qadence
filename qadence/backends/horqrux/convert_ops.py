@@ -362,7 +362,6 @@ def block_to_jax(
     elif isinstance(block, HorqScaleGate):
         (scale,) = values[block.parameter]
         scale = tensor_to_jnp(scale, dtype=jnp.float64)
-        breakpoint()
         mat = scale * block_to_jax(block.block, values, qubit_support, endianness=endianness)
 
     elif block.name in MAT_DICT.keys():

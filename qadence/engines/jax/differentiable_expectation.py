@@ -95,12 +95,12 @@ class JaxDifferentiableExpectation:
                 spectral_gap = compute_gap(eigenvals)
                 shifted_values = values.copy()
                 shifted_values[param_name] = shifted_values[param_name] + shift
-                f_plus = _expectation_fn(state, shifted_values, uuid_to_eigen)
+                f_plus = _expectation(state, shifted_values, uuid_to_eigen)
 
                 # - pi/2 shift
                 shifted_values = values.copy()
                 shifted_values[param_name] = shifted_values[param_name] - shift
-                f_min = _expectation_fn(state, shifted_values, uuid_to_eigen)
+                f_min = _expectation(state, shifted_values, uuid_to_eigen)
 
                 grad = spectral_gap * (f_plus - f_min) / (4 * jnp.sin(spectral_gap * shift / 2))
                 grads[param_name] = (v * grad).squeeze()  # Need dimensionless arrays
