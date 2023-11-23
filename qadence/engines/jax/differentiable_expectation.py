@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Tuple, Union
 
-import jax
 import jax.numpy as jnp
 from horqrux.types import Gate
 from horqrux.utils import prepare_state
@@ -91,7 +90,7 @@ class JaxDifferentiableExpectation:
 
         def _expectation_bwd(res: Any, v: Array) -> Any:
             state, values, uuid_to_eigen = res
-            grads = []
+            grads = {}
             for param_name, eigenvals in uuid_to_eigen.items():
                 # + pi/2 shift
                 spectral_gap = compute_gap(eigenvals)
@@ -105,11 +104,8 @@ class JaxDifferentiableExpectation:
                 f_min = _expectation_fn(state, shifted_values, uuid_to_eigen)
 
                 grad = spectral_gap * (f_plus - f_min) / (4 * jnp.sin(spectral_gap * shift / 2))
-                grads.append(v * grad)
-            grads = jax.tree_unflatten(
-                jax.tree_structure(self.circuit.native.operators, is_leaf=is_leaf), grads
-            )
-            return *grads, values, uuid_to_eigen
+                grads[param_name] = (v * grad).squeeze()  # Need dimensionless arrays
+            return None, grads, None
 
         _expectation.defvjp(_expectation_fwd, _expectation_bwd)
         return _expectation(self.state, values, uuid_to_eigs)

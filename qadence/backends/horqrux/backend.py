@@ -46,12 +46,10 @@ class Backend(BackendInterface):
 
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:
         ops = convert_block(circuit.block, n_qubits=circuit.n_qubits, config=self.config)
-        # hq_circ = jax.jit(HorqruxCircuit(ops).forward)
         return ConvertedCircuit(native=HorqruxCircuit(ops), abstract=circuit, original=circuit)
 
     def observable(self, observable: AbstractBlock, n_qubits: int) -> ConvertedObservable:
         hq_obs = convert_observable(observable, n_qubits=n_qubits, config=self.config)
-        # comp_circ = jax.jit(hq_obs.forward)
         return ConvertedObservable(native=hq_obs, abstract=observable, original=observable)
 
     def run(
