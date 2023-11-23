@@ -44,6 +44,7 @@ def IdealDevice(pattern: None = None) -> RydbergDevice:
     return RydbergDevice(
         interaction=Interaction.NN,
         rydberg_level=60,
+        coeff_xy=3700.00,
         max_abs_detuning=2 * pi * 4,
         max_amp=2 * pi * 3,
         pattern=pattern,
@@ -55,6 +56,7 @@ def RealisticDevice(pattern: None = None) -> RydbergDevice:
     return RydbergDevice(
         interaction=Interaction.NN,
         rydberg_level=60,
+        coeff_xy=3700.00,
         max_abs_detuning=2 * pi * 4,
         max_amp=2 * pi * 3,
         pattern=pattern,

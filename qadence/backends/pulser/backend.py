@@ -66,7 +66,7 @@ def make_sequence(circ: QuantumCircuit, config: Configuration) -> Sequence:
             device_specs.rydberg_level, device_specs.max_abs_detuning, device_specs.max_amp
         )
     else:
-        raise ValueError("Specified device type is not supported.")
+        raise ValueError("Specified device type is not supported by the pulser backend.")
 
     ########
     # FIXME: Remove the block below in V1.1.0

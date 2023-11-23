@@ -100,13 +100,6 @@ Q = np.array(
 )
 ```
 
-Now, build a weighted register graph from the QUBO definition similarly to what is
-done in Pulser.
-
-```python exec="on" source="material-block" session="qubo"
-
-```
-
 The analog circuit is composed of two global rotations per layer.  The first
 rotation corresponds to the mixing Hamiltonian and the second one to the
 embedding Hamiltonian in the QAOA algorithm. Subsequently, there is an Ising interaction

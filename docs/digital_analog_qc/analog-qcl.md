@@ -9,9 +9,7 @@ from sympy import acos
 
 # Line register
 n_qubits = 2
-dx = 8.0  # Atom spacing in μm
-coordinates = [(i*dx, 0) for i in range(n_qubits)]
-register = Register.from_coordinates(coordinates)
+register = Register.line(n_qubits, spacing = 8.0)
 
 # The input feature x for the circuit to learn f(x)
 x = FeatureParameter("x")
