@@ -3,7 +3,7 @@ from __future__ import annotations
 import jax.numpy as jnp
 import pytest
 import torch
-from jax import Array, grad, value_and_grad
+from jax import Array, grad, jit, value_and_grad
 
 from qadence import (
     CNOT,
@@ -57,8 +57,6 @@ def test_psr_3rd_order_single_param() -> None:
         hq_circ, hq_obs, hq_fn, hq_params = hq_bknd.convert(circ, Z(0))
         embedded_params = hq_fn(hq_params, {})
         param_names = embedded_params.keys()
-        param_values = embedded_params.values()
-        param_array = jnp.array(jnp.concatenate([arr for arr in param_values]))
 
         def _exp_fn(value: Array) -> Array:
             vals = {list(param_names)[0]: value}
@@ -67,7 +65,8 @@ def test_psr_3rd_order_single_param() -> None:
         d1fdx = grad(_exp_fn)
         d2fdx = grad(d1fdx)
         d3fdx = grad(d2fdx)
-        grad_dict[diff_mode] = d3fdx(param_array.squeeze())
+        jd3fdx = jit(d3fdx)
+        grad_dict[diff_mode] = jd3fdx(jnp.pi / 2)
     assert jnp.allclose(grad_dict["ad"], grad_dict["gpsr"])
 
 
