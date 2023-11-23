@@ -70,11 +70,12 @@ class Backend(BackendInterface):
             state = tensor_to_jnp(pyqify(state)) if horqify_state else state
         state = circuit.native.forward(state, param_values)
         batch_size = 1  # FIXME : add batching
-        if unhorqify_state:
-            state = jarr_to_tensor(jnp.reshape(state, (batch_size, 2**circuit.abstract.n_qubits)))
         if endianness != self.native_endianness:
             state = jnp.reshape(state, (batch_size, 2**circuit.abstract.n_qubits))
             state = invert_endianness(jarr_to_tensor(state))
+        # TODO flatten state, invert endianness
+        if unhorqify_state:
+            state = state.ravel()
         return state
 
     def run_dm(
@@ -164,7 +165,6 @@ class Backend(BackendInterface):
             circuit=circuit,
             param_values=param_values,
             state=state,
-            endianness=self.native_endianness,
             horqify_state=True,
             unhorqify_state=False,
         )
@@ -177,10 +177,6 @@ class Backend(BackendInterface):
                 n_qubits=circuit.abstract.n_qubits,
             ),
         ]
-        if endianness != self.native_endianness:
-            from qadence.transpile.invert import invert_endianness
-
-            samples = invert_endianness(samples)
 
         return samples
 

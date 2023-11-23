@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Callable, Tuple, Union
+from typing import Any, Tuple, Union
 
 import jax
 import jax.numpy as jnp
@@ -13,7 +13,6 @@ from qadence.backend import Backend as QuantumBackend
 from qadence.backend import ConvertedCircuit, ConvertedObservable
 from qadence.backends.utils import (
     tensor_to_jnp,
-    values_to_jax,
 )
 from qadence.blocks.utils import uuid_to_eigen
 from qadence.measurements import Measurements
@@ -37,24 +36,12 @@ def is_leaf(subtree: Any) -> bool:
         return False
 
 
-def single_gap_psr(
-    expectation_fn: Callable[[dict[str, Array]], Array],
-    values: ParamDictType,
-    param_name: str,
-    spectral_gap: Array = jnp.array([2], dtype=jnp.float64),
-    shift: Array = jnp.array([jnp.pi / 2], dtype=jnp.float64),
-) -> Array:
-    # + pi/2 shift
-    shifted_values = values.copy()
-    shifted_values[param_name] = shifted_values[param_name] + shift
-    f_plus = expectation_fn(shifted_values)
-
-    # - pi/2 shift
-    shifted_values = values.copy()
-    shifted_values[param_name] = shifted_values[param_name] - shift
-    f_min = expectation_fn(shifted_values)
-
-    return spectral_gap * (f_plus - f_min) / (4 * jnp.sin(spectral_gap * shift / 2))
+def compute_gap(eigen_vals: Array) -> Array:
+    diffs = eigen_vals - eigen_vals.reshape(-1, 1)
+    sorted_unique_spectral_gaps = jnp.unique(jnp.abs(jnp.tril(diffs)))
+    # We have to filter out zeros
+    sorted_unique_spectral_gaps = sorted_unique_spectral_gaps[sorted_unique_spectral_gaps > 0]
+    return sorted_unique_spectral_gaps
 
 
 @dataclass
@@ -91,7 +78,7 @@ class JaxDifferentiableExpectation:
         def _expectation(state: Array, values: dict, uuid_to_eigen: dict) -> Array:
             return _expectation_fn(state, values, uuid_to_eigen)
 
-        values = values_to_jax(self.param_values)
+        values = self.param_values
         uuid_to_eigs = {
             k: tensor_to_jnp(v) for k, v in uuid_to_eigen(self.circuit.abstract.block).items()
         }
@@ -100,13 +87,14 @@ class JaxDifferentiableExpectation:
         def _expectation_fwd(state: Array, values: dict, uuid_to_eigen: dict) -> Any:
             return _expectation_fn(state, values, uuid_to_eigen), (state, values, uuid_to_eigen)
 
-        shift = jnp.array([jnp.pi / 2], dtype=jnp.float64)
+        shift = jnp.array(jnp.pi / 2, dtype=jnp.float64)
 
         def _expectation_bwd(res: Any, v: Array) -> Any:
             state, values, uuid_to_eigen = res
             grads = []
-            for param_name, spectral_gap in uuid_to_eigen.items():
+            for param_name, eigenvals in uuid_to_eigen.items():
                 # + pi/2 shift
+                spectral_gap = compute_gap(eigenvals)
                 shifted_values = values.copy()
                 shifted_values[param_name] = shifted_values[param_name] + shift
                 f_plus = _expectation_fn(state, shifted_values, uuid_to_eigen)
@@ -121,8 +109,7 @@ class JaxDifferentiableExpectation:
             grads = jax.tree_unflatten(
                 jax.tree_structure(self.circuit.native.operators, is_leaf=is_leaf), grads
             )
-            return *grads, None
+            return *grads, values, uuid_to_eigen
 
         _expectation.defvjp(_expectation_fwd, _expectation_bwd)
-        _exp_fn = jax.jit(jax.value_and_grad(_expectation))
-        return _exp_fn(self.state, values, uuid_to_eigs)
+        return _expectation(self.state, values, uuid_to_eigs)
