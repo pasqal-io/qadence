@@ -520,6 +520,26 @@ def test_projector_tensor(projector: AbstractBlock, exp_projector_mat: Tensor) -
             product_state("1"),
             torch.tensor([[0.0, 1.0]], dtype=torch.cdouble),
         ),
+        (
+            Projector(bra="00", ket="00", qubit_support=(0, 1)),
+            product_state("00"),
+            torch.tensor([[1.0, 0.0, 0.0, 0.0]], dtype=torch.cdouble),
+        ),
+        (
+            Projector(bra="01", ket="10", qubit_support=(0, 1)),
+            product_state("01"),
+            torch.tensor([[0.0, 0.0, 1.0, 0.0]], dtype=torch.cdouble),
+        ),
+        (
+            Projector(bra="10", ket="01", qubit_support=(0, 1)),
+            product_state("10"),
+            torch.tensor([[0.0, 1.0, 0.0, 0.0]], dtype=torch.cdouble),
+        ),
+        (
+            Projector(bra="11", ket="11", qubit_support=(0, 1)),
+            product_state("11"),
+            torch.tensor([[0.0, 0.0, 0.0, 1.0]], dtype=torch.cdouble),
+        ),
     ],
 )
 def test_projector_with_pyqtorch(projector: AbstractBlock, state: Tensor, exp_wf: Tensor) -> None:
@@ -527,6 +547,7 @@ def test_projector_with_pyqtorch(projector: AbstractBlock, state: Tensor, exp_wf
     backend_inst = backend_factory(backend=BackendName.PYQTORCH)
     conv_circuit = backend_inst.circuit(circuit=circuit)
     wf = backend_inst.run(circuit=conv_circuit, state=state)
+    # breakpoint()
     assert torch.allclose(wf, exp_wf)
 
 
