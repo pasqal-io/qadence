@@ -58,7 +58,7 @@ def add_pulses(
     if not isinstance(qubit_support[0], int):
         qubit_support = tuple(range(n_qubits))
 
-    if isinstance(block, AnalogBlock) and config.interaction != Interaction.NN:
+    if isinstance(block, AnalogBlock) and qc_register.device_specs.interaction != Interaction.NN:
         raise ValueError(f"Pulser does not support other interactions than '{Interaction.NN}'")
 
     local_channel = sequence.device.channels["rydberg_local"]

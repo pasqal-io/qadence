@@ -67,19 +67,31 @@ class Configuration(BackendConfiguration):
     """
 
     amplitude_local: Optional[float] = None
-    """Default pulse amplitude on local channel."""
+    """Default pulse amplitude on local channel.
+
+    FIXME: To be deprecated.
+    """
 
     amplitude_global: Optional[float] = None
-    """Default pulse amplitude on global channel."""
+    """Default pulse amplitude on global channel.
+
+    FIXME: To be deprecated.
+    """
 
     detuning: Optional[float] = None
-    """Default value for the detuning pulses."""
+    """Default value for the detuning pulses.
+
+    FIXME: To be deprecated.
+    """
 
     interaction: Interaction = Interaction.NN
     """Type of interaction introduced in the Hamiltonian.
 
     Currently, only
     NN interaction is support. XY interaction is possible but not implemented
+
+    FIXME: This is deprecated, the interaction is now controlled in the
+    Qadence Device, as detailed in the documentation.
     """
 
     # configuration for cloud simulations

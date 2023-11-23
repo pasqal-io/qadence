@@ -259,9 +259,13 @@ class Register:
 
     @classmethod
     def _from_dict(cls, d: dict) -> Register:
+        device_dict = d.get("device_specs", None)
+        if device_dict is None:
+            device_dict = IdealDevice()._to_dict()
+
         return cls(
             support=nx.node_link_graph(d["graph"]),
-            device_specs=RydbergDevice._from_dict(d["device_specs"]),
+            device_specs=RydbergDevice._from_dict(device_dict),
         )
 
     def __eq__(self, other: object) -> bool:
