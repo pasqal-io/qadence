@@ -3,7 +3,7 @@ from __future__ import annotations
 import jax.numpy as jnp
 import pytest
 import torch
-from jax import Array, value_and_grad
+from jax import Array, grad, value_and_grad
 
 from qadence import (
     CNOT,
@@ -27,7 +27,7 @@ from qadence.blocks import AbstractBlock
 from qadence.constructors import hea
 
 
-def test_psr() -> None:
+def test_psr_firstOrder() -> None:
     circ = QuantumCircuit(2, hea(2, 1))
     v_list = []
     grad_dict = {}
@@ -46,6 +46,28 @@ def test_psr() -> None:
         v, grads = value_and_grad(_exp_fn)(param_array)
         v_list.append(v)
         grad_dict[diff_mode] = grads
+    assert jnp.allclose(grad_dict["ad"], grad_dict["gpsr"])
+
+
+def test_psr_3rd_order_single_param() -> None:
+    circ = QuantumCircuit(2, RX(0, "theta"))
+    grad_dict = {}
+    for diff_mode in ["ad", "gpsr"]:
+        hq_bknd = backend_factory("horqrux", diff_mode)
+        hq_circ, hq_obs, hq_fn, hq_params = hq_bknd.convert(circ, Z(0))
+        embedded_params = hq_fn(hq_params, {})
+        param_names = embedded_params.keys()
+        param_values = embedded_params.values()
+        param_array = jnp.array(jnp.concatenate([arr for arr in param_values]))
+
+        def _exp_fn(value: Array) -> Array:
+            vals = {list(param_names)[0]: value}
+            return hq_bknd.expectation(hq_circ, hq_obs, vals)
+
+        d1fdx = grad(_exp_fn)
+        d2fdx = grad(d1fdx)
+        d3fdx = grad(d2fdx)
+        grad_dict[diff_mode] = d3fdx(param_array.squeeze())
     assert jnp.allclose(grad_dict["ad"], grad_dict["gpsr"])
 
 

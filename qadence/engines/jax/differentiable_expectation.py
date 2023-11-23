@@ -36,11 +36,9 @@ def is_leaf(subtree: Any) -> bool:
 
 
 def compute_gap(eigen_vals: Array) -> Array:
-    diffs = eigen_vals - eigen_vals.reshape(-1, 1)
-    sorted_unique_spectral_gaps = jnp.unique(jnp.abs(jnp.tril(diffs)))
+    gaps = jnp.unique(jnp.abs(jnp.tril(eigen_vals - eigen_vals.reshape(-1, 1))))
     # We have to filter out zeros
-    sorted_unique_spectral_gaps = sorted_unique_spectral_gaps[sorted_unique_spectral_gaps > 0]
-    return sorted_unique_spectral_gaps
+    return gaps[gaps > 0]
 
 
 @dataclass
@@ -61,6 +59,7 @@ class JaxDifferentiableExpectation:
     def psr(self) -> Any:
         # assert not isinstance(self.observable, list), 'Lists of observables not supported.'
         assert self.measurement is None, "Measurements are not yet supported by engine JAX."
+        # assert is == 1, "Only single observable are supported."
         observable = self.observable[0]
         # batch_size = infer_batchsize(self.param_values)
 
@@ -86,7 +85,7 @@ class JaxDifferentiableExpectation:
         def _expectation_fwd(state: Array, values: dict, uuid_to_eigen: dict) -> Any:
             return _expectation_fn(state, values, uuid_to_eigen), (state, values, uuid_to_eigen)
 
-        shift = jnp.array(jnp.pi / 2, dtype=jnp.float64)
+        shift = jnp.array(jnp.pi / 2, dtype=jnp.float64).item()
 
         def _expectation_bwd(res: Any, v: Array) -> Any:
             state, values, uuid_to_eigen = res
