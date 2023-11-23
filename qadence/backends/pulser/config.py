@@ -7,7 +7,6 @@ from pasqal_cloud import TokenProvider
 from pasqal_cloud.device import EmulatorType
 from pulser_simulation.simconfig import SimConfig
 
-from qadence.analog import IdealDevice, RydbergDevice
 from qadence.backend import BackendConfiguration
 from qadence.types import DeviceType, Interaction
 
@@ -26,8 +25,8 @@ class CloudConfiguration:
 
 @dataclass
 class Configuration(BackendConfiguration):
-    device: RydbergDevice = IdealDevice()
-    """The device including the specs to initialize the backend Pulser Device."""
+    # device: RydbergDevice = IdealDevice()
+    # """The device including the specs to initialize the backend Pulser Device."""
 
     device_type: DeviceType = DeviceType.IDEALIZED
     """The type of quantum Device to use in the simulations.

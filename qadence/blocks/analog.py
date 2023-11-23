@@ -10,7 +10,6 @@ from rich.console import Console, RenderableType
 from rich.tree import Tree
 from sympy import Basic
 
-from qadence.analog import RydbergDevice
 from qadence.blocks.primitive import AbstractBlock
 from qadence.parameters import Parameter, ParamMap, evaluate
 from qadence.qubit_support import QubitSupport
@@ -86,16 +85,12 @@ class AnalogBlock(AbstractBlock):
     def compute_eigenvalues_generator(
         self,
         block: AbstractBlock,
-        device: RydbergDevice,
         register: Register,
     ) -> torch.Tensor:
         # FIXME: Temporary fix while we keep AnalogBlocks
         from qadence.analog import add_background_hamiltonian
 
-        # FIXME: This is very error prone, because we are initializing a device here
-        # for the eigenvalues that may not have the specs as the one actually being
-        # used for a given usecase.
-        return add_background_hamiltonian(block, device, register).eigenvalues_generator  # type: ignore [union-attr]
+        return add_background_hamiltonian(block, register).eigenvalues_generator  # type: ignore [union-attr]
 
 
 @dataclass(eq=False, repr=False)

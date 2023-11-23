@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 
 from torch import pi
 
 from qadence.types import DeviceType, Interaction
 
 
-@dataclass
+@dataclass(frozen=True, eq=True)
 class RydbergDevice:
     """Dataclass for interacting Rydberg atoms."""
 
@@ -31,6 +31,13 @@ class RydbergDevice:
             raise KeyError(
                 "RydbergDevice currently only supports Interaction.NN or Interaction.XY."
             )
+
+    def _to_dict(self) -> dict:
+        return {field.name: getattr(self, field.name) for field in fields(self)}
+
+    @classmethod
+    def _from_dict(cls, d: dict) -> RydbergDevice | None:
+        return cls(**d) if d else None
 
 
 def IdealDevice(pattern: None = None) -> RydbergDevice:

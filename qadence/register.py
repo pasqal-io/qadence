@@ -11,6 +11,7 @@ import numpy as np
 from deepdiff import DeepDiff
 from networkx.classes.reportviews import EdgeView, NodeView
 
+from qadence.analog import RydbergDevice
 from qadence.types import LatticeTopology
 
 # Modules to be automatically added to the qadence namespace
@@ -27,8 +28,14 @@ def _scale_node_positions(graph: nx.Graph, min_distance: float, spacing: float) 
 
 
 class Register:
-    def __init__(self, support: nx.Graph | int, spacing: float | None = 1.0):
-        """A 2D register of qubits which includes their coordinates.
+    def __init__(
+        self,
+        support: nx.Graph | int,
+        spacing: float | None = 1.0,
+        device_specs: RydbergDevice | None = None,
+    ):
+        """
+        A 2D register of qubits which includes their coordinates.
 
         It is needed for e.g. analog computing.
         The coordinates are ignored in backends that don't need them. The easiest
@@ -52,6 +59,11 @@ class Register:
         reg.draw()
         ```
         """
+        if device_specs is not None and not isinstance(device_specs, RydbergDevice):
+            raise ValueError("Device specs are not valid. Please pass a `RydbergDevice` instance.")
+
+        self.device_specs = device_specs
+
         self.graph = support if isinstance(support, nx.Graph) else alltoall_graph(support)
 
         # Auxiliary complete graph
@@ -77,27 +89,43 @@ class Register:
         coords: list[tuple],
         lattice: LatticeTopology | str = LatticeTopology.ARBITRARY,
         spacing: float | None = None,
+        device_specs: RydbergDevice | None = None,
     ) -> Register:
         graph = nx.Graph()
         for i, pos in enumerate(coords):
             graph.add_node(i, pos=pos)
-        return cls(graph, spacing)
+        return cls(graph, spacing, device_specs)
 
     @classmethod
-    def line(cls, n_qubits: int, spacing: float = 1.0) -> Register:
-        return cls(line_graph(n_qubits), spacing)
+    def line(
+        cls,
+        n_qubits: int,
+        spacing: float = 1.0,
+        device_specs: RydbergDevice | None = None,
+    ) -> Register:
+        return cls(line_graph(n_qubits), spacing, device_specs)
 
     @classmethod
-    def circle(cls, n_qubits: int, spacing: float = 1.0) -> Register:
+    def circle(
+        cls,
+        n_qubits: int,
+        spacing: float = 1.0,
+        device_specs: RydbergDevice | None = None,
+    ) -> Register:
         graph = nx.grid_2d_graph(n_qubits, 1, periodic=True)
         graph = nx.relabel_nodes(graph, {(i, 0): i for i in range(n_qubits)})
         coords = nx.circular_layout(graph)
         values = {i: {"pos": pos} for i, pos in coords.items()}
         nx.set_node_attributes(graph, values)
-        return cls(graph, spacing)
+        return cls(graph, spacing, device_specs)
 
     @classmethod
-    def square(cls, qubits_side: int, spacing: float = 1.0) -> Register:
+    def square(
+        cls,
+        qubits_side: int,
+        spacing: float = 1.0,
+        device_specs: RydbergDevice | None = None,
+    ) -> Register:
         n_points = 4 * (qubits_side - 1)
 
         def gen_points() -> np.ndarray:
@@ -122,35 +150,52 @@ class Register:
         graph = nx.relabel_nodes(graph, {(i, 0): i for i in range(n_points)})
         values = {i: {"pos": point} for i, point in zip(graph.nodes, gen_points())}
         nx.set_node_attributes(graph, values)
-        return cls(graph, spacing)
+        return cls(graph, spacing, device_specs)
 
     @classmethod
-    def all_to_all(cls, n_qubits: int, spacing: float = 1.0) -> Register:
-        return cls(alltoall_graph(n_qubits), spacing)
+    def all_to_all(
+        cls,
+        n_qubits: int,
+        spacing: float = 1.0,
+        device_specs: RydbergDevice | None = None,
+    ) -> Register:
+        return cls(alltoall_graph(n_qubits), spacing, device_specs)
 
     @classmethod
     def rectangular_lattice(
-        cls, qubits_row: int, qubits_col: int, spacing: float = 1.0
+        cls,
+        qubits_row: int,
+        qubits_col: int,
+        spacing: float = 1.0,
+        device_specs: RydbergDevice | None = None,
     ) -> Register:
         graph = nx.grid_2d_graph(qubits_col, qubits_row)
         values = {i: {"pos": node} for (i, node) in enumerate(graph.nodes)}
         graph = nx.relabel_nodes(graph, {(i, j): k for k, (i, j) in enumerate(graph.nodes)})
         nx.set_node_attributes(graph, values)
-        return cls(graph, spacing)
+        return cls(graph, spacing, device_specs)
 
     @classmethod
     def triangular_lattice(
-        cls, n_cells_row: int, n_cells_col: int, spacing: float = 1.0
+        cls,
+        n_cells_row: int,
+        n_cells_col: int,
+        spacing: float = 1.0,
+        device_specs: RydbergDevice | None = None,
     ) -> Register:
         return cls(triangular_lattice_graph(n_cells_row, n_cells_col), spacing)
 
     @classmethod
     def honeycomb_lattice(
-        cls, n_cells_row: int, n_cells_col: int, spacing: float = 1.0
+        cls,
+        n_cells_row: int,
+        n_cells_col: int,
+        spacing: float = 1.0,
+        device_specs: RydbergDevice | None = None,
     ) -> Register:
         graph = nx.hexagonal_lattice_graph(n_cells_row, n_cells_col)
         graph = nx.relabel_nodes(graph, {(i, j): k for k, (i, j) in enumerate(graph.nodes)})
-        return cls(graph, spacing)
+        return cls(graph, spacing, device_specs)
 
     @classmethod
     def lattice(cls, topology: LatticeTopology | str, *args: Any, **kwargs: Any) -> Register:
@@ -207,11 +252,17 @@ class Register:
         return Register(g, spacing=None)
 
     def _to_dict(self) -> dict:
-        return {"graph": nx.node_link_data(self.graph)}
+        return {
+            "graph": nx.node_link_data(self.graph),
+            "device_specs": self.device_specs._to_dict() if self.device_specs is not None else {},
+        }
 
     @classmethod
     def _from_dict(cls, d: dict) -> Register:
-        return cls(nx.node_link_graph(d["graph"]))
+        return cls(
+            support=nx.node_link_graph(d["graph"]),
+            device_specs=RydbergDevice._from_dict(d["device_specs"]),
+        )
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Register):

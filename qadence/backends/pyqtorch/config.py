@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable
 
-from qadence.analog import IdealDevice, RydbergDevice, add_background_hamiltonian
+from qadence.analog import add_background_hamiltonian
 from qadence.backend import BackendConfiguration
 from qadence.logger import get_logger
 from qadence.transpile import (
@@ -19,7 +19,7 @@ logger = get_logger(__name__)
 
 def default_passes(config: Configuration) -> list[Callable]:
     return [
-        lambda circ: add_background_hamiltonian(circ, device=config.device),
+        add_background_hamiltonian,
         lambda circ: blockfn_to_circfn(chain_single_qubit_ops)(circ)
         if config.use_single_qubit_composition
         else blockfn_to_circfn(flatten)(circ),
@@ -44,8 +44,8 @@ class Configuration(BackendConfiguration):
     use_single_qubit_composition: bool = False
     """Composes chains of single qubit gates into a single matmul if possible."""
 
-    device: RydbergDevice = IdealDevice()
-    """The device including the specs for the emulated-analog interface."""
+    # device: RydbergDevice = IdealDevice()
+    # """The device including the specs for the emulated-analog interface."""
 
     loop_expectation: bool = False
     """When computing batches of expectation values, only allocate one wavefunction.

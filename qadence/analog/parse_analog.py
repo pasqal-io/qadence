@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from sympy import cos, sin
 
-from qadence.analog.device import IdealDevice, RydbergDevice
 from qadence.analog.interaction_hamiltonian import rydberg_interaction_hamiltonian
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.analog import (
@@ -19,7 +18,6 @@ from qadence.transpile import apply_fn_to_blocks
 
 def add_background_hamiltonian(
     circuit: QuantumCircuit | AbstractBlock,
-    device: RydbergDevice | None = None,
     register: Register | None = None,
 ) -> QuantumCircuit | AbstractBlock:
     # Temporary check to allow both circuit or blocks as input
@@ -28,34 +26,37 @@ def add_background_hamiltonian(
     # likely have to be refactored in another MR.
 
     is_circuit_input = isinstance(circuit, QuantumCircuit)
-    target_block: AbstractBlock = circuit.block if is_circuit_input else circuit  # type: ignore
-    target_register: Register = circuit.register if is_circuit_input else register  # type: ignore
 
     if not is_circuit_input and register is None:
         raise ValueError("Block input requires an input to the `register` argument.")
 
-    if device is None:
-        device = IdealDevice()
+    input_block: AbstractBlock = circuit.block if is_circuit_input else circuit  # type: ignore
+    input_register: Register = circuit.register if is_circuit_input else register  # type: ignore
 
-    # Create interaction hamiltonian:
-    h_int = rydberg_interaction_hamiltonian(target_register, device)
+    device_specs = input_register.device_specs
 
-    # Create addressing pattern:
-    # h_addr = (...)
+    if device_specs is not None:
+        # Create interaction hamiltonian:
+        h_int = rydberg_interaction_hamiltonian(input_register, device_specs)
 
-    h_background = h_int  # + h_addr
+        # Create addressing pattern:
+        # h_addr = (...)
 
-    block_parsed = apply_fn_to_blocks(
-        target_block,
-        _analog_to_hevo,
-        target_register,
-        h_background,
-    )
+        h_background = h_int  # + h_addr
+
+        output_block = apply_fn_to_blocks(
+            input_block,
+            _analog_to_hevo,
+            input_register,
+            h_background,
+        )
+    else:
+        output_block = input_block
 
     if is_circuit_input:
-        return QuantumCircuit(target_register, block_parsed)
+        return QuantumCircuit(input_register, output_block)
     else:
-        return block_parsed
+        return output_block
 
 
 def _analog_to_hevo(
