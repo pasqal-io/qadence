@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import List, Tuple, Type, Union
+from typing import List, Type, Union
 
 import numpy as np
 from torch import Tensor, double, ones, rand
@@ -57,7 +57,6 @@ def hamiltonian_factory(
     interaction_strength: TArray | str | None = None,
     detuning_strength: TArray | str | None = None,
     random_strength: bool = False,
-    force_update: bool = False,
     use_complete_graph: bool = False,
 ) -> AbstractBlock:
     """
@@ -80,7 +79,6 @@ def hamiltonian_factory(
             Alternatively, some string "x" can be passed, which will create a parameterized
             detuning for each qubit, each labelled as `"x_i"`.
         random_strength: set random interaction and detuning strengths between -1 and 1.
-        force_update: force override register detuning and interaction strengths.
         use_complete_graph: computes an interaction for every edge in a complete graph,
             independent of the edges in the register. Useful for defining Hamiltonians
             where the interaction strength decays with the distance.
@@ -134,37 +132,29 @@ def hamiltonian_factory(
         raise TypeError(f"Detuning of type {type(detuning)} not supported.")
 
     # Pre-process detuning and interaction strengths and update register
-    has_detuning_strength, detuning_strength = _preprocess_strengths(
-        register, detuning_strength, "nodes", force_update, random_strength
+    detuning_strength_array = _preprocess_strengths(
+        register, detuning_strength, "nodes", random_strength
     )
 
     edge_str = "all_edges" if use_complete_graph else "edges"
-    has_interaction_strength, interaction_strength = _preprocess_strengths(
-        register, interaction_strength, edge_str, force_update, random_strength
+    interaction_strength_array = _preprocess_strengths(
+        register, interaction_strength, edge_str, random_strength
     )
-
-    if (not has_detuning_strength) or force_update:
-        register = _update_detuning_strength(register, detuning_strength)
-
-    if (not has_interaction_strength) or force_update:
-        register = _update_interaction_strength(register, interaction_strength, use_complete_graph)
 
     # Create single-qubit detunings:
     single_qubit_terms: List[AbstractBlock] = []
     if detuning is not None:
-        for node in register.nodes:
+        for i, node in enumerate(register.nodes):
             block_sq = detuning(node)  # type: ignore [operator]
-            strength_sq = register.nodes[node]["strength"]
-            single_qubit_terms.append(strength_sq * block_sq)
+            single_qubit_terms.append(detuning_strength_array[i] * block_sq)
 
     # Create two-qubit interactions:
     two_qubit_terms: List[AbstractBlock] = []
     edge_data = register.all_edges if use_complete_graph else register.edges
     if interaction is not None:
-        for edge in edge_data:
+        for i, edge in enumerate(edge_data):
             block_tq = int_fn(*edge)  # type: ignore [operator]
-            strength_tq = edge_data[edge]["strength"]
-            two_qubit_terms.append(strength_tq * block_tq)
+            two_qubit_terms.append(interaction_strength_array[i] * block_tq)
 
     return add(*single_qubit_terms, *two_qubit_terms)
 
@@ -173,22 +163,13 @@ def _preprocess_strengths(
     register: Register,
     strength: TArray | str | None,
     nodes_or_edges: str,
-    force_update: bool,
     random_strength: bool,
-) -> Tuple[bool, Union[TArray | str]]:
+) -> Tensor | list:
     data = getattr(register, nodes_or_edges)
 
     # Useful for error messages:
     strength_target = "detuning" if nodes_or_edges == "nodes" else "interaction"
 
-    # First we check if strength values already exist in the register
-    has_strength = any(["strength" in data[i] for i in data])
-    if has_strength and not force_update:
-        if strength is not None:
-            logger.warning(
-                "Register already includes " + strength_target + " strengths. "
-                "Skipping update. Use `force_update = True` to override them."
-            )
     # Next we process the strength given in the input arguments
     if strength is None:
         if random_strength:
@@ -202,8 +183,11 @@ def _preprocess_strengths(
             message = "Array of " + strength_target + " strengths has incorrect size."
             raise ValueError(message)
     elif isinstance(strength, str):
-        # Any string will be used as a prefix to variational parameters
-        pass
+        prefix = strength
+        if nodes_or_edges == "nodes":
+            strength = [prefix + f"_{node}" for node in data]
+        if nodes_or_edges == "edges" or nodes_or_edges == "all_edges":
+            strength = [prefix + f"_{edge[0]}{edge[1]}" for edge in data]
     else:
         # If not of the accepted types ARRAYS or str, we error out
         raise TypeError(
@@ -212,28 +196,7 @@ def _preprocess_strengths(
             "parameterized " + strength_target + "s."
         )
 
-    return has_strength, strength
-
-
-def _update_detuning_strength(register: Register, detuning_strength: TArray | str) -> Register:
-    for node in register.nodes:
-        if isinstance(detuning_strength, str):
-            register.nodes[node]["strength"] = detuning_strength + f"_{node}"
-        elif isinstance(detuning_strength, ARRAYS):
-            register.nodes[node]["strength"] = detuning_strength[node]
-    return register
-
-
-def _update_interaction_strength(
-    register: Register, interaction_strength: TArray | str, use_complete_graph: bool
-) -> Register:
-    edge_data = register.all_edges if use_complete_graph else register.edges
-    for idx, edge in enumerate(edge_data):
-        if isinstance(interaction_strength, str):
-            edge_data[edge]["strength"] = interaction_strength + f"_{edge[0]}{edge[1]}"
-        elif isinstance(interaction_strength, ARRAYS):
-            edge_data[edge]["strength"] = interaction_strength[idx]
-    return register
+    return strength
 
 
 # FIXME: Previous hamiltonian / observable functions, now refactored, to be deprecated:
