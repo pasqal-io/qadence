@@ -28,7 +28,7 @@ from qadence.constructors import hea
 
 
 def test_psr() -> None:
-    circ = QuantumCircuit(2, RX(0, "theta"))
+    circ = QuantumCircuit(2, hea(2, 1))
     v_list = []
     grad_dict = {}
     for diff_mode in ["ad", "gpsr"]:
@@ -46,8 +46,6 @@ def test_psr() -> None:
         v, grads = value_and_grad(_exp_fn)(param_array)
         v_list.append(v)
         grad_dict[diff_mode] = grads
-    breakpoint()
-    print(grad_dict)
     assert jnp.allclose(grad_dict["ad"], grad_dict["gpsr"])
 
 
