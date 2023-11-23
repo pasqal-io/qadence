@@ -7,6 +7,7 @@ from openfermion import QubitOperator, get_sparse_operator
 from torch import Tensor
 from torch.linalg import eigvals
 
+from qadence.backends.api import backend_factory
 from qadence.blocks import (
     AbstractBlock,
     AddBlock,
@@ -18,6 +19,7 @@ from qadence.blocks import (
     to_openfermion,
 )
 from qadence.blocks.block_to_tensor import IMAT, ZMAT, block_to_tensor
+from qadence.circuit import QuantumCircuit
 from qadence.operations import (
     CNOT,
     CPHASE,
@@ -48,6 +50,8 @@ from qadence.operations import (
     Z,
     Zero,
 )
+from qadence.states import product_state
+from qadence.types import BackendName
 
 
 def hamevo_generator_tensor() -> torch.Tensor:
@@ -487,9 +491,43 @@ def cphase_eigenvals(p: float, n_qubits: int = 2) -> torch.Tensor:
         ),
     ],
 )
-def test_projector(projector: AbstractBlock, exp_projector_mat: Tensor) -> None:
+def test_projector_tensor(projector: AbstractBlock, exp_projector_mat: Tensor) -> None:
     projector_mat = block_to_tensor(projector)
     assert torch.allclose(projector_mat, exp_projector_mat, atol=1.0e-4)
+
+
+# PyQTorch only supports single qubit projectors.
+@pytest.mark.parametrize(
+    "projector, state, exp_wf",
+    [
+        (
+            Projector(bra="0", ket="0", qubit_support=0),
+            product_state("0"),
+            torch.tensor([[1.0, 0.0]], dtype=torch.cdouble),
+        ),
+        (
+            Projector(bra="0", ket="0", qubit_support=0),
+            product_state("1"),
+            torch.tensor([[0.0, 0.0]], dtype=torch.cdouble),
+        ),
+        (
+            Projector(bra="1", ket="1", qubit_support=0),
+            product_state("0"),
+            torch.tensor([[0.0, 0.0]], dtype=torch.cdouble),
+        ),
+        (
+            Projector(bra="1", ket="1", qubit_support=0),
+            product_state("1"),
+            torch.tensor([[0.0, 1.0]], dtype=torch.cdouble),
+        ),
+    ],
+)
+def test_projector_with_pyqtorch(projector: AbstractBlock, state: Tensor, exp_wf: Tensor) -> None:
+    circuit = QuantumCircuit(projector.n_qubits, projector)
+    backend_inst = backend_factory(backend=BackendName.PYQTORCH)
+    conv_circuit = backend_inst.circuit(circuit=circuit)
+    wf = backend_inst.run(circuit=conv_circuit, state=state)
+    assert torch.allclose(wf, exp_wf)
 
 
 @pytest.mark.parametrize(
