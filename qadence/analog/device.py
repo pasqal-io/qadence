@@ -36,8 +36,8 @@ class RydbergDevice:
         return {field.name: getattr(self, field.name) for field in fields(self)}
 
     @classmethod
-    def _from_dict(cls, d: dict) -> RydbergDevice | None:
-        return cls(**d) if d else None
+    def _from_dict(cls, d: dict) -> RydbergDevice:
+        return cls(**d)
 
 
 def IdealDevice(pattern: None = None) -> RydbergDevice:

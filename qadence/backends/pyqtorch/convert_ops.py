@@ -156,8 +156,8 @@ def convert_block(
     else:
         raise NotImplementedError(
             f"Non supported operation of type {type(block)}. "
-            "In case you are trying to run an `AnalogBlock`, specifying the "
-            "`RydbergDevice` in your model `configuration` first."
+            "In case you are trying to run an `AnalogBlock`, make sure you "
+            "specify the `device_specs` in your `Register` first."
         )
 
 

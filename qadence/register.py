@@ -11,7 +11,7 @@ import numpy as np
 from deepdiff import DeepDiff
 from networkx.classes.reportviews import EdgeView, NodeView
 
-from qadence.analog import RydbergDevice
+from qadence.analog import IdealDevice, RydbergDevice
 from qadence.types import LatticeTopology
 
 # Modules to be automatically added to the qadence namespace
@@ -32,7 +32,7 @@ class Register:
         self,
         support: nx.Graph | int,
         spacing: float | None = 1.0,
-        device_specs: RydbergDevice | None = None,
+        device_specs: RydbergDevice = IdealDevice(),
     ):
         """
         A 2D register of qubits which includes their coordinates.
@@ -89,7 +89,7 @@ class Register:
         coords: list[tuple],
         lattice: LatticeTopology | str = LatticeTopology.ARBITRARY,
         spacing: float | None = None,
-        device_specs: RydbergDevice | None = None,
+        device_specs: RydbergDevice = IdealDevice(),
     ) -> Register:
         graph = nx.Graph()
         for i, pos in enumerate(coords):
@@ -101,7 +101,7 @@ class Register:
         cls,
         n_qubits: int,
         spacing: float = 1.0,
-        device_specs: RydbergDevice | None = None,
+        device_specs: RydbergDevice = IdealDevice(),
     ) -> Register:
         return cls(line_graph(n_qubits), spacing, device_specs)
 
@@ -110,7 +110,7 @@ class Register:
         cls,
         n_qubits: int,
         spacing: float = 1.0,
-        device_specs: RydbergDevice | None = None,
+        device_specs: RydbergDevice = IdealDevice(),
     ) -> Register:
         graph = nx.grid_2d_graph(n_qubits, 1, periodic=True)
         graph = nx.relabel_nodes(graph, {(i, 0): i for i in range(n_qubits)})
@@ -124,7 +124,7 @@ class Register:
         cls,
         qubits_side: int,
         spacing: float = 1.0,
-        device_specs: RydbergDevice | None = None,
+        device_specs: RydbergDevice = IdealDevice(),
     ) -> Register:
         n_points = 4 * (qubits_side - 1)
 
@@ -157,7 +157,7 @@ class Register:
         cls,
         n_qubits: int,
         spacing: float = 1.0,
-        device_specs: RydbergDevice | None = None,
+        device_specs: RydbergDevice = IdealDevice(),
     ) -> Register:
         return cls(alltoall_graph(n_qubits), spacing, device_specs)
 
@@ -167,7 +167,7 @@ class Register:
         qubits_row: int,
         qubits_col: int,
         spacing: float = 1.0,
-        device_specs: RydbergDevice | None = None,
+        device_specs: RydbergDevice = IdealDevice(),
     ) -> Register:
         graph = nx.grid_2d_graph(qubits_col, qubits_row)
         values = {i: {"pos": node} for (i, node) in enumerate(graph.nodes)}
@@ -181,9 +181,9 @@ class Register:
         n_cells_row: int,
         n_cells_col: int,
         spacing: float = 1.0,
-        device_specs: RydbergDevice | None = None,
+        device_specs: RydbergDevice = IdealDevice(),
     ) -> Register:
-        return cls(triangular_lattice_graph(n_cells_row, n_cells_col), spacing)
+        return cls(triangular_lattice_graph(n_cells_row, n_cells_col), spacing, device_specs)
 
     @classmethod
     def honeycomb_lattice(
@@ -191,7 +191,7 @@ class Register:
         n_cells_row: int,
         n_cells_col: int,
         spacing: float = 1.0,
-        device_specs: RydbergDevice | None = None,
+        device_specs: RydbergDevice = IdealDevice(),
     ) -> Register:
         graph = nx.hexagonal_lattice_graph(n_cells_row, n_cells_col)
         graph = nx.relabel_nodes(graph, {(i, j): k for k, (i, j) in enumerate(graph.nodes)})
@@ -249,12 +249,12 @@ class Register:
     def rescale_coords(self, scaling: float) -> Register:
         g = deepcopy(self.graph)
         _scale_node_positions(g, min_distance=1.0, spacing=scaling)
-        return Register(g, spacing=None)
+        return Register(g, spacing=None, device_specs=self.device_specs)
 
     def _to_dict(self) -> dict:
         return {
             "graph": nx.node_link_data(self.graph),
-            "device_specs": self.device_specs._to_dict() if self.device_specs is not None else {},
+            "device_specs": self.device_specs._to_dict(),
         }
 
     @classmethod

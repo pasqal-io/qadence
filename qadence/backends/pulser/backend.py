@@ -54,20 +54,22 @@ def create_register(register: Register) -> PulserRegister:
 
 
 def make_sequence(circ: QuantumCircuit, config: Configuration) -> Sequence:
-    if config.device.device_type == DeviceType.IDEALIZED:
+    register = circ.register
+    device_specs = register.device_specs
+
+    if device_specs.device_type == DeviceType.IDEALIZED:
         device = IdealDevice(
-            config.device.rydberg_level, config.device.max_abs_detuning, config.device.max_amp
+            device_specs.rydberg_level, device_specs.max_abs_detuning, device_specs.max_amp
         )
-    elif config.device.device_type == DeviceType.REALISTIC:
+    elif device_specs.device_type == DeviceType.REALISTIC:
         device = RealisticDevice(
-            config.device.rydberg_level, config.device.max_abs_detuning, config.device.max_amp
+            device_specs.rydberg_level, device_specs.max_abs_detuning, device_specs.max_amp
         )
     else:
         raise ValueError("Specified device type is not supported.")
 
     ########
     # FIXME: Remove the block below in V1.1.0
-    register = circ.register
     if config.spacing is not None:
         logger.warning(
             "Passing register spacing in the backend configuration is deprecated. "
@@ -94,7 +96,7 @@ def make_sequence(circ: QuantumCircuit, config: Configuration) -> Sequence:
     sequence.declare_channel(GLOBAL_CHANNEL, "rydberg_global")
     sequence.declare_channel(LOCAL_CHANNEL, "rydberg_local", initial_target=0)
 
-    add_pulses(sequence, circ.block, config, circ.register)
+    add_pulses(sequence, circ.block, config, register)
     sequence.measure()
 
     return sequence
