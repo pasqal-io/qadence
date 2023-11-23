@@ -34,7 +34,7 @@ from qadence.types import BackendName, DiffMode
 
 @pytest.mark.flaky(max_runs=5)
 @pytest.mark.parametrize("n_qubits", [2, 3, 4])
-@pytest.mark.parametrize("spacing", [6.0, 8.0, 15.0])
+@pytest.mark.parametrize("spacing", [7.0, 10.0, 15.0])
 @pytest.mark.parametrize("rydberg_level", [60, 70])
 @pytest.mark.parametrize("op", [AnalogRX, AnalogRY, AnalogRZ, AnalogRot, wait])
 def test_analog_op_run(
