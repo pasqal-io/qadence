@@ -139,7 +139,7 @@ print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
 In order to get a finer control over the GPSR differentiation engine we can use the low-level Qadence API to define a `DifferentiableBackend`.
 
 ```python exec="on" source="material-block" session="differentiability"
-from qadence import DifferentiableBackend
+from qadence.engines.torch import TorchBackend as DifferentiableBackend
 from qadence.backends.pyqtorch import Backend as PyQBackend
 
 # define differentiable quantum backend
