@@ -11,11 +11,7 @@ from jax.typing import ArrayLike
 
 from qadence.backend import Backend as BackendInterface
 from qadence.backend import ConvertedCircuit, ConvertedObservable
-from qadence.backends.utils import (
-    jarr_to_tensor,
-    pyqify,
-    tensor_to_jnp,
-)
+from qadence.backends.utils import jarr_to_tensor, pyqify, tensor_to_jnp
 from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
@@ -72,7 +68,7 @@ class Backend(BackendInterface):
             state = jnp.reshape(state, (batch_size, 2**circuit.abstract.n_qubits))
             state = invert_endianness(jarr_to_tensor(state))
         if unhorqify_state:
-            state = state.ravel()
+            state = state.reshape(batch_size, 2**n_qubits)
         return state
 
     def run_dm(

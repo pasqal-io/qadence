@@ -125,6 +125,11 @@ def unpyqify(state: Tensor) -> Tensor:
     return torchflatten(state, start_dim=0, end_dim=-2).t()
 
 
+def unhorqify(state: ArrayLike) -> ArrayLike:
+    """Convert a state of shape [2] * n_qubits + [batch_size] to (batch_size, 2**n_qubits)."""
+    return jnp.ravel(state, start_dim=0, end_dim=-2).t()
+
+
 def is_pyq_shape(state: Tensor, n_qubits: int) -> bool:
     return state.size()[:-1] == [2] * n_qubits  # type: ignore[no-any-return]
 
