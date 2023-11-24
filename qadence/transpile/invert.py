@@ -6,6 +6,8 @@ from functools import singledispatch
 from typing import Any, overload
 
 import numpy as np
+from jax import Array
+from jax.numpy import array
 from torch import Tensor, tensor
 
 from qadence.blocks import AbstractBlock
@@ -54,6 +56,11 @@ def invert_endianness(wf: Tensor) -> Tensor:
 
 
 @overload
+def invert_endianness(wf: Array) -> Array:  # type: ignore[misc]
+    ...
+
+
+@overload
 def invert_endianness(arr: np.ndarray) -> np.ndarray:
     ...
 
@@ -80,8 +87,8 @@ def invert_endianness(block: AbstractBlock, n_qubits: int, in_place: bool) -> Ab
 
 @singledispatch
 def invert_endianness(
-    x: QuantumCircuit | AbstractBlock | Tensor | Counter | np.ndarray, *args: Any
-) -> QuantumCircuit | AbstractBlock | Tensor | Counter | np.ndarray:
+    x: QuantumCircuit | AbstractBlock | Tensor | Array | Counter | np.ndarray, *args: Any
+) -> QuantumCircuit | AbstractBlock | Tensor | Array | Counter | np.ndarray:
     """Invert the endianness of a QuantumCircuit, AbstractBlock, wave function or Counter."""
     raise NotImplementedError(f"Unable to invert endianness of object {type(x)}.")
 
@@ -112,6 +119,23 @@ def _(wf: Tensor) -> Tensor:
     n_qubits = int(np.log2(wf.shape[1]))
     ls = list(range(2**n_qubits))
     permute_ind = tensor([int(f"{num:0{n_qubits}b}"[::-1], 2) for num in ls])
+    return wf[:, permute_ind]
+
+
+@invert_endianness.register(Array)  # type: ignore[attr-defined]
+def _(wf: Array) -> Array:
+    """
+    Inverts the endianness of a wave function.
+
+    Args:
+        wf (Tensor): the target wf as a torch Tensor of shape batch_size X 2**n_qubits
+
+    Returns:
+        The inverted wave function.
+    """
+    n_qubits = int(np.log2(wf.shape[1]))
+    ls = list(range(2**n_qubits))
+    permute_ind = array([int(f"{num:0{n_qubits}b}"[::-1], 2) for num in ls])
     return wf[:, permute_ind]
 
 

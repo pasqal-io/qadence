@@ -71,7 +71,6 @@ class Backend(BackendInterface):
         if endianness != self.native_endianness:
             state = jnp.reshape(state, (batch_size, 2**circuit.abstract.n_qubits))
             state = invert_endianness(jarr_to_tensor(state))
-        # TODO flatten state, invert endianness
         if unhorqify_state:
             state = state.ravel()
         return state

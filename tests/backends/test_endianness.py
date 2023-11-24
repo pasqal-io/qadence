@@ -10,6 +10,7 @@ from torch import Tensor, allclose, cdouble, pi, tensor
 
 from qadence import QuantumCircuit, block_to_tensor, run, sample
 from qadence.backends.api import backend_factory
+from qadence.backends.utils import jarr_to_tensor
 from qadence.blocks import AbstractBlock, MatrixBlock, chain, kron
 from qadence.divergences import js_divergence
 from qadence.ml_tools.utils import rand_featureparameters
@@ -136,6 +137,8 @@ def test_backend_wf_endianness(circ: QuantumCircuit, truth: Tensor, backend: Bac
         wf = run(circ, {}, backend=backend, endianness=endianness)
         if endianness == Endianness.LITTLE:
             truth = invert_endianness(truth)
+        if backend == BackendName.HORQRUX:
+            wf = jarr_to_tensor(wf)
         assert equivalent_state(wf, truth, atol=ATOL_DICT[backend])
 
 
