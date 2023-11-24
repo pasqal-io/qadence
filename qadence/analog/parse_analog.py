@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from sympy import cos, sin
 
-from qadence.analog.interaction_hamiltonian import rydberg_interaction_hamiltonian
+from qadence.analog.hamiltonian_terms import rydberg_interaction_hamiltonian
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.analog import (
     AnalogBlock,
