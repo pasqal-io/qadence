@@ -47,40 +47,53 @@ class JaxDifferentiableExpectation:
                 self.circuit.abstract.n_qubits, "0" * self.circuit.abstract.n_qubits
             )
 
-        def _expectation_fn(state: Array, values: dict, uuid_to_eigen: dict) -> Array:
+        def _expectation_fn(
+            state: Array, values: dict, psr_params: dict, uuid_to_eigen: dict
+        ) -> Array:
             wf = self.circuit.native.forward(state, values)
             return observable.native.forward(wf, values)
 
         @custom_vjp
-        def _expectation(state: Array, values: dict, uuid_to_eigen: dict) -> Array:
-            return _expectation_fn(state, values, uuid_to_eigen)
+        def _expectation(
+            state: Array, values: dict, psr_params: dict, uuid_to_eigen: dict
+        ) -> Array:
+            return _expectation_fn(state, values, psr_params, uuid_to_eigen)
 
         values = self.param_values
         uuid_to_eigs = {
             k: tensor_to_jnp(v) for k, v in uuid_to_eigen(self.circuit.abstract.block).items()
         }
-        values = {k: values[k] for k in uuid_to_eigs.keys()}
+        psr_params = {k: values[k] for k in uuid_to_eigs.keys()}
 
-        def _expectation_fwd(state: Array, values: dict, uuid_to_eigen: dict) -> Any:
-            return _expectation_fn(state, values, uuid_to_eigen), (state, values, uuid_to_eigen)
+        def _expectation_fwd(
+            state: Array, values: dict, psr_params: dict, uuid_to_eigen: dict
+        ) -> Any:
+            return _expectation_fn(state, values, psr_params, uuid_to_eigen), (
+                state,
+                values,
+                psr_params,
+                uuid_to_eigen,
+            )
 
         shift = jnp.pi / 2
         spectral_gap = 2.0
 
-        def _expectation_bwd(res: Tuple[Array, ParamDictType, dict[str, Array]], v: Array) -> Any:
-            state, values, uuid_to_eigen = res
+        def _expectation_bwd(
+            res: Tuple[Array, ParamDictType, dict, dict[str, Array]], v: Array
+        ) -> Any:
+            state, values, psr_params, uuid_to_eigen = res
             grads = {}
             for param_name, eigenvals in uuid_to_eigen.items():
                 # FIXME skipping for jitting; spectral_gap = compute_gap(eigenvals)
                 shifted_values = values.copy()
                 shifted_values[param_name] = shifted_values[param_name] + shift
-                f_plus = _expectation(state, shifted_values, uuid_to_eigen)
+                f_plus = _expectation(state, shifted_values, psr_params, uuid_to_eigen)
                 shifted_values = values.copy()
                 shifted_values[param_name] = shifted_values[param_name] - shift
-                f_min = _expectation(state, shifted_values, uuid_to_eigen)
+                f_min = _expectation(state, shifted_values, psr_params, uuid_to_eigen)
                 grad = spectral_gap * (f_plus - f_min) / (4.0 * jnp.sin(spectral_gap * shift / 2.0))
                 grads[param_name] = (v * grad).squeeze()  # Need dimensionless arrays
-            return None, grads, None
+            return None, None, grads, None
 
         _expectation.defvjp(_expectation_fwd, _expectation_bwd)
-        return _expectation(self.state, values, uuid_to_eigs)
+        return _expectation(self.state, values, psr_params, uuid_to_eigs)

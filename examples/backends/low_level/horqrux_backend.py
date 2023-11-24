@@ -9,7 +9,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.constructors import chebyshev_feature_map, hea, total_magnetization
 
 backend = "horqrux"
-diff_mode = "ad"
+diff_mode = "gpsr"
 
 num_epochs = 10
 n_qubits = 4
