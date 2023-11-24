@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from torch import tensor
+from torch import float64, tensor
 
 from qadence.analog.device import RydbergDevice
 from qadence.analog.utils import C6_DICT
@@ -25,11 +25,14 @@ def rydberg_interaction_hamiltonian(
         device: the RydbergDevice with respective specs.
     """
 
+    distances = tensor(list(register.distances.values()), dtype=float64)
+
     if device_specs.interaction == Interaction.NN:
         c6 = C6_DICT[device_specs.rydberg_level]
-        strength_list = c6 / (tensor(register.distances) ** 6)
+        strength_list = c6 / (distances**6)
     elif device_specs.interaction == Interaction.XY:
-        strength_list = device_specs.coeff_xy / (tensor(register.distances) ** 3)
+        c3 = device_specs.coeff_xy
+        strength_list = c3 / (distances**3)
 
     return hamiltonian_factory(
         register,
