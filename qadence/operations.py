@@ -721,6 +721,22 @@ class MCY(MixinTargetBlockIndex, MCIdemPotentBlock):
                  conditions: tuple[bool, ...] = None) -> None:
         super().__init__(control, Y(target), conditions)
 
+    def dagger(self) -> ControlBlock:
+        return MCYdagger(self.control_qubits, self.target_qubits[0],
+                         conditions=self.conditions)
+
+
+class MCYdagger(MixinTargetBlockIndex, MCIdemPotentBlock):
+    name = OpName.MCYdagger
+
+    def __init__(self, control: tuple[int, ...], target: int,
+                 conditions: tuple[bool, ...] = None) -> None:
+        super().__init__(control, Y(target).dagger(), conditions)
+
+    def dagger(self) -> ControlBlock:
+        return MCY(self.control_qubits, self.target_qubits[0],
+                   conditions=self.conditions)
+
 
 class MCZ(MixinTargetBlockIndex, MCIdemPotentBlock):
     name = OpName.MCZ
@@ -746,9 +762,24 @@ class CX(MixinSingleControlledIdemPotent, MCX):
     name = OpName.CX
 
 
-class CY(MixinSingleControlledIdemPotent, MCY):
+class CY(MCY):
     name = OpName.CY
 
+    def __init__(self, control: int, target: int, conditions: tuple[bool, ...] = None) -> None:
+        super().__init__((control,), target, conditions)
+
+    def dagger(self) -> ControlBlock:
+        return CYdagger(self.control_qubits[0], self.target_qubits[0], self.conditions)
+
+
+class CYdagger(MCYdagger):
+    name = OpName.CYdagger
+
+    def __init__(self, control: int, target: int, conditions: tuple[bool, ...] = None) -> None:
+        super().__init__((control,), target, conditions)
+
+    def dagger(self) -> ControlBlock:
+        return CY(self.control_qubits[0], self.target_qubits[0], self.conditions)
 
 class CZ(MixinSingleControlledIdemPotent, MCZ):
     name = OpName.CZ
