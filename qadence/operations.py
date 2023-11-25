@@ -768,6 +768,9 @@ class MCRX(ParametricControlBlock):
         lmbd = torch.cos(val / 2.0) - 1j * torch.sin(val / 2.0)
         return torch.cat((torch.ones(2**self.n_qubits - 2), lmbd, lmbd.conj()))
 
+    def dagger(self) -> ParametricBlock:  # type: ignore[override]
+        return self.__class__(self.control, self.blocks[0].qubit_support[0], -extract_original_param_entry(self.parameters.parameter))  # type: ignore[arg-type]
+
 
 class CRX(MCRX):
     """The CRX gate."""
@@ -781,6 +784,9 @@ class CRX(MCRX):
         parameter: Parameter | TNumber | sympy.Expr | str,
     ):
         super().__init__((control,), target, parameter)
+
+    def dagger(self) -> ParametricBlock:  # type: ignore[override]
+        return self.__class__(self.control[0], self.blocks[0].qubit_support[0], -extract_original_param_entry(self.parameters.parameter))  # type: ignore[arg-type]
 
 
 class MCRY(ParametricControlBlock):
@@ -811,6 +817,8 @@ class MCRY(ParametricControlBlock):
         lmbd = torch.cos(val / 2.0) - 1j * torch.sin(val / 2.0)
         return torch.cat((torch.ones(2**self.n_qubits - 2), lmbd, lmbd.conj()))
 
+    def dagger(self) -> ParametricBlock:  # type: ignore[override]
+        return self.__class__(self.control, self.blocks[0].qubit_support[0], -extract_original_param_entry(self.parameters.parameter))  # type: ignore[arg-type]
 
 class CRY(MCRY):
     """The CRY gate."""
@@ -825,6 +833,8 @@ class CRY(MCRY):
     ):
         super().__init__((control,), target, parameter)
 
+    def dagger(self) -> ParametricBlock:  # type: ignore[override]
+        return self.__class__(self.control[0], self.blocks[0].qubit_support[0], -extract_original_param_entry(self.parameters.parameter))  # type: ignore[arg-type]
 
 class MCRZ(ParametricControlBlock):
     name = OpName.MCRZ
@@ -854,6 +864,9 @@ class MCRZ(ParametricControlBlock):
         lmbd = torch.cos(val / 2.0) - 1j * torch.sin(val / 2.0)
         return torch.cat((torch.ones(2**self.n_qubits - 2), lmbd, lmbd.conj()))
 
+    def dagger(self) -> ParametricBlock:  # type: ignore[override]
+        return self.__class__(self.control, self.blocks[0].qubit_support[0], -extract_original_param_entry(self.parameters.parameter))  # type: ignore[arg-type]
+
 
 class CRZ(MCRZ):
     """The CRZ gate."""
@@ -867,6 +880,9 @@ class CRZ(MCRZ):
         parameter: Parameter | TNumber | sympy.Expr | str,
     ):
         super().__init__((control,), target, parameter)
+
+    def dagger(self) -> ParametricBlock:  # type: ignore[override]
+        return self.__class__(self.control[0], self.blocks[0].qubit_support[0], -extract_original_param_entry(self.parameters.parameter))  # type: ignore[arg-type]
 
 
 class CSWAP(ControlBlock):

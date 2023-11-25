@@ -396,11 +396,13 @@ class ParametricControlBlock(ParametricBlock):
     """The abstract parametrized ControlBlock."""
 
     name = "ParameterizedControl"
+    control = ()
 
     def __init__(self, control: tuple[int, ...], target_block: ParametricBlock) -> None:
         self.blocks = (target_block,)
+        self.control = control
         self.parameters = target_block.parameters
-        super().__init__((*control, target_block.qubit_support[0]))
+        super().__init__((*control, *target_block.qubit_support))
 
     @property
     def eigenvalues_generator(self) -> torch.Tensor:
@@ -454,3 +456,6 @@ class ParametricControlBlock(ParametricBlock):
 
         s += rf" \[params: {params_str}]"
         return s if self.tag is None else (s + rf" \[tag: {self.tag}]")
+
+    def dagger(self) -> ParametricBlock:  # type: ignore[override]
+        return self.__class__(self.control, self.blocks[0].dagger())  # type: ignore[arg-type]
