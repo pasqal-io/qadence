@@ -1079,6 +1079,9 @@ class MCPHASE(ParametricControlBlock):
         h = abs(target - control) + 1
         return Panel(self._block_title, expand=False, height=3 * h)
 
+    def dagger(self) -> ParametricBlock:  # type: ignore[override]
+        return self.__class__(self.control, self.blocks[0].qubit_support[0], -extract_original_param_entry(self.parameters.parameter))  # type: ignore[arg-type]
+
 
 class CPHASE(MCPHASE):
     """The CPHASE gate."""
@@ -1093,6 +1096,8 @@ class CPHASE(MCPHASE):
     ):
         super().__init__((control,), target, parameter)
 
+    def dagger(self) -> ParametricBlock:  # type: ignore[override]
+        return self.__class__(self.control[0], self.blocks[0].qubit_support[0], -extract_original_param_entry(self.parameters.parameter))  # type: ignore[arg-type]
 
 class Toffoli(ControlBlock):
     name = OpName.TOFFOLI
