@@ -662,22 +662,23 @@ class HamEvo(TimeEvolutionBlock):
             )
 
 
-class CNOT(ControlBlock):
-    """The CNot, or CX, gate."""
+class MCIdemPotentBlock(ControlBlock):
 
-    name = OpName.CNOT
-
-    def __init__(self, control: int, target: int) -> None:
-        self.generator = kron((I(control) - Z(control)) * 0.5, X(target) - I(target))
-        super().__init__((control,), X(target))
+    def __init__(self, control: tuple[int, ...], target_block: PrimitiveBlock,
+                 conditions: tuple[bool, ...] = None) -> None:
+        super().__init__(control, target_block, conditions)
+        self.generator = kron(
+            *[N(qubit) if self.conditions[index] else I(qubit)-N(qubit) for index, qubit in enumerate(control)],
+            target_block - kron(I(j) for j in target_block.qubit_support)
+        )
 
     @property
     def eigenvalues_generator(self) -> Tensor:
-        return torch.tensor([-2, 0, 0, 0], dtype=cdouble)
+        return torch.cat((torch.tensor(-2, dtype=cdouble), torch.zeros(2**self.n_qubits - 1, dtype=cdouble)))
 
     @property
     def eigenvalues(self) -> Tensor:
-        return torch.tensor([-1, 1, 1, 1], dtype=cdouble)
+        return torch.cat((torch.tensor(-1, dtype=cdouble), torch.ones(2**self.n_qubits - 1, dtype=cdouble)))
 
     def __ascii__(self, console: Console) -> RenderableType:
         (target, control) = self.qubit_support
@@ -691,53 +692,66 @@ class CNOT(ControlBlock):
             tree.add(self._block_title)
         return tree
 
-    def dagger(self) -> CNOT:
-        return CNOT(*self.qubit_support)
+
+class MixinTargetBlockIndex:
+    def dagger(self) -> ControlBlock:
+        return self.__class__(self.control_qubits, self.target_qubits[0], self.conditions)
 
 
-class MCZ(ControlBlock):
+class MCX(MixinTargetBlockIndex, MCIdemPotentBlock):
+    name = OpName.MCX
+
+    def __init__(self, control: tuple[int, ...], target: int,
+                 conditions: tuple[bool, ...] = None) -> None:
+        super().__init__(control, X(target), conditions)
+
+
+class MCNOT(MixinTargetBlockIndex, MCIdemPotentBlock):
+    name = OpName.MCNOT
+
+    def __init__(self, control: tuple[int, ...], target: int,
+                 conditions: tuple[bool, ...] = None) -> None:
+        super().__init__(control, X(target), conditions)
+
+
+class MCY(MixinTargetBlockIndex, MCIdemPotentBlock):
+    name = OpName.MCY
+
+    def __init__(self, control: tuple[int, ...], target: int,
+                 conditions: tuple[bool, ...] = None) -> None:
+        super().__init__(control, Y(target), conditions)
+
+
+class MCZ(MixinTargetBlockIndex, MCIdemPotentBlock):
     name = OpName.MCZ
 
-    def __init__(self, control: tuple[int, ...], target: int) -> None:
-        self.generator = kron(
-            *[(I(qubit) - Z(qubit)) * 0.5 for qubit in control], Z(target) - I(target)
-        )
-        super().__init__(control, Z(target))
-
-    @property
-    def eigenvalues_generator(self) -> Tensor:
-        return torch.cat((torch.tensor(-2, dtype=cdouble), torch.zeros(2**self.n_qubits - 1)))
-
-    @property
-    def eigenvalues(self) -> Tensor:
-        torch.cat((torch.tensor(-1, dtype=cdouble), torch.ones(2**self.n_qubits - 1)))
-
-    def __ascii__(self, console: Console) -> RenderableType:
-        (target, control) = self.qubit_support
-        h = abs(target - control) + 1
-        return Panel(self._block_title, expand=False, height=3 * h)
-
-    def __rich_tree__(self, tree: Tree = None) -> Tree:
-        if tree is None:
-            return Tree(self._block_title)
-        else:
-            tree.add(self._block_title)
-        return tree
-
-    def dagger(self) -> MCZ:
-        return MCZ(self.qubit_support[:-1], self.qubit_support[-1])
+    def __init__(self, control: tuple[int, ...], target: int,
+                 conditions: tuple[bool, ...] = None) -> None:
+        super().__init__(control, Z(target), conditions)
 
 
-class CZ(MCZ):
-    """The CZ gate."""
+class MixinSingleControlledIdemPotent:
+    def __init__(self, control: int, target: int, conditions: tuple[bool, ...] = None) -> None:
+        super().__init__((control,), target, conditions)
 
+    def dagger(self):
+        return self.__class__(self.control_qubits[0], self.target_qubits[0], self.conditions)
+
+
+class CNOT(MixinSingleControlledIdemPotent, MCNOT):
+    name = OpName.CNOT
+
+
+class CX(MixinSingleControlledIdemPotent, MCX):
+    name = OpName.CX
+
+
+class CY(MixinSingleControlledIdemPotent, MCY):
+    name = OpName.CY
+
+
+class CZ(MixinSingleControlledIdemPotent, MCZ):
     name = OpName.CZ
-
-    def __init__(self, control: int, target: int) -> None:
-        super().__init__((control,), target)
-
-    def dagger(self) -> CZ:
-        return CZ(self.qubit_support[-2], self.qubit_support[-1])
 
 
 class MCRX(ParametricControlBlock):
@@ -870,7 +884,7 @@ class CRZ(MCRZ):
 
 
 class CSWAP(ControlBlock):
-    """The CSWAP (Control-SWAP) gate."""
+    """The CSWAP (Control-SWAP) gate.""" # TODO: generalize to multi-controlled SWAP gate
 
     name = OpName.CSWAP
 
@@ -902,12 +916,6 @@ class CSWAP(ControlBlock):
     def eigenvalues(self) -> Tensor:
         return torch.tensor((1, -1, 1, 1, 1, 1, 1, 1), dtype=torch.cdouble)
 
-    @property
-    def nqubits(self) -> int:
-        return 3
-
-    def dagger(self) -> CSWAP:
-        return CSWAP(*self.qubit_support)
 
 
 class T(PrimitiveBlock):
@@ -1078,33 +1086,15 @@ class CPHASE(MCPHASE):
         super().__init__((control,), target, parameter)
 
 
-class Toffoli(ControlBlock):
+class Toffoli(MCX):
     name = OpName.TOFFOLI
 
-    def __init__(self, control: tuple[int, ...], target: int) -> None:
-        self.generator = kron(
-            *[(I(qubit) - Z(qubit)) * 0.5 for qubit in control], X(target) - I(target)
-        )
-        super().__init__(control, X(target))
+    def __init__(self, control: tuple[int, ...], target: int, conditions: tuple[bool, ...] = None) -> None:
+        assert len(control) == 2, "Please specify two control qubits, otherwise use MCX class"
+        super().__init__(control, target, conditions)
 
-    def dagger(self) -> Toffoli:
-        return Toffoli(self.qubit_support[:-1], self.qubit_support[-1])
-
-    @property
-    def n_qubits(self) -> int:
-        return len(self.qubit_support)
-
-    @property
-    def eigenvalues_generator(self) -> Tensor:
-        return torch.tensor(
-            [-2, *[0 for _ in range(2 ** len(self.qubit_support) - 1)]], dtype=cdouble
-        )
-
-    @property
-    def eigenvalues(self) -> Tensor:
-        return torch.tensor(
-            [-1, *[1 for _ in range(2 ** len(self.qubit_support) - 1)]], dtype=cdouble
-        )
+    def dagger(self):
+        return self.__class__(self.control_qubits, self.target_qubits[0], self.conditions)
 
 
 # FIXME: better name that stresses difference to `Wait`?

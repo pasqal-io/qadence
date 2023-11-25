@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from typing import Any, Iterable, Tuple
+import itertools
 
 import sympy
 import torch
@@ -347,12 +348,26 @@ class TimeEvolutionBlock(ParametricBlock):
 
 
 class ControlBlock(PrimitiveBlock):
-    """The abstract ControlBlock."""
+    """The general ControlBlock."""
 
     name = "Control"
+    control_qubits = ()
+    target_qubits = ()
+    conditions = ()
 
-    def __init__(self, control: tuple[int, ...], target_block: PrimitiveBlock) -> None:
+    def __init__(self, control: tuple[int, ...], target_block: PrimitiveBlock,
+                 conditions: tuple[bool, ...] = None) -> None:
         self.blocks = (target_block,)
+        self.control_qubits = control
+        self.target_qubits: tuple[int, ...] = target_block.qubit_support
+        assert set(self.control_qubits).isdisjoint(self.target_qubits)
+        if conditions is None:
+            self.conditions = tuple(itertools.repeat(True, len(self.control_qubits)))
+        else:
+            assert len(control) == len(conditions) and all([isinstance(b, bool) for b in conditions]), \
+                "Please provide a list of Bools the same length as the 'control' tuple, to the " \
+                "conditions keyword argument."
+            self.conditions = conditions
 
         # using tuple expansion because some control operations could
         # have multiple targets, e.g. CSWAP
@@ -383,6 +398,8 @@ class ControlBlock(PrimitiveBlock):
             "qubit_support": self.qubit_support,
             "tag": self.tag,
             "blocks": [b._to_dict() for b in self.blocks],
+            "control_qubits": self.control_qubits,
+            "target_qubits": self.target_qubits,
         }
 
     @classmethod
@@ -390,6 +407,10 @@ class ControlBlock(PrimitiveBlock):
         control = d["qubit_support"][0]
         target = d["qubit_support"][1]
         return cls(control, target)
+
+    def dagger(self) -> ControlBlock:
+        return self.__init__(self.control_qubits, self.blocks[0].dagger(),
+                             conditions=self.conditions)
 
 
 class ParametricControlBlock(ParametricBlock):
@@ -454,3 +475,9 @@ class ParametricControlBlock(ParametricBlock):
 
         s += rf" \[params: {params_str}]"
         return s if self.tag is None else (s + rf" \[tag: {self.tag}]")
+
+    def dagger(self) -> ParametricBlock:  # type: ignore[override]
+        exprs = self.parameters.expressions()
+        args = tuple(-extract_original_param_entry(param) for param in exprs)
+        args = args if -1 in self.qubit_support else (*self.qubit_support, *args)
+        return self.__class__(*args)
