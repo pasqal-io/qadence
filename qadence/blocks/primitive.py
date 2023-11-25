@@ -371,7 +371,7 @@ class ControlBlock(PrimitiveBlock):
 
         # using tuple expansion because some control operations could
         # have multiple targets, e.g. CSWAP
-        super().__init__((*control, *target_block.qubit_support))  # target_block.qubit_support[0]))
+        super().__init__((*control, *target_block.qubit_support))
 
     @property
     def _block_title(self) -> str:
@@ -400,13 +400,15 @@ class ControlBlock(PrimitiveBlock):
             "blocks": [b._to_dict() for b in self.blocks],
             "control_qubits": self.control_qubits,
             "target_qubits": self.target_qubits,
+            "conditions": self.conditions,
         }
 
     @classmethod
     def _from_dict(cls, d: dict) -> ControlBlock:
-        control = d["qubit_support"][0]
-        target = d["qubit_support"][1]
-        return cls(control, target)
+        control = d["control_qubits"]
+        target = PrimitiveBlock._from_dict(d["blocks"][0])
+        conditions = d["conditions"]
+        return cls(control, target, conditions)
 
     def dagger(self) -> ControlBlock:
         return self.__init__(self.control_qubits, self.blocks[0].dagger(),
@@ -417,11 +419,28 @@ class ParametricControlBlock(ParametricBlock):
     """The abstract parametrized ControlBlock."""
 
     name = "ParameterizedControl"
+    control_qubits = ()
+    target_qubits = ()
+    conditions = ()
 
-    def __init__(self, control: tuple[int, ...], target_block: ParametricBlock) -> None:
+    def __init__(self, control: tuple[int, ...], target_block: ParametricBlock,
+                 conditions: tuple[int, ...] = None) -> None:
         self.blocks = (target_block,)
         self.parameters = target_block.parameters
-        super().__init__((*control, target_block.qubit_support[0]))
+        self.control_qubits = control
+        self.target_qubits: tuple[int, ...] = target_block.qubit_support
+        assert set(self.control_qubits).isdisjoint(self.target_qubits)
+        if conditions is None:
+            self.conditions = tuple(itertools.repeat(True, len(self.control_qubits)))
+        else:
+            assert len(control) == len(conditions) and all([isinstance(b, bool) for b in conditions]), \
+                "Please provide a list of Bools the same length as the 'control' tuple, to the " \
+                "conditions keyword argument."
+            self.conditions = conditions
+
+        # using tuple expansion because some control operations could
+        # have multiple targets, e.g. CTimeEvolution
+        super().__init__((*control, *target_block.qubit_support))
 
     @property
     def eigenvalues_generator(self) -> torch.Tensor:
@@ -447,17 +466,21 @@ class ParametricControlBlock(ParametricBlock):
             "qubit_support": self.qubit_support,
             "tag": self.tag,
             "blocks": [b._to_dict() for b in self.blocks],
+            "control_qubits": self.control_qubits,
+            "target_qubits": self.target_qubits,
+            "conditions": self.conditions
         }
 
     @classmethod
     def _from_dict(cls, d: dict) -> ParametricControlBlock:
         from qadence.serialization import deserialize
 
-        control = d["qubit_support"][0]
-        target = d["qubit_support"][1]
+        control = d["control_qubits"]
+        target = d["target_qubits"]
+        conditions = d["conditions"]
         targetblock = d["blocks"][0]
         expr = deserialize(targetblock["parameters"])
-        block = cls(control, target, expr)  # type: ignore[call-arg]
+        block = cls(control, target, expr, conditions)  # type: ignore[call-arg]
         return block
 
     @property
@@ -477,7 +500,5 @@ class ParametricControlBlock(ParametricBlock):
         return s if self.tag is None else (s + rf" \[tag: {self.tag}]")
 
     def dagger(self) -> ParametricBlock:  # type: ignore[override]
-        exprs = self.parameters.expressions()
-        args = tuple(-extract_original_param_entry(param) for param in exprs)
-        args = args if -1 in self.qubit_support else (*self.qubit_support, *args)
-        return self.__class__(*args)
+        return self.__init__(self.control_qubits, self.blocks[0].dagger(),
+                             conditions=self.conditions)

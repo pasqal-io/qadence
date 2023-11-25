@@ -692,10 +692,24 @@ class MCIdemPotentBlock(ControlBlock):
             tree.add(self._block_title)
         return tree
 
+    @classmethod
+    def _from_dict(cls, d: dict) -> MCIdemPotentBlock:
+        control = d["control_qubits"]
+        target = PrimitiveBlock._from_dict(d["blocks"][0])
+        conditions = d["conditions"]
+        return cls(control, target, conditions)
+
 
 class MixinTargetBlockIndex:
     def dagger(self) -> ControlBlock:
         return self.__class__(self.control_qubits, self.target_qubits[0], self.conditions)
+
+    @classmethod
+    def _from_dict(cls, d: dict) -> MCIdemPotentBlock:
+        control = d["control_qubits"]
+        target = d["target_qubits"][0]
+        conditions = d["conditions"]
+        return cls(control, target, conditions)
 
 
 class MCX(MixinTargetBlockIndex, MCIdemPotentBlock):
@@ -753,6 +767,13 @@ class MixinSingleControlledIdemPotent:
     def dagger(self):
         return self.__class__(self.control_qubits[0], self.target_qubits[0], self.conditions)
 
+    @classmethod
+    def _from_dict(cls, d: dict) -> MCIdemPotentBlock:
+        control = d["control_qubits"][0]
+        target = d["target_qubits"][0]
+        conditions = d["conditions"]
+        return cls(control, target, conditions)
+
 
 class CNOT(MixinSingleControlledIdemPotent, MCNOT):
     name = OpName.CNOT
@@ -785,7 +806,84 @@ class CZ(MixinSingleControlledIdemPotent, MCZ):
     name = OpName.CZ
 
 
-class MCRX(ParametricControlBlock):
+class MCSQBRot(ParametricControlBlock):
+
+    def __init__(self, control: tuple[int, ...], target_block: ParametricBlock,
+                 conditions: tuple[int, ...] = None) -> None:
+        super().__init__(control, target_block, conditions)
+        self.generator = kron(
+            *[N(qubit) if self.conditions[index] else I(qubit)-N(qubit) for index, qubit in
+              enumerate(control)], target_block.generator)
+
+    @classmethod
+    def num_parameters(cls) -> int:
+        return 1
+
+    @property
+    def eigenvalues_generator(self) -> Tensor:
+        return torch.cat(
+            (torch.zeros(2**self.n_qubits - 2), torch.tensor([1, -1], dtype=cdouble))
+        )
+
+    @property
+    def eigenvalues(self) -> Tensor: # TODO: check if this holds tru in general case
+        val = evaluate(self.parameters.parameter, as_torch=True)
+        lmbd = torch.cos(val / 2.0) - 1j * torch.sin(val / 2.0)
+        return torch.cat((torch.ones(2**self.n_qubits - 2), lmbd, lmbd.conj()))
+
+    def __rich_tree__(self, tree: Tree = None) -> Tree:
+        if tree is None:
+            return Tree(self._block_title)
+        else:
+            tree.add(self._block_title)
+        return tree
+
+    def __ascii__(self, console: Console) -> RenderableType:
+        (target, control) = self.qubit_support
+        h = abs(target - control) + 1
+        return Panel(self._block_title, expand=False, height=3 * h)
+
+    def dagger(self) -> ParametricBlock:
+        return self.__class__(self.control_qubits,
+                              self.blocks[0].dagger(),
+                              self.conditions)
+
+    @classmethod
+    def _from_dict(cls, d: dict) -> MCSQBRot:
+        control = d["control_qubits"]
+        block = d["blocks"][0]
+        type = block['type']
+        block_class = globals()[type]
+        target = block_class._from_dict(block)
+        conditions = d["conditions"]
+        return cls(control, target, conditions)
+
+
+class SCSQBRotMixin:
+    def __init__(
+        self,
+        control: int,
+        target: int,
+        parameter: Parameter | TNumber | sympy.Expr | str,
+        conditions: tuple[bool, ...] = None
+    ):
+        super().__init__((control,), target, parameter, conditions)
+
+    def dagger(self) -> ParametricBlock:
+        return self.__class__(self.control_qubits[0],
+                              self.target_qubits[0],
+                              -extract_original_param_entry(self.parameters.parameter),
+                              self.conditions)
+
+    @classmethod
+    def _from_dict(cls, d: dict) -> MCSQBRot:
+        control = d["control_qubits"][0]
+        target = d["target_qubits"][0]
+        conditions = d["conditions"]
+        return cls(control, target, conditions)
+
+
+class MCRX(MCSQBRot):
     name = OpName.MCRX
 
     def __init__(
@@ -793,85 +891,62 @@ class MCRX(ParametricControlBlock):
         control: tuple[int, ...],
         target: int,
         parameter: Parameter | TNumber | sympy.Expr | str,
+        conditions: tuple[int, ...] = None
     ) -> None:
-        self.generator = kron(*[(I(qubit) - Z(qubit)) * 0.5 for qubit in control], X(target))
-        super().__init__(control, RX(target, parameter))
+        super().__init__(control, RX(target, parameter), conditions)
+
+    def dagger(self) -> ParametricBlock:
+        return self.__class__(self.control_qubits,
+                              self.target_qubits[0],
+                              -extract_original_param_entry(self.parameters.parameter),
+                              self.conditions)
 
     @classmethod
-    def num_parameters(cls) -> int:
-        return 1
-
-    @property
-    def eigenvalues_generator(self) -> Tensor:
-        return torch.cat(
-            (torch.zeros(2**self.n_qubits - 2), torch.tensor([1, -1], dtype=cdouble))
-        )
-
-    @property
-    def eigenvalues(self) -> Tensor:
-        val = evaluate(self.parameters.parameter, as_torch=True)
-        lmbd = torch.cos(val / 2.0) - 1j * torch.sin(val / 2.0)
-        return torch.cat((torch.ones(2**self.n_qubits - 2), lmbd, lmbd.conj()))
+    def _from_dict(cls, d: dict) -> MCSQBRot:
+        control = d["control_qubits"]
+        target = d["target_qubits"][0]
+        conditions = d["conditions"]
+        return cls(control, target, conditions)
 
 
-class CRX(MCRX):
+class CRX(SCSQBRotMixin, MCRX):
     """The CRX gate."""
 
     name = OpName.CRX
 
-    def __init__(
-        self,
-        control: int,
-        target: int,
-        parameter: Parameter | TNumber | sympy.Expr | str,
-    ):
-        super().__init__((control,), target, parameter)
 
-
-class MCRY(ParametricControlBlock):
+class MCRY(MCSQBRot):
     name = OpName.MCRY
-
     def __init__(
         self,
         control: tuple[int, ...],
         target: int,
         parameter: Parameter | TNumber | sympy.Expr | str,
+        conditions: tuple[int, ...] = None
     ) -> None:
-        self.generator = kron(*[(I(qubit) - Z(qubit)) * 0.5 for qubit in control], Y(target))
-        super().__init__(control, RY(target, parameter))
+        super().__init__(control, RY(target, parameter), conditions)
+
+    def dagger(self) -> ParametricBlock:
+        return self.__class__(self.control_qubits,
+                              self.target_qubits[0],
+                              -extract_original_param_entry(self.parameters.parameter),
+                              self.conditions)
 
     @classmethod
-    def num_parameters(cls) -> int:
-        return 1
-
-    @property
-    def eigenvalues_generator(self) -> Tensor:
-        return torch.cat(
-            (torch.zeros(2**self.n_qubits - 2), torch.tensor([1, -1], dtype=cdouble))
-        )
-
-    @property
-    def eigenvalues(self) -> Tensor:
-        val = evaluate(self.parameters.parameter, as_torch=True)
-        lmbd = torch.cos(val / 2.0) - 1j * torch.sin(val / 2.0)
-        return torch.cat((torch.ones(2**self.n_qubits - 2), lmbd, lmbd.conj()))
+    def _from_dict(cls, d: dict) -> MCSQBRot:
+        control = d["control_qubits"]
+        target = d["target_qubits"][0]
+        conditions = d["conditions"]
+        return cls(control, target, conditions)
 
 
-class CRY(MCRY):
+class CRY(SCSQBRotMixin, MCRY):
     """The CRY gate."""
 
     name = OpName.CRY
 
-    def __init__(
-        self,
-        control: int,
-        target: int,
-        parameter: Parameter | TNumber | sympy.Expr | str,
-    ):
-        super().__init__((control,), target, parameter)
 
-
-class MCRZ(ParametricControlBlock):
+class MCRZ(MCSQBRot):
     name = OpName.MCRZ
 
     def __init__(
@@ -879,39 +954,28 @@ class MCRZ(ParametricControlBlock):
         control: tuple[int, ...],
         target: int,
         parameter: Parameter | TNumber | sympy.Expr | str,
+        conditions: tuple[int, ...] = None
     ) -> None:
-        self.generator = kron(*[(I(qubit) - Z(qubit)) * 0.5 for qubit in control], Z(target))
-        super().__init__(control, RZ(target, parameter))
+        super().__init__(control, RZ(target, parameter), conditions)
+
+    def dagger(self) -> ParametricBlock:
+        return self.__class__(self.control_qubits,
+                              self.target_qubits[0],
+                              -extract_original_param_entry(self.parameters.parameter),
+                              self.conditions)
 
     @classmethod
-    def num_parameters(cls) -> int:
-        return 1
-
-    @property
-    def eigenvalues_generator(self) -> Tensor:
-        return torch.cat(
-            (torch.zeros(2**self.n_qubits - 2), torch.tensor([1, -1], dtype=cdouble))
-        )
-
-    @property
-    def eigenvalues(self) -> Tensor:
-        val = evaluate(self.parameters.parameter, as_torch=True)
-        lmbd = torch.cos(val / 2.0) - 1j * torch.sin(val / 2.0)
-        return torch.cat((torch.ones(2**self.n_qubits - 2), lmbd, lmbd.conj()))
+    def _from_dict(cls, d: dict) -> MCSQBRot:
+        control = d["control_qubits"]
+        target = d["target_qubits"][0]
+        conditions = d["conditions"]
+        return cls(control, target, conditions)
 
 
-class CRZ(MCRZ):
+class CRZ(SCSQBRotMixin, MCRZ):
     """The CRZ gate."""
 
     name = OpName.CRZ
-
-    def __init__(
-        self,
-        control: int,
-        target: int,
-        parameter: Parameter | TNumber | sympy.Expr | str,
-    ):
-        super().__init__((control,), target, parameter)
 
 
 class CSWAP(ControlBlock):
@@ -1061,7 +1125,7 @@ class AnalogSWAP(HamEvo):
         super().__init__(rydberg_ising_hamiltonian_generator, parameter, (control, target))
 
 
-class MCPHASE(ParametricControlBlock):
+class MCPHASE(MCSQBRot):
     name = OpName.MCPHASE
 
     def __init__(
@@ -1069,52 +1133,20 @@ class MCPHASE(ParametricControlBlock):
         control: tuple[int, ...],
         target: int,
         parameter: Parameter | TNumber | sympy.Expr | str,
+        conditions: tuple[int, ...] = None
     ) -> None:
-        self.generator = kron(
-            *[(I(qubit) - Z(qubit)) * 0.5 for qubit in control], Z(target) - I(target)
-        )
-        super().__init__(control, PHASE(target, parameter))
+        super().__init__(control, PHASE(target, parameter), conditions)
 
-    @classmethod
-    def num_parameters(cls) -> int:
-        return 1
+    def dagger(self) -> ParametricBlock:
+        return self.__class__(self.control_qubits,
+                              self.target_qubits[0],
+                              -extract_original_param_entry(self.parameters.parameter),
+                              self.conditions)
 
-    @property
-    def eigenvalues_generator(self) -> Tensor:
-        return torch.cat(
-            (torch.tensor([-2, 0], dtype=cdouble), (torch.zeros(2**self.n_qubits - 2)))
-        )
-
-    @property
-    def eigenvalues(self) -> Tensor:
-        v = evaluate(self.parameters.parameter, as_torch=True)
-        return torch.cat((torch.ones(2**self.n_qubits - 1), torch.exp(1j * v)))
-
-    def __rich_tree__(self, tree: Tree = None) -> Tree:
-        if tree is None:
-            return Tree(self._block_title)
-        else:
-            tree.add(self._block_title)
-        return tree
-
-    def __ascii__(self, console: Console) -> RenderableType:
-        (target, control) = self.qubit_support
-        h = abs(target - control) + 1
-        return Panel(self._block_title, expand=False, height=3 * h)
-
-
-class CPHASE(MCPHASE):
+class CPHASE(SCSQBRotMixin, MCPHASE):
     """The CPHASE gate."""
 
     name = OpName.CPHASE
-
-    def __init__(
-        self,
-        control: int,
-        target: int,
-        parameter: Parameter | TNumber | sympy.Expr | str,
-    ):
-        super().__init__((control,), target, parameter)
 
 
 class Toffoli(MCX):
