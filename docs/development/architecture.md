@@ -21,7 +21,7 @@ In Qadence there are 4 main objects spread across 3 different levels of abstract
 * **Differentiation layer**: Intermediate layer has the purpose of integrating quantum
   computation with a given automatic differentiation engine. It is meant to be purely stateless and
   contains one object:
-    * [`DifferentiableBackend`][qadence.backends.pytorch_wrapper.DifferentiableBackend]:
+    * [`DifferentiableBackend`][qadence.engines.torch.TorchBackend]:
       An abstract class whose concrete implementation wraps a quantum backend and make it
       automatically differentiable using different engines (e.g. PyTorch or Jax).
       Note, that today only PyTorch is supported but there is plan to add also a Jax
@@ -130,7 +130,7 @@ class CustomFunction(Function):
         ...
 ```
 
-The class [`PSRExpectation`][qadence.backends.pytorch_wrapper.PSRExpectation] implements parameter shift rules for all parameters using
+The class [`PSRExpectation`][qadence.engines.torch.differentiable_expectation.PSRExpectation] implements parameter shift rules for all parameters using
 a custom function as the one above. There are a few implementation details to keep in mind if you want
 to modify the PSR code:
 
