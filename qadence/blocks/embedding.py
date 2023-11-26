@@ -137,9 +137,10 @@ def embedding(
             for expr in constant_expressions
         }
     )
+    fn = jnp.array if engine == Engine.JAX else torch.tensor
     params.update(
         {
-            stringify(expr): np.array(expr.tolist(), dtype=np.cdouble)
+            stringify(expr): fn(np.array(expr.tolist(), dtype=np.cdouble))
             for expr in unique_const_matrices
         }
     )
