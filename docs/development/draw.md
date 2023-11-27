@@ -71,6 +71,22 @@ from qadence.draw import html_string # markdown-exec: hide
 print(html_string(model)) # markdown-exec: hide
 ```
 
+```python exec="on" source="material-block" html="1"
+from qadence import *
+
+b = chain(SWAP(0,1), SWAP(0,3))
+from qadence.draw import html_string # markdown-exec: hide
+print(html_string(b)) # markdown-exec: hide
+```
+
+```python exec="on" source="material-block" html="1"
+from qadence import *
+
+b = chain(CPHASE(0, 1, 0.5), CPHASE(0, 2, 0.5), CPHASE(0, 3, 0.5))
+from qadence.draw import html_string # markdown-exec: hide
+print(html_string(b)) # markdown-exec: hide
+```
+
 
 ## Developer documentation
 
