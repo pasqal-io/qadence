@@ -321,6 +321,7 @@ class Backend(BackendInterface):
                 backend_name=self.name,
                 circuit=circuit,
                 observable=observables,
+                param_values=param_values,
                 state=state,
                 measurement=measurement,
                 noise=noise,
