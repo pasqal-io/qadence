@@ -25,7 +25,6 @@ def rydberg_interaction_hamiltonian(
 
     Args:
         register: the register of qubits.
-        device: the RydbergDevice with respective specs.
     """
 
     distances = tensor(list(register.distances.values()), dtype=float64)
@@ -47,6 +46,16 @@ def rydberg_interaction_hamiltonian(
 
 
 def rydberg_drive_hamiltonian(block: ConstantAnalogRotation, register: Register) -> AbstractBlock:
+    """
+    Computes the Rydberg drive Hamiltonian for some local or global rotation.
+
+    H_d = ∑_i (Ω/2 cos(φ) * X_i - sin(φ) * Y_i) - δ * N_i
+
+    Args:
+        block: the ConstantAnalogRotation block containing the parameters.
+        register: the register of qubits.
+    """
+
     if block.qubit_support.is_global:
         qubit_support = tuple(register.nodes)
     else:
@@ -60,5 +69,4 @@ def rydberg_drive_hamiltonian(block: ConstantAnalogRotation, register: Register)
     y_terms = (omega / 2) * add(sin(phase) * Y(i) for i in qubit_support)
     n_terms = delta * add(N(i) for i in qubit_support)
     h_drive: AbstractBlock = x_terms - y_terms - n_terms
-
     return h_drive
