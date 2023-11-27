@@ -8,9 +8,13 @@ concurrency:
 
 
 jobs:
-  test_qadence_mac_windows:
-    name: Test Qadence (ubuntu)
-    runs-on: [windows-latest, macos-latest]
+  test_qadence_windows_mac:
+    name: Test Qadence (Windows, MacOS)
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest]
+        python-version: ["3.10"]
     steps:
     - name: Checkout Qadence
       uses: actions/checkout@v4
