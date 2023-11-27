@@ -135,6 +135,8 @@ class QNN(QuantumModel):
             Tensor: a tensor with the expectation value of the observables passed
                 in the constructor of the model
         """
+        if values is None:
+            values = {}
         if measurement is None:
             measurement = self._measurement
         if noise is None:
