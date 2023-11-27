@@ -86,13 +86,11 @@ def get_random_rot(param: str, qubit_support: tuple[int]) -> AbstractBlock:
 @pytest.mark.parametrize(
     "block",
     [
-        # Currently fails because pyq does the rotations in parallel
-        # and Pulser does sequentially, to be fixed.
-        # kron(
-        #     get_random_rot("x", qubit_support=(0,)),
-        #     get_random_rot("x", qubit_support=(1,)),
-        #     get_random_rot("x", qubit_support=(2,)),
-        # ),
+        kron(
+            get_random_rot("x", qubit_support=(0,)),
+            get_random_rot("x", qubit_support=(1,)),
+            get_random_rot("x", qubit_support=(2,)),
+        ),
         kron(
             get_random_rot("x", (1,)),
             wait("x", qubit_support=(0, 2)),

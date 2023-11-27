@@ -1,17 +1,19 @@
 from __future__ import annotations
 
-from sympy import cos, sin
-
-from qadence.analog.hamiltonian_terms import rydberg_interaction_hamiltonian
+from qadence.analog.hamiltonian_terms import (
+    rydberg_drive_hamiltonian,
+    rydberg_interaction_hamiltonian,
+)
+from qadence.blocks import chain
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.analog import (
     AnalogBlock,
+    AnalogKron,
     ConstantAnalogRotation,
     WaitBlock,
 )
-from qadence.blocks.utils import add
 from qadence.circuit import QuantumCircuit
-from qadence.operations import HamEvo, N, X, Y
+from qadence.operations import HamEvo
 from qadence.register import Register
 from qadence.transpile import apply_fn_to_blocks
 
@@ -33,11 +35,9 @@ def add_background_hamiltonian(
     input_block: AbstractBlock = circuit.block if is_circuit_input else circuit  # type: ignore
     input_register: Register = circuit.register if is_circuit_input else register  # type: ignore
 
-    device_specs = input_register.device_specs
-
-    if device_specs is not None:
+    if input_register.device_specs is not None:
         # Create interaction hamiltonian:
-        h_int = rydberg_interaction_hamiltonian(input_register, device_specs)
+        h_int = rydberg_interaction_hamiltonian(input_register)
 
         # Create addressing pattern:
         # h_addr = (...)
@@ -62,24 +62,27 @@ def add_background_hamiltonian(
 def _analog_to_hevo(
     block: AbstractBlock, register: Register, h_background: AbstractBlock
 ) -> AbstractBlock:
-    support = tuple(register.nodes)
-
     if isinstance(block, AnalogBlock):
         if isinstance(block, WaitBlock):
-            # FIXME: Currently hardcoding the wait to be global
             duration = block.parameters.duration
             return HamEvo(h_background, duration / 1000)
 
         if isinstance(block, ConstantAnalogRotation):
-            # FIXME: Currently hardcoding the rotations to be global
+            h_drive = rydberg_drive_hamiltonian(block, register)
             duration = block.parameters.duration
-            omega = block.parameters.omega
-            delta = block.parameters.delta
-            phase = block.parameters.phase
+            return HamEvo(h_drive + h_background, duration / 1000)
 
-            x_terms = (omega / 2) * add(cos(phase) * X(i) - sin(phase) * Y(i) for i in support)
-            z_terms = delta * add(N(i) for i in support)
-
-            return HamEvo(x_terms - z_terms + h_background, duration / 1000)
+        if isinstance(block, AnalogKron):
+            # FIXME: Clean this code
+            ops = []
+            for block in block.blocks:
+                if isinstance(block, ConstantAnalogRotation):
+                    duration = block.parameters.duration
+                    h_drive = rydberg_drive_hamiltonian(block, register)
+                    ops.append(HamEvo(h_drive + h_background, duration / 1000))
+            if len(ops) == 0:
+                duration = block.parameters.duration  # type: ignore
+                ops.append(HamEvo(h_background, duration / 1000))
+            return chain(*ops)
 
     return block
