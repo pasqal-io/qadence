@@ -11,15 +11,14 @@ jobs:
   test_qadence_mac_windows:
     name: Test Qadence (ubuntu)
     runs-on: [windows-latest, macos-latest]
-    python-version: "3.10"
     steps:
     - name: Checkout Qadence
       uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python 3.10
       uses: actions/setup-python@v4
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: '3.10'
 
     - name: Install Hatch
       run: |
