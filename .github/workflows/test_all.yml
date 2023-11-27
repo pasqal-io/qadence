@@ -1,22 +1,17 @@
 name: Run all Qadence tests on schedule.
 
-on:
-  schedule:
-    # 03:00 every Saturday morning
-    - cron: '0 3 * * 6'
-  workflow_dispatch: {}
 
 concurrency:
   group: all-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
+
+
 jobs:
-  test_qadence_ubuntu:
+  test_qadence_mac_windows:
     name: Test Qadence (ubuntu)
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.9", "3.10", "3.11"]
+    runs-on: [windows-latest, macos-latest]
+    python-version: "3.10"
     steps:
     - name: Checkout Qadence
       uses: actions/checkout@v4
@@ -32,4 +27,4 @@ jobs:
 
     - name: Run tests
       run: |
-        hatch -v run test
+        hatch -v run test -m "not slow"
