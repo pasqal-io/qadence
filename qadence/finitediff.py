@@ -14,6 +14,7 @@ def finitediff(
 ) -> Tensor:
     """
     Arguments:
+
         f: Function to differentiate
         x: Input of shape `(batch_size, input_size)`
         derivative_indices: which *input* to differentiate (i.e. which variable x[:,i])

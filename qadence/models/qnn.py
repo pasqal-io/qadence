@@ -104,7 +104,7 @@ class QNN(QuantumModel):
 
     def forward(
         self,
-        values: Tensor,
+        values: dict[str, Tensor] | Tensor = None,
         state: Tensor | None = None,
         measurement: Measurements | None = None,
         noise: Noise | None = None,

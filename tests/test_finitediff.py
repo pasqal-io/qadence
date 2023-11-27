@@ -52,4 +52,3 @@ def test_finitediff(idxs: tuple) -> None:
     print(f"{finitediff(ufa, xs, idxs) = }")
     print(f"{_torch_derivative(ufa, xs, idxs) = }")
     assert torch.allclose(finitediff(ufa, xs, idxs), _torch_derivative(ufa, xs, idxs), atol=1e-3)
-
