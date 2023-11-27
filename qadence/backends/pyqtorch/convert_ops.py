@@ -130,7 +130,10 @@ def convert_block(
     elif isinstance(block, tuple(non_unitary_gateset)):
         if isinstance(block, ProjectorBlock):
             projector = getattr(pyq, block.name)
-            return [projector(ket=block.ket, bra=block.bra, qubit_support=qubit_support)]
+            if block.name == OpName.N:
+                return [projector(target=qubit_support)]
+            else:
+                return [projector(qubit_support=qubit_support, ket=block.ket, bra=block.bra)]
         else:
             return [getattr(pyq, block.name)(qubit_support[0])]
     elif isinstance(block, tuple(single_qubit_gateset)):
