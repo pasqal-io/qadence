@@ -547,7 +547,6 @@ def test_projector_with_pyqtorch(projector: AbstractBlock, state: Tensor, exp_wf
     backend_inst = backend_factory(backend=BackendName.PYQTORCH)
     conv_circuit = backend_inst.circuit(circuit=circuit)
     wf = backend_inst.run(circuit=conv_circuit, state=state)
-    # breakpoint()
     assert torch.allclose(wf, exp_wf)
 
 
