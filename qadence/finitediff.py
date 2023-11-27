@@ -14,17 +14,16 @@ def finitediff(
 ) -> Tensor:
     """
     Arguments:
-
         f: Function to differentiate
         x: Input of shape `(batch_size, input_size)`
         derivative_indices: which *input* to differentiate (i.e. which variable x[:,i])
-        eps: finite difference spacing
+        eps: finite difference spacing (uses `torch.finfo(x.dtype).eps ** (1 / (2 + order))` as a
+            default)
     """
 
     if eps is None:
         order = len(derivative_indices)
-        # FIXME: this is the float64 machine epsilon, should probably be fixed for float32
-        eps = 2.220446049250313e-16 ** (1 / (2 + order))
+        eps = torch.finfo(x.dtype).eps ** (1 / (2 + order))
 
     # compute derivative direction vector(s)
     eps = torch.as_tensor(eps, dtype=x.dtype)
@@ -44,4 +43,4 @@ def finitediff(
     elif len(derivative_indices) == 1:
         return (f(x + ev) - f(x - ev)) * _eps / 2
     else:
-        raise
+        raise ValueError("If you see this error there is a bug in the `finitediff` function.")
