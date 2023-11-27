@@ -37,7 +37,7 @@ def embedding(
 ) -> tuple[ParamDictType, Callable[[ParamDictType, ParamDictType], ParamDictType],]:
     """Construct embedding function which maps user-facing parameters to either *expression-level*.
 
-    parameters or *gate-level* parameters. The construced embedding function has the signature:
+    parameters or *gate-level* parameters. The constructed embedding function has the signature:
 
          embedding_fn(params: ParamDictType, inputs: ParamDictType) -> ParamDictType:
 
