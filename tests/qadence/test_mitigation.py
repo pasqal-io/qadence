@@ -112,7 +112,7 @@ def test_readout_mitigation_quantum_model(
         ),
     ],
 )
-def test_analog_zne_with_pulser(
+def test_analog_zne_with_noise_levels(
     analog_block: AbstractBlock, observable: AbstractBlock, noise_probas: NDArray, noise_type: str
 ) -> None:
     circuit = QuantumCircuit(2, analog_block)
@@ -122,6 +122,51 @@ def test_analog_zne_with_pulser(
     options = {"noise_probas": noise_probas}
     noise = Noise(protocol=noise_type, options=options)
     mitigation = Mitigations(protocol=Mitigations.ANALOG_ZNE)
-    noisy_expectation = model.expectation(noise=noise, mitigation=mitigation)
+    mitigated_expectation = model.expectation(noise=noise, mitigation=mitigation)
     exact_expectation = model.expectation()
-    assert torch.allclose(noisy_expectation, exact_expectation, atol=1.0e-2)
+    assert torch.allclose(mitigated_expectation, exact_expectation, atol=1.0e-2)
+
+
+@pytest.mark.parametrize(
+    "analog_block, observable, noise_probas, noise_type, stretches",
+    [
+        (
+            chain(AnalogRX("t"), AnalogRZ(pi)),
+            [Z(0) + Z(1)],
+            [0.1],
+            Noise.DEPOLARIZING,
+            {"t": torch.tensor([0.5, 1.0, 1.5, 2.0])},
+        ),
+        # (
+        #     # Hardcoded time and angle for Bell state preparation.
+        #     chain(
+        #         entangle(383, qubit_support=(0, 1)),
+        #         RY(0, 3.0 * pi / 2.0),
+        #     ),
+        #     [hamiltonian_factory(2, detuning=Z)],
+        #     np.linspace(0.1, 0.5, 8),
+        #     Noise.DEPHASING,
+        # ),
+    ],
+)
+def test_analog_zne_with_pulse_stretching(
+    analog_block: AbstractBlock,
+    observable: AbstractBlock,
+    noise_probas: NDArray,
+    noise_type: str,
+    stretches: dict,
+) -> None:
+    circuit = QuantumCircuit(2, analog_block)
+    model = QuantumModel(
+        circuit=circuit, observable=observable, backend=BackendName.PULSER, diff_mode=DiffMode.GPSR
+    )
+    options = {"noise_probas": noise_probas}
+    noise = Noise(protocol=noise_type, options=options)
+    options = {"stretches": True}
+    mitigation = Mitigations(protocol=Mitigations.ANALOG_ZNE, options=options)
+    # breakpoint()
+    mitigated_expectation = model.expectation(values=stretches, noise=noise, mitigation=mitigation)
+    exact_t = {"t": torch.tensor([0.5])}
+    exact_expectation = model.expectation(values=exact_t)
+    breakpoint()
+    assert torch.allclose(mitigated_expectation, exact_expectation, atol=2.0e-1)
