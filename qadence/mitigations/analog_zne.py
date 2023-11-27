@@ -61,6 +61,9 @@ def analog_zne(
         KeyError(f"A noise model should be choosen from {Noise.list()}. Got {noise_model}.")
     backend = backend_factory(backend=BackendName.PULSER, diff_mode=None)
     backend = cast(Backend, backend)
+    stretches = mitigation.options.get("stretches", False)
+    # Signals to use the stretches as parameters for the ZNE data.
+    # They should be embedded before use.
     zne_datasets = []
     # Get noisy density matrices.
     noisy_density_matrices = backend.run_dm(
@@ -80,7 +83,10 @@ def analog_zne(
             ]
         )
     # Zero-noise extrapolate.
-    extrapolated_exp_values = zne(noise=noise, zne_datasets=zne_datasets)
+    if stretches:
+        extrapolated_exp_values = zne_pulse(stretches=param_values, zne_datasets=zne_datasets)
+    else:
+        extrapolated_exp_values = zne_noise(noise=noise, zne_datasets=zne_datasets)
     return torch.tensor(extrapolated_exp_values)
 
 
