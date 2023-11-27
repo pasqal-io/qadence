@@ -17,7 +17,20 @@ from qadence.noise import Noise
 from qadence.utils import Endianness
 
 
-def zne(noise: Noise, zne_datasets: list) -> list:
+def zne_pulse(stretches: dict, zne_datasets: list) -> list:
+    # Rearrange the dataset by selecting each element in the batches.
+    poly_fits = []
+    stretch_param = list(stretches.values())[0]
+    breakpoint()
+    for datasets in zne_datasets:  # Loop over batches of observables.
+        for dataset in datasets:
+            # Polynomial fit function.
+            poly_fits.append(np.poly1d(np.polyfit(stretch_param[1:], dataset[1:], 4)))
+
+    return list(map(lambda p: p(stretch_param[0]), poly_fits))  # Return the zero-noise fitted value.
+
+
+def zne_noise(noise: Noise, zne_datasets: list) -> list:
     # Rearrange the dataset by selecting each element in the batches.
     noise_probas = noise.options.get("noise_probas")
     poly_fits = []
