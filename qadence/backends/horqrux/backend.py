@@ -17,11 +17,11 @@ from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.noise import Noise
-from qadence.transpile import invert_endianness
+from qadence.transpile import flatten, invert_endianness, scale_primitive_blocks_only, transpile
 from qadence.types import BackendName, Endianness, Engine, ParamDictType, ReturnType
 from qadence.utils import int_to_basis
 
-from .config import Configuration
+from .config import Configuration, default_passes
 from .convert_ops import HorqruxCircuit, convert_block, convert_observable
 
 
@@ -41,12 +41,26 @@ class Backend(BackendInterface):
     engine: Engine = Engine.JAX
 
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:
+        passes = self.config.transpilation_passes
+        if passes is None:
+            passes = default_passes(self.config)
+
+        original_circ = circuit
+        if len(passes) > 0:
+            circuit = transpile(*passes)(circuit)
         ops = convert_block(circuit.block, n_qubits=circuit.n_qubits, config=self.config)
-        return ConvertedCircuit(native=HorqruxCircuit(ops), abstract=circuit, original=circuit)
+        return ConvertedCircuit(
+            native=HorqruxCircuit(ops), abstract=circuit, original=original_circ
+        )
 
     def observable(self, observable: AbstractBlock, n_qubits: int) -> ConvertedObservable:
-        hq_obs = convert_observable(observable, n_qubits=n_qubits, config=self.config)
-        return ConvertedObservable(native=hq_obs, abstract=observable, original=observable)
+        transpilations = [
+            flatten,
+            scale_primitive_blocks_only,
+        ]
+        block = transpile(*transpilations)(observable)  # type: ignore[call-overload]
+        hq_obs = convert_observable(block, n_qubits=n_qubits, config=self.config)
+        return ConvertedObservable(native=hq_obs, abstract=block, original=observable)
 
     def run(
         self,

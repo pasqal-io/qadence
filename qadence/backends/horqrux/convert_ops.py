@@ -115,7 +115,12 @@ def convert_block(
         elif isinstance(block, ChainBlock):
             ops = ops
         elif isinstance(block, KronBlock):
-            if all([isinstance(b, ParametricBlock) for b in block.blocks]):
+            if all(
+                [
+                    isinstance(b, ParametricBlock) and not isinstance(b, ScaleBlock)
+                    for b in block.blocks
+                ]
+            ):
                 param_names = [config.get_param_name(b)[0] for b in block.blocks if b.is_parametric]
                 ops = [
                     HorqKronParametric(
@@ -278,13 +283,7 @@ class HorqScaleGate(QdHorQGate):
         self.parameter: str = parameter_name
 
     def forward(self, state: ArrayLike, values: ParamDictType) -> ArrayLike:
-        if isinstance(values, dict):
-            val = jnp.array(values[self.parameter])
-
-        else:
-            raise
-
-        return val * self.op.forward(state, values)
+        return jnp.array(values[self.parameter]) * self.op.forward(state, values)
 
 
 IMAT = jnp.eye(2, dtype=jnp.cdouble)

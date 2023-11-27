@@ -13,7 +13,7 @@ from torch import Tensor
 
 from qadence.backend import BackendConfiguration
 from qadence.backends.api import backend_factory, config_factory
-from qadence.backends.utils import jarr_to_tensor
+from qadence.backends.utils import jarr_to_tensor, tensor_to_jnp
 from qadence.blocks import AbstractBlock, chain, kron
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import total_magnetization
@@ -248,7 +248,10 @@ def test_expectation_for_random_circuit(
     pyqtorch_expectation = bknd_pyqtorch.expectation(
         circ_pyqtorch, obs_pyqtorch, embed_pyqtorch(params_pyqtorch, inputs)
     )[0]
-    expectation = bknd.expectation(circ, obs, embed(params, inputs))[0]
+    if inputs and backend == BackendName.HORQRUX:
+        inputs = {k: tensor_to_jnp(v) for k, v in inputs.items()}
+
+    expectation = bknd.expectation(circ, obs, embed(params, inputs))
     if backend == BackendName.HORQRUX:
         expectation = jarr_to_tensor(expectation, dtype=torch.double)
     assert torch.allclose(pyqtorch_expectation, expectation, atol=ATOL_DICT[backend])
