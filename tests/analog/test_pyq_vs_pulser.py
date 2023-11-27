@@ -10,6 +10,7 @@ from qadence.blocks import AbstractBlock, chain, kron
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import ising_hamiltonian, total_magnetization
 from qadence.divergences import js_divergence
+from qadence.execution import run
 from qadence.models import QuantumModel
 from qadence.operations import (
     CNOT,
@@ -65,21 +66,61 @@ def test_analog_op_run(
 
     circuit = QuantumCircuit(register, block)
 
-    model_pyqtorch = QuantumModel(
-        circuit,
-        backend=BackendName.PYQTORCH,
-        diff_mode=DiffMode.AD,
-    )
-    model_pyqtorch = QuantumModel(circuit, backend=BackendName.PYQTORCH)
+    wf_pyq = run(circuit, values=values, state=init_state, backend=BackendName.PYQTORCH)
+    wf_pulser = run(circuit, values=values, state=init_state, backend=BackendName.PULSER)
 
-    model_pulser = QuantumModel(
-        circuit,
-        backend=BackendName.PULSER,
-        diff_mode=DiffMode.GPSR,
+    assert equivalent_state(wf_pyq, wf_pulser, atol=ATOL_DICT[BackendName.PULSER])
+
+
+def get_random_rot(param: str, qubit_support: tuple[int]) -> AbstractBlock:
+    return AnalogRot(
+        duration=param,
+        omega=torch.rand(1),
+        delta=torch.rand(1),
+        phase=torch.rand(1),
+        qubit_support=qubit_support,
     )
 
-    wf_pyq = model_pyqtorch.run(values=values, state=init_state)
-    wf_pulser = model_pulser.run(values=values, state=init_state)
+
+@pytest.mark.parametrize("spacing", [8.0, 15.0])
+@pytest.mark.parametrize(
+    "block",
+    [
+        # Currently fails because pyq does the rotations in parallel
+        # and Pulser does sequentially, to be fixed.
+        # kron(
+        #     get_random_rot("x", qubit_support=(0,)),
+        #     get_random_rot("x", qubit_support=(1,)),
+        #     get_random_rot("x", qubit_support=(2,)),
+        # ),
+        kron(
+            get_random_rot("x", (1,)),
+            wait("x", qubit_support=(0, 2)),
+        ),
+        chain(
+            kron(
+                get_random_rot("x", (0,)),
+                wait("x", qubit_support=(1, 2)),
+            ),
+            kron(
+                get_random_rot("x", (2,)),
+                wait("x", qubit_support=(0, 1)),
+            ),
+        ),
+    ],
+)
+def test_local_analog_op_run(spacing: float, block: AbstractBlock) -> None:
+    n_qubits = 3
+    init_state = random_state(n_qubits)
+
+    register = Register.line(n_qubits, spacing=spacing)
+
+    circuit = QuantumCircuit(register, block)
+
+    values = {"x": 5.0 + torch.rand(1)}
+
+    wf_pyq = run(circuit, values=values, state=init_state, backend=BackendName.PYQTORCH)
+    wf_pulser = run(circuit, values=values, state=init_state, backend=BackendName.PULSER)
 
     assert equivalent_state(wf_pyq, wf_pulser, atol=ATOL_DICT[BackendName.PULSER])
 
