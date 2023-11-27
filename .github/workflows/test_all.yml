@@ -1,5 +1,5 @@
 name: Run all Qadence tests on schedule.
- on: push
+on: push
 
 concurrency:
   group: all-${{ github.head_ref || github.run_id }}
