@@ -40,7 +40,7 @@ dependencies = [
     "jsonschema",
     "nevergrad",
     "scipy",
-    "pyqtorch==1.0.1",
+    "pyqtorch==1.0.3",
     "matplotlib",
     "jax",
     "flax",
