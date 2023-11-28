@@ -112,7 +112,7 @@ def test_mixing_digital_analog() -> None:
 def test_custom_interaction_function() -> None:
     circuit = QuantumCircuit(2, wait(duration=100))
     emulated = add_interaction(circuit, interaction=lambda reg, pairs: I(0))
-    assert emulated.block == HamEvo(I(0), 100 / 1000)
+    assert emulated.block == HamEvo(kron(I(0), I(1)), 100 / 1000)
 
     m = QuantumModel(circuit, configuration={"interaction": lambda reg, pairs: I(0)})
-    assert m._circuit.abstract.block == HamEvo(I(0), 100 / 1000)
+    assert m._circuit.abstract.block == HamEvo(kron(I(0), I(1)), 100 / 1000)

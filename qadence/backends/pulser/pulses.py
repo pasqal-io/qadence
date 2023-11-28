@@ -10,7 +10,7 @@ from pulser.pulse import Pulse
 from pulser.sequence.sequence import Sequence
 from pulser.waveforms import CompositeWaveform, ConstantWaveform, RampWaveform
 
-from qadence import Register
+from qadence import Parameter, Register
 from qadence.blocks import AbstractBlock, CompositeBlock
 from qadence.blocks.analog import (
     AnalogBlock,
@@ -40,6 +40,62 @@ supported_gates = [
     OpName.ANALOGSWAP,
     OpName.WAIT,
 ]
+
+
+def add_addressing_pattern(
+    sequence: Sequence,
+    config: Configuration,
+) -> None:
+    total_duration = sequence.get_duration()
+    n_qubits = len(sequence.register.qubits)
+
+    support = tuple(range(n_qubits))
+    if config.addressing_pattern is not None:
+        amp = config.addressing_pattern.amp
+        det = config.addressing_pattern.det
+        weights_amp = config.addressing_pattern.weights_amp
+        weights_det = config.addressing_pattern.weights_det
+        local_constr_amp = config.addressing_pattern.local_constr_amp
+        local_constr_det = config.addressing_pattern.local_constr_det
+        global_constr_amp = config.addressing_pattern.global_constr_amp
+        global_constr_det = config.addressing_pattern.global_constr_det
+    else:
+        amp = 0.0
+        det = 0.0
+        weights_amp = {i: Parameter(0.0) for i in support}
+        weights_det = {i: Parameter(0.0) for i in support}
+        local_constr_amp = {i: 0.0 for i in support}
+        local_constr_det = {i: 0.0 for i in support}
+        global_constr_amp = 0.0
+        global_constr_det = 0.0
+
+    for i in support:
+        # declare separate local channel for each qubit
+        sequence.declare_channel(f"ch_q{i}", "rydberg_local", initial_target=0)
+
+    # add amplitude and detuning patterns
+    for i in support:
+        if weights_amp[i].is_number:  # type: ignore [union-attr]
+            w_amp = evaluate(weights_amp[i], as_torch=True) * local_constr_amp[i]
+        else:
+            raise ValueError(
+                "Pulser backend currently doesn't support parametrized amplitude pattern weights."
+            )
+
+        if weights_det[i].is_number:  # type: ignore [union-attr]
+            w_det = evaluate(weights_det[i], as_torch=True) * local_constr_det[i]
+        else:
+            raise ValueError(
+                "Pulser backend currently doesn't support parametrized detuning pattern weights."
+            )
+
+        omega = global_constr_amp * amp * w_amp
+        detuning = global_constr_det * det * w_det
+        pulse = Pulse.ConstantPulse(
+            duration=total_duration, amplitude=omega, detuning=detuning, phase=0
+        )
+        sequence.target(i, f"ch_q{i}")
+        sequence.add(pulse, f"ch_q{i}", protocol="no-delay")
 
 
 def add_pulses(

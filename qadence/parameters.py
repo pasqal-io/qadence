@@ -10,7 +10,7 @@ from sympy import *
 from sympy import Array, Basic, Expr, Symbol, sympify
 from sympy2jax import SymbolicModule as JaxSympyModule
 from sympytorch import SymPyModule as torchSympyModule
-from torch import Tensor, rand, tensor
+from torch import Tensor, heaviside, no_grad, rand, tensor
 
 from qadence.logger import get_logger
 from qadence.types import Engine, TNumber
@@ -198,7 +198,13 @@ def torchify(expr: Expr) -> torchSympyModule:
     Returns:
         A torchified, differentiable Expression.
     """
-    extra_funcs = {sympy.core.numbers.ImaginaryUnit: 1.0j}
+
+    def heaviside_func(x: Tensor, _: Any) -> Tensor:
+        with no_grad():
+            res = heaviside(x, tensor(0.5))
+        return res
+
+    extra_funcs = {sympy.core.numbers.ImaginaryUnit: 1.0j, sympy.Heaviside: heaviside_func}
     return torchSympyModule(expressions=[sympy.N(expr)], extra_funcs=extra_funcs)
 
 
