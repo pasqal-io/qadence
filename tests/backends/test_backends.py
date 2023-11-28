@@ -282,8 +282,12 @@ def test_compare_run_to_sample(backend: BackendName, circuit: QuantumCircuit) ->
     bknd = backend_factory(backend)
     (conv_circ, _, embed, params) = bknd.convert(circuit)
     inputs = rand_featureparameters(circuit, 1)
+    if inputs and backend == BackendName.HORQRUX:
+        inputs = {k: tensor_to_jnp(v) for k, v in inputs.items()}
     samples = bknd.sample(conv_circ, embed(params, inputs), n_shots=1000)
     wf = bknd.run(conv_circ, embed(params, inputs))
+    if backend == BackendName.HORQRUX:
+        wf = jarr_to_tensor(wf)
     probs = list(torch.abs(torch.pow(wf, 2)).flatten().detach().numpy())
     bitstrngs = nqubits_to_basis(circuit.n_qubits)
     wf_counter = Counter(
