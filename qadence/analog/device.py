@@ -12,13 +12,13 @@ class RydbergDevice:
     """
     Dataclass for interacting Rydberg atoms under an Hamiltonian:
 
-    H = ∑ᵢ(Ω/2 cos(φ)*Xᵢ - sin(φ)*Yᵢ - δnᵢ) + H_int,
+    H = ∑_i [Ω/2 * (cos(φ) * Xᵢ - sin(φ) * Yᵢ) - δ * N_i] + H_int,
 
     where:
 
-    H_int = ∑_(j<i) (C_6 / R**6) * kron(N_i, N_j) for the NN interaction;
+    H_int = ∑_(j<i) (C_6 / R**6) * (N_i @ N_j) for the NN interaction;
 
-    H_int = ∑_(j<i) (C_3 / R**3) * (kron(X_i, X_j) + kron(Y_i, Y_j)) for the XY interaction;
+    H_int = ∑_(j<i) (C_3 / R**3) * ((X_i @ X_j) + (Y_i @ Y_j)) for the XY interaction;
     """
 
     interaction: Interaction = Interaction.NN
