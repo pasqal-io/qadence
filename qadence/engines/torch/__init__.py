@@ -1,4 +1,4 @@
 from __future__ import annotations
 
 from .differentiable_backend import TorchBackend
-from .differentiable_expectation import TorchDifferentiableExpectation
+from .differentiable_expectation import PSRExpectation, TorchDifferentiableExpectation
