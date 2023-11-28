@@ -25,9 +25,6 @@ class CloudConfiguration:
 
 @dataclass
 class Configuration(BackendConfiguration):
-    # device: RydbergDevice = IdealDevice()
-    # """The device including the specs to initialize the backend Pulser Device."""
-
     device_type: DeviceType = DeviceType.IDEALIZED
     """The type of quantum Device to use in the simulations.
 

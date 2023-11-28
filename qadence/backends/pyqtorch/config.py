@@ -44,9 +44,6 @@ class Configuration(BackendConfiguration):
     use_single_qubit_composition: bool = False
     """Composes chains of single qubit gates into a single matmul if possible."""
 
-    # device: RydbergDevice = IdealDevice()
-    # """The device including the specs for the emulated-analog interface."""
-
     loop_expectation: bool = False
     """When computing batches of expectation values, only allocate one wavefunction.
 
