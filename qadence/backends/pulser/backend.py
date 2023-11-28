@@ -35,7 +35,7 @@ from .cloud import get_client
 from .config import Configuration
 from .convert_ops import convert_observable
 from .devices import IdealDevice, RealisticDevice
-from .pulses import add_pulses, add_addressing_pattern
+from .pulses import add_addressing_pattern, add_pulses
 
 logger = get_logger(__file__)
 

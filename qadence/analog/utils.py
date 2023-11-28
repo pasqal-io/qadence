@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-
 from typing import Union
 
 from sympy import cos, sin
@@ -10,7 +9,7 @@ from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.analog import (
     ConstantAnalogRotation,
 )
-from qadence.blocks.utils import add, kron
+from qadence.blocks.utils import add
 from qadence.operations import I, N, X, Y, Z
 from qadence.register import Register
 
