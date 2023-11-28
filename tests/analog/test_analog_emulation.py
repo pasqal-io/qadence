@@ -81,13 +81,12 @@ def test_far_add_interaction(analog: AnalogBlock, digital_fn: Callable, register
             AnalogRot(duration=1000, omega=1.0, delta=0.0, phase=0),
             AnalogRot(duration=1000, omega=0.0, delta=1.0, phase=0),
         ),
-        # kron(AnalogRX(pi, qubit_support=(0, 1)), wait(1000, qubit_support=(2, 3))),
+        kron(AnalogRX(pi, qubit_support=(0, 1)), wait(1000, qubit_support=(2, 3))),
     ],
 )
 @pytest.mark.parametrize("register", [Register.from_coordinates([(0, 5), (5, 5), (5, 0), (0, 0)])])
 @pytest.mark.flaky(max_runs=5)
 def test_close_add_interaction(block: AnalogBlock, register: Register) -> None:
-    # FIXME: Unify config device interfaces
     register = register.rescale_coords(scaling=8.0)
     pulser_samples = sample(register, block, backend="pulser", n_shots=1000)[0]
     pyqtorch_samples = sample(register, block, backend="pyqtorch", n_shots=1000)[0]

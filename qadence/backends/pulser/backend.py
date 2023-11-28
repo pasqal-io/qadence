@@ -97,7 +97,6 @@ def make_sequence(circ: QuantumCircuit, config: Configuration) -> Sequence:
     sequence.declare_channel(LOCAL_CHANNEL, "rydberg_local", initial_target=0)
 
     add_pulses(sequence, circ.block, config, qadence_register)
-    sequence.measure()
 
     return sequence
 
@@ -219,7 +218,8 @@ class Backend(BackendInterface):
 
         for i, param_values_el in enumerate(vals):
             sequence = self.assign_parameters(circuit, param_values_el)
-            add_addressing_pattern(sequence, self.config)
+            pattern = circuit.original.register.device_specs.pattern
+            add_addressing_pattern(sequence, pattern)
             sequence.measure()
             sim_result = simulate_sequence(sequence, self.config, state, n_shots=None)
             wf = (
@@ -289,7 +289,8 @@ class Backend(BackendInterface):
         samples = []
         for param_values_el in vals:
             sequence = self.assign_parameters(circuit, param_values_el)
-            add_addressing_pattern(sequence, self.config)
+            pattern = circuit.original.register.device_specs.pattern
+            add_addressing_pattern(sequence, pattern)
             sequence.measure()
             sample = simulate_sequence(sequence, self.config, state, n_shots=n_shots)
             samples.append(sample)

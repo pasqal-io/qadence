@@ -3,6 +3,7 @@ from __future__ import annotations
 from qadence.analog.hamiltonian_terms import (
     rydberg_drive_hamiltonian,
     rydberg_interaction_hamiltonian,
+    rydberg_pattern_hamiltonian,
 )
 from qadence.blocks import chain
 from qadence.blocks.abstract import AbstractBlock
@@ -40,9 +41,9 @@ def add_background_hamiltonian(
         h_int = rydberg_interaction_hamiltonian(input_register)
 
         # Create addressing pattern:
-        # h_addr = (...)
+        h_addr = rydberg_pattern_hamiltonian(input_register)
 
-        h_background = h_int  # + h_addr
+        h_background = h_int + h_addr
 
         output_block = apply_fn_to_blocks(
             input_block,

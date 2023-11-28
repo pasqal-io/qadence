@@ -11,6 +11,7 @@ from pulser.sequence.sequence import Sequence
 from pulser.waveforms import CompositeWaveform, ConstantWaveform, RampWaveform
 
 from qadence import Parameter, Register
+from qadence.analog import AddressingPattern
 from qadence.blocks import AbstractBlock, CompositeBlock
 from qadence.blocks.analog import (
     AnalogBlock,
@@ -44,21 +45,21 @@ supported_gates = [
 
 def add_addressing_pattern(
     sequence: Sequence,
-    config: Configuration,
+    pattern: AddressingPattern | None,
 ) -> None:
     total_duration = sequence.get_duration()
     n_qubits = len(sequence.register.qubits)
 
     support = tuple(range(n_qubits))
-    if config.addressing_pattern is not None:
-        amp = config.addressing_pattern.amp
-        det = config.addressing_pattern.det
-        weights_amp = config.addressing_pattern.weights_amp
-        weights_det = config.addressing_pattern.weights_det
-        local_constr_amp = config.addressing_pattern.local_constr_amp
-        local_constr_det = config.addressing_pattern.local_constr_det
-        global_constr_amp = config.addressing_pattern.global_constr_amp
-        global_constr_det = config.addressing_pattern.global_constr_det
+    if pattern is not None:
+        amp = pattern.amp
+        det = pattern.det
+        weights_amp = pattern.weights_amp
+        weights_det = pattern.weights_det
+        local_constr_amp = pattern.local_constr_amp
+        local_constr_det = pattern.local_constr_det
+        global_constr_amp = pattern.global_constr_amp
+        global_constr_det = pattern.global_constr_det
     else:
         amp = 0.0
         det = 0.0

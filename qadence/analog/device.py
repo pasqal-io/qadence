@@ -4,6 +4,7 @@ from dataclasses import dataclass, fields
 
 from torch import pi
 
+from qadence.analog import AddressingPattern
 from qadence.types import DeviceType, Interaction
 
 
@@ -36,8 +37,8 @@ class RydbergDevice:
     max_amp: float = 2 * pi * 3
     """Maximum value of the amplitude Ω."""
 
-    pattern: None = None
-    """Addressing pattern to be added."""
+    pattern: AddressingPattern | None = None
+    """Semi-local addressing pattern configuration."""
 
     device_type: DeviceType = DeviceType.IDEALIZED
     """DeviceType.IDEALIZED or REALISTIC to convert to the Pulser backend."""
@@ -57,7 +58,7 @@ class RydbergDevice:
         return cls(**d)
 
 
-def IdealDevice(pattern: None = None) -> RydbergDevice:
+def IdealDevice(pattern: AddressingPattern | None = None) -> RydbergDevice:
     return RydbergDevice(
         interaction=Interaction.NN,
         rydberg_level=60,
@@ -69,7 +70,7 @@ def IdealDevice(pattern: None = None) -> RydbergDevice:
     )
 
 
-def RealisticDevice(pattern: None = None) -> RydbergDevice:
+def RealisticDevice(pattern: AddressingPattern | None = None) -> RydbergDevice:
     return RydbergDevice(
         interaction=Interaction.NN,
         rydberg_level=60,

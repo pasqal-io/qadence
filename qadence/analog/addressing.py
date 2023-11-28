@@ -21,6 +21,8 @@ def sigmoid(x: torch.Tensor, a: float, b: float) -> sympy.Expr:
 
 @dataclass
 class AddressingPattern:
+    """Semi-local addressing pattern."""
+
     n_qubits: int
     """Number of qubits in register."""
 
