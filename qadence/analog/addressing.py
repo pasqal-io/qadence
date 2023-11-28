@@ -8,22 +8,11 @@ import torch
 from numpy import pi
 
 from qadence.parameters import Parameter, evaluate
-from qadence.types import StrEnum
 
 GLOBAL_MAX_AMPLITUDE = 300
 GLOBAL_MAX_DETUNING = 2 * pi * 2000
 LOCAL_MAX_AMPLITUDE = 3
 LOCAL_MAX_DETUNING = 2 * pi * 20
-
-
-class WeightConstraint(StrEnum):
-    """Supported types of constraints for addressing weights."""
-
-    NORMALIZE = "normalize"
-    """Normalize weights so that they sum up to 1."""
-
-    RESTRICT = "restrict"
-    """Restrict weight values to interval [0, 1]."""
 
 
 def sigmoid(x: torch.Tensor, a: float, b: float) -> sympy.Expr:
@@ -32,33 +21,33 @@ def sigmoid(x: torch.Tensor, a: float, b: float) -> sympy.Expr:
 
 @dataclass
 class AddressingPattern:
-    # number of qubits
     n_qubits: int
+    """Number of qubits in register."""
 
-    # list of weights for fixed amplitude pattern that cannot be changed during the execution
-    weights_amp: dict[int, float | torch.Tensor | Parameter]
+    weights_amp: dict[int, str | float | torch.Tensor | Parameter]
+    """List of weights for fixed amplitude pattern that cannot be changed during the execution."""
 
-    # list of weights for fixed detuning pattern that cannot be changed during the execution
-    weights_det: dict[int, float | torch.Tensor | Parameter]
+    weights_det: dict[int, str | float | torch.Tensor | Parameter]
+    """List of weights for fixed detuning pattern that cannot be changed during the execution."""
 
-    # amplitude can also be chosen as a variational parameter if needed
-    amp: float | torch.Tensor | Parameter = LOCAL_MAX_AMPLITUDE
+    amp: str | float | torch.Tensor | Parameter = LOCAL_MAX_AMPLITUDE
+    """Maximal amplitude of the amplitude pattern felt by a single qubit."""
 
-    # detuning can also be chosen as a variational parameter if needed
-    det: float | torch.Tensor | Parameter = LOCAL_MAX_DETUNING
+    det: str | float | torch.Tensor | Parameter = LOCAL_MAX_DETUNING
+    """Maximal detuning of the detuning pattern felt by a single qubit."""
 
     def _validate_weights(
         self,
-        weights: dict[int, float | torch.Tensor | Parameter],
+        weights: dict[int, str | float | torch.Tensor | Parameter],
     ) -> None:
         for v in weights.values():
-            if not isinstance(v, Parameter):
+            if not isinstance(v, (str, Parameter)):
                 if not (v >= 0.0 and v <= 1.0):
                     raise ValueError("Addressing pattern weights must sum fall in range [0.0, 1.0]")
 
     def _constrain_weights(
         self,
-        weights: dict[int, float | torch.Tensor | Parameter],
+        weights: dict[int, str | float | torch.Tensor | Parameter],
     ) -> dict:
         # augment weight dict if needed
         weights = {
@@ -68,9 +57,10 @@ class AddressingPattern:
             for i in range(self.n_qubits)
         }
 
-        # restrict weights to [0, 1] range
+        # restrict weights to [0, 1] range - equal to 0 everywhere else
         weights = {
-            k: abs(v * (sigmoid(v, 20, 1.0) - sigmoid(v, 20.0, -1.0))) for k, v in weights.items()
+            k: v if v.is_number else abs(v * (sigmoid(v, 20, 1) - sigmoid(v, 20.0, -1)))  # type: ignore [union-attr]
+            for k, v in weights.items()
         }
 
         return weights
@@ -82,8 +72,8 @@ class AddressingPattern:
         self.amp = abs(
             self.amp
             * (
-                sympy.Heaviside(self.amp + GLOBAL_MAX_AMPLITUDE)
-                - sympy.Heaviside(self.amp - GLOBAL_MAX_AMPLITUDE)
+                sympy.Heaviside(self.amp + GLOBAL_MAX_AMPLITUDE)  # type: ignore [operator]
+                - sympy.Heaviside(self.amp - GLOBAL_MAX_AMPLITUDE)  # type: ignore [operator]
             )
         )
         self.det = -abs(
@@ -124,12 +114,16 @@ class AddressingPattern:
         self._validate_weights(self.weights_det)
 
         # validate maximum global amplitude/detuning values
-        if not isinstance(self.amp, Parameter):
+        if not isinstance(self.amp, (str, Parameter)):
             if self.amp > GLOBAL_MAX_AMPLITUDE:
                 warn("Maximum absolute value of amplitude is exceeded")
-        if not isinstance(self.det, Parameter):
+        elif isinstance(self.amp, str):
+            self.amp = Parameter(self.amp, trainable=True)
+        if not isinstance(self.det, (str, Parameter)):
             if abs(self.det) > GLOBAL_MAX_DETUNING:
                 warn("Maximum absolute value of detuning is exceeded")
+        elif isinstance(self.det, str):
+            self.det = Parameter(self.det, trainable=True)
 
         # constrain amplitude/detuning parameterized weights to [0.0, 1.0] interval
         self.weights_amp = self._constrain_weights(self.weights_amp)

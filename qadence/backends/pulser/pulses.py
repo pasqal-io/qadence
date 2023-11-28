@@ -55,11 +55,19 @@ def add_addressing_pattern(
         det = config.addressing_pattern.det
         weights_amp = config.addressing_pattern.weights_amp
         weights_det = config.addressing_pattern.weights_det
+        local_constr_amp = config.addressing_pattern.local_constr_amp
+        local_constr_det = config.addressing_pattern.local_constr_det
+        global_constr_amp = config.addressing_pattern.global_constr_amp
+        global_constr_det = config.addressing_pattern.global_constr_det
     else:
         amp = 0.0
         det = 0.0
         weights_amp = {i: Parameter(0.0) for i in support}
         weights_det = {i: Parameter(0.0) for i in support}
+        local_constr_amp = {i: 0.0 for i in support}
+        local_constr_det = {i: 0.0 for i in support}
+        global_constr_amp = 0.0
+        global_constr_det = 0.0
 
     for i in support:
         # declare separate local channel for each qubit
@@ -68,21 +76,21 @@ def add_addressing_pattern(
     # add amplitude and detuning patterns
     for i in support:
         if weights_amp[i].is_number:  # type: ignore [union-attr]
-            w_amp = evaluate(weights_amp[i])
+            w_amp = evaluate(weights_amp[i], as_torch=True) * local_constr_amp[i]
         else:
             raise ValueError(
                 "Pulser backend currently doesn't support parametrized amplitude pattern weights."
             )
 
         if weights_det[i].is_number:  # type: ignore [union-attr]
-            w_det = evaluate(weights_det[i])
+            w_det = evaluate(weights_det[i], as_torch=True) * local_constr_det[i]
         else:
             raise ValueError(
                 "Pulser backend currently doesn't support parametrized detuning pattern weights."
             )
 
-        omega = amp * w_amp
-        detuning = -det * w_det
+        omega = global_constr_amp * amp * w_amp
+        detuning = global_constr_det * det * w_det
         pulse = Pulse.ConstantPulse(
             duration=total_duration, amplitude=omega, detuning=detuning, phase=0
         )

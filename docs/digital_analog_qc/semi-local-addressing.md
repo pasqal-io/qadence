@@ -116,18 +116,18 @@ expval_pulser = model.expectation(values=values)
 
 ### Trainable weights
 
-Since the user can specify both the maximal detuning/amplitude value of the addressing pattern and the corresponding weights, it is natural to make these parameters variational in order to use them in some QML setting. This can be achieved by defining pattern weights as trainable `Parameter` instances.
+Since the user can specify both the maximal detuning/amplitude value of the addressing pattern and the corresponding weights, it is natural to make these parameters variational in order to use them in some QML setting. This can be achieved by defining pattern weights as trainable `Parameter` instances or strings specifying weight names.
 
 ```python exec="on" source="material-block" session="emu"
 n_qubits = 3
 reg = Register(support=n_qubits, spacing=8)
 f_value = torch.rand(1)
 
-# define training parameters
-w_amp = {i: Parameter(f"w_amp{i}", trainable=True) for i in range(n_qubits)}
-w_det = {i: Parameter(f"w_det{i}", trainable=True) for i in range(n_qubits)}
-amp = Parameter("amp", trainable=True)
-det = Parameter("det", trainable=True)
+# define training parameters as strings
+w_amp = {i: f"w_amp{i}" for i in range(n_qubits)}
+w_det = {i: f"w_det{i}" for i in range(n_qubits)}
+amp = "amp"
+det = "det"
 p = AddressingPattern(
     n_qubits=n_qubits,
     det=det,
@@ -137,7 +137,7 @@ p = AddressingPattern(
 )
 
 # define training circuit
-block = chain(AnalogRX(1 + torch.rand(1).item()), AnalogRY(1 + torch.rand(1).item()))
+block = AnalogRX(1 + torch.rand(1).item())
 circ = QuantumCircuit(reg, block)
 circ = add_interaction(circ, pattern=p)
 

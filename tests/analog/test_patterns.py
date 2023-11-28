@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 import torch
-from metrics import ATOL_DICT
+from metrics import LOW_ACCEPTANCE, MIDDLE_ACCEPTANCE
 
 from qadence import (
     AnalogRX,
@@ -19,6 +19,7 @@ from qadence import (
 from qadence.analog.addressing import AddressingPattern
 from qadence.analog.interaction import add_interaction
 from qadence.backends.pulser.config import Configuration
+from qadence.states import equivalent_state
 
 
 @pytest.mark.parametrize(
@@ -63,6 +64,7 @@ def test_pulser_pyq_addressing(amp: float, det: float, spacing: float) -> None:
         diff_mode=DiffMode.GPSR,
         configuration=conf,
     )
+    wf_pulser = model.run(values=values)
     expval_pulser = model.expectation(values=values)
 
     # define pyq backend
@@ -70,9 +72,11 @@ def test_pulser_pyq_addressing(amp: float, det: float, spacing: float) -> None:
     model = QuantumModel(
         circuit=int_circ, observable=obs, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD
     )
+    wf_pyq = model.run(values=values)
     expval_pyq = model.expectation(values=values)
 
-    torch.allclose(expval_pulser, expval_pyq, atol=ATOL_DICT[BackendName.PULSER])
+    assert equivalent_state(wf_pulser, wf_pyq, atol=MIDDLE_ACCEPTANCE)
+    assert torch.allclose(expval_pulser, expval_pyq, atol=MIDDLE_ACCEPTANCE)
 
 
 @pytest.mark.flaky(max_runs=10)
@@ -82,10 +86,10 @@ def test_addressing_training() -> None:
     f_value = torch.rand(1)
 
     # define training parameters
-    w_amp = {i: Parameter(f"w_amp{i}", trainable=True) for i in range(n_qubits)}
-    w_det = {i: Parameter(f"w_det{i}", trainable=True) for i in range(n_qubits)}
-    amp = Parameter("amp", trainable=True)
-    det = Parameter("det", trainable=True)
+    w_amp = {i: f"w_amp{i}" for i in range(n_qubits)}
+    w_det = {i: f"w_det{i}" for i in range(n_qubits)}
+    amp = "amp"
+    det = "det"
     p = AddressingPattern(
         n_qubits=n_qubits,
         det=det,
@@ -131,4 +135,4 @@ def test_addressing_training() -> None:
 
     assert torch.all(weights_amp >= 0.0) and torch.all(weights_amp <= 1.0)
     assert torch.all(weights_det >= 0.0) and torch.all(weights_det <= 1.0)
-    assert torch.isclose(f_value, f_value_model, atol=ATOL_DICT[BackendName.PULSER])
+    assert torch.isclose(f_value, f_value_model, atol=LOW_ACCEPTANCE)

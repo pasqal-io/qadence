@@ -156,14 +156,14 @@ def add_pattern(register: Register, pattern: Union[AddressingPattern, None]) -> 
         global_constr_det = 0.0
 
     p_amp_terms = (
-        (1 / 2)
+        (1 / 2)  # type: ignore [operator]
         * amp
         * global_constr_amp
-        * add(X(i) * weights_amp[i] * local_constr_amp[i] for i in support)
+        * add(X(i) * weights_amp[i] * local_constr_amp[i] for i in support)  # type: ignore [operator]
     )
     p_det_terms = (
-        -det
+        -det  # type: ignore [operator]
         * global_constr_det
-        * add(0.5 * (I(i) - Z(i)) * weights_det[i] * local_constr_det[i] for i in support)
+        * add(0.5 * (I(i) - Z(i)) * weights_det[i] * local_constr_det[i] for i in support)  # type: ignore [operator]
     )
     return p_amp_terms + p_det_terms  # type: ignore[no-any-return]
