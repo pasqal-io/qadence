@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import cast
 
 import numpy as np
-from qadence.blocks.utils import expression_to_uuids
 import torch
 from torch import Tensor
 
@@ -12,23 +11,26 @@ from qadence.backend import ConvertedCircuit, ConvertedObservable
 from qadence.backends.api import backend_factory
 from qadence.backends.pulser.backend import Backend
 from qadence.blocks import block_to_tensor
+from qadence.blocks.utils import expression_to_uuids
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.noise import Noise
+from qadence.parameters import Parameter
 from qadence.utils import Endianness
 
 
-def zne_pulse(stretches: dict, zne_datasets: list) -> list:
+def zne_pulse(stretches: dict, zne_datasets: list, zne_value: Tensor) -> list:
     # Rearrange the dataset by selecting each element in the batches.
     poly_fits = []
-    stretch_param = list(stretches.values())[0]
-    breakpoint()
+    # stretch_param = list(stretches.values())[0]
     for datasets in zne_datasets:  # Loop over batches of observables.
         for dataset in datasets:
             # Polynomial fit function.
-            poly_fits.append(np.poly1d(np.polyfit(stretch_param[1:], dataset[1:], 4)))
+            poly_fits.append(np.poly1d(np.polyfit(stretches, dataset, 4)))
 
-    return list(map(lambda p: p(stretch_param[0]), poly_fits))  # Return the zero-noise fitted value.
+    return list(
+        map(lambda p: p(zne_value.item()), poly_fits)
+    )  # Return the zero-noise fitted value.
 
 
 def zne_noise(noise: Noise, zne_datasets: list) -> list:
@@ -65,8 +67,22 @@ def analog_zne(
     stretches = mitigation.options.get("stretches", None)
     # Signals to use the stretches as parameters for the ZNE data.
     # They should be embedded before use.
-    expression_to_uuids
-    breakpoint()
+    # expression_to_uuids
+    if stretches is not None:
+        # Retrieve the parameter name and values to stretch over.
+        param_name, stretch_vals = list(stretches.items())[0]
+        # Convert to Parameter type.
+        param = Parameter(param_name)
+        # Get the map from parameters to uuids.
+        expr_to_uuids = expression_to_uuids(circuit.abstract.block)
+        # Retrieve the parameter uuid.
+        param_uuid = expr_to_uuids[param][0]
+        # Retrieve the parameter value.
+        param_value = param_values[param_uuid]
+        # Store the initial <uuid, value> pair to change back later.
+        init_val = {param_uuid: param_value}
+        # Use stretched values in-place of the param value.
+        param_values[param_uuid] = param_value * stretch_vals
     zne_datasets = []
     # Get noisy density matrices.
     noisy_density_matrices = backend.run_dm(
@@ -87,7 +103,14 @@ def analog_zne(
         )
     # Zero-noise extrapolate.
     if stretches:
-        extrapolated_exp_values = zne_pulse(stretches=param_values, zne_datasets=zne_datasets)
+        extrapolated_exp_values = zne_pulse(
+            stretches=param_values[param_uuid],
+            zne_datasets=zne_datasets,
+            zne_value=list(init_val.values())[0],
+        )
+        # Set the initial values back.
+        param_uuid, param_value = list(init_val.items())[0]
+        param_values[param_uuid] = param_value
     else:
         extrapolated_exp_values = zne_noise(noise=noise, zne_datasets=zne_datasets)
     return torch.tensor(extrapolated_exp_values)
