@@ -22,10 +22,10 @@ def add_background_hamiltonian(
     circuit: QuantumCircuit | AbstractBlock,
     register: Register | None = None,
 ) -> QuantumCircuit | AbstractBlock:
-    # Temporary check to allow both circuit or blocks as input
-    # Not sure yet if we want to support abstract blocks here, but
-    # currently it's used for eigenvalue computation, which will
-    # likely have to be refactored in another MR.
+    # Currently checks if input is either circuit or block and adjusts
+    # the ouput accordingly. Running this function on single blocks is
+    # currently used for eigenvalue computation for GPSR.
+    # FIXME: revisit eigenvalues of analog blocks and clean this code.
 
     is_circuit_input = isinstance(circuit, QuantumCircuit)
 
@@ -75,8 +75,9 @@ def _analog_to_hevo(
         if isinstance(block, AnalogKron):
             # Needed to ensure kronned Analog blocks are implemented
             # in sequence, consistent with the current Pulser implementation.
-            # FIXME: Revisit this assumption and the need for AnalogKron to have 
+            # FIXME: Revisit this assumption and the need for AnalogKron to have
             # the same duration, and clean this code accordingly.
+            # https://github.com/pasqal-io/qadence/issues/226
             ops = []
             for block in block.blocks:
                 if isinstance(block, ConstantAnalogRotation):
