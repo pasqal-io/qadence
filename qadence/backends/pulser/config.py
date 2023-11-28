@@ -7,6 +7,7 @@ from pasqal_cloud import TokenProvider
 from pasqal_cloud.device import EmulatorType
 from pulser_simulation.simconfig import SimConfig
 
+from qadence.analog.addressing import AddressingPattern
 from qadence.backend import BackendConfiguration
 from qadence.types import DeviceType, Interaction
 
@@ -93,6 +94,9 @@ class Configuration(BackendConfiguration):
 
     # configuration for cloud simulations
     cloud_configuration: Optional[CloudConfiguration] = None
+
+    addressing_pattern: AddressingPattern | None = None
+    """Semi-local addressing pattern."""
 
     def __post_init__(self) -> None:
         super().__post_init__()

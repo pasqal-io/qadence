@@ -379,3 +379,5 @@ class OpName(StrEnum):
     """The entanglement operation."""
     WAIT = "wait"
     """The wait operation."""
+    PROJ = "Projector"
+    """The projector operation."""

@@ -35,7 +35,7 @@ from .cloud import get_client
 from .config import Configuration
 from .convert_ops import convert_observable
 from .devices import IdealDevice, RealisticDevice
-from .pulses import add_pulses
+from .pulses import add_pulses, add_addressing_pattern
 
 logger = get_logger(__file__)
 
@@ -54,8 +54,8 @@ def create_register(register: Register) -> PulserRegister:
 
 
 def make_sequence(circ: QuantumCircuit, config: Configuration) -> Sequence:
-    register = circ.register
-    device_specs = register.device_specs
+    qadence_register = circ.register
+    device_specs = qadence_register.device_specs
 
     if device_specs.device_type == DeviceType.IDEALIZED:
         device = IdealDevice(
@@ -76,9 +76,9 @@ def make_sequence(circ: QuantumCircuit, config: Configuration) -> Sequence:
             "Please pass it in the register directly, as detailed in the register tutorial."
         )
         # Rescales the register coordinates, as was done with the previous "spacing" argument.
-        register = register.rescale_coords(scaling=config.spacing)
+        qadence_register = qadence_register.rescale_coords(scaling=config.spacing)
     else:
-        if register.min_distance < 4.0:
+        if qadence_register.min_distance < 4.0:
             # Throws warning for minimum distance below 4 because the typical values used
             # for the standard pulser device parameters is ~7-8, so this likely means the user
             # forgot to set the spacing at register creation.
@@ -89,14 +89,14 @@ def make_sequence(circ: QuantumCircuit, config: Configuration) -> Sequence:
             )
     ########
 
-    pulser_register = create_register(register)
+    pulser_register = create_register(qadence_register)
 
     sequence = Sequence(pulser_register, device)
 
     sequence.declare_channel(GLOBAL_CHANNEL, "rydberg_global")
     sequence.declare_channel(LOCAL_CHANNEL, "rydberg_local", initial_target=0)
 
-    add_pulses(sequence, circ.block, config, register)
+    add_pulses(sequence, circ.block, config, qadence_register)
     sequence.measure()
 
     return sequence
@@ -219,6 +219,8 @@ class Backend(BackendInterface):
 
         for i, param_values_el in enumerate(vals):
             sequence = self.assign_parameters(circuit, param_values_el)
+            add_addressing_pattern(sequence, self.config)
+            sequence.measure()
             sim_result = simulate_sequence(sequence, self.config, state, n_shots=None)
             wf = (
                 sim_result.get_final_state(  # type:ignore [union-attr]
@@ -287,6 +289,8 @@ class Backend(BackendInterface):
         samples = []
         for param_values_el in vals:
             sequence = self.assign_parameters(circuit, param_values_el)
+            add_addressing_pattern(sequence, self.config)
+            sequence.measure()
             sample = simulate_sequence(sequence, self.config, state, n_shots=n_shots)
             samples.append(sample)
         if endianness != self.native_endianness:

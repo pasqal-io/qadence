@@ -3,7 +3,6 @@ from __future__ import annotations
 from numpy import pi
 from pulser.channels.channels import Rydberg
 from pulser.channels.eom import RydbergBeam, RydbergEOM
-from pulser.devices._device_datacls import Device as PulserDevice
 from pulser.devices._device_datacls import VirtualDevice
 
 
@@ -28,8 +27,8 @@ def IdealDevice(
 # device with realistic specs with local channels and custom bandwith.
 def RealisticDevice(
     rydberg_level: int = 60, max_abs_detuning: float = 2 * pi * 4, max_amp: float = 2 * pi * 3
-) -> PulserDevice:
-    return PulserDevice(
+) -> VirtualDevice:
+    return VirtualDevice(
         name="RealisticDevice",
         dimensions=2,
         rydberg_level=rydberg_level,
