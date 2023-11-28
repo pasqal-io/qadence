@@ -73,7 +73,10 @@ def _analog_to_hevo(
             return HamEvo(h_drive + h_background, duration / 1000)
 
         if isinstance(block, AnalogKron):
-            # FIXME: Clean this code
+            # Needed to ensure kronned Analog blocks are implemented
+            # in sequence, consistent with the current Pulser implementation.
+            # FIXME: Revisit this assumption and the need for AnalogKron to have 
+            # the same duration, and clean this code accordingly.
             ops = []
             for block in block.blocks:
                 if isinstance(block, ConstantAnalogRotation):
