@@ -128,14 +128,14 @@ def test_analog_zne_with_noise_levels(
 
 
 @pytest.mark.parametrize(
-    "analog_block, observable, noise_probas, noise_type, stretches",
+    "analog_block, observable, noise_probas, noise_type, param_values",
     [
         (
             chain(AnalogRX("t"), AnalogRZ(pi)),
             [Z(0) + Z(1)],
             [0.1],
             Noise.DEPOLARIZING,
-            {"t": torch.tensor([0.5, 1.0, 1.5, 2.0])},
+            {"t": torch.tensor([0.5])},
         ),
         # (
         #     # Hardcoded time and angle for Bell state preparation.
@@ -154,7 +154,7 @@ def test_analog_zne_with_pulse_stretching(
     observable: AbstractBlock,
     noise_probas: NDArray,
     noise_type: str,
-    stretches: dict,
+    param_values: dict,
 ) -> None:
     circuit = QuantumCircuit(2, analog_block)
     model = QuantumModel(
@@ -162,11 +162,10 @@ def test_analog_zne_with_pulse_stretching(
     )
     options = {"noise_probas": noise_probas}
     noise = Noise(protocol=noise_type, options=options)
-    options = {"stretches": True}
+    options = {"stretches": {"t": torch.tensor([1.5, 2., 2.5, 3.])}}
     mitigation = Mitigations(protocol=Mitigations.ANALOG_ZNE, options=options)
     # breakpoint()
-    mitigated_expectation = model.expectation(values=stretches, noise=noise, mitigation=mitigation)
-    exact_t = {"t": torch.tensor([0.5])}
-    exact_expectation = model.expectation(values=exact_t)
+    mitigated_expectation = model.expectation(values=param_values, noise=noise, mitigation=mitigation)
+    exact_expectation = model.expectation(values=param_values)
     breakpoint()
     assert torch.allclose(mitigated_expectation, exact_expectation, atol=2.0e-1)

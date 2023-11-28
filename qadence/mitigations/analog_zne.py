@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import cast
 
 import numpy as np
+from qadence.blocks.utils import expression_to_uuids
 import torch
 from torch import Tensor
 
@@ -61,9 +62,11 @@ def analog_zne(
         KeyError(f"A noise model should be choosen from {Noise.list()}. Got {noise_model}.")
     backend = backend_factory(backend=BackendName.PULSER, diff_mode=None)
     backend = cast(Backend, backend)
-    stretches = mitigation.options.get("stretches", False)
+    stretches = mitigation.options.get("stretches", None)
     # Signals to use the stretches as parameters for the ZNE data.
     # They should be embedded before use.
+    expression_to_uuids
+    breakpoint()
     zne_datasets = []
     # Get noisy density matrices.
     noisy_density_matrices = backend.run_dm(
