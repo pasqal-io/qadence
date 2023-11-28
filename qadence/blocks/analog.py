@@ -60,7 +60,7 @@ class AnalogBlock(AbstractBlock):
     def eigenvalues_generator(self) -> torch.Tensor:
         msg = (
             "Eigenvalues of for generator of analog blocks can be computed via "
-            "`add_background_hamiltonian(block, device).eigenvalues_generator`. "
+            "`add_background_hamiltonian(block, register).eigenvalues_generator`. "
         )
         raise NotImplementedError(msg)
 
@@ -68,7 +68,7 @@ class AnalogBlock(AbstractBlock):
     def eigenvalues(self) -> torch.Tensor:
         msg = (
             "Eigenvalues of analog blocks can be computed via "
-            "`add_background_hamiltonian(block, device).eigenvalues`. "
+            "`add_background_hamiltonian(block, register).eigenvalues`. "
         )
         raise NotImplementedError(msg)
 
@@ -87,7 +87,7 @@ class AnalogBlock(AbstractBlock):
         block: AbstractBlock,
         register: Register,
     ) -> torch.Tensor:
-        # FIXME: Temporary fix while we keep AnalogBlocks
+        # FIXME: Revisit analog blocks eigenvalues
         from qadence.analog import add_background_hamiltonian
 
         return add_background_hamiltonian(block, register).eigenvalues_generator  # type: ignore [union-attr]
