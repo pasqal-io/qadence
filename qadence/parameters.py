@@ -189,30 +189,19 @@ def extract_original_param_entry(
     return param if not param.is_number else evaluate(param)
 
 
-def torchify(expr: Expr) -> torchSympyModule:
-    """
-    Arguments:
-
-        expr: An expression consisting of Parameters.
-
-    Returns:
-        A torchified, differentiable Expression.
-    """
-
-    def heaviside_func(x: Tensor, _: Any) -> Tensor:
-        with no_grad():
-            res = heaviside(x, tensor(0.5))
-        return res
-
-    extra_funcs = {sympy.core.numbers.ImaginaryUnit: 1.0j, sympy.Heaviside: heaviside_func}
-    return torchSympyModule(expressions=[sympy.N(expr)], extra_funcs=extra_funcs)
+def heaviside_func(x: Tensor, _: Any) -> Tensor:
+    with no_grad():
+        res = heaviside(x, tensor(0.5))
+    return res
 
 
-def make_differentiable(expr: Expr, engine: Engine) -> torchSympyModule | JaxSympyModule:
+def make_differentiable(
+    expr: Expr, engine: Engine = Engine.TORCH
+) -> torchSympyModule | JaxSympyModule:
     if engine == Engine.JAX:
         return JaxSympyModule(expr)
     else:
-        extra_funcs = {sympy.core.numbers.ImaginaryUnit: 1.0j}
+        extra_funcs = {sympy.core.numbers.ImaginaryUnit: 1.0j, sympy.Heaviside: heaviside_func}
         return torchSympyModule(expressions=[sympy.N(expr)], extra_funcs=extra_funcs)
 
 
@@ -268,7 +257,7 @@ def evaluate(expr: Expr, values: dict = {}, as_torch: bool = False) -> TNumber |
                 else:
                     raise ValueError(f"No value provided for symbol {s.name}")
         if as_torch:
-            res_value = torchify(expr)(**{s.name: tensor(v) for s, v in query.items()})
+            res_value = make_differentiable(expr)(**{s.name: tensor(v) for s, v in query.items()})
         else:
             res = expr.subs(query)
             res_value = sympy_to_numeric(res)
