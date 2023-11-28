@@ -137,7 +137,7 @@ def rand_digital_blocks(gate_list: list[AbstractBlock]) -> Callable:
         depth: SearchStrategy[int] = st.integers(min_value=1, max_value=8),
     ) -> AbstractBlock:
         total_qubits = draw(n_qubits)
-        gates_list = []
+        gates_list: list = []
         qubit_indices = {0}
 
         pool_1q = [gate for gate in single_qubit_gateset if gate in gate_list]
@@ -211,7 +211,6 @@ def rand_digital_blocks(gate_list: list[AbstractBlock]) -> Callable:
                     gates_list.append(gate((qubit, target1), target2))
                 elif gate in pool_nq_param:
                     gates_list.append(gate((qubit, target1), target2, rand_expression(draw)))
-
         return chain(*gates_list)
 
     return blocks  # type: ignore[no-any-return]

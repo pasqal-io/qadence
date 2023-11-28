@@ -31,6 +31,7 @@ from qadence.blocks.analog import (
     WaitBlock,
 )
 from qadence.blocks.block_to_tensor import block_to_tensor
+from qadence.blocks.primitive import ProjectorBlock
 from qadence.blocks.utils import (
     add,  # noqa
     block_is_commuting_hamiltonian,
@@ -169,13 +170,35 @@ class Z(PrimitiveBlock):
         return self
 
 
-class N(PrimitiveBlock):
+class Projector(ProjectorBlock):
+    """The projector operator."""
+
+    name = OpName.PROJ
+
+    def __init__(
+        self,
+        ket: str,
+        bra: str,
+        qubit_support: int | tuple[int, ...],
+    ):
+        super().__init__(ket=ket, bra=bra, qubit_support=qubit_support)
+
+    @property
+    def generator(self) -> None:
+        raise ValueError("Property `generator` not available for non-unitary operator.")
+
+    @property
+    def eigenvalues_generator(self) -> None:
+        raise ValueError("Property `eigenvalues_generator` not available for non-unitary operator.")
+
+
+class N(Projector):
     """The N = (1/2)(I-Z) operator."""
 
     name = OpName.N
 
-    def __init__(self, target: int):
-        super().__init__((target,))
+    def __init__(self, target: int, state: str = "1"):
+        super().__init__(ket=state, bra=state, qubit_support=(target,))
 
     @property
     def generator(self) -> None:
@@ -668,7 +691,7 @@ class CNOT(ControlBlock):
     name = OpName.CNOT
 
     def __init__(self, control: int, target: int) -> None:
-        self.generator = kron((I(control) - Z(control)) * 0.5, X(target) - I(target))
+        self.generator = kron(N(control), X(target) - I(target))
         super().__init__((control,), X(target))
 
     @property
@@ -699,9 +722,7 @@ class MCZ(ControlBlock):
     name = OpName.MCZ
 
     def __init__(self, control: tuple[int, ...], target: int) -> None:
-        self.generator = kron(
-            *[(I(qubit) - Z(qubit)) * 0.5 for qubit in control], Z(target) - I(target)
-        )
+        self.generator = kron(*[N(qubit) for qubit in control], Z(target) - I(target))
         super().__init__(control, Z(target))
 
     @property
@@ -749,7 +770,7 @@ class MCRX(ParametricControlBlock):
         target: int,
         parameter: Parameter | TNumber | sympy.Expr | str,
     ) -> None:
-        self.generator = kron(*[(I(qubit) - Z(qubit)) * 0.5 for qubit in control], X(target))
+        self.generator = kron(*[N(qubit) for qubit in control], X(target))
         super().__init__(control, RX(target, parameter))
 
     @classmethod
@@ -792,7 +813,7 @@ class MCRY(ParametricControlBlock):
         target: int,
         parameter: Parameter | TNumber | sympy.Expr | str,
     ) -> None:
-        self.generator = kron(*[(I(qubit) - Z(qubit)) * 0.5 for qubit in control], Y(target))
+        self.generator = kron(*[N(qubit) for qubit in control], Y(target))
         super().__init__(control, RY(target, parameter))
 
     @classmethod
@@ -835,7 +856,7 @@ class MCRZ(ParametricControlBlock):
         target: int,
         parameter: Parameter | TNumber | sympy.Expr | str,
     ) -> None:
-        self.generator = kron(*[(I(qubit) - Z(qubit)) * 0.5 for qubit in control], Z(target))
+        self.generator = kron(*[N(qubit) for qubit in control], Z(target))
         super().__init__(control, RZ(target, parameter))
 
     @classmethod
@@ -878,10 +899,10 @@ class CSWAP(ControlBlock):
         if isinstance(control, tuple):
             control = control[0]
 
-        a00m = 0.5 * (Z(control) - I(control))
-        a00p = -0.5 * (Z(control) + I(control))
-        a11 = 0.5 * (Z(target1) - I(target1))
-        a22 = -0.5 * (Z(target2) + I(target2))
+        a00m = -N(target=control)
+        a00p = -N(target=control, state="0")
+        a11 = -N(target=target1)
+        a22 = -N(target=target2, state="0")
         a12 = 0.5 * (chain(X(target1), Z(target1)) + X(target1))
         a21 = 0.5 * (chain(Z(target2), X(target2)) + X(target2))
         no_effect = kron(a00m, I(target1), I(target2))
@@ -1031,9 +1052,7 @@ class MCPHASE(ParametricControlBlock):
         target: int,
         parameter: Parameter | TNumber | sympy.Expr | str,
     ) -> None:
-        self.generator = kron(
-            *[(I(qubit) - Z(qubit)) * 0.5 for qubit in control], Z(target) - I(target)
-        )
+        self.generator = kron(*[N(qubit) for qubit in control], Z(target) - I(target))
         super().__init__(control, PHASE(target, parameter))
 
     @classmethod
@@ -1082,9 +1101,7 @@ class Toffoli(ControlBlock):
     name = OpName.TOFFOLI
 
     def __init__(self, control: tuple[int, ...], target: int) -> None:
-        self.generator = kron(
-            *[(I(qubit) - Z(qubit)) * 0.5 for qubit in control], X(target) - I(target)
-        )
+        self.generator = kron(*[N(qubit) for qubit in control], X(target) - I(target))
         super().__init__(control, X(target))
 
     def dagger(self) -> Toffoli:
@@ -1288,4 +1305,4 @@ analog_gateset = [
     entangle,
     wait,
 ]
-non_unitary_gateset = [Zero, N]
+non_unitary_gateset = [Zero, N, Projector]

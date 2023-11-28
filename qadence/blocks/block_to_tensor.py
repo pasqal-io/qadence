@@ -15,8 +15,11 @@ from qadence.blocks import (
     PrimitiveBlock,
     ScaleBlock,
 )
+from qadence.blocks.primitive import ProjectorBlock
 from qadence.blocks.utils import chain, kron, uuid_to_expression
 from qadence.parameters import evaluate, stringify
+
+# from qadence.states import product_state
 from qadence.types import Endianness, TensorType, TNumber
 
 J = torch.tensor(1j)
@@ -462,6 +465,14 @@ def _block_to_tensor_embedded(
 
         # add missing identities on unused qubits
         mat = _fill_identities(block_mat, block.qubit_support, qubit_support, endianness=endianness)
+
+    elif isinstance(block, ProjectorBlock):
+        from qadence.states import product_state
+
+        bra = product_state(block.bra)
+        ket = product_state(block.ket)
+
+        mat = torch.kron(ket, bra.T)
 
     else:
         raise TypeError(f"Conversion for block type {type(block)} not supported.")

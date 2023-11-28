@@ -236,11 +236,12 @@ def fill_identities(block: AbstractBlock, start: int, stop: int) -> AbstractBloc
 
 @fill_identities.register
 def _(block: PrimitiveBlock, start: int, stop: int) -> AbstractBlock:
-    if (start == min(block.qubit_support)) and (stop == max(block.qubit_support) + 1):
+    full_support = tuple(range(start, stop + 1))
+    if block.qubit_support == full_support:
         return block
     tag = block.tag
     block.tag = None
-    bs = [block] + [I(i) for i in (set(range(start, stop)) - set(block.qubit_support))]
+    bs = [block] + [I(i) for i in (set(full_support) - set(block.qubit_support))]
     b = kron(*sorted(bs, key=lambda x: x.qubit_support))
     b.tag = tag
     return b
@@ -248,11 +249,12 @@ def _(block: PrimitiveBlock, start: int, stop: int) -> AbstractBlock:
 
 @fill_identities.register
 def _(block: SWAP, start: int, stop: int) -> AbstractBlock:
-    if (start == min(block.qubit_support)) and (stop == max(block.qubit_support) + 1):
+    full_support = tuple(range(start, stop + 1))
+    if block.qubit_support == full_support:
         return block
     tag = block.tag
     block.tag = None
-    bs = [block] + [chain(I(i), I(i)) for i in (set(range(start, stop)) - set(block.qubit_support))]
+    bs = [block] + [chain(I(i), I(i)) for i in (set(full_support) - set(block.qubit_support))]
     b = kron(*sorted(bs, key=lambda x: x.qubit_support))
     b.tag = tag
     return b
@@ -278,17 +280,23 @@ def _fill_kron(block: KronBlock, start: int, stop: int) -> list[AbstractBlock]:
 
     def append_ids(block: AbstractBlock, total: int) -> AbstractBlock:
         qs = block.qubit_support
-        ids = [I(i) for i in range(min(qs), max(qs) + 1) for _ in range(length(block), total)]
+        ids = [I(i) for i in range(min(qs), max(qs)) for _ in range(length(block), total)]
         bs = [block] + ids
         return chain(*bs)
 
     def id_chain(i: int, max_len: int) -> AbstractBlock:
         return chain(I(i) for _ in range(max_len))
 
-    bs = [fill_identities(b, min(b.qubit_support), max(b.qubit_support) + 1) for b in block]
+    # fill subblocks with identities
+    bs = [fill_identities(b, min(b.qubit_support), max(b.qubit_support)) for b in block]
+
+    # make all subblocks equally "long" horizontally
     max_len = length(bs)
     bs = [append_ids(b, max_len) for b in bs]
-    bs += [id_chain(i, max_len) for i in (set(range(start, stop)) - set(block.qubit_support))]
+
+    # fill potentially completely empty wires
+    bs += [id_chain(i, max_len) for i in (set(range(start, stop + 1)) - set(block.qubit_support))]
+
     return sorted(bs, key=lambda x: x.qubit_support)
 
 
