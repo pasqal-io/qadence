@@ -57,6 +57,7 @@ class QdHorQGate(Gate):
     O: Any = None  # type: ignore
     target_idx: int = 0
     control_idx: int = 1  # Hotfix for horqrux native for now
+    name: str
 
 
 @register_pytree_node_class
@@ -113,7 +114,7 @@ def convert_block(
         if isinstance(block, AddBlock):
             ops = [HorqAddGate(ops)]
         elif isinstance(block, ChainBlock):
-            ops = ops
+            ops = [HorqruxCircuit(ops)]
         elif isinstance(block, KronBlock):
             if all(
                 [
@@ -139,7 +140,7 @@ def convert_block(
                     )
                 ]
             else:
-                ops = ops
+                ops = [HorqruxCircuit(ops)]
 
     elif isinstance(block, CNOT):
         native_op = ops_map[block.name]
@@ -157,6 +158,7 @@ def convert_block(
                 qubit=block.qubit_support[1],
                 parameter_name=param_name,
                 control=block.qubit_support[0],
+                name=block.name,
             )
         ]
     elif isinstance(block, ScaleBlock):
@@ -181,7 +183,7 @@ def convert_block(
     elif isinstance(block, PrimitiveBlock):
         native_op = ops_map[block.name]
         qubit = block.qubit_support[0]
-        ops = [HorqPrimitiveGate(gate=native_op, qubit=qubit)]
+        ops = [HorqPrimitiveGate(gate=native_op, qubit=qubit, name=block.name)]
 
     else:
         raise NotImplementedError(f"Non-supported operation of type {type(block)}.")
@@ -191,12 +193,16 @@ def convert_block(
 
 @register_pytree_node_class
 class HorqPrimitiveGate(QdHorQGate):
-    def __init__(self, gate: Gate, qubit: int):
+    def __init__(self, gate: Gate, qubit: int, name: str):
         self.gates: Gate = gate
         self.target = qubit
+        self.name = name
 
     def forward(self, state: ArrayLike, values: ParamDictType) -> ArrayLike:
         return apply_gate(state, self.gates(self.target))
+
+    def __repr__(self) -> str:
+        return self.name + f"(target={self.target})"
 
 
 @register_pytree_node_class
@@ -256,24 +262,37 @@ class HorqKronCNOT(HorqruxCircuit):
 
 @register_pytree_node_class
 class HorqParametricGate(QdHorQGate):
-    def __init__(self, gate: Gate, qubit: int, parameter_name: str, control: int = None):
+    def __init__(
+        self, gate: Gate, qubit: int, parameter_name: str, control: int = None, name: str = ""
+    ):
         self.gates: Callable = gate
         self.target: int = qubit
         self.parameter: str = parameter_name
         self.control: int | None = control
+        self.name = name
 
     def forward(self, state: ArrayLike, values: ParamDictType) -> Array:
         val = jnp.array(values[self.parameter])
         return apply_gate(state, self.gates(val, self.target, self.control))
+
+    def __repr__(self) -> str:
+        return (
+            self.name
+            + f"(target={self.target}, parameter={self.parameter}, control={self.control})"
+        )
 
 
 @register_pytree_node_class
 class HorqAddGate(HorqruxCircuit):
     def __init__(self, operations: list[QdHorQGate]):
         self.operators = operations
+        self.name = "Add"
 
     def forward(self, state: ArrayLike, values: ParamDictType = {}) -> Array:
         return reduce(add, (op.forward(state, values) for op in self.operators))
+
+    def __repr__(self) -> str:
+        return self.name + f"({self.operators})"
 
 
 @register_pytree_node_class
