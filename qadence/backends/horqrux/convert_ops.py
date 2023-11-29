@@ -83,9 +83,8 @@ class HorqruxCircuit:
 @register_pytree_node_class
 @dataclass
 class HorqruxObservable(HorqruxCircuit):
-    def __init__(self, operators: list[Gate], n_qubits: int):
+    def __init__(self, operators: list[Gate]):
         super().__init__(operators=operators)
-        self.n_qubits = n_qubits
 
     def _forward(self, state: ArrayLike, values: ParamDictType) -> ArrayLike:
         for op in self.operators:
@@ -100,7 +99,7 @@ def convert_observable(
     block: AbstractBlock, n_qubits: int, config: Configuration
 ) -> HorqruxObservable:
     _ops = convert_block(block, n_qubits, config)
-    return HorqruxObservable(_ops, n_qubits)
+    return HorqruxObservable(_ops)
 
 
 def convert_block(
