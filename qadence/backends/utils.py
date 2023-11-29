@@ -4,11 +4,9 @@ from collections import Counter
 from math import log2
 from typing import Callable, Sequence
 
-import jax.numpy as jnp
 import numpy as np
 import pyqtorch as pyq
 import torch
-from jax.typing import ArrayLike
 from pyqtorch.apply import apply_operator
 from pyqtorch.parametric import Parametric as PyQParametric
 from torch import (
@@ -19,7 +17,6 @@ from torch import (
     no_grad,
     rand,
 )
-from torch import flatten as torchflatten
 
 from qadence.utils import Endianness, int_to_basis
 
@@ -121,12 +118,7 @@ def pyqify(state: Tensor, n_qubits: int = None) -> Tensor:
 
 def unpyqify(state: Tensor) -> Tensor:
     """Convert a state of shape [2] * n_qubits + [batch_size] to (batch_size, 2**n_qubits)."""
-    return torchflatten(state, start_dim=0, end_dim=-2).t()
-
-
-def unhorqify(state: ArrayLike) -> ArrayLike:
-    """Convert a state of shape [2] * n_qubits + [batch_size] to (batch_size, 2**n_qubits)."""
-    return jnp.ravel(state, start_dim=0, end_dim=-2).t()
+    return torch.flatten(state, start_dim=0, end_dim=-2).t()
 
 
 def is_pyq_shape(state: Tensor, n_qubits: int) -> bool:
