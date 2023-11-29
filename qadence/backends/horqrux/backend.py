@@ -120,9 +120,7 @@ class Backend(BackendInterface):
             out_state = self.run(
                 circuit, params, state, endianness, horqify_state=True, unhorqify_state=False
             )
-            return jnp.array(
-                [conv_obs.native.forward(out_state, params) for conv_obs in observable]
-            )
+            return jax.vmap(lambda obs: obs.forward(out_state, params), in_axes=(None))([o.native for o in observable])
 
         expvals = jax.vmap(_expectation, in_axes=({k: 0 for k in param_values.keys()},))(
             uniform_batchsize(param_values)
