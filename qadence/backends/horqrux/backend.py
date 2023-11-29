@@ -113,7 +113,7 @@ class Backend(BackendInterface):
         endianness: Endianness = Endianness.BIG,
     ) -> ArrayLike:
         observable = observable if isinstance(observable, list) else [observable]
-        batch_size = max([arr.size for name, arr in param_values.items()])
+        batch_size = max([arr.size for arr in param_values.values()])
         n_obs = len(observable)
 
         def _expectation(params: ParamDictType) -> ArrayLike:
@@ -122,7 +122,10 @@ class Backend(BackendInterface):
             )
             return jnp.array(
                 list(
-                    map(lambda hq_obs: hq_obs.forward(out_state, params), [o.native for o in observable])
+                    map(
+                        lambda hq_obs: hq_obs.forward(out_state, params),
+                        [o.native for o in observable],
+                    )
                 )
             )
 
