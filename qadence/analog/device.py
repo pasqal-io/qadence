@@ -51,10 +51,20 @@ class RydbergDevice:
             )
 
     def _to_dict(self) -> dict:
-        return {field.name: getattr(self, field.name) for field in fields(self)}
+        device_dict = {}
+        for field in fields(self):
+            if field.name != "pattern":
+                device_dict[field.name] = getattr(self, field.name)
+            else:
+                device_dict[field.name] = (
+                    self.pattern._to_dict() if self.pattern is not None else {}
+                )
+        return device_dict
 
     @classmethod
     def _from_dict(cls, d: dict) -> RydbergDevice:
+        pattern = AddressingPattern._from_dict(d["pattern"])
+        d["pattern"] = pattern
         return cls(**d)
 
 

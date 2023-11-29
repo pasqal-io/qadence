@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from warnings import warn
 
 from sympy import Expr, Heaviside, exp
@@ -152,3 +152,10 @@ class AddressingPattern:
     def evaluate(self, weights: dict, values: dict) -> dict:
         # evaluate weight expressions with actual values
         return {k: evaluate(v, values, as_torch=True).flatten() for k, v in weights.items()}  # type: ignore [union-attr]
+
+    def _to_dict(self) -> dict:
+        return {field.name: getattr(self, field.name) for field in fields(self)}
+
+    @classmethod
+    def _from_dict(cls, d: dict) -> AddressingPattern | None:
+        return cls(**d) if len(d) > 0 else None
