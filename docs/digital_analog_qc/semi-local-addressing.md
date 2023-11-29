@@ -55,7 +55,8 @@ pattern = AddressingPattern(
 
 If only detuning or amplitude pattern is needed - the corresponding weights for all qubits can be set to 0.
 
-The created addressing pattern can now be passed as a characteristic of the `RydbergDevice`, defining the device specifications of a given `Register`.
+The created addressing pattern can now be passed as an argument to the `RydbergDevice`, or to the
+`IdealDevice` or `RealisticDevice` to make use of the pre-defined options to those devices,
 
 ```python exec="on" source="material-block" session="emu"
 from qadence import (
@@ -87,16 +88,16 @@ reg = Register.line(
 
 circ = QuantumCircuit(reg, block)
 
-# define parameter values and observable
-values = {"x": torch.linspace(0.5, 2 * torch.pi, 50)}
 obs = total_magnetization(n_qubits)
 
 model_pyq = QuantumModel(
     circuit=circ, observable=obs, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD
 )
 
-# calculate expectation value of the circuit
-expval_pyq = model_pyq.expectation(values=values)
+# calculate expectation value of the circuit for random input value
+value = {"x": 1.0 + torch.rand(1)}
+expval_pyq = model_pyq.expectation(values = value)
+print(f"Expectation value on PyQ: \n{expval_pyq.flatten().detach()}\n")  # markdown-exec: hide
 ```
 
 The same configuration can also be seamlessly used to create a model on the Pulser backend.
@@ -109,13 +110,17 @@ model_pulser = QuantumModel(
     diff_mode=DiffMode.GPSR
 )
 
-# calculate expectation value of the circuit
-expval_pulser = model_pulser.expectation(values=values)
+# calculate expectation value of the circuit for same random input value
+expval_pulser = model_pulser.expectation(values = value)
+print(f"Expectation value on Pulser: \n{expval_pulser.flatten().detach()}\n")  # markdown-exec: hide
 ```
 
 ### Trainable weights
 
-Since the user can specify both the maximal detuning/amplitude value of the addressing pattern and the corresponding weights, it is natural to make these parameters variational in order to use them in some QML setting. This can be achieved by defining pattern weights as trainable `Parameter` instances or strings specifying weight names.
+!!! note
+    Trainable parameters currently are supported only by `pyqtorch` backend.
+
+Since the user can specify both the maximum detuning/amplitude value of the addressing pattern and the corresponding weights, it is natural to make these parameters variational in order to use them in some QML setting. This can be achieved by defining pattern weights as trainable `Parameter` instances or strings specifying weight names.
 
 ```python exec="on" source="material-block" session="emu"
 n_qubits = 3
@@ -127,8 +132,8 @@ f_value = torch.rand(1)
 # define trainable addressing pattern
 w_amp = {i: f"w_amp{i}" for i in range(n_qubits)}
 w_det = {i: f"w_det{i}" for i in range(n_qubits)}
-amp = "amp"
-det = "det"
+amp = "max_amp"
+det = "max_det"
 
 pattern = AddressingPattern(
     n_qubits=n_qubits,
@@ -175,11 +180,8 @@ f_value_model = model.expectation().detach()
 
 assert torch.isclose(f_value, f_value_model, atol=0.01)
 
-print("The target function value: ", f_value)
-print("The trained function value: ", f_value_model)
+print("The target function value: ", f_value)  # markdown-exec: hide
+print("The trained function value: ", f_value_model)  # markdown-exec: hide
 ```
 
 Here the value of expectation of the circuit is fitted to some predefined value by varying the parameters of the addressing pattern.
-
-!!! note
-    Trainable parameters currently are supported only by `pyqtorch` backend.
