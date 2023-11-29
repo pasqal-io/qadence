@@ -10,7 +10,7 @@ from pulser.pulse import Pulse
 from pulser.sequence.sequence import Sequence
 from pulser.waveforms import CompositeWaveform, ConstantWaveform, RampWaveform
 
-from qadence import Parameter, Register
+from qadence import Register
 from qadence.analog import AddressingPattern
 from qadence.blocks import AbstractBlock, CompositeBlock
 from qadence.blocks.analog import (
@@ -45,30 +45,21 @@ supported_gates = [
 
 def add_addressing_pattern(
     sequence: Sequence,
-    pattern: AddressingPattern | None,
+    pattern: AddressingPattern,
 ) -> None:
     total_duration = sequence.get_duration()
     n_qubits = len(sequence.register.qubits)
 
     support = tuple(range(n_qubits))
-    if pattern is not None:
-        amp = pattern.amp
-        det = pattern.det
-        weights_amp = pattern.weights_amp
-        weights_det = pattern.weights_det
-        local_constr_amp = pattern.local_constr_amp
-        local_constr_det = pattern.local_constr_det
-        global_constr_amp = pattern.global_constr_amp
-        global_constr_det = pattern.global_constr_det
-    else:
-        amp = 0.0
-        det = 0.0
-        weights_amp = {i: Parameter(0.0) for i in support}
-        weights_det = {i: Parameter(0.0) for i in support}
-        local_constr_amp = {i: 0.0 for i in support}
-        local_constr_det = {i: 0.0 for i in support}
-        global_constr_amp = 0.0
-        global_constr_det = 0.0
+
+    amp = pattern.amp
+    det = pattern.det
+    weights_amp = pattern.weights_amp
+    weights_det = pattern.weights_det
+    local_constr_amp = pattern.local_constr_amp
+    local_constr_det = pattern.local_constr_det
+    global_constr_amp = pattern.global_constr_amp
+    global_constr_det = pattern.global_constr_det
 
     for i in support:
         # declare separate local channel for each qubit

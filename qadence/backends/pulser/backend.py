@@ -219,7 +219,8 @@ class Backend(BackendInterface):
         for i, param_values_el in enumerate(vals):
             sequence = self.assign_parameters(circuit, param_values_el)
             pattern = circuit.original.register.device_specs.pattern
-            add_addressing_pattern(sequence, pattern)
+            if pattern is not None:
+                add_addressing_pattern(sequence, pattern)
             sequence.measure()
             sim_result = simulate_sequence(sequence, self.config, state, n_shots=None)
             wf = (
@@ -290,7 +291,8 @@ class Backend(BackendInterface):
         for param_values_el in vals:
             sequence = self.assign_parameters(circuit, param_values_el)
             pattern = circuit.original.register.device_specs.pattern
-            add_addressing_pattern(sequence, pattern)
+            if pattern is not None:
+                add_addressing_pattern(sequence, pattern)
             sequence.measure()
             sample = simulate_sequence(sequence, self.config, state, n_shots=n_shots)
             samples.append(sample)
