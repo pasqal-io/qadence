@@ -12,7 +12,6 @@ from jax.typing import ArrayLike
 from qadence.backend import Backend as BackendInterface
 from qadence.backend import ConvertedCircuit, ConvertedObservable
 from qadence.backends.jax_utils import (
-    jarr_to_tensor,
     split_batched_paramdict,
     tensor_to_jnp,
     unhorqify,
@@ -23,7 +22,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.noise import Noise
-from qadence.transpile import flatten, invert_endianness, scale_primitive_blocks_only, transpile
+from qadence.transpile import flatten, scale_primitive_blocks_only, transpile
 from qadence.types import BackendName, Endianness, Engine, ParamDictType
 from qadence.utils import int_to_basis
 
@@ -85,8 +84,10 @@ class Backend(BackendInterface):
         state = circuit.native.forward(state, param_values)
         batch_size = 1  # FIXME : add batching
         if endianness != self.native_endianness:
-            state = jnp.reshape(state, (batch_size, 2**circuit.abstract.n_qubits))
-            state = invert_endianness(jarr_to_tensor(state))
+            state = jnp.reshape(state, (batch_size, 2**n_qubits))
+            ls = list(range(2**n_qubits))
+            permute_ind = jnp.array([int(f"{num:0{n_qubits}b}"[::-1], 2) for num in ls])
+            state = state[:, permute_ind]
         if unhorqify_state:
             state = unhorqify(state)
         return state
