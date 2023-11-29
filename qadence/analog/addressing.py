@@ -35,10 +35,10 @@ class AddressingPattern:
     """List of weights for fixed detuning pattern that cannot be changed during the execution."""
 
     amp: str | float | Tensor | Parameter = LOCAL_MAX_AMPLITUDE
-    """Maximal amplitude of the amplitude pattern felt by a single qubit."""
+    """Maximum amplitude of the amplitude pattern felt by a single qubit."""
 
     det: str | float | Tensor | Parameter = LOCAL_MAX_DETUNING
-    """Maximal detuning of the detuning pattern felt by a single qubit."""
+    """Maximum detuning of the detuning pattern felt by a single qubit."""
 
     def _validate_weights(
         self,
