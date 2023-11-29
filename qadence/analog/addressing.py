@@ -8,6 +8,9 @@ from torch import Tensor, pi
 
 from qadence.parameters import Parameter, evaluate
 
+# FIXME: Clarify the roles of these values in the context
+# device specification and how they relate with the
+# maximum values for delta and omega.
 GLOBAL_MAX_AMPLITUDE = 300
 GLOBAL_MAX_DETUNING = 2 * pi * 2000
 LOCAL_MAX_AMPLITUDE = 3

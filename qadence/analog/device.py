@@ -31,7 +31,7 @@ class RydbergDevice:
     coeff_xy: float = 3700.00
     """Value of C_3."""
 
-    max_abs_detuning: float = 2 * pi * 4
+    max_detuning: float = 2 * pi * 4
     """Maximum value of the detuning δ."""
 
     max_amp: float = 2 * pi * 3
@@ -73,7 +73,7 @@ def IdealDevice(pattern: AddressingPattern | None = None) -> RydbergDevice:
         interaction=Interaction.NN,
         rydberg_level=60,
         coeff_xy=3700.00,
-        max_abs_detuning=2 * pi * 4,
+        max_detuning=2 * pi * 4,
         max_amp=2 * pi * 3,
         pattern=pattern,
         device_type=DeviceType.IDEALIZED,
@@ -85,7 +85,7 @@ def RealisticDevice(pattern: AddressingPattern | None = None) -> RydbergDevice:
         interaction=Interaction.NN,
         rydberg_level=60,
         coeff_xy=3700.00,
-        max_abs_detuning=2 * pi * 4,
+        max_detuning=2 * pi * 4,
         max_amp=2 * pi * 3,
         pattern=pattern,
         device_type=DeviceType.REALISTIC,

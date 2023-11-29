@@ -59,11 +59,11 @@ def make_sequence(circ: QuantumCircuit, config: Configuration) -> Sequence:
 
     if device_specs.device_type == DeviceType.IDEALIZED:
         device = IdealDevice(
-            device_specs.rydberg_level, device_specs.max_abs_detuning, device_specs.max_amp
+            device_specs.rydberg_level, device_specs.max_detuning, device_specs.max_amp
         )
     elif device_specs.device_type == DeviceType.REALISTIC:
         device = RealisticDevice(
-            device_specs.rydberg_level, device_specs.max_abs_detuning, device_specs.max_amp
+            device_specs.rydberg_level, device_specs.max_detuning, device_specs.max_amp
         )
     else:
         raise ValueError("Specified device type is not supported by the pulser backend.")
