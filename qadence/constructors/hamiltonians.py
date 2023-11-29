@@ -252,7 +252,7 @@ def total_magnetization(n_qubits: int, z_terms: np.ndarray | list | None = None)
         DEPRECATION_MESSAGE
         + "Please use `hamiltonian_factory(n_qubits, detuning=Z, node_coeff=z_terms)`."
     )
-    warnings.warn(message, FutureWarning)
+    # warnings.warn(message, FutureWarning)
     return hamiltonian_factory(n_qubits, detuning=Z, detuning_strength=z_terms)
 
 

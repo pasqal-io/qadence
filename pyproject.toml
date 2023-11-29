@@ -41,7 +41,8 @@ dependencies = [
     "nevergrad",
     "scipy",
     "pyqtorch==1.0.3",
-    "matplotlib"
+    "matplotlib",
+    "memory_profiler"
 ]
 
 [tool.hatch.metadata]
