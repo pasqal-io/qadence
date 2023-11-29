@@ -82,9 +82,8 @@ class Backend(BackendInterface):
         else:
             state = tensor_to_jnp(pyqify(state)) if horqify_state else state
         state = circuit.native.forward(state, param_values)
-        batch_size = 1  # FIXME : add batching
         if endianness != self.native_endianness:
-            state = jnp.reshape(state, (batch_size, 2**n_qubits))
+            state = jnp.reshape(state, (1, 2**n_qubits))  # batch_size is always 1
             ls = list(range(2**n_qubits))
             permute_ind = jnp.array([int(f"{num:0{n_qubits}b}"[::-1], 2) for num in ls])
             state = state[:, permute_ind]
