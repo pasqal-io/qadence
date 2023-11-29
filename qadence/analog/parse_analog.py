@@ -43,7 +43,7 @@ def add_background_hamiltonian(
         # Create addressing pattern:
         h_addr = rydberg_pattern_hamiltonian(input_register)
 
-        h_background = h_int + h_addr
+        h_background = h_int + h_addr if h_addr is not None else h_int
 
         output_block = apply_fn_to_blocks(
             input_block,
