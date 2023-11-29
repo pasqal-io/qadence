@@ -36,14 +36,10 @@ def unhorqify(state: Array) -> Array:
     return jnp.ravel(state)
 
 
-def split_batched_paramdict(param_values: ParamDictType) -> list[ParamDictType]:
-    if not param_values:
-        return [param_values]
-
+def uniform_batchsize(param_values: ParamDictType) -> ParamDictType:
     max_batch_size = max(p.size for p in param_values.values())
     batched_values = {
         k: (v if v.size == max_batch_size else v.repeat(max_batch_size))
         for k, v in param_values.items()
     }
-
-    return [{k: v[i] for k, v in batched_values.items()} for i in range(max_batch_size)]
+    return batched_values

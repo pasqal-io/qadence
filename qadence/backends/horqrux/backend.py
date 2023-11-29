@@ -12,9 +12,9 @@ from jax.typing import ArrayLike
 from qadence.backend import Backend as BackendInterface
 from qadence.backend import ConvertedCircuit, ConvertedObservable
 from qadence.backends.jax_utils import (
-    split_batched_paramdict,
     tensor_to_jnp,
     unhorqify,
+    uniform_batchsize,
 )
 from qadence.backends.utils import pyqify
 from qadence.blocks import AbstractBlock
@@ -114,27 +114,19 @@ class Backend(BackendInterface):
     ) -> ArrayLike:
         observable = observable if isinstance(observable, list) else [observable]
         batch_size = max([arr.size for name, arr in param_values.items()])
-        # TODO vmap circ over batch of values
         n_obs = len(observable)
-        expvals: list | ArrayLike = []
-        for single_param_dict in split_batched_paramdict(param_values):
+
+        def _expectation(params: ParamDictType) -> ArrayLike:
             out_state = self.run(
-                circuit,
-                single_param_dict,
-                state,
-                endianness,
-                horqify_state=True,
-                unhorqify_state=False,
+                circuit, params, state, endianness, horqify_state=True, unhorqify_state=False
             )
-            expvals.append(
-                jnp.array(
-                    [
-                        conv_obs.native.forward(out_state, single_param_dict)
-                        for conv_obs in observable
-                    ]
-                )
+            return jnp.array(
+                [conv_obs.native.forward(out_state, params) for conv_obs in observable]
             )
-        expvals = jnp.array(expvals)
+
+        expvals = jax.vmap(_expectation, in_axes=({k: 0 for k in param_values.keys()},))(
+            uniform_batchsize(param_values)
+        )
         if expvals.size > 1:
             expvals = jnp.reshape(expvals, (batch_size, n_obs))
         return expvals
