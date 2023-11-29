@@ -2,11 +2,8 @@ from __future__ import annotations
 
 from typing import Callable, Iterable, List
 
-import jax.numpy as jnp
 import numpy as np
 import sympy
-import sympy2jax as s2j
-import sympytorch  # type: ignore [import]
 import torch
 
 from qadence.blocks import (
@@ -18,15 +15,23 @@ from qadence.blocks.utils import (
     uuid_to_expression,
 )
 from qadence.parameters import evaluate, make_differentiable, stringify
-from qadence.types import Engine, ParamDictType, ReturnType, TNumber
+from qadence.types import ArrayLike, DifferentiableExpression, Engine, ParamDictType, TNumber
 
 
-def concretize_parameter(value: TNumber, requires_grad: bool, engine: Engine) -> ReturnType:
+def _concretize_parameter(engine: Engine) -> Callable:
     if engine == Engine.JAX:
-        fn, dtype = (jnp.array, jnp.float64) if requires_grad else (np.array, np.float64)
-        return fn([value], dtype=dtype)
+        import jax.numpy as jnp
+
+        def concretize_parameter(value: TNumber, requires_grad: bool) -> ArrayLike:
+            fn, dtype = (jnp.array, jnp.float64) if requires_grad else (np.array, np.float64)
+            return fn([value], dtype=dtype)
+
     else:
-        return torch.tensor([value], requires_grad=requires_grad)
+
+        def concretize_parameter(value: TNumber, requires_grad: bool) -> ArrayLike:
+            return torch.tensor([value], requires_grad=requires_grad)
+
+    return concretize_parameter
 
 
 def unique(x: Iterable) -> List:
@@ -63,6 +68,13 @@ def embedding(
     Returns:
         A tuple with variational parameter dict and the embedding function.
     """
+    concretize_parameter = _concretize_parameter(engine)
+    if engine == Engine.TORCH:
+        cast_dtype = torch.tensor
+    else:
+        from jax.numpy import array
+
+        cast_dtype = array
 
     unique_expressions = unique(expressions(block))
     unique_symbols = [p for p in unique(parameters(block)) if not isinstance(p, sympy.Array)]
@@ -84,7 +96,7 @@ def embedding(
     # we dont need to care about constant symbols if they are contained in an symbolic expression
     # we only care about gate params which are ONLY a constant
 
-    embeddings: dict[sympy.Expr, sympytorch.SymPyModule | s2j.SymbolicModule] = {
+    embeddings: dict[sympy.Expr, DifferentiableExpression] = {
         expr: make_differentiable(expr=expr, engine=engine)
         for expr in unique_expressions
         if not expr.is_number
@@ -93,9 +105,9 @@ def embedding(
     uuid_to_expr = uuid_to_expression(block)
 
     def embedding_fn(params: ParamDictType, inputs: ParamDictType) -> ParamDictType:
-        embedded_params: dict[sympy.Expr, ReturnType] = {}
+        embedded_params: dict[sympy.Expr, ArrayLike] = {}
         for expr, fn in embeddings.items():
-            angle: ReturnType
+            angle: ArrayLike
             values = {}
             for symbol in expr.free_symbols:
                 if symbol.name in inputs:
@@ -129,19 +141,16 @@ def embedding(
             return {stringify(k): v for k, v in embedded_params.items()}
 
     params: ParamDictType
-    params = {p.name: concretize_parameter(p.value, True, engine) for p in trainable_symbols}
+    params = {p.name: concretize_parameter(p.value, True) for p in trainable_symbols}
     params.update(
         {
-            stringify(expr): concretize_parameter(
-                evaluate(expr), requires_grad=False, engine=engine
-            )
+            stringify(expr): concretize_parameter(evaluate(expr), requires_grad=False)
             for expr in constant_expressions
         }
     )
-    fn = jnp.array if engine == Engine.JAX else torch.tensor
     params.update(
         {
-            stringify(expr): fn(np.array(expr.tolist(), dtype=np.cdouble))
+            stringify(expr): cast_dtype(np.array(expr.tolist(), dtype=np.cdouble))
             for expr in unique_const_matrices
         }
     )

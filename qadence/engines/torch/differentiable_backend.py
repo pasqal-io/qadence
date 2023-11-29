@@ -19,7 +19,7 @@ from qadence.extensions import get_gpsr_fns
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.noise import Noise
-from qadence.types import DiffMode, Endianness, ParamDictType, ReturnType
+from qadence.types import ArrayLike, DiffMode, Endianness, ParamDictType
 
 
 class TorchBackend(DifferentiableBackend):
@@ -47,7 +47,7 @@ class TorchBackend(DifferentiableBackend):
         self,
         circuit: ConvertedCircuit,
         param_values: ParamDictType = {},
-        state: ReturnType | None = None,
+        state: ArrayLike | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         """Run on the underlying backend."""
@@ -60,12 +60,12 @@ class TorchBackend(DifferentiableBackend):
         circuit: ConvertedCircuit,
         observable: list[ConvertedObservable] | ConvertedObservable,
         param_values: ParamDictType = {},
-        state: ReturnType | None = None,
+        state: ArrayLike | None = None,
         measurement: Measurements | None = None,
         noise: Noise | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
-    ) -> ReturnType:
+    ) -> ArrayLike:
         """Compute the expectation value of a given observable.
 
         Arguments:
@@ -110,7 +110,7 @@ class TorchBackend(DifferentiableBackend):
         circuit: ConvertedCircuit,
         param_values: ParamDictType = {},
         n_shots: int = 1,
-        state: ReturnType | None = None,
+        state: ArrayLike | None = None,
         noise: Noise | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,

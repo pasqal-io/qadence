@@ -16,7 +16,7 @@ from qadence.engines.jax.differentiable_expectation import JaxDifferentiableExpe
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.noise import Noise
-from qadence.types import DiffMode, Endianness, ParamDictType, ReturnType
+from qadence.types import ArrayLike, DiffMode, Endianness, ParamDictType
 
 
 class JaxBackend(DifferentiableBackend):
@@ -44,7 +44,7 @@ class JaxBackend(DifferentiableBackend):
         param_values: ParamDictType = {},
         state: Array | None = None,
         endianness: Endianness = Endianness.BIG,
-    ) -> ReturnType:
+    ) -> ArrayLike:
         """Run on the underlying backend."""
         return self.backend.run(
             circuit=circuit, param_values=param_values, state=state, endianness=endianness
@@ -60,7 +60,7 @@ class JaxBackend(DifferentiableBackend):
         noise: Noise | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
-    ) -> ReturnType:
+    ) -> ArrayLike:
         observable = observable if isinstance(observable, list) else [observable]
 
         if self.diff_mode == DiffMode.AD:
@@ -84,7 +84,7 @@ class JaxBackend(DifferentiableBackend):
         circuit: ConvertedCircuit,
         param_values: ParamDictType = {},
         n_shots: int = 100,
-        state: ReturnType | None = None,
+        state: ArrayLike | None = None,
         noise: Noise | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,

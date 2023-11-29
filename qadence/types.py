@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import importlib
 from enum import Enum
-from typing import Iterable, Tuple, Union
+from typing import Callable, Iterable, Tuple, Union
 
 import numpy as np
 import sympy
-from jax import Array
+from numpy.typing import ArrayLike
 from torch import Tensor, pi
 
 TNumber = Union[int, float, complex]
@@ -380,7 +380,5 @@ class Engine(StrEnum):
     JAX = "jax"
 
 
-ReturnType = Union[Tensor, Array]
-
-
-ParamDictType = dict[str, ReturnType]
+ParamDictType = dict[str, ArrayLike]
+DifferentiableExpression = Callable[..., ArrayLike]

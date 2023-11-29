@@ -195,14 +195,20 @@ def heaviside_func(x: Tensor, _: Any) -> Tensor:
     return res
 
 
+def torchify(expr: Expr) -> torchSympyModule:
+    extra_funcs = {sympy.core.numbers.ImaginaryUnit: 1.0j, sympy.Heaviside: heaviside_func}
+    return torchSympyModule(expressions=[sympy.N(expr)], extra_funcs=extra_funcs)
+
+
 def make_differentiable(
     expr: Expr, engine: Engine = Engine.TORCH
 ) -> torchSympyModule | JaxSympyModule:
     if engine == Engine.JAX:
-        return JaxSympyModule(expr)
+        from qadence.backends.jax_utils import jaxify
+
+        return jaxify(expr)
     else:
-        extra_funcs = {sympy.core.numbers.ImaginaryUnit: 1.0j, sympy.Heaviside: heaviside_func}
-        return torchSympyModule(expressions=[sympy.N(expr)], extra_funcs=extra_funcs)
+        return torchify(expr)
 
 
 def sympy_to_numeric(expr: Basic) -> TNumber:

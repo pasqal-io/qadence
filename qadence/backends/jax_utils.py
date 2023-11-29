@@ -4,6 +4,8 @@ from typing import Any
 
 import jax.numpy as jnp
 from jax import Array, device_get
+from sympy import Expr
+from sympy2jax import SymbolicModule as JaxSympyModule
 from torch import Tensor, cdouble, from_numpy
 
 
@@ -21,3 +23,7 @@ def tensor_to_jnp(tensor: Tensor, dtype: Any = jnp.complex128) -> Array:
 
 def values_to_jax(param_values: dict[str, Tensor]) -> dict[str, Array]:
     return {key: jnp.array(value.detach().numpy()) for key, value in param_values.items()}
+
+
+def jaxify(expr: Expr) -> JaxSympyModule:
+    return JaxSympyModule(expr)

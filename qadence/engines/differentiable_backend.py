@@ -13,7 +13,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.noise import Noise
-from qadence.types import Endianness, Engine, ParamDictType, ReturnType
+from qadence.types import ArrayLike, Endianness, Engine, ParamDictType
 
 
 @dataclass(frozen=True, eq=True)
@@ -67,7 +67,7 @@ class DifferentiableBackend(ABC):
         circuit: ConvertedCircuit,
         param_values: ParamDictType = {},
         n_shots: int = 1000,
-        state: ReturnType | None = None,
+        state: ArrayLike | None = None,
         noise: Noise | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
@@ -91,7 +91,7 @@ class DifferentiableBackend(ABC):
         self,
         circuit: ConvertedCircuit,
         param_values: ParamDictType = {},
-        state: ReturnType | None = None,
+        state: ArrayLike | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Any:
         """Run a circuit and return the resulting wave function.
@@ -115,7 +115,7 @@ class DifferentiableBackend(ABC):
         circuit: ConvertedCircuit,
         observable: list[ConvertedObservable] | ConvertedObservable,
         param_values: ParamDictType = {},
-        state: ReturnType | None = None,
+        state: ArrayLike | None = None,
         measurement: Measurements | None = None,
         noise: Noise | None = None,
         mitigation: Mitigations | None = None,

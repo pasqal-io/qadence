@@ -25,7 +25,7 @@ from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.noise import Noise
 from qadence.parameters import stringify
-from qadence.types import BackendName, DiffMode, Endianness, Engine, ParamDictType, ReturnType
+from qadence.types import ArrayLike, BackendName, DiffMode, Endianness, Engine, ParamDictType
 
 logger = get_logger(__file__)
 
@@ -236,7 +236,7 @@ class Backend(ABC):
         circuit: ConvertedCircuit,
         param_values: dict[str, Tensor] = {},
         n_shots: int = 1000,
-        state: ReturnType | None = None,
+        state: ArrayLike | None = None,
         noise: Noise | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
@@ -259,10 +259,10 @@ class Backend(ABC):
     def run(
         self,
         circuit: ConvertedCircuit,
-        param_values: dict[str, ReturnType] = {},
-        state: ReturnType | None = None,
+        param_values: dict[str, ArrayLike] = {},
+        state: ArrayLike | None = None,
         endianness: Endianness = Endianness.BIG,
-    ) -> ReturnType:
+    ) -> ArrayLike:
         """Run a circuit and return the resulting wave function.
 
         Arguments:
@@ -311,12 +311,12 @@ class Backend(ABC):
         circuit: ConvertedCircuit,
         observable: list[ConvertedObservable] | ConvertedObservable,
         param_values: ParamDictType = {},
-        state: ReturnType | None = None,
+        state: ArrayLike | None = None,
         measurement: Measurements | None = None,
         noise: Noise | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
-    ) -> ReturnType:
+    ) -> ArrayLike:
         """Compute the expectation value of the `circuit` with the given `observable`.
 
         Arguments:

@@ -19,7 +19,7 @@ from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.noise import Noise
 from qadence.transpile import flatten, invert_endianness, scale_primitive_blocks_only, transpile
-from qadence.types import BackendName, Endianness, Engine, ParamDictType, ReturnType
+from qadence.types import BackendName, Endianness, Engine, ParamDictType
 from qadence.utils import int_to_basis
 
 from .config import Configuration, default_passes
@@ -71,7 +71,7 @@ class Backend(BackendInterface):
         endianness: Endianness = Endianness.BIG,
         horqify_state: bool = True,
         unhorqify_state: bool = True,
-    ) -> ReturnType:
+    ) -> ArrayLike:
         n_qubits = circuit.abstract.n_qubits
         if state is None:
             state = prepare_state(n_qubits, "0" * n_qubits)
@@ -91,9 +91,9 @@ class Backend(BackendInterface):
         circuit: ConvertedCircuit,
         noise: Noise,
         param_values: ParamDictType = {},
-        state: ReturnType | None = None,
+        state: ArrayLike | None = None,
         endianness: Endianness = Endianness.BIG,
-    ) -> ReturnType:
+    ) -> ArrayLike:
         raise NotImplementedError
 
     def expectation(
@@ -101,12 +101,12 @@ class Backend(BackendInterface):
         circuit: ConvertedCircuit,
         observable: list[ConvertedObservable] | ConvertedObservable,
         param_values: ParamDictType = {},
-        state: ReturnType | None = None,
+        state: ArrayLike | None = None,
         measurement: Measurements | None = None,
         noise: Noise | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
-    ) -> ReturnType:
+    ) -> ArrayLike:
         # batch_size = infer_batchsize(param_values)
         # TODO vmap circ over batch of values
         n_obs = len(observable)
@@ -126,7 +126,7 @@ class Backend(BackendInterface):
         circuit: ConvertedCircuit,
         param_values: ParamDictType = {},
         n_shots: int = 1,
-        state: ReturnType | None = None,
+        state: ArrayLike | None = None,
         noise: Noise | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
@@ -192,7 +192,7 @@ class Backend(BackendInterface):
         raise NotImplementedError
 
     @staticmethod
-    def _overlap(bras: ReturnType, kets: ReturnType) -> ReturnType:
+    def _overlap(bras: ArrayLike, kets: ArrayLike) -> ArrayLike:
         # TODO
         raise NotImplementedError
 
