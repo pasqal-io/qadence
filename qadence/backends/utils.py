@@ -18,6 +18,7 @@ from torch import (
     rand,
 )
 
+from qadence.types import ParamDictType
 from qadence.utils import Endianness, int_to_basis
 
 FINITE_DIFF_EPS = 1e-06
@@ -91,7 +92,7 @@ def count_bitstrings(sample: Tensor, endianness: Endianness = Endianness.BIG) ->
     )
 
 
-def to_list_of_dicts(param_values: dict[str, Tensor]) -> list[dict[str, float]]:
+def to_list_of_dicts(param_values: ParamDictType) -> list[ParamDictType]:
     if not param_values:
         return [param_values]
 
@@ -144,7 +145,7 @@ def validate_state(state: Tensor, n_qubits: int) -> None:
         )
 
 
-def infer_batchsize(param_values: dict[str, Tensor] = None) -> int:
+def infer_batchsize(param_values: ParamDictType = None) -> int:
     """Infer the batch_size through the length of the parameter tensors."""
     return max([len(tensor) for tensor in param_values.values()]) if param_values else 1
 

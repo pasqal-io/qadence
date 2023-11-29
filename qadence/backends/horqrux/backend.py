@@ -11,7 +11,12 @@ from jax.typing import ArrayLike
 
 from qadence.backend import Backend as BackendInterface
 from qadence.backend import ConvertedCircuit, ConvertedObservable
-from qadence.backends.jax_utils import jarr_to_tensor, tensor_to_jnp, unhorqify
+from qadence.backends.jax_utils import (
+    jarr_to_tensor,
+    split_batched_paramdict,
+    tensor_to_jnp,
+    unhorqify,
+)
 from qadence.backends.utils import pyqify
 from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
@@ -107,19 +112,32 @@ class Backend(BackendInterface):
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> ArrayLike:
-        # batch_size = infer_batchsize(param_values)
+        observable = observable if isinstance(observable, list) else [observable]
+        batch_size = max([arr.size for name, arr in param_values.items()])
         # TODO vmap circ over batch of values
         n_obs = len(observable)
-        if state is None:
-            state = prepare_state(circuit.abstract.n_qubits, "0" * circuit.abstract.n_qubits)
-
-        def _expectation(state: ArrayLike, param_values: ParamDictType) -> ArrayLike:
-            wf = circuit.native.forward(state, param_values)
-            return observable[0].native.forward(wf, param_values)
-
-        # FIXME reshape, n_obs > 1
-        # return jnp.reshape(exp_vals, (batch_size, n_obs))
-        return _expectation(state, param_values)
+        expvals: list | ArrayLike = []
+        for single_param_dict in split_batched_paramdict(param_values):
+            out_state = self.run(
+                circuit,
+                single_param_dict,
+                state,
+                endianness,
+                horqify_state=True,
+                unhorqify_state=False,
+            )
+            expvals.append(
+                jnp.array(
+                    [
+                        conv_obs.native.forward(out_state, single_param_dict)
+                        for conv_obs in observable
+                    ]
+                )
+            )
+        expvals = jnp.array(expvals)
+        if expvals.size > 1:
+            expvals = jnp.reshape(expvals, (batch_size, n_obs))
+        return expvals
 
     def sample(
         self,

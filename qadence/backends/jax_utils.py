@@ -8,6 +8,8 @@ from sympy import Expr
 from sympy2jax import SymbolicModule as JaxSympyModule
 from torch import Tensor, cdouble, from_numpy
 
+from qadence.types import ParamDictType
+
 
 def jarr_to_tensor(arr: Array, dtype: Any = cdouble) -> Tensor:
     return from_numpy(device_get(arr)).to(dtype=dtype)
@@ -31,4 +33,17 @@ def jaxify(expr: Expr) -> JaxSympyModule:
 
 def unhorqify(state: Array) -> Array:
     """Convert a state of shape [2] * n_qubits + [batch_size] to (batch_size, 2**n_qubits)."""
-    return jnp.ravel(state, start_dim=0, end_dim=-2).t()
+    return jnp.ravel(state)
+
+
+def split_batched_paramdict(param_values: ParamDictType) -> list[ParamDictType]:
+    if not param_values:
+        return [param_values]
+
+    max_batch_size = max(p.size for p in param_values.values())
+    batched_values = {
+        k: (v if v.size == max_batch_size else v.repeat(max_batch_size))
+        for k, v in param_values.items()
+    }
+
+    return [{k: v[i] for k, v in batched_values.items()} for i in range(max_batch_size)]
