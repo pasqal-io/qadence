@@ -11,7 +11,7 @@ from torch import Tensor, allclose, cdouble, pi, tensor
 
 from qadence import QuantumCircuit, block_to_tensor, run, sample
 from qadence.backends.api import backend_factory
-from qadence.backends.utils import jarr_to_tensor, tensor_to_jnp
+from qadence.backends.jax_utils import jarr_to_tensor, tensor_to_jnp
 from qadence.blocks import AbstractBlock, MatrixBlock, chain, kron
 from qadence.divergences import js_divergence
 from qadence.ml_tools.utils import rand_featureparameters

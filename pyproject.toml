@@ -19,7 +19,7 @@ authors = [
 ]
 requires-python = ">=3.9,<3.12"
 license = {text = "Apache 2.0"}
-version = "1.1.1"
+version = "1.2.0"
 classifiers=[
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python",
@@ -42,14 +42,6 @@ dependencies = [
     "scipy",
     "pyqtorch==1.0.3",
     "matplotlib",
-    "jax",
-    "flax",
-    "optax",
-    "jaxopt",
-    "einops",
-    "numpy",
-    "sympy2jax",
-    "horqrux @ git+https://github.com/pasqal-io/horqrux"
 ]
 
 [tool.hatch.metadata]
@@ -65,7 +57,9 @@ visualization = [
   # "latex2svg @ git+https://github.com/Moonbase59/latex2svg.git#egg=latex2svg",
   # "scour",
 ]
-jax = ["jax",
+horqrux = [
+"horqrux==0.3.0",
+     "jax",
     "flax",
     "optax",
     "jaxopt",
@@ -81,13 +75,17 @@ all = [
   # FIXME: will be needed once we support latex labels
   # "latex2svg @ git+https://github.com/Moonbase59/latex2svg.git#egg=latex2svg",
   # "scour",
-    "jax",
+    "scipy<1.11",
+    "numpy",
+    "horqrux==0.3.0",
+     "jax",
     "flax",
     "optax",
     "jaxopt",
     "einops",
     "scipy<1.11",
-    "numpy"
+    "numpy",
+    "sympy2jax"
 ]
 
 [tool.hatch.envs.default]

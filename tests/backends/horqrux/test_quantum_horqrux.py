@@ -22,7 +22,7 @@ from qadence import (
     run,
 )
 from qadence.backends import backend_factory
-from qadence.backends.utils import jarr_to_tensor
+from qadence.backends.jax_utils import jarr_to_tensor
 from qadence.blocks import AbstractBlock
 from qadence.constructors import hea
 

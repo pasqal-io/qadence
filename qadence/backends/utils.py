@@ -2,13 +2,12 @@ from __future__ import annotations
 
 from collections import Counter
 from math import log2
-from typing import Any, Callable, Sequence
+from typing import Callable, Sequence
 
 import jax.numpy as jnp
 import numpy as np
 import pyqtorch as pyq
 import torch
-from jax import device_get
 from jax.typing import ArrayLike
 from pyqtorch.apply import apply_operator
 from pyqtorch.parametric import Parametric as PyQParametric
@@ -204,19 +203,3 @@ def dydxx(
         ),
         values[op.param_name],
     )
-
-
-def jarr_to_tensor(arr: ArrayLike, dtype: Any = torch.cdouble) -> torch.Tensor:
-    return torch.from_numpy(device_get(arr)).to(dtype=dtype)
-
-
-def tensor_to_jnp(tensor: torch.Tensor, dtype: Any = jnp.complex128) -> ArrayLike:
-    return (
-        jnp.array(tensor.numpy(), dtype=dtype)
-        if not tensor.requires_grad
-        else jnp.array(tensor.detach().numpy(), dtype=dtype)
-    )
-
-
-def values_to_jax(param_values: dict[str, Tensor]) -> dict[str, ArrayLike]:
-    return {key: jnp.array(value.detach().numpy()) for key, value in param_values.items()}

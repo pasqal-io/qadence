@@ -9,7 +9,7 @@ from jax import Array, custom_vjp
 
 from qadence.backend import Backend as QuantumBackend
 from qadence.backend import ConvertedCircuit, ConvertedObservable
-from qadence.backends.utils import (
+from qadence.backends.jax_utils import (
     tensor_to_jnp,
 )
 from qadence.blocks.utils import uuid_to_eigen

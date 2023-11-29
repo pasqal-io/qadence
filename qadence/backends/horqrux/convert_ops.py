@@ -15,7 +15,7 @@ from jax import Array
 from jax.tree_util import register_pytree_node_class
 from jax.typing import ArrayLike
 
-from qadence.backends.utils import tensor_to_jnp
+from qadence.backends.jax_utils import tensor_to_jnp
 from qadence.blocks import (
     AbstractBlock,
     AddBlock,

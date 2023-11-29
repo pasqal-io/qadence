@@ -11,7 +11,8 @@ from jax.typing import ArrayLike
 
 from qadence.backend import Backend as BackendInterface
 from qadence.backend import ConvertedCircuit, ConvertedObservable
-from qadence.backends.utils import jarr_to_tensor, pyqify, tensor_to_jnp
+from qadence.backends.jax_utils import jarr_to_tensor, tensor_to_jnp
+from qadence.backends.utils import pyqify
 from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements

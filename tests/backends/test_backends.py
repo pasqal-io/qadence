@@ -14,7 +14,7 @@ from torch import Tensor
 
 from qadence.backend import BackendConfiguration
 from qadence.backends.api import backend_factory, config_factory
-from qadence.backends.utils import jarr_to_tensor, tensor_to_jnp
+from qadence.backends.jax_utils import jarr_to_tensor, tensor_to_jnp
 from qadence.blocks import AbstractBlock, chain, kron
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import total_magnetization
