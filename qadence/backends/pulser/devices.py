@@ -24,7 +24,7 @@ def IdealDevice(
     )
 
 
-# device with realistic specs with local channels and custom bandwith.
+# Device with realistic specs with local channels and custom bandwith.
 def RealisticDevice(
     rydberg_level: int = 60, max_abs_detuning: float = 2 * pi * 4, max_amp: float = 2 * pi * 3
 ) -> VirtualDevice:

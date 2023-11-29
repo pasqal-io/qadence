@@ -3,9 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from warnings import warn
 
-import sympy
-import torch
-from numpy import pi
+from sympy import Expr, Heaviside, exp
+from torch import Tensor, pi
 
 from qadence.parameters import Parameter, evaluate
 
@@ -15,8 +14,8 @@ LOCAL_MAX_AMPLITUDE = 3
 LOCAL_MAX_DETUNING = 2 * pi * 20
 
 
-def sigmoid(x: torch.Tensor, a: float, b: float) -> sympy.Expr:
-    return 1.0 / (1.0 + sympy.exp(-a * (x + b)))
+def sigmoid(x: Tensor, a: float, b: float) -> Expr:
+    return 1.0 / (1.0 + exp(-a * (x + b)))
 
 
 @dataclass
@@ -26,21 +25,21 @@ class AddressingPattern:
     n_qubits: int
     """Number of qubits in register."""
 
-    weights_amp: dict[int, str | float | torch.Tensor | Parameter]
+    weights_amp: dict[int, str | float | Tensor | Parameter]
     """List of weights for fixed amplitude pattern that cannot be changed during the execution."""
 
-    weights_det: dict[int, str | float | torch.Tensor | Parameter]
+    weights_det: dict[int, str | float | Tensor | Parameter]
     """List of weights for fixed detuning pattern that cannot be changed during the execution."""
 
-    amp: str | float | torch.Tensor | Parameter = LOCAL_MAX_AMPLITUDE
+    amp: str | float | Tensor | Parameter = LOCAL_MAX_AMPLITUDE
     """Maximal amplitude of the amplitude pattern felt by a single qubit."""
 
-    det: str | float | torch.Tensor | Parameter = LOCAL_MAX_DETUNING
+    det: str | float | Tensor | Parameter = LOCAL_MAX_DETUNING
     """Maximal detuning of the detuning pattern felt by a single qubit."""
 
     def _validate_weights(
         self,
-        weights: dict[int, str | float | torch.Tensor | Parameter],
+        weights: dict[int, str | float | Tensor | Parameter],
     ) -> None:
         for v in weights.values():
             if not isinstance(v, (str, Parameter)):
@@ -49,7 +48,7 @@ class AddressingPattern:
 
     def _constrain_weights(
         self,
-        weights: dict[int, str | float | torch.Tensor | Parameter],
+        weights: dict[int, str | float | Tensor | Parameter],
     ) -> dict:
         # augment weight dict if needed
         weights = {
@@ -74,37 +73,33 @@ class AddressingPattern:
         self.amp = abs(
             self.amp
             * (
-                sympy.Heaviside(self.amp + GLOBAL_MAX_AMPLITUDE)  # type: ignore [operator]
-                - sympy.Heaviside(self.amp - GLOBAL_MAX_AMPLITUDE)  # type: ignore [operator]
+                Heaviside(self.amp + GLOBAL_MAX_AMPLITUDE)  # type: ignore [operator]
+                - Heaviside(self.amp - GLOBAL_MAX_AMPLITUDE)  # type: ignore [operator]
             )
         )
         self.det = -abs(
             self.det
             * (
-                sympy.Heaviside(self.det + GLOBAL_MAX_DETUNING)
-                - sympy.Heaviside(self.det - GLOBAL_MAX_DETUNING)
+                Heaviside(self.det + GLOBAL_MAX_DETUNING)
+                - Heaviside(self.det - GLOBAL_MAX_DETUNING)
             )
         )
 
-    def _create_local_constraint(self, val: sympy.Expr, weights: dict, max_val: float) -> dict:
+    def _create_local_constraint(self, val: Expr, weights: dict, max_val: float) -> dict:
         # enforce local constraints:
         # amp * w_amp_i < LOCAL_MAX_AMPLITUDE or
         # abs(det) * w_det_i < LOCAL_MAX_DETUNING
         local_constr = {k: val * v for k, v in weights.items()}
-        local_constr = {
-            k: sympy.Heaviside(v) - sympy.Heaviside(v - max_val) for k, v in local_constr.items()
-        }
+        local_constr = {k: Heaviside(v) - Heaviside(v - max_val) for k, v in local_constr.items()}
 
         return local_constr
 
-    def _create_global_constraint(
-        self, val: sympy.Expr, weights: dict, max_val: float
-    ) -> sympy.Expr:
+    def _create_global_constraint(self, val: Expr, weights: dict, max_val: float) -> Expr:
         # enforce global constraints:
         # amp * sum(w_amp_0, w_amp_1, ...) < GLOBAL_MAX_AMPLITUDE or
         # abs(det) * sum(w_det_0, w_det_1, ...) < GLOBAL_MAX_DETUNING
         weighted_vals_global = val * sum([v for v in weights.values()])
-        weighted_vals_global = sympy.Heaviside(weighted_vals_global) - sympy.Heaviside(
+        weighted_vals_global = Heaviside(weighted_vals_global) - Heaviside(
             weighted_vals_global - max_val
         )
 

@@ -318,8 +318,8 @@ for the Pulser backend, but will be further developed as more options are integr
     Currently, the options above are not fully integrated in both backends and this class should mostly be used
     if a user wishes to experiment with a different `rydberg_level`, or to change the device type for the pulser backend.
 
-    Planned features to add to the RydbergDevice include the semi-local addressing pattern, the definition of custom
-    interaction functions, the control of other drive Hamiltonian parameters so that $\Omega$, $\delta$ and $\phi$ are
+    Planned features to add to the RydbergDevice include the definition of custom interaction functions,
+    the control of other drive Hamiltonian parameters so that $\Omega$, $\delta$ and $\phi$ are
     not hardcoded when doing analog rotations, and the usage of the `max_abs_detuning` and `max_amp` to control those
     repsective parameters when training models in the pyqtorch backend.
 
