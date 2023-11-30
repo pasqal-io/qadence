@@ -320,7 +320,7 @@ for the Pulser backend, but will be further developed as more options are integr
 
     Planned features to add to the RydbergDevice include the definition of custom interaction functions,
     the control of other drive Hamiltonian parameters so that $\Omega$, $\delta$ and $\phi$ are
-    not hardcoded when doing analog rotations, and the usage of the `max_abs_detuning` and `max_amp` to control those
+    not hardcoded when doing analog rotations, and the usage of the `max_detuning` and `max_amp` to control those
     repsective parameters when training models in the pyqtorch backend.
 
 Finally, to change a given simulation, the device specs are integrated in the Qadence `Register`. By default,
