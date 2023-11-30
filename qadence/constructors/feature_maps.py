@@ -6,7 +6,7 @@ from collections.abc import Callable
 from math import isclose, pi
 from typing import Union
 
-from sympy import Function, acos
+from sympy import Basic, Function, acos
 
 from qadence.blocks import AbstractBlock, KronBlock, chain, kron, tag
 from qadence.logger import get_logger
@@ -34,6 +34,86 @@ RS_FUNC_DICT = {
     ReuploadScaling.TOWER: lambda i: float(i + 1),
     ReuploadScaling.EXP: lambda i: float(2**i),
 }
+
+
+def fm_parameter(
+    fm_type: BasisSet | type[Function] | str,
+    param: Parameter | str = "phi",
+    feature_range: tuple[float, float] | None = None,
+    target_range: tuple[float, float] | None = None,
+) -> Parameter | Basic:
+    # Backwards compatibility
+    if fm_type in ("fourier", "chebyshev", "tower"):
+        logger.warning(
+            "Selecting `fm_type` as 'fourier', 'chebyshev' or 'tower' is deprecated. "
+            "Please use the respective enumerations: 'fm_type = BasisSet.FOURIER', "
+            "'fm_type = BasisSet.CHEBYSHEV' or 'reupload_scaling = ReuploadScaling.TOWER'."
+        )
+        if fm_type == "fourier":
+            fm_type = BasisSet.FOURIER
+        elif fm_type == "chebyshev":
+            fm_type = BasisSet.CHEBYSHEV
+        elif fm_type == "tower":
+            fm_type = BasisSet.CHEBYSHEV
+
+    if isinstance(param, Parameter):
+        fparam = param
+        fparam.trainable = False
+    else:
+        fparam = FeatureParameter(param)
+
+    # Set feature and target range
+    feature_range = _set_range(fm_type) if feature_range is None else feature_range
+    target_range = _set_range(fm_type) if target_range is None else target_range
+
+    # Rescale the feature parameter
+    scaling = (max(target_range) - min(target_range)) / (max(feature_range) - min(feature_range))
+    shift = min(target_range) - min(feature_range) * scaling
+
+    if isclose(scaling, 1.0):
+        # So we don't get 1.0 factor in visualization
+        scaled_fparam = fparam + shift
+    else:
+        scaled_fparam = scaling * fparam + shift
+
+    # Transform feature parameter
+    if fm_type == BasisSet.FOURIER:
+        transformed_feature = scaled_fparam
+    elif fm_type == BasisSet.CHEBYSHEV:
+        transformed_feature = acos(scaled_fparam)
+    elif inspect.isclass(fm_type) and issubclass(fm_type, Function):
+        transformed_feature = fm_type(scaled_fparam)
+    else:
+        raise NotImplementedError(
+            f"Feature map type {fm_type} not implemented. Choose an item from the BasisSet "
+            f"enum: {[bs.name for bs in BasisSet]}, or your own sympy.Function to wrap "
+            "the given feature parameter with."
+        )
+
+    return transformed_feature
+
+
+def fm_reupload_scaling_fn(
+    reupload_scaling: ReuploadScaling | Callable | str = ReuploadScaling.CONSTANT,
+) -> tuple[Callable, str]:
+    # Set reupload scaling function
+    if callable(reupload_scaling):
+        rs_func = reupload_scaling
+        rs_tag = "Custom"
+    else:
+        rs_func = RS_FUNC_DICT.get(reupload_scaling, None)  # type: ignore [call-overload]
+        if rs_func is None:
+            raise NotImplementedError(
+                f"Reupload scaling {reupload_scaling} not implemented; choose an item from "
+                f"the ReuploadScaling enum: {[rs.name for rs in ReuploadScaling]}, or your own "
+                "python function with a single int arg as input and int or float output."
+            )
+        if isinstance(reupload_scaling, ReuploadScaling):
+            rs_tag = reupload_scaling.value
+        else:
+            rs_tag = reupload_scaling
+
+    return rs_func, rs_tag
 
 
 def feature_map(
@@ -95,73 +175,83 @@ def feature_map(
             f"Please provide one from {[rot.__name__ for rot in ROTATIONS]}."
         )
 
+    transformed_feature = fm_parameter(
+        fm_type, param, feature_range=feature_range, target_range=target_range
+    )
+
     # Backwards compatibility
-    if fm_type in ("fourier", "chebyshev", "tower"):
-        logger.warning(
-            "Selecting `fm_type` as 'fourier', 'chebyshev' or 'tower' is deprecated. "
-            "Please use the respective enumerations: 'fm_type = BasisSet.FOURIER', "
-            "'fm_type = BasisSet.CHEBYSHEV' or 'reupload_scaling = ReuploadScaling.TOWER'."
-        )
-        if fm_type == "fourier":
-            fm_type = BasisSet.FOURIER
-        elif fm_type == "chebyshev":
-            fm_type = BasisSet.CHEBYSHEV
-        elif fm_type == "tower":
-            fm_type = BasisSet.CHEBYSHEV
-            reupload_scaling = ReuploadScaling.TOWER
+    if fm_type == "tower":
+        logger.warning("Forcing reupload scaling strategy to TOWER")
+        reupload_scaling = ReuploadScaling.TOWER
 
-    if isinstance(param, Parameter):
-        fparam = param
-        fparam.trainable = False
-    else:
-        fparam = FeatureParameter(param)
+    # if fm_type in ("fourier", "chebyshev", "tower"):
+    #     logger.warning(
+    #         "Selecting `fm_type` as 'fourier', 'chebyshev' or 'tower' is deprecated. "
+    #         "Please use the respective enumerations: 'fm_type = BasisSet.FOURIER', "
+    #         "'fm_type = BasisSet.CHEBYSHEV' or 'reupload_scaling = ReuploadScaling.TOWER'."
+    #     )
+    #     if fm_type == "fourier":
+    #         fm_type = BasisSet.FOURIER
+    #     elif fm_type == "chebyshev":
+    #         fm_type = BasisSet.CHEBYSHEV
+    #     elif fm_type == "tower":
+    #         fm_type = BasisSet.CHEBYSHEV
+    #         reupload_scaling = ReuploadScaling.TOWER
 
-    # Set feature and target range
-    feature_range = _set_range(fm_type) if feature_range is None else feature_range
-    target_range = _set_range(fm_type) if target_range is None else target_range
+    # if isinstance(param, Parameter):
+    #     fparam = param
+    #     fparam.trainable = False
+    # else:
+    #     fparam = FeatureParameter(param)
 
-    # Rescale the feature parameter
-    scaling = (max(target_range) - min(target_range)) / (max(feature_range) - min(feature_range))
-    shift = min(target_range) - min(feature_range) * scaling
+    # # Set feature and target range
+    # feature_range = _set_range(fm_type) if feature_range is None else feature_range
+    # target_range = _set_range(fm_type) if target_range is None else target_range
 
-    if isclose(scaling, 1.0):
-        # So we don't get 1.0 factor in visualization
-        scaled_fparam = fparam + shift
-    else:
-        scaled_fparam = scaling * fparam + shift
+    # # Rescale the feature parameter
+    # scaling = (max(target_range) - min(target_range)) / (max(feature_range) - min(feature_range))
+    # shift = min(target_range) - min(feature_range) * scaling
 
-    # Transform feature parameter
-    if fm_type == BasisSet.FOURIER:
-        transformed_feature = scaled_fparam
-    elif fm_type == BasisSet.CHEBYSHEV:
-        transformed_feature = acos(scaled_fparam)
-    elif inspect.isclass(fm_type) and issubclass(fm_type, Function):
-        transformed_feature = fm_type(scaled_fparam)
-    else:
-        raise NotImplementedError(
-            f"Feature map type {fm_type} not implemented. Choose an item from the BasisSet "
-            f"enum: {[bs.name for bs in BasisSet]}, or your own sympy.Function to wrap "
-            "the given feature parameter with."
-        )
+    # if isclose(scaling, 1.0):
+    #     # So we don't get 1.0 factor in visualization
+    #     scaled_fparam = fparam + shift
+    # else:
+    #     scaled_fparam = scaling * fparam + shift
+
+    # # Transform feature parameter
+    # if fm_type == BasisSet.FOURIER:
+    #     transformed_feature = scaled_fparam
+    # elif fm_type == BasisSet.CHEBYSHEV:
+    #     transformed_feature = acos(scaled_fparam)
+    # elif inspect.isclass(fm_type) and issubclass(fm_type, Function):
+    #     transformed_feature = fm_type(scaled_fparam)
+    # else:
+    #     raise NotImplementedError(
+    #         f"Feature map type {fm_type} not implemented. Choose an item from the BasisSet "
+    #         f"enum: {[bs.name for bs in BasisSet]}, or your own sympy.Function to wrap "
+    #         "the given feature parameter with."
+    #     )
 
     basis_tag = fm_type.value if isinstance(fm_type, BasisSet) else str(fm_type)
 
-    # Set reupload scaling function
-    if callable(reupload_scaling):
-        rs_func = reupload_scaling
-        rs_tag = "Custom"
-    else:
-        rs_func = RS_FUNC_DICT.get(reupload_scaling, None)  # type: ignore [call-overload]
-        if rs_func is None:
-            raise NotImplementedError(
-                f"Reupload scaling {reupload_scaling} not implemented; choose an item from "
-                f"the ReuploadScaling enum: {[rs.name for rs in ReuploadScaling]}, or your own "
-                "python function with a single int arg as input and int or float output."
-            )
-        if isinstance(reupload_scaling, ReuploadScaling):
-            rs_tag = reupload_scaling.value
-        else:
-            rs_tag = reupload_scaling
+    rs_func, rs_tag = fm_reupload_scaling_fn(reupload_scaling)
+
+    # # Set reupload scaling function
+    # if callable(reupload_scaling):
+    #     rs_func = reupload_scaling
+    #     rs_tag = "Custom"
+    # else:
+    #     rs_func = RS_FUNC_DICT.get(reupload_scaling, None)  # type: ignore [call-overload]
+    #     if rs_func is None:
+    #         raise NotImplementedError(
+    #             f"Reupload scaling {reupload_scaling} not implemented; choose an item from "
+    #             f"the ReuploadScaling enum: {[rs.name for rs in ReuploadScaling]}, or your own "
+    #             "python function with a single int arg as input and int or float output."
+    #         )
+    #     if isinstance(reupload_scaling, ReuploadScaling):
+    #         rs_tag = reupload_scaling.value
+    #     else:
+    #         rs_tag = reupload_scaling
 
     # Set overall multiplier
     multiplier = 1 if multiplier is None else multiplier
