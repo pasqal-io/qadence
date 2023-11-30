@@ -142,7 +142,7 @@ dependencies = [
   "markdown-exec",
   "mike",
 ]
-features = ["pulser", "braket", "visualization"]
+features = ["pulser", "braket", "horqrux", "visualization"]
 
 [tool.hatch.envs.docs.scripts]
 build = "mkdocs build --clean --strict"
