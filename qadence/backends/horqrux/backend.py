@@ -129,9 +129,12 @@ class Backend(BackendInterface):
                 )
             )
 
-        expvals = jax.vmap(_expectation, in_axes=({k: 0 for k in param_values.keys()},))(
-            uniform_batchsize(param_values)
-        )
+        if batch_size > 1:
+            expvals = jax.vmap(_expectation, in_axes=({k: 0 for k in param_values.keys()},))(
+                uniform_batchsize(param_values)
+            )
+        else:
+            expvals = jnp.squeeze(_expectation(param_values), 0)  # Remove the dim
         if expvals.size > 1:
             expvals = jnp.reshape(expvals, (batch_size, n_obs))
         return expvals
