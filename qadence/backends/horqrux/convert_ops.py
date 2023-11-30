@@ -13,7 +13,6 @@ from horqrux.types import Gate
 from horqrux.utils import overlap
 from jax import Array
 from jax.tree_util import register_pytree_node_class
-from jax.typing import ArrayLike
 
 from qadence.blocks import (
     AbstractBlock,
@@ -73,12 +72,12 @@ class HorqruxObservable(HorqruxCircuit):
     def __init__(self, operators: list[Gate]):
         super().__init__(operators=operators)
 
-    def _forward(self, state: ArrayLike, values: ParamDictType) -> ArrayLike:
+    def _forward(self, state: Array, values: ParamDictType) -> Array:
         for op in self.operators:
             state = op.forward(state, values)
         return state
 
-    def forward(self, state: ArrayLike, values: ParamDictType) -> ArrayLike:
+    def forward(self, state: Array, values: ParamDictType) -> Array:
         return overlap(state, self._forward(state, values))
 
 
@@ -183,7 +182,7 @@ class HorqPrimitiveGate:
         self.target = qubit
         self.name = name
 
-    def forward(self, state: ArrayLike, values: ParamDictType) -> ArrayLike:
+    def forward(self, state: Array, values: ParamDictType) -> Array:
         return apply_gate(state, self.gates(self.target))
 
     def __repr__(self) -> str:
@@ -196,7 +195,7 @@ class HorqCNOTGate:
         self.control: int = control
         self.target: int = target
 
-    def forward(self, state: ArrayLike, values: ParamDictType) -> ArrayLike:
+    def forward(self, state: Array, values: ParamDictType) -> Array:
         return apply_gate(state, self.gates(self.target, self.control))
 
 
@@ -206,7 +205,7 @@ class HorqKronParametric:
         self.target: list[int] = target
         self.param_names: list[str] = param_names
 
-    def forward(self, state: ArrayLike, values: ParamDictType) -> ArrayLike:
+    def forward(self, state: Array, values: ParamDictType) -> Array:
         return apply_gate(
             state,
             tuple(
@@ -222,7 +221,7 @@ class HorqKronCNOT(HorqruxCircuit):
         self.target: list[int] = target
         self.control: list[int] = control
 
-    def forward(self, state: ArrayLike, values: ParamDictType) -> ArrayLike:
+    def forward(self, state: Array, values: ParamDictType) -> Array:
         return apply_gate(
             state,
             tuple(
@@ -242,7 +241,7 @@ class HorqParametricGate:
         self.control: int | None = control
         self.name = name
 
-    def forward(self, state: ArrayLike, values: ParamDictType) -> Array:
+    def forward(self, state: Array, values: ParamDictType) -> Array:
         val = jnp.array(values[self.parameter])
         return apply_gate(state, self.gates(val, self.target, self.control))
 
@@ -258,7 +257,7 @@ class HorqAddGate(HorqruxCircuit):
         self.operators = operations
         self.name = "Add"
 
-    def forward(self, state: ArrayLike, values: ParamDictType = {}) -> Array:
+    def forward(self, state: Array, values: ParamDictType = {}) -> Array:
         return reduce(add, (op.forward(state, values) for op in self.operators))
 
     def __repr__(self) -> str:
@@ -270,5 +269,5 @@ class HorqScaleGate:
         self.op = op
         self.parameter: str = parameter_name
 
-    def forward(self, state: ArrayLike, values: ParamDictType) -> ArrayLike:
+    def forward(self, state: Array, values: ParamDictType) -> Array:
         return jnp.array(values[self.parameter]) * self.op.forward(state, values)
