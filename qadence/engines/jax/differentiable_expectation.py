@@ -70,6 +70,7 @@ class JaxDifferentiableExpectation:
         def _expectation_bwd(res: Tuple[Array, ParamDictType, dict], v: Array) -> Any:
             state, values, psr_params = res
             grads = {}
+            # Hardcoding the single spectral_gap to 2. for jax.lax jitting reasons.
             spectral_gap = jnp.array(2.0, dtype=jnp.float64)
             shift = jnp.pi / 2
             for param_name, _ in psr_params.items():
