@@ -306,13 +306,15 @@ device_specs = RydbergDevice(
     coeff_xy=3700.00, # C_3 coefficient for the XY interaction
     max_detuning=2 * pi * 4, # Max value for delta, currently only used in pulser
     max_amp=2 * pi * 3, # Max value for omega, currently only used in pulser
+    pattern=None, # Semi-local addressing pattern, see the relevant tutorial
     device_type=DeviceType.IDEALIZED, # Pulser device to which the qadence device is converted in that backend
 )
 ```
 
 The values above are the defaults when simply running `device_specs = RydbergDevice()`. The convenience wrappers
-`IdealDevice()` or `RealisticDevice()` can also be used which currently simply change the `device_type`
-for the Pulser backend, but will be further developed as more options are integrated.
+`IdealDevice()` or `RealisticDevice()` can also be used which simply change the `device_type`
+for the Pulser backend, but also allow an `AddressingPattern` passed in the `pattern` argument
+([see the relevant tutorial here](semi-local-addressing.md)).
 
 !!! warning
     Currently, the options above are not fully integrated in both backends and this class should mostly be used
@@ -321,7 +323,7 @@ for the Pulser backend, but will be further developed as more options are integr
     Planned features to add to the RydbergDevice include the definition of custom interaction functions,
     the control of other drive Hamiltonian parameters so that $\Omega$, $\delta$ and $\phi$ are
     not hardcoded when doing analog rotations, and the usage of the `max_detuning` and `max_amp` to control those
-    repsective parameters when training models in the pyqtorch backend.
+    respective parameters when training models in the pyqtorch backend.
 
 Finally, to change a given simulation, the device specs are integrated in the Qadence `Register`. By default,
 all registers initialize an `IdealDevice()` under the hood. Below we run a quick test for a different rydberg
@@ -367,8 +369,8 @@ print("States equivalent: ", bool_equiv)
 ## Some technical details
 
 !!! warning
-    The details described here are relevant in the current version but are under
-    revision for the next version of the emulated analog interface.
+    The details described here are relevant in the current version but will
+    be lifted soon for the next version of the emulated analog interface.
 
 In the previous section we have exemplified the main ingredients of the current user-facing functionalities
 of the emulated analog interface, and in the next tutorial on Quantum Circuit Learning we will exmplify its usage
