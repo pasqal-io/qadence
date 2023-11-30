@@ -20,8 +20,9 @@ from qadence.types import Endianness, Engine, ParamDictType
 
 
 def compute_single_gap(eigen_vals: Array, default_val: float = 2.0) -> Array:
-    # maybe_gap= jnp.unique(jnp.abs(jnp.tril(eigen_vals - eigen_vals.reshape(-1, 1))), size=1)
-    return jnp.array(default_val)
+    eigen_vals = eigen_vals.reshape(1, 2)
+    gaps = jnp.abs(jnp.tril(eigen_vals.T - eigen_vals))
+    return jnp.unique(jnp.where(gaps > 0.0, gaps, default_val), size=1)
 
 
 @dataclass
