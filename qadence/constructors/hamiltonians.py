@@ -248,11 +248,6 @@ def single_z(qubit: int = 0, z_coefficient: float = 1.0) -> AbstractBlock:
 
 
 def total_magnetization(n_qubits: int, z_terms: np.ndarray | list | None = None) -> AbstractBlock:
-    message = (
-        DEPRECATION_MESSAGE
-        + "Please use `hamiltonian_factory(n_qubits, detuning=Z, node_coeff=z_terms)`."
-    )
-    warnings.warn(message, FutureWarning)
     return hamiltonian_factory(n_qubits, detuning=Z, detuning_strength=z_terms)
 
 
