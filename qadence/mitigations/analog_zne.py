@@ -102,7 +102,7 @@ def analog_zne(
             ]
         )
     # Zero-noise extrapolate.
-    if stretches:
+    if stretches is not None:
         extrapolated_exp_values = zne_pulse(
             stretches=param_values[param_uuid],
             zne_datasets=zne_datasets,
