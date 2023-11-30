@@ -67,16 +67,12 @@ class JaxDifferentiableExpectation:
                 psr_params,
             )
 
-        shift = jnp.pi / 2
-        gap_dict = {
-            param_name: compute_single_gap(eigenvals)
-            for param_name, eigenvals in uuid_to_eigs.items()
-        }
-
         def _expectation_bwd(res: Tuple[Array, ParamDictType, dict], v: Array) -> Any:
             state, values, psr_params = res
             grads = {}
-            for param_name, spectral_gap in gap_dict.items():
+            spectral_gap = jnp.array(2.0, dtype=jnp.float64)
+            shift = jnp.pi / 2
+            for param_name, _ in psr_params.items():
                 shifted_values = values.copy()
                 shifted_values[param_name] = shifted_values[param_name] + shift
                 f_plus = _expectation(state, shifted_values, psr_params)
