@@ -304,7 +304,7 @@ device_specs = RydbergDevice(
     interaction=Interaction.NN, # Or Interaction.XY, supported only for pyqtorch
     rydberg_level=60, # Integer value affecting the C_6 coefficient
     coeff_xy=3700.00, # C_3 coefficient for the XY interaction
-    max_abs_detuning=2 * pi * 4, # Max value for delta, currently only used in pulser
+    max_detuning=2 * pi * 4, # Max value for delta, currently only used in pulser
     max_amp=2 * pi * 3, # Max value for omega, currently only used in pulser
     device_type=DeviceType.IDEALIZED, # Pulser device to which the qadence device is converted in that backend
 )
