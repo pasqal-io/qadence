@@ -6,6 +6,7 @@ from functools import reduce
 import numpy as np
 import numpy.typing as npt
 import torch
+from numpy.linalg import inv, matrix_rank, pinv
 from scipy.linalg import norm
 from scipy.optimize import LinearConstraint, minimize
 
@@ -18,6 +19,11 @@ def corrected_probas(p_corr: npt.NDArray, T: npt.NDArray, p_raw: npt.NDArray) ->
 
 
 def mle_solve(p_raw: npt.NDArray) -> npt.NDArray:
+    """
+    Computes the MLE probability vector in accordance to the.
+
+    algorithm specified in https://arxiv.org/pdf/1106.5458.pdf Page(3)
+    """
     ## sort p_raw by values while keeping track of indices
     index_sort = p_raw.argsort()
     p_sort = p_raw[index_sort]
@@ -58,14 +64,25 @@ def renormalize_counts(corrected_counts: npt.NDArray, n_shots: int) -> npt.NDArr
 
 
 def mitigation_minimization(
-    noise: Noise, mitigation: Mitigations, samples: list[Counter], optimization_type: str
+    noise: Noise,
+    mitigation: Mitigations,
+    samples: list[Counter],
 ) -> list[Counter]:
     """Minimize a correction matrix subjected to stochasticity constraints.
 
     See Equation (5) in https://arxiv.org/pdf/2001.09980.pdf.
     See Page(3) in https://arxiv.org/pdf/1106.5458.pdf for MLE implementation
+
+    Args:
+        noise: Specifies confusion matrix and default error probability
+        mitigation: Selects a method to implement: 1.constrained_opt, 2.mle
+        samples: List of samples to be mitigated
+
+    Returns:
+        Mitigated counts computed by the algorithm
     """
     noise_matrices = noise.options.get("noise_matrix", noise.options["confusion_matrices"])
+    optimization_type = mitigation.options.get("optimization_type", "mle")
     n_qubits = len(list(samples[0].keys())[0])
     n_shots = sum(samples[0].values())
     # Build the whole T matrix.
@@ -74,10 +91,7 @@ def mitigation_minimization(
 
     if optimization_type == "mle":  ## MLE version
         ##check if matrix is singular and use appropriate inverse
-        if np.linalg.matrix_rank(T_matrix) == T_matrix.shape[0]:
-            T_inv = np.linalg.inv(T_matrix)
-        else:
-            T_inv = np.linalg.pinv(T_matrix)
+        T_inv = inv(T_matrix) if matrix_rank(T_matrix) == T_matrix.shape[0] else pinv(T_matrix)
 
     for sample in samples:
         bitstring_length = 2**n_qubits
@@ -86,7 +100,7 @@ def mitigation_minimization(
         # Array of raw probabilites.
         p_raw = np.array([sample[bs] for bs in ordered_bitstrings]) / n_shots
 
-        if optimization_type == "consrained_opt":
+        if optimization_type == "constrained_opt":
             # Initial random guess in [0,1].
             p_corr0 = np.random.rand(bitstring_length)
             # Stochasticity constraints.
@@ -130,9 +144,5 @@ def mitigation_minimization(
     return corrected_counters
 
 
-def mitigate(
-    noise: Noise, mitigation: Mitigations, samples: list[Counter], optimization_type: str = "mle"
-) -> list[Counter]:
-    return mitigation_minimization(
-        noise=noise, mitigation=mitigation, samples=samples, optimization_type=optimization_type
-    )
+def mitigate(noise: Noise, mitigation: Mitigations, samples: list[Counter]) -> list[Counter]:
+    return mitigation_minimization(noise=noise, mitigation=mitigation, samples=samples)

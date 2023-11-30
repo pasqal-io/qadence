@@ -27,33 +27,53 @@ pi = torch.pi
 
 
 @pytest.mark.parametrize(
-    "error_probability, n_shots, block, backend",
+    "error_probability, n_shots, block, backend, optimization_type",
     [
-        (0.1, 100, kron(X(0), X(1)), BackendName.BRAKET),
-        (0.1, 1000, kron(Z(0), Z(1), Z(2)) + kron(X(0), Y(1), Z(2)), BackendName.BRAKET),
-        (0.15, 1000, add(Z(0), Z(1), Z(2)), BackendName.BRAKET),
-        (0.1, 5000, kron(X(0), X(1)) + kron(Z(0), Z(1)) + kron(X(2), X(3)), BackendName.BRAKET),
-        (0.1, 500, add(Z(0), Z(1), kron(X(2), X(3))) + add(X(2), X(3)), BackendName.BRAKET),
-        (0.1, 2000, add(kron(Z(0), Z(1)), kron(X(2), X(3))), BackendName.BRAKET),
-        (0.1, 1300, kron(Z(0), Z(1)) + CNOT(0, 1), BackendName.BRAKET),
+        (0.1, 100, kron(X(0), X(1)), BackendName.BRAKET, "mle"),
+        (0.1, 1000, kron(Z(0), Z(1), Z(2)) + kron(X(0), Y(1), Z(2)), BackendName.BRAKET, "mle"),
+        (0.15, 1000, add(Z(0), Z(1), Z(2)), BackendName.BRAKET, "constrained_opt"),
+        (
+            0.1,
+            5000,
+            kron(X(0), X(1)) + kron(Z(0), Z(1)) + kron(X(2), X(3)),
+            BackendName.BRAKET,
+            "constrained_opt",
+        ),
+        (0.1, 500, add(Z(0), Z(1), kron(X(2), X(3))) + add(X(2), X(3)), BackendName.BRAKET, "mle"),
+        (0.1, 2000, add(kron(Z(0), Z(1)), kron(X(2), X(3))), BackendName.BRAKET, "mle"),
+        (0.1, 1300, kron(Z(0), Z(1)) + CNOT(0, 1), BackendName.BRAKET, "constrained_opt"),
         (
             0.05,
             1500,
             kron(RZ(0, parameter=0.01), RZ(1, parameter=0.01))
             + kron(RX(0, parameter=0.01), RX(1, parameter=0.01)),
             BackendName.PULSER,
+            "constrained_opt",
         ),
-        (0.001, 5000, HamEvo(generator=kron(Z(0), Z(1)), parameter=0.05), BackendName.BRAKET),
-        (0.12, 2000, HamEvo(generator=kron(Z(0), Z(1), Z(2)), parameter=0.001), BackendName.BRAKET),
+        (
+            0.001,
+            5000,
+            HamEvo(generator=kron(Z(0), Z(1)), parameter=0.05),
+            BackendName.BRAKET,
+            "mle",
+        ),
+        (
+            0.12,
+            2000,
+            HamEvo(generator=kron(Z(0), Z(1), Z(2)), parameter=0.001),
+            BackendName.BRAKET,
+            "mle",
+        ),
         (
             0.1,
             1000,
             HamEvo(generator=kron(Z(0), Z(1)) + kron(Z(0), Z(1), Z(2)), parameter=0.005),
             BackendName.BRAKET,
+            "constrained_opt",
         ),
-        (0.1, 100, kron(X(0), X(1)), BackendName.PYQTORCH),
-        (0.1, 200, kron(Z(0), Z(1), Z(2)) + kron(X(0), Y(1), Z(2)), BackendName.PYQTORCH),
-        (0.01, 1000, add(Z(0), Z(1), Z(2)), BackendName.PYQTORCH),
+        (0.1, 100, kron(X(0), X(1)), BackendName.PYQTORCH, "constrained_opt"),
+        (0.1, 200, kron(Z(0), Z(1), Z(2)) + kron(X(0), Y(1), Z(2)), BackendName.PYQTORCH, "mle"),
+        (0.01, 1000, add(Z(0), Z(1), Z(2)), BackendName.PYQTORCH, "mle"),
         (
             0.1,
             2000,
@@ -61,11 +81,18 @@ pi = torch.pi
                 generator=kron(X(0), X(1)) + kron(Z(0), Z(1)) + kron(X(2), X(3)), parameter=0.005
             ),
             BackendName.PYQTORCH,
+            "constrained_opt",
         ),
-        (0.1, 500, add(Z(0), Z(1), kron(X(2), X(3))) + add(X(2), X(3)), BackendName.PYQTORCH),
-        (0.05, 10000, add(kron(Z(0), Z(1)), kron(X(2), X(3))), BackendName.PYQTORCH),
-        (0.2, 1000, hamiltonian_factory(4, detuning=Z), BackendName.PYQTORCH),
-        (0.1, 500, kron(Z(0), Z(1)) + CNOT(0, 1), BackendName.PYQTORCH),
+        (
+            0.1,
+            500,
+            add(Z(0), Z(1), kron(X(2), X(3))) + add(X(2), X(3)),
+            BackendName.PYQTORCH,
+            "constrained_opt",
+        ),
+        (0.05, 10000, add(kron(Z(0), Z(1)), kron(X(2), X(3))), BackendName.PYQTORCH, "mle"),
+        (0.2, 1000, hamiltonian_factory(4, detuning=Z), BackendName.PYQTORCH, "mle"),
+        (0.1, 500, kron(Z(0), Z(1)) + CNOT(0, 1), BackendName.PYQTORCH, "constrained_opt"),
     ],
 )
 def test_readout_mitigation_quantum_model(
@@ -73,13 +100,16 @@ def test_readout_mitigation_quantum_model(
     n_shots: int,
     block: AbstractBlock,
     backend: BackendName,
+    optimization_type: str,
 ) -> None:
     diff_mode = "ad" if backend == BackendName.PYQTORCH else "gpsr"
     circuit = QuantumCircuit(block.n_qubits, block)
     model = QuantumModel(circuit=circuit, backend=backend, diff_mode=diff_mode)
 
     noise = Noise(protocol=Noise.READOUT)
-    mitigation = Mitigations(protocol=Mitigations.READOUT)
+    mitigation = Mitigations(
+        protocol=Mitigations.READOUT, options={"optimization_type": optimization_type}
+    )
     noiseless_samples: list[Counter] = model.sample(n_shots=n_shots)
     noisy_samples: list[Counter] = model.sample(noise=noise, n_shots=n_shots)
     mitigated_samples: list[Counter] = model.sample(
