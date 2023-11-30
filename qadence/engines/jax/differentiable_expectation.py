@@ -41,11 +41,10 @@ class JaxDifferentiableExpectation:
     engine: Engine = Engine.JAX
 
     def psr(self) -> Any:
+        n_qubits = self.circuit.abstract.n_qubits
         observable = self.observable[0]
         if self.state is None:
-            self.state = prepare_state(
-                self.circuit.abstract.n_qubits, "0" * self.circuit.abstract.n_qubits
-            )
+            self.state = prepare_state(n_qubits, "0" * n_qubits)
 
         def _expectation_fn(state: Array, values: dict, psr_params: dict) -> Array:
             wf = self.circuit.native.forward(state, values)
