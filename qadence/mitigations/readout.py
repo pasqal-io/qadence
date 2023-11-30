@@ -75,7 +75,9 @@ def mitigation_minimization(
 
     Args:
         noise: Specifies confusion matrix and default error probability
-        mitigation: Selects a method to implement: 1.constrained_opt, 2.mle
+        mitigation: Selects additional mitigation options based on noise choice.
+        For readout we have the following mitigation options for optimization
+        1.constrained_opt, 2.mle. Default : mle
         samples: List of samples to be mitigated
 
     Returns:
