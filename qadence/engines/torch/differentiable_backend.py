@@ -44,18 +44,19 @@ class DifferentiableBackend(DifferentiableBackendInterface):
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> ArrayLike:
-        """Compute the expectation value of a given observable.
+        """Compute the expectation value of the `circuit` with the given `observable`.
 
         Arguments:
-            circuit: A backend native quantum circuit to be executed.
-            observable: A backend native observable to compute the expectation value from.
-            param_values: A dict of values for symbolic substitution.
-            state: An initial state.
-            measurement: A shot-based measurement protocol.
-            endianness: Endianness of the state.
-
-        Returns:
-            A tensor of expectation values.
+            circuit: A converted circuit as returned by `backend.circuit`.
+            observable: A converted observable as returned by `backend.observable`.
+            param_values: _**Already embedded**_ parameters of the circuit. See
+                [`embedding`][qadence.blocks.embedding.embedding] for more info.
+            state: Initial state.
+            measurement: Optional measurement protocol. If None, use
+                exact expectation value with a statevector simulator.
+            noise: A noise model to use.
+            mitigation: The error mitigation to use.
+            endianness: Endianness of the resulting bit strings.
         """
         observable = observable if isinstance(observable, list) else [observable]
         differentiable_expectation = DifferentiableExpectation(
