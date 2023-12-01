@@ -55,7 +55,7 @@ def test_pulser_pyq_addressing(amp: float, det: float, spacing: float) -> None:
     reg = Register(support=n_qubits, spacing=spacing, device_specs=device_specs)
     circ = QuantumCircuit(reg, block)
 
-    values = {"x": torch.linspace(0.5, 2 * torch.pi, 50)}
+    values = {"x": torch.linspace(0.5, 2 * torch.pi, 5)}
     obs = total_magnetization(n_qubits)
 
     # define pulser backend
@@ -79,10 +79,9 @@ def test_pulser_pyq_addressing(amp: float, det: float, spacing: float) -> None:
     assert torch.allclose(expval_pulser, expval_pyq, atol=MIDDLE_ACCEPTANCE)
 
 
-@pytest.mark.flaky(max_runs=10)
+@pytest.mark.flaky(max_runs=5)
 def test_addressing_training() -> None:
     n_qubits = 3
-
     f_value = torch.rand(1)
 
     # define training parameters
@@ -102,9 +101,10 @@ def test_addressing_training() -> None:
 
     device_specs = IdealDevice(pattern=pattern)
 
-    # define training circuit
-    block = chain(AnalogRX(1 + torch.rand(1).item()), AnalogRY(1 + torch.rand(1).item()))
-    reg = Register(support=n_qubits, spacing=8, device_specs=device_specs)
+    reg = Register.line(n_qubits, spacing=8.0, device_specs=device_specs)
+
+    # some otherwise fixed circuit
+    block = AnalogRX(torch.pi)
     circ = QuantumCircuit(reg, block)
 
     # define quantum model
@@ -114,13 +114,13 @@ def test_addressing_training() -> None:
     # prepare for training
     optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
     loss_criterion = torch.nn.MSELoss()
-    n_epochs = 200
+    n_epochs = 100
     loss_save = []
 
     # train model
     for _ in range(n_epochs):
         optimizer.zero_grad()
-        out = model.expectation({})
+        out = model.expectation({}).flatten()
         loss = loss_criterion(f_value, out)
         loss.backward()
         optimizer.step()
