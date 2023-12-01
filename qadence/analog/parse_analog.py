@@ -8,7 +8,6 @@ from qadence.analog.hamiltonian_terms import (
 from qadence.blocks import chain
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.analog import (
-    AnalogBlock,
     AnalogKron,
     ConstantAnalogRotation,
     WaitBlock,
@@ -63,31 +62,36 @@ def add_background_hamiltonian(
 def _analog_to_hevo(
     block: AbstractBlock, register: Register, h_background: AbstractBlock
 ) -> AbstractBlock:
-    if isinstance(block, AnalogBlock):
-        if isinstance(block, WaitBlock):
-            duration = block.parameters.duration
-            return HamEvo(h_background, duration / 1000)
+    """
+    Converter from AnalogBlock to the respective HamEvo.
 
-        if isinstance(block, ConstantAnalogRotation):
-            h_drive = rydberg_drive_hamiltonian(block, register)
-            duration = block.parameters.duration
-            return HamEvo(h_drive + h_background, duration / 1000)
+    Any other block not covered by the specific conditions below is left unchanged.
+    """
 
-        if isinstance(block, AnalogKron):
-            # Needed to ensure kronned Analog blocks are implemented
-            # in sequence, consistent with the current Pulser implementation.
-            # FIXME: Revisit this assumption and the need for AnalogKron to have
-            # the same duration, and clean this code accordingly.
-            # https://github.com/pasqal-io/qadence/issues/226
-            ops = []
-            for block in block.blocks:
-                if isinstance(block, ConstantAnalogRotation):
-                    duration = block.parameters.duration
-                    h_drive = rydberg_drive_hamiltonian(block, register)
-                    ops.append(HamEvo(h_drive + h_background, duration / 1000))
-            if len(ops) == 0:
-                duration = block.parameters.duration  # type: ignore
-                ops.append(HamEvo(h_background, duration / 1000))
-            return chain(*ops)
+    if isinstance(block, WaitBlock):
+        duration = block.parameters.duration
+        return HamEvo(h_background, duration / 1000)
+
+    if isinstance(block, ConstantAnalogRotation):
+        h_drive = rydberg_drive_hamiltonian(block, register)
+        duration = block.parameters.duration
+        return HamEvo(h_drive + h_background, duration / 1000)
+
+    if isinstance(block, AnalogKron):
+        # Needed to ensure kronned Analog blocks are implemented
+        # in sequence, consistent with the current Pulser implementation.
+        # FIXME: Revisit this assumption and the need for AnalogKron to have
+        # the same duration, and clean this code accordingly.
+        # https://github.com/pasqal-io/qadence/issues/226
+        ops = []
+        for block in block.blocks:
+            if isinstance(block, ConstantAnalogRotation):
+                duration = block.parameters.duration
+                h_drive = rydberg_drive_hamiltonian(block, register)
+                ops.append(HamEvo(h_drive + h_background, duration / 1000))
+        if len(ops) == 0:
+            duration = block.parameters.duration  # type: ignore
+            ops.append(HamEvo(h_background, duration / 1000))
+        return chain(*ops)
 
     return block

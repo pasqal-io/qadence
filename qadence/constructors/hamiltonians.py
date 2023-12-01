@@ -119,12 +119,9 @@ def hamiltonian_factory(
     register = Register(register) if isinstance(register, int) else register
 
     # Get interaction function
-    try:
-        int_fn = INTERACTION_DICT[interaction]  # type: ignore [index]
-    except (KeyError, ValueError) as error:
-        if interaction is None:
-            pass
-        else:
+    if interaction is not None:
+        int_fn = INTERACTION_DICT.get(interaction, None)
+        if int_fn is None:
             raise KeyError(f"Interaction {interaction} not supported.")
 
     # Check single-qubit detuning
@@ -144,17 +141,15 @@ def hamiltonian_factory(
     # Create single-qubit detunings:
     single_qubit_terms: List[AbstractBlock] = []
     if detuning is not None:
-        for i, node in enumerate(register.nodes):
-            block_sq = detuning(node)  # type: ignore [operator]
-            single_qubit_terms.append(detuning_strength_array[i] * block_sq)
+        for strength, node in zip(detuning_strength_array, register.nodes):
+            single_qubit_terms.append(strength * detuning(node))
 
     # Create two-qubit interactions:
     two_qubit_terms: List[AbstractBlock] = []
     edge_data = register.all_node_pairs if use_all_node_pairs else register.edges
-    if interaction is not None:
-        for i, edge in enumerate(edge_data):
-            block_tq = int_fn(*edge)  # type: ignore [operator]
-            two_qubit_terms.append(interaction_strength_array[i] * block_tq)
+    if interaction is not None and int_fn is not None:
+        for strength, edge in zip(interaction_strength_array, edge_data):
+            two_qubit_terms.append(strength * int_fn(*edge))
 
     return add(*single_qubit_terms, *two_qubit_terms)
 
@@ -199,6 +194,10 @@ def _preprocess_strengths(
     return strength
 
 
+def total_magnetization(n_qubits: int, z_terms: np.ndarray | list | None = None) -> AbstractBlock:
+    return hamiltonian_factory(n_qubits, detuning=Z, detuning_strength=z_terms)
+
+
 # FIXME: Previous hamiltonian / observable functions, now refactored, to be deprecated:
 
 DEPRECATION_MESSAGE = "This function will be removed in the future. "
@@ -208,10 +207,6 @@ def single_z(qubit: int = 0, z_coefficient: float = 1.0) -> AbstractBlock:
     message = DEPRECATION_MESSAGE + "Please use `z_coefficient * Z(qubit)` directly."
     warnings.warn(message, FutureWarning)
     return Z(qubit) * z_coefficient
-
-
-def total_magnetization(n_qubits: int, z_terms: np.ndarray | list | None = None) -> AbstractBlock:
-    return hamiltonian_factory(n_qubits, detuning=Z, detuning_strength=z_terms)
 
 
 def zz_hamiltonian(

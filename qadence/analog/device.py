@@ -70,11 +70,6 @@ class RydbergDevice:
 
 def IdealDevice(pattern: AddressingPattern | None = None) -> RydbergDevice:
     return RydbergDevice(
-        interaction=Interaction.NN,
-        rydberg_level=60,
-        coeff_xy=3700.00,
-        max_detuning=2 * pi * 4,
-        max_amp=2 * pi * 3,
         pattern=pattern,
         type=DeviceType.IDEALIZED,
     )
@@ -82,11 +77,6 @@ def IdealDevice(pattern: AddressingPattern | None = None) -> RydbergDevice:
 
 def RealisticDevice(pattern: AddressingPattern | None = None) -> RydbergDevice:
     return RydbergDevice(
-        interaction=Interaction.NN,
-        rydberg_level=60,
-        coeff_xy=3700.00,
-        max_detuning=2 * pi * 4,
-        max_amp=2 * pi * 3,
         pattern=pattern,
         type=DeviceType.REALISTIC,
     )
