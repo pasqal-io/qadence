@@ -14,7 +14,6 @@ def backend_factory(
     configuration: BackendConfiguration | dict | None = None,
 ) -> Backend | DifferentiableBackend:
     backend_inst: Backend | DifferentiableBackend
-    diff_backend_cls: type[DifferentiableBackend]
     backends = available_backends()
     try:
         backend_name = BackendName(backend)
@@ -60,7 +59,7 @@ def backend_factory(
             )
         try:
             diff_backend_cls = available_engines()[engine_name]
-            backend_inst = diff_backend_cls(backend_inst, DiffMode(diff_mode))  # type: ignore[arg-type]
+            backend_inst = diff_backend_cls(backend=backend_inst, diff_mode=DiffMode(diff_mode))  # type: ignore[arg-type]
         except Exception as e:
             raise ImportError(
                 f"The requested engine '{engine_name}' is either not installed\
