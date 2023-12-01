@@ -74,8 +74,7 @@ in the Hamiltonian can effectively be used for computations.
 ```python exec="on" source="material-block" session="emu"
 from qadence import Register
 
-dx = 8.0  # Atom spacing in μm
-reg = Register.line(3, spacing = dx)
+reg = Register.line(3, spacing=8.0)  # Atom spacing in μm
 ```
 
 Currently, the most general rotation operation uses the `AnalogRot` operation, which
@@ -209,8 +208,7 @@ from qadence import RX, AnalogRX, random_state, equivalent_state, kron, run
 from math import pi
 
 n_qubits = 3
-dx = 8.0
-reg = Register.line(n_qubits, spacing = dx)
+reg = Register.line(n_qubits, spacing=8.0)
 
 # Rotation angle
 theta = pi
@@ -276,8 +274,7 @@ function `wait` which does exactly this.
 from qadence import Register, BackendName, random_state, equivalent_state, wait, run
 
 n_qubits = 3
-dx = 8.0
-reg = Register.line(n_qubits, spacing = dx)
+reg = Register.line(n_qubits, spacing=8.0)
 
 duration = 1000.
 op = wait(duration = duration)
@@ -309,12 +306,12 @@ device_specs = RydbergDevice(
     max_detuning=2 * pi * 4, # Max value for delta, currently only used in pulser
     max_amp=2 * pi * 3, # Max value for omega, currently only used in pulser
     pattern=None, # Semi-local addressing pattern, see the relevant tutorial
-    device_type=DeviceType.IDEALIZED, # Pulser device to which the qadence device is converted in that backend
+    type=DeviceType.IDEALIZED, # Pulser device to which the qadence device is converted in that backend
 )
 ```
 
 The values above are the defaults when simply running `device_specs = RydbergDevice()`. The convenience wrappers
-`IdealDevice()` or `RealisticDevice()` can also be used which simply change the `device_type`
+`IdealDevice()` or `RealisticDevice()` can also be used which simply change the `type`
 for the Pulser backend, but also allow an `AddressingPattern` passed in the `pattern` argument
 ([see the relevant tutorial here](semi-local-addressing.md)).
 

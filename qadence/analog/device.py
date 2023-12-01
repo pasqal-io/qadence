@@ -40,7 +40,7 @@ class RydbergDevice:
     pattern: AddressingPattern | None = None
     """Semi-local addressing pattern configuration."""
 
-    device_type: DeviceType = DeviceType.IDEALIZED
+    type: DeviceType = DeviceType.IDEALIZED
     """DeviceType.IDEALIZED or REALISTIC to convert to the Pulser backend."""
 
     def __post_init__(self) -> None:
@@ -76,7 +76,7 @@ def IdealDevice(pattern: AddressingPattern | None = None) -> RydbergDevice:
         max_detuning=2 * pi * 4,
         max_amp=2 * pi * 3,
         pattern=pattern,
-        device_type=DeviceType.IDEALIZED,
+        type=DeviceType.IDEALIZED,
     )
 
 
@@ -88,5 +88,5 @@ def RealisticDevice(pattern: AddressingPattern | None = None) -> RydbergDevice:
         max_detuning=2 * pi * 4,
         max_amp=2 * pi * 3,
         pattern=pattern,
-        device_type=DeviceType.REALISTIC,
+        type=DeviceType.REALISTIC,
     )

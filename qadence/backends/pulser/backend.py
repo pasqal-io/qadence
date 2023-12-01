@@ -57,11 +57,11 @@ def make_sequence(circ: QuantumCircuit, config: Configuration) -> Sequence:
     qadence_register = circ.register
     device_specs = qadence_register.device_specs
 
-    if device_specs.device_type == DeviceType.IDEALIZED:
+    if device_specs.type == DeviceType.IDEALIZED:
         device = IdealDevice(
             device_specs.rydberg_level, device_specs.max_detuning, device_specs.max_amp
         )
-    elif device_specs.device_type == DeviceType.REALISTIC:
+    elif device_specs.type == DeviceType.REALISTIC:
         device = RealisticDevice(
             device_specs.rydberg_level, device_specs.max_detuning, device_specs.max_amp
         )
