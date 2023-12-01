@@ -31,15 +31,16 @@ classifiers=[
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
-    "openfermion",
+    "numpy",
     "torch",
+    "openfermion",
     "sympytorch>=0.1.2",
     "rich",
     "tensorboard>=2.12.0",
     "deepdiff",
     "jsonschema",
     "nevergrad",
-    "scipy",
+    "scipy<1.11",
     "pyqtorch==1.0.3",
     "matplotlib",
 ]
@@ -58,14 +59,12 @@ visualization = [
   # "scour",
 ]
 horqrux = [
-"horqrux==0.3.0",
-     "jax",
+    "horqrux==0.3.0",
+    "jax",
     "flax",
     "optax",
     "jaxopt",
     "einops",
-    "scipy<1.11",
-    "numpy",
     "sympy2jax"]
 
 all = [
@@ -75,16 +74,12 @@ all = [
   # FIXME: will be needed once we support latex labels
   # "latex2svg @ git+https://github.com/Moonbase59/latex2svg.git#egg=latex2svg",
   # "scour",
-    "scipy<1.11",
-    "numpy",
     "horqrux==0.3.0",
-     "jax",
+    "jax",
     "flax",
     "optax",
     "jaxopt",
     "einops",
-    "scipy<1.11",
-    "numpy",
     "sympy2jax"
 ]
 
