@@ -114,8 +114,8 @@ class DifferentiableBackend(ABC):
             )
             if len(list(non_prim_blocks)) > 0:
                 raise ValueError(
-                    "The circuit contains non-primitive blocks that are currently not supported by the "
-                    "PSR differentiable mode."
+                    "The circuit contains non-primitive blocks that are currently\
+                    not supported by the PSR differentiable mode."
                 )
         return self.backend.circuit(circuit)
 
