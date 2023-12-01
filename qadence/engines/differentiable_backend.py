@@ -107,7 +107,7 @@ class DifferentiableBackend(ABC):
         return self.backend.default_configuration()
 
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:
-        if self.diff_mode == DiffMode.PSR:
+        if self.diff_mode == DiffMode.GPSR:
             parametrized_blocks = list(uuid_to_block(circuit.block).values())
             non_prim_blocks = filter(
                 lambda b: not isinstance(b, PrimitiveBlock), parametrized_blocks
