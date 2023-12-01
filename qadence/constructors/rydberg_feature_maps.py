@@ -5,19 +5,11 @@ from typing import Callable
 import numpy as np
 from sympy import Basic, Function
 
-from qadence import (
-    AbstractBlock,
-    AnalogRot,
-    AnalogRX,
-    AnalogRY,
-    AnalogRZ,
-    FeatureParameter,
-    Parameter,
-    kron,
-)
-from qadence.blocks import AnalogBlock
+from qadence.blocks import AbstractBlock, AnalogBlock, kron
 from qadence.constructors.feature_maps import fm_parameter
 from qadence.logger import get_logger
+from qadence.operations import AnalogRot, AnalogRX, AnalogRY, AnalogRZ
+from qadence.parameters import FeatureParameter, Parameter
 from qadence.types import BasisSet, TParameter
 
 logger = get_logger(__file__)
