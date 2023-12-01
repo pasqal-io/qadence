@@ -15,13 +15,18 @@ def backend_factory(
 ) -> Backend | DifferentiableBackend:
     backend_inst: Backend | DifferentiableBackend
     diff_backend_cls: type[DifferentiableBackend]
-    backend_name = BackendName(backend)
     backends = available_backends()
-
+    try:
+        backend_name = BackendName(backend)
+    except ValueError:
+        raise NotImplementedError(f"The requested backend '{backend}' is not implemented.")
     try:
         BackendCls = backends[backend_name]
-    except (KeyError, ValueError):
-        raise NotImplementedError(f"The requested backend '{backend_name}' is not implemented.")
+    except Exception as e:
+        raise ImportError(
+            f"The requested backend '{backend_name}' is either not installed\
+              or could not be imported due to {e}."
+        )
 
     default_config = BackendCls.default_configuration()
     if configuration is None:
