@@ -18,13 +18,22 @@ logger = get_logger(__name__)
 
 
 def default_passes(config: Configuration) -> list[Callable]:
-    return [
-        add_background_hamiltonian,
-        lambda circ: blockfn_to_circfn(chain_single_qubit_ops)(circ)
-        if config.use_single_qubit_composition
-        else blockfn_to_circfn(flatten)(circ),
-        blockfn_to_circfn(scale_primitive_blocks_only),
-    ]
+    passes: list = []
+
+    # Replaces AnalogBlocks with respective HamEvo in the circuit block tree:
+    passes.append(add_background_hamiltonian)
+
+    if config.use_single_qubit_composition:
+        # Composes chains of single-qubit gates into a single unitary before applying to the state:
+        passes.append(lambda circ: blockfn_to_circfn(chain_single_qubit_ops)(circ))
+    else:
+        # Flattens nested composed blocks:
+        passes.append(lambda circ: blockfn_to_circfn(flatten)(circ))
+
+    # Pushes block scales into the leaves of the block tree:
+    passes.append(blockfn_to_circfn(scale_primitive_blocks_only))
+
+    return passes
 
 
 @dataclass
