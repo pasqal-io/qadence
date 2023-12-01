@@ -5,8 +5,7 @@ from typing import Any
 
 from jax import Array
 
-from qadence.backend import Backend as QuantumBackend
-from qadence.backend import Converted, ConvertedCircuit, ConvertedObservable
+from qadence.backend import Backend, Converted, ConvertedCircuit, ConvertedObservable
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.primitive import PrimitiveBlock
 from qadence.blocks.utils import uuid_to_block
@@ -30,7 +29,7 @@ class JaxBackend(DifferentiableBackend):
 
     def __init__(
         self,
-        backend: QuantumBackend,
+        backend: Backend,
         diff_mode: DiffMode = DiffMode.AD,
         **psr_args: int | float | None,
     ) -> None:
