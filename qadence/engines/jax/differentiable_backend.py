@@ -41,7 +41,7 @@ class JaxBackend(DifferentiableBackend):
         self,
         circuit: ConvertedCircuit,
         param_values: ParamDictType = {},
-        state: Array | None = None,
+        state: ArrayLike | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> ArrayLike:
         """Run on the underlying backend."""
@@ -54,7 +54,7 @@ class JaxBackend(DifferentiableBackend):
         circuit: ConvertedCircuit,
         observable: list[ConvertedObservable] | ConvertedObservable,
         param_values: ParamDictType = {},
-        state: Array | None = None,
+        state: ArrayLike | None = None,
         measurement: Measurements | None = None,
         noise: Noise | None = None,
         mitigation: Mitigations | None = None,
