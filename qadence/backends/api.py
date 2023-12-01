@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from qadence.backend import Backend, BackendConfiguration
 from qadence.engines.differentiable_backend import DifferentiableBackend
-from qadence.extensions import available_backends, set_backend_config
+from qadence.extensions import available_backends, available_engines, set_backend_config
 from qadence.types import BackendName, DiffMode, Engine
 
 __all__ = ["backend_factory", "config_factory"]
@@ -50,17 +50,22 @@ def backend_factory(
 
     # Set backend configurations which depend on the differentiation mode
     set_backend_config(backend_inst, diff_mode)
-
+    # Wrap the quantum Backend in a DifferentiableBackend if a diff_mode is passed.
     if diff_mode is not None:
-        if backend_inst.engine == Engine.TORCH:
-            from qadence.engines.torch.differentiable_backend import TorchBackend
-
-            diff_backend_cls = TorchBackend
-        elif backend_inst.engine == Engine.JAX:
-            from qadence.engines.jax.differentiable_backend import JaxBackend
-
-            diff_backend_cls = JaxBackend
-        backend_inst = diff_backend_cls(backend_inst, DiffMode(diff_mode))  # type: ignore[arg-type]
+        try:
+            engine_name = Engine(backend_inst.engine)
+        except ValueError:
+            raise NotImplementedError(
+                f"The requested engine '{backend_inst.engine}' is not implemented."
+            )
+        try:
+            diff_backend_cls = available_engines()[engine_name]
+            backend_inst = diff_backend_cls(backend_inst, DiffMode(diff_mode))  # type: ignore[arg-type]
+        except Exception as e:
+            raise ImportError(
+                f"The requested engine '{engine_name}' is either not installed\
+                or could not be imported due to {e}."
+            )
     return backend_inst
 
 

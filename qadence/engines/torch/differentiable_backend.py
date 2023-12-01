@@ -13,8 +13,10 @@ from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.primitive import PrimitiveBlock
 from qadence.blocks.utils import uuid_to_block
 from qadence.circuit import QuantumCircuit
-from qadence.engines.differentiable_backend import DifferentiableBackend
-from qadence.engines.torch.differentiable_expectation import TorchDifferentiableExpectation
+from qadence.engines.differentiable_backend import (
+    DifferentiableBackend as DifferentiableBackendInterface,
+)
+from qadence.engines.torch.differentiable_expectation import DifferentiableExpectation
 from qadence.extensions import get_gpsr_fns
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
@@ -22,7 +24,7 @@ from qadence.noise import Noise
 from qadence.types import ArrayLike, DiffMode, Endianness, ParamDictType
 
 
-class TorchBackend(DifferentiableBackend):
+class DifferentiableBackend(DifferentiableBackendInterface):
     """A class to abstract the operations done by the autodiff engine.
 
     Arguments:
@@ -80,7 +82,7 @@ class TorchBackend(DifferentiableBackend):
             A tensor of expectation values.
         """
         observable = observable if isinstance(observable, list) else [observable]
-        differentiable_expectation = TorchDifferentiableExpectation(
+        differentiable_expectation = DifferentiableExpectation(
             backend=self.backend,
             circuit=circuit,
             observable=observable,

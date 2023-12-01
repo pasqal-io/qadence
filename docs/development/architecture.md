@@ -21,7 +21,7 @@ In Qadence there are 4 main objects spread across 3 different levels of abstract
 * **Differentiation layer**: Intermediate layer has the purpose of integrating quantum
   computation with a given automatic differentiation engine. It is meant to be purely stateless and
   contains one object:
-    * [`DifferentiableBackend`][qadence.engines.torch.TorchBackend]:
+    * [`DifferentiableBackend`][qadence.engines.torch.DifferentiableBackend]:
       An abstract class whose concrete implementation wraps a quantum backend and make it
       automatically differentiable using different engines (e.g. PyTorch or Jax).
       Note, that today only PyTorch is supported but there is plan to add also a Jax

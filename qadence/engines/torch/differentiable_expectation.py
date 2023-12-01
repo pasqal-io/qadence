@@ -79,7 +79,7 @@ class PSRExpectation(Function):
 
 
 @dataclass
-class TorchDifferentiableExpectation:
+class DifferentiableExpectation:
     """A handler for differentiating expectation estimation using various engines."""
 
     backend: QuantumBackend

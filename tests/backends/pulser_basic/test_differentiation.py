@@ -10,7 +10,7 @@ from qadence.backends.pulser import Backend as PulserBackend
 from qadence.backends.pyqtorch import Backend as PyQBackend
 from qadence.blocks import AbstractBlock, chain
 from qadence.constructors import total_magnetization
-from qadence.engines.torch.differentiable_backend import TorchBackend as DifferentiableBackend
+from qadence.engines.torch.differentiable_backend import DifferentiableBackend
 from qadence.operations import RX, RY, AnalogRot, AnalogRX, wait
 from qadence.register import Register
 

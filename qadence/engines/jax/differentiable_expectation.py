@@ -26,7 +26,7 @@ def compute_single_gap(eigen_vals: Array, default_val: float = 2.0) -> Array:
 
 
 @dataclass
-class JaxDifferentiableExpectation:
+class DifferentiableExpectation:
     """A handler for differentiating expectation estimation using various engines."""
 
     backend: QuantumBackend

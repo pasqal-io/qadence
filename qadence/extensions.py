@@ -9,13 +9,27 @@ from qadence.blocks import (
     AbstractBlock,
 )
 from qadence.logger import get_logger
-from qadence.types import BackendName, DiffMode
+from qadence.types import BackendName, DiffMode, Engine
 
 TAbstractBlock = TypeVar("TAbstractBlock", bound=AbstractBlock)
 
 backends_namespace = Template("qadence.backends.$name")
 
 logger = get_logger(__name__)
+
+
+def _available_engines() -> dict:
+    """Fallback function for native Qadence available engines if extensions is not present."""
+    res = {}
+    for engine in Engine.list():
+        module_path = f"qadence.engines.{engine}.differentiable_backend"
+        try:
+            module = importlib.import_module(module_path)
+            DifferentiableBackendCls = getattr(module, "DifferentiableBackend")
+            res[engine] = DifferentiableBackendCls
+        except (ImportError, ModuleNotFoundError):
+            pass
+    return res
 
 
 def _available_backends() -> dict:
@@ -107,6 +121,7 @@ try:
     set_backend_config = getattr(module, "set_backend_config")
 except ModuleNotFoundError:
     available_backends = _available_backends
+    available_engines = _available_engines
     supported_gates = _supported_gates
     get_gpsr_fns = _gpsr_fns
     set_backend_config = _set_backend_config
