@@ -41,7 +41,7 @@ def rydberg_interaction_hamiltonian(
         register,
         interaction=device_specs.interaction,
         interaction_strength=strength_list,
-        use_complete_graph=True,
+        use_all_node_pairs=True,
     )
 
 

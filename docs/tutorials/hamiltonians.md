@@ -117,7 +117,7 @@ print(nn_ham) # markdown-exec: hide
 ```
 
 Alternatively, fully customizable sympy functions can be passed in an array using the Qadence parameters.
-Furthermore, the `use_complete_graph` option can be passed so that interactions are created for every single
+Furthermore, the `use_all_node_pairs = True` option can be passed so that interactions are created for every single
 node pair in the register, irrespectively of the topology of the edges. This is useful for creating Hamiltonians
 that depend on qubit distance.
 
@@ -132,16 +132,16 @@ distance_dict = reg.distances
 
 # Create interaction strength with variational parameter and 1/r term
 strength_list = []
-for edge in reg.all_edges:
-    param = VariationalParameter("x" + f"_{edge[0]}{edge[1]}")
-    dist_factor = reg.distances[edge]
+for node_pair in reg.all_node_pairs:
+    param = VariationalParameter("x" + f"_{node_pair[0]}{node_pair[1]}")
+    dist_factor = reg.distances[node_pair]
     strength_list.append(param / dist_factor)
 
 nn_ham = hamiltonian_factory(
     reg,
     interaction=Interaction.NN,
     interaction_strength=strength_list,
-    use_complete_graph=True,
+    use_all_node_pairs=True,
 )
 
 print(nn_ham) # markdown-exec: hide

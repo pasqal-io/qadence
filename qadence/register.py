@@ -66,18 +66,8 @@ class Register:
 
         self.graph = support if isinstance(support, nx.Graph) else alltoall_graph(support)
 
-        # Auxiliary complete graph
-        support = self.graph.nodes
-        all_edges = list(filter(lambda x: x[0] < x[1], product(support, support)))
-        self.complete_graph = nx.Graph()
-        self.complete_graph.add_nodes_from(support)
-        self.complete_graph.add_edges_from(all_edges)
-
         if spacing is not None and self.min_distance != 0.0:
             _scale_node_positions(self.graph, self.min_distance, spacing)
-
-        pos_values = nx.get_node_attributes(self.graph, "pos")
-        nx.set_node_attributes(self.complete_graph, pos_values, "pos")
 
     @property
     def n_qubits(self) -> int:
@@ -211,25 +201,29 @@ class Register:
         return self.graph.nodes[item]
 
     @property
-    def support(self) -> set:
-        return set(self.graph.nodes)
-
-    @property
-    def coords(self) -> dict:
-        return {i: tuple(node.get("pos", ())) for i, node in self.graph.nodes.items()}
+    def nodes(self) -> NodeView:
+        return self.graph.nodes
 
     @property
     def edges(self) -> EdgeView:
         return self.graph.edges
 
     @property
-    def all_edges(self) -> EdgeView:
-        return self.complete_graph.edges
+    def support(self) -> set:
+        return set(self.nodes)
+
+    @property
+    def coords(self) -> dict:
+        return {i: tuple(node.get("pos", ())) for i, node in self.nodes.items()}
+
+    @property
+    def all_node_pairs(self) -> EdgeView:
+        return list(filter(lambda x: x[0] < x[1], product(self.support, self.support)))
 
     @property
     def distances(self) -> dict:
         coords = self.coords
-        return {edge: dist(coords[edge[0]], coords[edge[1]]) for edge in self.all_edges}
+        return {edge: dist(coords[edge[0]], coords[edge[1]]) for edge in self.all_node_pairs}
 
     @property
     def edge_distances(self) -> dict:
@@ -241,10 +235,6 @@ class Register:
         distances = self.distances
         value: float = min(self.distances.values()) if len(distances) > 0 else 0.0
         return value
-
-    @property
-    def nodes(self) -> NodeView:
-        return self.graph.nodes
 
     def rescale_coords(self, scaling: float) -> Register:
         g = deepcopy(self.graph)

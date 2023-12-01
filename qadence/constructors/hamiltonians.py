@@ -57,7 +57,7 @@ def hamiltonian_factory(
     interaction_strength: TArray | str | None = None,
     detuning_strength: TArray | str | None = None,
     random_strength: bool = False,
-    use_complete_graph: bool = False,
+    use_all_node_pairs: bool = False,
 ) -> AbstractBlock:
     """
     General Hamiltonian creation function.
@@ -79,8 +79,8 @@ def hamiltonian_factory(
             Alternatively, some string "x" can be passed, which will create a parameterized
             detuning for each qubit, each labelled as `"x_i"`.
         random_strength: set random interaction and detuning strengths between -1 and 1.
-        use_complete_graph: computes an interaction for every edge in a complete graph,
-            independent of the edges in the register. Useful for defining Hamiltonians
+        use_all_node_pairs: computes an interaction term for every pair of nodes in the graph,
+            independent of the edge topology in the register. Useful for defining Hamiltonians
             where the interaction strength decays with the distance.
 
     Examples:
@@ -136,7 +136,7 @@ def hamiltonian_factory(
         register, detuning_strength, "nodes", random_strength
     )
 
-    edge_str = "all_edges" if use_complete_graph else "edges"
+    edge_str = "all_node_pairs" if use_all_node_pairs else "edges"
     interaction_strength_array = _preprocess_strengths(
         register, interaction_strength, edge_str, random_strength
     )
@@ -150,7 +150,7 @@ def hamiltonian_factory(
 
     # Create two-qubit interactions:
     two_qubit_terms: List[AbstractBlock] = []
-    edge_data = register.all_edges if use_complete_graph else register.edges
+    edge_data = register.all_node_pairs if use_all_node_pairs else register.edges
     if interaction is not None:
         for i, edge in enumerate(edge_data):
             block_tq = int_fn(*edge)  # type: ignore [operator]
@@ -186,7 +186,7 @@ def _preprocess_strengths(
         prefix = strength
         if nodes_or_edges == "nodes":
             strength = [prefix + f"_{node}" for node in data]
-        if nodes_or_edges == "edges" or nodes_or_edges == "all_edges":
+        if nodes_or_edges in ["edges", "all_node_pairs"]:
             strength = [prefix + f"_{edge[0]}{edge[1]}" for edge in data]
     else:
         # If not of the accepted types ARRAYS or str, we error out
