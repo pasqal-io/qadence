@@ -71,7 +71,7 @@ class Backend(BackendInterface):
         self,
         circuit: ConvertedCircuit,
         param_values: ParamDictType = {},
-        state: Any = None,
+        state: ArrayLike | None = None,
         endianness: Endianness = Endianness.BIG,
         horqify_state: bool = True,
         unhorqify_state: bool = True,
