@@ -100,7 +100,7 @@ print(square_hamilt) # markdown-exec: hide
 ## Adding variational parameters
 
 Finally, fully parameterized Hamiltonians can be created by passing a string to the strength arguments,
-which will be used as a prefix to the name of the variational parameters.
+and used to prefix the name of the variational parameters.
 
 ```python exec="on" source="material-block" result="json" session="hamiltonians"
 n_qubits = 3

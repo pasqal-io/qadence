@@ -67,7 +67,9 @@ few examples of the standard operations available in Qadence.
 
 To start, we will exemplify the a general rotation on a set of atoms. To create an arbitrary
 register of atoms, we refer the user to the [register creation tutorial](../tutorials/register.md).
-Below, we create a line register of three qubits with a separation of $8~\mu\text{m}$.
+Below, we create a line register of three qubits with a separation of $8~\mu\text{m}$. This is a typical
+value used in combination with a standard experimental setup of neutral atoms where the interaction term
+in the Hamiltonian can effectively be used for computations.
 
 ```python exec="on" source="material-block" session="emu"
 from qadence import Register
@@ -325,7 +327,7 @@ for the Pulser backend, but also allow an `AddressingPattern` passed in the `pat
     not hardcoded when doing analog rotations, and the usage of the `max_detuning` and `max_amp` to control those
     respective parameters when training models in the pyqtorch backend.
 
-Finally, to change a given simulation, the device specs are integrated in the Qadence `Register`. By default,
+Finally, to change a given simulation, the device specifications are integrated in the Qadence `Register`. By default,
 all registers initialize an `IdealDevice()` under the hood. Below we run a quick test for a different rydberg
 level.
 

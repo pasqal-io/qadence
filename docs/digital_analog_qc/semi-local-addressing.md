@@ -32,7 +32,7 @@ In Qadence semi-local addressing patterns can be created by either specifying fi
 
 ### Fixed weights
 
-With fixed weights detuning/amplitude addressing patterns can defined in the following way.
+With fixed weights, detuning/amplitude addressing patterns can be defined in the following way:
 
 ```python exec="on" source="material-block" session="emu"
 import torch
@@ -100,7 +100,7 @@ expval_pyq = model_pyq.expectation(values = value)
 print(f"Expectation value on PyQ: \n{expval_pyq.flatten().detach()}\n")  # markdown-exec: hide
 ```
 
-The same configuration can also be seamlessly used to create a model on the Pulser backend.
+The same configuration can also be seamlessly used to create a model with the Pulser backend.
 
 ```python exec="on" source="material-block" session="emu"
 model_pulser = QuantumModel(
@@ -120,7 +120,8 @@ print(f"Expectation value on Pulser: \n{expval_pulser.flatten().detach()}\n")  #
 !!! note
     Trainable parameters currently are supported only by `pyqtorch` backend.
 
-Since the user can specify both the maximum detuning/amplitude value of the addressing pattern and the corresponding weights, it is natural to make these parameters variational in order to use them in some QML setting. This can be achieved by defining pattern weights as trainable `Parameter` instances or strings specifying weight names.
+Since both the maximum detuning/amplitude value of the addressing pattern and the corresponding weights can be
+user specified, they can be variationally used in some QML setting. This can be achieved by defining pattern weights as trainable `Parameter` instances or strings specifying weight names.
 
 ```python exec="on" source="material-block" session="emu"
 n_qubits = 3
@@ -184,4 +185,4 @@ print("The target function value: ", f_value)  # markdown-exec: hide
 print("The trained function value: ", f_value_model)  # markdown-exec: hide
 ```
 
-Here the value of expectation of the circuit is fitted to some predefined value by varying the parameters of the addressing pattern.
+Here, the expectation value of the circuit is fitted by varying the parameters of the addressing pattern.
