@@ -128,11 +128,11 @@ filterwarnings = [
 
 [tool.hatch.envs.docs]
 dependencies = [
-  "mkdocs==1.5.2",
+  "mkdocs",
   "mkdocs-material",
   "mkdocstrings",
   "mkdocstrings-python",
-  "mkdocs-section-index==0.3.6",
+  "mkdocs-section-index",
   "mkdocs-exclude",
   "markdown-exec",
   "mike",
