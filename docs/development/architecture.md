@@ -104,7 +104,7 @@ You can see the logic for choosing the parameter identifier in [`get_param_name`
 
 ## Differentiation with parameter shift rules (PSR)
 
-In Qadence, parameter shift rules are implemented by implementing a custom `torch.autograd.Function` class for PyTorch and the `custom_vjp` in the Jax Engine, respectively.
+In Qadence, parameter shift rules are applied by implementing a custom `torch.autograd.Function` class for PyTorch and the `custom_vjp` in the Jax Engine, respectively.
 
 A custom PyTorch `Function` looks like this:
 
