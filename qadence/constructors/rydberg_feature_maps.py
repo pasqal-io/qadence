@@ -5,11 +5,11 @@ from typing import Callable
 import numpy as np
 from sympy import Basic, Function
 
-from qadence.blocks import AbstractBlock, AnalogBlock, kron
+from qadence.blocks import AnalogBlock, KronBlock, kron
 from qadence.constructors.feature_maps import fm_parameter
 from qadence.logger import get_logger
 from qadence.operations import AnalogRot, AnalogRX, AnalogRY, AnalogRZ
-from qadence.parameters import FeatureParameter, Parameter
+from qadence.parameters import FeatureParameter, Parameter, VariationalParameter
 from qadence.types import BasisSet, TParameter
 
 logger = get_logger(__file__)
@@ -17,25 +17,34 @@ logger = get_logger(__file__)
 AnalogRotationTypes = [AnalogRX, AnalogRY, AnalogRZ]
 
 
-def rydberg_tower_feature_map(
+def rydberg_feature_map(
     n_qubits: int,
     param: str = "phi",
     max_abs_detuning: float = 2 * np.pi * 10,
-    tower_weights: list[float] | None = None,
-) -> AbstractBlock:
+    weights: list[float] | None = None,
+) -> KronBlock:
     """Feature map using semi-local addressing patterns.
+
+    If not weights are specified, variational parameters are created
+    for the pattern
 
     Args:
         n_qubits (int): number of qubits
         param: the name of the feature parameter
         max_abs_detuning: maximum value of absolute detuning for each qubit
-        tower_weights: a list of wegiths to assign to each qubit in the tower feature map
+        weights: a list of wegiths to assign to each qubit parameter in the feature map
 
     Returns:
-        AbstractBlock: _description_
+        The block representing the feature map
     """
     max_abs_detuning = 2 * np.pi * 10
-    tower_coeffs = list(np.arange(1, n_qubits + 1)) if tower_weights is None else tower_weights
+
+    tower_coeffs: list[float | Parameter]
+    tower_coeffs = (
+        [VariationalParameter(f"w_{param}_{i}") for i in range(n_qubits)]
+        if weights is None
+        else weights
+    )
     tower_detuning = max_abs_detuning / (sum(tower_coeffs[i] for i in range(n_qubits)))
 
     param = FeatureParameter(param)
@@ -48,6 +57,15 @@ def rydberg_tower_feature_map(
             qubit_support=(i,),
         )
         for i in range(n_qubits)
+    )
+
+
+def rydberg_tower_feature_map(
+    n_qubits: int, param: str = "phi", max_abs_detuning: float = 2 * np.pi * 10
+) -> KronBlock:
+    weights = list(np.arange(1, n_qubits + 1))
+    return rydberg_feature_map(
+        n_qubits, param=param, max_abs_detuning=max_abs_detuning, weights=weights
     )
 
 
@@ -78,5 +96,5 @@ def analog_feature_map(
     transformed_feature = fm_parameter(
         fm_type, param, feature_range=feature_range, target_range=target_range
     )
-    multiplier = 1 if multiplier is None else multiplier
+    multiplier = 1.0 if multiplier is None else Parameter(multiplier)
     return op(multiplier * transformed_feature)

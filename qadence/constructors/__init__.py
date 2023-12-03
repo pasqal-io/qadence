@@ -23,7 +23,7 @@ from .hamiltonians import (
 )
 
 from .rydberg_hea import rydberg_hea, rydberg_hea_layer
-from .rydberg_feature_maps import rydberg_tower_feature_map, analog_feature_map
+from .rydberg_feature_maps import rydberg_feature_map, analog_feature_map, rydberg_tower_feature_map
 
 from .qft import qft
 
@@ -46,6 +46,7 @@ __all__ = [
     "daqc_transform",
     "rydberg_hea",
     "rydberg_hea_layer",
-    "rydberg_tower_feature_map",
+    "rydberg_feature_map",
     "analog_feature_map",
+    "rydberg_tower_feature_map",
 ]
