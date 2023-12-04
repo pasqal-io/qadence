@@ -188,7 +188,7 @@ class _BackendName(StrEnum):
     PULSER = "pulser"
     """The Pulser backend."""
     HORQRUX = "horqrux"
-    """The hoqrux backend."""
+    """The horqrux backend."""
 
 
 # If proprietary qadence_extensions is available, import the
