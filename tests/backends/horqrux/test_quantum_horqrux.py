@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import jax.numpy as jnp
 import pytest
+import sympy
 import torch
 from jax import Array, grad, jit, value_and_grad
 
@@ -14,12 +15,17 @@ from qadence import (
     RY,
     RZ,
     BackendName,
+    FeatureParameter,
     QuantumCircuit,
+    VariationalParameter,
     X,
     Y,
     Z,
+    chain,
     expectation,
+    ising_hamiltonian,
     run,
+    total_magnetization,
 )
 from qadence.backends import backend_factory
 from qadence.backends.jax_utils import jarr_to_tensor
@@ -99,4 +105,20 @@ def test_hea_expectation(block: AbstractBlock) -> None:
     exp_horq = jarr_to_tensor(
         expectation(block, Z(0), backend=BackendName.HORQRUX), dtype=torch.double
     )
+    torch.allclose(exp_pyq, exp_horq)
+
+
+def test_multiparam_multiobs() -> None:
+    n_qubits = 1
+    obs = [total_magnetization(n_qubits), ising_hamiltonian(n_qubits)]
+    block = chain(
+        RX(0, sympy.cos(VariationalParameter("theta") * FeatureParameter("phi"))), RY(0, 2.0)
+    )
+    values_jax = {"phi": jnp.array([2.0, 5.0])}
+    values_torch = {"phi": torch.tensor([2.0, 5.0])}
+    exp_pyq = expectation(block, obs, values=values_torch, backend=BackendName.PYQTORCH)
+    exp_horq = jarr_to_tensor(
+        expectation(block, obs, values=values_jax, backend=BackendName.HORQRUX), dtype=torch.double
+    )
+
     torch.allclose(exp_pyq, exp_horq)

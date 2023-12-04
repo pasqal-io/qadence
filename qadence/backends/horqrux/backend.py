@@ -129,14 +129,18 @@ class Backend(BackendInterface):
                 )
             )
 
-        if batch_size > 1:
+        if batch_size > 1:  # We vmap for batch_size > 1
             expvals = jax.vmap(_expectation, in_axes=({k: 0 for k in param_values.keys()},))(
                 uniform_batchsize(param_values)
             )
         else:
-            expvals = jnp.squeeze(_expectation(param_values), 0)  # Remove the dim
+            expvals = _expectation(param_values)
         if expvals.size > 1:
             expvals = jnp.reshape(expvals, (batch_size, n_obs))
+        else:
+            expvals = jnp.squeeze(
+                expvals, 0
+            )  # For the case of batch_size == n_obs == 1, we remove the dims
         return expvals
 
     def sample(
