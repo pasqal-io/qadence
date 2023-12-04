@@ -209,7 +209,9 @@ def _round_complex(t: torch.Tensor, decimals: int = 4) -> torch.Tensor:
 
 def is_qadence_shape(state: torch.Tensor, n_qubits: int) -> bool:
     if len(state.size()) < 2:
-        raise ValueError(f'Provided state is required to have atleast two dimensions. Got shape {state.shape}')
+        raise ValueError(
+            f"Provided state is required to have atleast two dimensions. Got shape {state.shape}"
+        )
     return state.shape[1] == 2**n_qubits  # type: ignore[no-any-return]
 
 
