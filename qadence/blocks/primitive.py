@@ -459,3 +459,41 @@ class ParametricControlBlock(ParametricBlock):
 
     def dagger(self) -> ParametricBlock:  # type: ignore[override]
         return self.__class__(self.control, self.blocks[0].dagger())  # type: ignore[arg-type]
+
+
+class ProjectorBlock(PrimitiveBlock):
+    """The abstract ProjectorBlock."""
+
+    name = "ProjectorBlock"
+
+    def __init__(
+        self,
+        ket: str,
+        bra: str,
+        qubit_support: int | tuple[int, ...],
+    ) -> None:
+        """
+        Arguments:
+
+            ket (str): The ket given as a bitstring.
+            bra (str): The bra given as a bitstring.
+            qubit_support (int | tuple[int]): The qubit_support of the block.
+        """
+        if isinstance(qubit_support, int):
+            qubit_support = (qubit_support,)
+        if len(bra) != len(ket):
+            raise ValueError(
+                "Bra and ket must be bitstrings of same length in the 'Projector' definition."
+            )
+        elif len(bra) != len(qubit_support):
+            raise ValueError("Bra or ket must be of same length as the 'qubit_support'")
+        for wf in [bra, ket]:
+            if not all(int(item) == 0 or int(item) == 1 for item in wf):
+                raise ValueError(
+                    "All qubits must be either in the '0' or '1' state"
+                    " in the 'ProjectorBlock' definition."
+                )
+
+        self.ket = ket
+        self.bra = bra
+        super().__init__(qubit_support)

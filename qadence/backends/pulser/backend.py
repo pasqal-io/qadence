@@ -35,7 +35,7 @@ from .cloud import get_client
 from .config import Configuration
 from .convert_ops import convert_observable
 from .devices import Device, IdealDevice, RealisticDevice
-from .pulses import add_pulses
+from .pulses import add_addressing_pattern, add_pulses
 
 logger = get_logger(__file__)
 
@@ -91,7 +91,6 @@ def make_sequence(circ: QuantumCircuit, config: Configuration) -> Sequence:
     sequence.declare_channel(LOCAL_CHANNEL, "rydberg_local", initial_target=0)
 
     add_pulses(sequence, circ.block, config, circ.register)
-    sequence.measure()
 
     return sequence
 
@@ -192,7 +191,7 @@ class Backend(BackendInterface):
 
         return circuit.native.build(**numpy_param_values)
 
-    def run(
+    def _run(
         self,
         circuit: ConvertedCircuit,
         param_values: dict[str, Tensor] = {},
@@ -213,6 +212,8 @@ class Backend(BackendInterface):
 
         for i, param_values_el in enumerate(vals):
             sequence = self.assign_parameters(circuit, param_values_el)
+            add_addressing_pattern(sequence, self.config)
+            sequence.measure()
             sim_result = simulate_sequence(sequence, self.config, state, n_shots=None)
             wf = (
                 sim_result.get_final_state(  # type:ignore [union-attr]
@@ -281,6 +282,8 @@ class Backend(BackendInterface):
         samples = []
         for param_values_el in vals:
             sequence = self.assign_parameters(circuit, param_values_el)
+            add_addressing_pattern(sequence, self.config)
+            sequence.measure()
             sample = simulate_sequence(sequence, self.config, state, n_shots=n_shots)
             samples.append(sample)
         if endianness != self.native_endianness:
