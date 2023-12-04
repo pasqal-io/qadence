@@ -22,9 +22,19 @@ def add_background_hamiltonian(
     circuit: QuantumCircuit | AbstractBlock,
     register: Register | None = None,
 ) -> QuantumCircuit | AbstractBlock:
-    # Currently checks if input is either circuit or block and adjusts
-    # the ouput accordingly. Running this function on single blocks is
-    # currently used for eigenvalue computation for GPSR.
+    """
+    Parses a `QuantumCircuit` to transform `AnalogBlocks` to `HamEvo`.
+
+    Depends on the circuit `Register` and included `RydbergDevice` specifications.
+
+    Currently checks if input is either circuit or block and adjusts
+    the ouput accordingly. Running this function on single blocks is
+    currently used for eigenvalue computation for GPSR.
+
+    Arguments:
+        circuit: the circuit to parse, or single block to transform.
+        register: needed for calling the function on a single block.
+    """
     # FIXME: revisit eigenvalues of analog blocks and clean this code.
 
     is_circuit_input = isinstance(circuit, QuantumCircuit)
