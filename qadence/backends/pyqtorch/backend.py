@@ -11,7 +11,6 @@ from torch import Tensor
 from qadence.backend import Backend as BackendInterface
 from qadence.backend import ConvertedCircuit, ConvertedObservable
 from qadence.backends.utils import (
-    infer_batchsize,
     pyqify,
     to_list_of_dicts,
     unpyqify,
@@ -32,7 +31,7 @@ from qadence.transpile import (
     transpile,
 )
 from qadence.types import BackendName, Endianness, Engine
-from qadence.utils import int_to_basis
+from qadence.utils import infer_batchsize, int_to_basis
 
 from .config import Configuration, default_passes
 from .convert_ops import convert_block, convert_observable
@@ -81,7 +80,7 @@ class Backend(BackendInterface):
         (native,) = convert_observable(block, n_qubits=n_qubits, config=self.config)
         return ConvertedObservable(native=native, abstract=block, original=observable)
 
-    def run(
+    def _run(
         self,
         circuit: ConvertedCircuit,
         param_values: dict[str, Tensor] = {},

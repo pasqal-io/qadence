@@ -19,7 +19,7 @@ from torch import (
 )
 
 from qadence.types import ParamDictType
-from qadence.utils import Endianness, int_to_basis
+from qadence.utils import Endianness, int_to_basis, is_qadence_shape
 
 FINITE_DIFF_EPS = 1e-06
 # Dict of NumPy dtype -> torch dtype (when the correspondence exists)
@@ -124,10 +124,6 @@ def unpyqify(state: Tensor) -> Tensor:
 
 def is_pyq_shape(state: Tensor, n_qubits: int) -> bool:
     return state.size()[:-1] == [2] * n_qubits  # type: ignore[no-any-return]
-
-
-def is_qadence_shape(state: Tensor, n_qubits: int) -> bool:
-    return state.shape[1] == 2**n_qubits  # type: ignore[no-any-return]
 
 
 def validate_state(state: Tensor, n_qubits: int) -> None:
