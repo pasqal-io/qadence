@@ -120,14 +120,7 @@ class Backend(BackendInterface):
             out_state = self.run(
                 circuit, params, state, endianness, horqify_state=True, unhorqify_state=False
             )
-            return jnp.array(
-                list(
-                    map(
-                        lambda hq_obs: hq_obs.forward(out_state, params),
-                        [o.native for o in observable],
-                    )
-                )
-            )
+            return jnp.array([o.native.forward(out_state, params) for o in observable])
 
         if batch_size > 1:  # We vmap for batch_size > 1
             expvals = jax.vmap(_expectation, in_axes=({k: 0 for k in param_values.keys()},))(
