@@ -47,7 +47,6 @@ class QuantumModel(nn.Module):
         self,
         circuit: QuantumCircuit,
         observable: list[AbstractBlock] | AbstractBlock | None = None,
-        inputs: list[sympy.Basic | str] | None = None,
         backend: BackendName | str = BackendName.PYQTORCH,
         diff_mode: DiffMode = DiffMode.AD,
         measurement: Measurements | None = None,
