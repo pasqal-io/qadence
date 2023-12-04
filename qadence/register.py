@@ -18,6 +18,9 @@ from qadence.types import LatticeTopology
 __all__ = ["Register"]
 
 
+DEFAULT_DEVICE = IdealDevice()
+
+
 def _scale_node_positions(graph: nx.Graph, min_distance: float, spacing: float) -> None:
     scaled_nodes = {}
     scale_factor = spacing / min_distance
@@ -32,7 +35,7 @@ class Register:
         self,
         support: nx.Graph | int,
         spacing: float | None = 1.0,
-        device_specs: RydbergDevice = IdealDevice(),
+        device_specs: RydbergDevice = DEFAULT_DEVICE,
     ):
         """
         A 2D register of qubits which includes their coordinates.
@@ -79,7 +82,7 @@ class Register:
         coords: list[tuple],
         lattice: LatticeTopology | str = LatticeTopology.ARBITRARY,
         spacing: float | None = None,
-        device_specs: RydbergDevice = IdealDevice(),
+        device_specs: RydbergDevice = DEFAULT_DEVICE,
     ) -> Register:
         graph = nx.Graph()
         for i, pos in enumerate(coords):
@@ -91,7 +94,7 @@ class Register:
         cls,
         n_qubits: int,
         spacing: float = 1.0,
-        device_specs: RydbergDevice = IdealDevice(),
+        device_specs: RydbergDevice = DEFAULT_DEVICE,
     ) -> Register:
         return cls(line_graph(n_qubits), spacing, device_specs)
 
@@ -100,7 +103,7 @@ class Register:
         cls,
         n_qubits: int,
         spacing: float = 1.0,
-        device_specs: RydbergDevice = IdealDevice(),
+        device_specs: RydbergDevice = DEFAULT_DEVICE,
     ) -> Register:
         graph = nx.grid_2d_graph(n_qubits, 1, periodic=True)
         graph = nx.relabel_nodes(graph, {(i, 0): i for i in range(n_qubits)})
@@ -114,7 +117,7 @@ class Register:
         cls,
         qubits_side: int,
         spacing: float = 1.0,
-        device_specs: RydbergDevice = IdealDevice(),
+        device_specs: RydbergDevice = DEFAULT_DEVICE,
     ) -> Register:
         n_points = 4 * (qubits_side - 1)
 
@@ -147,7 +150,7 @@ class Register:
         cls,
         n_qubits: int,
         spacing: float = 1.0,
-        device_specs: RydbergDevice = IdealDevice(),
+        device_specs: RydbergDevice = DEFAULT_DEVICE,
     ) -> Register:
         return cls(alltoall_graph(n_qubits), spacing, device_specs)
 
@@ -157,7 +160,7 @@ class Register:
         qubits_row: int,
         qubits_col: int,
         spacing: float = 1.0,
-        device_specs: RydbergDevice = IdealDevice(),
+        device_specs: RydbergDevice = DEFAULT_DEVICE,
     ) -> Register:
         graph = nx.grid_2d_graph(qubits_col, qubits_row)
         values = {i: {"pos": node} for (i, node) in enumerate(graph.nodes)}
@@ -171,7 +174,7 @@ class Register:
         n_cells_row: int,
         n_cells_col: int,
         spacing: float = 1.0,
-        device_specs: RydbergDevice = IdealDevice(),
+        device_specs: RydbergDevice = DEFAULT_DEVICE,
     ) -> Register:
         return cls(triangular_lattice_graph(n_cells_row, n_cells_col), spacing, device_specs)
 
@@ -181,7 +184,7 @@ class Register:
         n_cells_row: int,
         n_cells_col: int,
         spacing: float = 1.0,
-        device_specs: RydbergDevice = IdealDevice(),
+        device_specs: RydbergDevice = DEFAULT_DEVICE,
     ) -> Register:
         graph = nx.hexagonal_lattice_graph(n_cells_row, n_cells_col)
         graph = nx.relabel_nodes(graph, {(i, j): k for k, (i, j) in enumerate(graph.nodes)})
@@ -251,7 +254,7 @@ class Register:
     def _from_dict(cls, d: dict) -> Register:
         device_dict = d.get("device_specs", None)
         if device_dict is None:
-            device_dict = IdealDevice()._to_dict()
+            device_dict = DEFAULT_DEVICE._to_dict()
 
         return cls(
             support=nx.node_link_graph(d["graph"]),
