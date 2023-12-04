@@ -156,7 +156,7 @@ class QNN(QuantumModel):
         state: Tensor | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
-        return super().run(self._format_to_dict(values), state, endianness)
+        return super().run(values=self._format_to_dict(values), state=state, endianness=endianness)
 
     def sample(
         self,
@@ -168,7 +168,7 @@ class QNN(QuantumModel):
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         return super().sample(
-            self._format_to_dict(values),
+            values=self._format_to_dict(values),
             n_shots=n_shots,
             state=state,
             noise=noise,
