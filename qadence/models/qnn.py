@@ -84,7 +84,6 @@ class QNN(QuantumModel):
             measurement=measurement,
             configuration=configuration,
             noise=noise,
-            inputs=inputs,
         )
         if self.out_features is None:
             raise ValueError("You need to provide at least one observable in the QNN constructor")
