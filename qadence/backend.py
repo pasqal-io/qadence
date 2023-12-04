@@ -279,7 +279,6 @@ class Backend(ABC):
         """
         raise NotImplementedError
 
-
     def run(
         self,
         circuit: ConvertedCircuit,
