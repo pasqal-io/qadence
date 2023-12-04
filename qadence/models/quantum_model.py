@@ -6,7 +6,6 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Callable, Optional, Sequence
 
-import sympy
 import torch
 from torch import Tensor, nn
 
