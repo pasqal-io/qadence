@@ -49,13 +49,13 @@ class QNN(QuantumModel):
         self,
         circuit: QuantumCircuit,
         observable: list[AbstractBlock] | AbstractBlock,
-        inputs: list[sympy.Basic | str] | None = None,
         transform: Callable[[Tensor], Tensor] = None,  # transform output of the QNN
         backend: BackendName = BackendName.PYQTORCH,
         diff_mode: DiffMode = DiffMode.AD,
         measurement: Measurements | None = None,
         noise: Noise | None = None,
         configuration: BackendConfiguration | dict | None = None,
+        inputs: list[sympy.Basic | str] | None = None,
     ):
         """Initialize the QNN.
 
