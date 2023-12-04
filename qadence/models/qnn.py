@@ -92,7 +92,7 @@ class QNN(QuantumModel):
 
         if (inputs is not None) and (len(self.inputs) == len(inputs)):
             self.inputs = [sympy.symbols(x) if isinstance(x, str) else x for x in inputs]  # type: ignore[union-attr]
-        elif (inputs is None) and len(self.inputs) == 1:
+        elif (inputs is None) and len(self.inputs) <= 1:
             self.inputs = [sympy.symbols(x) if isinstance(x, str) else x for x in self.inputs]  # type: ignore[union-attr]
         else:
             raise ValueError(
