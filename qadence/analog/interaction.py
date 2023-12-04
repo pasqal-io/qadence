@@ -7,7 +7,8 @@ from typing import Any, Callable, Union, overload
 
 import torch
 
-from qadence.analog.utils import ising_interaction, rot_generator, xy_interaction
+from qadence.analog.addressing import AddressingPattern
+from qadence.analog.utils import add_pattern, ising_interaction, rot_generator, xy_interaction
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.analog import (
     AnalogBlock,
@@ -49,6 +50,7 @@ def add_interaction(
     x: Register | QuantumCircuit | AbstractBlock,
     *args: Any,
     interaction: Interaction | Callable = Interaction.NN,
+    pattern: AddressingPattern | None = None,
 ) -> QuantumCircuit | AbstractBlock:
     """Turns blocks or circuits into (a chain of) `HamEvo` blocks.
 
@@ -68,6 +70,7 @@ def add_interaction(
             combinations are accepted.
         interaction: Type of interaction that is added. Can also be a function that accepts a
             register and a list of edges that define which qubits interact (see the examples).
+        pattern: pattern for emulating semi-local addressing
 
     Examples:
     ```python exec="on" source="material-block" result="json"
@@ -128,6 +131,7 @@ def _(
     register: Register,
     block: AbstractBlock,
     interaction: Union[Interaction, Callable] = Interaction.NN,
+    pattern: Union[AddressingPattern, None] = None,
 ) -> AbstractBlock:
     try:
         fn = interaction if callable(interaction) else INTERACTIONS[Interaction(interaction)]
@@ -135,56 +139,94 @@ def _(
         raise KeyError(
             "Function `add_interaction` only supports NN and XY, or a custom callable function."
         )
-    return _add_interaction(block, register, fn)  # type: ignore[arg-type]
+    return _add_interaction(block, register, fn, pattern)  # type: ignore[arg-type]
 
 
 @singledispatch
-def _add_interaction(b: AbstractBlock, r: Register, interaction: Callable) -> AbstractBlock:
+def _add_interaction(
+    b: AbstractBlock,
+    r: Register,
+    interaction: Callable,
+    pattern: Union[AddressingPattern, None],
+) -> AbstractBlock:
     raise NotImplementedError(f"Cannot emulate {type(b)}")
 
 
 @_add_interaction.register
-def _(b: CompositeBlock, r: Register, i: Callable) -> AbstractBlock:
-    return _construct(type(b), tuple(map(lambda b: _add_interaction(b, r, i), b.blocks)))
+def _(
+    b: CompositeBlock,
+    r: Register,
+    i: Callable,
+    pattern: Union[AddressingPattern, None],
+) -> AbstractBlock:
+    return _construct(type(b), tuple(map(lambda b: _add_interaction(b, r, i, pattern), b.blocks)))
 
 
 @_add_interaction.register
-def _(block: ScaleBlock, register: Register, interaction: Callable) -> AbstractBlock:
+def _(
+    block: ScaleBlock,
+    register: Register,
+    interaction: Callable,
+    pattern: Union[AddressingPattern, None],
+) -> AbstractBlock:
     if isinstance(block.block, AnalogBlock):
         raise NotImplementedError("Scaling emulated analog blocks is not implemented.")
     return block
 
 
 @_add_interaction.register
-def _(block: PrimitiveBlock, register: Register, interaction: Callable) -> AbstractBlock:
+def _(
+    block: PrimitiveBlock,
+    register: Register,
+    interaction: Callable,
+    pattern: Union[AddressingPattern, None],
+) -> AbstractBlock:
     return block
 
 
 @_add_interaction.register
-def _(block: WaitBlock, register: Register, interaction: Callable) -> AbstractBlock:
+def _(
+    block: WaitBlock,
+    register: Register,
+    interaction: Callable,
+    pattern: Union[AddressingPattern, None],
+) -> AbstractBlock:
     duration = block.parameters.duration
 
     support = tuple(range(register.n_qubits))
     assert support == block.qubit_support if not block.qubit_support.is_global else True
     pairs = list(filter(lambda x: x[0] < x[1], product(support, support)))
 
-    return HamEvo(interaction(register, pairs), duration / 1000) if len(pairs) else I(0)
+    p_terms = add_pattern(register, pattern)
+    generator = interaction(register, pairs) + p_terms
+
+    return HamEvo(generator, duration / 1000) if len(pairs) else I(0)
 
 
 @_add_interaction.register
-def _(block: ConstantAnalogRotation, register: Register, interaction: Callable) -> AbstractBlock:
+def _(
+    block: ConstantAnalogRotation,
+    register: Register,
+    interaction: Callable,
+    pattern: Union[AddressingPattern, None],
+) -> AbstractBlock:
     # convert "global" to indexed qubit suppport so that we can re-use `kron` dispatched function
     b = deepcopy(block)
     b.qubit_support = QubitSupport(*range(register.n_qubits))
-    return _add_interaction(kron(b), register, interaction)
+    return _add_interaction(kron(b), register, interaction, pattern)
 
 
 @_add_interaction.register
-def _(block: AnalogKron, register: Register, interaction: Callable) -> AbstractBlock:
+def _(
+    block: AnalogKron,
+    register: Register,
+    interaction: Callable,
+    pattern: Union[AddressingPattern, None],
+) -> AbstractBlock:
     from qadence import block_to_tensor
 
     w_block = wait(duration=block.duration, qubit_support=block.qubit_support)
-    i_terms = add_interaction(register, w_block, interaction=interaction)
+    i_terms = add_interaction(register, w_block, interaction=interaction, pattern=pattern)
 
     generator = add(rot_generator(b) for b in block.blocks if isinstance(b, ConstantAnalogRotation))
     generator = generator if i_terms == I(0) else generator + i_terms.generator  # type: ignore[attr-defined]  # noqa: E501
@@ -194,5 +236,12 @@ def _(block: AnalogKron, register: Register, interaction: Callable) -> AbstractB
 
 
 @_add_interaction.register
-def _(block: AnalogChain, register: Register, interaction: Callable) -> AbstractBlock:
-    return chain(add_interaction(register, b, interaction=interaction) for b in block.blocks)
+def _(
+    block: AnalogChain,
+    register: Register,
+    interaction: Callable,
+    pattern: Union[AddressingPattern, None],
+) -> AbstractBlock:
+    return chain(
+        add_interaction(register, b, interaction=interaction, pattern=pattern) for b in block.blocks
+    )

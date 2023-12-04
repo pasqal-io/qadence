@@ -48,6 +48,7 @@ from qadence.blocks.block_to_tensor import (
     block_to_diagonal,
     block_to_tensor,
 )
+from qadence.blocks.primitive import ProjectorBlock
 from qadence.operations import (
     OpName,
     U,
@@ -127,7 +128,14 @@ def convert_block(
             # which would be wrong.
             return [pyq.QuantumCircuit(n_qubits, ops)]
     elif isinstance(block, tuple(non_unitary_gateset)):
-        return [getattr(pyq, block.name)(qubit_support[0])]
+        if isinstance(block, ProjectorBlock):
+            projector = getattr(pyq, block.name)
+            if block.name == OpName.N:
+                return [projector(target=qubit_support)]
+            else:
+                return [projector(qubit_support=qubit_support, ket=block.ket, bra=block.bra)]
+        else:
+            return [getattr(pyq, block.name)(qubit_support[0])]
     elif isinstance(block, tuple(single_qubit_gateset)):
         pyq_cls = getattr(pyq, block.name)
         if isinstance(block, ParametricBlock):

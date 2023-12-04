@@ -1,15 +1,17 @@
 from __future__ import annotations
 
 from math import dist as euclidean_distance
+from typing import Union
 
 from sympy import cos, sin
 
+from qadence.analog.addressing import AddressingPattern
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.analog import (
     ConstantAnalogRotation,
 )
 from qadence.blocks.utils import add, kron
-from qadence.operations import N, X, Y
+from qadence.operations import I, N, X, Y, Z
 from qadence.register import Register
 
 # Ising coupling coefficient depending on the Rydberg level
@@ -130,3 +132,38 @@ def rot_generator(block: ConstantAnalogRotation) -> AbstractBlock:
     x_terms = (omega / 2) * add(cos(phase) * X(i) - sin(phase) * Y(i) for i in support)
     z_terms = delta * add(N(i) for i in support)
     return x_terms - z_terms  # type: ignore[no-any-return]
+
+
+def add_pattern(register: Register, pattern: Union[AddressingPattern, None]) -> AbstractBlock:
+    support = tuple(range(register.n_qubits))
+    if pattern is not None:
+        amp = pattern.amp
+        det = pattern.det
+        weights_amp = pattern.weights_amp
+        weights_det = pattern.weights_det
+        local_constr_amp = pattern.local_constr_amp
+        local_constr_det = pattern.local_constr_det
+        global_constr_amp = pattern.global_constr_amp
+        global_constr_det = pattern.global_constr_det
+    else:
+        amp = 0.0
+        det = 0.0
+        weights_amp = {i: 0.0 for i in support}
+        weights_det = {i: 0.0 for i in support}
+        local_constr_amp = {i: 0.0 for i in support}
+        local_constr_det = {i: 0.0 for i in support}
+        global_constr_amp = 0.0
+        global_constr_det = 0.0
+
+    p_amp_terms = (
+        (1 / 2)  # type: ignore [operator]
+        * amp
+        * global_constr_amp
+        * add(X(i) * weights_amp[i] * local_constr_amp[i] for i in support)  # type: ignore [operator]
+    )
+    p_det_terms = (
+        -det  # type: ignore [operator]
+        * global_constr_det
+        * add(0.5 * (I(i) - Z(i)) * weights_det[i] * local_constr_det[i] for i in support)  # type: ignore [operator]
+    )
+    return p_amp_terms + p_det_terms  # type: ignore[no-any-return]
