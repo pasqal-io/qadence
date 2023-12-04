@@ -67,7 +67,7 @@ class Backend(BackendInterface):
         hq_obs = convert_observable(block, n_qubits=n_qubits, config=self.config)
         return ConvertedObservable(native=hq_obs, abstract=block, original=observable)
 
-    def run(
+    def _run(
         self,
         circuit: ConvertedCircuit,
         param_values: ParamDictType = {},
