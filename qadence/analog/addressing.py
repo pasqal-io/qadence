@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, fields
+from typing import Union
 from warnings import warn
 
 from sympy import Expr, Heaviside, exp
@@ -16,6 +17,8 @@ GLOBAL_MAX_DETUNING = 2 * pi * 2000
 LOCAL_MAX_AMPLITUDE = 3
 LOCAL_MAX_DETUNING = 2 * pi * 20
 
+TWeight = Union[str, float, Tensor, Parameter]
+
 
 def sigmoid(x: Tensor, a: float, b: float) -> Expr:
     return 1.0 / (1.0 + exp(-a * (x + b)))
@@ -28,21 +31,21 @@ class AddressingPattern:
     n_qubits: int
     """Number of qubits in register."""
 
-    weights_amp: dict[int, str | float | Tensor | Parameter]
+    weights_amp: dict[int, TWeight]
     """List of weights for fixed amplitude pattern that cannot be changed during the execution."""
 
-    weights_det: dict[int, str | float | Tensor | Parameter]
+    weights_det: dict[int, TWeight]
     """List of weights for fixed detuning pattern that cannot be changed during the execution."""
 
-    amp: str | float | Tensor | Parameter = LOCAL_MAX_AMPLITUDE
+    amp: TWeight = LOCAL_MAX_AMPLITUDE
     """Maximum amplitude of the amplitude pattern felt by a single qubit."""
 
-    det: str | float | Tensor | Parameter = LOCAL_MAX_DETUNING
+    det: TWeight = LOCAL_MAX_DETUNING
     """Maximum detuning of the detuning pattern felt by a single qubit."""
 
     def _validate_weights(
         self,
-        weights: dict[int, str | float | Tensor | Parameter],
+        weights: dict[int, TWeight],
     ) -> None:
         for v in weights.values():
             if not isinstance(v, (str, Parameter)):
@@ -51,7 +54,7 @@ class AddressingPattern:
 
     def _constrain_weights(
         self,
-        weights: dict[int, str | float | Tensor | Parameter],
+        weights: dict[int, TWeight],
     ) -> dict:
         # augment weight dict if needed
         weights = {
