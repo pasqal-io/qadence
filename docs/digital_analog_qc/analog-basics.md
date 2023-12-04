@@ -340,7 +340,7 @@ reg = Register.square(
     n_qubits_side,
     spacing = 8.0,
     device_specs = device_specs
-    )
+)
 
 rot_analog = AnalogRX(angle = pi)
 
@@ -365,7 +365,7 @@ bool_equiv = equivalent_state(wf_analog_pyq, wf_analog_pulser, atol = 1e-03)
 print("States equivalent: ", bool_equiv)
 ```
 
-## Some technical details
+## Technical details
 
 !!! warning
     The details described here are relevant in the current version but will

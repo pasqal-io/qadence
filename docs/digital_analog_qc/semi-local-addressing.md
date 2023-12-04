@@ -28,7 +28,7 @@ Using the detuning and amplitude patterns described above one can modify the beh
 
 ## Creating semi-local addressing patterns
 
-In Qadence semi-local addressing patterns can be created by either specifying fixed values for the weights of qubits to be addressed or defining them as trainable parameters that can be optimized later in some training loop. Semi-local addressing patterns can be defined with the `AddressingPattern` dataclass.
+In Qadence semi-local addressing patterns can be created by either specifying fixed values for the weights of the qubits being addressed or defining them as trainable parameters that can be optimized later in some training loop. Semi-local addressing patterns can be defined with the `AddressingPattern` dataclass.
 
 ### Fixed weights
 
@@ -55,8 +55,8 @@ pattern = AddressingPattern(
 
 If only detuning or amplitude pattern is needed - the corresponding weights for all qubits can be set to 0.
 
-The created addressing pattern can now be passed as an argument to the `RydbergDevice`, or to the
-`IdealDevice` or `RealisticDevice` to make use of the pre-defined options to those devices,
+The created addressing pattern can now be passed as an argument to any Qadence device class, or to the
+`IdealDevice` or `RealisticDevice` to make use of the pre-defined options in those devices,
 
 ```python exec="on" source="material-block" session="emu"
 from qadence import (

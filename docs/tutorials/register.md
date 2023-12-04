@@ -172,4 +172,4 @@ There is also an `all_node_pairs` property for convencience:
 print(reg.all_node_pairs)
 ```
 
-More details about the usage of Registers in the digital-analog paradigm can be found in the [digital-analog basics](../digital_analog_qc/analog-basics.md) section.
+More details about the usage of `Register` types in the digital-analog paradigm can be found in the [digital-analog basics](../digital_analog_qc/analog-basics.md) section.
