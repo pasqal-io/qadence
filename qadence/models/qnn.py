@@ -1,14 +1,16 @@
 from __future__ import annotations
 
+from collections import Counter
 from typing import Callable
 
 import sympy
 from torch import Tensor
 
-from qadence.backend import BackendConfiguration
+from qadence.backend import BackendConfiguration, ConvertedObservable
 from qadence.blocks.abstract import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
+from qadence.mitigations import Mitigations
 from qadence.models.quantum_model import QuantumModel
 from qadence.noise import Noise
 from qadence.types import BackendName, DiffMode, Endianness
@@ -82,25 +84,34 @@ class QNN(QuantumModel):
             measurement=measurement,
             configuration=configuration,
             noise=noise,
+            inputs=inputs,
         )
-
         if self.out_features is None:
             raise ValueError("You need to provide at least one observable in the QNN constructor")
-
         self.transform = transform if transform else lambda x: x
 
-        if len(self.inputs) > 1 and inputs is None:
+        if (inputs is not None) and (len(self.inputs) == len(inputs)):
+            self.inputs = [sympy.symbols(x) if isinstance(x, str) else x for x in inputs]  # type: ignore[union-attr]
+        elif (inputs is None) and len(self.inputs) == 1:
+            self.inputs = [sympy.symbols(x) if isinstance(x, str) else x for x in self.inputs]  # type: ignore[union-attr]
+        else:
             raise ValueError(
                 """
                 Your QNN has more than one input. Please provide a list of inputs in the order of
-                your domain. For example, if you want to pass
-                `xs = torch.rand(batch_size, input_size:=3)` to the QNN `svars = ("t", "x", "y")`
-                will make the QNN use `t = xs[:,0]`, etc. You can also pass a list of sympy
-                symbols.
+                your tensor domain. For example, if you want to pass
+                `xs = torch.rand(batch_size, input_size:=3)` to you QNN, where
+                ```
+                t = x[:,0]
+                x = x[:,1]
+                y = x[:,2]
+                ```
+                you have to specify
+                ```
+                QNN(circuit, observable, inputs=["t", "x", "y"])
+                ```
+                You can also pass a list of sympy symbols.
             """
             )
-        elif len(self.inputs) > 1:
-            self.inputs = [sympy.symbols(x) if isinstance(x, str) else x for x in inputs]  # type: ignore[union-attr]
 
     def forward(
         self,
@@ -135,15 +146,54 @@ class QNN(QuantumModel):
             Tensor: a tensor with the expectation value of the observables passed
                 in the constructor of the model
         """
+        return self.expectation(
+            values, state=state, measurement=measurement, noise=noise, endianness=endianness
+        )
+
+    def run(
+        self,
+        values: Tensor | dict[str, Tensor] = None,
+        state: Tensor | None = None,
+        endianness: Endianness = Endianness.BIG,
+    ) -> Tensor:
+        return super().run(self._format_to_dict(values), state, endianness)
+
+    def sample(
+        self,
+        values: Tensor | dict[str, Tensor] = {},
+        n_shots: int = 1000,
+        state: Tensor | None = None,
+        noise: Noise | None = None,
+        mitigation: Mitigations | None = None,
+        endianness: Endianness = Endianness.BIG,
+    ) -> list[Counter]:
+        return super().sample(
+            self._format_to_dict(values),
+            n_shots=n_shots,
+            state=state,
+            noise=noise,
+            mitigation=mitigation,
+            endianness=endianness,
+        )
+
+    def expectation(
+        self,
+        values: Tensor | dict[str, Tensor] = {},
+        observable: list[ConvertedObservable] | ConvertedObservable | None = None,
+        state: Tensor | None = None,
+        measurement: Measurements | None = None,
+        noise: Noise | None = None,
+        mitigation: Mitigations | None = None,
+        endianness: Endianness = Endianness.BIG,
+    ) -> Tensor:
         if values is None:
             values = {}
         if measurement is None:
             measurement = self._measurement
         if noise is None:
             noise = self._noise
-
         return self.transform(
-            self.expectation(
+            super().expectation(
                 values=self._format_to_dict(values),
                 state=state,
                 measurement=measurement,

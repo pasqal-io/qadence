@@ -12,7 +12,11 @@ from qadence.blocks import (
     tag,
 )
 from qadence.circuit import QuantumCircuit
-from qadence.constructors import hea, ising_hamiltonian, total_magnetization
+from qadence.constructors import (
+    hea,
+    ising_hamiltonian,
+    total_magnetization,
+)
 from qadence.models import QNN
 from qadence.operations import RX, RY
 from qadence.parameters import FeatureParameter, Parameter
@@ -177,3 +181,62 @@ def test_multiparam_qnn_training(diff_mode: str) -> None:
         loss.backward()
         optimizer.step()
         print(f"Epoch {i+1} modeling training - Loss: {loss.item()}")
+
+
+def test_qnn_input_order() -> None:
+    from torch import cos, sin
+
+    def compute_state_manually(xs: torch.Tensor) -> torch.Tensor:
+        x, y = xs[0], xs[1]
+        return torch.tensor(
+            [
+                cos(0.5 * y) * cos(0.5 * x),
+                -1j * cos(0.5 * x) * sin(0.5 * y),
+                -1j * cos(0.5 * y) * sin(0.5 * x),
+                -sin(0.5 * x) * sin(0.5 * y),
+            ]
+        )
+
+    xs = torch.rand(5, 2)
+    ys = torch.vstack(list(map(compute_state_manually, xs)))
+
+    model = QNN(
+        QuantumCircuit(
+            2,
+            chain(
+                RX(0, FeatureParameter("x")),
+                RX(1, FeatureParameter("y")),
+            ),
+        ),
+        observable=total_magnetization(2),
+        inputs=["x", "y"],
+    )
+    assert torch.allclose(ys, model.run(xs))
+
+    # now try again with switched featuremap order
+    model = QNN(
+        QuantumCircuit(
+            2,
+            chain(
+                RX(1, FeatureParameter("y")),
+                RX(0, FeatureParameter("x")),
+            ),
+        ),
+        observable=total_magnetization(2),
+        inputs=["x", "y"],
+    )
+    assert torch.allclose(ys, model.run(xs))
+
+    # make sure it fails with wrong order
+    model = QNN(
+        QuantumCircuit(
+            2,
+            chain(
+                RX(1, FeatureParameter("y")),
+                RX(0, FeatureParameter("x")),
+            ),
+        ),
+        observable=total_magnetization(2),
+        inputs=["y", "x"],
+    )
+    assert not torch.allclose(ys, model.run(xs))
