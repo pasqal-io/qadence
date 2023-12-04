@@ -68,8 +68,8 @@ few examples of the standard operations available in Qadence.
 To start, we will exemplify the a general rotation on a set of atoms. To create an arbitrary
 register of atoms, we refer the user to the [register creation tutorial](../tutorials/register.md).
 Below, we create a line register of three qubits with a separation of $8~\mu\text{m}$. This is a typical
-value used in combination with a standard experimental setup of neutral atoms where the interaction term
-in the Hamiltonian can effectively be used for computations.
+value used in combination with a standard experimental setup of neutral atoms such that the interaction
+term in the Hamiltonian can effectively be used for computations.
 
 ```python exec="on" source="material-block" session="emu"
 from qadence import Register
