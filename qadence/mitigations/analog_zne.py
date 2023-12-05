@@ -7,11 +7,12 @@ import torch
 from torch import Tensor
 
 from qadence import BackendName
-from qadence.backend import ConvertedCircuit, ConvertedObservable
 from qadence.backends.api import backend_factory
 from qadence.backends.pulser.backend import Backend
 from qadence.blocks import block_to_tensor
+from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.utils import expression_to_uuids
+from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.noise import Noise
@@ -19,79 +20,96 @@ from qadence.parameters import Parameter
 from qadence.utils import Endianness
 
 
-def zne_pulse(stretches: dict, zne_datasets: list, zne_value: Tensor) -> list:
+def zne_pulse(stretches: Tensor, zne_datasets: list[list], zne_value: float) -> Tensor:
+    from matplotlib import pyplot as plt
+
     # Rearrange the dataset by selecting each element in the batches.
     poly_fits = []
-    # stretch_param = list(stretches.values())[0]
     for datasets in zne_datasets:  # Loop over batches of observables.
+        batched_fits = []
         for dataset in datasets:
+            plt.plot(stretches, dataset, "o")
+
             # Polynomial fit function.
-            poly_fits.append(np.poly1d(np.polyfit(stretches, dataset, 4)))
+            poly_fit = np.poly1d(np.polyfit(stretches, dataset, len(stretches) - 1))
+            # Return the zero-noise extrapolated value in the zero duration limit.
+            # plt.plot(stretches, poly_fit(stretches))
+            # plt.show()
 
-    return list(
-        map(lambda p: p(zne_value.item()), poly_fits)
-    )  # Return the zero-noise fitted value.
+            plt.plot(stretches, poly_fit(stretches), "-")
+            plt.plot(0.0, poly_fit(0.0), "*")
+            plt.show()
+            batched_fits.append(poly_fit(0.0))
+        poly_fits.append(batched_fits)
+
+    return torch.tensor(poly_fits)
 
 
-def zne_noise(noise: Noise, zne_datasets: list) -> list:
+def zne_noise(noise_probas: Tensor, zne_datasets: list[list]) -> Tensor:
+    from matplotlib import pyplot as plt
+
     # Rearrange the dataset by selecting each element in the batches.
-    noise_probas = noise.options.get("noise_probas")
     poly_fits = []
     for datasets in zne_datasets:  # Loop over batches of observables.
+        batched_fits = []
         for i in range(len(datasets[0])):  # Loop over batch length.
             rearranged_dataset = [s[i] for s in datasets]
+            plt.plot(noise_probas, rearranged_dataset, "o")
             # Polynomial fit function.
-            poly_fits.append(np.poly1d(np.polyfit(noise_probas, rearranged_dataset, 4)))
+            poly_fit = np.poly1d(
+                np.polyfit(noise_probas, rearranged_dataset, len(noise_probas) - 1)
+            )
+            # Return the zero-noise extrapolated value.
+            plt.plot(noise_probas, poly_fit(noise_probas), "-")
+            plt.plot(0.0, poly_fit(0.0), "*")
+            plt.show()
+            batched_fits.append(poly_fit(0.0))
+        poly_fits.append(batched_fits)
 
-    return list(map(lambda p: p(0.0), poly_fits))  # Return the zero-noise fitted value.
+    return torch.tensor(poly_fits)
 
 
-def analog_zne(
-    backend_name: BackendName,
-    circuit: ConvertedCircuit,
-    observable: list[ConvertedObservable] | ConvertedObservable,
-    param_values: dict[str, Tensor] = {},
+def pulse_experiment(
+    backend: Backend,
+    circuit: QuantumCircuit,
+    observables: list[AbstractBlock],
+    param_values: dict[str, Tensor],
+    noise: Noise,
+    stretches: dict[str, Tensor],
+    endianness: Endianness,
     state: Tensor | None = None,
-    measurement: Measurements | None = None,
-    noise: Noise | None = None,
-    mitigation: Mitigations | None = None,
-    endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
-    assert noise
-    assert mitigation
-    noise_model = mitigation.options.get("noise_model", None)
-    if noise_model is None:
-        KeyError(f"A noise model should be choosen from {Noise.list()}. Got {noise_model}.")
-    backend = backend_factory(backend=BackendName.PULSER, diff_mode=None)
-    backend = cast(Backend, backend)
-    stretches = mitigation.options.get("stretches", None)
-    # Signals to use the stretches as parameters for the ZNE data.
     # They should be embedded before use.
     # expression_to_uuids
-    if stretches is not None:
-        # Retrieve the parameter name and values to stretch over.
-        param_name, stretch_vals = list(stretches.items())[0]
-        # Convert to Parameter type.
-        param = Parameter(param_name)
-        # Get the map from parameters to uuids.
-        expr_to_uuids = expression_to_uuids(circuit.abstract.block)
-        # Retrieve the parameter uuid.
-        param_uuid = expr_to_uuids[param][0]
-        # Retrieve the parameter value.
-        param_value = param_values[param_uuid]
-        # Store the initial <uuid, value> pair to change back later.
-        init_val = {param_uuid: param_value}
-        # Use stretched values in-place of the param value.
-        param_values[param_uuid] = param_value * stretch_vals
-    zne_datasets = []
-    # Get noisy density matrices.
+    # Retrieve the parameter name and values to stretch over.
+    breakpoint()
+    param_name, stretch_vals = list(stretches.items())[0]
+    # Convert to Parameter type.
+    param = Parameter(param_name)
+    # Get the map from parameters to uuids.
+    expr_to_uuids = expression_to_uuids(circuit.block)
+    # Retrieve the parameter uuid.
+    param_uuid = expr_to_uuids[param][0]
+    # Retrieve the parameter value.
+    param_value = param_values[param_uuid]
+    # Store the initial <uuid, value> pair to change back later.
+    init_val = {param_uuid: param_value}
+    # Use stretched values in-place of the param value.
+    param_values[param_uuid] = param_value * stretch_vals
+    # Run a batch experiment and get noisy density matrices.
+    breakpoint()
+
+    conv_circuit = backend.circuit(circuit)
     noisy_density_matrices = backend.run_dm(
-        circuit, param_values=param_values, state=state, noise=noise, endianness=endianness
+        conv_circuit, param_values=param_values, state=state, noise=noise, endianness=endianness
     )
     # Convert observables to Numpy types compatible with QuTip simulations.
     # Matrices are flipped to match QuTip conventions.
-    converted_observables = [np.flip(block_to_tensor(obs.original).numpy()) for obs in observable]
+    converted_observables = [
+        np.flip(block_to_tensor(observable).numpy()) for observable in observables
+    ]
     # Create ZNE datasets by looping over batches.
+    zne_datasets = []
     for observable in converted_observables:
         # Get expectation values at the end of the time serie [0,t]
         # at intervals of the sampling rate.
@@ -102,24 +120,58 @@ def analog_zne(
             ]
         )
     # Zero-noise extrapolate.
+    extrapolated_exp_values = zne_pulse(
+        stretches=param_values[param_uuid],
+        zne_datasets=zne_datasets,
+        zne_value=list(init_val.values())[0].item(),
+    )
+    # Set the initial values back.
+    param_uuid, param_value = list(init_val.items())[0]
+    param_values[param_uuid] = param_value
+    return extrapolated_exp_values
+
+
+def analog_zne(
+    backend_name: BackendName,
+    circuit: QuantumCircuit,
+    observables: list[AbstractBlock],
+    param_values: dict[str, Tensor] = {},
+    state: Tensor | None = None,
+    measurement: Measurements | None = None,
+    noise: Noise | None = None,
+    mitigation: Mitigations | None = None,
+    endianness: Endianness = Endianness.BIG,
+) -> Tensor:
+    assert noise
+    assert mitigation
+    backend = backend_factory(backend=BackendName.PULSER, diff_mode=None)
+    backend = cast(Backend, backend)
+    noise_model = mitigation.options.get("noise_model", None)
+    if noise_model is None:
+        KeyError(f"A noise model should be choosen from {Noise.list()}. Got {noise_model}.")
+    stretches = mitigation.options.get("stretches", None)
     if stretches is not None:
-        extrapolated_exp_values = zne_pulse(
-            stretches=param_values[param_uuid],
-            zne_datasets=zne_datasets,
-            zne_value=list(init_val.values())[0],
+        extrapolated_exp_values = pulse_experiment(
+            backend=backend,
+            circuit=circuit,
+            observables=observables,
+            param_values=param_values,
+            noise=noise,
+            stretches=stretches,
+            endianness=endianness,
+            state=state,
         )
-        # Set the initial values back.
-        param_uuid, param_value = list(init_val.items())[0]
-        param_values[param_uuid] = param_value
     else:
-        extrapolated_exp_values = zne_noise(noise=noise, zne_datasets=zne_datasets)
-    return torch.tensor(extrapolated_exp_values)
+        zne_datasets: list = []
+        noise_probas = noise.options.get("noise_probas")
+        extrapolated_exp_values = zne_noise(noise_probas=noise_probas, zne_datasets=zne_datasets)
+    return extrapolated_exp_values
 
 
 def mitigate(
     backend_name: BackendName,
-    circuit: ConvertedCircuit,
-    observable: list[ConvertedObservable] | ConvertedObservable,
+    circuit: QuantumCircuit,
+    observables: list[AbstractBlock],
     param_values: dict[str, Tensor] = {},
     state: Tensor | None = None,
     measurement: Measurements | None = None,
@@ -130,7 +182,7 @@ def mitigate(
     mitigated_exp = analog_zne(
         backend_name=backend_name,
         circuit=circuit,
-        observable=observable,
+        observables=observables,
         param_values=param_values,
         state=state,
         measurement=measurement,

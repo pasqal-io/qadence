@@ -249,7 +249,8 @@ class Backend(BackendInterface):
 
         noisy_batched_dm = []
 
-        for noise_proba in noise_probas:
+        # Pulser requires numpy types.
+        for noise_proba in noise_probas.numpy():
             batched_dm = []
             sim_config = {"noise": noise.protocol, noise.protocol + "_prob": noise_proba}
             self.config.sim_config = SimConfig(**sim_config)
@@ -319,8 +320,8 @@ class Backend(BackendInterface):
             mitigation_fn = mitigation.get_mitigation_fn()
             mitigated_exp_val = mitigation_fn(
                 backend_name=self.name,
-                circuit=circuit,
-                observable=observables,
+                circuit=circuit.original,
+                observables=[obs.original for obs in observables],
                 param_values=param_values,
                 state=state,
                 measurement=measurement,
