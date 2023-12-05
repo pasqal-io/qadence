@@ -89,6 +89,11 @@ class AnalogBlock(AbstractBlock):
 
         return add_interaction(register, block).eigenvalues_generator
 
+    def dagger(self) -> AbstractBlock:
+        raise NotImplementedError(
+            f"Hermitian adjoint of block type {type(self)} is not implemented yet."
+        )
+
 
 @dataclass(eq=False, repr=False)
 class WaitBlock(AnalogBlock):

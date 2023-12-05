@@ -118,9 +118,6 @@ class X(PrimitiveBlock):
     def eigenvalues(self) -> Tensor:
         return tensor([-1, 1], dtype=cdouble)
 
-    def dagger(self) -> X:
-        return self
-
 
 class Y(PrimitiveBlock):
     """The Y gate."""
@@ -142,9 +139,6 @@ class Y(PrimitiveBlock):
     def eigenvalues(self) -> Tensor:
         return tensor([-1, 1], dtype=cdouble)
 
-    def dagger(self) -> Y:
-        return self
-
 
 class Z(PrimitiveBlock):
     """The Z gate."""
@@ -165,9 +159,6 @@ class Z(PrimitiveBlock):
     @property
     def eigenvalues(self) -> Tensor:
         return tensor([-1, 1], dtype=cdouble)
-
-    def dagger(self) -> Z:
-        return self
 
 
 class Projector(ProjectorBlock):
@@ -211,9 +202,6 @@ class N(Projector):
     @property
     def eigenvalues(self) -> Tensor:
         return tensor([0, 1], dtype=cdouble)
-
-    def dagger(self) -> N:
-        return self
 
 
 class S(PrimitiveBlock):
@@ -319,9 +307,6 @@ class I(PrimitiveBlock):
     def __ascii__(self, console: Console) -> Padding:
         return Padding("──────", (1, 1, 1, 1))
 
-    def dagger(self) -> I:
-        return I(*self.qubit_support)
-
 
 TPauliBlock = Union[X, Y, Z, I, N]
 
@@ -342,9 +327,6 @@ class H(PrimitiveBlock):
     @property
     def eigenvalues(self) -> Tensor:
         return torch.tensor([-1, 1], dtype=cdouble)
-
-    def dagger(self) -> H:
-        return H(*self.qubit_support)
 
 
 class Zero(PrimitiveBlock):
@@ -387,7 +369,7 @@ class Zero(PrimitiveBlock):
         return self
 
     def dagger(self) -> Zero:
-        return Zero()
+        return self
 
 
 class RX(ParametricBlock):
@@ -714,9 +696,6 @@ class CNOT(ControlBlock):
             tree.add(self._block_title)
         return tree
 
-    def dagger(self) -> CNOT:
-        return CNOT(*self.qubit_support)
-
 
 class MCZ(ControlBlock):
     name = OpName.MCZ
@@ -745,9 +724,6 @@ class MCZ(ControlBlock):
             tree.add(self._block_title)
         return tree
 
-    def dagger(self) -> MCZ:
-        return MCZ(self.qubit_support[:-1], self.qubit_support[-1])
-
 
 class CZ(MCZ):
     """The CZ gate."""
@@ -756,9 +732,6 @@ class CZ(MCZ):
 
     def __init__(self, control: int, target: int) -> None:
         super().__init__((control,), target)
-
-    def dagger(self) -> CZ:
-        return CZ(self.qubit_support[-2], self.qubit_support[-1])
 
 
 class MCRX(ParametricControlBlock):
@@ -789,9 +762,6 @@ class MCRX(ParametricControlBlock):
         lmbd = torch.cos(val / 2.0) - 1j * torch.sin(val / 2.0)
         return torch.cat((torch.ones(2**self.n_qubits - 2), lmbd, lmbd.conj()))
 
-    def dagger(self) -> ParametricBlock:  # type: ignore[override]
-        return self.__class__(self.control, self.blocks[0].qubit_support[0], -extract_original_param_entry(self.parameters.parameter))  # type: ignore[arg-type]
-
 
 class CRX(MCRX):
     """The CRX gate."""
@@ -805,9 +775,6 @@ class CRX(MCRX):
         parameter: Parameter | TNumber | sympy.Expr | str,
     ):
         super().__init__((control,), target, parameter)
-
-    def dagger(self) -> ParametricBlock:  # type: ignore[override]
-        return self.__class__(self.control[0], self.blocks[0].qubit_support[0], -extract_original_param_entry(self.parameters.parameter))  # type: ignore[arg-type]
 
 
 class MCRY(ParametricControlBlock):
@@ -838,8 +805,6 @@ class MCRY(ParametricControlBlock):
         lmbd = torch.cos(val / 2.0) - 1j * torch.sin(val / 2.0)
         return torch.cat((torch.ones(2**self.n_qubits - 2), lmbd, lmbd.conj()))
 
-    def dagger(self) -> ParametricBlock:  # type: ignore[override]
-        return self.__class__(self.control, self.blocks[0].qubit_support[0], -extract_original_param_entry(self.parameters.parameter))  # type: ignore[arg-type]
 
 class CRY(MCRY):
     """The CRY gate."""
@@ -850,12 +815,10 @@ class CRY(MCRY):
         self,
         control: int,
         target: int,
-        parameter: Parameter | TNumber | sympy.Expr | str,
+        parameter: TParameter,
     ):
         super().__init__((control,), target, parameter)
 
-    def dagger(self) -> ParametricBlock:  # type: ignore[override]
-        return self.__class__(self.control[0], self.blocks[0].qubit_support[0], -extract_original_param_entry(self.parameters.parameter))  # type: ignore[arg-type]
 
 class MCRZ(ParametricControlBlock):
     name = OpName.MCRZ
@@ -885,9 +848,6 @@ class MCRZ(ParametricControlBlock):
         lmbd = torch.cos(val / 2.0) - 1j * torch.sin(val / 2.0)
         return torch.cat((torch.ones(2**self.n_qubits - 2), lmbd, lmbd.conj()))
 
-    def dagger(self) -> ParametricBlock:  # type: ignore[override]
-        return self.__class__(self.control, self.blocks[0].qubit_support[0], -extract_original_param_entry(self.parameters.parameter))  # type: ignore[arg-type]
-
 
 class CRZ(MCRZ):
     """The CRZ gate."""
@@ -901,9 +861,6 @@ class CRZ(MCRZ):
         parameter: Parameter | TNumber | sympy.Expr | str,
     ):
         super().__init__((control,), target, parameter)
-
-    def dagger(self) -> ParametricBlock:  # type: ignore[override]
-        return self.__class__(self.control[0], self.blocks[0].qubit_support[0], -extract_original_param_entry(self.parameters.parameter))  # type: ignore[arg-type]
 
 
 class CSWAP(ControlBlock):
@@ -942,9 +899,6 @@ class CSWAP(ControlBlock):
     @property
     def nqubits(self) -> int:
         return 3
-
-    def dagger(self) -> CSWAP:
-        return CSWAP(*self.qubit_support)
 
 
 class T(PrimitiveBlock):
@@ -1031,9 +985,6 @@ class SWAP(PrimitiveBlock):
         s = f"{self.name}({c}, {t})"
         return s if self.tag is None else (s + rf" \[tag: {self.tag}]")
 
-    def dagger(self) -> SWAP:
-        return SWAP(*self.qubit_support)
-
 
 class AnalogSWAP(HamEvo):
     """
@@ -1098,9 +1049,6 @@ class MCPHASE(ParametricControlBlock):
         h = abs(target - control) + 1
         return Panel(self._block_title, expand=False, height=3 * h)
 
-    def dagger(self) -> ParametricBlock:  # type: ignore[override]
-        return self.__class__(self.control, self.blocks[0].qubit_support[0], -extract_original_param_entry(self.parameters.parameter))  # type: ignore[arg-type]
-
 
 class CPHASE(MCPHASE):
     """The CPHASE gate."""
@@ -1115,8 +1063,6 @@ class CPHASE(MCPHASE):
     ):
         super().__init__((control,), target, parameter)
 
-    def dagger(self) -> ParametricBlock:  # type: ignore[override]
-        return self.__class__(self.control[0], self.blocks[0].qubit_support[0], -extract_original_param_entry(self.parameters.parameter))  # type: ignore[arg-type]
 
 class Toffoli(ControlBlock):
     name = OpName.TOFFOLI
