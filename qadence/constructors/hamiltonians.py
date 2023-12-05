@@ -198,14 +198,7 @@ def total_magnetization(n_qubits: int, z_terms: np.ndarray | list | None = None)
     return hamiltonian_factory(n_qubits, detuning=Z, detuning_strength=z_terms)
 
 
-# FIXME: Previous hamiltonian / observable functions, now refactored, to be deprecated:
-
-DEPRECATION_MESSAGE = "This function will be removed in the future. "
-
-
 def single_z(qubit: int = 0, z_coefficient: float = 1.0) -> AbstractBlock:
-    message = DEPRECATION_MESSAGE + "Please use `z_coefficient * Z(qubit)` directly."
-    warnings.warn(message, FutureWarning)
     return Z(qubit) * z_coefficient
 
 
@@ -214,20 +207,11 @@ def zz_hamiltonian(
     z_terms: np.ndarray | None = None,
     zz_terms: np.ndarray | None = None,
 ) -> AbstractBlock:
-    message = (
-        DEPRECATION_MESSAGE
-        + """
-Please use `hamiltonian_factory(n_qubits, Interaction.ZZ, Z, interaction_strength, z_terms)`. \
-Note that the argument `zz_terms` in this function is a 2D array of size `(n_qubits, n_qubits)`, \
-while `interaction_strength` is expected as a 1D array of size `0.5 * n_qubits * (n_qubits - 1)`."""
-    )
-    warnings.warn(message, FutureWarning)
     if zz_terms is not None:
         register = Register(n_qubits)
         interaction_strength = [zz_terms[edge[0], edge[1]] for edge in register.edges]
     else:
         interaction_strength = None
-
     return hamiltonian_factory(n_qubits, Interaction.ZZ, Z, interaction_strength, z_terms)
 
 
@@ -237,13 +221,6 @@ def ising_hamiltonian(
     z_terms: np.ndarray | None = None,
     zz_terms: np.ndarray | None = None,
 ) -> AbstractBlock:
-    message = (
-        DEPRECATION_MESSAGE
-        + """
-You can build a general transverse field ising model with the `hamiltonian_factory` function. \
-Check the hamiltonian construction tutorial in the documentation for more information."""
-    )
-    warnings.warn(message, FutureWarning)
     zz_ham = zz_hamiltonian(n_qubits, z_terms=z_terms, zz_terms=zz_terms)
     x_ham = hamiltonian_factory(n_qubits, detuning=X, detuning_strength=x_terms)
     return zz_ham + x_ham
