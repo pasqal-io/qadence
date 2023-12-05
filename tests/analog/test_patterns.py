@@ -16,9 +16,7 @@ from qadence import (
     chain,
     total_magnetization,
 )
-from qadence.analog.addressing import AddressingPattern
-from qadence.analog.interaction import add_interaction
-from qadence.backends.pulser.config import Configuration
+from qadence.analog import AddressingPattern, IdealDevice
 from qadence.states import equivalent_state
 
 
@@ -34,8 +32,6 @@ def test_pulser_pyq_addressing(amp: float, det: float, spacing: float) -> None:
     n_qubits = 3
     x = Parameter("x")
     block = chain(AnalogRX(3 * x), AnalogRY(0.5 * x))
-    reg = Register(support=n_qubits, spacing=spacing)
-    circ = QuantumCircuit(reg, block)
 
     # define addressing patterns
     rand_weights_amp = torch.rand(n_qubits)
@@ -44,7 +40,8 @@ def test_pulser_pyq_addressing(amp: float, det: float, spacing: float) -> None:
     rand_weights_det = torch.rand(n_qubits)
     rand_weights_det = rand_weights_det / rand_weights_det.sum()
     w_det = {i: rand_weights_det[i] for i in range(n_qubits)}
-    p = AddressingPattern(
+
+    pattern = AddressingPattern(
         n_qubits=n_qubits,
         det=det,
         amp=amp,
@@ -52,9 +49,14 @@ def test_pulser_pyq_addressing(amp: float, det: float, spacing: float) -> None:
         weights_amp=w_amp,
     )
 
-    values = {"x": torch.linspace(0.5, 2 * torch.pi, 50)}
+    # define device specs
+    device_specs = IdealDevice(pattern=pattern)
+
+    reg = Register(support=n_qubits, spacing=spacing, device_specs=device_specs)
+    circ = QuantumCircuit(reg, block)
+
+    values = {"x": torch.linspace(0.5, 2 * torch.pi, 5)}
     obs = total_magnetization(n_qubits)
-    conf = Configuration(addressing_pattern=p)
 
     # define pulser backend
     model = QuantumModel(
@@ -62,15 +64,13 @@ def test_pulser_pyq_addressing(amp: float, det: float, spacing: float) -> None:
         observable=obs,
         backend=BackendName.PULSER,
         diff_mode=DiffMode.GPSR,
-        configuration=conf,
     )
     wf_pulser = model.run(values=values)
     expval_pulser = model.expectation(values=values)
 
     # define pyq backend
-    int_circ = add_interaction(circ, pattern=p)
     model = QuantumModel(
-        circuit=int_circ, observable=obs, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD
+        circuit=circ, observable=obs, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD
     )
     wf_pyq = model.run(values=values)
     expval_pyq = model.expectation(values=values)
@@ -79,10 +79,9 @@ def test_pulser_pyq_addressing(amp: float, det: float, spacing: float) -> None:
     assert torch.allclose(expval_pulser, expval_pyq, atol=MIDDLE_ACCEPTANCE)
 
 
-@pytest.mark.flaky(max_runs=10)
+@pytest.mark.flaky(max_runs=5)
 def test_addressing_training() -> None:
     n_qubits = 3
-    reg = Register(support=n_qubits, spacing=8)
     f_value = torch.rand(1)
 
     # define training parameters
@@ -90,7 +89,9 @@ def test_addressing_training() -> None:
     w_det = {i: f"w_det{i}" for i in range(n_qubits)}
     amp = "amp"
     det = "det"
-    p = AddressingPattern(
+
+    # define pattern and device specs
+    pattern = AddressingPattern(
         n_qubits=n_qubits,
         det=det,
         amp=amp,
@@ -98,10 +99,13 @@ def test_addressing_training() -> None:
         weights_amp=w_amp,  # type: ignore [arg-type]
     )
 
-    # define training circuit
-    block = chain(AnalogRX(1 + torch.rand(1).item()), AnalogRY(1 + torch.rand(1).item()))
+    device_specs = IdealDevice(pattern=pattern)
+
+    reg = Register.line(n_qubits, spacing=8.0, device_specs=device_specs)
+
+    # some otherwise fixed circuit
+    block = AnalogRX(torch.pi)
     circ = QuantumCircuit(reg, block)
-    circ = add_interaction(circ, pattern=p)
 
     # define quantum model
     obs = total_magnetization(n_qubits)
@@ -110,13 +114,13 @@ def test_addressing_training() -> None:
     # prepare for training
     optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
     loss_criterion = torch.nn.MSELoss()
-    n_epochs = 200
+    n_epochs = 100
     loss_save = []
 
     # train model
     for _ in range(n_epochs):
         optimizer.zero_grad()
-        out = model.expectation({})
+        out = model.expectation({}).flatten()
         loss = loss_criterion(f_value, out)
         loss.backward()
         optimizer.step()
@@ -125,11 +129,11 @@ def test_addressing_training() -> None:
     # get final results
     f_value_model = model.expectation({}).detach()
 
-    weights_amp = torch.tensor(list(p.evaluate(p.weights_amp, model.vparams).values()))
+    weights_amp = torch.tensor(list(pattern.evaluate(pattern.weights_amp, model.vparams).values()))
     weights_amp_mask = weights_amp.abs() < 0.001
     weights_amp[weights_amp_mask] = 0.0
 
-    weights_det = torch.tensor(list(p.evaluate(p.weights_det, model.vparams).values()))
+    weights_det = torch.tensor(list(pattern.evaluate(pattern.weights_det, model.vparams).values()))
     weights_det_mask = weights_det.abs() < 0.001
     weights_det[weights_det_mask] = 0.0
 

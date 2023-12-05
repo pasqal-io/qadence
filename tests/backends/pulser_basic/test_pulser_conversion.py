@@ -9,9 +9,10 @@ from pulser.register.register import Register as PulserRegister
 from pulser.sequence.sequence import Sequence
 from pulser_simulation.simulation import QutipEmulator
 
+from qadence.analog import RealisticDevice, RydbergDevice
 from qadence.backends.pulser.backend import make_sequence
 from qadence.backends.pulser.config import Configuration
-from qadence.backends.pulser.devices import Device, RealisticDevice
+from qadence.backends.pulser.devices import RealisticDevice as PulserRealisticDevice
 from qadence.backends.pulser.pulses import digital_xy_rot_pulse, digital_z_rot_pulse, entangle_pulse
 from qadence.blocks import AbstractBlock
 from qadence.blocks.analog import Interaction
@@ -32,17 +33,16 @@ from qadence.register import Register as QadenceRegister
 def test_single_qubit_block_conversion(Qadence_op: AbstractBlock, func: Callable) -> None:
     spacing = 10
     n_qubits = 2
-    reg = QadenceRegister(n_qubits, spacing=spacing)
+    reg = QadenceRegister(n_qubits, spacing=spacing, device_specs=RealisticDevice())
     circ = QuantumCircuit(reg, Qadence_op)
-    config = Configuration(device_type=Device.REALISTIC)
 
-    seq1 = make_sequence(circ, config)
+    seq1 = make_sequence(circ, Configuration())
     sim1 = QutipEmulator.from_sequence(seq1)
     res1 = sim1.run()
     sample1 = res1.sample_final_state(500)
 
     reg = PulserRegister.rectangle(1, n_qubits, spacing=spacing)
-    seq2 = Sequence(reg, RealisticDevice)
+    seq2 = Sequence(reg, PulserRealisticDevice())
     seq2.declare_channel("local", "rydberg_local")
     seq2.target(Qadence_op.qubit_support, "local")
     pulse = func(seq2.device.channels["rydberg_local"])
@@ -70,7 +70,7 @@ def test_multiple_qubit_block_conversion(Qadence_op: AbstractBlock, func: Callab
     sample1 = res1.sample_final_state(500)
 
     reg = PulserRegister.rectangle(1, 2, spacing=spacing)
-    seq2 = Sequence(reg, RealisticDevice)
+    seq2 = Sequence(reg, PulserRealisticDevice())
     seq2.declare_channel("global", "rydberg_global")
     seq2.add(func(seq2.device.channels["rydberg_global"]), "global")
     sim2 = QutipEmulator.from_sequence(seq2)
@@ -82,7 +82,7 @@ def test_multiple_qubit_block_conversion(Qadence_op: AbstractBlock, func: Callab
 
 def test_interaction() -> None:
     with pytest.raises(ValueError, match="Pulser does not support other interactions than 'NN'"):
-        reg = QadenceRegister(2)
+        device = RydbergDevice(interaction=Interaction.XY)
+        reg = QadenceRegister(2, device_specs=device)
         circ = QuantumCircuit(reg, entangle(100))
-        config = Configuration(interaction=Interaction.XY)
-        make_sequence(circ, config)
+        make_sequence(circ, Configuration())
