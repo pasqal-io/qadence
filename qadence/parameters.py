@@ -8,8 +8,8 @@ import numpy as np
 import sympy
 from sympy import *
 from sympy import Array, Basic, Expr, Symbol, sympify
-from sympy2jax import SymbolicModule as JaxSympyModule
 from sympy.physics.quantum.dagger import Dagger
+from sympy2jax import SymbolicModule as JaxSympyModule
 from sympytorch import SymPyModule as torchSympyModule
 from torch import Tensor, heaviside, no_grad, rand, tensor
 
