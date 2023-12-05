@@ -22,14 +22,13 @@ def _concretize_parameter(engine: Engine) -> Callable:
     if engine == Engine.JAX:
         import jax.numpy as jnp
 
-        def concretize_parameter(value: TNumber, requires_grad: bool) -> ArrayLike:
-            fn, dtype = (jnp.array, jnp.float64) if requires_grad else (np.array, np.float64)
-            return fn([value], dtype=dtype)
+        def concretize_parameter(value: TNumber, trainable: bool = False) -> ArrayLike:
+            return jnp.array([value], dtype=jnp.float64)
 
     else:
 
-        def concretize_parameter(value: TNumber, requires_grad: bool) -> ArrayLike:
-            return torch.tensor([value], requires_grad=requires_grad)
+        def concretize_parameter(value: TNumber, trainable: bool = False) -> ArrayLike:
+            return torch.tensor([value], requires_grad=trainable)
 
     return concretize_parameter
 
@@ -141,10 +140,12 @@ def embedding(
             return {stringify(k): v for k, v in embedded_params.items()}
 
     params: ParamDictType
-    params = {p.name: concretize_parameter(p.value, True) for p in trainable_symbols}
+    params = {
+        p.name: concretize_parameter(value=p.value, trainable=True) for p in trainable_symbols
+    }
     params.update(
         {
-            stringify(expr): concretize_parameter(evaluate(expr), requires_grad=False)
+            stringify(expr): concretize_parameter(value=evaluate(expr), trainable=False)
             for expr in constant_expressions
         }
     )
