@@ -39,7 +39,7 @@ def test_register() -> None:
     assert len(r.graph) == 4
     assert r == Register.lattice("line", 4, spacing=spacing)
     assert isclose(sum(r.edge_distances.values()), 3 * spacing, rel_tol=ATOL_64)
-    assert len(r.distances) == len(r.all_edges)
+    assert len(r.distances) == len(r.all_node_pairs)
 
     # test circular lattice node number
     r = Register.circle(8)

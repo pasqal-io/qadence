@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from .apply_fn import apply_fn_to_blocks
 from .block import (
     chain_single_qubit_ops,
     repeat,
