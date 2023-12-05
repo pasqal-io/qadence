@@ -1,7 +1,6 @@
 !!! warning
-    The digital-analog emulation framework is under construction and significant changes to the interface
-    should be expected in the near-future. Nevertheless, the currest version serves as a prototype of the
-    functionality, and any feedback is greatly appreciated.
+    The digital-analog emulation framework is under construction and more changes to the interface
+    may still occur.
 
 Qadence includes primitives for the construction of programs implemented on a set of interacting qubits.
 The goal is to build digital-analog programs that better represent the reality of interacting qubit
@@ -38,8 +37,9 @@ $$
 \mathcal{H}^\text{int}_{ij} = \frac{C_6}{r_{ij}^6}N_iN_j
 $$
 
-where $r_{ij}$ is the distance between atoms $i$ and $j$, and $C_6$ is a coefficient depending on the specific Rydberg level
-of the excited state used in the computational logic states.
+where $r_{ij}$ is the distance between atoms $i$ and $j$, and $C_6$ is a coefficient depending on the specific
+Rydberg level of the excited state used in the computational logic states. A typical value for rydberg level of 60 is
+$C_6\approx 866~[\text{rad} . \mu \text{m}^6 / \text{ns}]$.
 
 For a given register of atoms prepared in some spatial coordinates, the Hamiltonians described will generate the dynamics
 of some unitary operation as
@@ -67,15 +67,14 @@ few examples of the standard operations available in Qadence.
 
 To start, we will exemplify the a general rotation on a set of atoms. To create an arbitrary
 register of atoms, we refer the user to the [register creation tutorial](../tutorials/register.md).
-In this tutorial we do not use any information regarding the edges of the register graph, only
-the coordinates of each node that are used to compute the distance $r_{ij}$ in the interaction term.
-Below, we create a line register of three qubits directly from the coordinates.
+Below, we create a line register of three qubits with a separation of $8~\mu\text{m}$. This is a typical
+value used in combination with a standard experimental setup of neutral atoms such that the interaction
+term in the Hamiltonian can effectively be used for computations.
 
 ```python exec="on" source="material-block" session="emu"
 from qadence import Register
 
-dx = 8.0  # Atom spacing in μm
-reg = Register.from_coordinates([(0, 0), (dx, 0), (2*dx, 0)])
+reg = Register.line(3, spacing=8.0)  # Atom spacing in μm
 ```
 
 Currently, the most general rotation operation uses the `AnalogRot` operation, which
@@ -113,7 +112,7 @@ print(wf)
 
     ```python exec="on" source="material-block" result="json"
     from qadence import BackendName, HamEvo, X, Y, N, add, run
-    from qadence.analog.utils import C6_DICT
+    from qadence.analog.constants import C6_DICT
     from math import pi, cos, sin
 
     # Following the 3-qubit register above
@@ -208,10 +207,8 @@ from qadence import Register, BackendName
 from qadence import RX, AnalogRX, random_state, equivalent_state, kron, run
 from math import pi
 
-dx = 8.0
-
-reg = Register.from_coordinates([(0, 0), (dx, 0), (2*dx, 0)])
 n_qubits = 3
+reg = Register.line(n_qubits, spacing=8.0)
 
 # Rotation angle
 theta = pi
@@ -276,9 +273,8 @@ function `wait` which does exactly this.
 ```python exec="on" source="material-block" result="json" session="int"
 from qadence import Register, BackendName, random_state, equivalent_state, wait, run
 
-dx = 8.0
-reg = Register.from_coordinates([(0, 0), (dx, 0), (2*dx, 0)])
 n_qubits = 3
+reg = Register.line(n_qubits, spacing=8.0)
 
 duration = 1000.
 op = wait(duration = duration)
@@ -293,11 +289,87 @@ bool_equiv = equivalent_state(wf_pyq, wf_pulser, atol = 1e-03)
 print("States equivalent: ", bool_equiv)
 ```
 
-## Some technical details
+## Device specifications in Qadence
+
+As a way to control other specifications of the interacting Rydberg atoms, Qadence provides a `RydbergDevice` class, which is
+currently used for both the pyqtorch and the pulser backends. Below we initialize a Rydberg device showcasing all the possible
+options.
+
+```python exec="on" source="material-block" session="device"
+from qadence import RydbergDevice, DeviceType, Interaction
+from math import pi
+
+device_specs = RydbergDevice(
+    interaction=Interaction.NN, # Or Interaction.XY, supported only for pyqtorch
+    rydberg_level=60, # Integer value affecting the C_6 coefficient
+    coeff_xy=3700.00, # C_3 coefficient for the XY interaction
+    max_detuning=2 * pi * 4, # Max value for delta, currently only used in pulser
+    max_amp=2 * pi * 3, # Max value for omega, currently only used in pulser
+    pattern=None, # Semi-local addressing pattern, see the relevant tutorial
+    type=DeviceType.IDEALIZED, # Pulser device to which the qadence device is converted in that backend
+)
+```
+
+The values above are the defaults when simply running `device_specs = RydbergDevice()`. The convenience wrappers
+`IdealDevice()` or `RealisticDevice()` can also be used which simply change the `type`
+for the Pulser backend, but also allow an `AddressingPattern` passed in the `pattern` argument
+([see the relevant tutorial here](semi-local-addressing.md)).
 
 !!! warning
-    The details described here are relevant in the current version but are under
-    revision for the next version of the emulated analog interface.
+    Currently, the options above are not fully integrated in both backends and this class should mostly be used
+    if a user wishes to experiment with a different `rydberg_level`, or to change the device type for the pulser backend.
+
+    Planned features to add to the RydbergDevice include the definition of custom interaction functions,
+    the control of other drive Hamiltonian parameters so that $\Omega$, $\delta$ and $\phi$ are
+    not hardcoded when doing analog rotations, and the usage of the `max_detuning` and `max_amp` to control those
+    respective parameters when training models in the pyqtorch backend.
+
+Finally, to change a given simulation, the device specifications are integrated in the Qadence `Register`. By default,
+all registers initialize an `IdealDevice()` under the hood. Below we run a quick test for a different rydberg
+level.
+
+```python exec="on" source="material-block" result="json" session="device"
+from qadence import Register, BackendName, random_state, equivalent_state, run
+from qadence import AnalogRX, RydbergDevice
+from math import pi
+
+device_specs = RydbergDevice(rydberg_level = 70)
+
+n_qubits_side = 2
+reg = Register.square(
+    n_qubits_side,
+    spacing = 8.0,
+    device_specs = device_specs
+)
+
+rot_analog = AnalogRX(angle = pi)
+
+init_state = random_state(n_qubits = 4)
+
+wf_analog_pyq = run(
+    reg,
+    rot_analog,
+    state = init_state,
+    backend = BackendName.PYQTORCH
+)
+
+wf_analog_pulser = run(
+    reg,
+    rot_analog,
+    state = init_state,
+    backend = BackendName.PULSER
+)
+
+bool_equiv = equivalent_state(wf_analog_pyq, wf_analog_pulser, atol = 1e-03)
+
+print("States equivalent: ", bool_equiv)
+```
+
+## Technical details
+
+!!! warning
+    The details described here are relevant in the current version but will
+    be lifted soon for the next version of the emulated analog interface.
 
 In the previous section we have exemplified the main ingredients of the current user-facing functionalities
 of the emulated analog interface, and in the next tutorial on Quantum Circuit Learning we will exmplify its usage

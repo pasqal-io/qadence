@@ -59,8 +59,8 @@ class AnalogBlock(AbstractBlock):
     @property
     def eigenvalues_generator(self) -> torch.Tensor:
         msg = (
-            "Eigenvalues of analog blocks can be computed via "
-            "`add_interaction(register, block).eigenvalues`"
+            "Eigenvalues of for generator of analog blocks can be computed via "
+            "`add_background_hamiltonian(block, register).eigenvalues_generator`. "
         )
         raise NotImplementedError(msg)
 
@@ -68,7 +68,7 @@ class AnalogBlock(AbstractBlock):
     def eigenvalues(self) -> torch.Tensor:
         msg = (
             "Eigenvalues of analog blocks can be computed via "
-            "`add_interaction(register, block).eigenvalues`"
+            "`add_background_hamiltonian(block, register).eigenvalues`. "
         )
         raise NotImplementedError(msg)
 
@@ -83,11 +83,14 @@ class AnalogBlock(AbstractBlock):
         return s
 
     def compute_eigenvalues_generator(
-        self, register: Register, block: AbstractBlock
+        self,
+        block: AbstractBlock,
+        register: Register,
     ) -> torch.Tensor:
-        from qadence import add_interaction
+        # FIXME: Revisit analog blocks eigenvalues
+        from qadence.analog import add_background_hamiltonian
 
-        return add_interaction(register, block).eigenvalues_generator
+        return add_background_hamiltonian(block, register).eigenvalues_generator  # type: ignore [union-attr]
 
     def dagger(self) -> AbstractBlock:
         raise NotImplementedError(
@@ -113,8 +116,6 @@ class WaitBlock(AnalogBlock):
     with `nᵢ = (1-Zᵢ)/2`.
 
     To construct this block, use the [`wait`][qadence.operations.wait] function.
-
-    Can be used with `add_interaction`.
     """
 
     _eigenvalues_generator: torch.Tensor | None = None
@@ -150,7 +151,6 @@ class ConstantAnalogRotation(AnalogBlock):
       [`AnalogRY`][qadence.operations.AnalogRY],
       [`AnalogRZ`][qadence.operations.AnalogRZ]
 
-    Can be used with `add_interaction`.
     WARNING: do not use `ConstantAnalogRotation` with `alpha` as differentiable parameter - use
     the convenience wrappers mentioned above.
     """

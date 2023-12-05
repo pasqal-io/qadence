@@ -14,11 +14,12 @@ The first two terms are the standard components of a neutral atom Hamiltonians
 and read as follows:
 
 $$
-    \mathcal{H}_{\textrm{global}} = \frac{\Omega}{2}\sum_{i}^N \left(
-        \textrm{cos}(\phi)\sigma^x_i - \textrm{sin}(\phi)\sigma^y_i \right) -
-        \delta \sum_{i}^N \hat{n}_i \\
-    \mathcal{H}_{\textrm{int}} = \sum_{i<j} \frac{C_6}{|R_i - R_j|^6} \hat{n}_i \hat{n}_j
+\mathcal{H}_{\textrm{global}} = \frac{\Omega}{2}\sum_{i}^N \left(
+    \textrm{cos}(\phi)\sigma^x_i - \textrm{sin}(\phi)\sigma^y_i \right) -
+    \delta \sum_{i}^N \hat{n}_i \\
+\mathcal{H}_{\textrm{int}} = \sum_{i<j} \frac{C_6}{|R_i - R_j|^6} \hat{n}_i \hat{n}_j
 $$
+
 where $\Omega$ is the Rabi frequency, $\phi$ the global phase, $\delta$ the
 detuning which can all be time-dependent (here omitted for simplicity). The operator
 $\hat{n}_i = \frac{1+\sigma_i^z}{2}$ is the occupation operator for the Rydberg state.
@@ -27,9 +28,9 @@ $R_i$ represents instead the spatial coordinates of the i-th qubit.
 The local addressability term reads instead:
 
 $$
-    \mathcal{H}_{\textrm{local}}(w^{drv}, w^{det}) = \frac{\tilde{\Omega}}{2}\sum_{i}^N
-        w_i^{drv}\left(\textrm{cos}(\phi)\sigma^x_i - \textrm{sin}(\phi)\sigma^y_i \right) -
-        \Delta \sum_{i}^N w_i^{det} \hat{n}_i
+\mathcal{H}_{\textrm{local}}(w^{drv}, w^{det}) = \frac{\tilde{\Omega}}{2}\sum_{i}^N
+    w_i^{drv}\left(\textrm{cos}(\phi)\sigma^x_i - \textrm{sin}(\phi)\sigma^y_i \right) -
+    \Delta \sum_{i}^N w_i^{det} \hat{n}_i
 $$
 
 In this Hamiltonian, the local addressing pattern in both Rabi frequency and detuning
@@ -50,7 +51,7 @@ are considered constants. Furthemore, **no global drive and detuning** are expli
 to the Hamiltonian. Therefore, the final Hamiltonian generator of the circuit reads as follows:
 
 $$
-\matchcal{H} = \mathcal{H}_{\textrm{local}}(w^{drv}, w^{det}) + \mathcal{H}_{\textrm{int}}
+\mathcal{H} = \mathcal{H}_{\textrm{local}}(w^{drv}, w^{det}) + \mathcal{H}_{\textrm{int}}
 $$
 
 This implementation does not perform any checks on the weights normalization, thus
