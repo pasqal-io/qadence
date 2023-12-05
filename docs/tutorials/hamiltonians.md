@@ -96,26 +96,11 @@ square_hamilt = hamiltonian_factory(reg, interaction=Interaction.NN)
 print(square_hamilt) # markdown-exec: hide
 ```
 
-Custom Hamiltonian coefficients can also be added to the register beforehand using the `"strength"` key.
-
-```python exec="on" source="material-block" result="json" session="hamiltonians"
-
-reg = Register.square(qubits_side = 2)
-
-for i, edge in enumerate(reg.edges):
-    reg.edges[edge]["strength"] = (0.5 * i) ** 2
-
-square_hamilt = hamiltonian_factory(reg, interaction=Interaction.NN)
-print(square_hamilt) # markdown-exec: hide
-```
-
-Alternatively, if the register already stores interaction or detuning strengths, it is possible to override them in the Hamiltonian creation by using `force_update = True`.
-
 
 ## Adding variational parameters
 
-Finally, fully parameterized Hamiltonians can be created by passing a string to the strength arguments:
-
+Finally, fully parameterized Hamiltonians can be created by passing a string to the strength arguments,
+and used to prefix the name of the variational parameters.
 
 ```python exec="on" source="material-block" result="json" session="hamiltonians"
 n_qubits = 3
@@ -126,6 +111,37 @@ nn_ham = hamiltonian_factory(
     detuning=N,
     interaction_strength="c",
     detuning_strength="d"
+)
+
+print(nn_ham) # markdown-exec: hide
+```
+
+Alternatively, fully customizable sympy functions can be passed in an array using the Qadence parameters.
+Furthermore, the `use_all_node_pairs = True` option can be passed so that interactions are created for every single
+node pair in the register, irrespectively of the topology of the edges. This is useful for creating Hamiltonians
+that depend on qubit distance.
+
+```python exec="on" source="material-block" result="json" session="hamiltonians"
+from qadence import VariationalParameter, Register
+
+# Square register of 4 qubits with a dimensionless distance of 8.0
+reg = Register.square(2, spacing = 8.0)
+
+# Get the distances between all pairs of qubits
+distance_dict = reg.distances
+
+# Create interaction strength with variational parameter and 1/r term
+strength_list = []
+for node_pair in reg.all_node_pairs:
+    param = VariationalParameter("x" + f"_{node_pair[0]}{node_pair[1]}")
+    dist_factor = reg.distances[node_pair]
+    strength_list.append(param / dist_factor)
+
+nn_ham = hamiltonian_factory(
+    reg,
+    interaction=Interaction.NN,
+    interaction_strength=strength_list,
+    use_all_node_pairs=True,
 )
 
 print(nn_ham) # markdown-exec: hide

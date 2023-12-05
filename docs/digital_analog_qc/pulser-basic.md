@@ -140,17 +140,17 @@ One can use the `Configuration` of the Pulser backend to select the appropriate 
 
 ```python exec="on" source="material-block" result="json" session="pulser-basic"
 from qadence import BackendName, DiffMode
-from qadence.backends.pulser.devices import Device
-
-register = Register.line(2, spacing = 8.0)
-circuit = QuantumCircuit(register, bell_state)
+from qadence import RealisticDevice
 
 # Choose a realistic device
+register = Register.line(2, spacing = 8.0, device_specs = RealisticDevice())
+
+circuit = QuantumCircuit(register, bell_state)
+
 model = QuantumModel(
     circuit,
     backend=BackendName.PULSER,
 	diff_mode=DiffMode.GPSR,
-    configuration={"device_type": Device.REALISTIC}
 )
 
 params = {
