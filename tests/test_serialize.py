@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 from sympy import Expr
 from torch import isclose
@@ -89,5 +90,37 @@ def test_tm_serialization(tmp_path: Path, BasicTransformedModule: TransformedMod
         save(_m, tmp_path, "obj", FORMAT)
         suffix, _, _, _ = FORMAT_DICT[FORMAT]
         qm = load(tmp_path / Path("obj" + suffix))
+        exp_l = qm.expectation(inputs)  # type: ignore[union-attr]
+        assert isclose(exp, exp_l)
+
+
+def test_external_serialization(
+    tmp_path: Path, BasicQuantumCircuit: QuantumCircuit, BasicObservable: AbstractBlock
+) -> None:
+    class ExternalModel(QuantumModel):
+        def __init__(
+            self,
+            circuit: QuantumCircuit,
+            observable: AbstractBlock,
+            **qm_kwargs: Any,
+        ) -> None:
+            super().__init__(circuit, observable, **qm_kwargs)
+
+    def deserialize_fn(d: dict) -> ExternalModel:
+        return ExternalModel._from_dict(d)
+
+    _m = ExternalModel(BasicQuantumCircuit, BasicObservable)
+    inputs = rand_featureparameters(_m, 1)
+
+    exp = _m.expectation(inputs)
+    d = serialize(_m)
+    qm_ser = deserialize_fn(d)
+    exp_ser = qm_ser.expectation(inputs)
+    assert isclose(exp, exp_ser)
+
+    for FORMAT in SerializationFormat:
+        save(_m, tmp_path, "obj", FORMAT)
+        suffix, _, _, _ = FORMAT_DICT[FORMAT]
+        qm = load(tmp_path / Path("obj" + suffix), deserialize_fn=deserialize_fn)
         exp_l = qm.expectation(inputs)  # type: ignore[union-attr]
         assert isclose(exp, exp_l)
