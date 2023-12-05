@@ -92,6 +92,11 @@ class AnalogBlock(AbstractBlock):
 
         return add_background_hamiltonian(block, register).eigenvalues_generator  # type: ignore [union-attr]
 
+    def dagger(self) -> AbstractBlock:
+        raise NotImplementedError(
+            f"Hermitian adjoint of block type {type(self)} is not implemented yet."
+        )
+
 
 @dataclass(eq=False, repr=False)
 class WaitBlock(AnalogBlock):
