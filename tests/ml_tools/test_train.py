@@ -9,7 +9,13 @@ import pytest
 import torch
 from torch.utils.data import DataLoader
 
-from qadence.ml_tools import DictDataLoader, TrainConfig, load_checkpoint, to_dataloader, train_with_grad
+from qadence.ml_tools import (
+    DictDataLoader,
+    TrainConfig,
+    load_checkpoint,
+    to_dataloader,
+    train_with_grad,
+)
 from qadence.ml_tools.models import TransformedModule
 from qadence.models import QNN
 
