@@ -104,9 +104,7 @@ class PrimitiveBlock(AbstractBlock):
         return len(self.qubit_support)
 
     def dagger(self) -> PrimitiveBlock:
-        blk = deepcopy(self)
-        blk._qubit_support = self.qubit_support
-        return blk
+        return self
 
 
 class ParametricBlock(PrimitiveBlock):

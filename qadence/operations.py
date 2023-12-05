@@ -368,9 +368,6 @@ class Zero(PrimitiveBlock):
     def __pow__(self, power: int) -> AbstractBlock:
         return self
 
-    def dagger(self) -> Zero:
-        return self
-
 
 class RX(ParametricBlock):
     """The Rx gate."""
@@ -1070,9 +1067,6 @@ class Toffoli(ControlBlock):
     def __init__(self, control: tuple[int, ...], target: int) -> None:
         self.generator = kron(*[N(qubit) for qubit in control], X(target) - I(target))
         super().__init__(control, X(target))
-
-    def dagger(self) -> Toffoli:
-        return Toffoli(self.qubit_support[:-1], self.qubit_support[-1])
 
     @property
     def n_qubits(self) -> int:
