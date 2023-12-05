@@ -17,7 +17,7 @@ from qadence.types import ArrayLike, DiffMode, Endianness, Engine, ParamDictType
 
 @dataclass(frozen=True, eq=True)
 class DifferentiableBackend(ABC):
-    """The abstract class that defines the interface for differentaible backends."""
+    """The abstract class which defines the interface for differentiable backends."""
 
     backend: Backend
     engine: Engine
