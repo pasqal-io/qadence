@@ -1154,7 +1154,7 @@ def AnalogRot(
     q = _cast(QubitSupport, qubit_support)
     if isinstance(duration, str):
         duration = Parameter(duration)
-    alpha = duration * sympy.sqrt(Parameter(omega)**2 + Parameter(delta)**2) / 1000  # type: ignore [operator]
+    alpha = duration * sympy.sqrt(Parameter(omega) ** 2 + Parameter(delta) ** 2) / 1000  # type: ignore [operator]
 
     ps = ParamMap(alpha=alpha, duration=duration, omega=omega, delta=delta, phase=phase)
     return ConstantAnalogRotation(parameters=ps, qubit_support=q)
