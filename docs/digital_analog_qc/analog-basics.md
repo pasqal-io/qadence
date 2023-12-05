@@ -112,7 +112,7 @@ print(wf)
 
     ```python exec="on" source="material-block" result="json"
     from qadence import BackendName, HamEvo, X, Y, N, add, run
-    from qadence.analog.utils import C6_DICT
+    from qadence.analog.constants import C6_DICT
     from math import pi, cos, sin
 
     # Following the 3-qubit register above

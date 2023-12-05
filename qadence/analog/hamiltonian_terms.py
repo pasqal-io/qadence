@@ -3,7 +3,7 @@ from __future__ import annotations
 from sympy import cos, sin
 from torch import float64, tensor
 
-from qadence.analog.utils import C6_DICT
+from qadence.analog.constants import C6_DICT
 from qadence.blocks import add
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.analog import ConstantAnalogRotation

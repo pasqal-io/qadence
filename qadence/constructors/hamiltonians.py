@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from typing import List, Type, Union
 
 import numpy as np
