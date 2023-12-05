@@ -2,16 +2,11 @@ from __future__ import annotations
 
 import importlib
 from string import Template
-from typing import TypeVar
 
 from qadence.backend import Backend
-from qadence.blocks import (
-    AbstractBlock,
-)
+from qadence.blocks.abstract import TAbstractBlock
 from qadence.logger import get_logger
 from qadence.types import BackendName, DiffMode, Engine
-
-TAbstractBlock = TypeVar("TAbstractBlock", bound=AbstractBlock)
 
 backends_namespace = Template("qadence.backends.$name")
 

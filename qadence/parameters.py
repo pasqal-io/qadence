@@ -9,6 +9,7 @@ import sympy
 from sympy import *
 from sympy import Array, Basic, Expr, Symbol, sympify
 from sympy2jax import SymbolicModule as JaxSympyModule
+from sympy.physics.quantum.dagger import Dagger
 from sympytorch import SymPyModule as torchSympyModule
 from torch import Tensor, heaviside, no_grad, rand, tensor
 
@@ -20,6 +21,7 @@ __all__ = ["FeatureParameter", "Parameter", "VariationalParameter"]
 
 logger = get_logger(__file__)
 
+dagger_expression = Dagger
 
 ParameterJSONSchema = {
     "$schema": "http://json-schema.org/draft-07/schema#",
