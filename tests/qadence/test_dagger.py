@@ -7,9 +7,9 @@ import strategies as st
 from hypothesis import given, settings
 from sympy import acos
 
-from qadence import Parameter, QuantumCircuit
-from qadence.blocks import AbstractBlock, chain, kron
-from qadence.blocks.utils import assert_same_block, put
+from qadence.blocks.abstract import AbstractBlock
+from qadence.blocks.utils import assert_same_block, chain, kron, put
+from qadence.circuit import QuantumCircuit
 from qadence.constructors import hea
 from qadence.operations import (
     CNOT,
@@ -18,6 +18,11 @@ from qadence.operations import (
     CRY,
     CRZ,
     CZ,
+    MCPHASE,
+    MCRX,
+    MCRY,
+    MCRZ,
+    MCZ,
     RX,
     RY,
     RZ,
@@ -33,11 +38,13 @@ from qadence.operations import (
     SDagger,
     T,
     TDagger,
+    Toffoli,
     X,
     Y,
     Z,
     Zero,
 )
+from qadence.parameters import Parameter
 
 
 @pytest.mark.parametrize(
@@ -72,9 +79,21 @@ def test_all_fixed_primitive_blocks(block: AbstractBlock) -> None:
         I(0),
         H(0),
         CNOT(0, 1),
+        CRX(0, 1, "theta"),
+        CRZ(2, 5, "theta"),
+        CRZ(2, 1, "theta"),
+        CPHASE(0, 1, "theta"),
         CZ(0, 1),
         SWAP(0, 1),
         Zero(),
+        CZ(0, 1),
+        MCZ((0, 1), 2),
+        MCRZ((0, 1), 2, "theta"),
+        MCRX((2, 1), 3, "theta"),
+        MCRZ((2, 1), 3, "theta"),
+        MCRY((2, 1), 3, "theta"),
+        Toffoli((0, 1, 2, 4), 5),
+        MCPHASE((0, 4, 5), 2, "theta"),
     ],
 )
 def test_self_adjoint_blocks(block: AbstractBlock) -> None:
@@ -90,11 +109,17 @@ def test_t_and_s_gates() -> None:
     assert_same_block(TDagger(0), T(0).dagger())
 
 
-def test_scale_dagger() -> None:
+def test_real_scale_dagger() -> None:
     # testing scale blocks with numerical or parametric values
-    for scale in [2, 2.1, Parameter("x"), acos(Parameter("x"))]:
-        assert_same_block(scale * X(0), (-scale * X(0)).dagger())
-        assert_same_block(scale * X(0), (scale * X(0)).dagger().dagger())
+    for scale in [2, 2.1, "x"]:
+        blk = Parameter(scale) * X(0)
+        assert_same_block(blk, blk.dagger())
+        assert_same_block(blk, blk.dagger().dagger())
+
+
+def test_complex_scale_dagger() -> None:
+    sclblk = (3 + 2j) * X(0)
+    assert sclblk.dagger() == (3.0 - 2.0j) * X(0)
 
 
 @pytest.mark.parametrize(

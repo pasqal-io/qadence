@@ -1,63 +1,70 @@
 from __future__ import annotations
 
 from collections import Counter
-from dataclasses import dataclass
-from math import prod
+from dataclasses import dataclass, field
 from typing import Any
 
-import pyqtorch.modules as pyq
+import pyqtorch as pyq
 import torch
 from torch import Tensor
 
 from qadence.backend import Backend as BackendInterface
-from qadence.backend import BackendName, ConvertedCircuit, ConvertedObservable
-from qadence.backends.utils import to_list_of_dicts
+from qadence.backend import ConvertedCircuit, ConvertedObservable
+from qadence.backends.utils import (
+    pyqify,
+    to_list_of_dicts,
+    unpyqify,
+    validate_state,
+)
 from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
+from qadence.logger import get_logger
 from qadence.measurements import Measurements
-from qadence.overlap import overlap_exact
-from qadence.states import zero_state
+from qadence.mitigations.protocols import Mitigations, apply_mitigation
+from qadence.noise import Noise
+from qadence.noise.protocols import apply_noise
 from qadence.transpile import (
-    add_interaction,
-    blockfn_to_circfn,
     chain_single_qubit_ops,
     flatten,
+    invert_endianness,
     scale_primitive_blocks_only,
     transpile,
 )
-from qadence.utils import Endianness, int_to_basis
+from qadence.types import BackendName, Endianness
+from qadence.utils import infer_batchsize, int_to_basis
 
-from .config import Configuration
+from .config import Configuration, default_passes
 from .convert_ops import convert_block, convert_observable
+
+logger = get_logger(__name__)
 
 
 @dataclass(frozen=True, eq=True)
 class Backend(BackendInterface):
     """PyQTorch backend."""
 
-    # set standard interface parameters
     name: BackendName = BackendName.PYQTORCH
     supports_ad: bool = True
     support_bp: bool = True
+    supports_adjoint: bool = True
     is_remote: bool = False
     with_measurements: bool = True
     with_noise: bool = False
     native_endianness: Endianness = Endianness.BIG
-    config: Configuration = Configuration()
+    config: Configuration = field(default_factory=Configuration)
 
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:
-        transpilations = [
-            lambda circ: add_interaction(circ, interaction=self.config.interaction),
-            lambda circ: blockfn_to_circfn(chain_single_qubit_ops)(circ)
-            if self.config.use_single_qubit_composition
-            else blockfn_to_circfn(flatten)(circ),
-            blockfn_to_circfn(scale_primitive_blocks_only),
-        ]
+        passes = self.config.transpilation_passes
+        if passes is None:
+            passes = default_passes(self.config)
 
-        abstract = transpile(*transpilations)(circuit)  # type: ignore[call-overload]
-        ops = convert_block(abstract.block, n_qubits=circuit.n_qubits, config=self.config)
-        native = pyq.QuantumCircuit(abstract.n_qubits, ops)
-        return ConvertedCircuit(native=native, abstract=abstract, original=circuit)
+        original_circ = circuit
+        if len(passes) > 0:
+            circuit = transpile(*passes)(circuit)
+
+        ops = convert_block(circuit.block, n_qubits=circuit.n_qubits, config=self.config)
+        native = pyq.QuantumCircuit(circuit.n_qubits, ops)
+        return ConvertedCircuit(native=native, abstract=circuit, original=original_circ)
 
     def observable(self, observable: AbstractBlock, n_qubits: int) -> ConvertedObservable:
         # make sure only leaves, i.e. primitive blocks are scaled
@@ -72,7 +79,7 @@ class Backend(BackendInterface):
         (native,) = convert_observable(block, n_qubits=n_qubits, config=self.config)
         return ConvertedObservable(native=native, abstract=block, original=observable)
 
-    def run(
+    def _run(
         self,
         circuit: ConvertedCircuit,
         param_values: dict[str, Tensor] = {},
@@ -82,43 +89,28 @@ class Backend(BackendInterface):
         unpyqify_state: bool = True,
     ) -> Tensor:
         n_qubits = circuit.abstract.n_qubits
-
-        if state is not None:
-            if pyqify_state:
-                if (state.ndim != 2) or (state.size(1) != 2**n_qubits):
-                    raise ValueError(
-                        "The initial state must be composed of tensors of size "
-                        f"(batch_size, 2**n_qubits). Found: {state.size() = }."
-                    )
-
-                # PyQ expects a column vector for the initial state
-                # where each element is of dim=2.
-                state = state.T.reshape([2] * n_qubits + [state.size(0)])
-            else:
-                if prod(state.size()[:-1]) != 2**n_qubits:
-                    raise ValueError(
-                        "A pyqified initial state must be composed of tensors of size "
-                        f"(2, 2, ..., batch_size). Found: {state.size() = }."
-                    )
+        if state is None:
+            # If no state is passed, we infer the batch_size through the length
+            # of the individual parameter value tensors.
+            state = circuit.native.init_state(batch_size=infer_batchsize(param_values))
         else:
-            # infer batch_size without state
-            if len(param_values) == 0:
-                batch_size = 1
-            else:
-                batch_size = max([len(tensor) for tensor in param_values.values()])
-            state = circuit.native.init_state(batch_size=batch_size)
-        state = circuit.native(state, param_values)
-
-        # make sure that the batch dimension is the first one, as standard
-        # for PyTorch, and not the last one as done in PyQ
-        if unpyqify_state:
-            state = torch.flatten(state, start_dim=0, end_dim=-2).t()
-
-        if endianness != self.native_endianness:
-            from qadence.transpile import invert_endianness
-
-            state = invert_endianness(state)
+            validate_state(state, n_qubits)
+            # pyqtorch expects input shape [2] * n_qubits + [batch_size]
+            state = pyqify(state, n_qubits) if pyqify_state else state
+        state = circuit.native.run(state, param_values)
+        state = unpyqify(state) if unpyqify_state else state
+        state = invert_endianness(state) if endianness != self.native_endianness else state
         return state
+
+    def run_dm(
+        self,
+        circuit: ConvertedCircuit,
+        noise: Noise,
+        param_values: dict[str, Tensor] = {},
+        state: Tensor | None = None,
+        endianness: Endianness = Endianness.BIG,
+    ) -> Tensor:
+        raise NotImplementedError
 
     def _batched_expectation(
         self,
@@ -126,7 +118,8 @@ class Backend(BackendInterface):
         observable: list[ConvertedObservable] | ConvertedObservable,
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
-        protocol: Measurements | None = None,
+        measurement: Measurements | None = None,
+        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         state = self.run(
@@ -150,10 +143,14 @@ class Backend(BackendInterface):
         observable: list[ConvertedObservable] | ConvertedObservable,
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
-        protocol: Measurements | None = None,
+        measurement: Measurements | None = None,
+        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
-        state = zero_state(circuit.abstract.n_qubits, batch_size=1) if state is None else state
+        if state is None:
+            from qadence.states import zero_state
+
+            state = zero_state(circuit.abstract.n_qubits, batch_size=1)
         if state.size(0) != 1:
             raise ValueError(
                 "Looping expectation does not make sense with batched initial state. "
@@ -176,16 +173,25 @@ class Backend(BackendInterface):
         observable: list[ConvertedObservable] | ConvertedObservable,
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
-        protocol: Measurements | None = None,
+        measurement: Measurements | None = None,
+        noise: Noise | None = None,
+        mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
+        # Noise is ignored if measurement protocol is not provided.
+        if noise is not None and measurement is None:
+            logger.warning(
+                f"Errors of type {noise} are not implemented for exact expectation yet. "
+                "This is ignored for now."
+            )
         fn = self._looped_expectation if self.config.loop_expectation else self._batched_expectation
         return fn(
             circuit=circuit,
             observable=observable,
             param_values=param_values,
             state=state,
-            protocol=protocol,
+            measurement=measurement,
+            noise=noise,
             endianness=endianness,
         )
 
@@ -195,6 +201,8 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         n_shots: int = 1,
         state: Tensor | None = None,
+        noise: Noise | None = None,
+        mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         if n_shots < 1:
@@ -215,7 +223,7 @@ class Backend(BackendInterface):
 
         wf = self.run(circuit=circuit, param_values=param_values, state=state)
         probs = torch.abs(torch.pow(wf, 2))
-        return list(
+        samples = list(
             map(
                 lambda _probs: _sample(
                     _probs=_probs,
@@ -226,12 +234,20 @@ class Backend(BackendInterface):
                 probs,
             )
         )
+        if noise is not None:
+            samples = apply_noise(noise=noise, samples=samples)
+        if mitigation is not None:
+            assert noise
+            samples = apply_mitigation(noise=noise, mitigation=mitigation, samples=samples)
+        return samples
 
     def assign_parameters(self, circuit: ConvertedCircuit, param_values: dict[str, Tensor]) -> Any:
         raise NotImplementedError
 
     @staticmethod
     def _overlap(bras: Tensor, kets: Tensor) -> Tensor:
+        from qadence.overlap import overlap_exact
+
         return overlap_exact(bras, kets)
 
     @staticmethod

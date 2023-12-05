@@ -51,25 +51,77 @@ print(docsutils.fig_to_html(fig)) # markdown-exec: hide
 
 ## Building and drawing registers
 
-Built-in topologies are directly accessible in the `Register`:
+Built-in topologies are directly accessible in the `Register` methods:
 
-```python exec="on" source="material-block" html="1"
+```python exec="on" source="material-block" html="1" session="register"
+from docs import docsutils # markdown-exec: hide
+import matplotlib.pyplot as plt # markdown-exec: hide
 from qadence import Register
 
-reg = Register.honeycomb_lattice(2, 3)
-import matplotlib.pyplot as plt # markdown-exec: hide
-plt.clf() # markdown-exec: hide
-reg.draw(show=False)
-from docs import docsutils # markdown-exec: hide
-fig = plt.gcf() # markdown-exec: hide
-fig.set_size_inches(3, 3) # markdown-exec: hide
-print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
+reg = Register.all_to_all(n_qubits = 2)
+reg_line = Register.line(n_qubits = 2)
+reg_circle = Register.circle(n_qubits = 2)
+reg_squre = Register.square(qubits_side = 2)
+reg_rect = Register.rectangular_lattice(qubits_row = 2, qubits_col = 2)
+reg_triang = Register.triangular_lattice(n_cells_row = 2, n_cells_col = 2)
+reg_honey = Register.honeycomb_lattice(n_cells_row = 2, n_cells_col = 2)
 ```
 
-Arbitrarily shaped registers can be constructed by providing coordinates.
+Qubit coordinates are saved as node properties in the underlying NetworkX graph, but can
+be accessed directly with the `coords` property.
 
-!!! note "Registers defined from coordinates"
-	`Register` constructed via the `from_coordinates` method do not define edges in the connectivity graph.
+```python exec="on" source="material-block" result="json" session="register"
+reg = Register.square(2)
+print(reg.coords)
+```
+By default, the coords are scaled such that the minimum distance between any two qubits is 1,
+unless the register is created directly from specific coordinates as shown below. The `spacing`
+argument can be used to set the minimum spacing. The `rescale_coords` method can be used to create
+a new register by rescaling the coordinates of an already created register.
+
+```python exec="on" source="material-block" result="json" session="register"
+scaled_reg_1 = Register.square(2, spacing = 2.0)
+scaled_reg_2 = reg.rescale_coords(scaling = 2.0)
+print(scaled_reg_1.coords)
+print(scaled_reg_2.coords)
+```
+
+The distance between qubits can also be directly accessed with the `distances` and `edge_distances`
+properties.
+
+```python exec="on" source="material-block" result="json" session="register"
+print("Distance between all qubit pairs:")  # markdown-exec: hide
+print(reg.distances)
+print("Distance between qubits connect by an edge in the graph")  # markdown-exec: hide
+print(reg.edge_distances)
+```
+
+By calling the `Register` directly, either the number of nodes or a specific graph can be given as input.
+If passing a custom graph directly, the node positions will not be defined automatically, and should be
+previously saved in the `"pos"` node property. If not, `reg.coords` will return empty tuples and all
+distances will be 0.
+
+```python exec="on" source="material-block" result="json" session="register"
+import networkx as nx
+
+# Same as Register.all_to_all(n_qubits = 2):
+reg = Register(2)
+
+# Register from a custom graph:
+graph = nx.complete_graph(3)
+
+# Set node positions, in this case a simple line:
+for i, node in enumerate(graph.nodes):
+    graph.nodes[node]["pos"] = (1.0 * i, 0.0)
+
+reg = Register(graph)
+
+print(reg.distances)
+```
+
+
+Alternatively, arbitrarily shaped registers can also be constructed by providing the node coordinates.
+In this case, there will be no edges automatically created in the connectivity graph.
 
 ```python exec="on" source="material-block" html="1"
 import numpy as np
@@ -82,7 +134,7 @@ reg = Register.from_coordinates(
 import matplotlib.pyplot as plt # markdown-exec: hide
 plt.clf() # markdown-exec: hide
 fig = plt.gcf() # markdown-exec: hide
-fig.set_size_inches(4, 2) # markdown-exec: hide
+fig.set_size_inches(2*np.pi, 2.5) # markdown-exec: hide
 plt.tight_layout() # markdown-exec: hide
 reg.draw(show=False)
 from docs import docsutils # markdown-exec: hide
@@ -90,14 +142,17 @@ print(docsutils.fig_to_html(fig)) # markdown-exec: hide
 ```
 
 !!! warning "Units for qubit coordinates"
-    Qubits coordinates in Qadence are *dimensionless* but converted to the required unit when executed on a backend.
-	For instance, [Pulser](https://github.com/pasqal-io/Pulser) uses $\mu \textrm{m}$.
+    In general, Qadence makes no assumption about the units for qubit coordinates and distances.
+    However, if used in the context of a Hamiltonian coefficient, care should be taken by the user to guarantee the
+    quantity $H.t$ is **dimensionless** for exponentiation in the PyQTorch backend, where it is assumed that $\hbar = 1$.
+	For registers passed to the [Pulser](https://github.com/pasqal-io/Pulser) backend, coordinates are in $\mu \textrm{m}$.
+
 
 ## Connectivity graphs
 
-Register topology is often assumed in simulations to be an all-to-all qubit connectivity.
-When running on real devices that enable the [digital-analog](../digital_analog_qc/daqc-basics.md) computing paradigm,
-qubit interaction must be specified either by specifying distances between qubits,
+Register topology is often assumed in digital simulations to be an all-to-all qubit connectivity.
+When running on real devices that enable the [digital-analog](../digital_analog_qc/index.md) computing paradigm,
+qubit interactions must be specified either by specifying distances between qubits,
 or by defining edges in the register connectivity graph.
 
 It is possible to access the abstract graph nodes and edges to work with if needed as in the [perfect state
@@ -111,11 +166,10 @@ print(f"{reg.nodes = }") # markdown-exec: hide
 print(f"{reg.edges = }") # markdown-exec: hide
 ```
 
-It is possible to customize qubit interaction through the [`add_interaction`][qadence.transpile.emulate.add_interaction] method.
-In that case, `Register.coords` are accessible from the concrete graph:
+There is also an `all_node_pairs` property for convencience:
 
 ```python exec="on" source="material-block" result="json" session="reg-usage"
-print(f"{reg.coords = }")
+print(reg.all_node_pairs)
 ```
 
-More details about their usage in the digital-analog paradigm can be found in the [digital-analog basics](../digital_analog_qc/analog-basics.md) section.
+More details about the usage of `Register` types in the digital-analog paradigm can be found in the [digital-analog basics](../digital_analog_qc/analog-basics.md) section.

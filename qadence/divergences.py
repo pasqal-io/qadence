@@ -11,7 +11,8 @@ def shannon_entropy(counter: Counter) -> float:
 
 def js_divergence(counter_p: Counter, counter_q: Counter) -> float:
     """
-    Compute the Jensen-Shannon divergence between two probability distributions
+    Compute the Jensen-Shannon divergence between two probability distributions.
+
     represented as Counter objects.
     The JSD is calculated using only the shared keys between the two input Counter objects.
 

@@ -12,13 +12,13 @@ from scipy.spatial.distance import pdist, squareform
 from qadence import (
     AnalogRX,
     AnalogRZ,
+    DiffMode,
     QuantumCircuit,
     QuantumModel,
     Register,
-    add_interaction,
+    RydbergDevice,
     chain,
 )
-from qadence.transpile.emulate import ising_interaction
 
 SHOW_PLOTS = False
 torch.manual_seed(0)
@@ -40,8 +40,10 @@ def qubo_register_coords(Q):
     print(sort_zipped[:3])
 
     def evaluate_mapping(new_coords, *args):
-        """Cost function to minimize. Ideally, the pairwise
-        distances are conserved"""
+        """Cost function to minimize.
+
+        Ideally, the pairwise distances are conserved.
+        """
         Q, shape = args
         new_coords = np.reshape(new_coords, shape)
         new_Q = squareform(Chadoq2.interaction_coeff / pdist(new_coords) ** 6)
@@ -101,12 +103,10 @@ Q = np.array(
 
 
 LAYERS = 2
-reg = Register.from_coordinates(qubo_register_coords(Q))
 block = chain(*[AnalogRX(f"t{i}") * AnalogRZ(f"s{i}") for i in range(LAYERS)])
-emulated = add_interaction(
-    reg, block, interaction=lambda r, ps: ising_interaction(r, ps, rydberg_level=70)
-)
-model = QuantumModel(QuantumCircuit(reg, emulated), diff_mode="gpsr")
+device = RydbergDevice(rydberg_level=70)
+reg = Register.from_coordinates(qubo_register_coords(Q), device_specs=device)
+model = QuantumModel(QuantumCircuit(reg, block), diff_mode=DiffMode.GPSR)
 cnts = model.sample({}, n_shots=1000)[0]
 
 plot_distribution(cnts, ax=ax[0])

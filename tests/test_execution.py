@@ -8,13 +8,15 @@ from hypothesis import given, settings
 from metrics import JS_ACCEPTANCE  # type: ignore
 from torch import Tensor, allclose, rand
 
-from qadence import RX, QuantumCircuit, Z, expectation, run, sample, total_magnetization
-from qadence.backend import BackendName
 from qadence.blocks import AbstractBlock
+from qadence.circuit import QuantumCircuit
+from qadence.constructors import total_magnetization
 from qadence.divergences import js_divergence
+from qadence.execution import expectation, run, sample
+from qadence.operations import RX, Z
 from qadence.register import Register
 from qadence.states import equivalent_state
-from qadence.types import DiffMode
+from qadence.types import BackendName, DiffMode
 
 BACKENDS = [BackendName.PYQTORCH, BackendName.BRAKET]
 
@@ -54,7 +56,7 @@ def test_expectation(
     backend: BackendName,
     circ_and_vals: tuple[QuantumCircuit, dict[str, Tensor]],
 ) -> None:
-    if diff_mode == "ad" and backend != "pyqtorch":
+    if diff_mode in ("ad", "adjoint") and backend != "pyqtorch":
         pytest.skip(f"Backend {backend} doesnt support diff_mode={diff_mode}.")
     circ, inputs = circ_and_vals
     reg = Register(circ.n_qubits)

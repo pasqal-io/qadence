@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from itertools import product
+from math import dist
 from typing import Any
 
 import matplotlib.pyplot as plt
@@ -9,24 +11,37 @@ import numpy as np
 from deepdiff import DeepDiff
 from networkx.classes.reportviews import EdgeView, NodeView
 
+from qadence.analog import IdealDevice, RydbergDevice
 from qadence.types import LatticeTopology
 
 # Modules to be automatically added to the qadence namespace
 __all__ = ["Register"]
 
 
-def _scale_node_positions(graph: nx.Graph, scale: float) -> None:
+DEFAULT_DEVICE = IdealDevice()
+
+
+def _scale_node_positions(graph: nx.Graph, min_distance: float, spacing: float) -> None:
     scaled_nodes = {}
+    scale_factor = spacing / min_distance
     for k, node in graph.nodes.items():
         (x, y) = node["pos"]
-        scaled_nodes[k] = {"pos": (x * scale, y * scale)}
+        scaled_nodes[k] = {"pos": (x * scale_factor, y * scale_factor)}
     nx.set_node_attributes(graph, scaled_nodes)
 
 
 class Register:
-    def __init__(self, support: nx.Graph | int):
-        """A 2D register of qubits which includes their coordinates (needed for e.g. analog
-        computing). The coordinates are ignored in backends that don't need them. The easiest
+    def __init__(
+        self,
+        support: nx.Graph | int,
+        spacing: float | None = 1.0,
+        device_specs: RydbergDevice = DEFAULT_DEVICE,
+    ):
+        """
+        A 2D register of qubits which includes their coordinates.
+
+        It is needed for e.g. analog computing.
+        The coordinates are ignored in backends that don't need them. The easiest
         way to construct a register is via its classmethods like `Register.triangular_lattice`.
 
         Arguments:
@@ -37,6 +52,7 @@ class Register:
                 don't want to build a graph manually.
                 If you pass an integer the resulting register is the same as
                 `Register.all_to_all(n_qubits)`.
+            spacing: Value set as the distance between the two closest qubits.
 
         Examples:
         ```python exec="on" source="material-block" result="json"
@@ -46,7 +62,15 @@ class Register:
         reg.draw()
         ```
         """
+        if device_specs is not None and not isinstance(device_specs, RydbergDevice):
+            raise ValueError("Device specs are not valid. Please pass a `RydbergDevice` instance.")
+
+        self.device_specs = device_specs
+
         self.graph = support if isinstance(support, nx.Graph) else alltoall_graph(support)
+
+        if spacing is not None and self.min_distance != 0.0:
+            _scale_node_positions(self.graph, self.min_distance, spacing)
 
     @property
     def n_qubits(self) -> int:
@@ -54,29 +78,47 @@ class Register:
 
     @classmethod
     def from_coordinates(
-        cls, coords: list[tuple], lattice: LatticeTopology | str = LatticeTopology.ARBITRARY
+        cls,
+        coords: list[tuple],
+        lattice: LatticeTopology | str = LatticeTopology.ARBITRARY,
+        spacing: float | None = None,
+        device_specs: RydbergDevice = DEFAULT_DEVICE,
     ) -> Register:
         graph = nx.Graph()
         for i, pos in enumerate(coords):
             graph.add_node(i, pos=pos)
-        return cls(graph)
+        return cls(graph, spacing, device_specs)
 
     @classmethod
-    def line(cls, n_qubits: int) -> Register:
-        return cls(line_graph(n_qubits))
+    def line(
+        cls,
+        n_qubits: int,
+        spacing: float = 1.0,
+        device_specs: RydbergDevice = DEFAULT_DEVICE,
+    ) -> Register:
+        return cls(line_graph(n_qubits), spacing, device_specs)
 
     @classmethod
-    def circle(cls, n_qubits: int, scale: float = 1.0) -> Register:
+    def circle(
+        cls,
+        n_qubits: int,
+        spacing: float = 1.0,
+        device_specs: RydbergDevice = DEFAULT_DEVICE,
+    ) -> Register:
         graph = nx.grid_2d_graph(n_qubits, 1, periodic=True)
         graph = nx.relabel_nodes(graph, {(i, 0): i for i in range(n_qubits)})
         coords = nx.circular_layout(graph)
         values = {i: {"pos": pos} for i, pos in coords.items()}
         nx.set_node_attributes(graph, values)
-        _scale_node_positions(graph, scale)
-        return cls(graph)
+        return cls(graph, spacing, device_specs)
 
     @classmethod
-    def square(cls, qubits_side: int, scale: float = 1.0) -> Register:
+    def square(
+        cls,
+        qubits_side: int,
+        spacing: float = 1.0,
+        device_specs: RydbergDevice = DEFAULT_DEVICE,
+    ) -> Register:
         n_points = 4 * (qubits_side - 1)
 
         def gen_points() -> np.ndarray:
@@ -101,36 +143,52 @@ class Register:
         graph = nx.relabel_nodes(graph, {(i, 0): i for i in range(n_points)})
         values = {i: {"pos": point} for i, point in zip(graph.nodes, gen_points())}
         nx.set_node_attributes(graph, values)
-        _scale_node_positions(graph, scale)
-        return cls(graph)
+        return cls(graph, spacing, device_specs)
 
     @classmethod
-    def all_to_all(cls, n_qubits: int) -> Register:
-        return cls(alltoall_graph(n_qubits))
+    def all_to_all(
+        cls,
+        n_qubits: int,
+        spacing: float = 1.0,
+        device_specs: RydbergDevice = DEFAULT_DEVICE,
+    ) -> Register:
+        return cls(alltoall_graph(n_qubits), spacing, device_specs)
 
     @classmethod
     def rectangular_lattice(
-        cls, qubits_row: int, qubits_col: int, side_length: float = 1.0
+        cls,
+        qubits_row: int,
+        qubits_col: int,
+        spacing: float = 1.0,
+        device_specs: RydbergDevice = DEFAULT_DEVICE,
     ) -> Register:
         graph = nx.grid_2d_graph(qubits_col, qubits_row)
         values = {i: {"pos": node} for (i, node) in enumerate(graph.nodes)}
         graph = nx.relabel_nodes(graph, {(i, j): k for k, (i, j) in enumerate(graph.nodes)})
         nx.set_node_attributes(graph, values)
-        _scale_node_positions(graph, side_length)
-        return cls(graph)
+        return cls(graph, spacing, device_specs)
 
     @classmethod
     def triangular_lattice(
-        cls, n_cells_row: int, n_cells_col: int, side_length: float = 1.0
+        cls,
+        n_cells_row: int,
+        n_cells_col: int,
+        spacing: float = 1.0,
+        device_specs: RydbergDevice = DEFAULT_DEVICE,
     ) -> Register:
-        return cls(triangular_lattice_graph(n_cells_row, n_cells_col, side_length))
+        return cls(triangular_lattice_graph(n_cells_row, n_cells_col), spacing, device_specs)
 
     @classmethod
-    def honeycomb_lattice(cls, n_cells_row: int, n_cells_col: int, scale: float = 1.0) -> Register:
+    def honeycomb_lattice(
+        cls,
+        n_cells_row: int,
+        n_cells_col: int,
+        spacing: float = 1.0,
+        device_specs: RydbergDevice = DEFAULT_DEVICE,
+    ) -> Register:
         graph = nx.hexagonal_lattice_graph(n_cells_row, n_cells_col)
         graph = nx.relabel_nodes(graph, {(i, j): k for k, (i, j) in enumerate(graph.nodes)})
-        _scale_node_positions(graph, scale)
-        return cls(graph)
+        return cls(graph, spacing, device_specs)
 
     @classmethod
     def lattice(cls, topology: LatticeTopology | str, *args: Any, **kwargs: Any) -> Register:
@@ -146,32 +204,62 @@ class Register:
         return self.graph.nodes[item]
 
     @property
-    def support(self) -> set:
-        return set(self.graph.nodes)
-
-    @property
-    def coords(self) -> dict:
-        return {i: tuple(node.get("pos", ())) for i, node in self.graph.nodes.items()}
+    def nodes(self) -> NodeView:
+        return self.graph.nodes
 
     @property
     def edges(self) -> EdgeView:
         return self.graph.edges
 
     @property
-    def nodes(self) -> NodeView:
-        return self.graph.nodes
+    def support(self) -> set:
+        return set(self.nodes)
 
-    def _scale_positions(self, scale: float) -> Register:
+    @property
+    def coords(self) -> dict:
+        return {i: tuple(node.get("pos", ())) for i, node in self.nodes.items()}
+
+    @property
+    def all_node_pairs(self) -> EdgeView:
+        return list(filter(lambda x: x[0] < x[1], product(self.support, self.support)))
+
+    @property
+    def distances(self) -> dict:
+        coords = self.coords
+        return {edge: dist(coords[edge[0]], coords[edge[1]]) for edge in self.all_node_pairs}
+
+    @property
+    def edge_distances(self) -> dict:
+        coords = self.coords
+        return {edge: dist(coords[edge[0]], coords[edge[1]]) for edge in self.edges}
+
+    @property
+    def min_distance(self) -> float:
+        distances = self.distances
+        value: float = min(self.distances.values()) if len(distances) > 0 else 0.0
+        return value
+
+    def rescale_coords(self, scaling: float) -> Register:
         g = deepcopy(self.graph)
-        _scale_node_positions(g, scale)
-        return Register(g)
+        _scale_node_positions(g, min_distance=1.0, spacing=scaling)
+        return Register(g, spacing=None, device_specs=self.device_specs)
 
     def _to_dict(self) -> dict:
-        return {"graph": nx.node_link_data(self.graph)}
+        return {
+            "graph": nx.node_link_data(self.graph),
+            "device_specs": self.device_specs._to_dict(),
+        }
 
     @classmethod
     def _from_dict(cls, d: dict) -> Register:
-        return cls(nx.node_link_graph(d["graph"]))
+        device_dict = d.get("device_specs", None)
+        if device_dict is None:
+            device_dict = DEFAULT_DEVICE._to_dict()
+
+        return cls(
+            support=nx.node_link_graph(d["graph"]),
+            device_specs=RydbergDevice._from_dict(device_dict),
+        )
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Register):
@@ -183,7 +271,7 @@ class Register:
         )
 
 
-def line_graph(n_qubits: int, spacing: float = 1.0) -> nx.Graph:
+def line_graph(n_qubits: int) -> nx.Graph:
     """Create graph representing linear lattice.
 
     Args:
@@ -194,25 +282,22 @@ def line_graph(n_qubits: int, spacing: float = 1.0) -> nx.Graph:
     """
     graph = nx.Graph()
     for i in range(n_qubits):
-        graph.add_node(i, pos=(i * spacing, 0.0))
+        graph.add_node(i, pos=(i, 0.0))
     for i, j in zip(range(n_qubits - 1), range(1, n_qubits)):
         graph.add_edge(i, j)
     return graph
 
 
-def triangular_lattice_graph(
-    n_cells_row: int, n_cells_col: int, side_length: float = 1.0
-) -> nx.Graph:
+def triangular_lattice_graph(n_cells_row: int, n_cells_col: int) -> nx.Graph:
     graph = nx.triangular_lattice_graph(n_cells_row, n_cells_col)
     graph = nx.relabel_nodes(graph, {(i, j): k for k, (i, j) in enumerate(graph.nodes)})
-    _scale_node_positions(graph, side_length)
     return graph
 
 
 def alltoall_graph(n_qubits: int) -> nx.Graph:
     if n_qubits == 2:
         return line_graph(2)
-    elif n_qubits == 3:
+    if n_qubits == 3:
         return triangular_lattice_graph(1, 1)
 
     graph = nx.complete_graph(n_qubits)

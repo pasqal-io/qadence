@@ -4,9 +4,10 @@ import numpy as np
 import pytest
 import torch
 from openfermion import QubitOperator, get_sparse_operator
+from torch import Tensor
 from torch.linalg import eigvals
 
-from qadence import block_to_tensor
+from qadence.backends.api import backend_factory
 from qadence.blocks import (
     AbstractBlock,
     AddBlock,
@@ -17,6 +18,8 @@ from qadence.blocks import (
     kron,
     to_openfermion,
 )
+from qadence.blocks.block_to_tensor import block_to_tensor
+from qadence.circuit import QuantumCircuit
 from qadence.operations import (
     CNOT,
     CPHASE,
@@ -36,6 +39,7 @@ from qadence.operations import (
     HamEvo,
     I,
     N,
+    Projector,
     S,
     T,
     Toffoli,
@@ -44,6 +48,8 @@ from qadence.operations import (
     Z,
     Zero,
 )
+from qadence.states import product_state
+from qadence.types import BackendName
 
 
 def hamevo_generator_tensor() -> torch.Tensor:
@@ -88,6 +94,60 @@ def crz_eigenvals(p: float, n_qubits: int = 2) -> torch.Tensor:
 
 def cphase_eigenvals(p: float, n_qubits: int = 2) -> torch.Tensor:
     return torch.cat((torch.ones(2**n_qubits - 1), eigenval(2.0 * p).conj()))
+
+
+# PyQTorch only supports single qubit projectors.
+@pytest.mark.parametrize(
+    "projector, state, exp_wf",
+    [
+        (
+            Projector(bra="0", ket="0", qubit_support=0),
+            product_state("0"),
+            torch.tensor([[1.0, 0.0]], dtype=torch.cdouble),
+        ),
+        (
+            Projector(bra="0", ket="0", qubit_support=0),
+            product_state("1"),
+            torch.tensor([[0.0, 0.0]], dtype=torch.cdouble),
+        ),
+        (
+            Projector(bra="1", ket="1", qubit_support=0),
+            product_state("0"),
+            torch.tensor([[0.0, 0.0]], dtype=torch.cdouble),
+        ),
+        (
+            Projector(bra="1", ket="1", qubit_support=0),
+            product_state("1"),
+            torch.tensor([[0.0, 1.0]], dtype=torch.cdouble),
+        ),
+        (
+            Projector(bra="00", ket="00", qubit_support=(0, 1)),
+            product_state("00"),
+            torch.tensor([[1.0, 0.0, 0.0, 0.0]], dtype=torch.cdouble),
+        ),
+        (
+            Projector(bra="01", ket="10", qubit_support=(0, 1)),
+            product_state("01"),
+            torch.tensor([[0.0, 0.0, 1.0, 0.0]], dtype=torch.cdouble),
+        ),
+        (
+            Projector(bra="10", ket="01", qubit_support=(0, 1)),
+            product_state("10"),
+            torch.tensor([[0.0, 1.0, 0.0, 0.0]], dtype=torch.cdouble),
+        ),
+        (
+            Projector(bra="11", ket="11", qubit_support=(0, 1)),
+            product_state("11"),
+            torch.tensor([[0.0, 0.0, 0.0, 1.0]], dtype=torch.cdouble),
+        ),
+    ],
+)
+def test_projector_with_pyqtorch(projector: AbstractBlock, state: Tensor, exp_wf: Tensor) -> None:
+    circuit = QuantumCircuit(projector.n_qubits, projector)
+    backend_inst = backend_factory(backend=BackendName.PYQTORCH)
+    conv_circuit = backend_inst.circuit(circuit=circuit)
+    wf = backend_inst.run(circuit=conv_circuit, state=state)
+    assert torch.allclose(wf, exp_wf)
 
 
 @pytest.mark.parametrize(

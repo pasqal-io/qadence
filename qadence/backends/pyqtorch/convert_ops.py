@@ -2,16 +2,36 @@ from __future__ import annotations
 
 from functools import reduce
 from itertools import chain as flatten
+from math import prod
 from operator import add
-from typing import Callable, Sequence
+from typing import Sequence, Tuple
 
-import pyqtorch.modules as pyq
+import pyqtorch as pyq
 import sympy
-import torch
-from pyqtorch.core.utils import _apply_batch_gate
+from pyqtorch.apply import apply_operator
+from pyqtorch.matrices import _dagger
+from pyqtorch.utils import is_diag
+from torch import (
+    Tensor,
+    argsort,
+    bmm,
+    cdouble,
+    diag_embed,
+    diagonal,
+    exp,
+    linalg,
+    ones_like,
+    permute,
+    tensor,
+    transpose,
+)
 from torch.nn import Module
-from torch.utils.checkpoint import checkpoint
 
+from qadence.backends.utils import (
+    finitediff,
+    pyqify,
+    unpyqify,
+)
 from qadence.blocks import (
     AbstractBlock,
     AddBlock,
@@ -28,13 +48,26 @@ from qadence.blocks.block_to_tensor import (
     block_to_diagonal,
     block_to_tensor,
 )
-from qadence.operations import OpName, U
+from qadence.blocks.primitive import ProjectorBlock
+from qadence.operations import (
+    OpName,
+    U,
+    multi_qubit_gateset,
+    non_unitary_gateset,
+    single_qubit_gateset,
+    three_qubit_gateset,
+    two_qubit_gateset,
+)
+from qadence.utils import infer_batchsize
 
 from .config import Configuration
 
 # Tdagger is not supported currently
 supported_gates = list(set(OpName.list()) - set([OpName.TDAGGER]))
-"""The set of supported gates. Tdagger is currently not supported."""
+"""The set of supported gates.
+
+Tdagger is currently not supported.
+"""
 
 
 def is_single_qubit_chain(block: AbstractBlock) -> bool:
@@ -55,8 +88,9 @@ def convert_observable(
 def convert_block(
     block: AbstractBlock, n_qubits: int = None, config: Configuration = None
 ) -> Sequence[Module]:
+    qubit_support = block.qubit_support
     if n_qubits is None:
-        n_qubits = max(block.qubit_support) + 1
+        n_qubits = max(qubit_support) + 1
 
     if config is None:
         config = Configuration()
@@ -66,34 +100,23 @@ def convert_block(
 
     elif isinstance(block, AddBlock):
         ops = list(flatten(*(convert_block(b, n_qubits, config) for b in block.blocks)))
-        return [AddPyQOperation(block.qubit_support, n_qubits, ops, config)]
+        return [AddPyQOperation(n_qubits, ops)]
 
-    elif isinstance(block, ParametricBlock):
-        if isinstance(block, TimeEvolutionBlock):
-            op = HEvoPyQOperation(
-                qubits=block.qubit_support,
+    elif isinstance(block, TimeEvolutionBlock):
+        return [
+            PyQHamiltonianEvolution(
+                qubit_support=qubit_support,
                 n_qubits=n_qubits,
-                # TODO: use the hevo_algo configuration here to switch between different algorithms
-                # for executing the Hamiltonian evolution
-                operation=pyq.HamiltonianEvolution(
-                    block.qubit_support,
-                    n_qubits,
-                    n_steps=config.n_steps_hevo,
-                ),
                 block=block,
                 config=config,
             )
-        else:
-            op = ParametricPyQOperation(n_qubits, block, config)
-        return [op]
+        ]
     elif isinstance(block, MatrixBlock):
         return [PyQMatrixBlock(block, n_qubits, config)]
-    elif isinstance(block, PrimitiveBlock):
-        return [PyQOperation(n_qubits, block)]
     elif isinstance(block, CompositeBlock):
         ops = list(flatten(*(convert_block(b, n_qubits, config) for b in block.blocks)))
         if is_single_qubit_chain(block) and config.use_single_qubit_composition:
-            return [PyQComposedBlock(ops, block.qubit_support, n_qubits, config)]
+            return [PyQComposedBlock(ops, qubit_support, n_qubits, config)]
         else:
             # NOTE: without wrapping in a pyq.QuantumCircuit here the kron/chain
             # blocks won't be properly nested which leads to incorrect results from
@@ -104,80 +127,46 @@ def convert_block(
             # AddPyQOperation(Z, Z)
             # which would be wrong.
             return [pyq.QuantumCircuit(n_qubits, ops)]
-
+    elif isinstance(block, tuple(non_unitary_gateset)):
+        if isinstance(block, ProjectorBlock):
+            projector = getattr(pyq, block.name)
+            if block.name == OpName.N:
+                return [projector(target=qubit_support)]
+            else:
+                return [projector(qubit_support=qubit_support, ket=block.ket, bra=block.bra)]
+        else:
+            return [getattr(pyq, block.name)(qubit_support[0])]
+    elif isinstance(block, tuple(single_qubit_gateset)):
+        pyq_cls = getattr(pyq, block.name)
+        if isinstance(block, ParametricBlock):
+            if isinstance(block, U):
+                op = pyq_cls(qubit_support[0], *config.get_param_name(block))
+            else:
+                op = pyq_cls(qubit_support[0], config.get_param_name(block)[0])
+        else:
+            op = pyq_cls(qubit_support[0])
+        return [op]
+    elif isinstance(block, tuple(two_qubit_gateset)):
+        pyq_cls = getattr(pyq, block.name)
+        if isinstance(block, ParametricBlock):
+            op = pyq_cls(qubit_support[0], qubit_support[1], config.get_param_name(block)[0])
+        else:
+            op = pyq_cls(qubit_support[0], qubit_support[1])
+        return [op]
+    elif isinstance(block, tuple(three_qubit_gateset) + tuple(multi_qubit_gateset)):
+        block_name = block.name[1:] if block.name.startswith("M") else block.name
+        pyq_cls = getattr(pyq, block_name)
+        if isinstance(block, ParametricBlock):
+            op = pyq_cls(qubit_support[:-1], qubit_support[-1], config.get_param_name(block)[0])
+        else:
+            op = pyq_cls(qubit_support[:-1], qubit_support[-1])
+        return [op]
     else:
-        msg = (
+        raise NotImplementedError(
             f"Non supported operation of type {type(block)}. "
-            "In case you are trying to run an `AnalogBlock`, try converting it "
-            "with `add_interaction` first."
+            "In case you are trying to run an `AnalogBlock`, make sure you "
+            "specify the `device_specs` in your `Register` first."
         )
-        raise NotImplementedError(msg)
-
-
-class PyQOperation(Module):
-    def __init__(self, n_qubits: int, block: AbstractBlock):
-        super().__init__()
-        name = block.name[1:] if block.name.startswith("MC") else block.name
-        Op = getattr(pyq, name)
-        self.operation = Op(block.qubit_support, n_qubits)
-
-    # primitive blocks do not require any parameter value, hence the
-    # second empty argument added here
-    def forward(self, state: torch.Tensor, _: dict[str, torch.Tensor] = None) -> torch.Tensor:
-        return self.apply(self.matrices(), state)
-
-    def matrices(self, _: dict[str, torch.Tensor] = None) -> torch.Tensor:
-        return self.operation.matrix
-
-    def apply(self, matrices: torch.Tensor, state: torch.Tensor) -> torch.Tensor:
-        return self.operation.apply(matrices, state)
-
-
-class ParametricPyQOperation(Module):
-    def __init__(self, n_qubits: int, block: ParametricBlock, config: Configuration):
-        super().__init__()
-        name = block.name[1:] if block.name.startswith("MC") else block.name
-        Op = getattr(pyq, name)
-        self.operation = Op(block.qubit_support, n_qubits)
-        self.param_names = config.get_param_name(block)
-        num_params = len(self.param_names)
-        if num_params == 1:
-
-            def _fwd(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-                return self.apply(self.matrices(values), state)
-
-        else:
-
-            def _fwd(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-                op_params = {key: values[key] for key in self.param_names}
-                max_batch_size = max(p.size() for p in values.values())
-                new_values = {
-                    k: (v if v.size() == max_batch_size else v.repeat(max_batch_size, 1, 1))
-                    for k, v in op_params.items()
-                }
-                return self.apply(self.matrices(new_values), state)
-
-        if config.use_gradient_checkpointing:
-
-            def _forward(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-                return checkpoint(_fwd, state, values, use_reentrant=False)
-
-        else:
-
-            def _forward(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-                return _fwd(state, values)
-
-        self._forward = _forward
-
-    def matrices(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
-        thetas = torch.vstack([values[name] for name in self.param_names])
-        return self.operation.matrices(thetas)
-
-    def apply(self, matrices: torch.Tensor, state: torch.Tensor) -> torch.Tensor:
-        return self.operation.apply(matrices, state)
-
-    def forward(self, state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-        return self._forward(state, values)
 
 
 class PyQMatrixBlock(Module):
@@ -187,59 +176,59 @@ class PyQMatrixBlock(Module):
         self.qubits = block.qubit_support
         self.register_buffer("mat", block.matrix.unsqueeze(2))
 
-    def forward(self, state: torch.Tensor, _: dict[str, torch.Tensor] = None) -> torch.Tensor:
-        return self.apply(self.mat, state)
-
-    def apply(self, matrices: torch.Tensor, state: torch.Tensor) -> torch.Tensor:
-        batch_size = state.size(-1)
-        return _apply_batch_gate(state, matrices, self.qubits, self.n_qubits, batch_size)
+    def forward(self, state: Tensor, _: dict[str, Tensor] = None) -> Tensor:
+        return apply_operator(state, self.mat, self.qubits, self.n_qubits)
 
 
-class PyQComposedBlock(Module):
+class PyQComposedBlock(pyq.QuantumCircuit):
     def __init__(
         self,
         ops: list[Module],
-        qubits: list[int] | tuple,
+        qubits: Tuple[int, ...],
         n_qubits: int,
         config: Configuration = None,
     ):
-        """Compose a chain of single qubit operations on the same qubit into a single
-        call to _apply_batch_gate."""
-        super().__init__()
-        self.operations = ops
+        """Compose a chain of single qubit operations on the same qubit into a single.
+
+        call to _apply_batch_gate.
+        """
+        super().__init__(n_qubits, ops)
         self.qubits = qubits
-        self.n_qubits = n_qubits
 
-    def forward(
-        self, state: torch.Tensor, values: dict[str, torch.Tensor] | None = None
-    ) -> torch.Tensor:
-        batch_size = state.size(-1)
-        return self.apply(self.matrices(values, batch_size), state)
+    def forward(self, state: Tensor, values: dict[str, Tensor] | None = None) -> Tensor:
+        batch_size = infer_batchsize(values)
+        return apply_operator(
+            state, self.unitary(values, batch_size), self.qubits, self.n_qubits, batch_size
+        )
 
-    def apply(self, matrices: torch.Tensor, state: torch.Tensor) -> torch.Tensor:
-        batch_size = state.size(-1)
-        return _apply_batch_gate(state, matrices, self.qubits, self.n_qubits, batch_size)
+    def unitary(self, values: dict[str, Tensor] | None, batch_size: int) -> Tensor:
+        batch_first_perm = (2, 0, 1)
+        undo_perm = tuple(argsort(tensor(batch_first_perm)))
 
-    def matrices(self, values: dict[str, torch.Tensor] | None, batch_size: int) -> torch.Tensor:
-        perm = (2, 0, 1)  # We permute the dims since torch.bmm expects the batch_dim at 0.
-
-        def _expand_mat(m: torch.Tensor) -> torch.Tensor:
+        def _expand(m: Tensor) -> Tensor:
             if len(m.size()) == 2:
                 m = m.unsqueeze(2).repeat(
                     1, 1, batch_size
                 )  # Primitive gates are 2D, so we expand them.
             elif m.shape != (2, 2, batch_size):
                 m = m.repeat(1, 1, batch_size)  # In case a tensor is 3D doesnt have batch_size.
-            return torch.permute(m, perm)  # This returns shape (batch_size, 2, 2)
+            return m
+
+        def _batch_first(m: Tensor) -> Tensor:
+            return permute(m, batch_first_perm)  # This returns shape (batch_size, 2, 2)
+
+        def _batch_last(m: Tensor) -> Tensor:
+            return permute(
+                m, undo_perm
+            )  # We need to undo the permute since PyQ expects (2, 2, batch_size).
 
         # We reverse the list of tensors here since matmul is not commutative.
-        return torch.permute(
+
+        return _batch_last(
             reduce(
-                torch.bmm, (_expand_mat(op.matrices(values)) for op in reversed(self.operations))
-            ),
-            tuple(
-                torch.argsort(torch.tensor(perm))
-            ),  # We need to undo the permute since PyQ expects (2, 2, batch_size).
+                bmm,
+                (_batch_first(_expand(op.unitary(values))) for op in reversed(self.operations)),
+            )
         )
 
 
@@ -253,11 +242,8 @@ class PyQObservable(Module):
             diag = block_to_diagonal(block, tuple(range(n_qubits)))
             self.register_buffer("diag", diag)
 
-            def sparse_operation(
-                state: torch.Tensor, values: dict[str, torch.Tensor] = None
-            ) -> torch.Tensor:
-                state = state.reshape(2**self.n_qubits, state.size(-1))
-                return (diag * state.T).T
+            def sparse_operation(state: Tensor, values: dict[str, Tensor] = None) -> Tensor:
+                return pyqify(diag * unpyqify(state), n_qubits=self.n_qubits)
 
             self.operation = sparse_operation
         else:
@@ -266,170 +252,171 @@ class PyQObservable(Module):
                 convert_block(block, n_qubits, config),
             )
 
-        if config.use_gradient_checkpointing:
+    def forward(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
+        return pyq.overlap(state, self.operation(state, values))
 
-            def _forward(
-                state: torch.Tensor, values: dict[str, torch.Tensor] = None
-            ) -> torch.Tensor:
-                new_state = checkpoint(self.operation, state, values, use_reentrant=False)
-                return pyq.overlap(state, new_state)
-
-        else:
-
-            def _forward(
-                state: torch.Tensor, values: dict[str, torch.Tensor] = None
-            ) -> torch.Tensor:
-                return pyq.overlap(state, self.operation(state, values))
-
-        self._forward = _forward
-
-    def forward(self, state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-        return self._forward(state, values)
+    def run(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
+        return self.operation(state, values)
 
 
-class HEvoPyQOperation(Module):
+class PyQHamiltonianEvolution(Module):
     def __init__(
         self,
-        qubits: Sequence,
+        qubit_support: Tuple[int, ...],
         n_qubits: int,
-        operation: Callable,
         block: TimeEvolutionBlock,
         config: Configuration,
     ):
         super().__init__()
-        self.qubits = qubits
+        self.qubit_support = qubit_support
         self.n_qubits = n_qubits
-        self.operation = operation
         self.param_names = config.get_param_name(block)
-        self._has_parametric_generator: bool
         self.block = block
 
         if isinstance(block.generator, AbstractBlock) and not block.generator.is_parametric:
             hmat = block_to_tensor(
                 block.generator,
-                qubit_support=tuple(self.qubits),
+                qubit_support=self.qubit_support,
                 use_full_support=False,
             )
             hmat = hmat.permute(1, 2, 0)
+            self._hamiltonian = lambda x: hmat
 
-            def _fwd(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-                tevo = values[self.param_names[0]]
-                return self.operation(hmat, tevo, state)
-
-        elif isinstance(block.generator, torch.Tensor):
-            m = block.generator.to(dtype=torch.cdouble)
+        elif isinstance(block.generator, Tensor):
+            m = block.generator.to(dtype=cdouble)
             hmat = block_to_tensor(
                 MatrixBlock(m, qubit_support=block.qubit_support),
-                qubit_support=tuple(self.qubits),
+                qubit_support=self.qubit_support,
                 use_full_support=False,
             )
             hmat = hmat.permute(1, 2, 0)
-
-            def _fwd(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-                tevo = values[self.param_names[0]]
-                return self.operation(hmat, tevo, state)
+            self._hamiltonian = lambda x: hmat
 
         elif isinstance(block.generator, sympy.Basic):
-
-            def _fwd(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-                tevo = values[self.param_names[0]]
-                hmat = values[self.param_names[1]]
-                hmat = hmat.squeeze(3)  # FIXME: why is this necessary?
-                hmat = hmat.permute(1, 2, 0)
-                return self.operation(hmat, tevo, state)
-
+            self._hamiltonian = (
+                lambda values: values[self.param_names[1]].squeeze(3).permute(1, 2, 0)
+            )
+            # FIXME Why are we squeezing
         else:
 
-            def _fwd(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
+            def _hamiltonian(values: dict[str, Tensor]) -> Tensor:
                 hmat = _block_to_tensor_embedded(
                     block.generator,  # type: ignore[arg-type]
                     values=values,
-                    qubit_support=tuple(self.qubits),
+                    qubit_support=self.qubit_support,
                     use_full_support=False,
                 )
-                hmat = hmat.permute(1, 2, 0)
-                tevo = values[self.param_names[0]]
-                return self.operation(hmat, tevo, state)
+                return hmat.permute(1, 2, 0)
 
-        if config.use_gradient_checkpointing:
+            self._hamiltonian = _hamiltonian
 
-            def _forward(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-                return checkpoint(_fwd, state, values, use_reentrant=False)
+        self._time_evolution = lambda values: values[self.param_names[0]]
 
-        else:
+    def _unitary(self, hamiltonian: Tensor, time_evolution: Tensor) -> Tensor:
+        self.batch_size = max(hamiltonian.size()[2], len(time_evolution))
+        diag_check = tensor([is_diag(hamiltonian[..., i]) for i in range(hamiltonian.size()[2])])
 
-            def _forward(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-                return _fwd(state, values)
+        def _evolve_diag_operator(hamiltonian: Tensor, time_evolution: Tensor) -> Tensor:
+            evol_operator = diagonal(hamiltonian) * (-1j * time_evolution).view((-1, 1))
+            evol_operator = diag_embed(exp(evol_operator))
+            return transpose(evol_operator, 0, -1)
 
-        self._forward = _forward
+        def _evolve_matrixexp_operator(hamiltonian: Tensor, time_evolution: Tensor) -> Tensor:
+            evol_operator = transpose(hamiltonian, 0, -1) * (-1j * time_evolution).view((-1, 1, 1))
+            evol_operator = linalg.matrix_exp(evol_operator)
+            return transpose(evol_operator, 0, -1)
 
-    def forward(self, state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-        return self._forward(state, values)
+        evolve_operator = (
+            _evolve_diag_operator if bool(prod(diag_check)) else _evolve_matrixexp_operator
+        )
+        return evolve_operator(hamiltonian, time_evolution)
+
+    def unitary(self, values: dict[str, Tensor]) -> Tensor:
+        """The evolved operator given current parameter values for generator and time evolution."""
+        return self._unitary(self._hamiltonian(values), self._time_evolution(values))
+
+    def jacobian_time(self, values: dict[str, Tensor]) -> Tensor:
+        """Approximate jacobian of the evolved operator with respect to time evolution."""
+        return finitediff(
+            lambda t: self._unitary(time_evolution=t, hamiltonian=self._hamiltonian(values)),
+            values[self.param_names[0]],
+        )
+
+    def jacobian_generator(self, values: dict[str, Tensor]) -> Tensor:
+        """Approximate jacobian of the evolved operator with respect to generator parameter(s)."""
+        if len(self.param_names) > 2:
+            raise NotImplementedError(
+                "jacobian_generator does not support generators\
+                                        with more than 1 parameter."
+            )
+
+        def _generator(val: Tensor) -> Tensor:
+            val_copy = values.copy()
+            val_copy[self.param_names[1]] = val
+            hmat = _block_to_tensor_embedded(
+                self.block.generator,  # type: ignore[arg-type]
+                values=val_copy,
+                qubit_support=self.qubit_support,
+                use_full_support=False,
+            )
+            return hmat.permute(1, 2, 0)
+
+        return finitediff(
+            lambda v: self._unitary(
+                time_evolution=self._time_evolution(values), hamiltonian=_generator(v)
+            ),
+            values[self.param_names[1]],
+        )
+
+    def dagger(self, values: dict[str, Tensor]) -> Tensor:
+        """Dagger of the evolved operator given the current parameter values."""
+        return _dagger(self.unitary(values))
+
+    def forward(
+        self,
+        state: Tensor,
+        values: dict[str, Tensor],
+    ) -> Tensor:
+        return apply_operator(
+            state,
+            self.unitary(values),
+            self.qubit_support,
+            self.n_qubits,
+            self.batch_size,
+        )
 
 
-class AddPyQOperation(Module):
-    def __init__(
-        self, qubits: Sequence, n_qubits: int, operations: list[Module], config: Configuration
-    ):
-        super().__init__()
-        self.operations = operations
+class AddPyQOperation(pyq.QuantumCircuit):
+    def __init__(self, n_qubits: int, operations: list[Module]):
+        super().__init__(n_qubits=n_qubits, operations=operations)
 
-        def _fwd(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-            return reduce(add, (op(state, values) for op in self.operations))
-
-        if config.use_gradient_checkpointing:
-
-            def _forward(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-                return checkpoint(_fwd, state, values, use_reentrant=False)
-
-        else:
-
-            def _forward(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-                return _fwd(state, values)
-
-        self._forward = _forward
-
-    def forward(self, state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-        return self._forward(state, values)
+    def forward(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
+        return reduce(add, (op(state, values) for op in self.operations))
 
 
-class ScalePyQOperation(Module):
-    """
-    Computes:
-
-        M = matrix(op, theta)
-        scale * matmul(M, state)
-    """
-
+class ScalePyQOperation(pyq.QuantumCircuit):
     def __init__(self, n_qubits: int, block: ScaleBlock, config: Configuration):
-        super().__init__()
-        (self.param_name,) = config.get_param_name(block)
         if not isinstance(block.block, PrimitiveBlock):
             raise NotImplementedError(
                 "The pyqtorch backend can currently only scale `PrimitiveBlock` types.\
                 Please use the following transpile function on your circuit first:\
                 from qadence.transpile import scale_primitive_blocks_only"
             )
-        self.operation = convert_block(block.block, n_qubits, config)[0]
+        ops = convert_block(block.block, n_qubits, config)
+        assert len(ops) == 1
+        super().__init__(n_qubits, ops)
+        (self.param_name,) = config.get_param_name(block)
+        self.qubit_support = self.operations[0].qubit_support
 
-        def _fwd(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-            return values[self.param_name] * self.operation(state, values)
+    def forward(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
+        return apply_operator(state, self.unitary(values), self.qubit_support, self.n_qubits)
 
-        if config.use_gradient_checkpointing:
-
-            def _forward(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-                return checkpoint(_fwd, state, values, use_reentrant=False)
-
-        else:
-
-            def _forward(state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-                return _fwd(state, values)
-
-        self._forward = _forward
-
-    def matrices(self, values: dict[str, torch.Tensor]) -> torch.Tensor:
+    def unitary(self, values: dict[str, Tensor]) -> Tensor:
         thetas = values[self.param_name]
-        return (thetas * self.operation.matrices()).unsqueeze(2)
+        return thetas * self.operations[0].unitary(values)
 
-    def forward(self, state: torch.Tensor, values: dict[str, torch.Tensor]) -> torch.Tensor:
-        return self._forward(state, values)
+    def dagger(self, values: dict[str, Tensor]) -> Tensor:
+        return _dagger(self.unitary(values))
+
+    def jacobian(self, values: dict[str, Tensor]) -> Tensor:
+        return values[self.param_name] * ones_like(self.unitary(values))

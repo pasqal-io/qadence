@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import warnings
-from typing import List, Tuple, Type, Union
+from typing import List, Type, Union
 
 import numpy as np
-import torch
+from torch import Tensor, double, ones, rand
 
 from qadence.blocks import AbstractBlock, add
 from qadence.logger import get_logger
@@ -43,7 +42,7 @@ INTERACTION_DICT = {
 }
 
 
-ARRAYS = (list, np.ndarray, torch.Tensor)
+ARRAYS = (list, np.ndarray, Tensor)
 
 DETUNINGS = (N, X, Y, Z)
 
@@ -57,10 +56,12 @@ def hamiltonian_factory(
     interaction_strength: TArray | str | None = None,
     detuning_strength: TArray | str | None = None,
     random_strength: bool = False,
-    force_update: bool = False,
+    use_all_node_pairs: bool = False,
 ) -> AbstractBlock:
     """
-    General Hamiltonian creation function. Can be used to create Hamiltonians with 2-qubit
+    General Hamiltonian creation function.
+
+    Can be used to create Hamiltonians with 2-qubit
     interactions and single-qubit detunings, both with arbitrary strength or parameterized.
 
     Arguments:
@@ -77,7 +78,9 @@ def hamiltonian_factory(
             Alternatively, some string "x" can be passed, which will create a parameterized
             detuning for each qubit, each labelled as `"x_i"`.
         random_strength: set random interaction and detuning strengths between -1 and 1.
-        force_update: force override register detuning and interaction strengths.
+        use_all_node_pairs: computes an interaction term for every pair of nodes in the graph,
+            independent of the edge topology in the register. Useful for defining Hamiltonians
+            where the interaction strength decays with the distance.
 
     Examples:
         ```python exec="on" source="material-block" result="json"
@@ -115,12 +118,9 @@ def hamiltonian_factory(
     register = Register(register) if isinstance(register, int) else register
 
     # Get interaction function
-    try:
-        int_fn = INTERACTION_DICT[interaction]  # type: ignore [index]
-    except (KeyError, ValueError) as error:
-        if interaction is None:
-            pass
-        else:
+    if interaction is not None:
+        int_fn = INTERACTION_DICT.get(interaction, None)
+        if int_fn is None:
             raise KeyError(f"Interaction {interaction} not supported.")
 
     # Check single-qubit detuning
@@ -128,34 +128,27 @@ def hamiltonian_factory(
         raise TypeError(f"Detuning of type {type(detuning)} not supported.")
 
     # Pre-process detuning and interaction strengths and update register
-    has_detuning_strength, detuning_strength = _preprocess_strengths(
-        register, detuning_strength, "nodes", force_update, random_strength
-    )
-    has_interaction_strength, interaction_strength = _preprocess_strengths(
-        register, interaction_strength, "edges", force_update, random_strength
+    detuning_strength_array = _preprocess_strengths(
+        register, detuning_strength, "nodes", random_strength
     )
 
-    if (not has_detuning_strength) or force_update:
-        register = _update_detuning_strength(register, detuning_strength)
-
-    if (not has_interaction_strength) or force_update:
-        register = _update_interaction_strength(register, interaction_strength)
+    edge_str = "all_node_pairs" if use_all_node_pairs else "edges"
+    interaction_strength_array = _preprocess_strengths(
+        register, interaction_strength, edge_str, random_strength
+    )
 
     # Create single-qubit detunings:
     single_qubit_terms: List[AbstractBlock] = []
     if detuning is not None:
-        for node in register.nodes:
-            block_sq = detuning(node)  # type: ignore [operator]
-            strength_sq = register.nodes[node]["strength"]
-            single_qubit_terms.append(strength_sq * block_sq)
+        for strength, node in zip(detuning_strength_array, register.nodes):
+            single_qubit_terms.append(strength * detuning(node))
 
     # Create two-qubit interactions:
     two_qubit_terms: List[AbstractBlock] = []
-    if interaction is not None:
-        for edge in register.edges:
-            block_tq = int_fn(*edge)  # type: ignore [operator]
-            strength_tq = register.edges[edge]["strength"]
-            two_qubit_terms.append(strength_tq * block_tq)
+    edge_data = register.all_node_pairs if use_all_node_pairs else register.edges
+    if interaction is not None and int_fn is not None:
+        for strength, edge in zip(interaction_strength_array, edge_data):
+            two_qubit_terms.append(strength * int_fn(*edge))
 
     return add(*single_qubit_terms, *two_qubit_terms)
 
@@ -164,37 +157,31 @@ def _preprocess_strengths(
     register: Register,
     strength: TArray | str | None,
     nodes_or_edges: str,
-    force_update: bool,
     random_strength: bool,
-) -> Tuple[bool, Union[TArray | str]]:
+) -> Tensor | list:
     data = getattr(register, nodes_or_edges)
 
     # Useful for error messages:
     strength_target = "detuning" if nodes_or_edges == "nodes" else "interaction"
 
-    # First we check if strength values already exist in the register
-    has_strength = any(["strength" in data[i] for i in data])
-    if has_strength and not force_update:
-        if strength is not None:
-            logger.warning(
-                "Register already includes " + strength_target + " strengths. "
-                "Skipping update. Use `force_update = True` to override them."
-            )
     # Next we process the strength given in the input arguments
     if strength is None:
         if random_strength:
-            strength = 2 * torch.rand(len(data), dtype=torch.double) - 1
+            strength = 2 * rand(len(data), dtype=double) - 1
         else:
             # None defaults to constant = 1.0
-            strength = torch.ones(len(data), dtype=torch.double)
+            strength = ones(len(data), dtype=double)
     elif isinstance(strength, ARRAYS):
         # If array is given, checks it has the correct length
         if len(strength) != len(data):
             message = "Array of " + strength_target + " strengths has incorrect size."
             raise ValueError(message)
     elif isinstance(strength, str):
-        # Any string will be used as a prefix to variational parameters
-        pass
+        prefix = strength
+        if nodes_or_edges == "nodes":
+            strength = [prefix + f"_{node}" for node in data]
+        if nodes_or_edges in ["edges", "all_node_pairs"]:
+            strength = [prefix + f"_{edge[0]}{edge[1]}" for edge in data]
     else:
         # If not of the accepted types ARRAYS or str, we error out
         raise TypeError(
@@ -203,47 +190,15 @@ def _preprocess_strengths(
             "parameterized " + strength_target + "s."
         )
 
-    return has_strength, strength
-
-
-def _update_detuning_strength(register: Register, detuning_strength: TArray | str) -> Register:
-    for node in register.nodes:
-        if isinstance(detuning_strength, str):
-            register.nodes[node]["strength"] = detuning_strength + f"_{node}"
-        elif isinstance(detuning_strength, ARRAYS):
-            register.nodes[node]["strength"] = detuning_strength[node]
-    return register
-
-
-def _update_interaction_strength(
-    register: Register, interaction_strength: TArray | str
-) -> Register:
-    for idx, edge in enumerate(register.edges):
-        if isinstance(interaction_strength, str):
-            register.edges[edge]["strength"] = interaction_strength + f"_{edge[0]}{edge[1]}"
-        elif isinstance(interaction_strength, ARRAYS):
-            register.edges[edge]["strength"] = interaction_strength[idx]
-    return register
-
-
-# FIXME: Previous hamiltonian / observable functions, now refactored, to be deprecated:
-
-DEPRECATION_MESSAGE = "This function will be removed in the future. "
-
-
-def single_z(qubit: int = 0, z_coefficient: float = 1.0) -> AbstractBlock:
-    message = DEPRECATION_MESSAGE + "Please use `z_coefficient * Z(qubit)` directly."
-    warnings.warn(message, FutureWarning)
-    return Z(qubit) * z_coefficient
+    return strength
 
 
 def total_magnetization(n_qubits: int, z_terms: np.ndarray | list | None = None) -> AbstractBlock:
-    message = (
-        DEPRECATION_MESSAGE
-        + "Please use `hamiltonian_factory(n_qubits, detuning=Z, node_coeff=z_terms)`."
-    )
-    warnings.warn(message, FutureWarning)
     return hamiltonian_factory(n_qubits, detuning=Z, detuning_strength=z_terms)
+
+
+def single_z(qubit: int = 0, z_coefficient: float = 1.0) -> AbstractBlock:
+    return Z(qubit) * z_coefficient
 
 
 def zz_hamiltonian(
@@ -251,20 +206,11 @@ def zz_hamiltonian(
     z_terms: np.ndarray | None = None,
     zz_terms: np.ndarray | None = None,
 ) -> AbstractBlock:
-    message = (
-        DEPRECATION_MESSAGE
-        + """
-Please use `hamiltonian_factory(n_qubits, Interaction.ZZ, Z, interaction_strength, z_terms)`. \
-Note that the argument `zz_terms` in this function is a 2D array of size `(n_qubits, n_qubits)`, \
-while `interaction_strength` is expected as a 1D array of size `0.5 * n_qubits * (n_qubits - 1)`."""
-    )
-    warnings.warn(message, FutureWarning)
     if zz_terms is not None:
         register = Register(n_qubits)
         interaction_strength = [zz_terms[edge[0], edge[1]] for edge in register.edges]
     else:
         interaction_strength = None
-
     return hamiltonian_factory(n_qubits, Interaction.ZZ, Z, interaction_strength, z_terms)
 
 
@@ -274,13 +220,6 @@ def ising_hamiltonian(
     z_terms: np.ndarray | None = None,
     zz_terms: np.ndarray | None = None,
 ) -> AbstractBlock:
-    message = (
-        DEPRECATION_MESSAGE
-        + """
-You can build a general transverse field ising model with the `hamiltonian_factory` function. \
-Check the hamiltonian construction tutorial in the documentation for more information."""
-    )
-    warnings.warn(message, FutureWarning)
     zz_ham = zz_hamiltonian(n_qubits, z_terms=z_terms, zz_terms=zz_terms)
     x_ham = hamiltonian_factory(n_qubits, detuning=X, detuning_strength=x_terms)
     return zz_ham + x_ham

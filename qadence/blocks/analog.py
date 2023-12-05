@@ -59,8 +59,8 @@ class AnalogBlock(AbstractBlock):
     @property
     def eigenvalues_generator(self) -> torch.Tensor:
         msg = (
-            "Eigenvalues of analog blocks can be computed via "
-            "`add_interaction(register, block).eigenvalues`"
+            "Eigenvalues of for generator of analog blocks can be computed via "
+            "`add_background_hamiltonian(block, register).eigenvalues_generator`. "
         )
         raise NotImplementedError(msg)
 
@@ -68,7 +68,7 @@ class AnalogBlock(AbstractBlock):
     def eigenvalues(self) -> torch.Tensor:
         msg = (
             "Eigenvalues of analog blocks can be computed via "
-            "`add_interaction(register, block).eigenvalues`"
+            "`add_background_hamiltonian(block, register).eigenvalues`. "
         )
         raise NotImplementedError(msg)
 
@@ -83,17 +83,27 @@ class AnalogBlock(AbstractBlock):
         return s
 
     def compute_eigenvalues_generator(
-        self, register: Register, block: AbstractBlock, spacing: float
+        self,
+        block: AbstractBlock,
+        register: Register,
     ) -> torch.Tensor:
-        from qadence import add_interaction
+        # FIXME: Revisit analog blocks eigenvalues
+        from qadence.analog import add_background_hamiltonian
 
-        return add_interaction(register, block, spacing=spacing).eigenvalues_generator
+        return add_background_hamiltonian(block, register).eigenvalues_generator  # type: ignore [union-attr]
+
+    def dagger(self) -> AbstractBlock:
+        raise NotImplementedError(
+            f"Hermitian adjoint of block type {type(self)} is not implemented yet."
+        )
 
 
 @dataclass(eq=False, repr=False)
 class WaitBlock(AnalogBlock):
     """
-    Waits. In real interacting quantum devices, it means letting the system evolve freely according
+    Waits.
+
+    In real interacting quantum devices, it means letting the system evolve freely according
     to the time-dependent Schrodinger equation. With emulators, this block is translated to an
     appropriate interaction Hamiltonian, for example, an Ising interaction
 
@@ -106,8 +116,6 @@ class WaitBlock(AnalogBlock):
     with `nᵢ = (1-Zᵢ)/2`.
 
     To construct this block, use the [`wait`][qadence.operations.wait] function.
-
-    Can be used with [`add_interaction`][qadence.transpile.emulate.add_interaction].
     """
 
     _eigenvalues_generator: torch.Tensor | None = None
@@ -132,9 +140,9 @@ class WaitBlock(AnalogBlock):
 
 @dataclass(eq=False, repr=False)
 class ConstantAnalogRotation(AnalogBlock):
-    """Implements a constant analog rotation with interaction dictated by the chosen Hamiltonian
+    """Implements a constant analog rotation with interaction dictated by the chosen Hamiltonian.
 
-        H = ∑ᵢ(hΩ/2 sin(φ)*Xᵢ - cos(φ)*Yᵢ - hδnᵢ) + Hᵢₙₜ.
+        H/h = ∑ᵢ(Ω/2 cos(φ)*Xᵢ - sin(φ)*Yᵢ - δnᵢ) + Hᵢₙₜ.
 
     To construct this block you can use of the following convenience wrappers:
     - The general rotation operation [`AnalogRot`][qadence.operations.AnalogRot]
@@ -143,7 +151,6 @@ class ConstantAnalogRotation(AnalogBlock):
       [`AnalogRY`][qadence.operations.AnalogRY],
       [`AnalogRZ`][qadence.operations.AnalogRZ]
 
-    Can be used with [`add_interaction`][qadence.transpile.emulate.add_interaction].
     WARNING: do not use `ConstantAnalogRotation` with `alpha` as differentiable parameter - use
     the convenience wrappers mentioned above.
     """
@@ -237,7 +244,9 @@ class AnalogComposite(AnalogBlock):
 @dataclass(eq=False, repr=False, init=False)
 class AnalogChain(AnalogComposite):
     def __init__(self, blocks: Tuple[AnalogBlock, ...]):
-        """A chain of analog blocks. Needed because analog blocks require
+        """A chain of analog blocks.
+
+        Needed because analog blocks require
         stricter validation than the general `ChainBlock`.
 
         `AnalogChain`s can only be constructed from `AnalogKron` blocks or
@@ -271,7 +280,9 @@ class AnalogChain(AnalogComposite):
 @dataclass(eq=False, repr=False, init=False)
 class AnalogKron(AnalogComposite):
     def __init__(self, blocks: Tuple[AnalogBlock, ...], interaction: Interaction = Interaction.NN):
-        """Stack analog blocks vertically (i.e. in time). Needed because analog require
+        """Stack analog blocks vertically (i.e. in time).
+
+        Needed because analog require
         stricter validation than the general `KronBlock`.
 
         `AnalogKron`s can only be constructed from _**non-global**_, analog blocks

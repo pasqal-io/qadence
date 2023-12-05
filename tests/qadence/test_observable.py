@@ -4,7 +4,6 @@ import strategies as st  # type: ignore
 import torch
 from hypothesis import given, settings
 
-from qadence import block_to_tensor, total_magnetization
 from qadence.blocks import (
     AbstractBlock,
     AddBlock,
@@ -12,6 +11,8 @@ from qadence.blocks import (
     add,
     kron,
 )
+from qadence.blocks.block_to_tensor import block_to_tensor
+from qadence.constructors import total_magnetization
 from qadence.operations import X, Y, Z
 from qadence.parameters import VariationalParameter
 from qadence.serialization import deserialize

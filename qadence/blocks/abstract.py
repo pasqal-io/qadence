@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod, abstractproperty
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
-from typing import ClassVar, Iterable, Tuple, Union, get_args
+from typing import ClassVar, Iterable, Tuple, TypeVar, Union, get_args
 
 import sympy
 import torch
@@ -18,7 +18,7 @@ from qadence.types import TNumber
 
 @dataclass(eq=False)  # Avoid unhashability errors due to mutable attributes.
 class AbstractBlock(ABC):
-    """Base class for both primitive and composite blocks
+    """Base class for both primitive and composite blocks.
 
     Attributes:
         name (str): A human-readable name attached to the block type. Notice, this is
@@ -39,13 +39,17 @@ class AbstractBlock(ABC):
     @abstractproperty
     def qubit_support(self) -> Tuple[int, ...]:
         """The indices of the qubit(s) the block is acting on.
-        Qadence uses the ordering [0..,N-1] for qubits."""
+
+        Qadence uses the ordering [0..,N-1] for qubits.
+        """
         pass
 
     @abstractproperty
     def n_qubits(self) -> int:
         """The number of qubits in the whole system.
-        A block acting on qubit N would has at least n_qubits >= N + 1."""
+
+        A block acting on qubit N would has at least n_qubits >= N + 1.
+        """
         pass
 
     @abstractproperty
@@ -118,7 +122,7 @@ class AbstractBlock(ABC):
         if not isinstance(other, (get_args(TNumber), sympy.Basic)):
             raise TypeError("Cannot divide block by another block.")
         ix = 1 / other
-        return self * ix
+        return self * ix  # type: ignore [no-any-return]
 
     def __add__(self, other: AbstractBlock) -> AbstractBlock:
         from qadence.blocks.utils import add
@@ -283,6 +287,7 @@ class AbstractBlock(ABC):
     def __hash__(self) -> int:
         return hash(self._to_json())
 
+    @abstractmethod
     def dagger(self) -> AbstractBlock:
         raise NotImplementedError(
             f"Hermitian adjoint of the Block '{type(self)}' is not implemented yet!"
@@ -329,3 +334,6 @@ class AbstractBlock(ABC):
         elif isinstance(self, PrimitiveBlock):
             return self.name == "I"
         return False
+
+
+TAbstractBlock = TypeVar("TAbstractBlock", bound=AbstractBlock)

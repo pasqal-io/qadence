@@ -15,8 +15,11 @@ from qadence.blocks import (
     PrimitiveBlock,
     ScaleBlock,
 )
+from qadence.blocks.primitive import ProjectorBlock
 from qadence.blocks.utils import chain, kron, uuid_to_expression
 from qadence.parameters import evaluate, stringify
+
+# from qadence.states import product_state
 from qadence.types import Endianness, TensorType, TNumber
 
 J = torch.tensor(1j)
@@ -60,7 +63,8 @@ def _fill_identities(
     diag_only: bool = False,
     endianness: Endianness = Endianness.BIG,
 ) -> torch.Tensor:
-    """Returns a Kronecker product of matrix defined on a subset of qubits with identities
+    """Returns a Kronecker product of matrix defined on a subset of qubits with identities.
+
     acting on the unused qubits.
 
     Args:
@@ -97,6 +101,7 @@ def _fill_identities(
 def _rot_matrices(theta: torch.Tensor, generator: torch.Tensor) -> torch.Tensor:
     """
     Args:
+
         theta(torch.Tensor): input parameter
         generator(torch.Tensor): the tensor of the generator
     Returns:
@@ -118,6 +123,7 @@ def _rot_matrices(theta: torch.Tensor, generator: torch.Tensor) -> torch.Tensor:
 def _u_matrix(theta: tuple[torch.Tensor, ...]) -> torch.Tensor:
     """
     Args:
+
         theta(tuple[torch.Tensor]): tuple of torch Tensor with 3 elements
             per each parameter of the arbitrary rotation
     Returns:
@@ -135,6 +141,7 @@ def _u_matrix(theta: tuple[torch.Tensor, ...]) -> torch.Tensor:
 def _phase_matrix(theta: torch.Tensor | TNumber) -> torch.Tensor:
     """
     Args:
+
         theta(torch.Tensor): input parameter
     Returns:
         torch.Tensor: a batch of gates after applying theta
@@ -458,6 +465,14 @@ def _block_to_tensor_embedded(
 
         # add missing identities on unused qubits
         mat = _fill_identities(block_mat, block.qubit_support, qubit_support, endianness=endianness)
+
+    elif isinstance(block, ProjectorBlock):
+        from qadence.states import product_state
+
+        bra = product_state(block.bra)
+        ket = product_state(block.ket)
+
+        mat = torch.kron(ket, bra.T)
 
     else:
         raise TypeError(f"Conversion for block type {type(block)} not supported.")

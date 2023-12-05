@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from functools import reduce, singledispatch
-from typing import Callable, Generator, Iterable, Type
+from functools import singledispatch
+from typing import Callable, Iterable, Type
 
 import sympy
 
-from qadence import SWAP, I
 from qadence.blocks import (
     AbstractBlock,
     AddBlock,
@@ -28,76 +27,10 @@ from qadence.blocks.utils import (
     parameters,
 )
 from qadence.logger import get_logger
+from qadence.operations import SWAP, I
 from qadence.parameters import Parameter
 
 logger = get_logger(__name__)
-
-
-def _flat_blocks(block: AbstractBlock, T: Type) -> Generator:
-    """Constructs a generator that flattens nested `CompositeBlock`s of type `T`.
-
-    Example:
-    ```python exec="on" source="material-block" result="json"
-    from qadence.transpile.block import _flat_blocks
-    from qadence.blocks import ChainBlock
-    from qadence import chain, X
-
-    x = chain(chain(chain(X(0)), X(0)))
-    assert tuple(_flat_blocks(x, ChainBlock)) == (X(0), X(0))
-    ```
-    """
-    if isinstance(block, T):
-        # here we do the flattening
-        for b in block.blocks:
-            if isinstance(b, T):
-                yield from _flat_blocks(b, T)
-            else:
-                yield flatten(b, [T])
-    elif isinstance(block, CompositeBlock):
-        # here we make sure that we don't get stuck at e.g. `KronBlock`s if we
-        # want to flatten `ChainBlock`s
-        yield from (flatten(b, [T]) for b in block.blocks)
-    elif isinstance(block, ScaleBlock):
-        blk = deepcopy(block)
-        blk.block = flatten(block.block, [T])
-        yield blk
-    else:
-        yield block
-
-
-def flatten(block: AbstractBlock, types: list = [ChainBlock, KronBlock, AddBlock]) -> AbstractBlock:
-    """Flattens the given types of `CompositeBlock`s if possible.
-
-    Example:
-    ```python exec="on" source="material-block" result="json"
-    from qadence import chain, kron, X
-    from qadence.transpile import flatten
-    from qadence.blocks import ChainBlock, KronBlock, AddBlock
-
-    x = chain(chain(chain(X(0))), kron(kron(X(0))))
-
-    # flatten only `ChainBlock`s
-    assert flatten(x, [ChainBlock]) == chain(X(0), kron(kron(X(0))))
-
-    # flatten `ChainBlock`s and `KronBlock`s
-    assert flatten(x, [ChainBlock, KronBlock]) == chain(X(0), kron(X(0)))
-
-    # flatten `AddBlock`s (does nothing in this case)
-    assert flatten(x, [AddBlock]) == x
-    ```
-    """
-    if isinstance(block, CompositeBlock):
-
-        def fn(b: AbstractBlock, T: Type) -> AbstractBlock:
-            return _construct(type(block), tuple(_flat_blocks(b, T)))
-
-        return reduce(fn, types, block)  # type: ignore[arg-type]
-    elif isinstance(block, ScaleBlock):
-        blk = deepcopy(block)
-        blk.block = flatten(block.block, types=types)
-        return blk
-    else:
-        return block
 
 
 def repeat(
@@ -111,7 +44,7 @@ def repeat(
 def set_trainable(
     blocks: AbstractBlock | list[AbstractBlock], value: bool = True, inplace: bool = True
 ) -> AbstractBlock | list[AbstractBlock]:
-    """Set the trainability of all parameters in a block to a given value
+    """Set the trainability of all parameters in a block to a given value.
 
     Args:
         blocks (AbstractBlock | list[AbstractBlock]): Block or list of blocks for which
@@ -144,8 +77,9 @@ def set_trainable(
 
 
 def validate(block: AbstractBlock) -> AbstractBlock:
-    """Moves a block from global to local qubit numbers by adding PutBlocks and reassigning
-    qubit locations approriately.
+    """Moves a block from global to local qubit numbers by adding PutBlocks.
+
+    Reassigns qubit locations appropriately.
 
     # Example
     ```python exec="on" source="above" result="json"
@@ -197,8 +131,9 @@ def validate(block: AbstractBlock) -> AbstractBlock:
 
 @singledispatch
 def scale_primitive_blocks_only(block: AbstractBlock, scale: sympy.Basic = None) -> AbstractBlock:
-    """When given a scaled CompositeBlock consisting of several PrimitiveBlocks,
-    move the scale all the way down into the leaves of the block tree.
+    """Push the scale all the way down into the leaves of the block tree.
+
+    When given a scaled CompositeBlock consisting of several PrimitiveBlocks.
 
     Arguments:
         block: The block to be transpiled.
@@ -301,11 +236,12 @@ def fill_identities(block: AbstractBlock, start: int, stop: int) -> AbstractBloc
 
 @fill_identities.register
 def _(block: PrimitiveBlock, start: int, stop: int) -> AbstractBlock:
-    if (start == min(block.qubit_support)) and (stop == max(block.qubit_support) + 1):
+    full_support = tuple(range(start, stop + 1))
+    if block.qubit_support == full_support:
         return block
     tag = block.tag
     block.tag = None
-    bs = [block] + [I(i) for i in (set(range(start, stop)) - set(block.qubit_support))]
+    bs = [block] + [I(i) for i in (set(full_support) - set(block.qubit_support))]
     b = kron(*sorted(bs, key=lambda x: x.qubit_support))
     b.tag = tag
     return b
@@ -313,11 +249,12 @@ def _(block: PrimitiveBlock, start: int, stop: int) -> AbstractBlock:
 
 @fill_identities.register
 def _(block: SWAP, start: int, stop: int) -> AbstractBlock:
-    if (start == min(block.qubit_support)) and (stop == max(block.qubit_support) + 1):
+    full_support = tuple(range(start, stop + 1))
+    if block.qubit_support == full_support:
         return block
     tag = block.tag
     block.tag = None
-    bs = [block] + [chain(I(i), I(i)) for i in (set(range(start, stop)) - set(block.qubit_support))]
+    bs = [block] + [chain(I(i), I(i)) for i in (set(full_support) - set(block.qubit_support))]
     b = kron(*sorted(bs, key=lambda x: x.qubit_support))
     b.tag = tag
     return b
@@ -343,17 +280,23 @@ def _fill_kron(block: KronBlock, start: int, stop: int) -> list[AbstractBlock]:
 
     def append_ids(block: AbstractBlock, total: int) -> AbstractBlock:
         qs = block.qubit_support
-        ids = [I(i) for i in range(min(qs), max(qs) + 1) for _ in range(length(block), total)]
+        ids = [I(i) for i in range(min(qs), max(qs)) for _ in range(length(block), total)]
         bs = [block] + ids
         return chain(*bs)
 
     def id_chain(i: int, max_len: int) -> AbstractBlock:
         return chain(I(i) for _ in range(max_len))
 
-    bs = [fill_identities(b, min(b.qubit_support), max(b.qubit_support) + 1) for b in block]
+    # fill subblocks with identities
+    bs = [fill_identities(b, min(b.qubit_support), max(b.qubit_support)) for b in block]
+
+    # make all subblocks equally "long" horizontally
     max_len = length(bs)
     bs = [append_ids(b, max_len) for b in bs]
-    bs += [id_chain(i, max_len) for i in (set(range(start, stop)) - set(block.qubit_support))]
+
+    # fill potentially completely empty wires
+    bs += [id_chain(i, max_len) for i in (set(range(start, stop + 1)) - set(block.qubit_support))]
+
     return sorted(bs, key=lambda x: x.qubit_support)
 
 

@@ -14,8 +14,7 @@ from qadence import (
     chain,
     total_magnetization,
 )
-from qadence.backend import BackendName
-from qadence.backends.pytorch_wrapper import DiffMode
+from qadence.types import BackendName, DiffMode
 
 torch.manual_seed(42)
 
@@ -81,6 +80,26 @@ if __name__ == "__main__":
         print(f"{key}: {param.grad}")
 
     # This works too!
+    print("Gradient of inputs: \n")
+    print(torch.autograd.grad(torch.mean(model.expectation(values)), nx))
+    print(torch.autograd.grad(torch.mean(model.expectation(values)), ny))
+
+    # Finally, lets try ADJOINT
+    model = QuantumModel(
+        circuit(n_qubits),
+        observable=observable,
+        backend=BackendName.PYQTORCH,
+        diff_mode=DiffMode.ADJOINT,
+    )
+    model.zero_grad()
+    loss = torch.mean(model.expectation(values))
+    loss.backward()
+
+    print("Gradients using ADJOINT: \n")
+    print("Gradient in model: \n")
+    for key, param in model.named_parameters():
+        print(f"{key}: {param.grad}")
+
     print("Gradient of inputs: \n")
     print(torch.autograd.grad(torch.mean(model.expectation(values)), nx))
     print(torch.autograd.grad(torch.mean(model.expectation(values)), ny))

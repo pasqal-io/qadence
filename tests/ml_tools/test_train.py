@@ -7,9 +7,9 @@ from typing import Any
 import numpy as np
 import pytest
 import torch
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader
 
-from qadence.ml_tools import DictDataLoader, TrainConfig, load_checkpoint, train_with_grad
+from qadence.ml_tools import DictDataLoader, TrainConfig, load_checkpoint, to_dataloader, train_with_grad
 from qadence.ml_tools.models import TransformedModule
 from qadence.models import QNN
 
@@ -17,41 +17,27 @@ torch.manual_seed(42)
 np.random.seed(42)
 
 
-def dataloader() -> DataLoader:
-    batch_size = 25
+def dataloader(batch_size: int = 25) -> DataLoader:
     x = torch.linspace(0, 1, batch_size).reshape(-1, 1)
     y = torch.sin(x)
-
-    dataset = TensorDataset(x, y)
-    return DataLoader(dataset, batch_size=batch_size)
+    return to_dataloader(x, y, batch_size=batch_size, infinite=True)
 
 
-def dictdataloader() -> DictDataLoader:
-    batch_size = 25
-
-    keys = ["y1", "y2"]
-    dls = {}
-    for k in keys:
-        x = torch.rand(batch_size, 1)
-        y = torch.sin(x)
-        dataset = TensorDataset(x, y)
-        dataloader = DataLoader(dataset, batch_size=batch_size)
-        dls[k] = dataloader
-
-    return DictDataLoader(dls, has_automatic_iter=False)
+def dictdataloader(batch_size: int = 25) -> DictDataLoader:
+    x = torch.rand(batch_size, 1)
+    y = torch.sin(x)
+    dls = {
+        "y1": to_dataloader(x, y, batch_size=batch_size, infinite=True),
+        "y2": to_dataloader(x, y, batch_size=batch_size, infinite=True),
+    }
+    return DictDataLoader(dls)
 
 
 def FMdictdataloader(param_name: str = "phi", n_qubits: int = 2) -> DictDataLoader:
     batch_size = 1
-
-    dls = {}
     x = torch.rand(batch_size, 1)
     y = torch.sin(x)
-    dataset = TensorDataset(x, y)
-    dataloader = DataLoader(dataset, batch_size=batch_size)
-    dls[param_name] = dataloader
-
-    return DictDataLoader(dls, has_automatic_iter=False)
+    return DictDataLoader({param_name: to_dataloader(x, y, batch_size=batch_size, infinite=True)})
 
 
 @pytest.mark.flaky(max_runs=10)
@@ -111,12 +97,13 @@ def test_train_dataloader_no_data(tmp_path: Path, BasicNoInput: torch.nn.Module)
 @pytest.mark.slow
 @pytest.mark.flaky(max_runs=10)
 def test_train_dictdataloader(tmp_path: Path, Basic: torch.nn.Module) -> None:
-    data = dictdataloader()
+    batch_size = 25
+    data = dictdataloader(batch_size=batch_size)
     model = Basic
 
     cnt = count()
     criterion = torch.nn.MSELoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 
     def loss_fn(model: torch.nn.Module, data: torch.Tensor) -> tuple[torch.Tensor, dict]:
         next(cnt)
@@ -188,11 +175,33 @@ def test_train_tensor_tuple(tmp_path: Path, Basic: torch.nn.Module) -> None:
         write_every=100,
         batch_size=batch_size,
     )
-    train_with_grad(model, (x, y), optimizer, config, loss_fn=loss_fn)
+    data = to_dataloader(x, y, batch_size=batch_size, infinite=True)
+    train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
     assert next(cnt) == n_epochs
 
     x = torch.rand(5, 1)
     assert torch.allclose(torch.sin(x), model(x), rtol=1e-1, atol=1e-1)
+
+
+@pytest.mark.flaky(max_runs=10)
+def test_fit_sin_adjoint(BasicAdjointQNN: torch.nn.Module) -> None:
+    model = BasicAdjointQNN
+    batch_size = 5
+    n_epochs = 200
+    criterion = torch.nn.MSELoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
+
+    for _ in range(n_epochs):
+        optimizer.zero_grad()
+        x_train = torch.rand(batch_size, 1)
+        y_train = torch.sin(x_train)
+        out = model(x_train)
+        loss = criterion(out, y_train)
+        loss.backward()
+        optimizer.step()
+
+    x_test = torch.rand(1, 1)
+    assert torch.allclose(torch.sin(x_test), model(x_test), rtol=1e-1, atol=1e-1)
 
 
 def test_tm_save_load(

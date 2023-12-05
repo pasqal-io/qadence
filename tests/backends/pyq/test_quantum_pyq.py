@@ -2,19 +2,20 @@ from __future__ import annotations
 
 import random
 from collections import Counter
-from itertools import count, product
-from typing import Any, Callable
+from itertools import product
+from typing import Callable
 
 import numpy as np
 import pytest
 import strategies as st
 import torch
 from hypothesis import given, settings
-from pyqtorch.core.circuit import QuantumCircuit as PyQQuantumCircuit
+from pyqtorch import U as pyqU
+from pyqtorch import zero_state as pyq_zero_state
+from pyqtorch.circuit import QuantumCircuit as PyQQuantumCircuit
 from sympy import acos
 from torch import Tensor
 
-from qadence import BackendName, DiffMode
 from qadence.backends import backend_factory
 from qadence.backends.pyqtorch.backend import Backend
 from qadence.backends.pyqtorch.config import Configuration as PyqConfig
@@ -26,13 +27,11 @@ from qadence.blocks import (
 )
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import (
-    chebyshev_feature_map,
     hea,
     ising_hamiltonian,
     total_magnetization,
     zz_hamiltonian,
 )
-from qadence.ml_tools import TrainConfig, train_with_grad
 from qadence.models import QuantumModel
 from qadence.operations import (
     CNOT,
@@ -57,6 +56,7 @@ from qadence.operations import (
 )
 from qadence.parameters import FeatureParameter, Parameter
 from qadence.transpile import set_trainable
+from qadence.types import BackendName, DiffMode
 
 
 def custom_obs() -> AbstractBlock:
@@ -288,17 +288,16 @@ def test_run_with_parametric_single_qubit_gates(
 
 
 def test_ugate_pure_pyqtorch() -> None:
-    import pyqtorch.modules as pyqtorch
-
     thetas = torch.rand(3)
-    state = pyqtorch.zero_state(n_qubits=1, dtype=torch.complex128)
-    pyqtorch_u = pyqtorch.U(qubits=[0], n_qubits=1)
+    pyq_state = pyq_zero_state(n_qubits=1)
     Qadence_u = U(0, phi=thetas[0], theta=thetas[1], omega=thetas[2])
     circ = QuantumCircuit(1, Qadence_u)
     backend = Backend()
     convert = backend.convert(circ)
-    Qadence_state = backend.run(convert.circuit, convert.embedding_fn(convert.params, {}))
-    f_state = torch.reshape(pyqtorch_u(state, thetas), (1, 2))
+    values = convert.embedding_fn(convert.params, {})
+    Qadence_state = backend.run(convert.circuit, values)
+    pyqtorch_u = pyqU(0, *values.keys())
+    f_state = torch.reshape(pyqtorch_u(pyq_state, values), (1, 2))
     assert torch.allclose(f_state, Qadence_state)
 
 
@@ -779,7 +778,7 @@ def test_batched_circuits(
     assert not torch.any(torch.isnan(wf_pyqtorch))
 
 
-@pytest.mark.parametrize("diff_mode", [DiffMode.GPSR, DiffMode.AD])
+@pytest.mark.parametrize("diff_mode", [DiffMode.GPSR, DiffMode.AD, DiffMode.ADJOINT])
 @pytest.mark.parametrize("obs", [total_magnetization, zz_hamiltonian])
 @given(st.batched_digital_circuits())
 @settings(deadline=None)
@@ -812,35 +811,3 @@ def test_sparse_obs_expectation_value(
     expval_s = qm_sparse.expectation(inputs)
 
     assert torch.allclose(expval, expval_s)
-
-
-@pytest.mark.parametrize("diff_mode", DiffMode.list())
-def test_gradient_checkpointing(diff_mode: DiffMode) -> None:
-    n_qubits = 2
-    qc = QuantumCircuit(n_qubits, chain(chebyshev_feature_map(n_qubits), hea(n_qubits, n_qubits)))
-    qm = QuantumModel(
-        qc,
-        total_magnetization(n_qubits),
-        backend=BackendName.PYQTORCH,
-        diff_mode=diff_mode,
-        configuration=PyqConfig(use_gradient_checkpointing=True),
-    )
-    inputs = {"phi": torch.rand(2, requires_grad=True)}
-
-    opt = torch.optim.Adam(qm.parameters())
-
-    criterion = torch.nn.MSELoss()
-    cnt = count()
-
-    wf = qm.run(inputs)
-    samples = qm.sample(inputs)
-
-    def loss_fn(model: QuantumModel, xs: Any = None) -> tuple[torch.Tensor, dict]:
-        next(cnt)
-        out = model.expectation(inputs)
-        loss = criterion(out, torch.tensor([0.0]))
-        return loss, {}
-
-    train_with_grad(
-        model=qm, dataloader=None, optimizer=opt, config=TrainConfig(max_iter=2), loss_fn=loss_fn
-    )

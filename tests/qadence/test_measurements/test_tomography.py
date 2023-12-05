@@ -5,11 +5,10 @@ from typing import List
 
 import pytest
 import strategies as st  # type: ignore
-import torch
 from hypothesis import given, settings
 from metrics import HIGH_ACCEPTANCE, LOW_ACCEPTANCE, MIDDLE_ACCEPTANCE  # type: ignore
+from torch import allclose, autograd, flatten, manual_seed, ones_like, rand, tensor
 
-from qadence import BackendName, BasisSet, DiffMode
 from qadence.backends import backend_factory
 from qadence.blocks import (
     AbstractBlock,
@@ -40,8 +39,9 @@ from qadence.ml_tools.utils import rand_featureparameters
 from qadence.models import QNN, QuantumModel
 from qadence.operations import RX, RY, H, SDagger, X, Y, Z
 from qadence.parameters import Parameter
+from qadence.types import BackendName, BasisSet, DiffMode
 
-torch.manual_seed(1)
+manual_seed(1)
 
 BACKENDS = ["pyqtorch", "braket"]
 DIFF_MODE = ["ad", "gpsr"]
@@ -211,11 +211,11 @@ def test_get_counts() -> None:
 def test_empirical_average() -> None:
     samples = [Counter({"00": 10, "01": 50, "10": 20, "11": 20})]
     support = [0]
-    assert torch.allclose(empirical_average(samples, support), torch.tensor([0.2]))
+    assert allclose(empirical_average(samples, support), tensor([0.2]))
     support = [1]
-    assert torch.allclose(empirical_average(samples, support), torch.tensor([-0.4]))
+    assert allclose(empirical_average(samples, support), tensor([-0.4]))
     support = [0, 1]
-    assert torch.allclose(empirical_average(samples, support), torch.tensor([-0.4]))
+    assert allclose(empirical_average(samples, support), tensor([-0.4]))
     samples = [
         Counter(
             {
@@ -239,7 +239,7 @@ def test_empirical_average() -> None:
         )
     ]
     support = [0, 1, 2, 3]
-    assert torch.allclose(empirical_average(samples, support), torch.tensor([0.2454]))
+    assert allclose(empirical_average(samples, support), tensor([0.2454]))
 
 
 # Disable cases are passing at the expense of high (1 billion) nshots.
@@ -252,23 +252,23 @@ def test_empirical_average() -> None:
         (QuantumCircuit(2, kron(H(0), H(1))), {}, kron(X(0), X(1))),
         (
             QuantumCircuit(4, feature_map(4, fm_type=BasisSet.CHEBYSHEV), hea(4, depth=2)),
-            {"phi": torch.rand(1)},
+            {"phi": rand(1)},
             total_magnetization(4),
         ),
         (
             QuantumCircuit(4, feature_map(4, fm_type=BasisSet.CHEBYSHEV), hea(4, depth=2)),
-            {"phi": torch.rand(1)},
+            {"phi": rand(1)},
             zz_hamiltonian(4),
         ),
         # (
         #     QuantumCircuit(4, feature_map(4, fm_type=BasisSet.CHEBYSHEV), hea(4, depth=2)),
-        #     {"phi": torch.rand(1)},
+        #     {"phi": rand(1)},
         #     ising_hamiltonian(4),
         #     HIGH_ACCEPTANCE,
         # ),
         (
             QuantumCircuit(4, feature_map(4, fm_type=BasisSet.CHEBYSHEV), hea(4, depth=2)),
-            {"phi": torch.rand(1)},
+            {"phi": rand(1)},
             add(
                 0.5 * kron(X(0), Y(1), X(2), Y(3)),
                 1.5 * kron(Y(0), Z(1), Y(2), Z(3)),
@@ -293,7 +293,7 @@ def test_iterate_pauli_decomposition(
         pauli_decomposition=pauli_decomposition,
         n_shots=1000000,
     )
-    assert torch.allclose(estimated_values, pyqtorch_expectation, atol=LOW_ACCEPTANCE)
+    assert allclose(estimated_values, pyqtorch_expectation, atol=LOW_ACCEPTANCE)
 
 
 @given(st.digital_circuits())
@@ -307,12 +307,12 @@ def test_basic_tomography_direct_call(circuit: QuantumCircuit) -> None:
     tomo_values = basic_tomography(
         conv_circ.abstract, [c_o.abstract for c_o in conv_obs], embed(params, inputs), kwargs
     )[0]
-    estimated_values = torch.flatten(tomo_values)
+    estimated_values = flatten(tomo_values)
 
     pyqtorch_expectation = pyqtorch_backend.expectation(conv_circ, conv_obs, embed(params, inputs))[
         0
     ]
-    assert torch.allclose(estimated_values, pyqtorch_expectation, atol=LOW_ACCEPTANCE)
+    assert allclose(estimated_values, pyqtorch_expectation, atol=LOW_ACCEPTANCE)
 
 
 @given(st.restricted_circuits())
@@ -326,14 +326,14 @@ def test_basic_tomography_for_backend_forward_pass(circuit: QuantumCircuit) -> N
             qm = QuantumModel(circuit=circuit, observable=obs, backend=backend, diff_mode=diff_mode)
             exp_tomo = qm.expectation(
                 values=inputs,
-                protocol=Measurements(
+                measurement=Measurements(
                     protocol=Measurements.TOMOGRAPHY,
                     options=kwargs,
                 ),
             )[0]
-            estimated_values = torch.flatten(exp_tomo)
+            estimated_values = flatten(exp_tomo)
             expectation_values = qm.expectation(values=inputs)[0]
-            assert torch.allclose(estimated_values, expectation_values, atol=LOW_ACCEPTANCE)
+            assert allclose(estimated_values, expectation_values, atol=LOW_ACCEPTANCE)
 
 
 @given(st.digital_circuits())
@@ -352,14 +352,14 @@ def test_basic_tomography_for_quantum_model(circuit: QuantumCircuit) -> None:
     kwargs = {"n_shots": 100000}
     estimated_values = model.expectation(
         inputs,
-        protocol=Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs),
+        measurement=Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs),
     )
     pyqtorch_backend = backend_factory(backend=backend, diff_mode=diff_mode)
     (conv_circ, conv_obs, embed, params) = pyqtorch_backend.convert(circuit, observable)
     pyqtorch_expectation = pyqtorch_backend.expectation(conv_circ, conv_obs, embed(params, inputs))[
         0
     ]
-    assert torch.allclose(estimated_values, pyqtorch_expectation, atol=LOW_ACCEPTANCE)
+    assert allclose(estimated_values, pyqtorch_expectation, atol=LOW_ACCEPTANCE)
 
 
 @given(st.digital_circuits())
@@ -376,14 +376,14 @@ def test_basic_list_observables_tomography_for_quantum_model(circuit: QuantumCir
     kwargs = {"n_shots": 100000}
     estimated_values = model.expectation(
         inputs,
-        protocol=Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs),
+        measurement=Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs),
     )
     pyqtorch_backend = backend_factory(BackendName.PYQTORCH, diff_mode=DiffMode.GPSR)
     (conv_circ, conv_obs, embed, params) = pyqtorch_backend.convert(
         circuit, observable  # type: ignore [arg-type]
     )
     pyqtorch_expectation = pyqtorch_backend.expectation(conv_circ, conv_obs, embed(params, inputs))
-    assert torch.allclose(estimated_values, pyqtorch_expectation, atol=LOW_ACCEPTANCE)
+    assert allclose(estimated_values, pyqtorch_expectation, atol=LOW_ACCEPTANCE)
 
 
 theta1 = Parameter("theta1", trainable=False)
@@ -397,17 +397,17 @@ blocks = chain(
 )
 
 values = {
-    "theta1": torch.tensor([0.5]),
-    "theta2": torch.tensor([1.5]),
-    "theta3": torch.tensor([2.0]),
-    "theta4": torch.tensor([2.5]),
+    "theta1": tensor([0.5]),
+    "theta2": tensor([1.5]),
+    "theta3": tensor([2.0]),
+    "theta4": tensor([2.5]),
 }
 
 values2 = {
-    "theta1": torch.tensor([0.5, 1.0]),
-    "theta2": torch.tensor([1.5, 2.0]),
-    "theta3": torch.tensor([2.0, 2.5]),
-    "theta4": torch.tensor([2.5, 3.0]),
+    "theta1": tensor([0.5, 1.0]),
+    "theta2": tensor([1.5, 2.0]),
+    "theta3": tensor([2.0, 2.5]),
+    "theta4": tensor([2.5, 3.0]),
 }
 
 
@@ -437,12 +437,12 @@ def test_basic_tomography_for_parametric_circuit_forward_pass(
     kwargs = {"n_shots": 100000}
     estimated_values = model.expectation(
         values=values,
-        protocol=Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs),
+        measurement=Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs),
     )
     pyqtorch_backend = backend_factory(BackendName.PYQTORCH, diff_mode=DiffMode.GPSR)
     (conv_circ, conv_obs, embed, params) = pyqtorch_backend.convert(circuit, observable)
     pyqtorch_expectation = pyqtorch_backend.expectation(conv_circ, conv_obs, embed(params, values))
-    assert torch.allclose(estimated_values, pyqtorch_expectation, atol=LOW_ACCEPTANCE)
+    assert allclose(estimated_values, pyqtorch_expectation, atol=LOW_ACCEPTANCE)
 
 
 # The ising hamiltonian constructor produces results that
@@ -481,40 +481,40 @@ def test_forward_and_backward_passes_with_qnn(observable: AbstractBlock, accepta
     fm = feature_map(n_qubits, fm_type=BasisSet.CHEBYSHEV)
     ansatz = hea(n_qubits, depth=2)
     circuit = QuantumCircuit(n_qubits, fm, ansatz)
-    values = {"phi": torch.rand(batch_size, requires_grad=True)}
+    values = {"phi": rand(batch_size, requires_grad=True)}
 
-    protocol = Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs)
+    measurement = Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs)
 
     model_with_psr = QNN(circuit=circuit, observable=observable, diff_mode=DiffMode.GPSR)
     model_with_psr_and_init = QNN(
-        circuit=circuit, observable=observable, diff_mode=DiffMode.GPSR, protocol=protocol
+        circuit=circuit, observable=observable, diff_mode=DiffMode.GPSR, measurement=measurement
     )
     model_with_psr.zero_grad()
     expectation_tomo = model_with_psr.expectation(
         values=values,
-        protocol=protocol,
+        measurement=measurement,
     )
     expectation_tomo_init = model_with_psr_and_init.expectation(values=values)
-    assert torch.allclose(expectation_tomo, expectation_tomo_init, atol=acceptance)
-    dexpval_tomo = torch.autograd.grad(
+    assert allclose(expectation_tomo, expectation_tomo_init, atol=acceptance)
+    dexpval_tomo = autograd.grad(
         expectation_tomo,
         values["phi"],
-        torch.ones_like(expectation_tomo),
+        ones_like(expectation_tomo),
     )[0]
-    dexpval_tomo_init = torch.autograd.grad(
+    dexpval_tomo_init = autograd.grad(
         expectation_tomo_init,
         values["phi"],
-        torch.ones_like(expectation_tomo_init),
+        ones_like(expectation_tomo_init),
     )[0]
-    assert torch.allclose(dexpval_tomo, dexpval_tomo_init, atol=acceptance)
+    assert allclose(dexpval_tomo, dexpval_tomo_init, atol=acceptance)
     expectation_exact = model_with_psr.expectation(values=values)
-    dexpval_exact = torch.autograd.grad(
+    dexpval_exact = autograd.grad(
         expectation_exact,
         values["phi"],
-        torch.ones_like(expectation_exact),
+        ones_like(expectation_exact),
     )[0]
-    assert torch.allclose(expectation_tomo, expectation_exact, atol=acceptance)
-    assert torch.allclose(dexpval_tomo, dexpval_exact, atol=acceptance)
+    assert allclose(expectation_tomo, expectation_exact, atol=acceptance)
+    assert allclose(dexpval_tomo, dexpval_exact, atol=acceptance)
 
 
 @pytest.mark.slow
@@ -533,82 +533,82 @@ def test_partial_derivatives_with_qnn(observable: AbstractBlock, acceptance: flo
     fm = feature_map(n_qubits, fm_type=BasisSet.CHEBYSHEV)
     ansatz = hea(n_qubits, depth=2)
     circuit = QuantumCircuit(n_qubits, fm, ansatz)
-    values = {"phi": torch.rand(batch_size, requires_grad=True)}
+    values = {"phi": rand(batch_size, requires_grad=True)}
 
     model_with_psr = QNN(circuit=circuit, observable=observable, diff_mode=DiffMode.GPSR)
     params = {k: v for k, v in model_with_psr._params.items() if v.requires_grad}
     model_with_psr.zero_grad()
     expectation_tomo = model_with_psr.expectation(
         values=values,
-        protocol=Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs),
+        measurement=Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs),
     )
-    dexpval_tomo_phi = torch.autograd.grad(
+    dexpval_tomo_phi = autograd.grad(
         expectation_tomo,
         values["phi"],
-        torch.ones_like(expectation_tomo),
+        ones_like(expectation_tomo),
         create_graph=True,
     )[0]
-    dexpval_tomo_theta = torch.autograd.grad(
+    dexpval_tomo_theta = autograd.grad(
         expectation_tomo,
         list(params.values()),
-        torch.ones_like(expectation_tomo),
+        ones_like(expectation_tomo),
         create_graph=True,
     )[0]
-    dexpval_tomo_phitheta = torch.autograd.grad(
+    dexpval_tomo_phitheta = autograd.grad(
         dexpval_tomo_phi,
         list(params.values()),
-        torch.ones_like(dexpval_tomo_phi),
+        ones_like(dexpval_tomo_phi),
         create_graph=True,
     )[0]
-    d2expval_tomo_phi2 = torch.autograd.grad(
+    d2expval_tomo_phi2 = autograd.grad(
         dexpval_tomo_phi,
         values["phi"],
-        torch.ones_like(dexpval_tomo_phi),
+        ones_like(dexpval_tomo_phi),
         create_graph=True,
     )[0]
-    d2expval_tomo_phi2theta = torch.autograd.grad(
+    d2expval_tomo_phi2theta = autograd.grad(
         d2expval_tomo_phi2,
         list(params.values()),
-        torch.ones_like(d2expval_tomo_phi2),
+        ones_like(d2expval_tomo_phi2),
         create_graph=True,
     )[0]
     expectation_exact = model_with_psr.expectation(values=values)
-    dexpval_exact_phi = torch.autograd.grad(
+    dexpval_exact_phi = autograd.grad(
         expectation_exact,
         values["phi"],
-        torch.ones_like(expectation_exact),
+        ones_like(expectation_exact),
         create_graph=True,
     )[0]
-    dexpval_exact_theta = torch.autograd.grad(
+    dexpval_exact_theta = autograd.grad(
         expectation_exact,
         list(params.values()),
-        torch.ones_like(expectation_exact),
+        ones_like(expectation_exact),
         create_graph=True,
     )[0]
-    dexpval_exact_phitheta = torch.autograd.grad(
+    dexpval_exact_phitheta = autograd.grad(
         dexpval_exact_phi,
         list(params.values()),
-        torch.ones_like(dexpval_exact_phi),
+        ones_like(dexpval_exact_phi),
         create_graph=True,
     )[0]
-    d2expval_exact_phi2 = torch.autograd.grad(
+    d2expval_exact_phi2 = autograd.grad(
         dexpval_exact_phi,
         values["phi"],
-        torch.ones_like(dexpval_exact_phi),
+        ones_like(dexpval_exact_phi),
         create_graph=True,
     )[0]
-    d2expval_exact_phi2theta = torch.autograd.grad(
+    d2expval_exact_phi2theta = autograd.grad(
         d2expval_exact_phi2,
         list(params.values()),
-        torch.ones_like(d2expval_exact_phi2),
+        ones_like(d2expval_exact_phi2),
         create_graph=True,
     )[0]
-    assert torch.allclose(expectation_tomo, expectation_exact, atol=acceptance)
-    assert torch.allclose(dexpval_tomo_phi, dexpval_exact_phi, atol=acceptance)
-    assert torch.allclose(dexpval_tomo_theta, dexpval_exact_theta, atol=acceptance)
-    assert torch.allclose(dexpval_tomo_phitheta, dexpval_exact_phitheta, atol=acceptance)
-    assert torch.allclose(d2expval_tomo_phi2, d2expval_exact_phi2, atol=HIGH_ACCEPTANCE)
-    assert torch.allclose(d2expval_tomo_phi2theta, d2expval_exact_phi2theta, atol=HIGH_ACCEPTANCE)
+    assert allclose(expectation_tomo, expectation_exact, atol=acceptance)
+    assert allclose(dexpval_tomo_phi, dexpval_exact_phi, atol=acceptance)
+    assert allclose(dexpval_tomo_theta, dexpval_exact_theta, atol=acceptance)
+    assert allclose(dexpval_tomo_phitheta, dexpval_exact_phitheta, atol=acceptance)
+    assert allclose(d2expval_tomo_phi2, d2expval_exact_phi2, atol=HIGH_ACCEPTANCE)
+    assert allclose(d2expval_tomo_phi2theta, d2expval_exact_phi2theta, atol=HIGH_ACCEPTANCE)
 
 
 @pytest.mark.skip(
@@ -629,56 +629,56 @@ def test_high_order_derivatives_with_qnn(observable: AbstractBlock, acceptance: 
     fm = feature_map(n_qubits, fm_type=BasisSet.CHEBYSHEV)
     ansatz = hea(n_qubits, depth=2)
     circuit = QuantumCircuit(n_qubits, fm, ansatz)
-    values = {"phi": torch.rand(batch_size, requires_grad=True)}
+    values = {"phi": rand(batch_size, requires_grad=True)}
 
     model_with_psr = QNN(circuit=circuit, observable=observable, diff_mode=DiffMode.GPSR)
     params = {k: v for k, v in model_with_psr._params.items() if v.requires_grad}
     model_with_psr.zero_grad()
     expectation_tomo = model_with_psr.expectation(
         values=values,
-        protocol=Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs),
+        measurement=Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs),
     )
-    dexpval_tomo_phi = torch.autograd.grad(
+    dexpval_tomo_phi = autograd.grad(
         expectation_tomo,
         values["phi"],
-        torch.ones_like(expectation_tomo),
+        ones_like(expectation_tomo),
         create_graph=True,
     )[0]
-    d2expval_tomo_phi2 = torch.autograd.grad(
+    d2expval_tomo_phi2 = autograd.grad(
         dexpval_tomo_phi,
         values["phi"],
-        torch.ones_like(dexpval_tomo_phi),
+        ones_like(dexpval_tomo_phi),
         create_graph=True,
     )[0]
-    d3expval_tomo_phi3 = torch.autograd.grad(
+    d3expval_tomo_phi3 = autograd.grad(
         d2expval_tomo_phi2,
         values["phi"],
-        torch.ones_like(d2expval_tomo_phi2),
+        ones_like(d2expval_tomo_phi2),
         create_graph=True,
     )[0]
     expectation_exact = model_with_psr.expectation(values=values)
-    dexpval_exact_phi = torch.autograd.grad(
+    dexpval_exact_phi = autograd.grad(
         expectation_exact,
         values["phi"],
-        torch.ones_like(expectation_exact),
+        ones_like(expectation_exact),
         create_graph=True,
     )[0]
-    d2expval_exact_phi2 = torch.autograd.grad(
+    d2expval_exact_phi2 = autograd.grad(
         dexpval_exact_phi,
         values["phi"],
-        torch.ones_like(dexpval_exact_phi),
+        ones_like(dexpval_exact_phi),
         create_graph=True,
     )[0]
-    d3expval_exact_phi3 = torch.autograd.grad(
+    d3expval_exact_phi3 = autograd.grad(
         d2expval_exact_phi2,
         values["phi"],
-        torch.ones_like(d2expval_exact_phi2),
+        ones_like(d2expval_exact_phi2),
         create_graph=True,
     )[0]
-    assert torch.allclose(expectation_tomo, expectation_exact, atol=acceptance)
-    assert torch.allclose(dexpval_tomo_phi, dexpval_exact_phi, atol=acceptance)
-    assert torch.allclose(d2expval_tomo_phi2, d2expval_exact_phi2, atol=HIGH_ACCEPTANCE)
-    assert torch.allclose(d3expval_tomo_phi3, d3expval_exact_phi3, atol=HIGH_ACCEPTANCE)
+    assert allclose(expectation_tomo, expectation_exact, atol=acceptance)
+    assert allclose(dexpval_tomo_phi, dexpval_exact_phi, atol=acceptance)
+    assert allclose(d2expval_tomo_phi2, d2expval_exact_phi2, atol=HIGH_ACCEPTANCE)
+    assert allclose(d3expval_tomo_phi3, d3expval_exact_phi3, atol=HIGH_ACCEPTANCE)
 
 
 def test_chemistry_hamiltonian() -> None:
@@ -700,6 +700,6 @@ def test_chemistry_hamiltonian() -> None:
     )
     estim = model.expectation(
         values={},
-        protocol=Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs),
+        measurement=Measurements(protocol=Measurements.TOMOGRAPHY, options=kwargs),
     )
-    assert torch.allclose(estim, exact, atol=LOW_ACCEPTANCE)
+    assert allclose(estim, exact, atol=LOW_ACCEPTANCE)

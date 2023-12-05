@@ -1,14 +1,17 @@
 from __future__ import annotations
 
-from qadence import chain, kron
 from qadence.blocks import AbstractBlock, AddBlock, ChainBlock, KronBlock
-from qadence.operations import RX, RZ, H, HamEvo, X
-from qadence.transpile import chain_single_qubit_ops, digitalize, flatten
+from qadence.blocks.utils import chain, kron
+from qadence.constructors import hea
+from qadence.execution import run
+from qadence.operations import RX, RY, RZ, H, HamEvo, X
+from qadence.states import equivalent_state
+from qadence.transpile import apply_fn_to_blocks, chain_single_qubit_ops, digitalize, flatten
 from qadence.types import LTSOrder
 
 
 def test_flatten() -> None:
-    from qadence.transpile.block import _flat_blocks
+    from qadence.transpile.flatten import _flat_blocks
 
     x: AbstractBlock
 
@@ -55,3 +58,21 @@ def test_digitalize() -> None:
 def test_chain_of_krons() -> None:
     b = chain(kron(X(0), X(2)), kron(X(0), X(2)))
     assert chain_single_qubit_ops(b) == kron(chain(X(0), X(0)), chain(X(2), X(2)))
+
+
+def test_apply_fn() -> None:
+    n_qubits = 4
+    depth = 4
+
+    def rot_replace(block: AbstractBlock) -> AbstractBlock:
+        if isinstance(block, RX):
+            return RY(block.qubit_support[0], block.parameters)
+        return block
+
+    block = hea(n_qubits, depth=depth, operations=[RX, RZ, RX])
+
+    block_replace = apply_fn_to_blocks(block, rot_replace)
+
+    block_target = hea(n_qubits, depth=depth, operations=[RY, RZ, RY])
+
+    assert equivalent_state(run(block_replace), run(block_target))

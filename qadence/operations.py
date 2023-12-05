@@ -31,6 +31,7 @@ from qadence.blocks.analog import (
     WaitBlock,
 )
 from qadence.blocks.block_to_tensor import block_to_tensor
+from qadence.blocks.primitive import ProjectorBlock
 from qadence.blocks.utils import (
     add,  # noqa
     block_is_commuting_hamiltonian,
@@ -83,7 +84,9 @@ __all__ = [
     "SWAP",
     "PHASE",
     "CPHASE",
+    "CSWAP",
     "MCPHASE",
+    "Toffoli",
     "wait",
     "entangle",
     "AnalogEntanglement",
@@ -96,7 +99,7 @@ __all__ = [
 
 
 class X(PrimitiveBlock):
-    """The X gate"""
+    """The X gate."""
 
     name = OpName.X
 
@@ -115,12 +118,9 @@ class X(PrimitiveBlock):
     def eigenvalues(self) -> Tensor:
         return tensor([-1, 1], dtype=cdouble)
 
-    def dagger(self) -> X:
-        return self
-
 
 class Y(PrimitiveBlock):
-    """The Y gate"""
+    """The Y gate."""
 
     name = OpName.Y
 
@@ -139,12 +139,9 @@ class Y(PrimitiveBlock):
     def eigenvalues(self) -> Tensor:
         return tensor([-1, 1], dtype=cdouble)
 
-    def dagger(self) -> Y:
-        return self
-
 
 class Z(PrimitiveBlock):
-    """The Z gate"""
+    """The Z gate."""
 
     name = OpName.Z
 
@@ -163,17 +160,36 @@ class Z(PrimitiveBlock):
     def eigenvalues(self) -> Tensor:
         return tensor([-1, 1], dtype=cdouble)
 
-    def dagger(self) -> Z:
-        return self
+
+class Projector(ProjectorBlock):
+    """The projector operator."""
+
+    name = OpName.PROJ
+
+    def __init__(
+        self,
+        ket: str,
+        bra: str,
+        qubit_support: int | tuple[int, ...],
+    ):
+        super().__init__(ket=ket, bra=bra, qubit_support=qubit_support)
+
+    @property
+    def generator(self) -> None:
+        raise ValueError("Property `generator` not available for non-unitary operator.")
+
+    @property
+    def eigenvalues_generator(self) -> None:
+        raise ValueError("Property `eigenvalues_generator` not available for non-unitary operator.")
 
 
-class N(PrimitiveBlock):
-    """The N = (1/2)(I-Z) operator"""
+class N(Projector):
+    """The N = (1/2)(I-Z) operator."""
 
     name = OpName.N
 
-    def __init__(self, target: int):
-        super().__init__((target,))
+    def __init__(self, target: int, state: str = "1"):
+        super().__init__(ket=state, bra=state, qubit_support=(target,))
 
     @property
     def generator(self) -> None:
@@ -187,12 +203,9 @@ class N(PrimitiveBlock):
     def eigenvalues(self) -> Tensor:
         return tensor([0, 1], dtype=cdouble)
 
-    def dagger(self) -> N:
-        return self
-
 
 class S(PrimitiveBlock):
-    """The S / Phase gate"""
+    """The S / Phase gate."""
 
     name = OpName.S
 
@@ -213,7 +226,7 @@ class S(PrimitiveBlock):
 
 
 class SDagger(PrimitiveBlock):
-    """The Hermitian adjoint/conjugate transpose of the S / Phase gate"""
+    """The Hermitian adjoint/conjugate transpose of the S / Phase gate."""
 
     name = OpName.SDAGGER
 
@@ -234,7 +247,7 @@ class SDagger(PrimitiveBlock):
 
 
 class PHASE(ParametricBlock):
-    """The Parametric Phase / S gate"""
+    """The Parametric Phase / S gate."""
 
     name = OpName.PHASE
 
@@ -258,7 +271,7 @@ class PHASE(ParametricBlock):
 
 
 class I(PrimitiveBlock):
-    """The identity gate"""
+    """The identity gate."""
 
     name = OpName.I
 
@@ -294,15 +307,12 @@ class I(PrimitiveBlock):
     def __ascii__(self, console: Console) -> Padding:
         return Padding("──────", (1, 1, 1, 1))
 
-    def dagger(self) -> I:
-        return I(*self.qubit_support)
-
 
 TPauliBlock = Union[X, Y, Z, I, N]
 
 
 class H(PrimitiveBlock):
-    """The Hadamard or H gate"""
+    """The Hadamard or H gate."""
 
     name = OpName.H
 
@@ -317,9 +327,6 @@ class H(PrimitiveBlock):
     @property
     def eigenvalues(self) -> Tensor:
         return torch.tensor([-1, 1], dtype=cdouble)
-
-    def dagger(self) -> H:
-        return H(*self.qubit_support)
 
 
 class Zero(PrimitiveBlock):
@@ -361,12 +368,9 @@ class Zero(PrimitiveBlock):
     def __pow__(self, power: int) -> AbstractBlock:
         return self
 
-    def dagger(self) -> Zero:
-        return Zero()
-
 
 class RX(ParametricBlock):
-    """The Rx gate"""
+    """The Rx gate."""
 
     name = OpName.RX
 
@@ -394,7 +398,7 @@ class RX(ParametricBlock):
 
 
 class RY(ParametricBlock):
-    """The Ry gate"""
+    """The Ry gate."""
 
     name = OpName.RY
 
@@ -421,7 +425,7 @@ class RY(ParametricBlock):
 
 
 class RZ(ParametricBlock):
-    """The Rz gate"""
+    """The Rz gate."""
 
     name = OpName.RZ
 
@@ -448,9 +452,10 @@ class RZ(ParametricBlock):
 
 
 class U(ParametricBlock):
-    """Arbitrary one-qubit rotation in the Bloch sphere
+    """Arbitrary one-qubit rotation in the Bloch sphere.
 
-    This operation accepts 3 parameters (phi, theta, omega)"""
+    This operation accepts 3 parameters (phi, theta, omega)
+    """
 
     name = OpName.U
 
@@ -496,6 +501,7 @@ class U(ParametricBlock):
 class HamEvo(TimeEvolutionBlock):
     """
     A block implementing the Hamiltonian evolution operation H where:
+
         H = exp(-iG, t)
     where G represents a square generator and t represents the time parameter
     which can be parametrized.
@@ -595,7 +601,7 @@ class HamEvo(TimeEvolutionBlock):
         return HamEvo(deepcopy(self.generator), -extract_original_param_entry(p))
 
     def digital_decomposition(self, approximation: LTSOrder = LTSOrder.ST4) -> AbstractBlock:
-        """Decompose the Hamiltonian evolution into digital gates
+        """Decompose the Hamiltonian evolution into digital gates.
 
         Args:
             approximation (str, optional): Choose the type of decomposition. Defaults to "st4".
@@ -659,12 +665,12 @@ class HamEvo(TimeEvolutionBlock):
 
 
 class CNOT(ControlBlock):
-    """The CNot, or CX, gate"""
+    """The CNot, or CX, gate."""
 
     name = OpName.CNOT
 
     def __init__(self, control: int, target: int) -> None:
-        self.generator = kron((I(control) - Z(control)) * 0.5, X(target) - I(target))
+        self.generator = kron(N(control), X(target) - I(target))
         super().__init__((control,), X(target))
 
     @property
@@ -687,17 +693,12 @@ class CNOT(ControlBlock):
             tree.add(self._block_title)
         return tree
 
-    def dagger(self) -> CNOT:
-        return CNOT(*self.qubit_support)
-
 
 class MCZ(ControlBlock):
     name = OpName.MCZ
 
     def __init__(self, control: tuple[int, ...], target: int) -> None:
-        self.generator = kron(
-            *[(I(qubit) - Z(qubit)) * 0.5 for qubit in control], Z(target) - I(target)
-        )
+        self.generator = kron(*[N(qubit) for qubit in control], Z(target) - I(target))
         super().__init__(control, Z(target))
 
     @property
@@ -720,20 +721,14 @@ class MCZ(ControlBlock):
             tree.add(self._block_title)
         return tree
 
-    def dagger(self) -> MCZ:
-        return MCZ(self.qubit_support[:-1], self.qubit_support[-1])
-
 
 class CZ(MCZ):
-    """The CZ gate"""
+    """The CZ gate."""
 
     name = OpName.CZ
 
     def __init__(self, control: int, target: int) -> None:
         super().__init__((control,), target)
-
-    def dagger(self) -> CZ:
-        return CZ(self.qubit_support[-2], self.qubit_support[-1])
 
 
 class MCRX(ParametricControlBlock):
@@ -745,7 +740,7 @@ class MCRX(ParametricControlBlock):
         target: int,
         parameter: Parameter | TNumber | sympy.Expr | str,
     ) -> None:
-        self.generator = kron(*[(I(qubit) - Z(qubit)) * 0.5 for qubit in control], X(target))
+        self.generator = kron(*[N(qubit) for qubit in control], X(target))
         super().__init__(control, RX(target, parameter))
 
     @classmethod
@@ -766,7 +761,7 @@ class MCRX(ParametricControlBlock):
 
 
 class CRX(MCRX):
-    """The CRX gate"""
+    """The CRX gate."""
 
     name = OpName.CRX
 
@@ -788,7 +783,7 @@ class MCRY(ParametricControlBlock):
         target: int,
         parameter: Parameter | TNumber | sympy.Expr | str,
     ) -> None:
-        self.generator = kron(*[(I(qubit) - Z(qubit)) * 0.5 for qubit in control], Y(target))
+        self.generator = kron(*[N(qubit) for qubit in control], Y(target))
         super().__init__(control, RY(target, parameter))
 
     @classmethod
@@ -809,7 +804,7 @@ class MCRY(ParametricControlBlock):
 
 
 class CRY(MCRY):
-    """The CRY gate"""
+    """The CRY gate."""
 
     name = OpName.CRY
 
@@ -817,7 +812,7 @@ class CRY(MCRY):
         self,
         control: int,
         target: int,
-        parameter: Parameter | TNumber | sympy.Expr | str,
+        parameter: TParameter,
     ):
         super().__init__((control,), target, parameter)
 
@@ -831,7 +826,7 @@ class MCRZ(ParametricControlBlock):
         target: int,
         parameter: Parameter | TNumber | sympy.Expr | str,
     ) -> None:
-        self.generator = kron(*[(I(qubit) - Z(qubit)) * 0.5 for qubit in control], Z(target))
+        self.generator = kron(*[N(qubit) for qubit in control], Z(target))
         super().__init__(control, RZ(target, parameter))
 
     @classmethod
@@ -852,7 +847,7 @@ class MCRZ(ParametricControlBlock):
 
 
 class CRZ(MCRZ):
-    """The CRZ gate"""
+    """The CRZ gate."""
 
     name = OpName.CRZ
 
@@ -874,10 +869,10 @@ class CSWAP(ControlBlock):
         if isinstance(control, tuple):
             control = control[0]
 
-        a00m = 0.5 * (Z(control) - I(control))
-        a00p = -0.5 * (Z(control) + I(control))
-        a11 = 0.5 * (Z(target1) - I(target1))
-        a22 = -0.5 * (Z(target2) + I(target2))
+        a00m = -N(target=control)
+        a00p = -N(target=control, state="0")
+        a11 = -N(target=target1)
+        a22 = -N(target=target2, state="0")
         a12 = 0.5 * (chain(X(target1), Z(target1)) + X(target1))
         a21 = 0.5 * (chain(Z(target2), X(target2)) + X(target2))
         no_effect = kron(a00m, I(target1), I(target2))
@@ -902,12 +897,9 @@ class CSWAP(ControlBlock):
     def nqubits(self) -> int:
         return 3
 
-    def dagger(self) -> CSWAP:
-        return CSWAP(*self.qubit_support)
-
 
 class T(PrimitiveBlock):
-    """The T gate"""
+    """The T gate."""
 
     name = OpName.T
 
@@ -932,7 +924,7 @@ class T(PrimitiveBlock):
 
 
 class TDagger(PrimitiveBlock):
-    """The Hermitian adjoint/conjugate transpose of the T gate"""
+    """The Hermitian adjoint/conjugate transpose of the T gate."""
 
     # FIXME: this gate is not support by any backend
     name = "T_dagger"
@@ -958,7 +950,7 @@ class TDagger(PrimitiveBlock):
 
 
 class SWAP(PrimitiveBlock):
-    """The SWAP gate"""
+    """The SWAP gate."""
 
     name = OpName.SWAP
 
@@ -990,13 +982,11 @@ class SWAP(PrimitiveBlock):
         s = f"{self.name}({c}, {t})"
         return s if self.tag is None else (s + rf" \[tag: {self.tag}]")
 
-    def dagger(self) -> SWAP:
-        return SWAP(*self.qubit_support)
-
 
 class AnalogSWAP(HamEvo):
     """
-    Single time-independent Hamiltonian evolution over a Rydberg Ising
+    Single time-independent Hamiltonian evolution over a Rydberg Ising.
+
     hamiltonian yielding a SWAP (up to global phase).
 
     Derived from
@@ -1026,9 +1016,7 @@ class MCPHASE(ParametricControlBlock):
         target: int,
         parameter: Parameter | TNumber | sympy.Expr | str,
     ) -> None:
-        self.generator = kron(
-            *[(I(qubit) - Z(qubit)) * 0.5 for qubit in control], Z(target) - I(target)
-        )
+        self.generator = kron(*[N(qubit) for qubit in control], Z(target) - I(target))
         super().__init__(control, PHASE(target, parameter))
 
     @classmethod
@@ -1060,7 +1048,7 @@ class MCPHASE(ParametricControlBlock):
 
 
 class CPHASE(MCPHASE):
-    """The CPHASE gate"""
+    """The CPHASE gate."""
 
     name = OpName.CPHASE
 
@@ -1077,13 +1065,8 @@ class Toffoli(ControlBlock):
     name = OpName.TOFFOLI
 
     def __init__(self, control: tuple[int, ...], target: int) -> None:
-        self.generator = kron(
-            *[(I(qubit) - Z(qubit)) * 0.5 for qubit in control], X(target) - I(target)
-        )
+        self.generator = kron(*[N(qubit) for qubit in control], X(target) - I(target))
         super().__init__(control, X(target))
-
-    def dagger(self) -> Toffoli:
-        return Toffoli(self.qubit_support[:-1], self.qubit_support[-1])
 
     @property
     def n_qubits(self) -> int:
@@ -1189,7 +1172,7 @@ def _analog_rot(
     omega = np.pi
     duration = alpha / omega * 1000
 
-    # FIXME: once https://gitlab.pasqal.com/pqs/qadence/-/issues/402 is fixed set default duration
+    # FIXME: once https://github.com/pasqal-io/qadence/issues/150 is fixed set default duration
     # in the function arguments to:
     # duration = Parameter(160)
     # and compute omega like this:
@@ -1202,7 +1185,9 @@ def AnalogRX(
     angle: float | str | Parameter,
     qubit_support: str | QubitSupport | Tuple = "global",
 ) -> ConstantAnalogRotation:
-    """Analog X rotation. Shorthand for [`AnalogRot`][qadence.operations.AnalogRot]:
+    """Analog X rotation.
+
+    Shorthand for [`AnalogRot`][qadence.operations.AnalogRot]:
 
     ```python
     φ=2.4; Ω=π; t = φ/Ω * 1000
@@ -1223,7 +1208,9 @@ def AnalogRY(
     angle: float | str | Parameter,
     qubit_support: str | QubitSupport | Tuple = "global",
 ) -> ConstantAnalogRotation:
-    """Analog Y rotation. Shorthand for [`AnalogRot`][qadence.operations.AnalogRot]:
+    """Analog Y rotation.
+
+    Shorthand for [`AnalogRot`][qadence.operations.AnalogRot]:
 
     ```python
     φ=2.4; Ω=π; t = φ/Ω * 1000
@@ -1253,7 +1240,7 @@ def AnalogRZ(
     alpha = _cast(Parameter, angle)
     delta = np.pi
     duration = alpha / delta * 1000
-    ps = ParamMap(alpha=alpha, duration=duration, omega=0, delta=delta, phase=np.pi / 2)
+    ps = ParamMap(alpha=alpha, duration=duration, omega=0, delta=delta, phase=0.0)
     return ConstantAnalogRotation(qubit_support=q, parameters=ps)
 
 
@@ -1279,4 +1266,4 @@ analog_gateset = [
     entangle,
     wait,
 ]
-non_unitary_gateset = [Zero, N]
+non_unitary_gateset = [Zero, N, Projector]

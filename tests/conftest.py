@@ -2,15 +2,14 @@ from __future__ import annotations
 
 import networkx as nx
 import numpy as np
-import torch
 import torch.nn as nn
 from openfermion import QubitOperator
 from pytest import fixture  # type: ignore
 from sympy import Expr
+from torch import Tensor, rand, tensor
 
-from qadence import BackendName, DiffMode
-from qadence.blocks import AbstractBlock, chain, kron
-from qadence.blocks.utils import unroll_block_with_scaling
+from qadence.blocks.abstract import AbstractBlock
+from qadence.blocks.utils import chain, kron, unroll_block_with_scaling
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import feature_map, hea, total_magnetization
 from qadence.ml_tools.models import TransformedModule
@@ -18,6 +17,7 @@ from qadence.models import QNN, QuantumModel
 from qadence.operations import CNOT, RX, RY, X, Y, Z
 from qadence.parameters import Parameter
 from qadence.register import Register
+from qadence.types import BackendName, DiffMode
 
 BASIC_NQUBITS = 4
 FM_NQUBITS = 2
@@ -75,17 +75,17 @@ class BasicNetwork(nn.Module):
         self.network = nn.Sequential(*network)
         self.n_neurons = n_neurons
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         return self.network(x)
 
 
 class BasicNetworkNoInput(nn.Module):
     def __init__(self) -> None:
         super().__init__()
-        self.x = nn.Parameter(torch.tensor([1.0]))
-        self.scale = nn.Parameter(torch.tensor([1.0]))
+        self.x = nn.Parameter(tensor([1.0]))
+        self.scale = nn.Parameter(tensor([1.0]))
 
-    def forward(self) -> torch.Tensor:
+    def forward(self) -> Tensor:
         res = self.scale * (self.x - 2.0) ** 2
         return res
 
@@ -194,6 +194,17 @@ def BasicQNN(BasicFMQuantumCircuit: QuantumCircuit, BasicObservable: AbstractBlo
         total_magnetization(FM_NQUBITS),
         backend=BackendName.PYQTORCH,
         diff_mode=DiffMode.AD,
+    )
+
+
+@fixture
+def BasicAdjointQNN(BasicFMQuantumCircuit: QuantumCircuit, BasicObservable: AbstractBlock) -> QNN:
+    return QNN(
+        BasicFMQuantumCircuit,
+        total_magnetization(FM_NQUBITS),
+        inputs=["phi"],
+        backend=BackendName.PYQTORCH,
+        diff_mode=DiffMode.ADJOINT,
     )
 
 

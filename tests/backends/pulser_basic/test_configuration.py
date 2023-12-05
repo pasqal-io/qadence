@@ -5,14 +5,15 @@ import pytest
 import torch
 from pulser_simulation.simconfig import SimConfig
 
-from qadence import QuantumCircuit
 from qadence.backends.pulser import Backend
-from qadence.blocks import chain
+from qadence.blocks.utils import chain
+from qadence.circuit import QuantumCircuit
 from qadence.divergences import js_divergence
 from qadence.operations import RY, entangle
 from qadence.register import Register
 
 SEED = 42
+DEFAULT_SPACING = 8.0
 
 
 def test_configuration() -> None:
@@ -20,7 +21,7 @@ def test_configuration() -> None:
     np.random.seed(SEED)
 
     blocks = chain(entangle(892, qubit_support=(0, 1)), RY(0, torch.pi / 2))
-    register = Register(2)
+    register = Register(2, spacing=DEFAULT_SPACING)
     circuit = QuantumCircuit(register, blocks)
 
     # first try the standard execution with default configuration
@@ -49,7 +50,7 @@ def test_configuration_as_dict() -> None:
     np.random.seed(SEED)
 
     blocks = chain(entangle(892, qubit_support=(0, 1)), RY(0, torch.pi / 2))
-    register = Register(2)
+    register = Register(2, spacing=DEFAULT_SPACING)
     circuit = QuantumCircuit(register, blocks)
 
     # first try the standard execution with default configuration

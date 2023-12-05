@@ -6,17 +6,22 @@ import numpy as np
 import pytest
 import torch
 
-from qadence import BackendName, DiffMode, FeatureParameter, QuantumCircuit
 from qadence.blocks import (
     chain,
     kron,
     tag,
 )
-from qadence.constructors import hea, ising_hamiltonian, total_magnetization
+from qadence.circuit import QuantumCircuit
+from qadence.constructors import (
+    hea,
+    ising_hamiltonian,
+    total_magnetization,
+)
 from qadence.models import QNN
 from qadence.operations import RX, RY
-from qadence.parameters import Parameter
+from qadence.parameters import FeatureParameter, Parameter
 from qadence.states import uniform_state
+from qadence.types import BackendName, DiffMode
 
 
 def build_circuit(n_qubits_per_feature: int, n_features: int, depth: int = 2) -> QuantumCircuit:
@@ -73,7 +78,7 @@ def test_input_nd(dim: int) -> None:
     observable = total_magnetization(n_qubits_per_feature * dim)
     circuit = build_circuit(n_qubits_per_feature, dim)
     a = torch.rand(batch_size, dim)
-    qnn = QNN(circuit, observable)
+    qnn = QNN(circuit, observable, inputs=[f"x{i}" for i in range(dim)])
     assert qnn.in_features == dim
 
     res: torch.Tensor = qnn(a)
@@ -82,7 +87,8 @@ def test_input_nd(dim: int) -> None:
     assert res.size()[0] == batch_size
 
 
-def test_qnn_expectation(n_qubits: int = 4) -> None:
+@pytest.mark.parametrize("diff_mode", ["ad", "adjoint"])
+def test_qnn_expectation(diff_mode: str, n_qubits: int = 2) -> None:
     theta0 = Parameter("theta0", trainable=True)
     theta1 = Parameter("theta1", trainable=True)
 
@@ -91,14 +97,14 @@ def test_qnn_expectation(n_qubits: int = 4) -> None:
 
     fm = chain(ry0, ry1)
 
-    ansatz = hea(2, 2, param_prefix="eps")
+    ansatz = hea(n_qubits, depth=2, param_prefix="eps")
 
     block = chain(fm, ansatz)
 
     qc = QuantumCircuit(n_qubits, block)
     uni_state = uniform_state(n_qubits)
     obs = total_magnetization(n_qubits)
-    model = QNN(circuit=qc, observable=obs, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD)
+    model = QNN(circuit=qc, observable=obs, backend=BackendName.PYQTORCH, diff_mode=diff_mode)
 
     exp = model(values={}, state=uni_state)
     assert not torch.any(torch.isnan(exp))
@@ -141,7 +147,8 @@ def test_qnn_multiple_outputs(n_qubits: int = 4) -> None:
         assert torch.allclose(tmp, torch.ones(n_obs))
 
 
-def test_multiparam_qnn_training() -> None:
+@pytest.mark.parametrize("diff_mode", ["ad", "adjoint"])
+def test_multiparam_qnn_training(diff_mode: str) -> None:
     backend = BackendName.PYQTORCH
     n_qubits = 2
     n_epochs = 5
@@ -160,7 +167,7 @@ def test_multiparam_qnn_training() -> None:
     block = chain(fm, ansatz)
     qc = QuantumCircuit(n_qubits, block)
     obs = total_magnetization(n_qubits)
-    qnn = QNN(qc, observable=obs, diff_mode=DiffMode.AD, backend=backend)
+    qnn = QNN(qc, observable=obs, diff_mode=diff_mode, backend=backend)
 
     optimizer = torch.optim.Adam(qnn.parameters(), lr=1e-1)
 
@@ -174,3 +181,62 @@ def test_multiparam_qnn_training() -> None:
         loss.backward()
         optimizer.step()
         print(f"Epoch {i+1} modeling training - Loss: {loss.item()}")
+
+
+def test_qnn_input_order() -> None:
+    from torch import cos, sin
+
+    def compute_state_manually(xs: torch.Tensor) -> torch.Tensor:
+        x, y = xs[0], xs[1]
+        return torch.tensor(
+            [
+                cos(0.5 * y) * cos(0.5 * x),
+                -1j * cos(0.5 * x) * sin(0.5 * y),
+                -1j * cos(0.5 * y) * sin(0.5 * x),
+                -sin(0.5 * x) * sin(0.5 * y),
+            ]
+        )
+
+    xs = torch.rand(5, 2)
+    ys = torch.vstack(list(map(compute_state_manually, xs)))
+
+    model = QNN(
+        QuantumCircuit(
+            2,
+            chain(
+                RX(0, FeatureParameter("x")),
+                RX(1, FeatureParameter("y")),
+            ),
+        ),
+        observable=total_magnetization(2),
+        inputs=["x", "y"],
+    )
+    assert torch.allclose(ys, model.run(xs))
+
+    # now try again with switched featuremap order
+    model = QNN(
+        QuantumCircuit(
+            2,
+            chain(
+                RX(1, FeatureParameter("y")),
+                RX(0, FeatureParameter("x")),
+            ),
+        ),
+        observable=total_magnetization(2),
+        inputs=["x", "y"],
+    )
+    assert torch.allclose(ys, model.run(xs))
+
+    # make sure it fails with wrong order
+    model = QNN(
+        QuantumCircuit(
+            2,
+            chain(
+                RX(1, FeatureParameter("y")),
+                RX(0, FeatureParameter("x")),
+            ),
+        ),
+        observable=total_magnetization(2),
+        inputs=["y", "x"],
+    )
+    assert not torch.allclose(ys, model.run(xs))

@@ -6,23 +6,23 @@ from typing import Iterable, Tuple, Union
 
 import numpy as np
 import sympy
-import torch
+from torch import Tensor, pi
 
 TNumber = Union[int, float, complex]
 """Union of python number types."""
 
 TDrawColor = Tuple[float, float, float, float]
 
-TParameter = Union[TNumber, torch.Tensor, sympy.Basic, str]
+TParameter = Union[TNumber, Tensor, sympy.Basic, str]
 """Union of numbers, tensors, and parameter types."""
 
-TArray = Union[Iterable, torch.Tensor, np.ndarray]
+TArray = Union[Iterable, Tensor, np.ndarray]
 """Union of common array types."""
 
-TGenerator = Union[torch.Tensor, sympy.Array, sympy.Basic]
+TGenerator = Union[Tensor, sympy.Array, sympy.Basic]
 """Union of torch tensors and numpy arrays."""
 
-PI = torch.pi
+PI = pi
 
 # Modules to be automatically added to the qadence namespace
 __all__ = [
@@ -39,6 +39,7 @@ __all__ = [
     "DiffMode",
     "BackendName",
     "Interaction",
+    "DeviceType",
     "OverlapMethod",
     "AlgoHEvo",
     "SerializationFormat",
@@ -112,9 +113,7 @@ class TensorType(StrEnum):
 
 
 class LTSOrder(StrEnum):
-    """
-    Lie-Trotter-Suzuki approximation order.
-    """
+    """Lie-Trotter-Suzuki approximation order."""
 
     BASIC = "BASIC"
     """Basic."""
@@ -151,6 +150,8 @@ class _DiffMode(StrEnum):
     """Basic generalized parameter shift rule."""
     AD = "ad"
     """Automatic Differentiation."""
+    ADJOINT = "adjoint"
+    """Adjoint Differentiation."""
 
 
 class QubitSupportType(StrEnum):
@@ -161,19 +162,30 @@ class QubitSupportType(StrEnum):
 
 
 class Interaction(StrEnum):
-    """Interaction types used in
-    - [`add_interaction`][qadence.transpile.emulate.add_interaction].
+    """Interaction types used in.
+
+    - `RydbergDevice`.
     - [`hamiltonian_factory`][qadence.constructors.hamiltonians.hamiltonian_factory].
     """
 
     ZZ = "ZZ"
-    """ZZ-Ising Interaction"""
+    """ZZ-Ising Interaction."""
     NN = "NN"
-    """NN-Ising Interaction, N=(I-Z)/2"""
+    """NN-Ising Interaction, N=(I-Z)/2."""
     XY = "XY"
-    """XY Interaction"""
+    """XY Interaction."""
     XYZ = "XYZ"
-    """XYZ Interaction"""
+    """XYZ Interaction."""
+
+
+class DeviceType(StrEnum):
+    """Supported types of devices for Pulser backend."""
+
+    IDEALIZED = "IdealDevice"
+    """Idealized device, least realistic."""
+
+    REALISTIC = "RealisticDevice"
+    """Device with realistic specs."""
 
 
 class _BackendName(StrEnum):
@@ -296,7 +308,7 @@ class OpName(StrEnum):
     Z = "Z"
     """The Z gate."""
     N = "N"
-    """The N = (1/2)(I-Z) operator"""
+    """The N = (1/2)(I-Z) operator."""
     H = "H"
     """The Hadamard gate."""
     I = "I"  # noqa
@@ -367,3 +379,5 @@ class OpName(StrEnum):
     """The entanglement operation."""
     WAIT = "wait"
     """The wait operation."""
+    PROJ = "Projector"
+    """The projector operation."""

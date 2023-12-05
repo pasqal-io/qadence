@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import math
-import warnings
 from collections import Counter
 from typing import Any
 
@@ -19,12 +18,6 @@ __all__ = []  # type: ignore
 
 
 logger = get_logger(__name__)
-
-
-def bitstring_to_int(bstring: str, endianness: Endianness = Endianness.BIG) -> int:
-    # FIXME: Remove in v1.0.0
-    warnings.warn("Deprecated function bitstring_to_int. Please use basis_to_int.", FutureWarning)
-    return basis_to_int(bstring, endianness)
 
 
 def basis_to_int(basis: str, endianness: Endianness = Endianness.BIG) -> int:
@@ -127,7 +120,7 @@ def nqubits_to_basis(
 
 def samples_to_integers(samples: Counter, endianness: Endianness = Endianness.BIG) -> Counter:
     """
-    Converts a Counter of basis state samples to integer values
+    Converts a Counter of basis state samples to integer values.
 
     Args:
         samples (Counter({bits: counts})): basis state sample counter.
@@ -169,8 +162,9 @@ def format_parameter(p: sympy.Basic) -> str:
 
 def print_sympy_expr(expr: sympy.Expr, num_digits: int = 3) -> str:
     """
-    Converts all numerical values in a sympy expression to
-    something with fewer digits for better readability.
+    Converts numerical values in a sympy expression.
+
+    The result is a numerical expression with fewer digits for better readability.
     """
     from qadence.parameters import sympy_to_numeric
 
@@ -211,3 +205,38 @@ def _round_complex(t: torch.Tensor, decimals: int = 4) -> torch.Tensor:
 
     fn = torch.vmap(_round)
     return fn(t)
+
+
+def is_qadence_shape(state: torch.Tensor, n_qubits: int) -> bool:
+    if len(state.size()) < 2:
+        raise ValueError(
+            f"Provided state is required to have atleast two dimensions. Got shape {state.shape}"
+        )
+    return state.shape[1] == 2**n_qubits  # type: ignore[no-any-return]
+
+
+def infer_batchsize(param_values: dict[str, torch.Tensor] = None) -> int:
+    """Infer the batch_size through the length of the parameter tensors."""
+    try:
+        return max([len(tensor) for tensor in param_values.values()]) if param_values else 1
+    except Exception:
+        return 1
+
+
+def validate_values_and_state(
+    state: torch.Tensor | None, n_qubits: int, param_values: dict[str, torch.Tensor] = None
+) -> None:
+    if state is not None:
+        batch_size_state = (
+            state.shape[0] if is_qadence_shape(state, n_qubits=n_qubits) else state.size(-1)
+        )
+        batch_size_values = infer_batchsize(param_values)
+        if batch_size_state != batch_size_values and (
+            batch_size_values > 1 and batch_size_state > 1
+        ):
+            raise ValueError(
+                "Batching of parameter values and states is only valid for the cases:\
+                            (1) batch_size_values == batch_size_state\
+                            (2) batch_size_values == 1 and batch_size_state > 1\
+                            (3) batch_size_values > 1 and batch_size_state == 1."
+            )

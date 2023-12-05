@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import pytest
-import torch
+from torch import pi, tensor
 
 from qadence import (
     RX,
@@ -21,13 +21,13 @@ def batched_circuit() -> QuantumCircuit:
     phi = FeatureParameter("phi")
     theta = VariationalParameter("theta")
 
-    block = kron(RX(0, phi), RX(1, theta), RX(2, torch.pi))
+    block = kron(RX(0, phi), RX(1, theta), RX(2, pi))
     return QuantumCircuit(n_qubits, block)
 
 
 def test_expectation_batched(batched_circuit: QuantumCircuit) -> None:
     batch_size = 3
-    values = {"phi": torch.tensor([torch.pi / 5, torch.pi / 4, torch.pi / 3])}
+    values = {"phi": tensor([pi / 5, pi / 4, pi / 3])}
     observables = [
         total_magnetization(batched_circuit.n_qubits),
         2 * total_magnetization(batched_circuit.n_qubits),
@@ -41,7 +41,7 @@ def test_expectation_batched(batched_circuit: QuantumCircuit) -> None:
 
 def test_run_batched(batched_circuit: QuantumCircuit) -> None:
     batch_size = 3
-    values = {"phi": torch.tensor([torch.pi / 5, torch.pi / 4, torch.pi / 3])}
+    values = {"phi": tensor([pi / 5, pi / 4, pi / 3])}
 
     backend = backend_factory(backend=BackendName.PULSER, diff_mode=None)
     circ, _, embed, params = backend.convert(batched_circuit)

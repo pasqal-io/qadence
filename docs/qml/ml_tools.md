@@ -5,46 +5,42 @@ algorithm by using a standard PyTorch `DataLoader` instance. Qadence also provid
 the `DictDataLoader` convenience class which allows
 to build dictionaries of `DataLoader`s instances and easily iterate over them.
 
-```python exec="on" source="material-block"
+```python exec="on" source="material-block" result="json"
 import torch
 from torch.utils.data import DataLoader, TensorDataset
-from qadence.ml_tools import DictDataLoader
+from qadence.ml_tools import DictDataLoader, to_dataloader
 
-def dataloader() -> DataLoader:
-    batch_size = 5
-    x = torch.linspace(0, 1, batch_size).reshape(-1, 1)
+
+def dataloader(data_size: int = 25, batch_size: int = 5, infinite: bool = False) -> DataLoader:
+    x = torch.linspace(0, 1, data_size).reshape(-1, 1)
     y = torch.sin(x)
-
-    dataset = TensorDataset(x, y)
-    return DataLoader(dataset, batch_size=batch_size)
+    return to_dataloader(x, y, batch_size=batch_size, infinite=infinite)
 
 
-def dictdataloader() -> DictDataLoader:
-    batch_size = 5
-
-    keys = ["y1", "y2"]
+def dictdataloader(data_size: int = 25, batch_size: int = 5) -> DictDataLoader:
     dls = {}
-    for k in keys:
-        x = torch.rand(batch_size, 1)
+    for k in ["y1", "y2"]:
+        x = torch.rand(data_size, 1)
         y = torch.sin(x)
-        dataset = TensorDataset(x, y)
-        dataloader = DataLoader(dataset, batch_size=batch_size)
-        dls[k] = dataloader
-
+        dls[k] = to_dataloader(x, y, batch_size=batch_size, infinite=True)
     return DictDataLoader(dls)
 
-n_epochs = 2
 
-# iterate standard DataLoader
-dl = dataloader()
-for i in range(n_epochs):
-    data = next(iter(dl))
+# iterate over standard DataLoader
+for (x,y) in dataloader(data_size=6, batch_size=2):
+    print(f"Standard {x = }")
 
-# iterate DictDataLoader
+# construct an infinite dataset which will keep sampling indefinitely
+n_epochs = 5
+dl = iter(dataloader(data_size=6, batch_size=2, infinite=True))
+for _ in range(n_epochs):
+    (x, y) = next(dl)
+    print(f"Infinite {x = }")
+
+# iterate over DictDataLoader
 ddl = dictdataloader()
-for i in range(n_epochs):
-    data = next(iter(ddl))
-
+data = next(iter(ddl))
+print(f"{data = }")
 ```
 
 ## Optimization routines
@@ -108,11 +104,12 @@ Let's look at a complete example of how to use `train_with_grad` now.
 from pathlib import Path
 import torch
 from itertools import count
-from qadence.constructors import hamiltonian_factory, hea, feature_map
-from qadence import chain, Parameter, QuantumCircuit, Z
-from qadence.models import QNN
-from qadence.ml_tools import train_with_grad, TrainConfig
 import matplotlib.pyplot as plt
+
+from qadence import Parameter, QuantumCircuit, Z
+from qadence import hamiltonian_factory, hea, feature_map, chain
+from qadence.models import QNN
+from qadence.ml_tools import  TrainConfig, train_with_grad, to_dataloader
 
 n_qubits = 2
 fm = feature_map(n_qubits)
@@ -152,12 +149,13 @@ batch_size = 25
 
 x = torch.linspace(0, 1, batch_size).reshape(-1, 1)
 y = torch.sin(x)
+data = to_dataloader(x, y, batch_size=batch_size, infinite=True)
 
-train_with_grad(model, (x, y), optimizer, config, loss_fn=loss_fn)
+train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
 
 plt.clf() # markdown-exec: hide
-plt.plot(x.numpy(), y.numpy())
-plt.plot(x.numpy(), model(x).detach().numpy())
+plt.plot(x, y)
+plt.plot(x, model(x).detach())
 from docs import docsutils # markdown-exec: hide
 print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
 ```
@@ -210,4 +208,77 @@ for i in range(n_epochs):
     loss = criterion(out, y)
     loss.backward()
     optimizer.step()
+```
+
+
+## Custom `train` loop
+
+If you need custom training functionality that goes beyon what is available in
+`qadence.ml_tools.train_with_grad` and `qadence.ml_tools.train_gradient_free` you can write your own
+training loop based on the building blocks that are available in Qadence.
+
+A simplified version of Qadence's train loop is defined below. Feel free to copy it and modify at
+will.
+
+```python
+from typing import Callable, Union
+
+from torch.nn import Module
+from torch.optim import Optimizer
+from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
+
+from qadence.ml_tools.config import TrainConfig
+from qadence.ml_tools.data import DictDataLoader, data_to_device
+from qadence.ml_tools.optimize_step import optimize_step
+from qadence.ml_tools.printing import print_metrics, write_tensorboard
+from qadence.ml_tools.saveload import load_checkpoint, write_checkpoint
+
+
+def train(
+    model: Module,
+    data: DataLoader,
+    optimizer: Optimizer,
+    config: TrainConfig,
+    loss_fn: Callable,
+    device: str = "cpu",
+    optimize_step: Callable = optimize_step,
+    write_tensorboard: Callable = write_tensorboard,
+) -> tuple[Module, Optimizer]:
+
+    # Move model to device before optimizer is loaded
+    model = model.to(device)
+
+    # load available checkpoint
+    init_iter = 0
+    if config.folder:
+        model, optimizer, init_iter = load_checkpoint(config.folder, model, optimizer)
+
+    # initialize tensorboard
+    writer = SummaryWriter(config.folder, purge_step=init_iter)
+
+    dl_iter = iter(dataloader)
+
+    # outer epoch loop
+    for iteration in range(init_iter, init_iter + config.max_iter):
+        data = data_to_device(next(dl_iter), device)
+        loss, metrics = optimize_step(model, optimizer, loss_fn, data)
+
+        if iteration % config.print_every == 0 and config.verbose:
+            print_metrics(loss, metrics, iteration)
+
+        if iteration % config.write_every == 0:
+            write_tensorboard(writer, loss, metrics, iteration)
+
+        if config.folder:
+            if iteration % config.checkpoint_every == 0:
+                write_checkpoint(config.folder, model, optimizer, iteration)
+
+    # Final writing and checkpointing
+    if config.folder:
+        write_checkpoint(config.folder, model, optimizer, iteration)
+    write_tensorboard(writer, loss, metrics, iteration)
+    writer.close()
+
+    return model, optimizer
 ```

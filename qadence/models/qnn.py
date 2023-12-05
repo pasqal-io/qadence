@@ -1,40 +1,46 @@
 from __future__ import annotations
 
+from collections import Counter
 from typing import Callable
 
+import sympy
 from torch import Tensor
 
-from qadence.backend import BackendConfiguration, BackendName
-from qadence.backends.pytorch_wrapper import DiffMode
-from qadence.blocks import AbstractBlock
+from qadence.backend import BackendConfiguration, ConvertedObservable
+from qadence.blocks.abstract import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
+from qadence.mitigations import Mitigations
 from qadence.models.quantum_model import QuantumModel
-from qadence.utils import Endianness
+from qadence.noise import Noise
+from qadence.types import BackendName, DiffMode, Endianness
 
 
 class QNN(QuantumModel):
-    """Quantum neural network model for n-dimensional inputs
+    """Quantum neural network model for n-dimensional inputs.
 
     Examples:
     ```python exec="on" source="material-block" result="json"
     import torch
-    from qadence import QuantumCircuit, QNN
-    from qadence import hea, feature_map, hamiltonian_factory, Z
+    from qadence import QuantumCircuit, QNN, Z
+    from qadence import hea, feature_map, hamiltonian_factory, kron
 
     # create the circuit
     n_qubits, depth = 2, 4
-    fm = feature_map(n_qubits)
+    fm = kron(
+        feature_map(1, support=(0,), param="x"),
+        feature_map(1, support=(1,), param="y")
+    )
     ansatz = hea(n_qubits=n_qubits, depth=depth)
     circuit = QuantumCircuit(n_qubits, fm, ansatz)
-    obs_base = hamiltonian_factory(n_qubits, detuning = Z)
+    obs_base = hamiltonian_factory(n_qubits, detuning=Z)
 
     # the QNN will yield two outputs
     obs = [2.0 * obs_base, 4.0 * obs_base]
 
     # initialize and use the model
-    qnn = QNN(circuit, obs, diff_mode="ad", backend="pyqtorch")
-    y = qnn.expectation({"phi": torch.rand(3)})
+    qnn = QNN(circuit, obs, inputs=["x", "y"])
+    y = qnn(torch.rand(3, 2))
     print(str(y)) # markdown-exec: hide
     ```
     """
@@ -46,10 +52,12 @@ class QNN(QuantumModel):
         transform: Callable[[Tensor], Tensor] = None,  # transform output of the QNN
         backend: BackendName = BackendName.PYQTORCH,
         diff_mode: DiffMode = DiffMode.AD,
-        protocol: Measurements | None = None,
+        measurement: Measurements | None = None,
+        noise: Noise | None = None,
         configuration: BackendConfiguration | dict | None = None,
+        inputs: list[sympy.Basic | str] | None = None,
     ):
-        """Initialize the QNN
+        """Initialize the QNN.
 
         The number of inputs is determined by the feature parameters in the input
         quantum circuit while the number of outputs is determined by how many
@@ -58,35 +66,61 @@ class QNN(QuantumModel):
         Args:
             circuit: The quantum circuit to use for the QNN.
             transform: A transformation applied to the output of the QNN.
+            inputs: Tuple that indicates the order of variables of the tensors that are passed
+                to the model. Given input tensors `xs = torch.rand(batch_size, input_size:=2)` a QNN
+                with `inputs=("t", "x")` will assign `t, x = xs[:,0], xs[:,1]`.
             backend: The chosen quantum backend.
             diff_mode: The differentiation engine to use. Choices 'gpsr' or 'ad'.
-            protocol: optional measurement protocol. If None,
+            measurement: optional measurement protocol. If None,
                 use exact expectation value with a statevector simulator
+            noise: A noise model to use.
             configuration: optional configuration for the backend
-
         """
         super().__init__(
-            circuit=circuit,
+            circuit,
             observable=observable,
             backend=backend,
             diff_mode=diff_mode,
-            protocol=protocol,
+            measurement=measurement,
             configuration=configuration,
+            noise=noise,
         )
-
         if self.out_features is None:
             raise ValueError("You need to provide at least one observable in the QNN constructor")
-
         self.transform = transform if transform else lambda x: x
+
+        if (inputs is not None) and (len(self.inputs) == len(inputs)):
+            self.inputs = [sympy.symbols(x) if isinstance(x, str) else x for x in inputs]  # type: ignore[union-attr]
+        elif (inputs is None) and len(self.inputs) <= 1:
+            self.inputs = [sympy.symbols(x) if isinstance(x, str) else x for x in self.inputs]  # type: ignore[union-attr]
+        else:
+            raise ValueError(
+                """
+                Your QNN has more than one input. Please provide a list of inputs in the order of
+                your tensor domain. For example, if you want to pass
+                `xs = torch.rand(batch_size, input_size:=3)` to you QNN, where
+                ```
+                t = x[:,0]
+                x = x[:,1]
+                y = x[:,2]
+                ```
+                you have to specify
+                ```
+                QNN(circuit, observable, inputs=["t", "x", "y"])
+                ```
+                You can also pass a list of sympy symbols.
+            """
+            )
 
     def forward(
         self,
         values: dict[str, Tensor] | Tensor = None,
         state: Tensor | None = None,
-        protocol: Measurements | None = None,
+        measurement: Measurements | None = None,
+        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
-        """Forward pass of the model
+        """Forward pass of the model.
 
         This returns the (differentiable) expectation value of the given observable
         operator defined in the constructor. Differently from the base QuantumModel
@@ -100,29 +134,82 @@ class QNN(QuantumModel):
         is instead `n_batches x n_observables`
 
         Args:
-            values (dict[str, Tensor] | Tensor): the values of the feature parameters
+            values: the values of the feature parameters
+            state: Initial state.
+            measurement: optional measurement protocol. If None,
+                use exact expectation value with a statevector simulator
+            noise: A noise model to use.
+            endianness: Endianness of the resulting bit strings.
 
         Returns:
             Tensor: a tensor with the expectation value of the observables passed
                 in the constructor of the model
         """
+        return self.expectation(
+            values, state=state, measurement=measurement, noise=noise, endianness=endianness
+        )
+
+    def run(
+        self,
+        values: Tensor | dict[str, Tensor] = None,
+        state: Tensor | None = None,
+        endianness: Endianness = Endianness.BIG,
+    ) -> Tensor:
+        return super().run(values=self._format_to_dict(values), state=state, endianness=endianness)
+
+    def sample(
+        self,
+        values: Tensor | dict[str, Tensor] = {},
+        n_shots: int = 1000,
+        state: Tensor | None = None,
+        noise: Noise | None = None,
+        mitigation: Mitigations | None = None,
+        endianness: Endianness = Endianness.BIG,
+    ) -> list[Counter]:
+        return super().sample(
+            values=self._format_to_dict(values),
+            n_shots=n_shots,
+            state=state,
+            noise=noise,
+            mitigation=mitigation,
+            endianness=endianness,
+        )
+
+    def expectation(
+        self,
+        values: Tensor | dict[str, Tensor] = {},
+        observable: list[ConvertedObservable] | ConvertedObservable | None = None,
+        state: Tensor | None = None,
+        measurement: Measurements | None = None,
+        noise: Noise | None = None,
+        mitigation: Mitigations | None = None,
+        endianness: Endianness = Endianness.BIG,
+    ) -> Tensor:
         if values is None:
             values = {}
-        if not isinstance(values, dict):
-            values = self._format_to_dict(values)
-        if protocol is None:
-            protocol = self._protocol
-
+        if measurement is None:
+            measurement = self._measurement
+        if noise is None:
+            noise = self._noise
         return self.transform(
-            self.expectation(values=values, state=state, protocol=protocol, endianness=endianness)
+            super().expectation(
+                values=self._format_to_dict(values),
+                state=state,
+                measurement=measurement,
+                endianness=endianness,
+                noise=noise,
+            )
         )
 
     def _format_to_dict(self, values: Tensor) -> dict[str, Tensor]:
-        """Format an input tensor into the format required by the forward pass
+        """Format an input tensor into the format required by the forward pass.
 
         The tensor is assumed to have dimensions: n_batches x in_features where in_features
         corresponds to the number of input features of the QNN
         """
+        # for backwards compat...
+        if isinstance(values, dict):
+            return values
 
         if len(values.size()) == 1:
             values = values.reshape(-1, 1)
@@ -130,10 +217,4 @@ class QNN(QuantumModel):
         assert len(values.size()) == 2, msg
         assert values.size()[1] == self.in_features, msg
 
-        names = [p.name for p in self.inputs]
-        res = {}
-        for i, name in enumerate(names):
-            res[name] = values[:, i]
-        return res
-
-    # TODO: Implement derivatives w.r.t. to inputs
+        return {var.name: values[:, self.inputs.index(var)] for var in self.inputs}
