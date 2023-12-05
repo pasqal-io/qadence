@@ -1,67 +1,71 @@
 from __future__ import annotations
 
+from typing import Callable
+
 import jax.numpy as jnp
 import optax
 from jax import Array, jit, value_and_grad
+from numpy.typing import ArrayLike
 
 from qadence.backends import backend_factory
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import feature_map, hea, total_magnetization
+from qadence.types import BackendName, DiffMode
 
-backend = "horqrux"
+backend = BackendName.HORQRUX
 
 num_epochs = 10
 n_qubits = 4
+depth = 1
 
 fm = feature_map(n_qubits)
-circ = QuantumCircuit(n_qubits, hea(n_qubits, depth=1))
+circ = QuantumCircuit(n_qubits, hea(n_qubits, depth=depth))
 obs = total_magnetization(n_qubits)
 
-for diff_mode in ["ad", "gpsr"]:
-    hq_bknd = backend_factory(backend, diff_mode)
-    hq_circ, hq_obs, hq_embedfn, hq_init_params = hq_bknd.convert(circ, obs)
-    inputs = {}
-    embedded_params = hq_embedfn(hq_init_params, inputs)
+for diff_mode in [DiffMode.AD, DiffMode.GPSR]:
+    bknd = backend_factory(backend, diff_mode)
+    conv_circ, conv_obs, embedding_fn, vparams = bknd.convert(circ, obs)
+    init_params = vparams.copy()
     optimizer = optax.adam(learning_rate=0.001)
+    opt_state = optimizer.init(vparams)
 
-    param_names = embedded_params.keys()
-    param_values = embedded_params.values()
-    init_array = jnp.array(jnp.concatenate([arr for arr in param_values]))
-    opt_state = optimizer.init(init_array)
-    param_array = init_array
+    loss: Array
+    grads: dict[str, Array]  # 'grads' is the same datatype as 'params'
+    inputs: dict[str, Array] = {}  # Our circuits doesnt have any feature parameters.
 
-    def optimize_step(params: Array, opt_state: Array, grads: Array):
+    def optimize_step(params: dict[str, Array], opt_state: Array, grads: dict[str, Array]) -> tuple:
         updates, opt_state = optimizer.update(grads, opt_state, params)
-        new_params = optax.apply_updates(params, updates)
-        return new_params, opt_state
+        params = optax.apply_updates(params, updates)
+        return params, opt_state
 
-    def _exp_fn(values: Array) -> Array:
-        vals = {k: v for k, v in zip(param_names, values)}
-        return hq_bknd.expectation(hq_circ, hq_obs, vals)
+    def exp_fn(params: dict[str, Array], inputs: dict[str, Array] = inputs) -> ArrayLike:
+        return bknd.expectation(conv_circ, conv_obs, embedding_fn(params, inputs))
 
-    init_pred = _exp_fn(init_array)
+    init_pred = exp_fn(vparams)
 
-    def _loss(param_arr: Array, y_true: Array) -> Array:
-        expval = _exp_fn(param_arr)
+    def mse_loss(params: dict[str, Array], y_true: Array) -> Array:
+        expval = exp_fn(params)
         return (expval - y_true) ** 2
 
-    loss_and_grads = value_and_grad(_loss)
-
-    def _train_step(param_array: Array, opt_state, y_true: Array) -> tuple:
-        loss, grads = loss_and_grads(param_array, y_true)
-        updated_param_array, updated_opt_state = optimize_step(param_array, opt_state, grads)
-        return loss, updated_param_array, updated_opt_state
-
-    train_step = jit(_train_step)
-    y_true = jnp.array(1.0, dtype=jnp.float64)  # We need to enforce float64
+    @jit
+    def train_step(
+        params: dict,
+        opt_state: Array,
+        y_true: Array = jnp.array(1.0, dtype=jnp.float64),
+        loss_fn: Callable = mse_loss,
+    ) -> tuple:
+        loss, grads = value_and_grad(loss_fn)(params, y_true)
+        params, opt_state = optimize_step(params, opt_state, grads)
+        return loss, params, opt_state
 
     for epoch in range(num_epochs):
-        loss, param_array, opt_state = train_step(param_array, opt_state, y_true)
+        loss, vparams, opt_state = train_step(vparams, opt_state)
         print(f"epoch {epoch} loss:{loss}")
 
-    final_pred = _exp_fn(param_array)
+    final_pred = exp_fn(vparams)
 
-    print(f"diff_mode '{diff_mode}, Initial prediction:")
-    print(init_pred)
-    print(f"diff_mode '{diff_mode}, Final prediction:")
-    print(final_pred)
+    print(
+        f"diff_mode '{diff_mode}: Initial prediction: {init_pred}, initial vparams: {init_params}"
+    )
+    print(f"Final prediction: {final_pred}, final vparams: {vparams}")
+    print("----------")
