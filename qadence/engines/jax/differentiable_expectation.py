@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Any, Tuple
 
 import jax.numpy as jnp
-from jax import Array, custom_vjp
+from jax import Array, custom_vjp, vmap
 
 from qadence.backend import Backend as QuantumBackend
 from qadence.backend import ConvertedCircuit, ConvertedObservable
@@ -71,13 +71,21 @@ class DifferentiableExpectation:
             # Hardcoding the single spectral_gap to 2. for jax.lax jitting reasons.
             spectral_gap = 2.0
             shift = jnp.pi / 2
+
+            def shift_circ(pname: str, values: dict) -> Array:
+                shifted_values = values.copy()
+                shiftvals = jnp.array(
+                    [shifted_values[pname] + shift, shifted_values[pname] - shift]
+                )
+
+                def _expectation(val: Array) -> Array:
+                    shifted_values[param_name] = val
+                    return expectation(state, shifted_values, psr_params)
+
+                return vmap(_expectation, in_axes=(0,))(shiftvals)
+
             for param_name, _ in psr_params.items():
-                shifted_values = values.copy()
-                shifted_values[param_name] = shifted_values[param_name] + shift
-                f_plus = expectation(state, shifted_values, psr_params)
-                shifted_values = values.copy()
-                shifted_values[param_name] = shifted_values[param_name] - shift
-                f_min = expectation(state, shifted_values, psr_params)
+                f_plus, f_min = shift_circ(param_name, values)
                 grad = spectral_gap * (f_plus - f_min) / (4.0 * jnp.sin(spectral_gap * shift / 2.0))
                 grads[param_name] = jnp.sum(tangent * grad, axis=1) if n_obs > 1 else tangent * grad
             return None, None, grads
