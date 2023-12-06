@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import Any, Tuple
 
 import jax.numpy as jnp
-from horqrux.utils import prepare_state
 from jax import Array, custom_vjp
 
 from qadence.backend import Backend as QuantumBackend
@@ -41,48 +40,47 @@ class DifferentiableExpectation:
     engine: Engine = Engine.JAX
 
     def psr(self) -> Any:
-        n_qubits = self.circuit.abstract.n_qubits
-        observable = self.observable[0]
-        if self.state is None:
-            self.state = prepare_state(n_qubits, "0" * n_qubits)
+        n_obs = len(self.observable)
 
-        def _expectation_fn(state: Array, values: dict, psr_params: dict) -> Array:
-            wf = self.circuit.native.forward(state, values)
-            return observable.native.forward(wf, values)
+        def expectation_fn(state: Array, values: ParamDictType, psr_params: ParamDictType) -> Array:
+            return self.backend.expectation(
+                circuit=self.circuit, observable=self.observable, param_values=values, state=state
+            )
 
         @custom_vjp
-        def _expectation(state: Array, values: dict, psr_params: dict) -> Array:
-            return _expectation_fn(state, values, psr_params)
+        def expectation(state: Array, values: ParamDictType, psr_params: ParamDictType) -> Array:
+            return expectation_fn(state, values, psr_params)
 
-        values = self.param_values
         uuid_to_eigs = {
             k: tensor_to_jnp(v) for k, v in uuid_to_eigen(self.circuit.abstract.block).items()
         }
-        psr_params = {k: values[k] for k in uuid_to_eigs.keys()}
+        self.psr_params = {
+            k: self.param_values[k] for k in uuid_to_eigs.keys()
+        }  # Subset of params on which to perform PSR.
 
-        def _expectation_fwd(state: Array, values: dict, psr_params: dict) -> Any:
-            return _expectation_fn(state, values, psr_params), (
+        def expectation_fwd(state: Array, values: ParamDictType, psr_params: ParamDictType) -> Any:
+            return expectation_fn(state, values, psr_params), (
                 state,
                 values,
                 psr_params,
             )
 
-        def _expectation_bwd(res: Tuple[Array, ParamDictType, dict], v: Array) -> Any:
+        def expectation_bwd(res: Tuple[Array, ParamDictType, ParamDictType], tangent: Array) -> Any:
             state, values, psr_params = res
             grads = {}
             # Hardcoding the single spectral_gap to 2. for jax.lax jitting reasons.
-            spectral_gap = jnp.array(2.0, dtype=jnp.float64)
+            spectral_gap = 2.0
             shift = jnp.pi / 2
             for param_name, _ in psr_params.items():
                 shifted_values = values.copy()
                 shifted_values[param_name] = shifted_values[param_name] + shift
-                f_plus = _expectation(state, shifted_values, psr_params)
+                f_plus = expectation(state, shifted_values, psr_params)
                 shifted_values = values.copy()
                 shifted_values[param_name] = shifted_values[param_name] - shift
-                f_min = _expectation(state, shifted_values, psr_params)
+                f_min = expectation(state, shifted_values, psr_params)
                 grad = spectral_gap * (f_plus - f_min) / (4.0 * jnp.sin(spectral_gap * shift / 2.0))
-                grads[param_name] = (v * grad).squeeze()  # Need dimensionless arrays
+                grads[param_name] = jnp.sum(tangent * grad, axis=1) if n_obs > 1 else tangent * grad
             return None, None, grads
 
-        _expectation.defvjp(_expectation_fwd, _expectation_bwd)
-        return _expectation(self.state, values, psr_params)
+        expectation.defvjp(expectation_fwd, expectation_bwd)
+        return expectation(self.state, self.param_values, self.psr_params)

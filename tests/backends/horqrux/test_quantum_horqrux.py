@@ -4,7 +4,7 @@ import jax.numpy as jnp
 import pytest
 import sympy
 import torch
-from jax import Array, grad, jit, value_and_grad
+from jax import Array, grad, jit, value_and_grad, vmap
 
 from qadence import (
     CNOT,
@@ -55,12 +55,15 @@ def test_psr_firstOrder() -> None:
     assert jnp.allclose(grad_dict["ad"], grad_dict["gpsr"])
 
 
-def test_psr_3rd_order_single_param() -> None:
-    circ = QuantumCircuit(2, RX(0, "theta"))
+@pytest.mark.parametrize("batch_size", [1, 2])
+@pytest.mark.parametrize("obs", [Z(0), Z(0) + Z(1)])
+def test_psr_3rd_order_single_param(batch_size: int, obs: AbstractBlock) -> None:
+    n_qubits: int = 2
+    circ = QuantumCircuit(n_qubits, RX(0, "theta"))
     grad_dict = {}
     for diff_mode in ["ad", "gpsr"]:
         hq_bknd = backend_factory("horqrux", diff_mode)
-        hq_circ, hq_obs, hq_fn, hq_params = hq_bknd.convert(circ, Z(0))
+        hq_circ, hq_obs, hq_fn, hq_params = hq_bknd.convert(circ, obs)
         embedded_params = hq_fn(hq_params, {})
         param_names = embedded_params.keys()
 
@@ -72,7 +75,7 @@ def test_psr_3rd_order_single_param() -> None:
         d2fdx = grad(d1fdx)
         d3fdx = grad(d2fdx)
         jd3fdx = jit(d3fdx)
-        grad_dict[diff_mode] = jd3fdx(jnp.pi / 2)
+        grad_dict[diff_mode] = vmap(jd3fdx, in_axes=(0,))(jnp.ones(batch_size))
     assert jnp.allclose(grad_dict["ad"], grad_dict["gpsr"])
 
 
