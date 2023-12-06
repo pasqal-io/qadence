@@ -166,10 +166,10 @@ print(f"{reg.nodes = }") # markdown-exec: hide
 print(f"{reg.edges = }") # markdown-exec: hide
 ```
 
-There is also an `all_edges` property for convencience:
+There is also an `all_node_pairs` property for convencience:
 
 ```python exec="on" source="material-block" result="json" session="reg-usage"
-print(reg.all_edges)
+print(reg.all_node_pairs)
 ```
 
-More details about the usage of Registers in the digital-analog paradigm can be found in the [digital-analog basics](../digital_analog_qc/analog-basics.md) section.
+More details about the usage of `Register` types in the digital-analog paradigm can be found in the [digital-analog basics](../digital_analog_qc/analog-basics.md) section.

@@ -118,9 +118,6 @@ class X(PrimitiveBlock):
     def eigenvalues(self) -> Tensor:
         return tensor([-1, 1], dtype=cdouble)
 
-    def dagger(self) -> X:
-        return self
-
 
 class Y(PrimitiveBlock):
     """The Y gate."""
@@ -142,9 +139,6 @@ class Y(PrimitiveBlock):
     def eigenvalues(self) -> Tensor:
         return tensor([-1, 1], dtype=cdouble)
 
-    def dagger(self) -> Y:
-        return self
-
 
 class Z(PrimitiveBlock):
     """The Z gate."""
@@ -165,9 +159,6 @@ class Z(PrimitiveBlock):
     @property
     def eigenvalues(self) -> Tensor:
         return tensor([-1, 1], dtype=cdouble)
-
-    def dagger(self) -> Z:
-        return self
 
 
 class Projector(ProjectorBlock):
@@ -211,9 +202,6 @@ class N(Projector):
     @property
     def eigenvalues(self) -> Tensor:
         return tensor([0, 1], dtype=cdouble)
-
-    def dagger(self) -> N:
-        return self
 
 
 class S(PrimitiveBlock):
@@ -319,9 +307,6 @@ class I(PrimitiveBlock):
     def __ascii__(self, console: Console) -> Padding:
         return Padding("──────", (1, 1, 1, 1))
 
-    def dagger(self) -> I:
-        return I(*self.qubit_support)
-
 
 TPauliBlock = Union[X, Y, Z, I, N]
 
@@ -342,9 +327,6 @@ class H(PrimitiveBlock):
     @property
     def eigenvalues(self) -> Tensor:
         return torch.tensor([-1, 1], dtype=cdouble)
-
-    def dagger(self) -> H:
-        return H(*self.qubit_support)
 
 
 class Zero(PrimitiveBlock):
@@ -385,9 +367,6 @@ class Zero(PrimitiveBlock):
 
     def __pow__(self, power: int) -> AbstractBlock:
         return self
-
-    def dagger(self) -> Zero:
-        return Zero()
 
 
 class RX(ParametricBlock):
@@ -714,9 +693,6 @@ class CNOT(ControlBlock):
             tree.add(self._block_title)
         return tree
 
-    def dagger(self) -> CNOT:
-        return CNOT(*self.qubit_support)
-
 
 class MCZ(ControlBlock):
     name = OpName.MCZ
@@ -745,9 +721,6 @@ class MCZ(ControlBlock):
             tree.add(self._block_title)
         return tree
 
-    def dagger(self) -> MCZ:
-        return MCZ(self.qubit_support[:-1], self.qubit_support[-1])
-
 
 class CZ(MCZ):
     """The CZ gate."""
@@ -756,9 +729,6 @@ class CZ(MCZ):
 
     def __init__(self, control: int, target: int) -> None:
         super().__init__((control,), target)
-
-    def dagger(self) -> CZ:
-        return CZ(self.qubit_support[-2], self.qubit_support[-1])
 
 
 class MCRX(ParametricControlBlock):
@@ -842,7 +812,7 @@ class CRY(MCRY):
         self,
         control: int,
         target: int,
-        parameter: Parameter | TNumber | sympy.Expr | str,
+        parameter: TParameter,
     ):
         super().__init__((control,), target, parameter)
 
@@ -926,9 +896,6 @@ class CSWAP(ControlBlock):
     @property
     def nqubits(self) -> int:
         return 3
-
-    def dagger(self) -> CSWAP:
-        return CSWAP(*self.qubit_support)
 
 
 class T(PrimitiveBlock):
@@ -1014,9 +981,6 @@ class SWAP(PrimitiveBlock):
         c, t = self.qubit_support
         s = f"{self.name}({c}, {t})"
         return s if self.tag is None else (s + rf" \[tag: {self.tag}]")
-
-    def dagger(self) -> SWAP:
-        return SWAP(*self.qubit_support)
 
 
 class AnalogSWAP(HamEvo):
@@ -1104,9 +1068,6 @@ class Toffoli(ControlBlock):
         self.generator = kron(*[N(qubit) for qubit in control], X(target) - I(target))
         super().__init__(control, X(target))
 
-    def dagger(self) -> Toffoli:
-        return Toffoli(self.qubit_support[:-1], self.qubit_support[-1])
-
     @property
     def n_qubits(self) -> int:
         return len(self.qubit_support)
@@ -1191,10 +1152,11 @@ def AnalogRot(
         ConstantAnalogRotation
     """
     q = _cast(QubitSupport, qubit_support)
-    if isinstance(duration, str):
-        duration = Parameter(duration)
-    alpha = duration * sympy.sqrt(omega**2 + delta**2) / 1000  # type: ignore [operator]
-
+    duration = Parameter(duration)
+    omega = Parameter(omega)
+    delta = Parameter(delta)
+    phase = Parameter(phase)
+    alpha = duration * sympy.sqrt(omega**2 + delta**2) / 1000
     ps = ParamMap(alpha=alpha, duration=duration, omega=omega, delta=delta, phase=phase)
     return ConstantAnalogRotation(parameters=ps, qubit_support=q)
 
