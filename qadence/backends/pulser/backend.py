@@ -28,14 +28,14 @@ from qadence.noise.protocols import apply_noise
 from qadence.overlap import overlap_exact
 from qadence.register import Register
 from qadence.transpile import transpile
-from qadence.types import BackendName, Endianness
+from qadence.types import BackendName, DeviceType, Endianness
 
 from .channels import GLOBAL_CHANNEL, LOCAL_CHANNEL
 from .cloud import get_client
 from .config import Configuration
 from .convert_ops import convert_observable
-from .devices import Device, IdealDevice, RealisticDevice
-from .pulses import add_pulses
+from .devices import IdealDevice, RealisticDevice
+from .pulses import add_addressing_pattern, add_pulses
 
 logger = get_logger(__file__)
 
@@ -54,25 +54,33 @@ def create_register(register: Register) -> PulserRegister:
 
 
 def make_sequence(circ: QuantumCircuit, config: Configuration) -> Sequence:
-    if config.device_type == Device.IDEALIZED:
-        device = IdealDevice
-    elif config.device_type == Device.REALISTIC:
-        device = RealisticDevice
+    qadence_register = circ.register
+    device_specs = qadence_register.device_specs
+
+    if device_specs.type == DeviceType.IDEALIZED:
+        device = IdealDevice(
+            device_specs.rydberg_level, device_specs.max_detuning, device_specs.max_amp
+        )
+    elif device_specs.type == DeviceType.REALISTIC:
+        device = RealisticDevice(
+            device_specs.rydberg_level, device_specs.max_detuning, device_specs.max_amp
+        )
     else:
-        raise ValueError("Specified device is not supported.")
+        raise ValueError(
+            f"Specified device of type {device_specs.type} is not supported by the pulser backend."
+        )
 
     ########
     # FIXME: Remove the block below in V1.1.0
-    register = circ.register
     if config.spacing is not None:
         logger.warning(
             "Passing register spacing in the backend configuration is deprecated. "
             "Please pass it in the register directly, as detailed in the register tutorial."
         )
         # Rescales the register coordinates, as was done with the previous "spacing" argument.
-        register = register.rescale_coords(scaling=config.spacing)
+        qadence_register = qadence_register.rescale_coords(scaling=config.spacing)
     else:
-        if register.min_distance < 4.0:
+        if qadence_register.min_distance < 4.0:
             # Throws warning for minimum distance below 4 because the typical values used
             # for the standard pulser device parameters is ~7-8, so this likely means the user
             # forgot to set the spacing at register creation.
@@ -83,15 +91,14 @@ def make_sequence(circ: QuantumCircuit, config: Configuration) -> Sequence:
             )
     ########
 
-    pulser_register = create_register(register)
+    pulser_register = create_register(qadence_register)
 
     sequence = Sequence(pulser_register, device)
 
     sequence.declare_channel(GLOBAL_CHANNEL, "rydberg_global")
     sequence.declare_channel(LOCAL_CHANNEL, "rydberg_local", initial_target=0)
 
-    add_pulses(sequence, circ.block, config, circ.register)
-    sequence.measure()
+    add_pulses(sequence, circ.block, config, qadence_register)
 
     return sequence
 
@@ -192,7 +199,7 @@ class Backend(BackendInterface):
 
         return circuit.native.build(**numpy_param_values)
 
-    def run(
+    def _run(
         self,
         circuit: ConvertedCircuit,
         param_values: dict[str, Tensor] = {},
@@ -213,6 +220,10 @@ class Backend(BackendInterface):
 
         for i, param_values_el in enumerate(vals):
             sequence = self.assign_parameters(circuit, param_values_el)
+            pattern = circuit.original.register.device_specs.pattern
+            if pattern is not None:
+                add_addressing_pattern(sequence, pattern)
+            sequence.measure()
             sim_result = simulate_sequence(sequence, self.config, state, n_shots=None)
             wf = (
                 sim_result.get_final_state(  # type:ignore [union-attr]
@@ -281,6 +292,10 @@ class Backend(BackendInterface):
         samples = []
         for param_values_el in vals:
             sequence = self.assign_parameters(circuit, param_values_el)
+            pattern = circuit.original.register.device_specs.pattern
+            if pattern is not None:
+                add_addressing_pattern(sequence, pattern)
+            sequence.measure()
             sample = simulate_sequence(sequence, self.config, state, n_shots=n_shots)
             samples.append(sample)
         if endianness != self.native_endianness:

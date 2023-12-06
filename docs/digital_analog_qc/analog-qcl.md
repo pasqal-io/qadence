@@ -1,6 +1,8 @@
 Analog blocks can be parametrized in the usual Qadence manner. Like any other parameters,
 they can be optimized. The next snippet examplifies the creation of an analog and parameterized ansatz
-to fit a simple function. First, define a register and feature map block:
+to fit a simple function. First, define a register and feature map block. We again use a default spacing of
+$8~\mu\text{m}$ as done in the [basic tutorial](analog-basics.md).
+
 
 ```python exec="on" source="material-block" session="qcl"
 from qadence import Register, FeatureParameter, chain
@@ -9,9 +11,7 @@ from sympy import acos
 
 # Line register
 n_qubits = 2
-dx = 8.0  # Atom spacing in μm
-coordinates = [(i*dx, 0) for i in range(n_qubits)]
-register = Register.from_coordinates(coordinates)
+register = Register.line(n_qubits, spacing = 8.0)
 
 # The input feature x for the circuit to learn f(x)
 x = FeatureParameter("x")

@@ -9,7 +9,7 @@ import torch
 from metrics import GPSR_ACCEPTANCE, PSR_ACCEPTANCE
 
 from qadence import DifferentiableBackend, DiffMode, Parameter, QuantumCircuit
-from qadence.analog import add_interaction
+from qadence.analog import add_background_hamiltonian
 from qadence.backends.pyqtorch import Backend as PyQBackend
 from qadence.blocks import add, chain
 from qadence.constructors import total_magnetization
@@ -133,10 +133,9 @@ def circuit_analog_rotation_gpsr(n_qubits: int) -> QuantumCircuit:
         ),
     )
 
-    block = add_interaction(register, analog_block)  # type: ignore [arg-type]
-    circ = QuantumCircuit(n_qubits, block)
+    circ = QuantumCircuit(register, analog_block)
 
-    return circ
+    return add_background_hamiltonian(circ)  # type: ignore [return-value]
 
 
 @pytest.mark.parametrize(

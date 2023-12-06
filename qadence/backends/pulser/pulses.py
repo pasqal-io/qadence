@@ -11,6 +11,7 @@ from pulser.sequence.sequence import Sequence
 from pulser.waveforms import CompositeWaveform, ConstantWaveform, RampWaveform
 
 from qadence import Register
+from qadence.analog import AddressingPattern
 from qadence.blocks import AbstractBlock, CompositeBlock
 from qadence.blocks.analog import (
     AnalogBlock,
@@ -42,6 +43,53 @@ supported_gates = [
 ]
 
 
+def add_addressing_pattern(
+    sequence: Sequence,
+    pattern: AddressingPattern,
+) -> None:
+    total_duration = sequence.get_duration()
+    n_qubits = len(sequence.register.qubits)
+
+    support = tuple(range(n_qubits))
+
+    amp = pattern.amp
+    det = pattern.det
+    weights_amp = pattern.weights_amp
+    weights_det = pattern.weights_det
+    local_constr_amp = pattern.local_constr_amp
+    local_constr_det = pattern.local_constr_det
+    global_constr_amp = pattern.global_constr_amp
+    global_constr_det = pattern.global_constr_det
+
+    for i in support:
+        # declare separate local channel for each qubit
+        sequence.declare_channel(f"ch_q{i}", "rydberg_local", initial_target=0)
+
+    # add amplitude and detuning patterns
+    for i in support:
+        if weights_amp[i].is_number:  # type: ignore [union-attr]
+            w_amp = evaluate(weights_amp[i], as_torch=True) * local_constr_amp[i]
+        else:
+            raise ValueError(
+                "Pulser backend currently doesn't support parametrized amplitude pattern weights."
+            )
+
+        if weights_det[i].is_number:  # type: ignore [union-attr]
+            w_det = evaluate(weights_det[i], as_torch=True) * local_constr_det[i]
+        else:
+            raise ValueError(
+                "Pulser backend currently doesn't support parametrized detuning pattern weights."
+            )
+
+        omega = global_constr_amp * amp * w_amp
+        detuning = global_constr_det * det * w_det
+        pulse = Pulse.ConstantPulse(
+            duration=total_duration, amplitude=omega, detuning=detuning, phase=0
+        )
+        sequence.target(i, f"ch_q{i}")
+        sequence.add(pulse, f"ch_q{i}", protocol="no-delay")
+
+
 def add_pulses(
     sequence: Sequence,
     block: AbstractBlock,
@@ -58,7 +106,7 @@ def add_pulses(
     if not isinstance(qubit_support[0], int):
         qubit_support = tuple(range(n_qubits))
 
-    if isinstance(block, AnalogBlock) and config.interaction != Interaction.NN:
+    if isinstance(block, AnalogBlock) and qc_register.device_specs.interaction != Interaction.NN:
         raise ValueError(f"Pulser does not support other interactions than '{Interaction.NN}'")
 
     local_channel = sequence.device.channels["rydberg_local"]
@@ -97,7 +145,7 @@ def add_pulses(
         d = evaluate(detuning) if detuning.is_number else sequence.declare_variable(d_uuid)
 
         # calculate generator eigenvalues
-        block.eigenvalues_generator = block.compute_eigenvalues_generator(qc_register, block)
+        block.eigenvalues_generator = block.compute_eigenvalues_generator(block, qc_register)
 
         if block.qubit_support.is_global:
             pulse = analog_rot_pulse(a, w, p, d, global_channel, config)

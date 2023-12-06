@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from copy import deepcopy
 from typing import Any, Iterable, Tuple
 
 import sympy
@@ -13,6 +14,7 @@ from qadence.blocks.abstract import AbstractBlock
 from qadence.parameters import (
     Parameter,
     ParamMap,
+    dagger_expression,
     evaluate,
     extract_original_param_entry,
     stringify,
@@ -100,6 +102,9 @@ class PrimitiveBlock(AbstractBlock):
     @property
     def n_supports(self) -> int:
         return len(self.qubit_support)
+
+    def dagger(self) -> PrimitiveBlock:
+        return self
 
 
 class ParametricBlock(PrimitiveBlock):
@@ -200,11 +205,10 @@ class ParametricBlock(PrimitiveBlock):
         target = d["qubit_support"][0]
         return cls(target, params)  # type: ignore[call-arg]
 
-    def dagger(self) -> ParametricBlock:  # type: ignore[override]
+    def dagger(self) -> ParametricBlock:
         exprs = self.parameters.expressions()
-        args = tuple(-extract_original_param_entry(param) for param in exprs)
-        args = args if -1 in self.qubit_support else (*self.qubit_support, *args)
-        return self.__class__(*args)  # type: ignore[arg-type]
+        params = tuple(-extract_original_param_entry(param) for param in exprs)
+        return type(self)(*self.qubit_support, *params)  # type: ignore[arg-type]
 
 
 class ScaleBlock(ParametricBlock):
@@ -304,9 +308,8 @@ class ScaleBlock(ParametricBlock):
             )
 
     def dagger(self) -> ScaleBlock:
-        return self.__class__(
-            self.block, Parameter(-extract_original_param_entry(self.parameters.parameter))
-        )
+        p = list(self.parameters.expressions())[0]
+        return self.__class__(self.block.dagger(), dagger_expression(p))
 
     def _to_dict(self) -> dict:
         return {
@@ -350,13 +353,25 @@ class ControlBlock(PrimitiveBlock):
     """The abstract ControlBlock."""
 
     name = "Control"
+    control: tuple[int, ...]
+    target: tuple[int, ...]
 
     def __init__(self, control: tuple[int, ...], target_block: PrimitiveBlock) -> None:
+        self.control = control
         self.blocks = (target_block,)
+        self.target = target_block.qubit_support
 
         # using tuple expansion because some control operations could
         # have multiple targets, e.g. CSWAP
-        super().__init__((*control, *target_block.qubit_support))  # target_block.qubit_support[0]))
+        super().__init__((*control, *self.target))  # target_block.qubit_support[0]))
+
+    @property
+    def n_controls(self) -> int:
+        return len(self.control)
+
+    @property
+    def n_targets(self) -> int:
+        return len(self.target)
 
     @property
     def _block_title(self) -> str:
@@ -391,16 +406,28 @@ class ControlBlock(PrimitiveBlock):
         target = d["qubit_support"][1]
         return cls(control, target)
 
+    def dagger(self) -> ControlBlock:
+        blk = deepcopy(self)
+        blk.blocks = (self.blocks[0].dagger(),)
+        return blk
+
 
 class ParametricControlBlock(ParametricBlock):
     """The abstract parametrized ControlBlock."""
 
     name = "ParameterizedControl"
+    control: tuple[int, ...] = ()
+    blocks: tuple[ParametricBlock, ...]
 
     def __init__(self, control: tuple[int, ...], target_block: ParametricBlock) -> None:
         self.blocks = (target_block,)
+        self.control = control
         self.parameters = target_block.parameters
-        super().__init__((*control, target_block.qubit_support[0]))
+        super().__init__((*control, *target_block.qubit_support))
+
+    @property
+    def n_controls(self) -> int:
+        return len(self.control)
 
     @property
     def eigenvalues_generator(self) -> torch.Tensor:
@@ -454,3 +481,48 @@ class ParametricControlBlock(ParametricBlock):
 
         s += rf" \[params: {params_str}]"
         return s if self.tag is None else (s + rf" \[tag: {self.tag}]")
+
+    def dagger(self) -> ParametricControlBlock:
+        blk = deepcopy(self)
+        blocks = tuple(b.dagger() for b in blk.blocks)
+        blk.blocks = blocks
+        blk.parameters = blocks[0].parameters
+        return blk
+
+
+class ProjectorBlock(PrimitiveBlock):
+    """The abstract ProjectorBlock."""
+
+    name = "ProjectorBlock"
+
+    def __init__(
+        self,
+        ket: str,
+        bra: str,
+        qubit_support: int | tuple[int, ...],
+    ) -> None:
+        """
+        Arguments:
+
+            ket (str): The ket given as a bitstring.
+            bra (str): The bra given as a bitstring.
+            qubit_support (int | tuple[int]): The qubit_support of the block.
+        """
+        if isinstance(qubit_support, int):
+            qubit_support = (qubit_support,)
+        if len(bra) != len(ket):
+            raise ValueError(
+                "Bra and ket must be bitstrings of same length in the 'Projector' definition."
+            )
+        elif len(bra) != len(qubit_support):
+            raise ValueError("Bra or ket must be of same length as the 'qubit_support'")
+        for wf in [bra, ket]:
+            if not all(int(item) == 0 or int(item) == 1 for item in wf):
+                raise ValueError(
+                    "All qubits must be either in the '0' or '1' state"
+                    " in the 'ProjectorBlock' definition."
+                )
+
+        self.ket = ket
+        self.bra = bra
+        super().__init__(qubit_support)

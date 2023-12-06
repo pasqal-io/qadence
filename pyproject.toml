@@ -19,7 +19,7 @@ authors = [
 ]
 requires-python = ">=3.9,<3.12"
 license = {text = "Apache 2.0"}
-version = "1.1.0"
+version = "1.2.0"
 classifiers=[
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python",
@@ -40,7 +40,7 @@ dependencies = [
     "jsonschema",
     "nevergrad",
     "scipy",
-    "pyqtorch==1.0.1",
+    "pyqtorch==1.0.3",
     "matplotlib"
 ]
 
@@ -111,11 +111,11 @@ filterwarnings = [
 
 [tool.hatch.envs.docs]
 dependencies = [
-  "mkdocs==1.5.2",
+  "mkdocs",
   "mkdocs-material",
   "mkdocstrings",
   "mkdocstrings-python",
-  "mkdocs-section-index==0.3.6",
+  "mkdocs-section-index",
   "mkdocs-exclude",
   "markdown-exec",
   "mike",

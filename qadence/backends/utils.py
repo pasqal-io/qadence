@@ -19,7 +19,7 @@ from torch import (
 )
 from torch import flatten as torchflatten
 
-from qadence.utils import Endianness, int_to_basis
+from qadence.utils import Endianness, int_to_basis, is_qadence_shape
 
 FINITE_DIFF_EPS = 1e-06
 # Dict of NumPy dtype -> torch dtype (when the correspondence exists)
@@ -126,10 +126,6 @@ def is_pyq_shape(state: Tensor, n_qubits: int) -> bool:
     return state.size()[:-1] == [2] * n_qubits  # type: ignore[no-any-return]
 
 
-def is_qadence_shape(state: Tensor, n_qubits: int) -> bool:
-    return state.shape[1] == 2**n_qubits  # type: ignore[no-any-return]
-
-
 def validate_state(state: Tensor, n_qubits: int) -> None:
     """Check if a custom initial state conforms to the qadence or the pyqtorch format."""
     if state.dtype != complex128:
@@ -143,11 +139,6 @@ def validate_state(state: Tensor, n_qubits: int) -> None:
                   (2) Pyqtorch shape: (2 * n_qubits + [batch_size])\
                   Found: {state.size() = }"
         )
-
-
-def infer_batchsize(param_values: dict[str, Tensor] = None) -> int:
-    """Infer the batch_size through the length of the parameter tensors."""
-    return max([len(tensor) for tensor in param_values.values()]) if param_values else 1
 
 
 # The following functions can be used to compute potentially higher order gradients using pyqtorch's

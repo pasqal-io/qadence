@@ -39,6 +39,7 @@ __all__ = [
     "DiffMode",
     "BackendName",
     "Interaction",
+    "DeviceType",
     "OverlapMethod",
     "AlgoHEvo",
     "SerializationFormat",
@@ -163,7 +164,7 @@ class QubitSupportType(StrEnum):
 class Interaction(StrEnum):
     """Interaction types used in.
 
-    - `add_interaction`.
+    - `RydbergDevice`.
     - [`hamiltonian_factory`][qadence.constructors.hamiltonians.hamiltonian_factory].
     """
 
@@ -175,6 +176,16 @@ class Interaction(StrEnum):
     """XY Interaction."""
     XYZ = "XYZ"
     """XYZ Interaction."""
+
+
+class DeviceType(StrEnum):
+    """Supported types of devices for Pulser backend."""
+
+    IDEALIZED = "IdealDevice"
+    """Idealized device, least realistic."""
+
+    REALISTIC = "RealisticDevice"
+    """Device with realistic specs."""
 
 
 class _BackendName(StrEnum):
@@ -368,3 +379,5 @@ class OpName(StrEnum):
     """The entanglement operation."""
     WAIT = "wait"
     """The wait operation."""
+    PROJ = "Projector"
+    """The projector operation."""

@@ -8,9 +8,7 @@ from pasqal_cloud.device import EmulatorType
 from pulser_simulation.simconfig import SimConfig
 
 from qadence.backend import BackendConfiguration
-from qadence.blocks.analog import Interaction
-
-from .devices import Device
+from qadence.types import DeviceType, Interaction
 
 DEFAULT_CLOUD_ENV = "prod"
 
@@ -27,12 +25,11 @@ class CloudConfiguration:
 
 @dataclass
 class Configuration(BackendConfiguration):
-    device_type: Device = Device.IDEALIZED
+    device_type: DeviceType = DeviceType.IDEALIZED
     """The type of quantum Device to use in the simulations.
 
-    Choose
-    between IDEALIZED and REALISTIC. This influences pulse duration, max
-    amplitude, minimum atom spacing and other properties of the system
+    FIXME: This is deprecated, the device_type is now controlled in the
+    Qadence Device, as detailed in the documentation.
     """
 
     sampling_rate: float = 1.0
@@ -67,19 +64,31 @@ class Configuration(BackendConfiguration):
     """
 
     amplitude_local: Optional[float] = None
-    """Default pulse amplitude on local channel."""
+    """Default pulse amplitude on local channel.
+
+    FIXME: To be deprecated.
+    """
 
     amplitude_global: Optional[float] = None
-    """Default pulse amplitude on global channel."""
+    """Default pulse amplitude on global channel.
+
+    FIXME: To be deprecated.
+    """
 
     detuning: Optional[float] = None
-    """Default value for the detuning pulses."""
+    """Default value for the detuning pulses.
+
+    FIXME: To be deprecated.
+    """
 
     interaction: Interaction = Interaction.NN
     """Type of interaction introduced in the Hamiltonian.
 
     Currently, only
     NN interaction is support. XY interaction is possible but not implemented
+
+    FIXME: This is deprecated, the interaction is now controlled in the
+    Qadence Device, as detailed in the documentation.
     """
 
     # configuration for cloud simulations

@@ -3,17 +3,14 @@ from __future__ import annotations
 import numpy as np
 import pytest
 import torch
-from metrics import (
-    ATOL_DICT,
-    JS_ACCEPTANCE,
-    LARGE_SPACING,
-)
+from metrics import ATOL_DICT, JS_ACCEPTANCE, LARGE_SPACING, SMALL_SPACING
 
-from qadence.backends.pulser.devices import Device
+from qadence.analog import RealisticDevice, RydbergDevice
 from qadence.blocks import AbstractBlock, chain, kron
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import ising_hamiltonian, total_magnetization
 from qadence.divergences import js_divergence
+from qadence.execution import run
 from qadence.models import QuantumModel
 from qadence.operations import (
     CNOT,
@@ -38,9 +35,12 @@ from qadence.types import BackendName, DiffMode
 
 @pytest.mark.flaky(max_runs=5)
 @pytest.mark.parametrize("n_qubits", [2, 3, 4])
-@pytest.mark.parametrize("spacing", [6.0, 8.0, 15.0])
+@pytest.mark.parametrize("spacing", [7.0, 10.0, 15.0])
+@pytest.mark.parametrize("rydberg_level", [60, 70])
 @pytest.mark.parametrize("op", [AnalogRX, AnalogRY, AnalogRZ, AnalogRot, wait])
-def test_analog_op_run(n_qubits: int, spacing: float, op: AbstractBlock) -> None:
+def test_analog_op_run(
+    n_qubits: int, spacing: float, rydberg_level: int, op: AbstractBlock
+) -> None:
     init_state = random_state(n_qubits)
     batch_size = 3
 
@@ -60,20 +60,65 @@ def test_analog_op_run(n_qubits: int, spacing: float, op: AbstractBlock) -> None
         block = op(t)  # type: ignore [operator]
         values = {"t": 10.0 * (1.0 + torch.rand(batch_size))}
 
+    device = RydbergDevice(rydberg_level=rydberg_level)
+
+    register = Register.line(n_qubits, spacing=spacing, device_specs=device)
+
+    circuit = QuantumCircuit(register, block)
+
+    wf_pyq = run(circuit, values=values, state=init_state, backend=BackendName.PYQTORCH)
+    wf_pulser = run(circuit, values=values, state=init_state, backend=BackendName.PULSER)
+
+    assert equivalent_state(wf_pyq, wf_pulser, atol=ATOL_DICT[BackendName.PULSER])
+
+
+def get_random_rot(param: str, qubit_support: tuple[int]) -> AbstractBlock:
+    return AnalogRot(
+        duration=param,
+        omega=torch.rand(1),
+        delta=torch.rand(1),
+        phase=torch.rand(1),
+        qubit_support=qubit_support,
+    )
+
+
+@pytest.mark.parametrize("spacing", [8.0, 15.0])
+@pytest.mark.parametrize(
+    "block",
+    [
+        kron(
+            get_random_rot("x", qubit_support=(0,)),
+            get_random_rot("x", qubit_support=(1,)),
+            get_random_rot("x", qubit_support=(2,)),
+        ),
+        kron(
+            get_random_rot("x", (1,)),
+            wait("x", qubit_support=(0, 2)),
+        ),
+        chain(
+            kron(
+                get_random_rot("x", (0,)),
+                wait("x", qubit_support=(1, 2)),
+            ),
+            kron(
+                get_random_rot("x", (2,)),
+                wait("x", qubit_support=(0, 1)),
+            ),
+        ),
+    ],
+)
+def test_local_analog_op_run(spacing: float, block: AbstractBlock) -> None:
+    n_qubits = 3
+    init_state = random_state(n_qubits)
+
     register = Register.line(n_qubits, spacing=spacing)
 
     circuit = QuantumCircuit(register, block)
 
-    model_pyqtorch = QuantumModel(circuit, backend=BackendName.PYQTORCH)
+    values = {"x": 5.0 + torch.rand(1)}
 
-    model_pulser = QuantumModel(
-        circuit,
-        backend=BackendName.PULSER,
-        diff_mode=DiffMode.GPSR,
-    )
-
-    wf_pyq = model_pyqtorch.run(values=values, state=init_state)
-    wf_pulser = model_pulser.run(values=values, state=init_state)
+    wf_pyq = run(circuit, values=values, state=init_state, backend=BackendName.PYQTORCH)
+    wf_pulser = run(circuit, values=values, state=init_state, backend=BackendName.PULSER)
 
     assert equivalent_state(wf_pyq, wf_pulser, atol=ATOL_DICT[BackendName.PULSER])
 
@@ -95,7 +140,7 @@ def test_analog_op_run(n_qubits: int, spacing: float, op: AbstractBlock) -> None
 def test_compatibility_pyqtorch_pulser_entanglement(
     pyqtorch_block: AbstractBlock, pulser_block: AbstractBlock
 ) -> None:
-    register = Register.line(2, spacing=8.0)
+    register = Register.line(2, spacing=8.0, device_specs=RealisticDevice())
 
     pyqtorch_circuit = QuantumCircuit(register, pyqtorch_block)
     pulser_circuit = QuantumCircuit(register, pulser_block)
@@ -103,10 +148,8 @@ def test_compatibility_pyqtorch_pulser_entanglement(
     model_pyqtorch = QuantumModel(
         pyqtorch_circuit, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD
     )
-    config = {"device_type": Device.REALISTIC}
-    model_pulser = QuantumModel(
-        pulser_circuit, backend=BackendName.PULSER, diff_mode=DiffMode.GPSR, configuration=config
-    )
+
+    model_pulser = QuantumModel(pulser_circuit, backend=BackendName.PULSER, diff_mode=DiffMode.GPSR)
     pyqtorch_samples = model_pyqtorch.sample({}, n_shots=500)
     pulser_samples = model_pulser.sample({}, n_shots=500)
     for pyqtorch_sample, pulser_sample in zip(pyqtorch_samples, pulser_samples):
@@ -224,7 +267,7 @@ def test_compatibility_pyqtorch_pulser_analog_rot_int(obs: AbstractBlock) -> Non
     psi = FeatureParameter("psi")
 
     n_qubits = 2
-    register = Register.line(n_qubits, spacing=8.0)
+    register = Register.line(n_qubits, spacing=SMALL_SPACING)
 
     b_analog = chain(AnalogRX(phi), AnalogRY(psi))
 

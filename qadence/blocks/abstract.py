@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod, abstractproperty
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
-from typing import ClassVar, Iterable, Tuple, Union, get_args
+from typing import ClassVar, Iterable, Tuple, TypeVar, Union, get_args
 
 import sympy
 import torch
@@ -287,6 +287,7 @@ class AbstractBlock(ABC):
     def __hash__(self) -> int:
         return hash(self._to_json())
 
+    @abstractmethod
     def dagger(self) -> AbstractBlock:
         raise NotImplementedError(
             f"Hermitian adjoint of the Block '{type(self)}' is not implemented yet!"
@@ -333,3 +334,6 @@ class AbstractBlock(ABC):
         elif isinstance(self, PrimitiveBlock):
             return self.name == "I"
         return False
+
+
+TAbstractBlock = TypeVar("TAbstractBlock", bound=AbstractBlock)
