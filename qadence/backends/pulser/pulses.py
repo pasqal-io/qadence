@@ -204,7 +204,7 @@ def analog_rot_pulse(
 
     # create amplitude waveform
     amp_wf = SquareWaveform.from_duration(
-        duration=duration,  # type: ignore
+        duration=abs(duration),  # type: ignore
         max_amp=max_amp,  # type: ignore[arg-type]
         duration_steps=channel.clock_period,  # type: ignore[attr-defined]
         min_duration=channel.min_duration,
@@ -212,7 +212,7 @@ def analog_rot_pulse(
 
     # create detuning waveform
     det_wf = SquareWaveform.from_duration(
-        duration=duration,  # type: ignore
+        duration=abs(duration),  # type: ignore
         max_amp=max_det,  # type: ignore[arg-type]
         duration_steps=channel.clock_period,  # type: ignore[attr-defined]
         min_duration=channel.min_duration,
