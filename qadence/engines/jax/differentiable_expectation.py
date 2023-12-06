@@ -91,7 +91,7 @@ class DifferentiableExpectation:
                 grads[param_name] = jnp.sum(tangent * grad, axis=1) if n_obs > 1 else tangent * grad
             return None, None, grads
 
-        ## TODO ask GJ/Atiyo: Experimental vmap version which generates an array of all shift permutations and vmaps the circ
+        ## TODO Experimental bwd which vmaps the circ over all parameter shift permutations
         def expectation_bwd_vmap(
             res: Tuple[Array, ParamDictType, ParamDictType], tangent: Array
         ) -> Any:
