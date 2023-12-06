@@ -122,6 +122,7 @@ def add_pulses(
         if block.qubit_support.is_global:
             (uuid, duration) = block.parameters.uuid_param("duration")
             t = evaluate(duration) if duration.is_number else sequence.declare_variable(uuid)
+            print(t)
             pulse = Pulse.ConstantPulse(duration=t, amplitude=0, detuning=0, phase=0)
             sequence.add(pulse, GLOBAL_CHANNEL, "wait-for-all")
 
@@ -134,12 +135,12 @@ def add_pulses(
 
     elif isinstance(block, ConstantAnalogRotation):
         ps = block.parameters
-        (a_uuid, alpha) = ps.uuid_param("alpha")
+        (t_uuid, duration) = ps.uuid_param("duration")
         (w_uuid, omega) = ps.uuid_param("omega")
         (p_uuid, phase) = ps.uuid_param("phase")
         (d_uuid, detuning) = ps.uuid_param("delta")
 
-        a = evaluate(alpha) if alpha.is_number else sequence.declare_variable(a_uuid)
+        t = evaluate(duration) if duration.is_number else sequence.declare_variable(t_uuid)
         w = evaluate(omega) if omega.is_number else sequence.declare_variable(w_uuid)
         p = evaluate(phase) if phase.is_number else sequence.declare_variable(p_uuid)
         d = evaluate(detuning) if detuning.is_number else sequence.declare_variable(d_uuid)
@@ -148,10 +149,10 @@ def add_pulses(
         block.eigenvalues_generator = block.compute_eigenvalues_generator(block, qc_register)
 
         if block.qubit_support.is_global:
-            pulse = analog_rot_pulse(a, w, p, d, global_channel, config)
+            pulse = analog_rot_pulse(t, w, p, d, global_channel, config)
             sequence.add(pulse, GLOBAL_CHANNEL, protocol="wait-for-all")
         else:
-            pulse = analog_rot_pulse(a, w, p, d, local_channel, config)
+            pulse = analog_rot_pulse(t, w, p, d, local_channel, config)
             sequence.target(qubit_support, LOCAL_CHANNEL)
             sequence.add(pulse, LOCAL_CHANNEL, protocol="wait-for-all")
 
@@ -184,7 +185,7 @@ def add_pulses(
 
 
 def analog_rot_pulse(
-    alpha: TVar | float,
+    duration: TVar | float,
     omega: TVar | float,
     phase: TVar | float,
     detuning: TVar | float,
@@ -201,9 +202,6 @@ def analog_rot_pulse(
     else:
         max_amp = omega
         max_det = detuning
-
-    # get pulse duration in ns
-    duration = 1000 * abs(alpha) / np.sqrt(omega**2 + detuning**2)
 
     # create amplitude waveform
     amp_wf = SquareWaveform.from_duration(
