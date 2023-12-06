@@ -123,7 +123,7 @@ class WaitBlock(AnalogBlock):
     parameters: ParamMap = ParamMap(duration=1000.0)  # ns
     qubit_support: QubitSupport = QubitSupport("global")
 
-    add_pattern: bool = False
+    add_pattern: bool = True
 
     @property
     def eigenvalues_generator(self) -> torch.Tensor | None:
@@ -168,7 +168,7 @@ class ConstantAnalogRotation(AnalogBlock):
     )
     qubit_support: QubitSupport = QubitSupport("global")
 
-    add_pattern: bool = False
+    add_pattern: bool = True
 
     @property
     def _block_title(self) -> str:
