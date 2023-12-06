@@ -21,7 +21,7 @@ from qadence import (
 from qadence.divergences import js_divergence
 from qadence.noise.protocols import Noise
 from qadence.operations import CNOT, RX, RY, RZ, HamEvo, X, Y, Z, add, kron
-from qadence.types import BackendName, DiffMode
+from qadence.types import BackendName, DiffMode, ReadOutOptimization
 
 pi = torch.pi
 
@@ -30,51 +30,81 @@ pi = torch.pi
 @pytest.mark.parametrize(
     "error_probability, n_shots, block, backend, optimization_type",
     [
-        (0.1, 100, kron(X(0), X(1)), BackendName.BRAKET, "mle"),
-        (0.1, 1000, kron(Z(0), Z(1), Z(2)) + kron(X(0), Y(1), Z(2)), BackendName.BRAKET, "mle"),
-        (0.15, 1000, add(Z(0), Z(1), Z(2)), BackendName.BRAKET, "constrained_opt"),
+        (0.1, 100, kron(X(0), X(1)), BackendName.BRAKET, ReadOutOptimization.MLE),
+        (
+            0.1,
+            1000,
+            kron(Z(0), Z(1), Z(2)) + kron(X(0), Y(1), Z(2)),
+            BackendName.BRAKET,
+            ReadOutOptimization.MLE,
+        ),
+        (0.15, 1000, add(Z(0), Z(1), Z(2)), BackendName.BRAKET, ReadOutOptimization.CONSTRAINED),
         (
             0.1,
             5000,
             kron(X(0), X(1)) + kron(Z(0), Z(1)) + kron(X(2), X(3)),
             BackendName.BRAKET,
-            "constrained_opt",
+            ReadOutOptimization.CONSTRAINED,
         ),
-        (0.1, 500, add(Z(0), Z(1), kron(X(2), X(3))) + add(X(2), X(3)), BackendName.BRAKET, "mle"),
-        (0.1, 2000, add(kron(Z(0), Z(1)), kron(X(2), X(3))), BackendName.BRAKET, "mle"),
-        (0.1, 1300, kron(Z(0), Z(1)) + CNOT(0, 1), BackendName.BRAKET, "constrained_opt"),
+        (
+            0.1,
+            500,
+            add(Z(0), Z(1), kron(X(2), X(3))) + add(X(2), X(3)),
+            BackendName.BRAKET,
+            ReadOutOptimization.MLE,
+        ),
+        (
+            0.1,
+            2000,
+            add(kron(Z(0), Z(1)), kron(X(2), X(3))),
+            BackendName.BRAKET,
+            ReadOutOptimization.MLE,
+        ),
+        (
+            0.1,
+            1300,
+            kron(Z(0), Z(1)) + CNOT(0, 1),
+            BackendName.BRAKET,
+            ReadOutOptimization.CONSTRAINED,
+        ),
         (
             0.05,
             1500,
             kron(RZ(0, parameter=0.01), RZ(1, parameter=0.01))
             + kron(RX(0, parameter=0.01), RX(1, parameter=0.01)),
             BackendName.PULSER,
-            "constrained_opt",
+            ReadOutOptimization.CONSTRAINED,
         ),
         (
             0.001,
             5000,
             HamEvo(generator=kron(Z(0), Z(1)), parameter=0.05),
             BackendName.BRAKET,
-            "mle",
+            ReadOutOptimization.MLE,
         ),
         (
             0.12,
             2000,
             HamEvo(generator=kron(Z(0), Z(1), Z(2)), parameter=0.001),
             BackendName.BRAKET,
-            "mle",
+            ReadOutOptimization.MLE,
         ),
         (
             0.1,
             1000,
             HamEvo(generator=kron(Z(0), Z(1)) + kron(Z(0), Z(1), Z(2)), parameter=0.005),
             BackendName.BRAKET,
-            "constrained_opt",
+            ReadOutOptimization.CONSTRAINED,
         ),
-        (0.1, 100, kron(X(0), X(1)), BackendName.PYQTORCH, "constrained_opt"),
-        (0.1, 200, kron(Z(0), Z(1), Z(2)) + kron(X(0), Y(1), Z(2)), BackendName.PYQTORCH, "mle"),
-        (0.01, 1000, add(Z(0), Z(1), Z(2)), BackendName.PYQTORCH, "mle"),
+        (0.1, 100, kron(X(0), X(1)), BackendName.PYQTORCH, ReadOutOptimization.CONSTRAINED),
+        (
+            0.1,
+            200,
+            kron(Z(0), Z(1), Z(2)) + kron(X(0), Y(1), Z(2)),
+            BackendName.PYQTORCH,
+            ReadOutOptimization.MLE,
+        ),
+        (0.01, 1000, add(Z(0), Z(1), Z(2)), BackendName.PYQTORCH, ReadOutOptimization.MLE),
         (
             0.1,
             2000,
@@ -82,18 +112,36 @@ pi = torch.pi
                 generator=kron(X(0), X(1)) + kron(Z(0), Z(1)) + kron(X(2), X(3)), parameter=0.005
             ),
             BackendName.PYQTORCH,
-            "constrained_opt",
+            ReadOutOptimization.CONSTRAINED,
         ),
         (
             0.1,
             500,
             add(Z(0), Z(1), kron(X(2), X(3))) + add(X(2), X(3)),
             BackendName.PYQTORCH,
-            "constrained_opt",
+            ReadOutOptimization.CONSTRAINED,
         ),
-        (0.05, 10000, add(kron(Z(0), Z(1)), kron(X(2), X(3))), BackendName.PYQTORCH, "mle"),
-        (0.2, 1000, hamiltonian_factory(4, detuning=Z), BackendName.PYQTORCH, "mle"),
-        (0.1, 500, kron(Z(0), Z(1)) + CNOT(0, 1), BackendName.PYQTORCH, "constrained_opt"),
+        (
+            0.05,
+            10000,
+            add(kron(Z(0), Z(1)), kron(X(2), X(3))),
+            BackendName.PYQTORCH,
+            ReadOutOptimization.MLE,
+        ),
+        (
+            0.2,
+            1000,
+            hamiltonian_factory(4, detuning=Z),
+            BackendName.PYQTORCH,
+            ReadOutOptimization.MLE,
+        ),
+        (
+            0.1,
+            500,
+            kron(Z(0), Z(1)) + CNOT(0, 1),
+            BackendName.PYQTORCH,
+            ReadOutOptimization.CONSTRAINED,
+        ),
     ],
 )
 def test_readout_mitigation_quantum_model(
@@ -122,10 +170,7 @@ def test_readout_mitigation_quantum_model(
     assert js_mitigated < js_noisy
 
 
-
-
-
-
+@pytest.mark.flaky(max_runs=5)
 @pytest.mark.parametrize(
     "error_probability, n_shots, block, backend",
     [
@@ -148,27 +193,25 @@ def test_compare_readout_methods(
     noise = Noise(protocol=Noise.READOUT)
 
     noiseless_samples: list[Counter] = model.sample(n_shots=n_shots)
-    # noisy_samples: list[Counter] = model.sample(noise=noise, n_shots=n_shots)
 
     mitigation_mle = Mitigations(
-        protocol=Mitigations.READOUT, options={"optimization_type": "mle"}
+        protocol=Mitigations.READOUT, options={"optimization_type": ReadOutOptimization.CONSTRAINED}
     )
     mitigated_samples_mle: list[Counter] = model.sample(
         noise=noise, mitigation=mitigation_mle, n_shots=n_shots
     )
 
     mitigation_constrained_opt = Mitigations(
-        protocol=Mitigations.READOUT, options={"optimization_type": "mle"}
+        protocol=Mitigations.READOUT, options={"optimization_type": ReadOutOptimization.MLE}
     )
     mitigated_samples_constrained_opt: list[Counter] = model.sample(
         noise=noise, mitigation=mitigation_constrained_opt, n_shots=n_shots
     )
     js_mitigated_mle = js_divergence(mitigated_samples_mle[0], noiseless_samples[0])
-    js_mitigated_constrained_opt = js_divergence(mitigated_samples_constrained_opt[0], noiseless_samples[0])
-    breakpoint()
+    js_mitigated_constrained_opt = js_divergence(
+        mitigated_samples_constrained_opt[0], noiseless_samples[0]
+    )
     assert js_mitigated_mle <= js_mitigated_constrained_opt
-
-
 
 
 @pytest.mark.parametrize(

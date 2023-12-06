@@ -12,6 +12,7 @@ from scipy.optimize import LinearConstraint, minimize
 
 from qadence.mitigations.protocols import Mitigations
 from qadence.noise.protocols import Noise
+from qadence.types import ReadOutOptimization
 
 
 def corrected_probas(p_corr: npt.NDArray, T: npt.NDArray, p_raw: npt.NDArray) -> np.double:
@@ -63,6 +64,10 @@ def renormalize_counts(corrected_counts: npt.NDArray, n_shots: int) -> npt.NDArr
     return corrected_counts
 
 
+def matrix_inv(K: npt.NDArray) -> npt.NDArray:
+    return inv(K) if matrix_rank(K) == K.shape[0] else pinv(K)
+
+
 def mitigation_minimization(
     noise: Noise,
     mitigation: Mitigations,
@@ -84,20 +89,19 @@ def mitigation_minimization(
         Mitigated counts computed by the algorithm
     """
     noise_matrices = noise.options.get("noise_matrix", noise.options["confusion_matrices"])
-    optimization_type = mitigation.options.get("optimization_type", "mle")
+    optimization_type = mitigation.options.get("optimization_type", ReadOutOptimization.MLE)
     n_qubits = len(list(samples[0].keys())[0])
     n_shots = sum(samples[0].values())
     corrected_counters: list[Counter] = []
 
-    M_inv = lambda K: inv(K) if matrix_rank(K) == K.shape[0] else pinv(K)
-    if optimization_type == "constrained_opt":
+    if optimization_type == ReadOutOptimization.CONSTRAINED:
         # Build the whole T matrix.
         T_matrix = reduce(torch.kron, noise_matrices).detach().numpy()
 
-    if optimization_type == "mle":  ## MLE version
+    if optimization_type == ReadOutOptimization.MLE:  ## MLE version
         ##check if matrix is singular and use appropriate inverse
-        noise_matrices_inv = list(map(M_inv, noise_matrices.numpy()))
-        T_inv = reduce(np.kron,noise_matrices_inv)
+        noise_matrices_inv = list(map(matrix_inv, noise_matrices.numpy()))
+        T_inv = reduce(np.kron, noise_matrices_inv)
 
     for sample in samples:
         bitstring_length = 2**n_qubits
@@ -106,7 +110,7 @@ def mitigation_minimization(
         # Array of raw probabilites.
         p_raw = np.array([sample[bs] for bs in ordered_bitstrings]) / n_shots
 
-        if optimization_type == "constrained_opt":
+        if optimization_type == ReadOutOptimization.CONSTRAINED:
             # Initial random guess in [0,1].
             p_corr0 = np.random.rand(bitstring_length)
             # Stochasticity constraints.
@@ -123,11 +127,11 @@ def mitigation_minimization(
             )
             p_corr = res.x
 
-        elif optimization_type == "mle":  ## MLE version
+        elif optimization_type == ReadOutOptimization.MLE:  ## MLE version
             ## compute corrected inverse using matrix inversion and run MLE
             p_corr = mle_solve(T_inv @ p_raw)
         else:
-            raise NotImplementedError
+            raise NotImplementedError("Requested method does not match supported protocols")
 
         corrected_counts = np.rint(p_corr * n_shots).astype(int)
 
