@@ -115,6 +115,13 @@ expval_pulser = model_pulser.expectation(values = value)
 print(f"Expectation value on Pulser: \n{expval_pulser.flatten().detach()}\n")  # markdown-exec: hide
 ```
 
+Note that by default the addressing pattern terms are added to every analog operation in the circuit. However, it is
+possible to turn the addressing pattern off for specific operations by passing `add_pattern=False` in the operation.
+For example `AnalogRX(pi)` will get the extra addressing pattern term, but `AnalogRX(pi, add_pattern=False)` will not.
+This is currently only implemented for the PyQTorch backend. If an addressing pattern is specified for the Pulser backend,
+it will be added to all the blocks.
+
+
 ### Trainable weights
 
 !!! note
