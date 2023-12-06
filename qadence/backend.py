@@ -100,11 +100,14 @@ class Backend(ABC):
         name: backend unique string identifier
         supports_ad: whether or not the backend has a native autograd
         supports_bp: whether or not the backend has a native backprop
+        supports_adjoint: Does the backend support native adjoint differentation.
         is_remote: whether computations are executed locally or remotely on this
             backend, useful when using cloud platforms where credentials are
             needed for example.
         with_measurements: whether it supports counts or not
         with_noise: whether to add realistic noise or not
+        native_endianness: The native endianness of the backend
+        engine: The underlying (native) automatic differentiation engine of the backend.
     """
 
     name: BackendName
