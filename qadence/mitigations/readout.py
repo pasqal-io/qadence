@@ -87,13 +87,17 @@ def mitigation_minimization(
     optimization_type = mitigation.options.get("optimization_type", "mle")
     n_qubits = len(list(samples[0].keys())[0])
     n_shots = sum(samples[0].values())
-    # Build the whole T matrix.
-    T_matrix = reduce(torch.kron, noise_matrices).detach().numpy()
     corrected_counters: list[Counter] = []
+
+    M_inv = lambda K: inv(K) if matrix_rank(K) == K.shape[0] else pinv(K)
+    if optimization_type == "constrained_opt":
+        # Build the whole T matrix.
+        T_matrix = reduce(torch.kron, noise_matrices).detach().numpy()
 
     if optimization_type == "mle":  ## MLE version
         ##check if matrix is singular and use appropriate inverse
-        T_inv = inv(T_matrix) if matrix_rank(T_matrix) == T_matrix.shape[0] else pinv(T_matrix)
+        noise_matrices_inv = list(map(M_inv, noise_matrices.numpy()))
+        T_inv = reduce(np.kron,noise_matrices_inv)
 
     for sample in samples:
         bitstring_length = 2**n_qubits

@@ -121,6 +121,55 @@ def test_readout_mitigation_quantum_model(
     assert js_mitigated < js_noisy
 
 
+
+
+
+
+@pytest.mark.parametrize(
+    "error_probability, n_shots, block, backend",
+    [
+        (0.1, 100, kron(X(0), X(1)), BackendName.BRAKET),
+        (0.1, 1000, kron(Z(0), Z(1), Z(2)) + kron(X(0), Y(1), Z(2)), BackendName.BRAKET),
+        (0.1, 500, add(Z(0), Z(1), kron(X(2), X(3))) + add(X(2), X(3)), BackendName.BRAKET),
+        (0.1, 2000, add(kron(Z(0), Z(1)), kron(X(2), X(3))), BackendName.BRAKET),
+    ],
+)
+def test_compare_readout_methods(
+    error_probability: float,
+    n_shots: int,
+    block: AbstractBlock,
+    backend: BackendName,
+) -> None:
+    diff_mode = "ad" if backend == BackendName.PYQTORCH else "gpsr"
+    circuit = QuantumCircuit(block.n_qubits, block)
+    model = QuantumModel(circuit=circuit, backend=backend, diff_mode=diff_mode)
+
+    noise = Noise(protocol=Noise.READOUT)
+
+    noiseless_samples: list[Counter] = model.sample(n_shots=n_shots)
+    # noisy_samples: list[Counter] = model.sample(noise=noise, n_shots=n_shots)
+
+    mitigation_mle = Mitigations(
+        protocol=Mitigations.READOUT, options={"optimization_type": "mle"}
+    )
+    mitigated_samples_mle: list[Counter] = model.sample(
+        noise=noise, mitigation=mitigation_mle, n_shots=n_shots
+    )
+
+    mitigation_constrained_opt = Mitigations(
+        protocol=Mitigations.READOUT, options={"optimization_type": "mle"}
+    )
+    mitigated_samples_constrained_opt: list[Counter] = model.sample(
+        noise=noise, mitigation=mitigation_constrained_opt, n_shots=n_shots
+    )
+    js_mitigated_mle = js_divergence(mitigated_samples_mle[0], noiseless_samples[0])
+    js_mitigated_constrained_opt = js_divergence(mitigated_samples_constrained_opt[0], noiseless_samples[0])
+    breakpoint()
+    assert js_mitigated_mle <= js_mitigated_constrained_opt
+
+
+
+
 @pytest.mark.parametrize(
     "analog_block, observable, noise_probas, noise_type",
     [
