@@ -111,7 +111,7 @@ In Qadence semi-local addressing patterns can be created by either specifying fi
 
 With fixed weights, detuning/amplitude addressing patterns can be defined in the following way:
 
-```python exec="on" source="material-block" session="emu"
+```python exec="on" source="material-block" session="addr"
 import torch
 from qadence.analog import AddressingPattern
 
@@ -180,7 +180,7 @@ print(f"Expectation value on PyQ: \n{expval_pyq.flatten().detach()}\n")  # markd
 
 The same configuration can also be seamlessly used to create a model with the Pulser backend.
 
-```python exec="on" source="material-block" session="emu"
+```python exec="on" source="material-block" session="addr"
 model_pulser = QuantumModel(
     circuit=circ,
     observable=obs,
