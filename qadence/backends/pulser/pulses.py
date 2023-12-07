@@ -20,12 +20,15 @@ from qadence.blocks.analog import (
     Interaction,
     WaitBlock,
 )
+from qadence.logger import get_logger
 from qadence.operations import RX, RY, RZ, AnalogEntanglement, OpName
 from qadence.parameters import evaluate
 
 from .channels import GLOBAL_CHANNEL, LOCAL_CHANNEL
 from .config import Configuration
 from .waveforms import SquareWaveform
+
+logger = get_logger(__file__)
 
 TVar = Union[Variable, VariableItem]
 
@@ -118,6 +121,11 @@ def add_pulses(
 
     # TODO: lets move those to `@singledipatch`ed functions
     if isinstance(block, WaitBlock):
+        if not block.add_pattern:
+            logger.warning(
+                "Found block with `add_pattern = False`. This is not yet supported in the Pulser "
+                "backend. If an addressing pattern is specified, it will be added to all blocks."
+            )
         # wait if its a global wait
         if block.qubit_support.is_global:
             (uuid, duration) = block.parameters.uuid_param("duration")
@@ -133,6 +141,11 @@ def add_pulses(
                 raise ValueError("Trying to wait on qubits outside of support.")
 
     elif isinstance(block, ConstantAnalogRotation):
+        if not block.add_pattern:
+            logger.warning(
+                "Found block with `add_pattern = False`. This is not yet supported in the Pulser "
+                "backend. If an addressing pattern is specified, it will be added to all blocks."
+            )
         ps = block.parameters
         (t_uuid, duration) = ps.uuid_param("duration")
         (w_uuid, omega) = ps.uuid_param("omega")
