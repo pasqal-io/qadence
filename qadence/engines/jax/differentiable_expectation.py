@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from operator import add, sub
 from typing import Any, Tuple
 
 import jax.numpy as jnp
@@ -69,7 +68,7 @@ class DifferentiableExpectation:
         def expectation_bwd(res: Tuple[Array, ParamDictType, ParamDictType], tangent: Array) -> Any:
             state, values, psr_params = res
             grads = {}
-            # Hardcoding the single spectral_gap to 2. for jax.lax jitting reasons.
+            # FIXME Hardcoding the single spectral_gap to 2.
             spectral_gap = 2.0
             shift = jnp.pi / 2
 
@@ -89,50 +88,6 @@ class DifferentiableExpectation:
                 f_plus, f_min = shift_circ(param_name, values)
                 grad = spectral_gap * (f_plus - f_min) / (4.0 * jnp.sin(spectral_gap * shift / 2.0))
                 grads[param_name] = jnp.sum(tangent * grad, axis=1) if n_obs > 1 else tangent * grad
-            return None, None, grads
-
-        ## TODO Experimental bwd which vmaps the circ over all parameter shift permutations
-        def expectation_bwd_vmap(
-            res: Tuple[Array, ParamDictType, ParamDictType], tangent: Array
-        ) -> Any:
-            state, values, psr_params = res
-            grads = {}
-            # Hardcoding the single spectral_gap to 2. for jax.lax jitting reasons.
-            spectral_gap = 2.0
-            shift = jnp.pi / 2
-            psr_names = list(psr_params.keys())
-            psr_values = jnp.array([arr for arr in psr_params.values()]).reshape(1, len(psr_names))
-            _all_shifted_vals = []
-            # Create an array all_shifted_values.shape == (2*num_psr_params X num_psr_params)
-            # where idx [i,:] denotes the parameter vector where parameter i is shifted by +shift
-            # and idx i+1 is the parameter vector where parameter i is shifted by -shift
-            for i in range(len(psr_names)):
-                for op in [add, sub]:
-                    shift_val = op(psr_values[0, i], shift)
-                    shifted_values = jnp.copy(psr_values)
-                    shifted_values = shifted_values.at[0, i].set(shift_val)
-                    _all_shifted_vals.append(shifted_values)
-            all_shifted_values = jnp.concatenate(_all_shifted_vals, axis=0)
-            non_psr_params = {k: v for k, v in values.items() if k not in psr_params.keys()}
-
-            def eval_circ(values: Array) -> Array:
-                shifted_params = {k: v for k, v in zip(psr_names, values)}
-                shifted_params.update(non_psr_params)
-                return expectation(state, shifted_params, psr_params)
-
-            # now we can vmap the circ over all parameter vectors
-            shifted_expvals = vmap(eval_circ, in_axes=(0,))(all_shifted_values)
-
-            def psr_grad(f_plus: Array, f_min: Array, spectral_gap: Array = 2.0) -> Array:
-                grad = spectral_gap * (f_plus - f_min) / (4.0 * jnp.sin(spectral_gap * shift / 2.0))
-                return jnp.sum(tangent * grad, axis=1) if n_obs > 1 else tangent * grad
-
-            grads = {
-                param_name: grad
-                for param_name, grad in zip(
-                    psr_names, vmap(psr_grad)(shifted_expvals[0::2], shifted_expvals[1::2])
-                )
-            }
             return None, None, grads
 
         expectation.defvjp(expectation_fwd, expectation_bwd)
