@@ -45,7 +45,7 @@ def test_single_rotation(block: AbstractBlock, goal: Counter) -> None:
 def test_single_rotation_multiple_qubits(
     single_rotation: AbstractBlock, global_rotation: AbstractBlock
 ) -> None:
-    register = Register.from_coordinates([(-0.5, 0), (0.5, 0)], lattice="line")
+    register = Register.from_coordinates([(-0.5, 0), (0.5, 0)], lattice="line", spacing=8.0)
 
     circuit1 = QuantumCircuit(register, single_rotation)
     model_pulser1 = QuantumModel(

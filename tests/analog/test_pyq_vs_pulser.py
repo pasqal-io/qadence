@@ -5,6 +5,7 @@ import pytest
 import torch
 from metrics import ATOL_DICT, JS_ACCEPTANCE, LARGE_SPACING, SMALL_SPACING
 
+from qadence import Parameter
 from qadence.analog import RealisticDevice, RydbergDevice
 from qadence.blocks import AbstractBlock, chain, kron
 from qadence.circuit import QuantumCircuit
@@ -31,6 +32,58 @@ from qadence.parameters import FeatureParameter
 from qadence.register import Register
 from qadence.states import equivalent_state, random_state
 from qadence.types import BackendName, DiffMode
+
+
+@pytest.mark.parametrize(
+    "duration, omega, delta, phase, values",
+    [
+        (
+            "t",
+            "omega",
+            "delta",
+            "phase",
+            {
+                "t": torch.tensor([1000.0]),
+                "omega": torch.tensor([1.0]),
+                "delta": torch.tensor([1.0]),
+            },
+        ),
+        (
+            Parameter("t"),
+            Parameter("omega"),
+            Parameter("delta"),
+            Parameter("phase"),
+            {
+                "t": torch.tensor([1000.0]),
+                "omega": torch.tensor([1.0]),
+                "delta": torch.tensor([1.0]),
+            },
+        ),
+        (
+            1000.0,
+            1.0,
+            1.0,
+            1.0,
+            {},
+        ),
+    ],
+)
+def test_parametrized_analog_rot(
+    duration: float | str | Parameter,
+    omega: float | str | Parameter,
+    delta: float | str | Parameter,
+    phase: float | str | Parameter,
+    values: dict,
+) -> None:
+    analog_rot = AnalogRot(duration=duration, omega=omega, delta=delta)
+
+    register = Register.line(2, spacing=8)
+    circuit = QuantumCircuit(register, analog_rot)
+
+    wf_pyq = run(circuit, values=values, backend=BackendName.PYQTORCH)
+    wf_pulser = run(circuit, values=values, backend=BackendName.PULSER)
+
+    assert equivalent_state(wf_pyq, wf_pulser, atol=ATOL_DICT[BackendName.PULSER])
 
 
 @pytest.mark.flaky(max_runs=5)
