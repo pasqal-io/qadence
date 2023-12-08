@@ -4,7 +4,7 @@ import jax.numpy as jnp
 import pytest
 import sympy
 import torch
-from jax import Array, grad, jit, value_and_grad, vmap
+from jax import Array, grad, jacrev, jit, value_and_grad, vmap
 
 from qadence import (
     CNOT,
@@ -57,7 +57,7 @@ def test_psr_firstOrder() -> None:
 
 @pytest.mark.parametrize("batch_size", [1, 2])
 @pytest.mark.parametrize("obs", [Z(0), Z(0) + Z(1)])
-def test_psr_3rd_order_single_param(batch_size: int, obs: AbstractBlock) -> None:
+def test_psr_d3fdx(batch_size: int, obs: AbstractBlock) -> None:
     n_qubits: int = 2
     circ = QuantumCircuit(n_qubits, RX(0, "theta"))
     grad_dict = {}
@@ -77,6 +77,30 @@ def test_psr_3rd_order_single_param(batch_size: int, obs: AbstractBlock) -> None
         jd3fdx = jit(d3fdx)
         grad_dict[diff_mode] = vmap(jd3fdx, in_axes=(0,))(jnp.ones(batch_size))
     assert jnp.allclose(grad_dict["ad"], grad_dict["gpsr"])
+
+
+@pytest.mark.parametrize("batch_size", [1])
+@pytest.mark.parametrize("obs", [Z(0)])
+def test_psr_2nd_order_mixed(batch_size: int, obs: AbstractBlock) -> None:
+    n_qubits: int = 2
+    circ = QuantumCircuit(n_qubits, hea(n_qubits=n_qubits, depth=1))
+    grad_dict = {}
+    for diff_mode in ["ad", "gpsr"]:
+        hq_bknd = backend_factory("horqrux", diff_mode)
+        hq_circ, hq_obs, hq_fn, hq_params = hq_bknd.convert(circ, obs)
+        hessian = jit(
+            jacrev(jacrev(lambda params: hq_bknd.expectation(hq_circ, hq_obs, hq_fn(params, {}))))
+        )
+        grad_dict[diff_mode] = hessian(hq_params)
+
+    def _allclose(d0: dict, d1: dict) -> None:
+        for (k0, dd0), (k1, dd1) in zip(d0.items(), d1.items()):
+            if isinstance(dd0, dict):
+                return _allclose(dd0, dd1)
+            else:
+                assert jnp.allclose(dd0, dd1) and k0 == k1
+
+    _allclose(grad_dict["ad"], grad_dict["gpsr"])
 
 
 @pytest.mark.parametrize("block", [RX(0, 1.0), RY(0, 3.0), RZ(0, 4.0), X(0), Y(0), Z(0)])
