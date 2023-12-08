@@ -14,7 +14,7 @@ logger = get_logger(__name__)
 
 
 def _available_engines() -> dict:
-    """Fallback function for native Qadence available engines if extensions is not present."""
+    """Returns a dictionary of currently installed, native qadence engines."""
     res = {}
     for engine in Engine.list():
         module_path = f"qadence.engines.{engine}.differentiable_backend"
@@ -29,7 +29,7 @@ def _available_engines() -> dict:
 
 
 def _available_backends() -> dict:
-    """Fallback function for native Qadence available backends if extensions is not present."""
+    """Returns a dictionary of currently installed, native qadence backends."""
     res = {}
     for backend in BackendName.list():
         module_path = f"qadence.backends.{backend}.backend"
@@ -44,7 +44,7 @@ def _available_backends() -> dict:
 
 
 def _supported_gates(name: BackendName | str) -> list[TAbstractBlock]:
-    """Fallback function for native Qadence backend supported gates if extensions is not present."""
+    """Returns a list of supported gates for the queried backend 'name'."""
     from qadence import operations
 
     name = str(BackendName(name).name.lower())
