@@ -52,13 +52,11 @@ def add_background_hamiltonian(
         # Create addressing pattern:
         h_addr = rydberg_pattern_hamiltonian(input_register)
 
-        h_background = h_int + h_addr if h_addr is not None else h_int
-
         output_block = apply_fn_to_blocks(
             input_block,
             _analog_to_hevo,
             input_register,
-            h_background,
+            (h_int, h_addr),
         )
     else:
         output_block = input_block
@@ -69,8 +67,25 @@ def add_background_hamiltonian(
         return output_block
 
 
+def _build_ham_evo(
+    block: WaitBlock | ConstantAnalogRotation,
+    h_int: AbstractBlock,
+    h_drive: AbstractBlock | None,
+    h_addr: AbstractBlock | None,
+) -> HamEvo:
+    duration = block.parameters.duration
+    h_block = h_int
+    if h_drive is not None:
+        h_block += h_drive
+    if block.add_pattern and h_addr is not None:
+        h_block += h_addr
+    return HamEvo(h_block, duration / 1000)
+
+
 def _analog_to_hevo(
-    block: AbstractBlock, register: Register, h_background: AbstractBlock
+    block: AbstractBlock,
+    register: Register,
+    h_terms: tuple[AbstractBlock, AbstractBlock | None],
 ) -> AbstractBlock:
     """
     Converter from AnalogBlock to the respective HamEvo.
@@ -78,14 +93,14 @@ def _analog_to_hevo(
     Any other block not covered by the specific conditions below is left unchanged.
     """
 
+    h_int, h_addr = h_terms
+
     if isinstance(block, WaitBlock):
-        duration = block.parameters.duration
-        return HamEvo(h_background, duration / 1000)
+        return _build_ham_evo(block, h_int, None, h_addr)
 
     if isinstance(block, ConstantAnalogRotation):
         h_drive = rydberg_drive_hamiltonian(block, register)
-        duration = block.parameters.duration
-        return HamEvo(h_drive + h_background, duration / 1000)
+        return _build_ham_evo(block, h_int, h_drive, h_addr)
 
     if isinstance(block, AnalogKron):
         # Needed to ensure kronned Analog blocks are implemented
@@ -96,12 +111,10 @@ def _analog_to_hevo(
         ops = []
         for block in block.blocks:
             if isinstance(block, ConstantAnalogRotation):
-                duration = block.parameters.duration
                 h_drive = rydberg_drive_hamiltonian(block, register)
-                ops.append(HamEvo(h_drive + h_background, duration / 1000))
+                ops.append(_build_ham_evo(block, h_int, h_drive, h_addr))
         if len(ops) == 0:
-            duration = block.parameters.duration  # type: ignore
-            ops.append(HamEvo(h_background, duration / 1000))
+            ops.append(_build_ham_evo(block, h_int, None, h_addr))  # type: ignore [arg-type]
         return chain(*ops)
 
     return block
