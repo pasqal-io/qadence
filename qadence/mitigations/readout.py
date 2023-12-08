@@ -22,7 +22,7 @@ def corrected_probas(p_corr: npt.NDArray, T: npt.NDArray, p_raw: npt.NDArray) ->
 def mle_solve(p_raw: npt.NDArray) -> npt.NDArray:
     """
     Compute the MLE probability vector.
-    
+
     Algorithmic details can be found in https://arxiv.org/pdf/1106.5458.pdf Page(3).
 
     algorithm specified in https://arxiv.org/pdf/1106.5458.pdf Page(3)
@@ -133,7 +133,9 @@ def mitigation_minimization(
             # Compute corrected inverse using matrix inversion and run MLE.
             p_corr = mle_solve(T_inv @ p_raw)
         else:
-            raise NotImplementedError(f"Requested method {optimization_type} does not match supported protocols.")
+            raise NotImplementedError(
+                f"Requested method {optimization_type} does not match supported protocols."
+            )
 
         corrected_counts = np.rint(p_corr * n_shots).astype(int)
 
