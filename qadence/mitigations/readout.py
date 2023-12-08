@@ -101,7 +101,7 @@ def mitigation_minimization(
         T_matrix = reduce(torch.kron, noise_matrices).detach().numpy()
 
     if optimization_type == ReadOutOptimization.MLE:
-        ##check if matrix is singular and use appropriate inverse
+        # Check if matrix is singular and use appropriate inverse.
         noise_matrices_inv = list(map(matrix_inv, noise_matrices.numpy()))
         T_inv = reduce(np.kron, noise_matrices_inv)
 
