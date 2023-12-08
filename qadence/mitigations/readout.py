@@ -129,7 +129,7 @@ def mitigation_minimization(
             )
             p_corr = res.x
 
-        elif optimization_type == ReadOutOptimization.MLE:  ## MLE version
+        elif optimization_type == ReadOutOptimization.MLE:
             ## compute corrected inverse using matrix inversion and run MLE
             p_corr = mle_solve(T_inv @ p_raw)
         else:
