@@ -133,7 +133,7 @@ def mitigation_minimization(
             # Compute corrected inverse using matrix inversion and run MLE.
             p_corr = mle_solve(T_inv @ p_raw)
         else:
-            raise NotImplementedError("Requested method does not match supported protocols")
+            raise NotImplementedError(f"Requested method {optimization_type} does not match supported protocols.")
 
         corrected_counts = np.rint(p_corr * n_shots).astype(int)
 
