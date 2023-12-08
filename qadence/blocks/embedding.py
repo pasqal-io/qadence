@@ -25,7 +25,7 @@ def _concretize_parameter(engine: Engine) -> Callable:
         from jax.numpy import float64 as jaxfloat64
 
         def concretize_parameter(value: TNumber, trainable: bool = False) -> ArrayLike:
-            return jaxarray.array([value], dtype=jaxfloat64)
+            return jaxarray([value], dtype=jaxfloat64)
 
     else:
 
