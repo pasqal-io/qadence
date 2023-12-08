@@ -21,7 +21,9 @@ def corrected_probas(p_corr: npt.NDArray, T: npt.NDArray, p_raw: npt.NDArray) ->
 
 def mle_solve(p_raw: npt.NDArray) -> npt.NDArray:
     """
-    Computes the MLE probability vector in accordance to the.
+    Compute the MLE probability vector.
+    
+    Algorithmic details can be found in https://arxiv.org/pdf/1106.5458.pdf Page(3).
 
     algorithm specified in https://arxiv.org/pdf/1106.5458.pdf Page(3)
     """
