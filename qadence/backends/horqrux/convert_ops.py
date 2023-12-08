@@ -130,7 +130,7 @@ def convert_block(
     elif isinstance(block, CNOT):
         native_op = ops_map[block.name]
         ops = [
-            HorqCNOTGate(native_op, block.qubit_support[1], block.qubit_support[0])
+            HorqCNOTGate(native_op, block.qubit_support[0], block.qubit_support[1])
         ]  # in horqrux target and control are swapped
 
     elif isinstance(block, (CRX, CRY, CRZ)):
@@ -190,7 +190,7 @@ class HorqPrimitiveGate:
 
 
 class HorqCNOTGate:
-    def __init__(self, gate: Gate, target: int, control: int):
+    def __init__(self, gate: Gate, control: int, target: int):
         self.gates: Callable = gate
         self.control: int = control
         self.target: int = target
