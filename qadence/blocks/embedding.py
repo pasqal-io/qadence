@@ -4,7 +4,7 @@ from typing import Callable, Iterable, List
 
 import sympy
 from numpy import array as nparray
-from numpy import float64 as npcdouble
+from numpy import cdouble as npcdouble
 from torch import tensor
 
 from qadence.blocks import (
