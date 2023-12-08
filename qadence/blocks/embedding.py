@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from typing import Callable, Iterable, List
 
-import numpy as np
 import sympy
-import torch
+from numpy import array as nparray
+from numpy import float64 as npcdouble
+from torch import tensor
 
 from qadence.blocks import (
     AbstractBlock,
@@ -20,15 +21,16 @@ from qadence.types import ArrayLike, DifferentiableExpression, Engine, ParamDict
 
 def _concretize_parameter(engine: Engine) -> Callable:
     if engine == Engine.JAX:
-        import jax.numpy as jnp
+        from jax.numpy import array as jaxarray
+        from jax.numpy import float64 as jaxfloat64
 
         def concretize_parameter(value: TNumber, trainable: bool = False) -> ArrayLike:
-            return jnp.array([value], dtype=jnp.float64)
+            return jaxarray.array([value], dtype=jaxfloat64)
 
     else:
 
         def concretize_parameter(value: TNumber, trainable: bool = False) -> ArrayLike:
-            return torch.tensor([value], requires_grad=trainable)
+            return tensor([value], requires_grad=trainable)
 
     return concretize_parameter
 
@@ -69,7 +71,7 @@ def embedding(
     """
     concretize_parameter = _concretize_parameter(engine)
     if engine == Engine.TORCH:
-        cast_dtype = torch.tensor
+        cast_dtype = tensor
     else:
         from jax.numpy import array
 
@@ -151,7 +153,7 @@ def embedding(
     )
     params.update(
         {
-            stringify(expr): cast_dtype(np.array(expr.tolist(), dtype=np.cdouble))
+            stringify(expr): cast_dtype(nparray(expr.tolist(), dtype=npcdouble))
             for expr in unique_const_matrices
         }
     )

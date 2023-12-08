@@ -9,12 +9,11 @@ import sympy
 from sympy import *
 from sympy import Array, Basic, Expr, Symbol, sympify
 from sympy.physics.quantum.dagger import Dagger
-from sympy2jax import SymbolicModule as JaxSympyModule
 from sympytorch import SymPyModule as torchSympyModule
 from torch import Tensor, heaviside, no_grad, rand, tensor
 
 from qadence.logger import get_logger
-from qadence.types import Engine, TNumber
+from qadence.types import DifferentiableExpression, Engine, TNumber
 
 # Modules to be automatically added to the qadence namespace
 __all__ = ["FeatureParameter", "Parameter", "VariationalParameter"]
@@ -202,15 +201,15 @@ def torchify(expr: Expr) -> torchSympyModule:
     return torchSympyModule(expressions=[sympy.N(expr)], extra_funcs=extra_funcs)
 
 
-def make_differentiable(
-    expr: Expr, engine: Engine = Engine.TORCH
-) -> torchSympyModule | JaxSympyModule:
+def make_differentiable(expr: Expr, engine: Engine = Engine.TORCH) -> DifferentiableExpression:
+    diff_expr: DifferentiableExpression
     if engine == Engine.JAX:
         from qadence.backends.jax_utils import jaxify
 
-        return jaxify(expr)
+        diff_expr = jaxify(expr)
     else:
-        return torchify(expr)
+        diff_expr = torchify(expr)
+    return diff_expr
 
 
 def sympy_to_numeric(expr: Basic) -> TNumber:
