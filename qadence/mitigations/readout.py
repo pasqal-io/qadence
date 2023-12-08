@@ -27,7 +27,7 @@ def mle_solve(p_raw: npt.NDArray) -> npt.NDArray:
 
     algorithm specified in https://arxiv.org/pdf/1106.5458.pdf Page(3)
     """
-    ## sort p_raw by values while keeping track of indices
+    # Sort p_raw by values while keeping track of indices.
     index_sort = p_raw.argsort()
     p_sort = p_raw[index_sort]
     neg_sum = 0
