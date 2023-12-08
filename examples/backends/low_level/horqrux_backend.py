@@ -8,6 +8,7 @@ from jax import Array, jit, value_and_grad
 from numpy.typing import ArrayLike
 
 from qadence.backends import backend_factory
+from qadence.blocks.utils import chain
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import feature_map, hea, total_magnetization
 from qadence.types import BackendName, DiffMode
@@ -19,7 +20,7 @@ n_qubits = 4
 depth = 1
 
 fm = feature_map(n_qubits)
-circ = QuantumCircuit(n_qubits, hea(n_qubits, depth=depth))
+circ = QuantumCircuit(n_qubits, chain(fm, hea(n_qubits, depth=depth)))
 obs = total_magnetization(n_qubits)
 
 for diff_mode in [DiffMode.AD, DiffMode.GPSR]:
@@ -31,7 +32,7 @@ for diff_mode in [DiffMode.AD, DiffMode.GPSR]:
 
     loss: Array
     grads: dict[str, Array]  # 'grads' is the same datatype as 'params'
-    inputs: dict[str, Array] = {}  # Our circuits doesnt have any feature parameters.
+    inputs: dict[str, Array] = {"phi": jnp.array(1.0)}
 
     def optimize_step(params: dict[str, Array], opt_state: Array, grads: dict[str, Array]) -> tuple:
         updates, opt_state = optimizer.update(grads, opt_state, params)
