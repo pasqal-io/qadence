@@ -16,7 +16,7 @@ from qadence.types import ArrayLike, DiffMode, Endianness, Engine, ParamDictType
 
 
 class DifferentiableBackend(DifferentiableBackendInterface):
-    """A class to abstract the operations done by the autodiff engine.
+    """A class which wraps a QuantumBackend with the automatic differentation engine TORCH.
 
     Arguments:
         backend: An instance of the QuantumBackend type perform execution.

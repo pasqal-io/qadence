@@ -17,7 +17,15 @@ from qadence.types import ArrayLike, DiffMode, Endianness, Engine, ParamDictType
 
 @dataclass(frozen=True, eq=True)
 class DifferentiableBackend(ABC):
-    """The abstract class which defines the interface for differentiable backends."""
+    """The abstract class which wraps any (non)-natively differentiable QuantumBackend.
+
+       in an automatic differentiation engine.
+
+    Arguments:
+        backend: An instance of the QuantumBackend type perform execution.
+        engine: Which automatic differentiation engine the QuantumBackend runs on.
+        diff_mode: A differentiable mode supported by the differentiation engine.
+    """
 
     backend: Backend
     engine: Engine
