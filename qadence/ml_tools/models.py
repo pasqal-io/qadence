@@ -180,7 +180,8 @@ class TransformedModule(torch.nn.Module):
                 x = self._format_to_dict(x)
             if self.in_features == 1:
                 return {
-                    key: self._input_scaling * (val + self._input_shifting) for key, val in x.items()
+                    key: self._input_scaling * (val + self._input_shifting)
+                    for key, val in x.items()
                 }
             else:
                 return {
