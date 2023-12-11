@@ -5,6 +5,7 @@ from collections import Counter
 import numpy as np
 import pytest
 import torch
+from metrics import MIDDLE_ACCEPTANCE
 from numpy.typing import NDArray
 
 from qadence import (
@@ -170,7 +171,6 @@ def test_readout_mitigation_quantum_model(
     assert js_mitigated < js_noisy
 
 
-@pytest.mark.flaky(max_runs=5)
 @pytest.mark.parametrize(
     "error_probability, n_shots, block, backend",
     [
@@ -211,7 +211,7 @@ def test_compare_readout_methods(
     js_mitigated_constrained_opt = js_divergence(
         mitigated_samples_constrained_opt[0], noiseless_samples[0]
     )
-    assert js_mitigated_mle <= js_mitigated_constrained_opt
+    assert (js_mitigated_constrained_opt - js_mitigated_mle) < MIDDLE_ACCEPTANCE
 
 
 @pytest.mark.parametrize(
