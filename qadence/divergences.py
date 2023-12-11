@@ -36,3 +36,15 @@ def js_divergence(counter_p: Counter, counter_q: Counter) -> float:
     entropy_p = shannon_entropy(counter_p)
     entropy_q = shannon_entropy(counter_q)
     return float(average_entropy - (entropy_p + entropy_q) / 2.0)
+
+
+def norm_difference(counter_p: Counter, counter_q: Counter) -> float:
+    # Normalise counters
+
+    counter_p = np.array([v for v in counter_p.values()])
+    counter_q = np.array([v for v in counter_q.values()])
+
+    prob_p = counter_p / np.sum(counter_p)
+    prob_q = counter_q / np.sum(counter_q)
+
+    return float(np.linalg.norm(prob_p - prob_q))

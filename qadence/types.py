@@ -381,3 +381,8 @@ class OpName(StrEnum):
     """The wait operation."""
     PROJ = "Projector"
     """The projector operation."""
+
+
+class ReadOutOptimization(StrEnum):
+    MLE = "mle"
+    CONSTRAINED = "constrained"
