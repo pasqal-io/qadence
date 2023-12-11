@@ -18,11 +18,13 @@ from qadence.backend import (
 )
 from qadence.backends.api import backend_factory, config_factory
 from qadence.blocks.abstract import AbstractBlock
+from qadence.blocks.utils import chain, unique_parameters
 from qadence.circuit import QuantumCircuit
 from qadence.logger import get_logger
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.noise import Noise
+from qadence.parameters import Parameter
 from qadence.types import DiffMode, Endianness
 
 logger = get_logger(__name__)
@@ -77,7 +79,6 @@ class QuantumModel(nn.Module):
                 f"The circuit should be of type '<class QuantumCircuit>'. Got {type(circuit)}."
             )
 
-        self.inputs = [p for p in circuit.unique_parameters if not p.trainable and not p.is_number]
         if diff_mode is None:
             raise ValueError("`diff_mode` cannot be `None` in a `QuantumModel`.")
 
@@ -89,6 +90,15 @@ class QuantumModel(nn.Module):
             observable = observable
         else:
             observable = [observable]
+
+        def _is_feature_param(p: Parameter) -> bool:
+            return not p.trainable and not p.is_number
+
+        if observable is None:
+            self.inputs = list(filter(_is_feature_param, circuit.unique_parameters))
+        else:
+            uparams = unique_parameters(chain(circuit.block, *observable))
+            self.inputs = list(filter(_is_feature_param, uparams))
 
         conv = self.backend.convert(circuit, observable)
         self.embedding_fn = conv.embedding_fn
