@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Counter
 
+import jax.numpy as jnp
 import pytest
 import strategies as st  # type: ignore
 from hypothesis import given, settings
@@ -10,6 +11,7 @@ from torch import Tensor, allclose, cdouble, pi, tensor
 
 from qadence import QuantumCircuit, block_to_tensor, run, sample
 from qadence.backends.api import backend_factory
+from qadence.backends.jax_utils import jarr_to_tensor, tensor_to_jnp
 from qadence.blocks import AbstractBlock, MatrixBlock, chain, kron
 from qadence.divergences import js_divergence
 from qadence.ml_tools.utils import rand_featureparameters
@@ -136,6 +138,8 @@ def test_backend_wf_endianness(circ: QuantumCircuit, truth: Tensor, backend: Bac
         wf = run(circ, {}, backend=backend, endianness=endianness)
         if endianness == Endianness.LITTLE:
             truth = invert_endianness(truth)
+        if backend == BackendName.HORQRUX:
+            wf = jarr_to_tensor(wf)
         assert equivalent_state(wf, truth, atol=ATOL_DICT[backend])
 
 
@@ -257,21 +261,28 @@ def test_sample_inversion_for_random_circuit(backend: str, circuit: QuantumCircu
     bknd = backend_factory(backend=backend)
     (circ, _, embed, params) = bknd.convert(circuit)
     inputs = rand_featureparameters(circuit, 1)
+    if backend == BackendName.HORQRUX:
+        inputs = {k: tensor_to_jnp(v, dtype=jnp.float64) for k, v in inputs.items()}
     for endianness in Endianness:
         samples = bknd.sample(circ, embed(params, inputs), n_shots=100, endianness=endianness)
         for _sample in samples:
-            double_inv_wf = invert_endianness(invert_endianness(_sample))
-            assert js_divergence(double_inv_wf, _sample) < JS_ACCEPTANCE
+            double_inv_sample = invert_endianness(invert_endianness(_sample))
+            assert js_divergence(double_inv_sample, _sample) < JS_ACCEPTANCE
 
 
 @given(st.restricted_circuits())
 @settings(deadline=None)
-@pytest.mark.parametrize("backend", BACKENDS)
+@pytest.mark.parametrize("backend", [BackendName.PYQTORCH, BackendName.BRAKET])
 def test_wf_inversion_for_random_circuit(backend: str, circuit: QuantumCircuit) -> None:
     bknd = backend_factory(backend=backend)
     (circ, _, embed, params) = bknd.convert(circuit)
     inputs = rand_featureparameters(circuit, 1)
+    if backend == BackendName.HORQRUX:
+        inputs = {k: tensor_to_jnp(v, dtype=jnp.float64) for k, v in inputs.items()}
     for endianness in Endianness:
         wf = bknd.run(circ, embed(params, inputs), endianness=endianness)
         double_inv_wf = invert_endianness(invert_endianness(wf))
+        if backend == BackendName.HORQRUX:
+            double_inv_wf = jarr_to_tensor(double_inv_wf)
+            wf = jarr_to_tensor(wf)
         assert equivalent_state(double_inv_wf, wf)

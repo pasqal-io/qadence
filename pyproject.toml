@@ -19,7 +19,7 @@ authors = [
 ]
 requires-python = ">=3.9,<3.12"
 license = {text = "Apache 2.0"}
-version = "1.2.0"
+version = "1.2.1"
 classifiers=[
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python",
@@ -31,8 +31,9 @@ classifiers=[
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
-    "openfermion",
+    "numpy",
     "torch",
+    "openfermion",
     "sympytorch>=0.1.2",
     "rich",
     "tensorboard>=2.12.0",
@@ -41,7 +42,7 @@ dependencies = [
     "nevergrad",
     "scipy",
     "pyqtorch==1.0.3",
-    "matplotlib"
+    "matplotlib",
 ]
 
 [tool.hatch.metadata]
@@ -57,6 +58,15 @@ visualization = [
   # "latex2svg @ git+https://github.com/Moonbase59/latex2svg.git#egg=latex2svg",
   # "scour",
 ]
+horqrux = [
+    "horqrux==0.3.0",
+    "jax",
+    "flax",
+    "optax",
+    "jaxopt",
+    "einops",
+    "sympy2jax"]
+
 all = [
   "pulser>=0.15.2",
   "amazon-braket-sdk",
@@ -64,6 +74,13 @@ all = [
   # FIXME: will be needed once we support latex labels
   # "latex2svg @ git+https://github.com/Moonbase59/latex2svg.git#egg=latex2svg",
   # "scour",
+    "horqrux==0.3.0",
+    "jax",
+    "flax",
+    "optax",
+    "jaxopt",
+    "einops",
+    "sympy2jax"
 ]
 
 [tool.hatch.envs.default]
@@ -120,7 +137,7 @@ dependencies = [
   "markdown-exec",
   "mike",
 ]
-features = ["pulser", "braket", "visualization"]
+features = ["pulser", "braket", "horqrux", "visualization"]
 
 [tool.hatch.envs.docs.scripts]
 build = "mkdocs build --clean --strict"
@@ -167,6 +184,7 @@ required-imports = ["from __future__ import annotations"]
 [tool.ruff.per-file-ignores]
 "__init__.py" = ["F401"]
 "operations.py" = ["E742"]  # Avoid ambiguous class name warning for identity.
+"qadence/backends/horqrux/convert_ops.py" = ["E741"]  # Avoid ambiguous class name warning for 0.
 
 [tool.ruff.mccabe]
 max-complexity = 15

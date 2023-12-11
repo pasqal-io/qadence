@@ -1,1 +1,2 @@
-### ::: qadence.backends.pytorch_wrapper
+### ::: qadence.engines.torch.differentiable_backend
+### ::: qadence.engines.jax.differentiable_backend

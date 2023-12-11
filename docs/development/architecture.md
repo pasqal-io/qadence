@@ -21,7 +21,7 @@ In Qadence there are 4 main objects spread across 3 different levels of abstract
 * **Differentiation layer**: Intermediate layer has the purpose of integrating quantum
   computation with a given automatic differentiation engine. It is meant to be purely stateless and
   contains one object:
-    * [`DifferentiableBackend`][qadence.backends.pytorch_wrapper.DifferentiableBackend]:
+    * [`DifferentiableBackend`][qadence.engines.torch.DifferentiableBackend]:
       An abstract class whose concrete implementation wraps a quantum backend and make it
       automatically differentiable using different engines (e.g. PyTorch or Jax).
       Note, that today only PyTorch is supported but there is plan to add also a Jax
@@ -57,7 +57,7 @@ and outputs.
 
 ### `DifferentiableBackend`
 
-The differentiable backend is a thin wrapper which takes as input a `QuantumCircuit` instance and a chosen quantum backend and make the circuit execution routines (expectation value, overalap, etc.) differentiable. Currently, the only implemented differentiation engine is PyTorch but it is easy to add support to another one like Jax.
+The differentiable backend is a thin wrapper which takes as input a `QuantumCircuit` instance and a chosen quantum backend and make the circuit execution routines (expectation value, overalap, etc.) differentiable. Qadence offers both a PyTorch and Jax differentiation engine.
 
 ### Quantum `Backend`
 
@@ -104,8 +104,7 @@ You can see the logic for choosing the parameter identifier in [`get_param_name`
 
 ## Differentiation with parameter shift rules (PSR)
 
-In Qadence, parameter shift rules are implemented by extending the PyTorch autograd engine using custom `Function`
-objects. The implementation is based on this PyTorch [guide](https://pytorch.org/docs/stable/notes/extending.html).
+In Qadence, parameter shift rules are applied by implementing a custom `torch.autograd.Function` class for PyTorch and the `custom_vjp` in the Jax Engine, respectively.
 
 A custom PyTorch `Function` looks like this:
 
@@ -130,7 +129,7 @@ class CustomFunction(Function):
         ...
 ```
 
-The class [`PSRExpectation`][qadence.backends.pytorch_wrapper.PSRExpectation] implements parameter shift rules for all parameters using
+The class `PSRExpectation` under `qadence.engines.torch.differentiable_expectation` implements parameter shift rules for all parameters using
 a custom function as the one above. There are a few implementation details to keep in mind if you want
 to modify the PSR code:
 

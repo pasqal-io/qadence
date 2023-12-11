@@ -8,11 +8,13 @@ import strategies as st  # type: ignore
 import sympy
 import torch
 from hypothesis import given, settings
+from jax import Array
 from metrics import ATOL_DICT, JS_ACCEPTANCE  # type: ignore
 from torch import Tensor
 
 from qadence.backend import BackendConfiguration
 from qadence.backends.api import backend_factory, config_factory
+from qadence.backends.jax_utils import jarr_to_tensor, tensor_to_jnp
 from qadence.blocks import AbstractBlock, chain, kron
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import total_magnetization
@@ -66,7 +68,7 @@ def flatten_counter(c: Counter | list[Counter]) -> Counter:
 def test_simple_circuits(backend: str, circuit: QuantumCircuit) -> None:
     bknd = backend_factory(backend=backend)
     wf = bknd.run(bknd.circuit(circuit))
-    assert isinstance(wf, Tensor)
+    assert isinstance(wf, (Tensor, Array))
 
 
 def test_expectation_value(parametric_circuit: QuantumCircuit) -> None:
@@ -77,6 +79,8 @@ def test_expectation_value(parametric_circuit: QuantumCircuit) -> None:
     for b in BACKENDS:
         bkd = backend_factory(backend=b, diff_mode=None)
         conv = bkd.convert(parametric_circuit, observable)
+        if b == BackendName.HORQRUX:
+            values = {k: tensor_to_jnp(v) for k, v in values.items()}
         expval = bkd.expectation(
             conv.circuit, conv.observable, conv.embedding_fn(conv.params, values)  # type: ignore
         )
@@ -91,7 +95,17 @@ def test_expectation_value(parametric_circuit: QuantumCircuit) -> None:
     assert np.all(np.isclose(wfs_np, wfs_np[0]))
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
+@pytest.mark.parametrize(
+    "backend",
+    [
+        BackendName.PYQTORCH,
+        BackendName.BRAKET,
+        pytest.param(
+            BackendName.HORQRUX,
+            marks=pytest.mark.xfail(reason="Horqrux uses JAX engine."),
+        ),
+    ],
+)
 def test_qcl_loss(backend: str) -> None:
     np.random.seed(42)
     torch.manual_seed(42)
@@ -131,6 +145,10 @@ def test_qcl_loss(backend: str) -> None:
     "backend",
     [
         BackendName.PYQTORCH,
+        pytest.param(
+            BackendName.HORQRUX,
+            marks=pytest.mark.xfail(reason="horqrux doesnt support batching of states."),
+        ),
         pytest.param(
             BackendName.BRAKET,
             marks=pytest.mark.xfail(reason="state-vector initial state not implemented in Braket"),
@@ -197,7 +215,11 @@ def test_run_for_random_circuit(backend: BackendName, circuit: QuantumCircuit) -
     (circ, _, embed, params) = bknd.convert(circuit)
     inputs = rand_featureparameters(circuit, 1)
     wf_pyqtorch = bknd_pyqtorch.run(circ_pyqtorch, embed_pyqtorch(params_pyqtorch, inputs))
+    if inputs and backend == BackendName.HORQRUX:
+        inputs = {k: tensor_to_jnp(v) for k, v in inputs.items()}
     wf = bknd.run(circ, embed(params, inputs))
+    if backend == BackendName.HORQRUX:
+        wf = jarr_to_tensor(wf)
     assert equivalent_state(wf_pyqtorch, wf, atol=ATOL_DICT[backend])
 
 
@@ -215,6 +237,8 @@ def test_sample_for_random_circuit(backend: BackendName, circuit: QuantumCircuit
     pyqtorch_samples = bknd_pyqtorch.sample(
         circ_pyqtorch, embed_pyqtorch(params_pyqtorch, inputs), n_shots=100
     )
+    if inputs and backend == BackendName.HORQRUX:
+        inputs = {k: tensor_to_jnp(v) for k, v in inputs.items()}
     samples = bknd.sample(circ, embed(params, inputs), n_shots=100)
 
     for pyqtorch_sample, sample in zip(pyqtorch_samples, samples):
@@ -241,7 +265,12 @@ def test_expectation_for_random_circuit(
     pyqtorch_expectation = bknd_pyqtorch.expectation(
         circ_pyqtorch, obs_pyqtorch, embed_pyqtorch(params_pyqtorch, inputs)
     )[0]
-    expectation = bknd.expectation(circ, obs, embed(params, inputs))[0]
+    if inputs and backend == BackendName.HORQRUX:
+        inputs = {k: tensor_to_jnp(v) for k, v in inputs.items()}
+
+    expectation = bknd.expectation(circ, obs, embed(params, inputs))
+    if backend == BackendName.HORQRUX:
+        expectation = jarr_to_tensor(expectation, dtype=torch.double)
     assert torch.allclose(pyqtorch_expectation, expectation, atol=ATOL_DICT[backend])
 
 
@@ -253,8 +282,12 @@ def test_compare_run_to_sample(backend: BackendName, circuit: QuantumCircuit) ->
     bknd = backend_factory(backend)
     (conv_circ, _, embed, params) = bknd.convert(circuit)
     inputs = rand_featureparameters(circuit, 1)
+    if inputs and backend == BackendName.HORQRUX:
+        inputs = {k: tensor_to_jnp(v) for k, v in inputs.items()}
     samples = bknd.sample(conv_circ, embed(params, inputs), n_shots=1000)
     wf = bknd.run(conv_circ, embed(params, inputs))
+    if backend == BackendName.HORQRUX:
+        wf = jarr_to_tensor(wf)
     probs = list(torch.abs(torch.pow(wf, 2)).flatten().detach().numpy())
     bitstrngs = nqubits_to_basis(circuit.n_qubits)
     wf_counter = Counter(

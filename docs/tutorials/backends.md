@@ -25,7 +25,7 @@ For more enquiries, please contact: [`info@pasqal.com`](mailto:info@pasqal.com).
 
 ## Differentiation backend
 
-The [`DifferentiableBackend`][qadence.backends.pytorch_wrapper.DifferentiableBackend] class enables different differentiation modes
+The [`DifferentiableBackend`][qadence.engines.torch.DifferentiableBackend] class enables different differentiation modes
 for the given backend. This can be chosen from two types:
 
 - Automatic differentiation (AD): available for PyTorch based backends (PyQTorch).

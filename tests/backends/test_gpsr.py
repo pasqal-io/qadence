@@ -8,11 +8,12 @@ import sympy
 import torch
 from metrics import GPSR_ACCEPTANCE, PSR_ACCEPTANCE
 
-from qadence import DifferentiableBackend, DiffMode, Parameter, QuantumCircuit
+from qadence import DiffMode, Parameter, QuantumCircuit
 from qadence.analog import add_background_hamiltonian
 from qadence.backends.pyqtorch import Backend as PyQBackend
 from qadence.blocks import add, chain
 from qadence.constructors import total_magnetization
+from qadence.engines.torch.differentiable_backend import DifferentiableBackend
 from qadence.operations import CNOT, CRX, CRY, RX, RY, ConstantAnalogRotation, HamEvo, X, Y, Z
 from qadence.parameters import ParamMap
 from qadence.register import Register

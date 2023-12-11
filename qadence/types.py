@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import importlib
 from enum import Enum
-from typing import Iterable, Tuple, Union
+from typing import Callable, Iterable, Tuple, Union
 
 import numpy as np
 import sympy
+from numpy.typing import ArrayLike
 from torch import Tensor, pi
 
 TNumber = Union[int, float, complex]
@@ -197,6 +198,8 @@ class _BackendName(StrEnum):
     """The Braket backend."""
     PULSER = "pulser"
     """The Pulser backend."""
+    HORQRUX = "horqrux"
+    """The horqrux backend."""
 
 
 # If proprietary qadence_extensions is available, import the
@@ -386,3 +389,12 @@ class OpName(StrEnum):
 class ReadOutOptimization(StrEnum):
     MLE = "mle"
     CONSTRAINED = "constrained"
+
+
+class Engine(StrEnum):
+    TORCH = "torch"
+    JAX = "jax"
+
+
+ParamDictType = dict[str, ArrayLike]
+DifferentiableExpression = Callable[..., ArrayLike]

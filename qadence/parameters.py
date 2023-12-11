@@ -9,11 +9,11 @@ import sympy
 from sympy import *
 from sympy import Array, Basic, Expr, Symbol, sympify
 from sympy.physics.quantum.dagger import Dagger
-from sympytorch import SymPyModule
+from sympytorch import SymPyModule as torchSympyModule
 from torch import Tensor, heaviside, no_grad, rand, tensor
 
 from qadence.logger import get_logger
-from qadence.types import TNumber
+from qadence.types import DifferentiableExpression, Engine, TNumber
 
 # Modules to be automatically added to the qadence namespace
 __all__ = ["FeatureParameter", "Parameter", "VariationalParameter"]
@@ -190,23 +190,26 @@ def extract_original_param_entry(
     return param if not param.is_number else evaluate(param)
 
 
-def torchify(expr: Expr) -> SymPyModule:
-    """
-    Arguments:
+def heaviside_func(x: Tensor, _: Any) -> Tensor:
+    with no_grad():
+        res = heaviside(x, tensor(0.5))
+    return res
 
-        expr: An expression consisting of Parameters.
 
-    Returns:
-        A torchified, differentiable Expression.
-    """
-
-    def heaviside_func(x: Tensor, _: Any) -> Tensor:
-        with no_grad():
-            res = heaviside(x, tensor(0.5))
-        return res
-
+def torchify(expr: Expr) -> torchSympyModule:
     extra_funcs = {sympy.core.numbers.ImaginaryUnit: 1.0j, sympy.Heaviside: heaviside_func}
-    return SymPyModule(expressions=[sympy.N(expr)], extra_funcs=extra_funcs)
+    return torchSympyModule(expressions=[sympy.N(expr)], extra_funcs=extra_funcs)
+
+
+def make_differentiable(expr: Expr, engine: Engine = Engine.TORCH) -> DifferentiableExpression:
+    diff_expr: DifferentiableExpression
+    if engine == Engine.JAX:
+        from qadence.backends.jax_utils import jaxify
+
+        diff_expr = jaxify(expr)
+    else:
+        diff_expr = torchify(expr)
+    return diff_expr
 
 
 def sympy_to_numeric(expr: Basic) -> TNumber:
@@ -261,7 +264,7 @@ def evaluate(expr: Expr, values: dict = {}, as_torch: bool = False) -> TNumber |
                 else:
                     raise ValueError(f"No value provided for symbol {s.name}")
         if as_torch:
-            res_value = torchify(expr)(**{s.name: tensor(v) for s, v in query.items()})
+            res_value = make_differentiable(expr)(**{s.name: tensor(v) for s, v in query.items()})
         else:
             res = expr.subs(query)
             res_value = sympy_to_numeric(res)
