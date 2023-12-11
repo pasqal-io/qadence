@@ -24,8 +24,6 @@ def mle_solve(p_raw: npt.NDArray) -> npt.NDArray:
     Compute the MLE probability vector.
 
     Algorithmic details can be found in https://arxiv.org/pdf/1106.5458.pdf Page(3).
-
-    algorithm specified in https://arxiv.org/pdf/1106.5458.pdf Page(3)
     """
     # Sort p_raw by values while keeping track of indices.
     index_sort = p_raw.argsort()
@@ -84,7 +82,7 @@ def mitigation_minimization(
         noise: Specifies confusion matrix and default error probability
         mitigation: Selects additional mitigation options based on noise choice.
         For readout we have the following mitigation options for optimization
-        1.constrained_opt, 2.mle. Default : mle
+        1. constrained 2. mle. Default : mle
         samples: List of samples to be mitigated
 
     Returns:
