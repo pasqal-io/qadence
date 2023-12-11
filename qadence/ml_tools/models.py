@@ -179,7 +179,8 @@ class TransformedModule(torch.nn.Module):
             if not isinstance(x, dict):
                 x = self._format_to_dict(x)
             return {
-                key: self._input_scaling * (val + self._input_shifting) for key, val in x.items()
+                key: self._input_scaling[idx] * (val + self._input_shifting[idx])
+                for idx, (key, val) in enumerate(x.items())
             }
 
         else:
