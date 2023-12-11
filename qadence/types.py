@@ -386,6 +386,11 @@ class OpName(StrEnum):
     """The projector operation."""
 
 
+class ReadOutOptimization(StrEnum):
+    MLE = "mle"
+    CONSTRAINED = "constrained"
+
+
 class Engine(StrEnum):
     TORCH = "torch"
     JAX = "jax"
