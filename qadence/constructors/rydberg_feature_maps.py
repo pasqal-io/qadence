@@ -10,7 +10,7 @@ from qadence.constructors.feature_maps import fm_parameter
 from qadence.logger import get_logger
 from qadence.operations import AnalogRot, AnalogRX, AnalogRY, AnalogRZ
 from qadence.parameters import FeatureParameter, Parameter, VariationalParameter
-from qadence.types import BasisSet, TParameter
+from qadence.types import BasisSet, ReuploadScaling, TParameter
 
 logger = get_logger(__file__)
 
@@ -31,13 +31,12 @@ def rydberg_feature_map(
     Args:
         n_qubits (int): number of qubits
         param: the name of the feature parameter
-        max_abs_detuning: maximum value of absolute detuning for each qubit
+        max_abs_detuning: maximum value of absolute detuning for each qubit. Defaulted at 10 MHz.
         weights: a list of wegiths to assign to each qubit parameter in the feature map
 
     Returns:
         The block representing the feature map
     """
-    max_abs_detuning = 2 * np.pi * 10
 
     tower_coeffs: list[float | Parameter]
     tower_coeffs = (
@@ -73,6 +72,7 @@ def analog_feature_map(
     param: str = "phi",
     op: Callable[[Parameter | Basic], AnalogBlock] = AnalogRX,
     fm_type: BasisSet | type[Function] | str = BasisSet.FOURIER,
+    reupload_scaling: ReuploadScaling | Callable | str = ReuploadScaling.CONSTANT,
     feature_range: tuple[float, float] | None = None,
     target_range: tuple[float, float] | None = None,
     multiplier: Parameter | TParameter | None = None,
@@ -86,15 +86,28 @@ def analog_feature_map(
             callable function returning an AnalogBlock instance
         fm_type: Basis set for data encoding; choose from `BasisSet.FOURIER` for Fourier
             encoding, or `BasisSet.CHEBYSHEV` for Chebyshev polynomials of the first kind.
+        reupload_scaling: how the feature map scales the data that is re-uploaded. Given that
+            this feature map uses analog rotations, the reuploading works by simply
+            adding additional operations with different scaling factors in the parameter.
+            Choose from `ReuploadScaling` enumeration, currently only CONSTANT works,
+            or provide your own function with the first argument being the given
+            operation `op` and the second argument the feature parameter
         feature_range: range of data that the input data is assumed to come from.
         target_range: range of data the data encoder assumes as the natural range. For example,
             in Chebyshev polynomials it is (-1, 1), while for Fourier it may be chosen as (0, 2*pi).
         multiplier: overall multiplier; this is useful for reuploading the feature map serially with
             different scalings; can be a number or parameter/expression.
     """
-
     transformed_feature = fm_parameter(
         fm_type, param, feature_range=feature_range, target_range=target_range
     )
     multiplier = 1.0 if multiplier is None else Parameter(multiplier)
-    return op(multiplier * transformed_feature)
+
+    if callable(reupload_scaling):
+        return reupload_scaling(op, multiplier * transformed_feature)  # type: ignore[no-any-return]
+    elif reupload_scaling == ReuploadScaling.CONSTANT:
+        return op(multiplier * transformed_feature)
+    # TODO: implement tower scaling by reuploading multiple times
+    # using different analog rotations
+    else:
+        raise NotImplementedError(f"Reupload scaling {str(reupload_scaling)} not implemented!")

@@ -188,7 +188,7 @@ def feature_map(
     rs_func, rs_tag = fm_reupload_scaling_fn(reupload_scaling)
 
     # Set overall multiplier
-    multiplier = 1.0 if multiplier is None else Parameter(multiplier)
+    multiplier = 1 if multiplier is None else Parameter(multiplier)
 
     # Build feature map
     op_list = []
