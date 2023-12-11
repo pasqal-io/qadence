@@ -1107,6 +1107,7 @@ def _cast(T: Any, val: Any) -> Any:
 def wait(
     duration: TNumber | sympy.Basic,
     qubit_support: str | QubitSupport | tuple = "global",
+    add_pattern: bool = True,
 ) -> WaitBlock:
     """Constructs a [`WaitBlock`][qadence.blocks.analog.WaitBlock].
 
@@ -1120,7 +1121,7 @@ def wait(
     """
     q = _cast(QubitSupport, qubit_support)
     ps = ParamMap(duration=duration)
-    return WaitBlock(parameters=ps, qubit_support=q)
+    return WaitBlock(parameters=ps, qubit_support=q, add_pattern=add_pattern)
 
 
 def entangle(
@@ -1138,6 +1139,7 @@ def AnalogRot(
     delta: float | str | Parameter = 0,
     phase: float | str | Parameter = 0,
     qubit_support: str | QubitSupport | Tuple = "global",
+    add_pattern: bool = True,
 ) -> ConstantAnalogRotation:
     """General analog rotation operation.
 
@@ -1152,18 +1154,20 @@ def AnalogRot(
         ConstantAnalogRotation
     """
     q = _cast(QubitSupport, qubit_support)
-    if isinstance(duration, str):
-        duration = Parameter(duration)
-    alpha = duration * sympy.sqrt(omega**2 + delta**2) / 1000  # type: ignore [operator]
-
+    duration = Parameter(duration)
+    omega = Parameter(omega)
+    delta = Parameter(delta)
+    phase = Parameter(phase)
+    alpha = duration * sympy.sqrt(omega**2 + delta**2) / 1000
     ps = ParamMap(alpha=alpha, duration=duration, omega=omega, delta=delta, phase=phase)
-    return ConstantAnalogRotation(parameters=ps, qubit_support=q)
+    return ConstantAnalogRotation(parameters=ps, qubit_support=q, add_pattern=add_pattern)
 
 
 def _analog_rot(
     angle: float | str | Parameter,
     qubit_support: str | QubitSupport | Tuple,
     phase: float,
+    add_pattern: bool = True,
 ) -> ConstantAnalogRotation:
     q = _cast(QubitSupport, qubit_support)
     # assuming some arbitrary omega = π rad/μs
@@ -1178,12 +1182,13 @@ def _analog_rot(
     # and compute omega like this:
     # omega = alpha / duration * 1000
     ps = ParamMap(alpha=alpha, duration=duration, omega=omega, delta=0, phase=phase)
-    return ConstantAnalogRotation(parameters=ps, qubit_support=q)
+    return ConstantAnalogRotation(parameters=ps, qubit_support=q, add_pattern=add_pattern)
 
 
 def AnalogRX(
     angle: float | str | Parameter,
     qubit_support: str | QubitSupport | Tuple = "global",
+    add_pattern: bool = True,
 ) -> ConstantAnalogRotation:
     """Analog X rotation.
 
@@ -1201,12 +1206,13 @@ def AnalogRX(
     Returns:
         ConstantAnalogRotation
     """
-    return _analog_rot(angle, qubit_support, phase=0)
+    return _analog_rot(angle, qubit_support, phase=0, add_pattern=add_pattern)
 
 
 def AnalogRY(
     angle: float | str | Parameter,
     qubit_support: str | QubitSupport | Tuple = "global",
+    add_pattern: bool = True,
 ) -> ConstantAnalogRotation:
     """Analog Y rotation.
 
@@ -1223,12 +1229,13 @@ def AnalogRY(
     Returns:
         ConstantAnalogRotation
     """
-    return _analog_rot(angle, qubit_support, phase=-np.pi / 2)
+    return _analog_rot(angle, qubit_support, phase=-np.pi / 2, add_pattern=add_pattern)
 
 
 def AnalogRZ(
     angle: float | str | Parameter,
     qubit_support: str | QubitSupport | Tuple = "global",
+    add_pattern: bool = True,
 ) -> ConstantAnalogRotation:
     """Analog Z rotation. Shorthand for [`AnalogRot`][qadence.operations.AnalogRot]:
     ```
@@ -1241,7 +1248,7 @@ def AnalogRZ(
     delta = np.pi
     duration = alpha / delta * 1000
     ps = ParamMap(alpha=alpha, duration=duration, omega=0, delta=delta, phase=0.0)
-    return ConstantAnalogRotation(qubit_support=q, parameters=ps)
+    return ConstantAnalogRotation(qubit_support=q, parameters=ps, add_pattern=add_pattern)
 
 
 # gate sets
