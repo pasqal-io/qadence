@@ -72,10 +72,10 @@ class DifferentiableExpectation:
             spectral_gap = 2.0
             shift = jnp.pi / 2
 
-            def shift_circ(pname: str, values: dict) -> Array:
+            def shift_circ(param_name: str, values: dict) -> Array:
                 shifted_values = values.copy()
                 shiftvals = jnp.array(
-                    [shifted_values[pname] + shift, shifted_values[pname] - shift]
+                    [shifted_values[param_name] + shift, shifted_values[param_name] - shift]
                 )
 
                 def _expectation(val: Array) -> Array:
