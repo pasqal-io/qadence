@@ -178,10 +178,15 @@ class TransformedModule(torch.nn.Module):
         if isinstance(self.model, (QuantumModel, QNN)):
             if not isinstance(x, dict):
                 x = self._format_to_dict(x)
-            return {
-                key: self._input_scaling[idx] * (val + self._input_shifting[idx])
-                for idx, (key, val) in enumerate(x.items())
-            }
+            if self.in_features == 1:
+                return {
+                    key: self._input_scaling * (val + self._input_shifting) for key, val in x.items()
+                }
+            else:
+                return {
+                    key: self._input_scaling[idx] * (val + self._input_shifting[idx])
+                    for idx, (key, val) in enumerate(x.items())
+                }
 
         else:
             assert isinstance(self.model, torch.nn.Module) and isinstance(x, Tensor)
