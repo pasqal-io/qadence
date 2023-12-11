@@ -211,7 +211,7 @@ def test_compare_readout_methods(
     js_mitigated_constrained_opt = js_divergence(
         mitigated_samples_constrained_opt[0], noiseless_samples[0]
     )
-    assert (js_mitigated_constrained_opt - js_mitigated_mle) < MIDDLE_ACCEPTANCE
+    assert abs(js_mitigated_constrained_opt - js_mitigated_mle) <= MIDDLE_ACCEPTANCE
 
 
 @pytest.mark.parametrize(
