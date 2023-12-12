@@ -2,9 +2,9 @@ name: Run all Qadence tests on schedule.
 
 on:
   schedule:
-    # 03:00 every Saturday morning
-    - cron: '0 3 * * 6'
-  workflow_dispatch: {}
+    # 03:00 nightly
+    - cron: '0 3 * * *'
+  workflow_dispatch:
 
 concurrency:
   group: all-${{ github.head_ref || github.run_id }}
@@ -12,49 +12,50 @@ concurrency:
 
 
 jobs:
-  test_qadence_ubuntu:
-    name: Test Qadence (ubuntu)
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.9", "3.10", "3.11"]
-    steps:
-    - name: Checkout Qadence
-      uses: actions/checkout@v4
+  scheduled:
+    test_qadence_ubuntu:
+      name: Test Qadence (ubuntu)
+      runs-on: ubuntu-latest
+      strategy:
+        matrix:
+          python-version: ["3.9", "3.10", "3.11"]
+      steps:
+      - name: Checkout Qadence
+        uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
 
-    - name: Install Hatch
-      run: |
-        pip install hatch
+      - name: Install Hatch
+        run: |
+          pip install hatch
 
-    - name: Run tests
-      run: |
-        hatch -v run test
+      - name: Run tests
+        run: |
+          hatch -v run test
 
-  test_fast_qadence_windows_mac:
-    name: Test Qadence (Windows, MacOS)
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [macos-latest, windows-latest]
-        python-version: ["3.10"]
-    steps:
-    - name: Checkout Qadence
-      uses: actions/checkout@v4
+    test_fast_qadence_windows_mac:
+      name: Test Qadence (Windows, MacOS)
+      runs-on: ${{ matrix.os }}
+      strategy:
+        matrix:
+          os: [macos-latest, windows-latest]
+          python-version: ["3.10"]
+      steps:
+      - name: Checkout Qadence
+        uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
 
-    - name: Install Hatch
-      run: |
-        pip install hatch
+      - name: Install Hatch
+        run: |
+          pip install hatch
 
-    - name: Run tests
-      run: |
-        hatch -v run test -m "not slow"
+      - name: Run tests
+        run: |
+          hatch -v run test -m "not slow"
