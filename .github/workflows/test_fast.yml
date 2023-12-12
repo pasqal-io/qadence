@@ -33,20 +33,19 @@ jobs:
     - name: Install Hatch
       run: |
         pip install hatch
-    - name: Run fast tests
+    - name: Pick Test Suite
       run: |
-        # Define the probability for test_suite_0
-        P=0.8 # 50% probability for test_suite_0
-
-        # Generate a random number between 0 and 1
+        P_FAST=0.95
         R=$(awk -v seed=$RANDOM 'BEGIN { srand(seed); print rand() }')
-
-        # Compare and run the appropriate test suite
-        if (( $(echo "$R < $P" | bc -l) )); then
+        if (( $(echo "$R < $P_FAST" | bc -l) )); then
+          echo "-------------------"
           echo "Running fast tests"
+          echo "-------------------"
           hatch -v run test -m "not slow"
         else
+          echo "-------------------"
           echo "Running all tests (including slow)"
+          echo "-------------------"
           hatch -v run test
         fi
     - name: Upload coverage data
