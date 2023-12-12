@@ -333,5 +333,5 @@ def test_qm_obs_batch_feature_param(batch_size: int, observables: list[AbstractB
 
 def test_model_inputs_in_observable() -> None:
     w = FeatureParameter("w")
-    m = QuantumModel(QuantumCircuit(1, X(0)), observable=w*Z(0))
+    m = QuantumModel(QuantumCircuit(1, X(0)), observable=w * Z(0))
     assert m.inputs == [w]
