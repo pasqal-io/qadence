@@ -35,7 +35,20 @@ jobs:
         pip install hatch
     - name: Run fast tests
       run: |
-        hatch -v run test -m "not slow"
+        # Define the probability for test_suite_0
+        P=0.8 # 50% probability for test_suite_0
+
+        # Generate a random number between 0 and 1
+        R=$(awk -v seed=$RANDOM 'BEGIN { srand(seed); print rand() }')
+
+        # Compare and run the appropriate test suite
+        if (( $(echo "$R < $P" | bc -l) )); then
+          echo "Running fast tests"
+          hatch -v run test -m "not slow"
+        else
+          echo "Running all tests (including slow)"
+          hatch -v run test
+        fi
     - name: Upload coverage data
       uses: actions/upload-artifact@v3
       with:
@@ -61,6 +74,9 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install hatch
+      - name: Test full test suite
+        run: |
+          hatch -v run test
       - name: Build and publish package
         run: |
           hatch build
