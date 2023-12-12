@@ -2,8 +2,8 @@ name: Run all Qadence tests on schedule.
 
 on:
   schedule:
-    # 03:00 every Saturday morning
-    - cron: '0 3 * * 6'
+  # 03:00 nightly
+  - cron: "0 3 * * *"
   workflow_dispatch: {}
 
 concurrency:
