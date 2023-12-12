@@ -329,3 +329,9 @@ def test_qm_obs_batch_feature_param(batch_size: int, observables: list[AbstractB
     model_f_exp = model_f.expectation(batch_query_dict)
 
     assert torch.all(torch.isclose(model_f_exp, expected_output))
+
+
+def test_model_inputs_in_observable() -> None:
+    w = FeatureParameter("w")
+    m = QuantumModel(QuantumCircuit(1, X(0)), observable=w*Z(0))
+    assert m.inputs == [w]
