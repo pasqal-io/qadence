@@ -113,6 +113,7 @@ def _set_backend_config(backend: Backend, diff_mode: DiffMode) -> None:
 try:
     module = importlib.import_module("qadence_extensions.extensions")
     available_backends = getattr(module, "available_backends")
+    available_engines = getattr(module, "available_engines")
     supported_gates = getattr(module, "supported_gates")
     get_gpsr_fns = getattr(module, "gpsr_fns")
     set_backend_config = getattr(module, "set_backend_config")
