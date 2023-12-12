@@ -7,12 +7,27 @@ from pyqtorch.circuit import QuantumCircuit as PyQCircuit
 from pyqtorch.parametric import Parametric as PyQParametric
 from pyqtorch.primitive import Primitive as PyQPrimitive
 from pyqtorch.utils import overlap, param_dict
-from torch import Tensor, no_grad, tensor
+from torch import Tensor, cat, no_grad, split, tensor
 from torch.autograd import Function
 from torch.nn import Module
 
 from qadence.backends.pyqtorch.convert_ops import PyQHamiltonianEvolution, ScalePyQOperation
 from qadence.blocks.abstract import AbstractBlock
+
+
+def batched_adjoint_step(
+    out_state: Tensor, projected_state: Tensor, op: PyQPrimitive, values: dict
+) -> tuple[Tensor, Tensor]:
+    batch_dim = len(out_state.size()) - 1
+    return split(
+        apply_operator(
+            cat([out_state, projected_state], dim=batch_dim),
+            op.dagger(values),
+            op.qubit_support,
+        ),
+        split_size_or_sections=(1, 1),
+        dim=batch_dim,
+    )
 
 
 class AdjointExpectation(Function):
@@ -127,17 +142,23 @@ class AdjointExpectation(Function):
             elif isinstance(op, PyQCircuit):
                 grads = [g for sub_op in op.reverse() for g in _apply_adjoint(ctx, sub_op)]
             elif isinstance(op, PyQPrimitive):
-                ctx.out_state = apply_operator(ctx.out_state, op.dagger(values), op.qubit_support)
                 if isinstance(op, PyQParametric) and values[op.param_name].requires_grad:
+                    ctx.out_state = apply_operator(
+                        ctx.out_state, op.dagger(values), op.qubit_support
+                    )
                     mu = apply_operator(
                         ctx.out_state,
                         op.jacobian(values),
                         op.qubit_support,
                     )
                     grads.append(2 * overlap(ctx.projected_state, mu))
-                ctx.projected_state = apply_operator(
-                    ctx.projected_state, op.dagger(values), op.qubit_support
-                )
+                    ctx.projected_state = apply_operator(
+                        ctx.projected_state, op.dagger(values), op.qubit_support
+                    )
+                else:
+                    ctx.out_state, ctx.projected_state = batched_adjoint_step(
+                        ctx.out_state, ctx.projected_state, op, values
+                    )
             else:
                 raise TypeError(
                     f"AdjointExpectation does not support a backward pass for type {type(op)}."
