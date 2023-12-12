@@ -202,15 +202,22 @@ class _BackendName(StrEnum):
     """The horqrux backend."""
 
 
+class _Engine(StrEnum):
+    TORCH = "torch"
+    JAX = "jax"
+
+
 # If proprietary qadence_extensions is available, import the
 # right function since more backends are supported.
 try:
     module = importlib.import_module("qadence_extensions.types")
     BackendName = getattr(module, "BackendName")
     DiffMode = getattr(module, "DiffMode")
+    Engine = getattr(module, "Engine")
 except ModuleNotFoundError:
     BackendName = _BackendName
     DiffMode = _DiffMode
+    Engine = _Engine
 
 
 class StateGeneratorType(StrEnum):
@@ -389,11 +396,6 @@ class OpName(StrEnum):
 class ReadOutOptimization(StrEnum):
     MLE = "mle"
     CONSTRAINED = "constrained"
-
-
-class Engine(StrEnum):
-    TORCH = "torch"
-    JAX = "jax"
 
 
 ParamDictType = dict[str, ArrayLike]
