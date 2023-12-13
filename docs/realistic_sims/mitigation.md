@@ -44,9 +44,10 @@ observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
 # Construct a quantum model.
 model = QuantumModel(circuit=circuit, observable=observable)
 
-# Define a noise model to use and the mitigation method solving the minimization problem:
+# Define a noise model to use:
 noise = Noise(protocol=Noise.READOUT)
-options={"optimization_type": ReadOutOptimization.CONSTRAINED}
+# Define the mitigation method solving the minimization problem:
+options={"optimization_type": ReadOutOptimization.CONSTRAINED}  # ReadOutOptimization.MLE for the alternative method.
 mitigation = Mitigations(protocol=Mitigations.READOUT, options=options)
 
 # Run noiseless, noisy and mitigated simulations.
