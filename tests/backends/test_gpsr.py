@@ -8,7 +8,7 @@ import sympy
 import torch
 from metrics import GPSR_ACCEPTANCE, PSR_ACCEPTANCE
 
-from qadence import DiffMode, Parameter, QuantumCircuit
+from qadence import DiffMode, Parameter, QuantumCircuit, backend_factory
 from qadence.analog import add_background_hamiltonian
 from qadence.backends.pyqtorch import Backend as PyQBackend
 from qadence.blocks import add, chain
@@ -235,3 +235,21 @@ def test_expectation_psr(n_qubits: int, batch_size: int, n_obs: int, circuit_fn:
         assert torch.allclose(
             dexpval_xxtheta, dexpval_psr_xxtheta, atol=atol
         ), "d3f/dx2dtheta not equal."
+
+
+def test_diff_parametric_obs() -> None:
+    obs = Parameter("phi") * Z(0)
+    block = RX(0, "theta")
+    phi_val = torch.rand(1, requires_grad=True)
+    grads = {}
+    for diff_mode in ["ad", "gpsr"]:
+        bknd = backend_factory("pyqtorch", diff_mode)
+        conv = bknd.convert(QuantumCircuit(1, block), obs)
+        expval = bknd.expectation(
+            conv.circuit,
+            conv.observable,  # type: ignore[arg-type]
+            param_values=conv.embedding_fn(conv.params, {"phi": phi_val}),
+        )
+        dfdphi = torch.autograd.grad(expval, phi_val, torch.ones_like(expval), create_graph=True)[0]
+        grads[diff_mode] = dfdphi
+    assert torch.allclose(grads["ad"], grads["gpsr"])
