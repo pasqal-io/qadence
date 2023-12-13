@@ -24,7 +24,7 @@ $$
 However, even for a reduced $n$ the third limitation holds. This can be avoided by reformulating into a minimization problem[^1]:
 
 $$
-\lVert Tp_{\textrm{corr}}-p_{\textrm{raw}\rVert_{2}^{2}
+\lVert Tp_{\textrm{corr}}-p_{\textrm{raw}}\rVert_{2}^{2}
 $$
 
 subjected to physicality constraints $0 \leq p_{corr}(x) \leq 1$ and $\lVert p_{corr} \rVert = 1$. At this point, two methods are implemented to solve this problem. The first one relies on solving using standard optimization tools, the second on Maximum-Likelihood Estimation[^2]. In Qadence, this can be user defined using the mitigation protocol:
