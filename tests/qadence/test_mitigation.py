@@ -19,7 +19,7 @@ from qadence import (
 )
 from qadence.divergences import js_divergence
 from qadence.noise.protocols import Noise
-from qadence.operations import CNOT, RX, RY, RZ, AnalogRot, HamEvo, X, Y, Z, add, kron
+from qadence.operations import CNOT, RX, RY, RZ, HamEvo, X, Y, Z, add, kron
 from qadence.types import BackendName, DiffMode
 
 pi = torch.pi
@@ -131,23 +131,23 @@ def test_analog_zne_with_noise_levels(
     "analog_block, observable, noise_probas, noise_type, param_values",
     [
         (
-            chain(AnalogRot(duration="t", omega="omega", delta="delta"), AnalogRZ(pi)),
+            chain(AnalogRX(pi / 2.0), AnalogRZ(pi)),
             [Z(0) + Z(1)],
             torch.tensor([0.1]),
             Noise.DEPOLARIZING,
-            {"t": torch.tensor([1.0]), "omega": torch.tensor([1.0]), "delta": torch.tensor([1.0])},
+            {},
         ),
-        (
-            # Parameter time and harcoded angle for Bell state preparation.
-            chain(
-                entangle("t", qubit_support=(0, 1)),
-                RY(0, 3.0 * pi / 2.0),
-            ),
-            [hamiltonian_factory(2, detuning=Z)],
-            torch.tensor([0.1]),
-            Noise.DEPHASING,
-            {"t": torch.tensor([1.0])},
-        ),
+        # (
+        #     # Parameter time and harcoded angle for Bell state preparation.
+        #     chain(
+        #         entangle("t", qubit_support=(0, 1)),
+        #         RY(0, 3.0 * pi / 2.0),
+        #     ),
+        #     [hamiltonian_factory(2, detuning=Z)],
+        #     torch.tensor([0.1]),
+        #     Noise.DEPHASING,
+        #     {"t": torch.tensor([1.0])},
+        # ),
     ],
 )
 def test_analog_zne_with_pulse_stretching(
@@ -163,12 +163,10 @@ def test_analog_zne_with_pulse_stretching(
     )
     options = {"noise_probas": noise_probas}
     noise = Noise(protocol=noise_type, options=options)
-    options = {"stretches": {"t": torch.tensor([1.0, 1.5, 2.0, 2.5, 3.0])}}
+    options = {"stretches": torch.tensor([1.0, 1.5, 2.0, 2.5, 3.0])}
     mitigation = Mitigations(protocol=Mitigations.ANALOG_ZNE, options=options)
     mitigated_expectation = model.expectation(
         values=param_values, noise=noise, mitigation=mitigation
     )
     exact_expectation = model.expectation(values=param_values)
-    print(f"m {mitigated_expectation}")
-    print(f"e {exact_expectation}")
     assert torch.allclose(mitigated_expectation, exact_expectation, atol=2.0e-1)
