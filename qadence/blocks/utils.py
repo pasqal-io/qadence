@@ -5,7 +5,7 @@ from enum import Enum
 from itertools import chain as _flatten
 from typing import Generator, List, Type, TypeVar, Union, get_args
 
-from sympy import Basic, Expr
+from sympy import Array, Basic, Expr
 from torch import Tensor
 
 from qadence.blocks import (
@@ -503,3 +503,22 @@ def assert_same_block(b1: AbstractBlock, b2: AbstractBlock) -> None:
         ), f"Blocks {b1} and {b2} have differing numbers of parameters."
         for p1, p2 in zip(b1.parameters.expressions(), b2.parameters.expressions()):
             assert p1 == p2
+
+
+def unique_parameters(block: AbstractBlock) -> list[Parameter]:
+    """Return the unique parameters in the block.
+
+    These parameters are the actual user-facing parameters which
+    can be assigned by the user. Multiple gates can contain the
+    same unique parameter
+
+    Returns:
+        list[Parameter]: List of unique parameters in the circuit
+    """
+    symbols = []
+    for p in parameters(block):
+        if isinstance(p, Array):
+            continue
+        elif not p.is_number and p not in symbols:
+            symbols.append(p)
+    return symbols

@@ -252,11 +252,11 @@ class PyQObservable(Module):
                 convert_block(block, n_qubits, config),
             )
 
-    def forward(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
-        return pyq.overlap(state, self.operation(state, values))
-
     def run(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
         return self.operation(state, values)
+
+    def forward(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
+        return pyq.overlap(state, self.run(state, values))
 
 
 class PyQHamiltonianEvolution(Module):

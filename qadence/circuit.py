@@ -5,10 +5,10 @@ from itertools import chain as flatten
 from pathlib import Path
 from typing import Iterable
 
-from sympy import Array, Basic
+from sympy import Basic
 
 from qadence.blocks import AbstractBlock, AnalogBlock, CompositeBlock, chain
-from qadence.blocks.utils import parameters, primitive_blocks
+from qadence.blocks.utils import parameters, primitive_blocks, unique_parameters
 from qadence.parameters import Parameter
 from qadence.register import Register
 
@@ -88,13 +88,7 @@ class QuantumCircuit:
         Returns:
             list[Parameter]: List of unique parameters in the circuit
         """
-        symbols = []
-        for p in parameters(self.block):
-            if isinstance(p, Array):
-                continue
-            elif not p.is_number and p not in symbols:
-                symbols.append(p)
-        return symbols
+        return unique_parameters(self.block)
 
     @property
     def num_unique_parameters(self) -> int:

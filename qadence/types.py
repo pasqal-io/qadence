@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import importlib
 from enum import Enum
-from typing import Iterable, Tuple, Union
+from typing import Callable, Iterable, Tuple, Union
 
 import numpy as np
 import sympy
+from numpy.typing import ArrayLike
 from torch import Tensor, pi
 
 TNumber = Union[int, float, complex]
@@ -197,6 +198,13 @@ class _BackendName(StrEnum):
     """The Braket backend."""
     PULSER = "pulser"
     """The Pulser backend."""
+    HORQRUX = "horqrux"
+    """The horqrux backend."""
+
+
+class _Engine(StrEnum):
+    TORCH = "torch"
+    JAX = "jax"
 
 
 # If proprietary qadence_extensions is available, import the
@@ -205,9 +213,11 @@ try:
     module = importlib.import_module("qadence_extensions.types")
     BackendName = getattr(module, "BackendName")
     DiffMode = getattr(module, "DiffMode")
+    Engine = getattr(module, "Engine")
 except ModuleNotFoundError:
     BackendName = _BackendName
     DiffMode = _DiffMode
+    Engine = _Engine
 
 
 class StateGeneratorType(StrEnum):
@@ -381,3 +391,12 @@ class OpName(StrEnum):
     """The wait operation."""
     PROJ = "Projector"
     """The projector operation."""
+
+
+class ReadOutOptimization(StrEnum):
+    MLE = "mle"
+    CONSTRAINED = "constrained"
+
+
+ParamDictType = dict[str, ArrayLike]
+DifferentiableExpression = Callable[..., ArrayLike]

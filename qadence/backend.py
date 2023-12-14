@@ -25,7 +25,7 @@ from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.noise import Noise
 from qadence.parameters import stringify
-from qadence.types import BackendName, DiffMode, Endianness
+from qadence.types import ArrayLike, BackendName, DiffMode, Endianness, Engine, ParamDictType
 from qadence.utils import validate_values_and_state
 
 logger = get_logger(__file__)
@@ -100,11 +100,14 @@ class Backend(ABC):
         name: backend unique string identifier
         supports_ad: whether or not the backend has a native autograd
         supports_bp: whether or not the backend has a native backprop
+        supports_adjoint: Does the backend support native adjoint differentation.
         is_remote: whether computations are executed locally or remotely on this
             backend, useful when using cloud platforms where credentials are
             needed for example.
         with_measurements: whether it supports counts or not
         with_noise: whether to add realistic noise or not
+        native_endianness: The native endianness of the backend
+        engine: The underlying (native) automatic differentiation engine of the backend.
     """
 
     name: BackendName
@@ -114,6 +117,7 @@ class Backend(ABC):
     is_remote: bool
     with_measurements: bool
     native_endianness: Endianness
+    engine: Engine
 
     # FIXME: should this also go into the configuration?
     with_noise: bool
@@ -199,7 +203,7 @@ class Backend(ABC):
 
         conv_circ = self.circuit(circuit)
         circ_params, circ_embedding_fn = embedding(
-            conv_circ.abstract.block, self.config._use_gate_params
+            conv_circ.abstract.block, self.config._use_gate_params, self.engine
         )
         params = circ_params
         if observable is not None:
@@ -211,7 +215,7 @@ class Backend(ABC):
                 obs = check_observable(obs)
                 c_obs = self.observable(obs, max(circuit.n_qubits, obs.n_qubits))
                 obs_params, obs_embedding_fn = embedding(
-                    c_obs.abstract, self.config._use_gate_params
+                    c_obs.abstract, self.config._use_gate_params, self.engine
                 )
                 params.update(obs_params)
                 obs_embedding_fn_list.append(obs_embedding_fn)
@@ -236,7 +240,7 @@ class Backend(ABC):
         circuit: ConvertedCircuit,
         param_values: dict[str, Tensor] = {},
         n_shots: int = 1000,
-        state: Tensor | None = None,
+        state: ArrayLike | None = None,
         noise: Noise | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
@@ -259,10 +263,10 @@ class Backend(ABC):
     def _run(
         self,
         circuit: ConvertedCircuit,
-        param_values: dict[str, Tensor] = {},
-        state: Tensor | None = None,
+        param_values: dict[str, ArrayLike] = {},
+        state: ArrayLike | None = None,
         endianness: Endianness = Endianness.BIG,
-    ) -> Tensor:
+    ) -> ArrayLike:
         """Run a circuit and return the resulting wave function.
 
         Arguments:
@@ -281,12 +285,12 @@ class Backend(ABC):
     def run(
         self,
         circuit: ConvertedCircuit,
-        param_values: dict[str, Tensor] = {},
+        param_values: dict[str, ArrayLike] = {},
         state: Tensor | None = None,
         endianness: Endianness = Endianness.BIG,
         *args: Any,
         **kwargs: Any,
-    ) -> Tensor:
+    ) -> ArrayLike:
         """Run a circuit and return the resulting wave function.
 
         Arguments:
@@ -308,7 +312,7 @@ class Backend(ABC):
         self,
         circuit: ConvertedCircuit,
         noise: Noise,
-        param_values: dict[str, Tensor] = {},
+        param_values: dict[str, ArrayLike] = {},
         state: Tensor | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
@@ -335,13 +339,13 @@ class Backend(ABC):
         self,
         circuit: ConvertedCircuit,
         observable: list[ConvertedObservable] | ConvertedObservable,
-        param_values: dict[str, Tensor] = {},
-        state: Tensor | None = None,
+        param_values: ParamDictType = {},
+        state: ArrayLike | None = None,
         measurement: Measurements | None = None,
         noise: Noise | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
-    ) -> Tensor:
+    ) -> ArrayLike:
         """Compute the expectation value of the `circuit` with the given `observable`.
 
         Arguments:
@@ -398,7 +402,7 @@ class Converted:
     circuit: ConvertedCircuit
     observable: list[ConvertedObservable] | ConvertedObservable | None
     embedding_fn: Callable
-    params: dict[str, Tensor]
+    params: ParamDictType
 
     def __iter__(self) -> Iterator:
         yield self.circuit

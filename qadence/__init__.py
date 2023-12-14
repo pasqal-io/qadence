@@ -11,6 +11,7 @@ from .backends import *
 from .blocks import *
 from .circuit import *
 from .constructors import *
+from .engines import *
 from .exceptions import *
 from .execution import *
 from .measurements import *

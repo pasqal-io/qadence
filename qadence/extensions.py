@@ -6,15 +6,30 @@ from string import Template
 from qadence.backend import Backend
 from qadence.blocks.abstract import TAbstractBlock
 from qadence.logger import get_logger
-from qadence.types import BackendName, DiffMode
+from qadence.types import BackendName, DiffMode, Engine
 
 backends_namespace = Template("qadence.backends.$name")
 
 logger = get_logger(__name__)
 
 
+def _available_engines() -> dict:
+    """Returns a dictionary of currently installed, native qadence engines."""
+    res = {}
+    for engine in Engine.list():
+        module_path = f"qadence.engines.{engine}.differentiable_backend"
+        try:
+            module = importlib.import_module(module_path)
+            DifferentiableBackendCls = getattr(module, "DifferentiableBackend")
+            res[engine] = DifferentiableBackendCls
+        except (ImportError, ModuleNotFoundError):
+            pass
+    logger.info(f"Found engines: {res.keys()}")
+    return res
+
+
 def _available_backends() -> dict:
-    """Fallback function for native Qadence available backends if extensions is not present."""
+    """Returns a dictionary of currently installed, native qadence backends."""
     res = {}
     for backend in BackendName.list():
         module_path = f"qadence.backends.{backend}.backend"
@@ -24,11 +39,12 @@ def _available_backends() -> dict:
             res[backend] = BackendCls
         except (ImportError, ModuleNotFoundError):
             pass
+    logger.info(f"Found backends: {res.keys()}")
     return res
 
 
 def _supported_gates(name: BackendName | str) -> list[TAbstractBlock]:
-    """Fallback function for native Qadence backend supported gates if extensions is not present."""
+    """Returns a list of supported gates for the queried backend 'name'."""
     from qadence import operations
 
     name = str(BackendName(name).name.lower())
@@ -97,11 +113,13 @@ def _set_backend_config(backend: Backend, diff_mode: DiffMode) -> None:
 try:
     module = importlib.import_module("qadence_extensions.extensions")
     available_backends = getattr(module, "available_backends")
+    available_engines = getattr(module, "available_engines")
     supported_gates = getattr(module, "supported_gates")
     get_gpsr_fns = getattr(module, "gpsr_fns")
     set_backend_config = getattr(module, "set_backend_config")
 except ModuleNotFoundError:
     available_backends = _available_backends
+    available_engines = _available_engines
     supported_gates = _supported_gates
     get_gpsr_fns = _gpsr_fns
     set_backend_config = _set_backend_config

@@ -13,7 +13,7 @@ from torch.nn import Module
 from qadence.backend import Backend as QuantumBackend
 from qadence.backend import Converted, ConvertedCircuit, ConvertedObservable
 from qadence.backends.adjoint import AdjointExpectation
-from qadence.backends.utils import is_pyq_shape, param_dict, pyqify, validate_state
+from qadence.backends.utils import infer_batchsize, is_pyq_shape, param_dict, pyqify, validate_state
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.primitive import PrimitiveBlock
 from qadence.blocks.utils import uuid_to_block, uuid_to_eigen
@@ -24,7 +24,6 @@ from qadence.mitigations import Mitigations
 from qadence.ml_tools import promote_to_tensor
 from qadence.noise import Noise
 from qadence.types import DiffMode, Endianness
-from qadence.utils import infer_batchsize
 
 
 class PSRExpectation(Function):

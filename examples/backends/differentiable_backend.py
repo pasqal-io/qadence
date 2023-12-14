@@ -8,13 +8,13 @@ from qadence import (
     CNOT,
     RX,
     RY,
-    DifferentiableBackend,
     Parameter,
     QuantumCircuit,
     chain,
     total_magnetization,
 )
 from qadence.backends.pyqtorch.backend import Backend as PyQTorchBackend
+from qadence.engines.torch.differentiable_backend import DifferentiableBackend
 
 torch.manual_seed(42)
 

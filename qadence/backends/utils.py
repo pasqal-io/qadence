@@ -17,8 +17,8 @@ from torch import (
     no_grad,
     rand,
 )
-from torch import flatten as torchflatten
 
+from qadence.types import ParamDictType
 from qadence.utils import Endianness, int_to_basis, is_qadence_shape
 
 FINITE_DIFF_EPS = 1e-06
@@ -92,7 +92,7 @@ def count_bitstrings(sample: Tensor, endianness: Endianness = Endianness.BIG) ->
     )
 
 
-def to_list_of_dicts(param_values: dict[str, Tensor]) -> list[dict[str, float]]:
+def to_list_of_dicts(param_values: ParamDictType) -> list[ParamDictType]:
     if not param_values:
         return [param_values]
 
@@ -119,7 +119,7 @@ def pyqify(state: Tensor, n_qubits: int = None) -> Tensor:
 
 def unpyqify(state: Tensor) -> Tensor:
     """Convert a state of shape [2] * n_qubits + [batch_size] to (batch_size, 2**n_qubits)."""
-    return torchflatten(state, start_dim=0, end_dim=-2).t()
+    return torch.flatten(state, start_dim=0, end_dim=-2).t()
 
 
 def is_pyq_shape(state: Tensor, n_qubits: int) -> bool:
@@ -139,6 +139,11 @@ def validate_state(state: Tensor, n_qubits: int) -> None:
                   (2) Pyqtorch shape: (2 * n_qubits + [batch_size])\
                   Found: {state.size() = }"
         )
+
+
+def infer_batchsize(param_values: ParamDictType = None) -> int:
+    """Infer the batch_size through the length of the parameter tensors."""
+    return max([len(tensor) for tensor in param_values.values()]) if param_values else 1
 
 
 # The following functions can be used to compute potentially higher order gradients using pyqtorch's

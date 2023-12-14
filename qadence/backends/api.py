@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from qadence.backend import Backend, BackendConfiguration
-from qadence.backends.pytorch_wrapper import DifferentiableBackend
-from qadence.extensions import available_backends, set_backend_config
-from qadence.types import BackendName, DiffMode
+from qadence.engines.differentiable_backend import DifferentiableBackend
+from qadence.extensions import available_backends, available_engines, set_backend_config
+from qadence.types import BackendName, DiffMode, Engine
 
 __all__ = ["backend_factory", "config_factory"]
 
@@ -14,13 +14,18 @@ def backend_factory(
     configuration: BackendConfiguration | dict | None = None,
 ) -> Backend | DifferentiableBackend:
     backend_inst: Backend | DifferentiableBackend
-    backend_name = BackendName(backend)
     backends = available_backends()
-
+    try:
+        backend_name = BackendName(backend)
+    except ValueError:
+        raise NotImplementedError(f"The requested backend '{backend}' is not implemented.")
     try:
         BackendCls = backends[backend_name]
-    except (KeyError, ValueError):
-        raise NotImplementedError(f"The requested backend '{backend_name}' is not implemented.")
+    except Exception as e:
+        raise ImportError(
+            f"The requested backend '{backend_name}' is either not installed\
+              or could not be imported due to {e}."
+        )
 
     default_config = BackendCls.default_configuration()
     if configuration is None:
@@ -44,9 +49,22 @@ def backend_factory(
 
     # Set backend configurations which depend on the differentiation mode
     set_backend_config(backend_inst, diff_mode)
-
+    # Wrap the quantum Backend in a DifferentiableBackend if a diff_mode is passed.
     if diff_mode is not None:
-        backend_inst = DifferentiableBackend(backend_inst, DiffMode(diff_mode))
+        try:
+            engine_name = Engine(backend_inst.engine)
+        except ValueError:
+            raise NotImplementedError(
+                f"The requested engine '{backend_inst.engine}' is not implemented."
+            )
+        try:
+            diff_backend_cls = available_engines()[engine_name]
+            backend_inst = diff_backend_cls(backend=backend_inst, diff_mode=DiffMode(diff_mode))  # type: ignore[arg-type]
+        except Exception as e:
+            raise ImportError(
+                f"The requested engine '{engine_name}' is either not installed\
+                or could not be imported due to {e}."
+            )
     return backend_inst
 
 

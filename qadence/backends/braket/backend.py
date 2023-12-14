@@ -23,7 +23,7 @@ from qadence.noise import Noise
 from qadence.noise.protocols import apply_noise
 from qadence.overlap import overlap_exact
 from qadence.transpile import transpile
-from qadence.types import BackendName
+from qadence.types import BackendName, Engine
 from qadence.utils import Endianness
 
 from .config import Configuration, default_passes
@@ -55,6 +55,7 @@ class Backend(BackendInterface):
     with_noise: bool = False
     native_endianness: Endianness = Endianness.BIG
     config: Configuration = field(default_factory=Configuration)
+    engine: Engine = Engine.TORCH
 
     # braket specifics
     # TODO: include it in the configuration?

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 import torch
-from metrics import LOW_ACCEPTANCE, MIDDLE_ACCEPTANCE
+from metrics import ATOL_32, LOW_ACCEPTANCE, MIDDLE_ACCEPTANCE
 
 from qadence import (
     AnalogRX,
@@ -17,6 +17,7 @@ from qadence import (
     total_magnetization,
 )
 from qadence.analog import AddressingPattern, IdealDevice
+from qadence.execution import expectation, run
 from qadence.states import equivalent_state
 
 
@@ -140,3 +141,54 @@ def test_addressing_training() -> None:
     assert torch.all(weights_amp >= 0.0) and torch.all(weights_amp <= 1.0)
     assert torch.all(weights_det >= 0.0) and torch.all(weights_det <= 1.0)
     assert torch.isclose(f_value, f_value_model, atol=LOW_ACCEPTANCE)
+
+
+@pytest.mark.parametrize("n_qubits", [3, 4, 5])
+def test_pyq_addressing_on_off(n_qubits: int) -> None:
+    spacing = 8.0
+    x = Parameter("x")
+
+    block_pattern_on = chain(AnalogRX(3 * x, add_pattern=True), AnalogRY(0.5 * x, add_pattern=True))
+    block_pattern_off = chain(
+        AnalogRX(3 * x, add_pattern=False), AnalogRY(0.5 * x, add_pattern=False)
+    )
+
+    # define addressing patterns
+    rand_weights_amp = torch.rand(n_qubits, dtype=torch.float64)
+    rand_weights_amp = rand_weights_amp / rand_weights_amp.sum()
+    w_amp = {i: rand_weights_amp[i] for i in range(n_qubits)}
+    rand_weights_det = torch.rand(n_qubits, dtype=torch.float64)
+    rand_weights_det = rand_weights_det / rand_weights_det.sum()
+    w_det = {i: rand_weights_det[i] for i in range(n_qubits)}
+
+    pattern = AddressingPattern(
+        n_qubits=n_qubits,
+        weights_det=w_det,
+        weights_amp=w_amp,
+    )
+
+    device_specs_with_pattern = IdealDevice(pattern=pattern)
+    device_specs_no_pattern = IdealDevice(pattern=None)
+
+    reg_pattern = Register(
+        support=n_qubits, spacing=spacing, device_specs=device_specs_with_pattern
+    )
+    reg_no_pattern = Register(
+        support=n_qubits, spacing=spacing, device_specs=device_specs_no_pattern
+    )
+
+    circ_0 = QuantumCircuit(reg_pattern, block_pattern_off)
+    circ_1 = QuantumCircuit(reg_no_pattern, block_pattern_on)
+
+    values = {"x": torch.linspace(0.5, 2 * torch.pi, 5, dtype=torch.float64)}
+
+    obs = total_magnetization(n_qubits)
+
+    wf_pyq_0 = run(circ_0, values=values)
+    wf_pyq_1 = run(circ_1, values=values)
+
+    exp_pyq_0 = expectation(circ_0, observable=obs, values=values)
+    exp_pyq_1 = expectation(circ_1, observable=obs, values=values)
+
+    assert equivalent_state(wf_pyq_0, wf_pyq_1, atol=ATOL_32)
+    assert torch.allclose(exp_pyq_0, exp_pyq_1, atol=ATOL_32)

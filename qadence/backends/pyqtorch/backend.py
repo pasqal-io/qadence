@@ -30,7 +30,7 @@ from qadence.transpile import (
     scale_primitive_blocks_only,
     transpile,
 )
-from qadence.types import BackendName, Endianness
+from qadence.types import BackendName, Endianness, Engine
 from qadence.utils import infer_batchsize, int_to_basis
 
 from .config import Configuration, default_passes
@@ -52,6 +52,7 @@ class Backend(BackendInterface):
     with_noise: bool = False
     native_endianness: Endianness = Endianness.BIG
     config: Configuration = field(default_factory=Configuration)
+    engine: Engine = Engine.TORCH
 
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:
         passes = self.config.transpilation_passes

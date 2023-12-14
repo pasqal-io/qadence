@@ -28,7 +28,7 @@ from qadence.noise.protocols import apply_noise
 from qadence.overlap import overlap_exact
 from qadence.register import Register
 from qadence.transpile import transpile
-from qadence.types import BackendName, DeviceType, Endianness
+from qadence.types import BackendName, DeviceType, Endianness, Engine
 
 from .channels import GLOBAL_CHANNEL, LOCAL_CHANNEL
 from .cloud import get_client
@@ -159,6 +159,7 @@ class Backend(BackendInterface):
     with_noise: bool = False
     native_endianness: Endianness = Endianness.BIG
     config: Configuration = field(default_factory=Configuration)
+    engine: Engine = Engine.TORCH
 
     def circuit(self, circ: QuantumCircuit) -> Sequence:
         passes = self.config.transpilation_passes
