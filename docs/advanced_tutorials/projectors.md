@@ -1,4 +1,4 @@
-This section introduces the `ProjectorBlock` (defined [here](qadence.blocks.primitive.ProjectorBlock)) as an implementation for the the quantum mechanical projection operation. It evaluates to the outer product of a ket and a bra expressed as bitstrings.
+This section introduces the `ProjectorBlock` (defined [here](qadence/blocks.md)) as an implementation for the the quantum mechanical projection operation. It evaluates to the outer product of a ket and a bra expressed as bitstrings.
 
 !!! warning
     Projectors lead to non-unitary computations.
@@ -17,4 +17,4 @@ projector_matrix = block_to_tensor(projector_block)
 print(f"projector matrix = {projector_matrix}") # markdown-exec: hide
 ```
 
-Other standard operations can be expressed as projectors: for instance projector controlled-unitary gates or the number operator $N$.
+Other standard operations can be expressed as projectors: for instance, the number operator $N=\dfrac{1}{2}(I-Z)=|1\rangle\langle 1|$ is used for projector controlled-unitary gates: $\textrm{CNOT}(i,j)=N(i)\otimes(X(j)-I(j))$
