@@ -72,33 +72,6 @@ def pulse_experiment(
     endianness: Endianness,
     state: Tensor | None = None,
 ) -> Tensor:
-    # They should be embedded before use.
-    # expression_to_uuids
-    # Retrieve the parameter name and values to stretch over.
-    breakpoint()
-    param_name, stretch_vals = list(stretches.items())[0]
-    # Convert to Parameter type.
-    param = Parameter(param_name)
-    # Get the map from parameters to uuids.
-    expr_to_uuids = expression_to_uuids(circuit.block)
-    # Retrieve the parameter uuid.
-    param_uuid = expr_to_uuids[param][0]
-    # Retrieve the parameter value.
-    param_value = param_values[param_uuid]
-    # Store the initial <uuid, value> pair to change back later.
-    init_val = {param_uuid: param_value}
-    # Use stretched values in-place of the param value.
-    param_values[param_uuid] = param_value * stretch_vals
-    # Run a batch experiment and get noisy density matrices.
-    breakpoint()
-
-    conv_circuit = backend.circuit(circuit)
-    noisy_density_matrices = backend.run_dm(
-        conv_circuit, param_values=param_values, state=state, noise=noise, endianness=endianness
-    )
-    # Convert observables to Numpy types compatible with QuTip simulations.
-    # Matrices are flipped to match QuTip conventions.
-    converted_observables = [
     def mutate_params(block: AbstractBlock, stretch: float) -> AbstractBlock:
         """Closure to retrieve and stretch analog parameters."""
         # Check for stretchable analog block.
@@ -118,24 +91,42 @@ def pulse_experiment(
         return block
 
     zne_datasets = []
-    for observable in converted_observables:
-        # Get expectation values at the end of the time serie [0,t]
-        # at intervals of the sampling rate.
-        zne_datasets.append(
-            [
-                [dm.expect(observable)[0][-1] for dm in density_matrices]
-                for density_matrices in noisy_density_matrices
-            ]
+    for stretch in stretches:
+        # FIXME: Iterating through the circuit for every stretch
+        # and rebuilding the block leaves is inefficient.
+        # Best to retrieve the parameters once
+        # and rebuild the blocks.
+        assert isinstance(stretch, Tensor)
+        stre = stretch.item()
+        block = apply_fn_to_blocks(circuit.block, mutate_params, stre)
+        stretched_register = circuit.register.rescale_coords(stre)
+        stretched_circuit = QuantumCircuit(stretched_register, block)
+        conv_circuit = backend.circuit(stretched_circuit)
+        noisy_density_matrices = backend.run_dm(
+            conv_circuit, param_values=param_values, state=state, noise=noise, endianness=endianness
         )
+        # Convert observables to Numpy types compatible with QuTip simulations.
+        # Matrices are flipped to match QuTip conventions.
+        converted_observables = [
+            np.flip(block_to_tensor(observable).numpy()) for observable in observables
+        ]
+        # Create ZNE datasets by looping over batches.
+        for observable in converted_observables:
+            # Get expectation values at the end of the time serie [0,t]
+            # at intervals of the sampling rate.
+            zne_datasets.append(
+                [
+                    [dm.expect(observable)[0][-1] for dm in density_matrices]
+                    for density_matrices in noisy_density_matrices
+                ]
+            )
     # Zero-noise extrapolate.
     extrapolated_exp_values = zne_pulse(
-        stretches=param_values[param_uuid],
+        stretches=stretches,
         zne_datasets=zne_datasets,
-        zne_value=list(init_val.values())[0].item(),
+        n_observables=len(converted_observables),
+        n_params=circuit.num_unique_parameters,
     )
-    # Set the initial values back.
-    param_uuid, param_value = list(init_val.items())[0]
-    param_values[param_uuid] = param_value
     return extrapolated_exp_values
 
 
