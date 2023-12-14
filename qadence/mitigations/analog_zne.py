@@ -99,9 +99,24 @@ def pulse_experiment(
     # Convert observables to Numpy types compatible with QuTip simulations.
     # Matrices are flipped to match QuTip conventions.
     converted_observables = [
-        np.flip(block_to_tensor(observable).numpy()) for observable in observables
-    ]
-    # Create ZNE datasets by looping over batches.
+    def mutate_params(block: AbstractBlock, stretch: float) -> AbstractBlock:
+        """Closure to retrieve and stretch analog parameters."""
+        # Check for stretchable analog block.
+        if isinstance(block, (ConstantAnalogRotation, WaitBlock)):
+            stretched_duration = block.parameters.duration * stretch
+            stretched_omega = block.parameters.omega / stretch
+            stretched_delta = block.parameters.delta / stretch
+            phase = block.parameters.phase
+            qubit_support = block.qubit_support
+            return AnalogRot(
+                duration=stretched_duration,
+                omega=stretched_omega,
+                delta=stretched_delta,
+                phase=phase,
+                qubit_support=qubit_support,
+            )
+        return block
+
     zne_datasets = []
     for observable in converted_observables:
         # Get expectation values at the end of the time serie [0,t]
