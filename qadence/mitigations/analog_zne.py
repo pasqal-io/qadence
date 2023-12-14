@@ -21,27 +21,19 @@ from qadence.transpile import apply_fn_to_blocks
 from qadence.utils import Endianness
 
 
-def zne_pulse(stretches: Tensor, zne_datasets: list[list], zne_value: float) -> Tensor:
-    from matplotlib import pyplot as plt
-
-    # Rearrange the dataset by selecting each element in the batches.
+def zne_pulse(
+    stretches: Tensor, zne_datasets: list[list], n_observables: int, n_params: int
+) -> Tensor:
     poly_fits = []
-    for datasets in zne_datasets:  # Loop over batches of observables.
-        batched_fits = []
-        for dataset in datasets:
-            plt.plot(stretches, dataset, "o")
-
+    for o in range(n_observables):
+        batched_observables: list = []
+        for p in range(1 if n_params == 0 else n_params):
+            rearranged_dataset = [s[o][p] for s in zne_datasets]
             # Polynomial fit function.
-            poly_fit = np.poly1d(np.polyfit(stretches, dataset, len(stretches) - 1))
-            # Return the zero-noise extrapolated value in the zero duration limit.
-            # plt.plot(stretches, poly_fit(stretches))
-            # plt.show()
-
-            plt.plot(stretches, poly_fit(stretches), "-")
-            plt.plot(0.0, poly_fit(0.0), "*")
-            plt.show()
-            batched_fits.append(poly_fit(0.0))
-        poly_fits.append(batched_fits)
+            poly_fit = np.poly1d(np.polyfit(stretches, rearranged_dataset, len(stretches) - 1))
+            # Return the zero-noise extrapolated value.
+            batched_observables.append(poly_fit(0.0))
+        poly_fits.append(batched_observables)
 
     return torch.tensor(poly_fits)
 
