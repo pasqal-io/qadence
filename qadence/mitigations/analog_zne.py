@@ -11,12 +11,13 @@ from qadence.backends.api import backend_factory
 from qadence.backends.pulser.backend import Backend
 from qadence.blocks import block_to_tensor
 from qadence.blocks.abstract import AbstractBlock
-from qadence.blocks.utils import expression_to_uuids
+from qadence.blocks.analog import ConstantAnalogRotation, WaitBlock
 from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.noise import Noise
-from qadence.parameters import Parameter
+from qadence.operations import AnalogRot
+from qadence.transpile import apply_fn_to_blocks
 from qadence.utils import Endianness
 
 
