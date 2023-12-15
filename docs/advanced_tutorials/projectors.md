@@ -1,4 +1,4 @@
-This section introduces the `ProjectorBlock` (defined [here](qadence/blocks.md)) as an implementation for the the quantum mechanical projection operation. It evaluates to the outer product of a ket and a bra expressed as bitstrings.
+This section introduces the `ProjectorBlock` as an implementation for the the quantum mechanical projection operation. It evaluates to the outer product of a ket and a bra expressed as bitstrings.
 
 !!! warning
     Projectors lead to non-unitary computations.
