@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
-from typing import Any, get_args
+from typing import Any, Callable, get_args
 from typing import Union as TypingUnion
 
 import torch
@@ -302,7 +302,9 @@ def save(
         logger.error(f"Unable to write {type(obj)} to disk due to {e}")
 
 
-def load(file_path: str | Path, map_location: str = "cpu") -> SUPPORTED_TYPES:
+def load(
+    file_path: str | Path, map_location: str = "cpu", deserialize_fn: Callable = deserialize
+) -> SUPPORTED_TYPES:
     """
     Same as serialize/deserialize but for storing/loading files.
 
@@ -353,4 +355,4 @@ def load(file_path: str | Path, map_location: str = "cpu") -> SUPPORTED_TYPES:
         logger.debug(f"Successfully loaded {d} from {file_path}.")
     except Exception as e:
         logger.error(f"Unable to load Object from {file_path} due to {e}")
-    return deserialize(d)
+    return deserialize_fn(d)
