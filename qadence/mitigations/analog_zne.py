@@ -21,43 +21,20 @@ from qadence.transpile import apply_fn_to_blocks
 from qadence.utils import Endianness
 
 
-def zne(
-    noise_levels: Tensor, zne_datasets: list[list], n_observables: int, n_params: int
-) -> Tensor:
+def zne(noise_levels: Tensor, zne_datasets: list[list]) -> Tensor:
     poly_fits = []
-    for o in range(n_observables):
+    for dataset in zne_datasets:  # Looping over batched observables.
         batched_observables: list = []
-        for p in range(1 if n_params == 0 else n_params):
-            rearranged_dataset = [s[o][p] for s in zne_datasets]
+        n_params = len(dataset[0])
+        for p in range(n_params):  # Looping over the batched parameters.
+            rearranged_dataset = [s[p] for s in dataset]
             # Polynomial fit function.
-            poly_fit = np.poly1d(np.polyfit(noise_levels, rearranged_dataset, len(noise_levels) - 1))
+            poly_fit = np.poly1d(
+                np.polyfit(noise_levels, rearranged_dataset, len(noise_levels) - 1)
+            )
             # Return the zero-noise extrapolated value.
             batched_observables.append(poly_fit(0.0))
         poly_fits.append(batched_observables)
-
-    return torch.tensor(poly_fits)
-
-
-def zne_noise(noise_probas: Tensor, zne_datasets: list[list]) -> Tensor:
-    from matplotlib import pyplot as plt
-
-    # Rearrange the dataset by selecting each element in the batches.
-    poly_fits = []
-    for datasets in zne_datasets:  # Loop over batches of observables.
-        batched_fits = []
-        for i in range(len(datasets[0])):  # Loop over batch length.
-            rearranged_dataset = [s[i] for s in datasets]
-            plt.plot(noise_probas, rearranged_dataset, "o")
-            # Polynomial fit function.
-            poly_fit = np.poly1d(
-                np.polyfit(noise_probas, rearranged_dataset, len(noise_probas) - 1)
-            )
-            # Return the zero-noise extrapolated value.
-            plt.plot(noise_probas, poly_fit(noise_probas), "-")
-            plt.plot(0.0, poly_fit(0.0), "*")
-            plt.show()
-            batched_fits.append(poly_fit(0.0))
-        poly_fits.append(batched_fits)
 
     return torch.tensor(poly_fits)
 
