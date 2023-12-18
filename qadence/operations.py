@@ -1134,7 +1134,7 @@ def entangle(
 
 
 def AnalogRot(
-    duration: float | str | Parameter = 1000.0,
+    duration: float | str | Parameter,
     omega: float | str | Parameter = 0,
     delta: float | str | Parameter = 0,
     phase: float | str | Parameter = 0,
@@ -1153,13 +1153,20 @@ def AnalogRot(
     Returns:
         ConstantAnalogRotation
     """
+
+    if omega == 0 and delta == 0:
+        raise ValueError("Parameters omega and delta cannot both be 0.")
+
     q = _cast(QubitSupport, qubit_support)
     duration = Parameter(duration)
     omega = Parameter(omega)
     delta = Parameter(delta)
     phase = Parameter(phase)
-    alpha = duration * sympy.sqrt(omega**2 + delta**2) / 1000
-    ps = ParamMap(alpha=alpha, duration=duration, omega=omega, delta=delta, phase=phase)
+    h_norm = sympy.sqrt(omega**2 + delta**2)
+    alpha = duration * h_norm / 1000
+    ps = ParamMap(
+        alpha=alpha, duration=duration, omega=omega, delta=delta, phase=phase, h_norm=h_norm
+    )
     return ConstantAnalogRotation(parameters=ps, qubit_support=q, add_pattern=add_pattern)
 
 
@@ -1172,16 +1179,19 @@ def _analog_rot(
     q = _cast(QubitSupport, qubit_support)
     # assuming some arbitrary omega = π rad/μs
     alpha = _cast(Parameter, angle)
-
+    delta = 0
     omega = np.pi
     duration = alpha / omega * 1000
+    h_norm = sympy.sqrt(omega**2 + delta**2)
 
     # FIXME: once https://github.com/pasqal-io/qadence/issues/150 is fixed set default duration
     # in the function arguments to:
     # duration = Parameter(160)
     # and compute omega like this:
     # omega = alpha / duration * 1000
-    ps = ParamMap(alpha=alpha, duration=duration, omega=omega, delta=0, phase=phase)
+    ps = ParamMap(
+        alpha=alpha, duration=duration, omega=omega, delta=delta, phase=phase, h_norm=h_norm
+    )
     return ConstantAnalogRotation(parameters=ps, qubit_support=q, add_pattern=add_pattern)
 
 
@@ -1246,8 +1256,12 @@ def AnalogRZ(
     q = _cast(QubitSupport, qubit_support)
     alpha = _cast(Parameter, angle)
     delta = np.pi
+    omega = 0
     duration = alpha / delta * 1000
-    ps = ParamMap(alpha=alpha, duration=duration, omega=0, delta=delta, phase=0.0)
+    h_norm = sympy.sqrt(omega**2 + delta**2)
+    ps = ParamMap(
+        alpha=alpha, duration=duration, omega=omega, delta=delta, phase=0.0, h_norm=h_norm
+    )
     return ConstantAnalogRotation(qubit_support=q, parameters=ps, add_pattern=add_pattern)
 
 
