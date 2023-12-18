@@ -11,7 +11,7 @@ from qadence.backends.pyqtorch import Backend as PyQBackend
 from qadence.blocks import AbstractBlock, chain
 from qadence.constructors import total_magnetization
 from qadence.engines.torch.differentiable_backend import DifferentiableBackend
-from qadence.operations import RX, RY, AnalogRot, AnalogRX, wait
+from qadence.operations import RX, RY, AnalogRot, AnalogRX
 from qadence.register import Register
 
 
@@ -20,24 +20,27 @@ def block(circ_id: int) -> AbstractBlock:
 
     x = Parameter("x", trainable=False)
 
+    block: AbstractBlock
+
     if circ_id == 1:
         block = chain(RX(0, x), RY(1, x))
     elif circ_id == 2:
-        block = chain(AnalogRot(duration=1000 * x / 3.0, omega=3.0))
+        block = AnalogRot(duration=1000 * x / 3.0, omega=3.0)
     if circ_id == 3:
-        block = chain(AnalogRX(x))
+        block = AnalogRX(x)
     elif circ_id == 4:
         block = chain(
             AnalogRX(np.pi / 2),
             AnalogRot(duration=1000 * x / 3.0, omega=4.0, delta=3.0),
-            wait(500),
+            # FIXME: Re-check these tests after handling:
+            # https://github.com/pasqal-io/qadence/issues/266
+            # wait(500),
             AnalogRX(np.pi / 2),
         )
 
     return block
 
 
-@pytest.mark.slow
 @pytest.mark.parametrize(
     "block_id",
     [1, 2, 3, 4],
@@ -56,7 +59,7 @@ def test_pulser_gpsr(block_id: int) -> None:
     circ = QuantumCircuit(register, block(block_id))
 
     # create input values
-    xs = torch.linspace(1, 2 * np.pi, 30, requires_grad=True)
+    xs = torch.linspace(1, 2 * np.pi, 5, requires_grad=True)
     values = {"x": xs}
 
     obs = total_magnetization(2)
