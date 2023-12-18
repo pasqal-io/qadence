@@ -14,8 +14,7 @@ from qadence.backends.pyqtorch import Backend as PyQBackend
 from qadence.blocks import add, chain
 from qadence.constructors import total_magnetization
 from qadence.engines.torch.differentiable_backend import DifferentiableBackend
-from qadence.operations import CNOT, CRX, CRY, RX, RY, ConstantAnalogRotation, HamEvo, X, Y, Z
-from qadence.parameters import ParamMap
+from qadence.operations import CNOT, CRX, CRY, RX, RY, AnalogRot, HamEvo, X, Y, Z
 from qadence.register import Register
 
 
@@ -126,12 +125,8 @@ def circuit_analog_rotation_gpsr(n_qubits: int) -> QuantumCircuit:
     x = Parameter("x", trainable=False)
     theta = Parameter("theta")
     analog_block = chain(
-        ConstantAnalogRotation(
-            parameters=ParamMap(duration=1000 * x / omega1, omega=omega1, delta=0, phase=0)
-        ),
-        ConstantAnalogRotation(
-            parameters=ParamMap(duration=1000 * theta / omega2, omega=omega2, delta=0, phase=0)
-        ),
+        AnalogRot(duration=1000 * x / omega1, omega=omega1, delta=0, phase=0),
+        AnalogRot(duration=1000 * theta / omega2, omega=omega2, delta=0, phase=0),
     )
 
     circ = QuantumCircuit(register, analog_block)

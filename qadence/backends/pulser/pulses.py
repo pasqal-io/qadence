@@ -147,12 +147,12 @@ def add_pulses(
                 "backend. If an addressing pattern is specified, it will be added to all blocks."
             )
         ps = block.parameters
-        (t_uuid, duration) = ps.uuid_param("duration")
+        (a_uuid, alpha) = ps.uuid_param("alpha")
         (w_uuid, omega) = ps.uuid_param("omega")
         (p_uuid, phase) = ps.uuid_param("phase")
         (d_uuid, detuning) = ps.uuid_param("delta")
 
-        t = evaluate(duration) if duration.is_number else sequence.declare_variable(t_uuid)
+        a = evaluate(alpha) if alpha.is_number else sequence.declare_variable(a_uuid)
         w = evaluate(omega) if omega.is_number else sequence.declare_variable(w_uuid)
         p = evaluate(phase) if phase.is_number else sequence.declare_variable(p_uuid)
         d = evaluate(detuning) if detuning.is_number else sequence.declare_variable(d_uuid)
@@ -161,10 +161,10 @@ def add_pulses(
         block.eigenvalues_generator = block.compute_eigenvalues_generator(block, qc_register)
 
         if block.qubit_support.is_global:
-            pulse = analog_rot_pulse(t, w, p, d, global_channel, config)
+            pulse = analog_rot_pulse(a, w, p, d, global_channel, config)
             sequence.add(pulse, GLOBAL_CHANNEL, protocol="wait-for-all")
         else:
-            pulse = analog_rot_pulse(t, w, p, d, local_channel, config)
+            pulse = analog_rot_pulse(a, w, p, d, local_channel, config)
             sequence.target(qubit_support, LOCAL_CHANNEL)
             sequence.add(pulse, LOCAL_CHANNEL, protocol="wait-for-all")
 
@@ -197,7 +197,7 @@ def add_pulses(
 
 
 def analog_rot_pulse(
-    duration: TVar | float,
+    alpha: TVar | float,
     omega: TVar | float,
     phase: TVar | float,
     detuning: TVar | float,
@@ -215,9 +215,12 @@ def analog_rot_pulse(
         max_amp = omega
         max_det = detuning
 
+    # get pulse duration in ns
+    duration = 1000 * abs(alpha) / np.sqrt(omega**2 + detuning**2)
+
     # create amplitude waveform
     amp_wf = SquareWaveform.from_duration(
-        duration=abs(duration),  # type: ignore
+        duration=duration,  # type: ignore
         max_amp=max_amp,  # type: ignore[arg-type]
         duration_steps=channel.clock_period,  # type: ignore[attr-defined]
         min_duration=channel.min_duration,
@@ -225,7 +228,7 @@ def analog_rot_pulse(
 
     # create detuning waveform
     det_wf = SquareWaveform.from_duration(
-        duration=abs(duration),  # type: ignore
+        duration=duration,  # type: ignore
         max_amp=max_det,  # type: ignore[arg-type]
         duration_steps=channel.clock_period,  # type: ignore[attr-defined]
         min_duration=channel.min_duration,
