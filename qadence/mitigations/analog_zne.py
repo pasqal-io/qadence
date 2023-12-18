@@ -181,9 +181,15 @@ def analog_zne(
             state=state,
         )
     else:
-        zne_datasets: list = []
-        noise_probas = noise.options.get("noise_probas")
-        extrapolated_exp_values = zne_noise(noise_probas=noise_probas, zne_datasets=zne_datasets)
+        extrapolated_exp_values = noise_level_experiment(
+            backend=backend,
+            circuit=circuit,
+            observables=observables,
+            param_values=param_values,
+            noise=noise,
+            endianness=endianness,
+            state=state,
+        )
     return extrapolated_exp_values
 
 
