@@ -21,8 +21,8 @@ from qadence.transpile import apply_fn_to_blocks
 from qadence.utils import Endianness
 
 
-def zne_pulse(
-    stretches: Tensor, zne_datasets: list[list], n_observables: int, n_params: int
+def zne(
+    noise_levels: Tensor, zne_datasets: list[list], n_observables: int, n_params: int
 ) -> Tensor:
     poly_fits = []
     for o in range(n_observables):
@@ -30,7 +30,7 @@ def zne_pulse(
         for p in range(1 if n_params == 0 else n_params):
             rearranged_dataset = [s[o][p] for s in zne_datasets]
             # Polynomial fit function.
-            poly_fit = np.poly1d(np.polyfit(stretches, rearranged_dataset, len(stretches) - 1))
+            poly_fit = np.poly1d(np.polyfit(noise_levels, rearranged_dataset, len(noise_levels) - 1))
             # Return the zero-noise extrapolated value.
             batched_observables.append(poly_fit(0.0))
         poly_fits.append(batched_observables)
@@ -122,8 +122,8 @@ def pulse_experiment(
                 ]
             )
     # Zero-noise extrapolate.
-    extrapolated_exp_values = zne_pulse(
-        stretches=stretches,
+    extrapolated_exp_values = zne(
+        noise_levels=stretches,
         zne_datasets=zne_datasets,
         n_observables=len(converted_observables),
         n_params=circuit.num_unique_parameters,
