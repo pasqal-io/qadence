@@ -69,6 +69,7 @@ def pulse_experiment(
         return block
 
     zne_datasets = []
+    noisy_density_matrices: list = []
     for stretch in stretches:
         # FIXME: Iterating through the circuit for every stretch
         # and rebuilding the block leaves is inefficient.
@@ -80,31 +81,72 @@ def pulse_experiment(
         stretched_register = circuit.register.rescale_coords(stre)
         stretched_circuit = QuantumCircuit(stretched_register, block)
         conv_circuit = backend.circuit(stretched_circuit)
-        noisy_density_matrices = backend.run_dm(
-            conv_circuit, param_values=param_values, state=state, noise=noise, endianness=endianness
+        noisy_density_matrices.append(
+            # Contain a single experiment result for the stretch.
+            backend.run_dm(
+                conv_circuit,
+                param_values=param_values,
+                state=state,
+                noise=noise,
+                endianness=endianness,
+            )[0]
         )
-        # Convert observables to Numpy types compatible with QuTip simulations.
-        # Matrices are flipped to match QuTip conventions.
-        converted_observables = [
-            np.flip(block_to_tensor(observable).numpy()) for observable in observables
-        ]
-        # Create ZNE datasets by looping over batches.
-        for observable in converted_observables:
-            # Get expectation values at the end of the time serie [0,t]
-            # at intervals of the sampling rate.
-            zne_datasets.append(
-                [
-                    [dm.expect(observable)[0][-1] for dm in density_matrices]
-                    for density_matrices in noisy_density_matrices
-                ]
-            )
+    # Convert observables to Numpy types compatible with QuTip simulations.
+    # Matrices are flipped to match QuTip conventions.
+    converted_observables = [
+        np.flip(block_to_tensor(observable).numpy()) for observable in observables
+    ]
+    # Create ZNE datasets by looping over batches.
+    for observable in converted_observables:
+        # Get expectation values at the end of the time serie [0,t]
+        # at intervals of the sampling rate.
+        zne_datasets.append(
+            [
+                [dm.expect(observable)[0][-1] for dm in density_matrices]
+                for density_matrices in noisy_density_matrices
+            ]
+        )
     # Zero-noise extrapolate.
     extrapolated_exp_values = zne(
         noise_levels=stretches,
         zne_datasets=zne_datasets,
-        n_observables=len(converted_observables),
-        n_params=circuit.num_unique_parameters,
     )
+    return extrapolated_exp_values
+
+
+def noise_level_experiment(
+    backend: Backend,
+    circuit: QuantumCircuit,
+    observables: list[AbstractBlock],
+    param_values: dict[str, Tensor],
+    noise: Noise,
+    endianness: Endianness,
+    state: Tensor | None = None,
+) -> Tensor:
+    noise_probas = noise.options.get("noise_probas")
+    zne_datasets: list = []
+    # Get noisy density matrices.
+    conv_circuit = backend.circuit(circuit)
+    noisy_density_matrices = backend.run_dm(
+        conv_circuit, param_values=param_values, state=state, noise=noise, endianness=endianness
+    )
+    # Convert observables to Numpy types compatible with QuTip simulations.
+    # Matrices are flipped to match QuTip conventions.
+    converted_observables = [
+        np.flip(block_to_tensor(observable).numpy()) for observable in observables
+    ]
+    # Create ZNE datasets by looping over batches.
+    for observable in converted_observables:
+        # Get expectation values at the end of the time serie [0,t]
+        # at intervals of the sampling rate.
+        zne_datasets.append(
+            [
+                [dm.expect(observable)[0][-1] for dm in density_matrices]
+                for density_matrices in noisy_density_matrices
+            ]
+        )
+    # Zero-noise extrapolate.
+    extrapolated_exp_values = zne(noise_levels=noise_probas, zne_datasets=zne_datasets)
     return extrapolated_exp_values
 
 
