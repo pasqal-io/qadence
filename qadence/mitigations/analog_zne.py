@@ -79,6 +79,7 @@ def pulse_experiment(
             stretched_duration = block.parameters.duration * stretch
             stretched_omega = block.parameters.omega / stretch
             stretched_delta = block.parameters.delta / stretch
+             # The Hamiltonian scaling has no effect on the phase parameter
             phase = block.parameters.phase
             qubit_support = block.qubit_support
             return AnalogRot(
