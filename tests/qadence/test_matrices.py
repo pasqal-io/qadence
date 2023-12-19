@@ -470,6 +470,36 @@ def test_projector_tensor(projector: AbstractBlock, exp_projector_mat: Tensor) -
     assert torch.allclose(projector_mat, exp_projector_mat, atol=1.0e-4)
 
 
+projector0 = Projector(ket="0", bra="0", qubit_support=0)
+projector1 = Projector(ket="1", bra="1", qubit_support=0)
+
+
+cnot = kron(projector0, I(1)) + kron(projector1, X(1))
+
+projector00 = Projector(ket="00", bra="00", qubit_support=(0, 1))
+projector01 = Projector(ket="01", bra="10", qubit_support=(0, 1))
+projector10 = Projector(ket="10", bra="01", qubit_support=(0, 1))
+projector11 = Projector(ket="11", bra="11", qubit_support=(0, 1))
+
+swap = projector00 + projector10 + projector01 + projector11
+
+
+@pytest.mark.parametrize(
+    "projector, exp_projector",
+    [
+        (
+            cnot,
+            CNOT(0, 1),
+        ),
+        (swap, SWAP(0, 1)),
+    ],
+)
+def test_projector_composition_unitaries(
+    projector: AbstractBlock, exp_projector: AbstractBlock
+) -> None:
+    assert torch.allclose(block_to_tensor(projector), block_to_tensor(exp_projector))
+
+
 @given(st.batched_digital_circuits())
 @settings(deadline=None)
 def test_embedded(circ_and_inputs: tuple[QuantumCircuit, dict[str, torch.Tensor]]) -> None:
