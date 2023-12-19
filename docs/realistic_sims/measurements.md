@@ -2,4 +2,4 @@ Sample-based measurement protocols are fundamental tools for the prediction and 
 
 ## Quantum state tomography
 
-The fundamental task of quantum state tomography is to learn an approximate description of an output quantum state described by a density matrix $\rho$, by repeatedly measuring a copy on a chosen basis. The expectation value of a given observable $\mathcal{\hat{O}}$, is calculated with $\langle \mathcal{\hat{O}} \rangle$
+The fundamental task of quantum state tomography is to learn an approximate description of an output quantum state described by a density matrix $\rho$, from repeated measurements of copies on a chosen basis. To do so, $\rho$ is expanded in a basis of observables (the tomography step). For a given observable $\mathcal{\hat{O}}$, the expectation value is calculated with $\langle \mathcal{\hat{O}} \rangle=\textrm{Tr}(\mathcal{\hat{O}}\rho)$. A number of measurement repetitions in a suitable basis is then required to estimate $\langle \mathcal{\hat{O}} \rangle$.
