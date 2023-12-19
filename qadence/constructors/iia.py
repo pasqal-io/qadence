@@ -64,7 +64,7 @@ def _rotations(
 def identity_initialized_ansatz(
     n_qubits: int,
     depth: int = 1,
-    param_prefix: str = "",
+    param_prefix: str = "iia",
     rotations: Any = [RX, RY],
     entangler: Any = CNOT,
     periodic: bool = False,
@@ -96,12 +96,12 @@ def identity_initialized_ansatz(
             n_qubits=n_qubits,
             layer=layer,
             side="left",
-            param_str=f"{param_prefix}_alpha",
+            param_str=f"{param_prefix}_α",
             values=alpha,
             ops=rotations,
         )
 
-        ent_param_prefix = f"{param_prefix}_theta_ent_"
+        ent_param_prefix = f"{param_prefix}_θ_ent_"
         if not periodic:
             left_entanglers = [
                 chain(
@@ -131,9 +131,7 @@ def identity_initialized_ansatz(
             kron(
                 RX(
                     target=n,
-                    parameter=Parameter(
-                        name=f"{param_prefix}_gamma" + f"_{layer}{n}", value=gamma[n]
-                    ),
+                    parameter=Parameter(name=f"{param_prefix}_γ" + f"_{layer}{n}", value=gamma[n]),
                 )
                 for n in range(n_qubits)
             )
@@ -145,7 +143,7 @@ def identity_initialized_ansatz(
             n_qubits=n_qubits,
             layer=layer,
             side="right",
-            param_str=f"{param_prefix}_beta",
+            param_str=f"{param_prefix}_β",
             values=beta,
             ops=rotations,
         )
