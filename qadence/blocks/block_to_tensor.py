@@ -88,8 +88,7 @@ def _fill_identities(
             if endianness == Endianness.LITTLE:
                 mat = torch.kron(other, mat)
             else:
-                breakpoint()
-                mat = torch.kron(mat, other)
+                mat = torch.kron(mat.contiguous(), other.contiguous())
         elif i not in qubit_support:
             other = torch.diag(IMAT.squeeze(0)) if diag_only else IMAT
             if endianness == Endianness.LITTLE:
