@@ -7,7 +7,7 @@ import pytest
 import strategies as st
 import torch
 from hypothesis import given, settings
-from metrics import ATOL_32, ATOL_E6
+from metrics import ATOL_32, ATOL_64, ATOL_E6
 from torch import Tensor
 
 from qadence import Parameter, QuantumCircuit, VariationalParameter, run
@@ -575,7 +575,7 @@ swap = projector00 + projector10 + projector01 + projector11
 def test_projector_composition_unitaries(
     projector: AbstractBlock, exp_projector: AbstractBlock
 ) -> None:
-    assert torch.allclose(block_to_tensor(projector), block_to_tensor(exp_projector))
+    assert torch.allclose(block_to_tensor(projector), block_to_tensor(exp_projector), atol=ATOL_64)
 
 
 @given(st.batched_digital_circuits())
