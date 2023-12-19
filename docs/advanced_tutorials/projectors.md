@@ -13,7 +13,9 @@ projector_matrix = block_to_tensor(projector_block)
 print(f"projector matrix = {projector_matrix}") # markdown-exec: hide
 ```
 
-Other standard operations are expressed as projectors in Qadence. For instance, the number operator $N=\dfrac{1}{2}(I-Z)=|1\rangle\langle 1|$ is used to build $\textrm{CNOT}(i,j)=N(i)\otimes(X(j)-I(j))$. In fact, `CNOT` can also be defined as a projector controlled-unitary operation: $\textrm{CNOT}(i,j)=|0\rangle\langle 0|_i\otimes \mathbb{I}(j)+|1\rangle\langle 1|_i\otimes X(j)$ and we can check their matrix representations are identical:
+Other standard operations are expressed as projectors in Qadence. For instance, the number operator is the projector onto the 1-subspace, $N=|1\rangle\langle 1|$.
+
+In fact, projectors can be used to compose arbitrary operators. For example, the `CNOT` can also be defined as $\textrm{CNOT}(i,j)=|0\rangle\langle 0|_i\otimes \mathbb{I}(j)+|1\rangle\langle 1|_i\otimes X(j)$ and we can check their matrix representations are identical:
 
 ```python exec="on" source="material-block" session="projector" result="json"
 from qadence.blocks import block_to_tensor
