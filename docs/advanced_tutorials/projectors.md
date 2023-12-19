@@ -15,7 +15,7 @@ print(f"projector matrix = {projector_matrix}") # markdown-exec: hide
 
 Other standard operations are expressed as projectors in Qadence. For instance, the number operator is the projector onto the 1-subspace, $N=|1\rangle\langle 1|$.
 
-In fact, projectors can be used to compose arbitrary operators. For example, the `CNOT` can also be defined as $\textrm{CNOT}(i,j)=|0\rangle\langle 0|_i\otimes \mathbb{I}(j)+|1\rangle\langle 1|_i\otimes X(j)$ and we can check their matrix representations are identical:
+In fact, projectors can be used to compose any arbitrary operator. For example, the `CNOT` can be defined as $\textrm{CNOT}(i,j)=|0\rangle\langle 0|_i\otimes \mathbb{I}_j+|1\rangle\langle 1|_i\otimes X_j$ and we can compare its matrix representation with the native one in Qadence:
 
 ```python exec="on" source="material-block" session="projector" result="json"
 from qadence.blocks import block_to_tensor
@@ -40,7 +40,7 @@ print(f"projector cnot matrix = {projector_cnot_matrix}") # markdown-exec: hide
 print(f"qadence cnot matrix = {qadence_cnot_matrix}") # markdown-exec: hide
 ```
 
-Another example is the canonical SWAP gate that can be defined as $SWAP(i,j)=|00\rangle\langle 00|+|01\rangle\langle 10|+|10\rangle\langle 01|+|11\rangle\langle 11|$. Indeed, it can be shown that their matricial representations are again identical:
+Another example is the canonical SWAP unitary that can be defined as $SWAP=|00\rangle\langle 00|+|01\rangle\langle 10|+|10\rangle\langle 01|+|11\rangle\langle 11|$. Indeed, it can be shown that their matricial representations are again identical:
 
 ```python exec="on" source="material-block" session="projector" result="json"
 from qadence.blocks import block_to_tensor
