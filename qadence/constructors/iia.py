@@ -64,6 +64,7 @@ def _rotations(
 def identity_initialized_ansatz(
     n_qubits: int,
     depth: int = 1,
+    param_prefix: str = "iia",
     rotations: Any = [RX, RY],
     entangler: Any = CNOT,
     periodic: bool = False,
@@ -95,19 +96,19 @@ def identity_initialized_ansatz(
             n_qubits=n_qubits,
             layer=layer,
             side="left",
-            param_str="alpha",
+            param_str=f"{param_prefix}_α",
             values=alpha,
             ops=rotations,
         )
 
-        param_prefix = "theta_ent_"
+        ent_param_prefix = f"{param_prefix}_θ_ent_"
         if not periodic:
             left_entanglers = [
                 chain(
                     _entangler(
                         control=n,
                         target=n + 1,
-                        param_str=param_prefix + f"_{layer}{n}",
+                        param_str=ent_param_prefix + f"_{layer}{n}",
                         entangler=entangler,
                     )
                     for n in range(n_qubits - 1)
@@ -119,7 +120,7 @@ def identity_initialized_ansatz(
                     _entangler(
                         control=n,
                         target=(n + 1) % n_qubits,
-                        param_str=param_prefix + f"_{layer}{n}",
+                        param_str=ent_param_prefix + f"_{layer}{n}",
                         entangler=entangler,
                     )
                     for n in range(n_qubits)
@@ -128,7 +129,10 @@ def identity_initialized_ansatz(
 
         centre_rotations = [
             kron(
-                RX(target=n, parameter=Parameter(name="gamma" + f"_{layer}{n}", value=gamma[n]))
+                RX(
+                    target=n,
+                    parameter=Parameter(name=f"{param_prefix}_γ" + f"_{layer}{n}", value=gamma[n]),
+                )
                 for n in range(n_qubits)
             )
         ]
@@ -139,7 +143,7 @@ def identity_initialized_ansatz(
             n_qubits=n_qubits,
             layer=layer,
             side="right",
-            param_str="beta",
+            param_str=f"{param_prefix}_β",
             values=beta,
             ops=rotations,
         )
