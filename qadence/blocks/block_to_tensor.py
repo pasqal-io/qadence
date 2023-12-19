@@ -472,7 +472,9 @@ def _block_to_tensor_embedded(
         bra = product_state(block.bra)
         ket = product_state(block.ket)
 
-        mat = torch.kron(ket, bra.T)
+        block_mat = torch.kron(ket, bra.T)
+
+        mat = _fill_identities(block_mat, block.qubit_support, qubit_support, endianness=endianness)
 
     else:
         raise TypeError(f"Conversion for block type {type(block)} not supported.")
