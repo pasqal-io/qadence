@@ -63,9 +63,10 @@ def _fill_identities(
     diag_only: bool = False,
     endianness: Endianness = Endianness.BIG,
 ) -> torch.Tensor:
-    """Returns a Kronecker product of matrix defined on a subset of qubits with identities.
+    """Returns a Kronecker product of a block matrix with identities.
 
-    acting on the unused qubits.
+    The block matrix can defined on a subset of qubits and the full matrix is
+    filled with identities acting on the unused qubits.
 
     Args:
         block_mat (torch.Tensor): matrix of an arbitrary gate
@@ -87,6 +88,7 @@ def _fill_identities(
             if endianness == Endianness.LITTLE:
                 mat = torch.kron(other, mat)
             else:
+                breakpoint()
                 mat = torch.kron(mat, other)
         elif i not in qubit_support:
             other = torch.diag(IMAT.squeeze(0)) if diag_only else IMAT
