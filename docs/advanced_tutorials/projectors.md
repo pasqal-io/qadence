@@ -33,7 +33,7 @@ projector_cnot = kron(projector0, I(1)) + kron(projector1, X(1))
 # Get the underlying unitary.
 projector_cnot_matrix = block_to_tensor(projector_cnot)
 
-# Qadence CNOT unitary defined as N @ (X-I).
+# Qadence CNOT unitary.
 qadence_cnot_matrix = block_to_tensor(CNOT(0,1))
 
 print(f"projector cnot matrix = {projector_cnot_matrix}") # markdown-exec: hide
