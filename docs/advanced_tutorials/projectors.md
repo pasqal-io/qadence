@@ -64,7 +64,7 @@ print(f"qadence swap matrix = {qadence_swap_matrix}") # markdown-exec: hide
 ```
 
 !!! warning
-    Projectors lead to non-unitary computations only supported by the PyQTorch backend.
+    Projectors are non-unitary operators, only supported by the PyQTorch backend.
 
 
 To examplify this point, let's run some non-unitary computation involving projectors.
