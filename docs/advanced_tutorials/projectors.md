@@ -79,6 +79,7 @@ projector_block = Projector(ket="1", bra="1", qubit_support=1)
 # Some non-unitary computation.
 non_unitary_block = chain(H(0), CNOT(0,1), projector_block)
 
+# Projected wavefunction becomes unnormalized
 projected_wf = run(non_unitary_block)  # Run on PyQTorch.
 
 print(f"projected_wf = {projected_wf}") # markdown-exec: hide
