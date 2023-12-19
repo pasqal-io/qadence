@@ -475,6 +475,7 @@ def _block_to_tensor_embedded(
         ket = product_state(block.ket)
 
         block_mat = torch.kron(ket, bra.T)
+        block_mat = block_mat.unsqueeze(0) if len(block_mat.size()) == 2 else block_mat
 
         mat = _fill_identities(block_mat, block.qubit_support, qubit_support, endianness=endianness)
 
