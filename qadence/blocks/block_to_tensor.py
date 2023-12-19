@@ -63,9 +63,10 @@ def _fill_identities(
     diag_only: bool = False,
     endianness: Endianness = Endianness.BIG,
 ) -> torch.Tensor:
-    """Returns a Kronecker product of matrix defined on a subset of qubits with identities.
+    """Returns a Kronecker product of a block matrix with identities.
 
-    acting on the unused qubits.
+    The block matrix can defined on a subset of qubits and the full matrix is
+    filled with identities acting on the unused qubits.
 
     Args:
         block_mat (torch.Tensor): matrix of an arbitrary gate
@@ -87,7 +88,7 @@ def _fill_identities(
             if endianness == Endianness.LITTLE:
                 mat = torch.kron(other, mat)
             else:
-                mat = torch.kron(mat, other)
+                mat = torch.kron(mat.contiguous(), other.contiguous())
         elif i not in qubit_support:
             other = torch.diag(IMAT.squeeze(0)) if diag_only else IMAT
             if endianness == Endianness.LITTLE:
@@ -472,7 +473,10 @@ def _block_to_tensor_embedded(
         bra = product_state(block.bra)
         ket = product_state(block.ket)
 
-        mat = torch.kron(ket, bra.T)
+        block_mat = torch.kron(ket, bra.T)
+        block_mat = block_mat.unsqueeze(0) if len(block_mat.size()) == 2 else block_mat
+
+        mat = _fill_identities(block_mat, block.qubit_support, qubit_support, endianness=endianness)
 
     else:
         raise TypeError(f"Conversion for block type {type(block)} not supported.")

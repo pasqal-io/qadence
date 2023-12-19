@@ -7,7 +7,7 @@ import pytest
 import strategies as st
 import torch
 from hypothesis import given, settings
-from metrics import ATOL_32, ATOL_E6
+from metrics import ATOL_32, ATOL_64, ATOL_E6
 from torch import Tensor
 
 from qadence import Parameter, QuantumCircuit, VariationalParameter, run
@@ -80,13 +80,91 @@ def _calc_mat_vec_wavefunction(
             torch.tensor([[0.0 + 0.0j, 0.0 + 0.0j], [0.0 + 0.0j, 1.0 + 0.0j]]),
         ),
         (
-            Projector(bra="10", ket="01", qubit_support=(2, 3)),
+            Projector(bra="10", ket="01", qubit_support=(1, 2)),
             torch.tensor(
                 [
-                    [0.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j],
-                    [0.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j],
-                    [0.0 + 0.0j, 1.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j],
-                    [0.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j],
+                    [
+                        [
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                        ],
+                        [
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                        ],
+                        [
+                            0.0 + 0.0j,
+                            1.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                        ],
+                        [
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                        ],
+                        [
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                        ],
+                        [
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                        ],
+                        [
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            1.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                        ],
+                        [
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                            0.0 + 0.0j,
+                        ],
+                    ]
                 ]
             ),
         ),
@@ -468,6 +546,36 @@ def _calc_mat_vec_wavefunction(
 def test_projector_tensor(projector: AbstractBlock, exp_projector_mat: Tensor) -> None:
     projector_mat = block_to_tensor(projector)
     assert torch.allclose(projector_mat, exp_projector_mat, atol=1.0e-4)
+
+
+projector0 = Projector(ket="0", bra="0", qubit_support=0)
+projector1 = Projector(ket="1", bra="1", qubit_support=0)
+
+
+cnot = kron(projector0, I(1)) + kron(projector1, X(1))
+
+projector00 = Projector(ket="00", bra="00", qubit_support=(0, 1))
+projector01 = Projector(ket="01", bra="10", qubit_support=(0, 1))
+projector10 = Projector(ket="10", bra="01", qubit_support=(0, 1))
+projector11 = Projector(ket="11", bra="11", qubit_support=(0, 1))
+
+swap = projector00 + projector10 + projector01 + projector11
+
+
+@pytest.mark.parametrize(
+    "projector, exp_projector",
+    [
+        (
+            cnot,
+            CNOT(0, 1),
+        ),
+        (swap, SWAP(0, 1)),
+    ],
+)
+def test_projector_composition_unitaries(
+    projector: AbstractBlock, exp_projector: AbstractBlock
+) -> None:
+    assert torch.allclose(block_to_tensor(projector), block_to_tensor(exp_projector), atol=ATOL_64)
 
 
 @given(st.batched_digital_circuits())
