@@ -1,4 +1,4 @@
-This section introduces the `ProjectorBlock` as an implementation for the the quantum mechanical projection operation onto the subspace spanned by $|a\rangle$: $\mathbb{\hat{P}}=|a\rangle \langle a|$. It evaluates the outer product for bras and kets expressed as bitstrings for a given qubit support. They have to possess matching lengths.
+This section introduces the `ProjectorBlock` as an implementation for the quantum mechanical projection operation onto the subspace spanned by $|a\rangle$: $\mathbb{\hat{P}}=|a\rangle \langle a|$. It evaluates the outer product for bras and kets expressed as bitstrings for a given qubit support. They have to possess matching lengths.
 
 ```python exec="on" source="material-block" session="projector" result="json"
 from qadence.blocks import block_to_tensor
