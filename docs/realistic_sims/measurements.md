@@ -25,7 +25,7 @@ In Qadence, running a tomographical experiment is made simple by defining a `Mea
 ```python exec="on" source="material-block" session="measurements" result="json"
 from torch import tensor
 from qadence import hamiltonian_factory, BackendName, DiffMode
-from qadence import Parameter, chain, kron, RX, RY, Z, QuantumCircuit
+from qadence import Parameter, chain, kron, RX, RY, Z, QuantumCircuit, QuantumModel
 from qadence.measurements import Measurements
 
 # Define parameters for a circuit.
