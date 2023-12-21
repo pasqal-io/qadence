@@ -24,7 +24,7 @@ from qadence.utils import Endianness
 def zne(noise_levels: Tensor, zne_datasets: list[list]) -> Tensor:
     poly_fits = []
     for dataset in zne_datasets:  # Looping over batched observables.
-        batched_observables: list = []
+        batched_observable: list = []
         n_params = len(dataset[0])
         for p in range(n_params):  # Looping over the batched parameters.
             rearranged_dataset = [s[p] for s in dataset]
@@ -33,8 +33,8 @@ def zne(noise_levels: Tensor, zne_datasets: list[list]) -> Tensor:
                 np.polyfit(noise_levels, rearranged_dataset, len(noise_levels) - 1)
             )
             # Return the zero-noise extrapolated value.
-            batched_observables.append(poly_fit(0.0))
-        poly_fits.append(batched_observables)
+            batched_observable.append(poly_fit(0.0))
+        poly_fits.append(batched_observable)
 
     return torch.tensor(poly_fits)
 
@@ -42,7 +42,7 @@ def zne(noise_levels: Tensor, zne_datasets: list[list]) -> Tensor:
 def pulse_experiment(
     backend: Backend,
     circuit: QuantumCircuit,
-    observables: list[AbstractBlock],
+    observable: list[AbstractBlock],
     param_values: dict[str, Tensor],
     noise: Noise,
     stretches: Tensor,
@@ -90,13 +90,11 @@ def pulse_experiment(
                 endianness=endianness,
             )[0]
         )
-    # Convert observables to Numpy types compatible with QuTip simulations.
+    # Convert observable to Numpy types compatible with QuTip simulations.
     # Matrices are flipped to match QuTip conventions.
-    converted_observables = [
-        np.flip(block_to_tensor(observable).numpy()) for observable in observables
-    ]
+    converted_observable = [np.flip(block_to_tensor(obs).numpy()) for obs in observable]
     # Create ZNE datasets by looping over batches.
-    for observable in converted_observables:
+    for observable in converted_observable:
         # Get expectation values at the end of the time serie [0,t]
         # at intervals of the sampling rate.
         zne_datasets.append(
@@ -116,7 +114,7 @@ def pulse_experiment(
 def noise_level_experiment(
     backend: Backend,
     circuit: QuantumCircuit,
-    observables: list[AbstractBlock],
+    observable: list[AbstractBlock],
     param_values: dict[str, Tensor],
     noise: Noise,
     endianness: Endianness,
@@ -129,13 +127,11 @@ def noise_level_experiment(
     noisy_density_matrices = backend.run_dm(
         conv_circuit, param_values=param_values, state=state, noise=noise, endianness=endianness
     )
-    # Convert observables to Numpy types compatible with QuTip simulations.
+    # Convert observable to Numpy types compatible with QuTip simulations.
     # Matrices are flipped to match QuTip conventions.
-    converted_observables = [
-        np.flip(block_to_tensor(observable).numpy()) for observable in observables
-    ]
+    converted_observable = [np.flip(block_to_tensor(obs).numpy()) for obs in observable]
     # Create ZNE datasets by looping over batches.
-    for observable in converted_observables:
+    for observable in converted_observable:
         # Get expectation values at the end of the time serie [0,t]
         # at intervals of the sampling rate.
         zne_datasets.append(
@@ -152,7 +148,7 @@ def noise_level_experiment(
 def analog_zne(
     backend_name: BackendName,
     circuit: QuantumCircuit,
-    observables: list[AbstractBlock],
+    observable: list[AbstractBlock],
     param_values: dict[str, Tensor] = {},
     state: Tensor | None = None,
     measurement: Measurements | None = None,
@@ -172,7 +168,7 @@ def analog_zne(
         extrapolated_exp_values = pulse_experiment(
             backend=backend,
             circuit=circuit,
-            observables=observables,
+            observable=observable,
             param_values=param_values,
             noise=noise,
             stretches=stretches,
@@ -183,7 +179,7 @@ def analog_zne(
         extrapolated_exp_values = noise_level_experiment(
             backend=backend,
             circuit=circuit,
-            observables=observables,
+            observable=observable,
             param_values=param_values,
             noise=noise,
             endianness=endianness,
@@ -195,7 +191,7 @@ def analog_zne(
 def mitigate(
     backend_name: BackendName,
     circuit: QuantumCircuit,
-    observables: list[AbstractBlock],
+    observable: list[AbstractBlock],
     param_values: dict[str, Tensor] = {},
     state: Tensor | None = None,
     measurement: Measurements | None = None,
@@ -206,7 +202,7 @@ def mitigate(
     mitigated_exp = analog_zne(
         backend_name=backend_name,
         circuit=circuit,
-        observables=observables,
+        observable=observable,
         param_values=param_values,
         state=state,
         measurement=measurement,

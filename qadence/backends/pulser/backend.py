@@ -322,12 +322,12 @@ class Backend(BackendInterface):
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
-        observables = observable if isinstance(observable, list) else [observable]
+        observable = observable if isinstance(observable, list) else [observable]
         if mitigation is None:
             state = self.run(circuit, param_values=param_values, state=state, endianness=endianness)
             support = sorted(list(circuit.abstract.register.support))
             res_list = [
-                obs.native(state, param_values, qubit_support=support) for obs in observables
+                obs.native(state, param_values, qubit_support=support) for obs in observable
             ]
             res = torch.transpose(torch.stack(res_list), 0, 1)
             res = res if len(res.shape) > 0 else res.reshape(1)
@@ -337,7 +337,7 @@ class Backend(BackendInterface):
             mitigated_exp_val = mitigation_fn(
                 backend_name=self.name,
                 circuit=circuit.original,
-                observables=[obs.original for obs in observables],
+                observable=[obs.original for obs in observable],
                 param_values=param_values,
                 state=state,
                 measurement=measurement,
