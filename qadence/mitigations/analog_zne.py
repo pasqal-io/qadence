@@ -45,7 +45,7 @@ def pulse_experiment(
     observables: list[AbstractBlock],
     param_values: dict[str, Tensor],
     noise: Noise,
-    stretches: dict[str, Tensor],
+    stretches: Tensor,
     endianness: Endianness,
     state: Tensor | None = None,
 ) -> Tensor:
@@ -75,7 +75,6 @@ def pulse_experiment(
         # and rebuilding the block leaves is inefficient.
         # Best to retrieve the parameters once
         # and rebuild the blocks.
-        assert isinstance(stretch, Tensor)
         stre = stretch.item()
         block = apply_fn_to_blocks(circuit.block, mutate_params, stre)
         stretched_register = circuit.register.rescale_coords(stre)
