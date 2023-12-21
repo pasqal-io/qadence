@@ -249,6 +249,7 @@ def test_analog_zne_with_noise_levels(
     assert torch.allclose(mitigated_expectation, exact_expectation, atol=1.0e-2)
 
 
+# FIXME: Consider a stretchable replacement for entangle.
 @pytest.mark.parametrize(
     "analog_block, observable, noise_probs, noise_type, param_values",
     [
