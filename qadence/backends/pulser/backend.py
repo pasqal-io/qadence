@@ -255,15 +255,16 @@ class Backend(BackendInterface):
         endianness: Endianness = Endianness.BIG,
     ) -> list:
         vals = to_list_of_dicts(param_values)
-        noise_probas = noise.options.get("noise_probas", None)
-        if noise_probas is None:
-            KeyError(f"A range of noise probabilies should be passed. Got {noise_probas}.")
+        noise_probs = noise.options.get("noise_probs", None)
+        if noise_probs is None:
+            KeyError(f"A range of noise probabilies should be passed. Got {noise_probs}.")
 
         noisy_batched_dm = []
 
-        for noise_proba in noise_probas:
+        # Pulser requires numpy types.
+        for noise_prob in noise_probs.numpy():
             batched_dm = []
-            sim_config = {"noise": noise.protocol, noise.protocol + "_prob": noise_proba}
+            sim_config = {"noise": noise.protocol, noise.protocol + "_prob": noise_prob}
             self.config.sim_config = SimConfig(**sim_config)
 
             for i, param_values_el in enumerate(vals):
@@ -321,12 +322,12 @@ class Backend(BackendInterface):
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
-        observables = observable if isinstance(observable, list) else [observable]
+        observable = observable if isinstance(observable, list) else [observable]
         if mitigation is None:
             state = self.run(circuit, param_values=param_values, state=state, endianness=endianness)
             support = sorted(list(circuit.abstract.register.support))
             res_list = [
-                obs.native(state, param_values, qubit_support=support) for obs in observables
+                obs.native(state, param_values, qubit_support=support) for obs in observable
             ]
             res = torch.transpose(torch.stack(res_list), 0, 1)
             res = res if len(res.shape) > 0 else res.reshape(1)
@@ -335,8 +336,9 @@ class Backend(BackendInterface):
             mitigation_fn = mitigation.get_mitigation_fn()
             mitigated_exp_val = mitigation_fn(
                 backend_name=self.name,
-                circuit=circuit,
-                observable=observables,
+                circuit=circuit.original,
+                observable=[obs.original for obs in observable],
+                param_values=param_values,
                 state=state,
                 measurement=measurement,
                 noise=noise,
