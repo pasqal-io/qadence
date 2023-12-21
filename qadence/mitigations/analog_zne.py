@@ -123,7 +123,7 @@ def noise_level_experiment(
     endianness: Endianness,
     state: Tensor | None = None,
 ) -> Tensor:
-    noise_probas = noise.options.get("noise_probas")
+    noise_probs = noise.options.get("noise_probs")
     zne_datasets: list = []
     # Get noisy density matrices.
     conv_circuit = backend.circuit(circuit)
@@ -146,7 +146,7 @@ def noise_level_experiment(
             ]
         )
     # Zero-noise extrapolate.
-    extrapolated_exp_values = zne(noise_levels=noise_probas, zne_datasets=zne_datasets)
+    extrapolated_exp_values = zne(noise_levels=noise_probs, zne_datasets=zne_datasets)
     return extrapolated_exp_values
 
 
