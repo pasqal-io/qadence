@@ -255,16 +255,16 @@ class Backend(BackendInterface):
         endianness: Endianness = Endianness.BIG,
     ) -> list:
         vals = to_list_of_dicts(param_values)
-        noise_probas = noise.options.get("noise_probas", None)
-        if noise_probas is None:
-            KeyError(f"A range of noise probabilies should be passed. Got {noise_probas}.")
+        noise_probs = noise.options.get("noise_probs", None)
+        if noise_probs is None:
+            KeyError(f"A range of noise probabilies should be passed. Got {noise_probs}.")
 
         noisy_batched_dm = []
 
         # Pulser requires numpy types.
-        for noise_proba in noise_probas.numpy():
+        for noise_prob in noise_probs.numpy():
             batched_dm = []
-            sim_config = {"noise": noise.protocol, noise.protocol + "_prob": noise_proba}
+            sim_config = {"noise": noise.protocol, noise.protocol + "_prob": noise_prob}
             self.config.sim_config = SimConfig(**sim_config)
 
             for i, param_values_el in enumerate(vals):

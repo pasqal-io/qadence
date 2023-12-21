@@ -214,7 +214,7 @@ def test_compare_readout_methods(
 
 
 @pytest.mark.parametrize(
-    "analog_block, observable, noise_probas, noise_type",
+    "analog_block, observable, noise_probs, noise_type",
     [
         (
             chain(AnalogRX(pi / 2.0), AnalogRZ(pi)),
@@ -235,13 +235,13 @@ def test_compare_readout_methods(
     ],
 )
 def test_analog_zne_with_noise_levels(
-    analog_block: AbstractBlock, observable: AbstractBlock, noise_probas: Tensor, noise_type: str
+    analog_block: AbstractBlock, observable: AbstractBlock, noise_probs: Tensor, noise_type: str
 ) -> None:
     circuit = QuantumCircuit(2, analog_block)
     model = QuantumModel(
         circuit=circuit, observable=observable, backend=BackendName.PULSER, diff_mode=DiffMode.GPSR
     )
-    options = {"noise_probas": noise_probas}
+    options = {"noise_probs": noise_probs}
     noise = Noise(protocol=noise_type, options=options)
     mitigation = Mitigations(protocol=Mitigations.ANALOG_ZNE)
     exact_expectation = model.expectation()
@@ -250,7 +250,7 @@ def test_analog_zne_with_noise_levels(
 
 
 @pytest.mark.parametrize(
-    "analog_block, observable, noise_probas, noise_type, param_values",
+    "analog_block, observable, noise_probs, noise_type, param_values",
     [
         (
             chain(AnalogRX(pi / 2.0), AnalogRZ(pi)),
@@ -275,7 +275,7 @@ def test_analog_zne_with_noise_levels(
 def test_analog_zne_with_pulse_stretching(
     analog_block: AbstractBlock,
     observable: AbstractBlock,
-    noise_probas: Tensor,
+    noise_probs: Tensor,
     noise_type: str,
     param_values: dict,
 ) -> None:
@@ -283,7 +283,7 @@ def test_analog_zne_with_pulse_stretching(
     model = QuantumModel(
         circuit=circuit, observable=observable, backend=BackendName.PULSER, diff_mode=DiffMode.GPSR
     )
-    options = {"noise_probas": noise_probas}
+    options = {"noise_probs": noise_probs}
     noise = Noise(protocol=noise_type, options=options)
     options = {"stretches": torch.tensor([1.0, 1.5, 2.0, 2.5, 3.0])}
     mitigation = Mitigations(protocol=Mitigations.ANALOG_ZNE, options=options)
