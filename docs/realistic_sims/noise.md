@@ -5,7 +5,14 @@ corresponding error mitigation techniques whenever possible.
 ## Readout errors
 
 State Preparation and Measurement (SPAM) in the hardware is a major source of noise in the execution of
-quantum programs. Qadence offers to simulate readout errors with the `Noise` protocol to corrupt the output
+quantum programs. They are typically described using confusion matrices of the form:
+
+$$
+T(x|x')=\delta_{xx'}
+$$
+
+
+Qadence offers to simulate readout errors with the `Noise` protocol to corrupt the output
 samples of a simulation, through execution via a `QuantumModel`:
 
 ```python exec="on" source="material-block" session="noise" result="json"

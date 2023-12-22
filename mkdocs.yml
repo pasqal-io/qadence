@@ -36,8 +36,10 @@ nav:
     - Solving MaxCut with QAOA: qml/qaoa.md
 
   - Advanced Tutorials:
+    - advanced_tutorials/index.md
     - Quantum circuits differentiation: advanced_tutorials/differentiability.md
     - Custom quantum models: advanced_tutorials/custom-models.md
+    - Projector blocks: advanced_tutorials/projectors.md
 
   - Realistic simulations:
     - realistic_sims/index.md
