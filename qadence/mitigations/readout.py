@@ -156,5 +156,9 @@ def mitigation_minimization(
     return corrected_counters
 
 
+def mitigation_modelfree() -> None:
+    pass
+
+
 def mitigate(noise: Noise, mitigation: Mitigations, samples: list[Counter]) -> list[Counter]:
     return mitigation_minimization(noise=noise, mitigation=mitigation, samples=samples)
