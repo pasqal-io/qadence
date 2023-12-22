@@ -37,7 +37,7 @@ custom_fm_0 = feature_map(n_qubits, fm_type=asin)
 def custom_fn(x):
     asin(x) + x**2
 
-custom_fm_1 = feature_map(n_qubits, fm_type=custom_func)
+custom_fm_1 = feature_map(n_qubits, fm_type=custom_fn)
 
 block = chain(custom_fm_0, custom_fm_1)
 from qadence.draw import html_string # markdown-exec: hide
