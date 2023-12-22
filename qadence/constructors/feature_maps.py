@@ -99,7 +99,7 @@ def fm_parameter_func(fm_type: BasisSet | Callable | str) -> Callable:
     else:
         raise NotImplementedError(
             f"Feature map type {fm_type} not implemented. Choose an item from the BasisSet "
-            f"enum: {[bs.name for bs in BasisSet]}, or your own sympy function to wrap "
+            f"enum: {BasisSet.list()}, or a custom defined sympy function to wrap "
             "the given feature parameter with."
         )
 

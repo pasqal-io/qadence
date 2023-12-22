@@ -100,7 +100,7 @@ from qadence.draw import html_string # markdown-exec: hide
 print(html_string(fm_trainable)) # markdown-exec: hide
 ```
 
-Note that for the Fourier feature map the encoding function is simply $f(x)=x$. For other cases, like the Chebyshev `acos()` encoding,
+Note that for the Fourier feature map, the encoding function is simply $f(x)=x$. For other cases, like the Chebyshev `acos()` encoding,
 the trainable parameter may cause the feature value to be outside the domain of the encoding function. This will eventually be fixed
 by adding range constraints to trainable parameters in Qadence.
 
