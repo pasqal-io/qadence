@@ -121,7 +121,7 @@ fm_full = feature_map(
     reupload_scaling = ReuploadScaling.EXP,
     feature_range = (-1.0, 2.0), # Range from which the input data comes from
     target_range = (1.0, 3.0), # Range the encoder assumes as the natural range
-    multiplier = 5.0 # Extra multiplier, which can also be a Parameter
+    multiplier = 5.0, # Extra multiplier, which can also be a Parameter
     param_prefix = "w", # Add trainable parameters
 )
 
