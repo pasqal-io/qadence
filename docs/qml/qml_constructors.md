@@ -33,11 +33,9 @@ n_qubits = 3
 # Using a pre-defined sympy Function
 custom_fm_0 = feature_map(n_qubits, fm_type=asin)
 
-# Creating a custom sub-class of Function
-class custom_func(Function):
-    @classmethod
-    def eval(cls, x):
-        return asin(x) + x**2
+# Creating a custom function
+def custom_fn(x):
+    asin(x) + x**2
 
 custom_fm_1 = feature_map(n_qubits, fm_type=custom_func)
 
@@ -85,6 +83,27 @@ from qadence.draw import html_string # markdown-exec: hide
 print(html_string(fm_custom)) # markdown-exec: hide
 ```
 
+To add a trainable parameter that multiplies the feature parameter inside the encoding function,
+simply pass a `param_prefix` string:
+
+```python exec="on" source="material-block" html="1" session="fms"
+n_qubits = 5
+
+fm_trainable = feature_map(
+    n_qubits,
+    fm_type=BasisSet.FOURIER,
+    reupload_scaling=ReuploadScaling.EXP,
+    param_prefix = "w",
+)
+
+from qadence.draw import html_string # markdown-exec: hide
+print(html_string(fm_trainable)) # markdown-exec: hide
+```
+
+Note that for the Fourier feature map the encoding function is simply $f(x)=x$. For other cases, like the Chebyshev `acos()` encoding,
+the trainable parameter may cause the feature value to be outside the domain of the encoding function. This will eventually be fixed
+by adding range constraints to trainable parameters in Qadence.
+
 A full description of the remaining arguments can be found in the [`feature_map` API reference][qadence.constructors.feature_map]. We provide an example below.
 
 ```python exec="on" source="material-block" html="1" session="fms"
@@ -103,6 +122,7 @@ fm_full = feature_map(
     feature_range = (-1.0, 2.0), # Range from which the input data comes from
     target_range = (1.0, 3.0), # Range the encoder assumes as the natural range
     multiplier = 5.0 # Extra multiplier, which can also be a Parameter
+    param_prefix = "w", # Add trainable parameters
 )
 
 from qadence.draw import html_string # markdown-exec: hide
