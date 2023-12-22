@@ -1,0 +1,19 @@
+name: readthedocs
+channels:
+  - defaults
+dependencies:
+  - python=3.10
+  - python-graphviz
+  - pip
+  - pip:
+    - markdown-exec
+    - mkdocs-exclude
+    - mkdocs-jupyter
+    - mkdocs-material
+    - mkdocs-section-index==0.3.6
+    - mkdocs==1.5.2
+    - mkdocstrings
+    - mkdocstrings-python
+    - -e ../
+    - pulser>=0.12.0
+    - amazon-braket-sdk
