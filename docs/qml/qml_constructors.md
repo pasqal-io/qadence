@@ -35,7 +35,7 @@ custom_fm_0 = feature_map(n_qubits, fm_type=asin)
 
 # Creating a custom function
 def custom_fn(x):
-    asin(x) + x**2
+    return asin(x) + x**2
 
 custom_fm_1 = feature_map(n_qubits, fm_type=custom_fn)
 
