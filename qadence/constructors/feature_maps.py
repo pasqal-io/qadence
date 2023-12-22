@@ -5,7 +5,7 @@ from collections.abc import Callable
 from math import isclose, pi
 from typing import Union
 
-from sympy import Basic, Function, acos
+from sympy import Basic, acos
 
 from qadence.blocks import AbstractBlock, KronBlock, chain, kron, tag
 from qadence.logger import get_logger
@@ -85,7 +85,7 @@ def fm_parameter_scaling(
     return scaled_fparam
 
 
-def fm_parameter_func(fm_type: BasisSet | Callable | str) -> type[Function]:
+def fm_parameter_func(fm_type: BasisSet | Callable | str) -> Callable:
     def ident_fn(x: TParameter) -> TParameter:
         return x
 
@@ -103,7 +103,7 @@ def fm_parameter_func(fm_type: BasisSet | Callable | str) -> type[Function]:
             "the given feature parameter with."
         )
 
-    return transform_func  # type: ignore [return-value]
+    return transform_func
 
 
 def fm_reupload_scaling_fn(
