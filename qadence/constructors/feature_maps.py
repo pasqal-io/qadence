@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import inspect
 import warnings
 from collections.abc import Callable
 from math import isclose, pi
@@ -20,7 +19,7 @@ ROTATIONS = [RX, RY, RZ, PHASE]
 RotationTypes = type[Union[RX, RY, RZ, PHASE]]
 
 
-def _set_range(fm_type: BasisSet | type[Function] | str) -> tuple[float, float]:
+def _set_range(fm_type: BasisSet | Callable | str) -> tuple[float, float]:
     if fm_type == BasisSet.FOURIER:
         return (0.0, 2 * pi)
     elif fm_type == BasisSet.CHEBYSHEV:
@@ -37,7 +36,7 @@ RS_FUNC_DICT = {
 
 
 def backwards_compatibility(
-    fm_type: BasisSet | type[Function] | str,
+    fm_type: BasisSet | Callable | str,
     reupload_scaling: ReuploadScaling | Callable | str,
 ) -> tuple:
     if fm_type in ("fourier", "chebyshev", "tower"):
@@ -58,7 +57,7 @@ def backwards_compatibility(
 
 
 def fm_parameter_scaling(
-    fm_type: BasisSet | type[Function] | str,
+    fm_type: BasisSet | Callable | str,
     param: Parameter | str = "phi",
     feature_range: tuple[float, float] | None = None,
     target_range: tuple[float, float] | None = None,
@@ -86,7 +85,7 @@ def fm_parameter_scaling(
     return scaled_fparam
 
 
-def fm_parameter_func(fm_type: BasisSet | type[Function] | str) -> type[Function]:
+def fm_parameter_func(fm_type: BasisSet | Callable | str) -> type[Function]:
     def ident_fn(x: TParameter) -> TParameter:
         return x
 
@@ -95,12 +94,12 @@ def fm_parameter_func(fm_type: BasisSet | type[Function] | str) -> type[Function
         transform_func = ident_fn
     elif fm_type == BasisSet.CHEBYSHEV:
         transform_func = acos
-    elif inspect.isclass(fm_type) and issubclass(fm_type, Function):
+    elif callable(fm_type):
         transform_func = fm_type
     else:
         raise NotImplementedError(
             f"Feature map type {fm_type} not implemented. Choose an item from the BasisSet "
-            f"enum: {[bs.name for bs in BasisSet]}, or your own sympy.Function to wrap "
+            f"enum: {[bs.name for bs in BasisSet]}, or your own sympy function to wrap "
             "the given feature parameter with."
         )
 
@@ -135,7 +134,7 @@ def feature_map(
     support: tuple[int, ...] | None = None,
     param: Parameter | str = "phi",
     op: RotationTypes = RX,
-    fm_type: BasisSet | type[Function] | str = BasisSet.FOURIER,
+    fm_type: BasisSet | Callable | str = BasisSet.FOURIER,
     reupload_scaling: ReuploadScaling | Callable | str = ReuploadScaling.CONSTANT,
     feature_range: tuple[float, float] | None = None,
     target_range: tuple[float, float] | None = None,

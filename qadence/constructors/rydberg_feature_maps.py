@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Callable
 
 import numpy as np
-from sympy import Basic, Function
+from sympy import Basic
 
 from qadence.blocks import AnalogBlock, KronBlock, kron
 from qadence.constructors.feature_maps import fm_parameter_func, fm_parameter_scaling
@@ -71,7 +71,7 @@ def rydberg_tower_feature_map(
 def analog_feature_map(
     param: str = "phi",
     op: Callable[[Parameter | Basic], AnalogBlock] = AnalogRX,
-    fm_type: BasisSet | type[Function] | str = BasisSet.FOURIER,
+    fm_type: BasisSet | Callable | str = BasisSet.FOURIER,
     reupload_scaling: ReuploadScaling | Callable | str = ReuploadScaling.CONSTANT,
     feature_range: tuple[float, float] | None = None,
     target_range: tuple[float, float] | None = None,
