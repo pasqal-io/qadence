@@ -140,8 +140,7 @@ def feature_map(
     feature_range: tuple[float, float] | None = None,
     target_range: tuple[float, float] | None = None,
     multiplier: Parameter | TParameter | None = None,
-    train_freq: bool = False,
-    freq_prefix: str = "w",
+    param_prefix: str | None = None,
 ) -> KronBlock:
     """Construct a feature map of a given type.
 
@@ -158,11 +157,16 @@ def feature_map(
         reupload_scaling: how the feature map scales the data that is re-uploaded for each qubit.
             choose from `ReuploadScaling` enumeration or provide your own function with a single
             int as input and int or float as output.
-        feature_range: range of data that the input data is assumed to come from.
+        feature_range: range of data that the input data provided comes from. Used to map input data
+            to the correct domain of the feature-encoding function.
         target_range: range of data the data encoder assumes as the natural range. For example,
             in Chebyshev polynomials it is (-1, 1), while for Fourier it may be chosen as (0, 2*pi).
+            Used to map data to the correct domain of the feature-encoding function.
         multiplier: overall multiplier; this is useful for reuploading the feature map serially with
             different scalings; can be a number or parameter/expression.
+        param_prefix: string prefix to create trainable parameters multiplying the feature parameter
+            inside the feature-encoding function. Note that currently this does not take into
+            account the domain of the feature-encoding function.
 
     Example:
     ```python exec="on" source="material-block" result="json"
@@ -210,9 +214,9 @@ def feature_map(
     op_list = []
     fparam = scaled_fparam
     for i, qubit in enumerate(support):
-        if train_freq:
-            freq_param = VariationalParameter(freq_prefix + f"_{i}")
-            fparam = freq_param * scaled_fparam
+        if param_prefix is not None:
+            train_param = VariationalParameter(param_prefix + f"_{i}")
+            fparam = train_param * scaled_fparam
         op_list.append(op(qubit, multiplier * rs_func(i) * transform_func(fparam)))
     fm = kron(*op_list)
 
