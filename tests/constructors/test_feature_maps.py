@@ -36,11 +36,14 @@ PARAM_DICT_1 = {
     "feature_range": (-2.0, -1.0),
     "target_range": (1.0, 5.0),
     "multiplier": FeatureParameter("y"),
+    "param_prefix": "w",
 }
 
 
 @pytest.mark.parametrize("param_dict", [PARAM_DICT_0, PARAM_DICT_1])
-@pytest.mark.parametrize("fm_type", [BasisSet.FOURIER, BasisSet.CHEBYSHEV, sympy.asin])
+@pytest.mark.parametrize(
+    "fm_type", [BasisSet.FOURIER, BasisSet.CHEBYSHEV, sympy.asin, lambda x: x**2]
+)
 @pytest.mark.parametrize(
     "reupload_scaling",
     [

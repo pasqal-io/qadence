@@ -1,17 +1,16 @@
 from __future__ import annotations
 
-import inspect
 import warnings
 from collections.abc import Callable
 from math import isclose, pi
 from typing import Union
 
-from sympy import Basic, Function, acos
+from sympy import Basic, acos
 
 from qadence.blocks import AbstractBlock, KronBlock, chain, kron, tag
 from qadence.logger import get_logger
 from qadence.operations import PHASE, RX, RY, RZ, H
-from qadence.parameters import FeatureParameter, Parameter
+from qadence.parameters import FeatureParameter, Parameter, VariationalParameter
 from qadence.types import BasisSet, ReuploadScaling, TParameter
 
 logger = get_logger(__name__)
@@ -20,7 +19,7 @@ ROTATIONS = [RX, RY, RZ, PHASE]
 RotationTypes = type[Union[RX, RY, RZ, PHASE]]
 
 
-def _set_range(fm_type: BasisSet | type[Function] | str) -> tuple[float, float]:
+def _set_range(fm_type: BasisSet | Callable | str) -> tuple[float, float]:
     if fm_type == BasisSet.FOURIER:
         return (0.0, 2 * pi)
     elif fm_type == BasisSet.CHEBYSHEV:
@@ -36,13 +35,10 @@ RS_FUNC_DICT = {
 }
 
 
-def fm_parameter(
-    fm_type: BasisSet | type[Function] | str,
-    param: Parameter | str = "phi",
-    feature_range: tuple[float, float] | None = None,
-    target_range: tuple[float, float] | None = None,
-) -> Parameter | Basic:
-    # Backwards compatibility
+def backwards_compatibility(
+    fm_type: BasisSet | Callable | str,
+    reupload_scaling: ReuploadScaling | Callable | str,
+) -> tuple:
     if fm_type in ("fourier", "chebyshev", "tower"):
         logger.warning(
             "Selecting `fm_type` as 'fourier', 'chebyshev' or 'tower' is deprecated. "
@@ -55,7 +51,17 @@ def fm_parameter(
             fm_type = BasisSet.CHEBYSHEV
         elif fm_type == "tower":
             fm_type = BasisSet.CHEBYSHEV
+            reupload_scaling = ReuploadScaling.TOWER
 
+    return fm_type, reupload_scaling
+
+
+def fm_parameter_scaling(
+    fm_type: BasisSet | Callable | str,
+    param: Parameter | str = "phi",
+    feature_range: tuple[float, float] | None = None,
+    target_range: tuple[float, float] | None = None,
+) -> Parameter | Basic:
     if isinstance(param, Parameter):
         fparam = param
         fparam.trainable = False
@@ -76,21 +82,28 @@ def fm_parameter(
     else:
         scaled_fparam = scaling * fparam + shift
 
+    return scaled_fparam
+
+
+def fm_parameter_func(fm_type: BasisSet | Callable | str) -> Callable:
+    def ident_fn(x: TParameter) -> TParameter:
+        return x
+
     # Transform feature parameter
     if fm_type == BasisSet.FOURIER:
-        transformed_feature = scaled_fparam
+        transform_func = ident_fn
     elif fm_type == BasisSet.CHEBYSHEV:
-        transformed_feature = acos(scaled_fparam)
-    elif inspect.isclass(fm_type) and issubclass(fm_type, Function):
-        transformed_feature = fm_type(scaled_fparam)
+        transform_func = acos
+    elif callable(fm_type):
+        transform_func = fm_type
     else:
         raise NotImplementedError(
             f"Feature map type {fm_type} not implemented. Choose an item from the BasisSet "
-            f"enum: {[bs.name for bs in BasisSet]}, or your own sympy.Function to wrap "
+            f"enum: {BasisSet.list()}, or a custom defined sympy function to wrap "
             "the given feature parameter with."
         )
 
-    return transformed_feature
+    return transform_func
 
 
 def fm_reupload_scaling_fn(
@@ -121,11 +134,12 @@ def feature_map(
     support: tuple[int, ...] | None = None,
     param: Parameter | str = "phi",
     op: RotationTypes = RX,
-    fm_type: BasisSet | type[Function] | str = BasisSet.FOURIER,
+    fm_type: BasisSet | Callable | str = BasisSet.FOURIER,
     reupload_scaling: ReuploadScaling | Callable | str = ReuploadScaling.CONSTANT,
     feature_range: tuple[float, float] | None = None,
     target_range: tuple[float, float] | None = None,
     multiplier: Parameter | TParameter | None = None,
+    param_prefix: str | None = None,
 ) -> KronBlock:
     """Construct a feature map of a given type.
 
@@ -142,11 +156,16 @@ def feature_map(
         reupload_scaling: how the feature map scales the data that is re-uploaded for each qubit.
             choose from `ReuploadScaling` enumeration or provide your own function with a single
             int as input and int or float as output.
-        feature_range: range of data that the input data is assumed to come from.
+        feature_range: range of data that the input data provided comes from. Used to map input data
+            to the correct domain of the feature-encoding function.
         target_range: range of data the data encoder assumes as the natural range. For example,
             in Chebyshev polynomials it is (-1, 1), while for Fourier it may be chosen as (0, 2*pi).
+            Used to map data to the correct domain of the feature-encoding function.
         multiplier: overall multiplier; this is useful for reuploading the feature map serially with
             different scalings; can be a number or parameter/expression.
+        param_prefix: string prefix to create trainable parameters multiplying the feature parameter
+            inside the feature-encoding function. Note that currently this does not take into
+            account the domain of the feature-encoding function.
 
     Example:
     ```python exec="on" source="material-block" result="json"
@@ -175,14 +194,14 @@ def feature_map(
             f"Please provide one from {[rot.__name__ for rot in ROTATIONS]}."
         )
 
-    transformed_feature = fm_parameter(
+    # Backwards compatibility
+    fm_type, reupload_scaling = backwards_compatibility(fm_type, reupload_scaling)
+
+    scaled_fparam = fm_parameter_scaling(
         fm_type, param, feature_range=feature_range, target_range=target_range
     )
 
-    # Backwards compatibility
-    if fm_type == "tower":
-        logger.warning("Forcing reupload scaling strategy to TOWER")
-        reupload_scaling = ReuploadScaling.TOWER
+    transform_func = fm_parameter_func(fm_type)
 
     basis_tag = fm_type.value if isinstance(fm_type, BasisSet) else str(fm_type)
     rs_func, rs_tag = fm_reupload_scaling_fn(reupload_scaling)
@@ -192,8 +211,12 @@ def feature_map(
 
     # Build feature map
     op_list = []
+    fparam = scaled_fparam
     for i, qubit in enumerate(support):
-        op_list.append(op(qubit, multiplier * rs_func(i) * transformed_feature))
+        if param_prefix is not None:
+            train_param = VariationalParameter(param_prefix + f"_{i}")
+            fparam = train_param * scaled_fparam
+        op_list.append(op(qubit, multiplier * rs_func(i) * transform_func(fparam)))
     fm = kron(*op_list)
 
     fm.tag = rs_tag + " " + basis_tag + " FM"
