@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Callable
 
-import numpy as np
 import pytest
 from metrics import JS_ACCEPTANCE
 from pulser.register.register import Register as PulserRegister
@@ -20,14 +19,15 @@ from qadence.circuit import QuantumCircuit
 from qadence.divergences import js_divergence
 from qadence.operations import RX, RY, RZ, entangle
 from qadence.register import Register as QadenceRegister
+from qadence.types import PI
 
 
 @pytest.mark.parametrize(
     "Qadence_op, func",
     [
         (RX(0, 1.5), lambda ch: digital_xy_rot_pulse(1.5, 0, ch)),
-        (RY(1, 1.5), lambda ch: digital_xy_rot_pulse(1.5, np.pi / 2, ch)),
-        (RZ(0, 1.5), lambda ch: digital_z_rot_pulse(1.5, np.pi / 2, ch)),
+        (RY(1, 1.5), lambda ch: digital_xy_rot_pulse(1.5, PI / 2, ch)),
+        (RZ(0, 1.5), lambda ch: digital_z_rot_pulse(1.5, PI / 2, ch)),
     ],
 )
 def test_single_qubit_block_conversion(Qadence_op: AbstractBlock, func: Callable) -> None:

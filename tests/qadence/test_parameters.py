@@ -21,7 +21,7 @@ from qadence.parameters import (
 )
 from qadence.serialization import deserialize, serialize
 from qadence.states import one_state, uniform_state, zero_state
-from qadence.types import BackendName, DiffMode
+from qadence.types import PI, BackendName, DiffMode
 
 
 def test_param_initialization(parametric_circuit: QuantumCircuit) -> None:
@@ -51,7 +51,7 @@ def test_param_initialization(parametric_circuit: QuantumCircuit) -> None:
     # check numerical valued parameter
     for q in params[:6]:
         if q.is_number:
-            assert evaluate(q) == np.pi
+            assert evaluate(q) == PI
     for q in params[6:]:
         assert evaluate(q) == 1.0
 
@@ -79,10 +79,10 @@ def test_multiparam_expressions(n_qubits: int) -> None:
     uni_state = uniform_state(n_qubits)
     wf = qm.run(
         {
-            "w": torch.rand(1) * np.pi,
-            "x": torch.rand(1) * np.pi,
-            "y": torch.rand(1) * np.pi,
-            "z": torch.rand(1) * np.pi,
+            "w": torch.rand(1) * PI,
+            "x": torch.rand(1) * PI,
+            "y": torch.rand(1) * PI,
+            "z": torch.rand(1) * PI,
         },
         uni_state,
     )
@@ -107,8 +107,8 @@ def test_multiparam_no_rx_rotation(n_qubits: int = 1) -> None:
 
 
 def test_multiparam_pi_ry_rotation_trainable(n_qubits: int = 1) -> None:
-    x = Parameter("x", trainable=True, value=torch.tensor([np.pi / 2], dtype=torch.cdouble))
-    y = Parameter("y", trainable=True, value=torch.tensor([np.pi / 2], dtype=torch.cdouble))
+    x = Parameter("x", trainable=True, value=torch.tensor([PI / 2], dtype=torch.cdouble))
+    y = Parameter("y", trainable=True, value=torch.tensor([PI / 2], dtype=torch.cdouble))
     block = RY(0, x + y)
     qc = QuantumCircuit(n_qubits, block)
     obs = total_magnetization(n_qubits)
@@ -130,8 +130,8 @@ def test_multiparam_pi_ry_rotation_nontrainable(n_qubits: int = 1) -> None:
     o_state = one_state(n_qubits)
     wf = qm.run(
         {
-            "x": torch.tensor([np.pi / 2], dtype=torch.cdouble),
-            "y": torch.tensor([np.pi / 2], dtype=torch.cdouble),
+            "x": torch.tensor([PI / 2], dtype=torch.cdouble),
+            "y": torch.tensor([PI / 2], dtype=torch.cdouble),
         },
         z_state,
     )
@@ -140,7 +140,7 @@ def test_multiparam_pi_ry_rotation_nontrainable(n_qubits: int = 1) -> None:
 
 def test_mixed_single_trainable(n_qubits: int = 1) -> None:
     x = Parameter("x", trainable=False)
-    y = Parameter("y", trainable=True, value=torch.tensor([np.pi / 2], dtype=torch.cdouble))
+    y = Parameter("y", trainable=True, value=torch.tensor([PI / 2], dtype=torch.cdouble))
     ry0 = RY(0, x)
     ry1 = RY(0, y)
     block = chain(ry0, ry1)
@@ -151,7 +151,7 @@ def test_mixed_single_trainable(n_qubits: int = 1) -> None:
     o_state = one_state(n_qubits)
     wf = qm.run(
         {
-            "x": torch.tensor([np.pi / 2], dtype=torch.cdouble),
+            "x": torch.tensor([PI / 2], dtype=torch.cdouble),
         },
         z_state,
     )
@@ -226,7 +226,7 @@ def test_non_trainable_trainable_gate(n_qubits: int = 1) -> None:
     z = Parameter(
         "z",
         trainable=True,
-        value=torch.tensor([np.pi / 2], dtype=torch.cdouble),
+        value=torch.tensor([PI / 2], dtype=torch.cdouble),
     )
     block = RY(0, x * y + z)
     qc = QuantumCircuit(n_qubits, block)
@@ -236,7 +236,7 @@ def test_non_trainable_trainable_gate(n_qubits: int = 1) -> None:
     o_state = one_state(n_qubits)
     wf = qm.run(
         {
-            "y": torch.tensor([np.pi / 2], dtype=torch.cdouble),
+            "y": torch.tensor([PI / 2], dtype=torch.cdouble),
         },
         z_state,
     )
@@ -264,8 +264,8 @@ def test_trainable_untrainable_fm(n_qubits: int = 2) -> None:
     wf = qm.run(
         {
             "x": torch.tensor([1.0], dtype=torch.cdouble),
-            "theta0": torch.tensor([np.pi / 2], dtype=torch.cdouble),
-            "theta1": torch.tensor([np.pi / 2], dtype=torch.cdouble),
+            "theta0": torch.tensor([PI / 2], dtype=torch.cdouble),
+            "theta1": torch.tensor([PI / 2], dtype=torch.cdouble),
         },
         z_state,
     )
@@ -294,8 +294,8 @@ def test_hetereogenous_multiparam_expr(n_qubits: int = 2) -> None:
     wf = qm.run(
         {
             "x": torch.tensor([1.0], dtype=torch.cdouble),
-            "theta0": torch.tensor([np.pi / 2], dtype=torch.cdouble),
-            "theta1": torch.tensor([np.pi / 2], dtype=torch.cdouble),
+            "theta0": torch.tensor([PI / 2], dtype=torch.cdouble),
+            "theta1": torch.tensor([PI / 2], dtype=torch.cdouble),
         },
         z_state,
     )

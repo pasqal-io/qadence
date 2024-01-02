@@ -5,7 +5,6 @@ from typing import Any, Callable
 
 import pytest
 from metrics import JS_ACCEPTANCE
-from torch import pi
 
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.analog import AnalogBlock
@@ -25,6 +24,7 @@ from qadence.operations import (
 from qadence.overlap import js_divergence
 from qadence.register import Register
 from qadence.states import equivalent_state, random_state
+from qadence.types import PI
 
 
 def layer(Op: Any, n_qubits: int, angle: float) -> AbstractBlock:
@@ -42,9 +42,9 @@ d = 3.75
         # pytest.param(  # enable with next pulser release
         #     AnalogInteraction(duration=1), lambda n: I(n), marks=pytest.mark.xfail
         # ),
-        (AnalogRX(angle=pi), lambda n: layer(RX, n, pi)),
-        (AnalogRY(angle=pi), lambda n: layer(RY, n, pi)),
-        (AnalogRZ(angle=pi), lambda n: layer(RZ, n, pi)),
+        (AnalogRX(angle=PI), lambda n: layer(RX, n, PI)),
+        (AnalogRY(angle=PI), lambda n: layer(RY, n, PI)),
+        (AnalogRZ(angle=PI), lambda n: layer(RZ, n, PI)),
     ],
 )
 @pytest.mark.parametrize(
@@ -74,14 +74,14 @@ def test_far_add_interaction(analog: AnalogBlock, digital_fn: Callable, register
 @pytest.mark.parametrize(
     "block",
     [
-        AnalogRX(angle=pi),
-        AnalogRY(angle=pi),
-        chain(AnalogInteraction(duration=2000), AnalogRX(angle=pi)),
+        AnalogRX(angle=PI),
+        AnalogRY(angle=PI),
+        chain(AnalogInteraction(duration=2000), AnalogRX(angle=PI)),
         chain(
             AnalogRot(duration=1000, omega=1.0, delta=0.0, phase=0),
             AnalogRot(duration=1000, omega=0.0, delta=1.0, phase=0),
         ),
-        kron(AnalogRX(pi, qubit_support=(0, 1)), AnalogInteraction(1000, qubit_support=(2, 3))),
+        kron(AnalogRX(PI, qubit_support=(0, 1)), AnalogInteraction(1000, qubit_support=(2, 3))),
     ],
 )
 @pytest.mark.parametrize("register", [Register.from_coordinates([(0, 5), (5, 5), (5, 0), (0, 0)])])
@@ -96,7 +96,7 @@ def test_close_add_interaction(block: AnalogBlock, register: Register) -> None:
 def test_mixing_digital_analog() -> None:
     from qadence import X, chain, kron
 
-    b = chain(kron(X(0), X(1)), AnalogRX(pi))
+    b = chain(kron(X(0), X(1)), AnalogRX(PI))
     r = Register.from_coordinates([(0, 10), (0, -10)])
 
     sample_results = sample(r, b)[0]

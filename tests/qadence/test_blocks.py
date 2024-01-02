@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from uuid import uuid4
 
-import numpy as np
 import pytest
 import sympy
 
@@ -38,7 +37,7 @@ from qadence.constructors import (
 from qadence.operations import CNOT, CRX, CRY, RX, RY, H, I, X, Y, Z, Zero
 from qadence.parameters import Parameter, evaluate
 from qadence.transpile import invert_endianness, reassign, set_trainable
-from qadence.types import TNumber
+from qadence.types import PI, TNumber
 
 
 def test_1qubit_blocks() -> None:
@@ -384,8 +383,8 @@ def test_lookup_block_by_param() -> None:
     block2 = RX(1, "theta1")
     block3 = RX(2, "theta2")
     block4 = RX(3, "theta3")
-    block5 = RY(0, np.pi)
-    block6 = RX(1, np.pi)
+    block5 = RY(0, PI)
+    block6 = RX(1, PI)
     block7 = CNOT(2, 3)
 
     comp_block = chain(

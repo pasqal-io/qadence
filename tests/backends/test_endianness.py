@@ -7,7 +7,7 @@ import pytest
 import strategies as st  # type: ignore
 from hypothesis import given, settings
 from metrics import ATOL_DICT, JS_ACCEPTANCE  # type: ignore
-from torch import Tensor, allclose, cdouble, pi, tensor
+from torch import Tensor, allclose, cdouble, tensor
 
 from qadence import QuantumCircuit, block_to_tensor, run, sample
 from qadence.backends.api import backend_factory
@@ -19,7 +19,7 @@ from qadence.operations import CNOT, RX, RY, H, HamEvo, I, X, Z
 from qadence.register import Register
 from qadence.states import equivalent_state, product_state
 from qadence.transpile import invert_endianness
-from qadence.types import BackendName, Endianness, ResultType
+from qadence.types import PI, BackendName, Endianness, ResultType
 from qadence.utils import (
     basis_to_int,
     nqubits_to_basis,
@@ -58,7 +58,7 @@ def test_endianness_equal_sample(
 def test_endianness_hamevo(backend: BackendName) -> None:
     n_qubits = 2
     gen = -0.5 * kron(I(0) - Z(0), I(1) - X(1))
-    evo = HamEvo(gen, tensor([pi / 2]))
+    evo = HamEvo(gen, tensor([PI / 2]))
     circ = QuantumCircuit(n_qubits, evo)
     cnotgate = CNOT(0, 1)
     qc_cnot = QuantumCircuit(2, cnotgate)
@@ -128,8 +128,8 @@ def test_state_endianness() -> None:
             QuantumCircuit(3, chain(X(0), X(1), X(2))),
             tensor([[0, 0, 0, 0, 0, 0, 0, 1]], dtype=cdouble),
         ),
-        (QuantumCircuit(2, RY(0, pi)), tensor([[0, 0, 1, 0]], dtype=cdouble)),
-        (QuantumCircuit(2, RY(1, pi)), tensor([[0, 1, 0, 0]], dtype=cdouble)),
+        (QuantumCircuit(2, RY(0, PI)), tensor([[0, 0, 1, 0]], dtype=cdouble)),
+        (QuantumCircuit(2, RY(1, PI)), tensor([[0, 1, 0, 0]], dtype=cdouble)),
     ],
 )
 @pytest.mark.parametrize("backend", BACKENDS)
@@ -146,9 +146,9 @@ def test_backend_wf_endianness(circ: QuantumCircuit, truth: Tensor, backend: Bac
 @pytest.mark.parametrize(
     "circ, truth",
     [
-        (QuantumCircuit(3, RX(0, pi)), Counter({"100": 100})),
-        (QuantumCircuit(3, RX(1, pi)), Counter({"010": 100})),
-        (QuantumCircuit(3, RX(2, pi)), Counter({"001": 100})),
+        (QuantumCircuit(3, RX(0, PI)), Counter({"100": 100})),
+        (QuantumCircuit(3, RX(1, PI)), Counter({"010": 100})),
+        (QuantumCircuit(3, RX(2, PI)), Counter({"001": 100})),
     ],
 )
 @pytest.mark.parametrize("backend", BACKENDS + [BackendName.PULSER])
@@ -168,9 +168,9 @@ def test_backend_sample_endianness(
 @pytest.mark.parametrize(
     "block",
     [
-        RX(0, pi),
-        RX(1, pi),
-        RX(2, pi),
+        RX(0, PI),
+        RX(1, PI),
+        RX(2, PI),
     ],
 )
 def test_pulser_run_endianness(

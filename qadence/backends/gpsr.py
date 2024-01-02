@@ -6,6 +6,7 @@ from typing import Callable
 import torch
 from torch import Tensor
 
+from qadence.types import PI
 from qadence.utils import _round_complex
 
 
@@ -33,7 +34,7 @@ def single_gap_psr(
     param_dict: dict[str, Tensor],
     param_name: str,
     spectral_gap: Tensor = torch.tensor([2], dtype=torch.get_default_dtype()),
-    shift: Tensor = torch.tensor([torch.pi / 2], dtype=torch.get_default_dtype()),
+    shift: Tensor = torch.tensor([PI / 2], dtype=torch.get_default_dtype()),
 ) -> Tensor:
     """Implements single qubit PSR rule.
 
@@ -87,9 +88,7 @@ def multi_gap_psr(
     batch_size = max(t.size(0) for t in param_dict.values())
 
     # get shift values
-    shifts = shift_prefac * torch.linspace(
-        torch.pi / 2 - torch.pi / 5, torch.pi / 2 + torch.pi / 5, n_eqs
-    )
+    shifts = shift_prefac * torch.linspace(PI / 2 - PI / 5, PI / 2 + PI / 5, n_eqs)
 
     # calculate F vector and M matrix
     # (see: https://arxiv.org/pdf/2108.01218.pdf on p. 4 for definitions)

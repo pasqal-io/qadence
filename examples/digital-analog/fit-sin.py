@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import torch
 
 from qadence import (
+    AnalogInteraction,
     AnalogRX,
     AnalogRZ,
     DiffMode,
@@ -19,7 +20,6 @@ from qadence import (
     add,
     chain,
     expectation,
-    wait,
 )
 
 pi = torch.pi
@@ -49,7 +49,7 @@ block = chain(
     AnalogRZ(t),
     # NOTE: for a better fit, manually set delta
     # AnalogRot(duration=1000 / (6 * torch.pi) * t, delta=6 * torch.pi),  # RZ
-    wait(1000 * VariationalParameter("theta", value=0.5)),
+    AnalogInteraction(1000 * VariationalParameter("theta", value=0.5)),
     AnalogRX(pi / 2),
 )
 

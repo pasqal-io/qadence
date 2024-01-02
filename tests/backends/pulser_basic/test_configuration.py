@@ -11,6 +11,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.divergences import js_divergence
 from qadence.operations import RY, entangle
 from qadence.register import Register
+from qadence.types import PI
 
 SEED = 42
 DEFAULT_SPACING = 8.0
@@ -20,7 +21,7 @@ def test_configuration() -> None:
     torch.manual_seed(SEED)
     np.random.seed(SEED)
 
-    blocks = chain(entangle(892, qubit_support=(0, 1)), RY(0, torch.pi / 2))
+    blocks = chain(entangle(892, qubit_support=(0, 1)), RY(0, PI / 2))
     register = Register(2, spacing=DEFAULT_SPACING)
     circuit = QuantumCircuit(register, blocks)
 
@@ -49,7 +50,7 @@ def test_configuration_as_dict() -> None:
     torch.manual_seed(SEED)
     np.random.seed(SEED)
 
-    blocks = chain(entangle(892, qubit_support=(0, 1)), RY(0, torch.pi / 2))
+    blocks = chain(entangle(892, qubit_support=(0, 1)), RY(0, PI / 2))
     register = Register(2, spacing=DEFAULT_SPACING)
     circuit = QuantumCircuit(register, blocks)
 

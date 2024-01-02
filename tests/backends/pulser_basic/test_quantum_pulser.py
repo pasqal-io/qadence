@@ -1,18 +1,15 @@
 from __future__ import annotations
 
 import pytest
-from torch import pi, tensor
+from torch import tensor
 
-from qadence import (
-    RX,
-    BackendName,
-    FeatureParameter,
-    QuantumCircuit,
-    VariationalParameter,
-    backend_factory,
-    kron,
-    total_magnetization,
-)
+from qadence.backends import backend_factory
+from qadence.blocks import kron
+from qadence.circuit import QuantumCircuit
+from qadence.constructors import total_magnetization
+from qadence.operations import RX
+from qadence.parameters import FeatureParameter, VariationalParameter
+from qadence.types import PI, BackendName
 
 
 @pytest.fixture
@@ -21,13 +18,13 @@ def batched_circuit() -> QuantumCircuit:
     phi = FeatureParameter("phi")
     theta = VariationalParameter("theta")
 
-    block = kron(RX(0, phi), RX(1, theta), RX(2, pi))
+    block = kron(RX(0, phi), RX(1, theta), RX(2, PI))
     return QuantumCircuit(n_qubits, block)
 
 
 def test_expectation_batched(batched_circuit: QuantumCircuit) -> None:
     batch_size = 3
-    values = {"phi": tensor([pi / 5, pi / 4, pi / 3])}
+    values = {"phi": tensor([PI / 5, PI / 4, PI / 3])}
     observables = [
         total_magnetization(batched_circuit.n_qubits),
         2 * total_magnetization(batched_circuit.n_qubits),
@@ -41,7 +38,7 @@ def test_expectation_batched(batched_circuit: QuantumCircuit) -> None:
 
 def test_run_batched(batched_circuit: QuantumCircuit) -> None:
     batch_size = 3
-    values = {"phi": tensor([pi / 5, pi / 4, pi / 3])}
+    values = {"phi": tensor([PI / 5, PI / 4, PI / 3])}
 
     backend = backend_factory(backend=BackendName.PULSER, diff_mode=None)
     circ, _, embed, params = backend.convert(batched_circuit)

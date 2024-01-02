@@ -23,6 +23,7 @@ from qadence.blocks.analog import (
 from qadence.logger import get_logger
 from qadence.operations import RX, RY, RZ, AnalogEntanglement, OpName
 from qadence.parameters import evaluate
+from qadence.types import PI
 
 from .channels import GLOBAL_CHANNEL, LOCAL_CHANNEL
 from .config import Configuration
@@ -116,8 +117,8 @@ def add_pulses(
     global_channel = sequence.device.channels["rydberg_global"]
 
     rx = partial(digital_xy_rot_pulse, channel=local_channel, phase=0, config=config)
-    ry = partial(digital_xy_rot_pulse, channel=local_channel, phase=np.pi / 2, config=config)
-    rz = partial(digital_z_rot_pulse, channel=local_channel, phase=np.pi / 2, config=config)
+    ry = partial(digital_xy_rot_pulse, channel=local_channel, phase=PI / 2, config=config)
+    rz = partial(digital_z_rot_pulse, channel=local_channel, phase=PI / 2, config=config)
 
     # TODO: lets move those to `@singledipatch`ed functions
     if isinstance(block, WaitBlock):
@@ -250,16 +251,16 @@ def entangle_pulse(
     clock = channel.clock_period
     delay_wf = ConstantWaveform(clock * np.ceil(duration / clock), 0)  # type: ignore
     half_pi_wf = SquareWaveform.from_area(
-        area=np.pi / 2,
+        area=PI / 2,
         max_amp=max_amp,  # type: ignore[arg-type]
         duration_steps=clock,  # type: ignore[attr-defined]
         min_duration=channel.min_duration,
     )
 
-    detuning_wf = RampWaveform(duration=half_pi_wf.duration, start=0, stop=np.pi)
+    detuning_wf = RampWaveform(duration=half_pi_wf.duration, start=0, stop=PI)
     amplitude = CompositeWaveform(half_pi_wf, delay_wf)
     detuning = CompositeWaveform(detuning_wf, delay_wf)
-    return Pulse(amplitude=amplitude, detuning=detuning, phase=np.pi / 2)
+    return Pulse(amplitude=amplitude, detuning=detuning, phase=PI / 2)
 
 
 def digital_xy_rot_pulse(

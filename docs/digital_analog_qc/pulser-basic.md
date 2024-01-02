@@ -81,7 +81,7 @@ pulse sequence with the Pulser backend. Supplying the parameter values allows to
 ```python exec="on" source="material-block" result="json" session="pulser-basic"
 import torch
 import matplotlib.pyplot as plt
-from qadence import Register, QuantumCircuit, QuantumModel
+from qadence import Register, QuantumCircuit, QuantumModel, PI
 
 register = Register.line(2, spacing = 8.0)  # Two qubits with a distance of 8µm
 circuit = QuantumCircuit(register, bell_state)
@@ -89,7 +89,7 @@ model = QuantumModel(circuit, backend="pulser", diff_mode="gpsr")
 
 params = {
     "t": torch.tensor([1000]),  # ns
-    "y": torch.tensor([3*torch.pi/2]),
+    "y": torch.tensor([3*PI/2]),
 }
 
 # Return the final state vector
@@ -155,7 +155,7 @@ model = QuantumModel(
 
 params = {
     "t": torch.tensor([1000]),  # ns
-    "y": torch.tensor([3*torch.pi/2]),
+    "y": torch.tensor([3*PI/2]),
 }
 
 # Sample from the result state vector
@@ -178,7 +178,7 @@ from qadence import AnalogRY, chain, AnalogInteraction
 # Custom entanglement operation.
 def my_entanglement(duration):
     return chain(
-        AnalogRY(-torch.pi / 2),
+        AnalogRY(-PI / 2),
         AnalogInteraction(duration)
     )
 
@@ -193,7 +193,7 @@ model = QuantumModel(circuit, backend=BackendName.PULSER, diff_mode=DiffMode.GPS
 
 params = {
     "t": torch.tensor([500]),  # ns
-    "y": torch.tensor([torch.pi / 2]),
+    "y": torch.tensor([PI / 2]),
 }
 
 sample = model.sample(params, n_shots=50)[0]
@@ -226,7 +226,7 @@ hea_one_layer = chain(
 protocol = chain(
     fourier_feature_map(1, param="x"),
     hea_one_layer,
-    AnalogRX(torch.pi/4)
+    AnalogRX(PI/4)
 )
 
 register = Register.line(2, spacing=8.0)

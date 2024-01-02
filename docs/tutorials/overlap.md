@@ -10,9 +10,9 @@ consisting of a single `RX` rotation on different qubits. The overlap is expecte
 non-zero only when the rotation angle is different from $\pi \; \textrm{mod}\; 2\pi$ for both rotations:
 
 ```python exec="on" source="material-block" result="json" session="overlap"
-import torch
 import numpy as np
-from qadence import Overlap, OverlapMethod, QuantumCircuit, H, RX, X, FeatureParameter, hea
+from torch import tensor
+from qadence import Overlap, OverlapMethod, QuantumCircuit, H, RX, X, FeatureParameter, hea, PI
 
 
 # Create two quantum circuits
@@ -27,8 +27,8 @@ psi = FeatureParameter("psi")
 circuit_ket = QuantumCircuit(n_qubits, RX(qubits[1], psi))
 
 # Values for the feature parameters
-values_bra = {"phi": torch.Tensor([torch.pi / 2, torch.pi])}
-values_ket = {"psi": torch.Tensor([torch.pi / 2, torch.pi])}
+values_bra = {"phi": tensor([PI / 2, PI])}
+values_ket = {"psi": tensor([PI / 2, PI])}
 
 # Calculate overlap by assigning values to the given bra and ket circuits
 ovrlp = Overlap(circuit_bra, circuit_ket)

@@ -7,7 +7,6 @@ from typing import Any, Callable, Set
 
 import hypothesis.strategies as st
 from hypothesis.strategies._internal import SearchStrategy
-from numpy import pi
 from sympy import Basic, Expr, acos, asin, atan, cos, sin, tan
 from torch import Tensor
 
@@ -31,7 +30,7 @@ from qadence.operations import (
     two_qubit_gateset,
 )
 from qadence.parameters import FeatureParameter, Parameter, VariationalParameter
-from qadence.types import BackendName, ParameterType, TNumber
+from qadence.types import PI, BackendName, ParameterType, TNumber
 
 PARAM_NAME_LENGTH = 1
 MIN_SYMBOLS = 1
@@ -39,8 +38,8 @@ MAX_SYMBOLS = 3
 FEAT_PARAM_MIN = -1.0
 FEAT_PARAM_MAX = 1.0
 
-VAR_PARAM_MIN = -2 * pi
-VAR_PARAM_MAX = 2 * pi
+VAR_PARAM_MIN = -2 * PI
+VAR_PARAM_MAX = 2 * PI
 
 TRIG_FNS = [cos, sin, tan, acos, asin, atan]
 

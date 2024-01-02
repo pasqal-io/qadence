@@ -14,7 +14,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.operations import RX, RY, H, I, S, T, Z
 from qadence.overlap import Overlap, OverlapMethod
 from qadence.parameters import FeatureParameter, VariationalParameter
-from qadence.types import BackendName, DiffMode
+from qadence.types import PI, BackendName, DiffMode
 
 torch.manual_seed(42)
 
@@ -47,8 +47,8 @@ def _get_theoretical_result(n_qubits: int, values_bra: dict, values_ket: dict) -
 
 
 def _generate_parameter_values() -> tuple[dict, dict]:
-    values_bra = {"phi": 2 * np.pi * torch.rand(2)}
-    values_ket = {"psi": 2 * np.pi * torch.rand(2)}
+    values_bra = {"phi": 2 * PI * torch.rand(2)}
+    values_ket = {"psi": 2 * PI * torch.rand(2)}
     return values_bra, values_ket
 
 
@@ -85,8 +85,8 @@ def test_overlap_jensen_shannon(backend_name: BackendName, n_qubits: int) -> Non
     circuit_bra, circuit_ket = _create_test_circuits(n_qubits)
 
     # values for circuits
-    values_bra = {"phi": torch.Tensor([np.pi / 2, np.pi])}
-    values_ket = {"psi": torch.Tensor([np.pi / 2, np.pi])}
+    values_bra = {"phi": torch.Tensor([PI / 2, PI])}
+    values_ket = {"psi": torch.Tensor([PI / 2, PI])}
 
     # get theoretical result
     if n_qubits == 1:
@@ -273,7 +273,7 @@ def test_overlap_exact_speed(backend_name: BackendName, n_qubits: int) -> None:
     circuit_bra = QuantumCircuit(n_qubits, fm_bra)
 
     # values for circuits
-    values_bra = {"phi": torch.Tensor([np.pi / 2])}
+    values_bra = {"phi": torch.Tensor([PI / 2])}
 
     # create backend for calculating expectation value
     obs = tag(kron(*[I(i) for i in range(n_qubits)]), "observable")
@@ -348,8 +348,8 @@ def test_output_shape() -> None:
     circuit_ket = QuantumCircuit(2, fm_ket)
 
     # values for circuits
-    values_bra = {"phi": 2 * np.pi * torch.rand(2)}
-    values_ket = {"psi": 2 * np.pi * torch.rand(3)}
+    values_bra = {"phi": 2 * PI * torch.rand(2)}
+    values_ket = {"psi": 2 * PI * torch.rand(3)}
 
     # get result from overlap class - distinct feature params for bra/ket
     ovrlp = Overlap(
@@ -369,7 +369,7 @@ def test_output_shape() -> None:
     circuit_ket = QuantumCircuit(2, fm_ket)
 
     # values for circuits
-    values_bra = {"phi": 2 * np.pi * torch.rand(4)}
+    values_bra = {"phi": 2 * PI * torch.rand(4)}
 
     # get result from overlap class - shared feature param for bra/ket
     ovrlp = Overlap(
@@ -379,12 +379,12 @@ def test_output_shape() -> None:
     assert ovrlp.shape == (4, 1)
 
     # prepare circuit for kets
-    block_ket = kron(*[RX(qubit, np.pi / 2) for qubit in range(2)])
+    block_ket = kron(*[RX(qubit, PI / 2) for qubit in range(2)])
     fm_ket = tag(block_ket, tag="feature-map-ket")
     circuit_ket = QuantumCircuit(2, fm_ket)
 
     # values for circuits
-    values_bra = {"phi": 2 * np.pi * torch.rand(4)}
+    values_bra = {"phi": 2 * PI * torch.rand(4)}
 
     # get result from overlap class - bra has feature param, ket doesn't
     ovrlp = Overlap(

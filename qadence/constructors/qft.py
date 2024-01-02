@@ -6,7 +6,7 @@ import torch
 
 from qadence.blocks import AbstractBlock, add, chain, kron, tag
 from qadence.operations import CPHASE, SWAP, H, HamEvo, I, Z
-from qadence.types import Strategy
+from qadence.types import PI, Strategy
 
 from .daqc import daqc_transform
 
@@ -106,7 +106,7 @@ def _qft_layer_digital(
     rots = []
     for j in qubit_range_layer:
         angle = torch.tensor(
-            ((-1) ** inverse) * 2 * torch.pi / (2 ** (j - layer + 1)), dtype=torch.cdouble
+            ((-1) ** inverse) * 2 * PI / (2 ** (j - layer + 1)), dtype=torch.cdouble
         )
         rots.append(CPHASE(support[j], support[layer], angle))  # type: ignore
     if inverse:
@@ -122,13 +122,13 @@ def _qft_layer_digital(
 
 def _theta(k: int) -> float:
     """Equation (16) from [1]."""
-    return float(torch.pi / (2 ** (k + 1)))
+    return float(PI / (2 ** (k + 1)))
 
 
 def _alpha(c: int, m: int, k: int) -> float:
     """Equation (16) from [1]."""
     if c == m:
-        return float(torch.pi / (2 ** (k - m + 2)))
+        return float(PI / (2 ** (k - m + 2)))
     else:
         return 0.0
 
