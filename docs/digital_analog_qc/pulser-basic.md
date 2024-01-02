@@ -53,10 +53,10 @@ Currently, the Pulser backend supports the following operations:
 
 | gate        | description                                                                                      | trainable parameter |
 |-------------|--------------------------------------------------------------------------------------------------|---------------------|
-| `RX`, `RY`     | Single qubit rotations. Notice that the interaction is on and this affects the resulting gate fidelity.                                                                        | rotation angle      |
-| `AnalogRX`, `AnalogRY`, `AnalogRZ` | Span a single qubit rotation among the entire register.                                          | rotation angle      |
+| `RX`, `RY`     | Single qubit rotations. Notice that the interaction is on and this affects the resulting gate fidelity.          | rotation angle      |
+| `AnalogRX`, `AnalogRY`, `AnalogRZ` | Span a single qubit rotation among the entire register.                                      | rotation angle      |
 | `entangle`  | Fully entangle the register.                                                                     | interaction time    |
-| `wait`      | An idle block to wait for the system to free-evolve for a duration according to the interaction. | free evolution time |
+| `AnalogInteraction`      | An idle block to wait for the system to free-evolve for a duration according to the interaction. | free evolution time |
 
 ## Sequence the Bell state on a two qubit register
 
@@ -169,17 +169,17 @@ A major advantage of the block-based interface in Qadence is the ease to compose
 operations from a restricted set of primitive ones. In the following, a custom entanglement operation is used as an example.
 
 The operation consists of moving _all_ the qubits to the $X$-basis. This is realized when the atomic interaction performs a
-controlled-$Z$ operation during the free evolution. As seen before, this is implemented with the `wait` and `AnalogRY` blocks and
+controlled-$Z$ operation during the free evolution. As seen before, this is implemented with the `AnalogInteraction` and `AnalogRY` blocks and
 appropriate parameters.
 
 ```python exec="on" source="material-block" session="pulser-basic"
-from qadence import AnalogRY, chain, wait
+from qadence import AnalogRY, chain, AnalogInteraction
 
 # Custom entanglement operation.
 def my_entanglement(duration):
     return chain(
         AnalogRY(-torch.pi / 2),
-        wait(duration)
+        AnalogInteraction(duration)
     )
 
 protocol = chain(

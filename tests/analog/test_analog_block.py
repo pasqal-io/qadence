@@ -11,7 +11,7 @@ from qadence.blocks.analog import (
     chain,
     kron,
 )
-from qadence.operations import AnalogRX, X, wait
+from qadence.operations import AnalogInteraction, AnalogRX, X
 from qadence.parameters import ParamMap
 
 
@@ -36,7 +36,7 @@ def test_qubit_support() -> None:
 
 def test_analog_block() -> None:
     b: AnalogBlock
-    b = wait(duration=3, qubit_support=(1, 2))
+    b = AnalogInteraction(duration=3, qubit_support=(1, 2))
     assert b.__repr__() == "WaitBlock(t=3.0, support=(1, 2))"
 
     c1 = chain(
@@ -48,7 +48,7 @@ def test_analog_block() -> None:
 
     c2 = kron(
         AnalogRX(torch.pi, qubit_support=(0, 1)),
-        wait(duration=1000, qubit_support=(2, 3)),
+        AnalogInteraction(duration=1000, qubit_support=(2, 3)),
     )
     assert c2.duration == 1000
     assert c2.qubit_support == QubitSupport(0, 1, 2, 3)
@@ -56,31 +56,31 @@ def test_analog_block() -> None:
     c3 = chain(
         kron(
             AnalogRX(torch.pi, qubit_support=(0, 1)),
-            wait(duration=1000, qubit_support=(2, 3)),
+            AnalogInteraction(duration=1000, qubit_support=(2, 3)),
         ),
         kron(
-            wait(duration=1000, qubit_support=(0, 1)),
+            AnalogInteraction(duration=1000, qubit_support=(0, 1)),
             AnalogRX(torch.pi, qubit_support=(2, 3)),
         ),
     )
     assert c3.duration == 2000
 
     with pytest.raises(ValueError, match="Only KronBlocks or global blocks can be chain'ed."):
-        chain(c3, wait(duration=10))
+        chain(c3, AnalogInteraction(duration=10))
 
     with pytest.raises(ValueError, match="Blocks with global support cannot be kron'ed."):
-        kron(AnalogRX(torch.pi, qubit_support=(0, 1)), wait(duration=1000))
+        kron(AnalogRX(torch.pi, qubit_support=(0, 1)), AnalogInteraction(duration=1000))
 
     with pytest.raises(ValueError, match="Make sure blocks act on distinct qubits!"):
         kron(
             AnalogRX(torch.pi, qubit_support=(0, 1)),
-            wait(duration=1000, qubit_support=(1, 2)),
+            AnalogInteraction(duration=1000, qubit_support=(1, 2)),
         )
 
     with pytest.raises(ValueError, match="Kron'ed blocks have to have same duration."):
         kron(
             AnalogRX(1, qubit_support=(0, 1)),
-            wait(duration=10, qubit_support=(2, 3)),
+            AnalogInteraction(duration=10, qubit_support=(2, 3)),
         )
 
 
@@ -91,9 +91,9 @@ def test_mix_digital_analog() -> None:
     b = chain(X(0), AnalogRX(2.0))
     assert b.qubit_support == (0,)
 
-    b = chain(X(0), wait(2.0), X(2))
+    b = chain(X(0), AnalogInteraction(2.0), X(2))
     assert b.qubit_support == (0, 1, 2)
 
-    b = chain(chain(X(0), wait(2.0, qubit_support="global"), X(2)), X(3))
+    b = chain(chain(X(0), AnalogInteraction(2.0, qubit_support="global"), X(2)), X(3))
     assert all([not isinstance(b, CompositeBlock) for b in b.blocks])
     assert b.qubit_support == (0, 1, 2, 3)

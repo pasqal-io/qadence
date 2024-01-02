@@ -214,7 +214,7 @@ def _(
         _make_cluster(qcd, labels, start, stop, qcd.theme.get_add_cluster_attr())
 
     elif isinstance(block, WaitBlock):
-        labels = ["wait", f"t = {_expr_string(block.parameters.duration)}"]
+        labels = ["Wait", f"t = {_expr_string(block.parameters.duration)}"]
         is_global = block.qubit_support.is_global
         start = 0 if is_global else min(block.qubit_support)
         stop = qcd.nb_wires if is_global else block.n_qubits

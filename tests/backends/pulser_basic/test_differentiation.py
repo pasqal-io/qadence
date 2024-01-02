@@ -34,7 +34,7 @@ def block(circ_id: int) -> AbstractBlock:
             AnalogRot(duration=1000 * x / 3.0, omega=4.0, delta=3.0),
             # FIXME: Re-check these tests after handling:
             # https://github.com/pasqal-io/qadence/issues/266
-            # wait(500),
+            # AnalogInteraction(500),
             AnalogRX(np.pi / 2),
         )
 

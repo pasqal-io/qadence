@@ -101,7 +101,7 @@ class AnalogBlock(AbstractBlock):
 @dataclass(eq=False, repr=False)
 class WaitBlock(AnalogBlock):
     """
-    Waits.
+    Evolves the interaction term for a register of qubits.
 
     In real interacting quantum devices, it means letting the system evolve freely according
     to the time-dependent Schrodinger equation. With emulators, this block is translated to an
@@ -115,7 +115,7 @@ class WaitBlock(AnalogBlock):
 
     with `nᵢ = (1-Zᵢ)/2`.
 
-    To construct this block, use the [`wait`][qadence.operations.wait] function.
+    To construct, use the [`AnalogInteraction`][qadence.operations.AnalogInteraction] function.
     """
 
     _eigenvalues_generator: torch.Tensor | None = None
@@ -262,12 +262,12 @@ class AnalogChain(AnalogComposite):
 
         Example:
         ```python exec="on" source="material-block" result="json"
-        from qadence import X, chain, wait
+        from qadence import X, chain, AnalogInteraction
 
-        b = chain(wait(200), wait(200))
+        b = chain(AnalogInteraction(200), AnalogInteraction(200))
         print(type(b))  # this is an `AnalogChain`
 
-        b = chain(X(0), wait(200))
+        b = chain(X(0), AnalogInteraction(200))
         print(type(b))  # this is a general `ChainBlock`
         ```
         """

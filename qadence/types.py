@@ -387,8 +387,8 @@ class OpName(StrEnum):
     """The analog SWAP operation."""
     ENTANG = "entangle"
     """The entanglement operation."""
-    WAIT = "wait"
-    """The wait operation."""
+    ANALOGINTERACTION = "AnalogInteraction"
+    """The analog interaction operation."""
     PROJ = "Projector"
     """The projector operation."""
 

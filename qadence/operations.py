@@ -90,6 +90,7 @@ __all__ = [
     "wait",
     "entangle",
     "AnalogEntanglement",
+    "AnalogInteraction",
     "AnalogRot",
     "AnalogRX",
     "AnalogRY",
@@ -1085,6 +1086,41 @@ class Toffoli(ControlBlock):
         )
 
 
+def _cast(T: Any, val: Any) -> Any:
+    return val if isinstance(val, T) else T(val)
+
+
+def AnalogInteraction(
+    duration: TNumber | sympy.Basic,
+    qubit_support: str | QubitSupport | tuple = "global",
+    add_pattern: bool = True,
+) -> WaitBlock:
+    """Evolution of the interaction term for a register of qubits.
+
+    Constructs a [`WaitBlock`][qadence.blocks.analog.WaitBlock].
+
+    Arguments:
+        duration: Time to evolve the interaction for in nanoseconds.
+        qubit_support: Qubits the `WaitBlock` is applied to. Can be either
+            `"global"` to apply the wait block to all qubits or a tuple of integers.
+
+    Returns:
+        a `WaitBlock`
+    """
+    q = _cast(QubitSupport, qubit_support)
+    ps = ParamMap(duration=duration)
+    return WaitBlock(parameters=ps, qubit_support=q, add_pattern=add_pattern)
+
+
+def wait(
+    duration: TNumber | sympy.Basic,
+    qubit_support: str | QubitSupport | tuple = "global",
+    add_pattern: bool = True,
+) -> WaitBlock:
+    logger.warning("The alias `wait` is deprecated, please use `AnalogInteraction`")
+    return AnalogInteraction(duration, qubit_support, add_pattern)
+
+
 # FIXME: better name that stresses difference to `Wait`?
 @dataclass(eq=False, repr=False)
 class AnalogEntanglement(AnalogBlock):
@@ -1098,30 +1134,6 @@ class AnalogEntanglement(AnalogBlock):
     @property
     def duration(self) -> Basic:
         return self.parameters.duration
-
-
-def _cast(T: Any, val: Any) -> Any:
-    return val if isinstance(val, T) else T(val)
-
-
-def wait(
-    duration: TNumber | sympy.Basic,
-    qubit_support: str | QubitSupport | tuple = "global",
-    add_pattern: bool = True,
-) -> WaitBlock:
-    """Constructs a [`WaitBlock`][qadence.blocks.analog.WaitBlock].
-
-    Arguments:
-        duration: Time to wait in nanoseconds.
-        qubit_support: Qubits the `WaitBlock` is applied to. Can be either
-            `"global"` to apply the wait block to all qubits or a tuple of integers.
-
-    Returns:
-        a `WaitBlock`
-    """
-    q = _cast(QubitSupport, qubit_support)
-    ps = ParamMap(duration=duration)
-    return WaitBlock(parameters=ps, qubit_support=q, add_pattern=add_pattern)
 
 
 def entangle(
@@ -1284,7 +1296,7 @@ analog_gateset = [
     AnalogRX,
     AnalogRY,
     AnalogRZ,
+    AnalogInteraction,
     entangle,
-    wait,
 ]
 non_unitary_gateset = [Zero, N, Projector]

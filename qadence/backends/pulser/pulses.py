@@ -42,7 +42,7 @@ supported_gates = [
     OpName.ANALOGRY,
     OpName.ANALOGRZ,
     OpName.ANALOGSWAP,
-    OpName.WAIT,
+    OpName.ANALOGINTERACTION,
 ]
 
 

@@ -268,16 +268,16 @@ print("States equivalent: ", bool_equiv)
 
 Finally, besides applying specific qubit rotations, we can also choose to evolve only the interaction term
 $\mathcal{H}^\text{int}$, equivalent to setting $\Omega = \delta = \phi = 0$. To do so, Qadence provides the
-function `wait` which does exactly this.
+function `AnalogInteraction` which does exactly this.
 
 ```python exec="on" source="material-block" result="json" session="int"
-from qadence import Register, BackendName, random_state, equivalent_state, wait, run
+from qadence import Register, BackendName, random_state, equivalent_state, AnalogInteraction, run
 
 n_qubits = 3
 reg = Register.line(n_qubits, spacing=8.0)
 
 duration = 1000.
-op = wait(duration = duration)
+op = AnalogInteraction(duration = duration)
 
 init_state = random_state(n_qubits)
 
@@ -376,7 +376,7 @@ of the emulated analog interface, and in the next tutorial on Quantum Circuit Le
 in a simple QML example. Here we specify some extra details of this interface.
 
 In the block system, all the Analog rotation operators initialize a [`ConstantAnalogRotation`][qadence.blocks.analog.ConstantAnalogRotation]
-block, while the `wait` operation initializes a [`WaitBlock`][qadence.blocks.analog.WaitBlock]. As we have shown, by default,
+block, while the `AnalogInteraction` operation initializes a [`WaitBlock`][qadence.blocks.analog.WaitBlock]. As we have shown, by default,
 these blocks use a global qubit support, which can be passed explicitly by setting `qubit_support = "global"`. However, the blocks do support
 local qubit supports, with some constraints. The main constraint is that using `kron` on operators with different durations is not allowed.
 
