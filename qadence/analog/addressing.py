@@ -5,17 +5,18 @@ from typing import Union
 from warnings import warn
 
 from sympy import Expr, Heaviside, exp
-from torch import Tensor, pi
+from torch import Tensor
 
 from qadence.parameters import Parameter, evaluate
+from qadence.types import PI
 
 # FIXME: Clarify the roles of these values in the context
 # device specification and how they relate with the
 # maximum values for delta and omega.
 GLOBAL_MAX_AMPLITUDE = 300
-GLOBAL_MAX_DETUNING = 2 * pi * 2000
+GLOBAL_MAX_DETUNING = 2 * PI * 2000
 LOCAL_MAX_AMPLITUDE = 3
-LOCAL_MAX_DETUNING = 2 * pi * 20
+LOCAL_MAX_DETUNING = 2 * PI * 20
 
 TWeight = Union[str, float, Tensor, Parameter]
 

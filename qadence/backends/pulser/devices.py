@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-from numpy import pi
 from pulser.channels.channels import Rydberg
 from pulser.channels.eom import RydbergBeam, RydbergEOM
 from pulser.devices._device_datacls import VirtualDevice
 
+from qadence.types import PI
+
 
 # Idealized virtual device
 def IdealDevice(
-    rydberg_level: int = 60, max_abs_detuning: float = 2 * pi * 4, max_amp: float = 2 * pi * 3
+    rydberg_level: int = 60, max_abs_detuning: float = 2 * PI * 4, max_amp: float = 2 * PI * 3
 ) -> VirtualDevice:
     return VirtualDevice(
         name="IdealizedDevice",
@@ -26,7 +27,7 @@ def IdealDevice(
 
 # Device with realistic specs with local channels and custom bandwith.
 def RealisticDevice(
-    rydberg_level: int = 60, max_abs_detuning: float = 2 * pi * 4, max_amp: float = 2 * pi * 3
+    rydberg_level: int = 60, max_abs_detuning: float = 2 * PI * 4, max_amp: float = 2 * PI * 3
 ) -> VirtualDevice:
     return VirtualDevice(
         name="RealisticDevice",
@@ -45,8 +46,8 @@ def RealisticDevice(
                 mod_bandwidth=16,
                 eom_config=RydbergEOM(
                     limiting_beam=RydbergBeam.RED,
-                    max_limiting_amp=40 * 2 * pi,
-                    intermediate_detuning=700 * 2 * pi,
+                    max_limiting_amp=40 * 2 * PI,
+                    intermediate_detuning=700 * 2 * PI,
                     mod_bandwidth=24,
                     controlled_beams=(RydbergBeam.BLUE,),
                 ),
@@ -61,8 +62,8 @@ def RealisticDevice(
                 mod_bandwidth=16,
                 eom_config=RydbergEOM(
                     limiting_beam=RydbergBeam.RED,
-                    max_limiting_amp=40 * 2 * pi,
-                    intermediate_detuning=700 * 2 * pi,
+                    max_limiting_amp=40 * 2 * PI,
+                    intermediate_detuning=700 * 2 * PI,
                     mod_bandwidth=24,
                     controlled_beams=(RydbergBeam.BLUE,),
                 ),

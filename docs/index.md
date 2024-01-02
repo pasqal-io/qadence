@@ -27,8 +27,7 @@ This next example showcases the construction and sampling of a system that admit
 line. This relies on time-evolving a Hamiltonian for a custom defined qubit interaction until $t=\frac{\pi}{\sqrt 2}$.
 
 ```python exec="on" source="material-block" result="json"
-from torch import pi
-from qadence import X, Y, HamEvo, Register, product_state, sample, add
+from qadence import X, Y, HamEvo, Register, product_state, sample, add, PI
 
 # Define the qubit-qubit interaction term.
 def interaction(i, j):
@@ -45,7 +44,7 @@ register = Register.line(n_qubits=3)
 hamiltonian = add(interaction(*edge) for edge in register.edges)
 
 # Define and time-evolve the Hamiltonian until t=pi/sqrt(2).
-t = pi/(2**0.5)  # Dimensionless.
+t = PI / (2**0.5)  # Dimensionless.
 evolution = HamEvo(hamiltonian, t)
 
 # Sample with 100 shots.
@@ -60,11 +59,10 @@ assert samples[0] == Counter({"001": 100}) # markdown-exec: hide
 This final example deals with the construction and sampling of an Ising Hamiltonian that includes a distance-based interaction between qubits and a global analog block of rotations around the $X$-axis. Here, _global_ has to be understood as applied to the whole register for qubits.
 
 ```python exec="on" source="material-block" result="json"
-from torch import pi
-from qadence import Register, AnalogRX, sample
+from qadence import Register, AnalogRX, sample, PI
 
 # Global analog RX block.
-block = AnalogRX(pi)
+block = AnalogRX(PI)
 
 # Almost non-interacting qubits as too far apart.
 register = Register.from_coordinates([(0,0), (0,15)])

@@ -125,16 +125,16 @@ In this case, there will be no edges automatically created in the connectivity g
 
 ```python exec="on" source="material-block" html="1"
 import numpy as np
-from qadence import Register
+from qadence import Register, PI
 
 reg = Register.from_coordinates(
-    [(x, np.sin(x)) for x in np.linspace(0, 2*np.pi, 10)]
+    [(x, np.sin(x)) for x in np.linspace(0, 2*PI, 10)]
 )
 
 import matplotlib.pyplot as plt # markdown-exec: hide
 plt.clf() # markdown-exec: hide
 fig = plt.gcf() # markdown-exec: hide
-fig.set_size_inches(2*np.pi, 2.5) # markdown-exec: hide
+fig.set_size_inches(2*PI, 2.5) # markdown-exec: hide
 plt.tight_layout() # markdown-exec: hide
 reg.draw(show=False)
 from docs import docsutils # markdown-exec: hide

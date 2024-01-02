@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Callable
-from math import isclose, pi
+from math import isclose
 from typing import Union
 
 from sympy import Basic, acos
@@ -11,7 +11,7 @@ from qadence.blocks import AbstractBlock, KronBlock, chain, kron, tag
 from qadence.logger import get_logger
 from qadence.operations import PHASE, RX, RY, RZ, H
 from qadence.parameters import FeatureParameter, Parameter, VariationalParameter
-from qadence.types import BasisSet, ReuploadScaling, TParameter
+from qadence.types import PI, BasisSet, ReuploadScaling, TParameter
 
 logger = get_logger(__name__)
 
@@ -21,7 +21,7 @@ RotationTypes = type[Union[RX, RY, RZ, PHASE]]
 
 def _set_range(fm_type: BasisSet | Callable | str) -> tuple[float, float]:
     if fm_type == BasisSet.FOURIER:
-        return (0.0, 2 * pi)
+        return (0.0, 2 * PI)
     elif fm_type == BasisSet.CHEBYSHEV:
         return (-1.0, 1.0)
     else:
@@ -312,7 +312,7 @@ def exp_fourier_feature_map(
         fm_type=BasisSet.FOURIER,
         reupload_scaling=ReuploadScaling.EXP,
         feature_range=feature_range,
-        target_range=(0.0, 2 * pi),
+        target_range=(0.0, 2 * PI),
     )
     rlayer.tag = None
     return tag(chain(hlayer, rlayer), f"ExpFourierFM({param})")

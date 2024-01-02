@@ -149,6 +149,7 @@ from qadence import (
     chain,
     total_magnetization,
     IdealDevice,
+    PI
 )
 
 # define register and circuit
@@ -230,7 +231,7 @@ pattern = AddressingPattern(
 )
 
 # some fixed analog operation
-block = AnalogRX(torch.pi)
+block = AnalogRX(PI)
 
 device_specs = IdealDevice(pattern = pattern)
 

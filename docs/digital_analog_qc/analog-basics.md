@@ -81,14 +81,13 @@ Currently, the most general rotation operation uses the `AnalogRot` operation, w
 essentially implements $U(t, \Omega, \delta, \phi)$ defined above.
 
 ```python exec="on" source="material-block" session="emu"
-from math import pi
-from qadence import AnalogRot
+from qadence import AnalogRot, PI
 
 rot_op = AnalogRot(
     duration = 500., # [ns]
-    omega = pi, # [rad/μs]
-    delta = pi, # [rad/μs]
-    phase = pi, # [rad]
+    omega = PI, # [rad/μs]
+    delta = PI, # [rad/μs]
+    phase = PI, # [rad]
 )
 ```
 
@@ -111,9 +110,9 @@ print(wf)
     code below.
 
     ```python exec="on" source="material-block" result="json"
-    from qadence import BackendName, HamEvo, X, Y, N, add, run
+    from qadence import BackendName, HamEvo, X, Y, N, add, run, PI
     from qadence.analog.constants import C6_DICT
-    from math import pi, cos, sin
+    from math import cos, sin
 
     # Following the 3-qubit register above
     n_qubits = 3
@@ -121,9 +120,9 @@ print(wf)
 
     # Parameters used in the AnalogRot
     duration = 500.
-    omega = pi
-    delta = pi
-    phase = pi
+    omega = PI
+    delta = PI
+    phase = PI
 
     # Building the terms in the driving Hamiltonian
     h_x = (omega / 2) * cos(phase) * add(X(i) for i in range(n_qubits))
@@ -204,14 +203,13 @@ Below we exemplify the usage of `AnalogRX`:
 
 ```python exec="on" source="material-block" result="json" session="rx"
 from qadence import Register, BackendName
-from qadence import RX, AnalogRX, random_state, equivalent_state, kron, run
-from math import pi
+from qadence import RX, AnalogRX, random_state, equivalent_state, kron, run, PI
 
 n_qubits = 3
 reg = Register.line(n_qubits, spacing=8.0)
 
 # Rotation angle
-theta = pi
+theta = PI
 
 # Analog rotation using the Rydberg Hamiltonian
 rot_analog = AnalogRX(angle = theta)
@@ -296,15 +294,14 @@ currently used for both the pyqtorch and the pulser backends. Below we initializ
 options.
 
 ```python exec="on" source="material-block" session="device"
-from qadence import RydbergDevice, DeviceType, Interaction
-from math import pi
+from qadence import RydbergDevice, DeviceType, Interaction, PI
 
 device_specs = RydbergDevice(
     interaction=Interaction.NN, # Or Interaction.XY, supported only for pyqtorch
     rydberg_level=60, # Integer value affecting the C_6 coefficient
     coeff_xy=3700.00, # C_3 coefficient for the XY interaction
-    max_detuning=2 * pi * 4, # Max value for delta, currently only used in pulser
-    max_amp=2 * pi * 3, # Max value for omega, currently only used in pulser
+    max_detuning=2 * PI * 4, # Max value for delta, currently only used in pulser
+    max_amp=2 * PI * 3, # Max value for omega, currently only used in pulser
     pattern=None, # Semi-local addressing pattern, see the relevant tutorial
     type=DeviceType.IDEALIZED, # Pulser device to which the qadence device is converted in that backend
 )
@@ -330,8 +327,7 @@ level.
 
 ```python exec="on" source="material-block" result="json" session="device"
 from qadence import Register, BackendName, random_state, equivalent_state, run
-from qadence import AnalogRX, RydbergDevice
-from math import pi
+from qadence import AnalogRX, RydbergDevice, PI
 
 device_specs = RydbergDevice(rydberg_level = 70)
 
@@ -342,7 +338,7 @@ reg = Register.square(
     device_specs = device_specs
 )
 
-rot_analog = AnalogRX(angle = pi)
+rot_analog = AnalogRX(angle = PI)
 
 init_state = random_state(n_qubits = 4)
 

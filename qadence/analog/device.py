@@ -2,10 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, fields
 
-from torch import pi
-
 from qadence.analog import AddressingPattern
-from qadence.types import DeviceType, Interaction
+from qadence.types import PI, DeviceType, Interaction
 
 
 @dataclass(frozen=True, eq=True)
@@ -31,10 +29,10 @@ class RydbergDevice:
     coeff_xy: float = 3700.00
     """Value of C_3."""
 
-    max_detuning: float = 2 * pi * 4
+    max_detuning: float = 2 * PI * 4
     """Maximum value of the detuning δ."""
 
-    max_amp: float = 2 * pi * 3
+    max_amp: float = 2 * PI * 3
     """Maximum value of the amplitude Ω."""
 
     pattern: AddressingPattern | None = None
