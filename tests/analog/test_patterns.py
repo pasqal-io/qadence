@@ -19,6 +19,7 @@ from qadence import (
 from qadence.analog import AddressingPattern, IdealDevice
 from qadence.execution import expectation, run
 from qadence.states import equivalent_state
+from qadence.types import PI
 
 
 @pytest.mark.parametrize(
@@ -56,7 +57,7 @@ def test_pulser_pyq_addressing(amp: float, det: float, spacing: float) -> None:
     reg = Register(support=n_qubits, spacing=spacing, device_specs=device_specs)
     circ = QuantumCircuit(reg, block)
 
-    values = {"x": torch.linspace(0.5, 2 * torch.pi, 5)}
+    values = {"x": torch.linspace(0.5, 2 * PI, 5)}
     obs = total_magnetization(n_qubits)
 
     # define pulser backend
@@ -105,7 +106,7 @@ def test_addressing_training() -> None:
     reg = Register.line(n_qubits, spacing=8.0, device_specs=device_specs)
 
     # some otherwise fixed circuit
-    block = AnalogRX(torch.pi)
+    block = AnalogRX(PI)
     circ = QuantumCircuit(reg, block)
 
     # define quantum model
@@ -180,7 +181,7 @@ def test_pyq_addressing_on_off(n_qubits: int) -> None:
     circ_0 = QuantumCircuit(reg_pattern, block_pattern_off)
     circ_1 = QuantumCircuit(reg_no_pattern, block_pattern_on)
 
-    values = {"x": torch.linspace(0.5, 2 * torch.pi, 5, dtype=torch.float64)}
+    values = {"x": torch.linspace(0.5, 2 * PI, 5, dtype=torch.float64)}
 
     obs = total_magnetization(n_qubits)
 

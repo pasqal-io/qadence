@@ -6,7 +6,6 @@ from typing import Any
 import numpy as np
 import pytest
 import strategies as st  # type: ignore
-import sympy
 import torch
 from hypothesis import given, settings
 from metrics import ADJOINT_ACCEPTANCE, ATOL_DICT, JS_ACCEPTANCE  # type: ignore
@@ -21,7 +20,7 @@ from qadence.operations import MCRX, RX, HamEvo, I, Toffoli, X, Z
 from qadence.parameters import FeatureParameter, VariationalParameter
 from qadence.states import equivalent_state
 from qadence.transpile import invert_endianness
-from qadence.types import BackendName, DiffMode
+from qadence.types import PI, BackendName, DiffMode
 
 np.random.seed(42)
 torch.manual_seed(42)
@@ -95,7 +94,7 @@ def test_quantum_model_with_toffoli(n_qubits: int) -> None:
 @pytest.mark.parametrize("gate", [MCRX, MCRX, MCRX])
 def test_quantum_model_with_multi_controlled_rotation(gate: Any, n_qubits: int) -> None:
     prep_block = kron(X(i) for i in range(n_qubits))
-    block = chain(prep_block, gate(tuple(range(n_qubits - 1)), n_qubits - 1, 2 * sympy.pi))
+    block = chain(prep_block, gate(tuple(range(n_qubits - 1)), n_qubits - 1, 2 * PI))
     circuit = QuantumCircuit(n_qubits, block)
     model = QuantumModel(circuit, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD)
     wf = model.run({})

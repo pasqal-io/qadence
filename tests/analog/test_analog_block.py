@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pytest
-import torch
 
 from qadence.blocks import CompositeBlock
 from qadence.blocks.analog import (
@@ -13,6 +12,7 @@ from qadence.blocks.analog import (
 )
 from qadence.operations import AnalogRX, X, wait
 from qadence.parameters import ParamMap
+from qadence.types import PI
 
 
 def test_qubit_support() -> None:
@@ -47,7 +47,7 @@ def test_analog_block() -> None:
     assert c1.qubit_support == QubitSupport("global")
 
     c2 = kron(
-        AnalogRX(torch.pi, qubit_support=(0, 1)),
+        AnalogRX(PI, qubit_support=(0, 1)),
         wait(duration=1000, qubit_support=(2, 3)),
     )
     assert c2.duration == 1000
@@ -55,12 +55,12 @@ def test_analog_block() -> None:
 
     c3 = chain(
         kron(
-            AnalogRX(torch.pi, qubit_support=(0, 1)),
+            AnalogRX(PI, qubit_support=(0, 1)),
             wait(duration=1000, qubit_support=(2, 3)),
         ),
         kron(
             wait(duration=1000, qubit_support=(0, 1)),
-            AnalogRX(torch.pi, qubit_support=(2, 3)),
+            AnalogRX(PI, qubit_support=(2, 3)),
         ),
     )
     assert c3.duration == 2000
@@ -69,11 +69,11 @@ def test_analog_block() -> None:
         chain(c3, wait(duration=10))
 
     with pytest.raises(ValueError, match="Blocks with global support cannot be kron'ed."):
-        kron(AnalogRX(torch.pi, qubit_support=(0, 1)), wait(duration=1000))
+        kron(AnalogRX(PI, qubit_support=(0, 1)), wait(duration=1000))
 
     with pytest.raises(ValueError, match="Make sure blocks act on distinct qubits!"):
         kron(
-            AnalogRX(torch.pi, qubit_support=(0, 1)),
+            AnalogRX(PI, qubit_support=(0, 1)),
             wait(duration=1000, qubit_support=(1, 2)),
         )
 

@@ -1,11 +1,24 @@
 from __future__ import annotations
 
-import numpy as np
 import pytest
 import torch
 
-import qadence as qd
-from qadence import analog_feature_map, rydberg_feature_map, rydberg_hea, rydberg_tower_feature_map
+from qadence.blocks import CompositeBlock
+from qadence.blocks.analog import ConstantAnalogRotation
+from qadence.circuit import QuantumCircuit
+from qadence.constructors import (
+    analog_feature_map,
+    hamiltonian_factory,
+    rydberg_feature_map,
+    rydberg_hea,
+    rydberg_tower_feature_map,
+    total_magnetization,
+)
+from qadence.models import QuantumModel
+from qadence.operations import AnalogRY, X
+from qadence.parameters import VariationalParameter
+from qadence.register import Register
+from qadence.types import PI, BasisSet
 
 
 @pytest.mark.parametrize("detunings", [True, False])
@@ -14,7 +27,7 @@ from qadence import analog_feature_map, rydberg_feature_map, rydberg_hea, rydber
 def test_rydberg_hea_construction(detunings: bool, drives: bool, phase: bool) -> None:
     n_qubits = 4
     n_layers = 2
-    register = qd.Register.line(n_qubits)
+    register = Register.line(n_qubits)
 
     ansatz = rydberg_hea(
         register,
@@ -23,7 +36,7 @@ def test_rydberg_hea_construction(detunings: bool, drives: bool, phase: bool) ->
         addressable_drive=drives,
         tunable_phase=phase,
     )
-    assert isinstance(ansatz, qd.CompositeBlock)
+    assert isinstance(ansatz, CompositeBlock)
     assert len(ansatz.blocks) == n_layers
 
     drive_layer = ansatz.blocks[0].blocks[0]  # type:ignore [attr-defined]
@@ -45,7 +58,7 @@ def test_rydberg_hea_construction(detunings: bool, drives: bool, phase: bool) ->
 def test_rydberg_hea_differentiation() -> None:
     n_qubits = 4
     n_layers = 2
-    register = qd.Register.line(n_qubits)
+    register = Register.line(n_qubits)
 
     ansatz = rydberg_hea(
         register,
@@ -55,9 +68,9 @@ def test_rydberg_hea_differentiation() -> None:
         tunable_phase=True,
     )
 
-    circuit = qd.QuantumCircuit(n_qubits, ansatz)
-    observable = qd.hamiltonian_factory(register, detuning=qd.X)
-    model = qd.QuantumModel(circuit, observable=observable)
+    circuit = QuantumCircuit(n_qubits, ansatz)
+    observable = hamiltonian_factory(register, detuning=X)
+    model = QuantumModel(circuit, observable=observable)
 
     expval = model.expectation({})
     expval.backward()
@@ -66,15 +79,15 @@ def test_rydberg_hea_differentiation() -> None:
             assert p.grad is not None
 
 
-@pytest.mark.parametrize("basis", [qd.BasisSet.FOURIER, qd.BasisSet.CHEBYSHEV])
-def test_analog_feature_map(basis: qd.BasisSet) -> None:
+@pytest.mark.parametrize("basis", [BasisSet.FOURIER, BasisSet.CHEBYSHEV])
+def test_analog_feature_map(basis: BasisSet) -> None:
     pname = "x"
     mname = "mult"
     fm = analog_feature_map(
-        param=pname, op=qd.AnalogRY, fm_type=basis, multiplier=qd.VariationalParameter(mname)
+        param=pname, op=AnalogRY, fm_type=basis, multiplier=VariationalParameter(mname)
     )
-    assert isinstance(fm, qd.ConstantAnalogRotation)
-    assert fm.parameters.phase == -np.pi / 2
+    assert isinstance(fm, ConstantAnalogRotation)
+    assert fm.parameters.phase == -PI / 2
     assert fm.parameters.delta == 0.0
 
     params = list(fm.parameters.alpha.free_symbols)
@@ -88,11 +101,11 @@ def test_rydberg_feature_map(weights: list[float] | None) -> None:
 
     fm = rydberg_feature_map(n_qubits, param="x", weights=weights)
     assert len(fm) == n_qubits
-    assert all([isinstance(b, qd.ConstantAnalogRotation) for b in fm.blocks])
+    assert all([isinstance(b, ConstantAnalogRotation) for b in fm.blocks])
 
-    circuit = qd.QuantumCircuit(n_qubits, fm)
-    observable = qd.total_magnetization(n_qubits)
-    model = qd.QuantumModel(circuit, observable=observable)
+    circuit = QuantumCircuit(n_qubits, fm)
+    observable = total_magnetization(n_qubits)
+    model = QuantumModel(circuit, observable=observable)
 
     values = {"x": torch.rand(1)}
     expval = model.expectation(values)

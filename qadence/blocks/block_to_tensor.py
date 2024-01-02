@@ -20,7 +20,7 @@ from qadence.blocks.utils import chain, kron, uuid_to_expression
 from qadence.parameters import evaluate, stringify
 
 # from qadence.states import product_state
-from qadence.types import Endianness, TensorType, TNumber
+from qadence.types import PI, Endianness, TensorType, TNumber
 
 J = torch.tensor(1j)
 
@@ -32,8 +32,8 @@ ZMAT = torch.tensor([[1, 0], [0, -1]], dtype=torch.cdouble).unsqueeze(0)
 NMAT = torch.tensor([[0, 0], [0, 1]], dtype=torch.cdouble).unsqueeze(0)
 SMAT = torch.tensor([[1, 0], [0, 1j]], dtype=torch.cdouble).unsqueeze(0)
 SDAGMAT = torch.tensor([[1, 0], [0, -1j]], dtype=torch.cdouble).unsqueeze(0)
-TMAT = torch.tensor([[1, 0], [0, torch.exp(J * torch.pi / 4)]], dtype=torch.cdouble).unsqueeze(0)
-TDAGMAT = torch.tensor([[1, 0], [0, torch.exp(J * torch.pi / 4)]], dtype=torch.cdouble).unsqueeze(0)
+TMAT = torch.tensor([[1, 0], [0, torch.exp(J * PI / 4)]], dtype=torch.cdouble).unsqueeze(0)
+TDAGMAT = torch.tensor([[1, 0], [0, torch.exp(J * PI / 4)]], dtype=torch.cdouble).unsqueeze(0)
 HMAT = (
     1
     / torch.sqrt(torch.tensor(2))

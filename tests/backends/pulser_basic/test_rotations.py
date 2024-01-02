@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections import Counter
 
 import pytest
-import torch
 from metrics import JS_ACCEPTANCE
 
 from qadence.blocks import AbstractBlock, chain
@@ -12,16 +11,16 @@ from qadence.divergences import js_divergence
 from qadence.models import QuantumModel
 from qadence.operations import RX, RY, AnalogRX, AnalogRY
 from qadence.register import Register
-from qadence.types import BackendName, DiffMode
+from qadence.types import PI, BackendName, DiffMode
 
 
 @pytest.mark.parametrize(
     "block,goal",
     [
-        (RY(0, -torch.pi / 2), Counter({"00": 260, "10": 240})),
-        (RY(1, -torch.pi / 2), Counter({"00": 260, "01": 240})),
-        (RX(0, -torch.pi / 2), Counter({"00": 260, "10": 240})),
-        (RX(1, -torch.pi / 2), Counter({"00": 260, "01": 240})),
+        (RY(0, -PI / 2), Counter({"00": 260, "10": 240})),
+        (RY(1, -PI / 2), Counter({"00": 260, "01": 240})),
+        (RX(0, -PI / 2), Counter({"00": 260, "10": 240})),
+        (RX(1, -PI / 2), Counter({"00": 260, "01": 240})),
     ],
 )
 def test_single_rotation(block: AbstractBlock, goal: Counter) -> None:
@@ -38,8 +37,8 @@ def test_single_rotation(block: AbstractBlock, goal: Counter) -> None:
 @pytest.mark.parametrize(
     "single_rotation,global_rotation",
     [
-        (chain(RY(0, -torch.pi / 2), RY(1, -torch.pi / 2)), AnalogRY(-torch.pi / 2)),
-        (chain(RX(0, -torch.pi / 2), RX(1, -torch.pi / 2)), AnalogRX(-torch.pi / 2)),
+        (chain(RY(0, -PI / 2), RY(1, -PI / 2)), AnalogRY(-PI / 2)),
+        (chain(RX(0, -PI / 2), RX(1, -PI / 2)), AnalogRX(-PI / 2)),
     ],
 )
 def test_single_rotation_multiple_qubits(

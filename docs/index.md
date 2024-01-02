@@ -75,7 +75,7 @@ assert js < 0.01 # markdown-exec: hide
 
 # Interacting qubits are close to each other.
 register = Register.from_coordinates([(0,0), (0,5)])
-samples = sample(register, AnalogRX(pi))
+samples = sample(register, AnalogRX(PI))
 print(f"distance =  5: {samples = }") # markdown-exec: hide
 js = js_divergence(samples[0], Counter({"01":33, "10":33, "00":33, "11":1})) # markdown-exec: hide
 assert js < 0.05 # markdown-exec: hide```

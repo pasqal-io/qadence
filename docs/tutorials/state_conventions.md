@@ -137,7 +137,7 @@ import warnings # markdown-exec: hide
 warnings.filterwarnings("ignore") # markdown-exec: hide
 from qadence import BackendName, RX, run, sample, PI
 
-# RX(pi/4) on qubit 1
+# RX(PI/4) on qubit 1
 n_qubits = 2
 op = RX(1, PI/4)
 

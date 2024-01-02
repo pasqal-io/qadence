@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import numpy as np
 import pytest
 import torch
 from metrics import ATOL_DICT, JS_ACCEPTANCE, LARGE_SPACING, SMALL_SPACING
@@ -31,7 +30,7 @@ from qadence.operations import (
 from qadence.parameters import FeatureParameter
 from qadence.register import Register
 from qadence.states import equivalent_state, random_state
-from qadence.types import BackendName, DiffMode
+from qadence.types import PI, BackendName, DiffMode
 
 
 @pytest.mark.parametrize(
@@ -185,7 +184,7 @@ def test_local_analog_op_run(spacing: float, block: AbstractBlock) -> None:
         # Bell state generation
         (
             chain(H(0), CNOT(0, 1)),
-            chain(entangle(1000, qubit_support=(0, 1)), RY(0, 3 * torch.pi / 2)),
+            chain(entangle(1000, qubit_support=(0, 1)), RY(0, 3 * PI / 2)),
         )
     ],
 )
@@ -232,7 +231,7 @@ def test_compatibility_pyqtorch_pulser_digital_rot(obs: AbstractBlock) -> None:
     model_pyqtorch = QuantumModel(
         pyqtorch_circuit, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD, observable=obs
     )
-    conf = {"amplitude_local": 2 * np.pi, "detuning": 2 * np.pi}
+    conf = {"amplitude_local": 2 * PI, "detuning": 2 * PI}
 
     model_pulser = QuantumModel(
         pulser_circuit,

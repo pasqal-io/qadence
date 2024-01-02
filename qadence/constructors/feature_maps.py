@@ -159,7 +159,7 @@ def feature_map(
         feature_range: range of data that the input data provided comes from. Used to map input data
             to the correct domain of the feature-encoding function.
         target_range: range of data the data encoder assumes as the natural range. For example,
-            in Chebyshev polynomials it is (-1, 1), while for Fourier it may be chosen as (0, 2*pi).
+            in Chebyshev polynomials it is (-1, 1), while for Fourier it may be chosen as (0, 2*PI).
             Used to map data to the correct domain of the feature-encoding function.
         multiplier: overall multiplier; this is useful for reuploading the feature map serially with
             different scalings; can be a number or parameter/expression.

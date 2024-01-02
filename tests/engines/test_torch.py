@@ -11,6 +11,7 @@ from qadence.blocks import AbstractBlock, add, chain, kron
 from qadence.circuit import QuantumCircuit
 from qadence.operations import CNOT, RX, RZ, Z
 from qadence.parameters import Parameter, VariationalParameter
+from qadence.types import PI
 
 torch.manual_seed(42)
 
@@ -48,13 +49,13 @@ def test_parametrized_rotation(diff_mode: str) -> None:
     backend = backend_factory("pyqtorch", diff_mode=diff_mode)
     (pyqtorch_circ, _, embed, params) = backend.convert(circ)
 
-    values = {param.name: torch.tensor([np.pi])}
+    values = {param.name: torch.tensor([PI])}
     wf = backend.run(pyqtorch_circ, embed(params, values))[0]
 
     wf_prob = torch.abs(torch.pow(wf, 2))  # type: ignore [arg-type]
     assert torch.allclose(wf_prob.reshape(nqubits, nqubits), expected_pi)
 
-    values = {param.name: torch.tensor([np.pi / 2])}
+    values = {param.name: torch.tensor([PI / 2])}
     wf = backend.run(pyqtorch_circ, embed(params, values))[0]
     wf_prob = torch.abs(torch.pow(wf, 2))
     assert torch.allclose(wf_prob.reshape(nqubits, nqubits), expected_pi2)
@@ -72,13 +73,13 @@ def test_parametrized_rotation_with_expr(diff_mode: str) -> None:
     backend = backend_factory("pyqtorch", diff_mode=diff_mode)
     (pyqtorch_circ, _, embed, params) = backend.convert(circ)
 
-    angle = np.log(np.pi) / 5
+    angle = np.log(PI) / 5
     values = {param.name: torch.tensor([angle])}
     wf = backend.run(pyqtorch_circ, embed(params, values))[0]
     wf_prob = torch.abs(torch.pow(wf, 2))  # type: ignore [arg-type]
     assert torch.allclose(wf_prob.reshape(nqubits, nqubits), expected_pi)
 
-    angle = np.log(np.pi / 2) / 5
+    angle = np.log(PI / 2) / 5
     values = {param.name: torch.tensor([angle])}
     wf = backend.run(pyqtorch_circ, embed(params, values))[0]
     wf_prob = torch.abs(torch.pow(wf, 2))  # type: ignore [arg-type]

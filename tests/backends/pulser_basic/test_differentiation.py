@@ -13,6 +13,7 @@ from qadence.constructors import total_magnetization
 from qadence.engines.torch.differentiable_backend import DifferentiableBackend
 from qadence.operations import RX, RY, AnalogRot, AnalogRX
 from qadence.register import Register
+from qadence.types import PI
 
 
 def block(circ_id: int) -> AbstractBlock:
@@ -30,12 +31,12 @@ def block(circ_id: int) -> AbstractBlock:
         block = AnalogRX(x)
     elif circ_id == 4:
         block = chain(
-            AnalogRX(np.pi / 2),
+            AnalogRX(PI / 2),
             AnalogRot(duration=1000 * x / 3.0, omega=4.0, delta=3.0),
             # FIXME: Re-check these tests after handling:
             # https://github.com/pasqal-io/qadence/issues/266
             # wait(500),
-            AnalogRX(np.pi / 2),
+            AnalogRX(PI / 2),
         )
 
     return block
@@ -59,7 +60,7 @@ def test_pulser_gpsr(block_id: int) -> None:
     circ = QuantumCircuit(register, block(block_id))
 
     # create input values
-    xs = torch.linspace(1, 2 * np.pi, 5, requires_grad=True)
+    xs = torch.linspace(1, 2 * PI, 5, requires_grad=True)
     values = {"x": xs}
 
     obs = total_magnetization(2)

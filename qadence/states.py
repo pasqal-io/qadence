@@ -13,7 +13,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.execution import run
 from qadence.operations import CNOT, RX, RY, RZ, H, I, X
 from qadence.overlap import fidelity
-from qadence.types import BackendName, Endianness, StateGeneratorType
+from qadence.types import PI, BackendName, Endianness, StateGeneratorType
 from qadence.utils import basis_to_int
 
 # Modules to be automatically added to the qadence namespace
@@ -52,7 +52,7 @@ def _rand_haar_fast(n_qubits: int) -> Tensor:
     N = 2**n_qubits
     x = -torch.log(torch.rand(N))
     sumx = torch.sum(x)
-    phases = torch.rand(N) * 2.0 * torch.pi
+    phases = torch.rand(N) * 2.0 * PI
     return (torch.sqrt(x / sumx) * torch.exp(1j * phases)).reshape(1, N)
 
 

@@ -7,19 +7,11 @@ import sympy
 import torch
 from metrics import ATOL_64
 
-from qadence import (
-    PHASE,
-    RX,
-    BasisSet,
-    FeatureParameter,
-    ReuploadScaling,
-    X,
-    Z,
-    exp_fourier_feature_map,
-    expectation,
-    feature_map,
-    run,
-)
+from qadence.constructors import exp_fourier_feature_map, feature_map
+from qadence.execution import expectation, run
+from qadence.operations import PHASE, RX, X, Z
+from qadence.parameters import FeatureParameter
+from qadence.types import PI, BasisSet, ReuploadScaling
 
 PARAM_DICT_0 = {
     "support": None,
@@ -87,10 +79,10 @@ def test_feature_map_correctness(
         feature_range = (-1.0, 1.0)
         target_range = (-1.0, 1.0)
     elif fm_type == BasisSet.FOURIER:
-        xv = torch.linspace(0.0, 2 * torch.pi, 100)
+        xv = torch.linspace(0.0, 2 * PI, 100)
         transformed_xv = xv
-        feature_range = (0.0, 2 * torch.pi)
-        target_range = (0.0, 2 * torch.pi)
+        feature_range = (0.0, 2 * PI)
+        target_range = (0.0, 2 * PI)
 
     if reupload_scaling == ReuploadScaling.CONSTANT:
 
@@ -143,10 +135,7 @@ def test_exp_fourier_feature_map_correctness(n_qubits: int) -> None:
     xv = torch.linspace(0.0, 2**n_qubits - 1, 100)
     yv = expectation(block, [X(j) for j in range(n_qubits)], values={"x": xv})
     target = torch.cat(
-        [
-            torch.cos(2 ** (j + 1) * torch.pi * xv / 2**n_qubits).unsqueeze(1)
-            for j in range(n_qubits)
-        ],
+        [torch.cos(2 ** (j + 1) * PI * xv / 2**n_qubits).unsqueeze(1) for j in range(n_qubits)],
         1,
     )
     assert torch.allclose(yv, target)

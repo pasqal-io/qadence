@@ -16,6 +16,7 @@ from qadence.constructors import total_magnetization
 from qadence.engines.torch.differentiable_backend import DifferentiableBackend
 from qadence.operations import CNOT, CRX, CRY, RX, RY, AnalogRot, HamEvo, X, Y, Z
 from qadence.register import Register
+from qadence.types import PI
 
 
 def circuit_psr(n_qubits: int) -> QuantumCircuit:
@@ -24,7 +25,7 @@ def circuit_psr(n_qubits: int) -> QuantumCircuit:
     x = Parameter("x", trainable=False)
     theta = Parameter("theta")
 
-    fm = chain(RX(0, 3 * x), RY(1, sympy.exp(x)), RX(0, theta), RY(1, np.pi / 2))
+    fm = chain(RX(0, 3 * x), RY(1, sympy.exp(x)), RX(0, theta), RY(1, PI / 2))
     ansatz = CNOT(0, 1)
     block = chain(fm, ansatz)
 
@@ -45,7 +46,7 @@ def circuit_gpsr(n_qubits: int) -> QuantumCircuit:
         CRY(1, 2, sympy.exp(x)),
         CRX(1, 2, theta),
         X(0),
-        CRY(0, 1, np.pi / 2),
+        CRY(0, 1, PI / 2),
     )
     ansatz = CNOT(0, 1)
     block = chain(fm, ansatz)
@@ -72,7 +73,7 @@ def circuit_hamevo_tensor_gpsr(n_qubits: int) -> QuantumCircuit:
         HamEvo(ham, x, qubit_support=tuple(range(n_qubits))),
         CRX(1, 2, theta),
         X(0),
-        CRY(0, 1, np.pi / 2),
+        CRY(0, 1, PI / 2),
     )
     ansatz = CNOT(0, 1)
     block = chain(fm, ansatz)
@@ -104,7 +105,7 @@ def circuit_hamevo_block_gpsr(n_qubits: int) -> QuantumCircuit:
         HamEvo(generator, x, qubit_support=tuple(range(n_qubits))),
         CRX(1, 2, theta),
         X(0),
-        CRY(0, 1, np.pi / 2),
+        CRY(0, 1, PI / 2),
     )
     ansatz = CNOT(0, 1)
     block = chain(fm, ansatz)
@@ -116,8 +117,8 @@ def circuit_hamevo_block_gpsr(n_qubits: int) -> QuantumCircuit:
 
 def circuit_analog_rotation_gpsr(n_qubits: int) -> QuantumCircuit:
     d = 10
-    omega1 = 6 * np.pi
-    omega2 = 3 * np.pi
+    omega1 = 6 * PI
+    omega2 = 3 * PI
     coords = [(x_coord, 0) for x_coord in np.linspace(0, (n_qubits - 1) * d, n_qubits)]
     register = Register.from_coordinates(coords)  # type: ignore[arg-type]
 

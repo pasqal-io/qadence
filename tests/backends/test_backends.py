@@ -32,7 +32,7 @@ from qadence.states import (
     zero_state,
 )
 from qadence.transpile import flatten
-from qadence.types import BackendName, DiffMode
+from qadence.types import PI, BackendName, DiffMode
 from qadence.utils import nqubits_to_basis
 
 BACKENDS = BackendName.list()
@@ -363,7 +363,7 @@ def test_output_cphase_batching(bsize: int) -> None:
 def test_custom_transpilation_passes() -> None:
     backend_list = [BackendName.BRAKET, BackendName.PYQTORCH, BackendName.PULSER]
 
-    block = chain(chain(chain(RX(0, np.pi / 2))), kron(kron(RX(0, np.pi / 2))))
+    block = chain(chain(chain(RX(0, PI / 2))), kron(kron(RX(0, PI / 2))))
     circuit = QuantumCircuit(1, block)
 
     for name in backend_list:
