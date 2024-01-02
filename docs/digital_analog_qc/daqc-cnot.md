@@ -16,7 +16,7 @@ import torch
 from qadence import chain, sample, product_state
 
 from qadence.draw import display
-from qadence import X, I, Z, H, N, CPHASE, CNOT, HamEvo
+from qadence import X, I, Z, H, N, CPHASE, CNOT, HamEvo, PI
 from qadence.draw import html_string # markdown-exec: hide
 
 n_qubits = 2
@@ -25,7 +25,7 @@ n_qubits = 2
 cnot_gate = CNOT(0, 1)
 
 # CNOT decomposed
-phi = torch.pi
+phi = PI
 cnot_decomp = chain(H(1), CPHASE(0, 1, phi), H(1))
 
 init_state = product_state("10")
@@ -142,7 +142,7 @@ h_int = (-1.0) * kron(N(i), N(j))
 transformed_ising = daqc_transform(
     n_qubits=3,        # Total number of qubits in the transformation
     gen_target=h_int,  # The target Ising generator
-    t_f=torch.pi,      # The target evolution time
+    t_f=PI,            # The target evolution time
     gen_build=h_sys,   # The building block Ising generator to be used
     strategy=Strategy.SDAQC,   # Currently only sDAQC is implemented
     ignore_global_phases=False  # Global phases from mapping between Z and N

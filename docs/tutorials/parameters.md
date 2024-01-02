@@ -10,11 +10,10 @@ To pass a fixed parameter to a gate (or any parametrizable block), one can simpl
 a `torch.Tensor`.
 
 ```python exec="on" source="material-block" result="json"
-from torch import pi
-from qadence import RX, run
+from qadence import RX, run, PI
 
 # Let's use a torch type.
-block = RX(0, pi)
+block = RX(0, PI)
 wf = run(block)
 print(f"{wf = }") # markdown-exec: hide
 

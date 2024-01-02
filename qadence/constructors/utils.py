@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import Iterable, Type
 
-import numpy as np
 import sympy
 
 from qadence.blocks import KronBlock, kron
 from qadence.operations import RY
 from qadence.parameters import FeatureParameter, Parameter
+from qadence.types import PI
 
 
 def generator_prefactor(spectrum: str, qubit_index: int) -> float | int:
@@ -19,7 +19,7 @@ def generator_prefactor(spectrum: str, qubit_index: int) -> float | int:
     conversion_dict: dict[str, float | int] = {
         "simple": 1,
         "tower": qubit_index + 1,
-        "exponential": 2 * np.pi / (2 ** (qubit_index + 1)),
+        "exponential": 2 * PI / (2 ** (qubit_index + 1)),
     }
     return conversion_dict[spectrum]
 

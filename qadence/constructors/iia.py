@@ -7,6 +7,7 @@ import torch
 from qadence.blocks import AbstractBlock, KronBlock, chain, kron, tag
 from qadence.operations import CNOT, CRX, CRY, CRZ, CZ, RX, RY
 from qadence.parameters import Parameter
+from qadence.types import PI
 
 DigitalEntanglers = Union[CNOT, CZ, CRZ, CRY, CRX]
 
@@ -88,7 +89,7 @@ def identity_initialized_ansatz(
     """
     initialized_layers = []
     for layer in range(depth):
-        alpha = 2 * torch.pi * torch.rand(n_qubits * len(rotations))
+        alpha = 2 * PI * torch.rand(n_qubits * len(rotations))
         gamma = torch.zeros(n_qubits)
         beta = -alpha
 

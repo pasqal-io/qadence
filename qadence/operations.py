@@ -48,7 +48,7 @@ from qadence.parameters import (
     evaluate,
     extract_original_param_entry,
 )
-from qadence.types import LTSOrder, OpName, TGenerator, TNumber, TParameter
+from qadence.types import PI, LTSOrder, OpName, TGenerator, TNumber, TParameter
 from qadence.utils import eigenvalues
 
 logger = get_logger(__name__)
@@ -514,9 +514,9 @@ class HamEvo(TimeEvolutionBlock):
     Examples:
 
     ```python exec="on" source="material-block" result="json"
-    from qadence import RX, HamEvo, run
+    from qadence import RX, HamEvo, run, PI
     import torch
-    hevo = HamEvo(generator=RX(0, torch.pi), parameter=torch.rand(2))
+    hevo = HamEvo(generator=RX(0, PI), parameter=torch.rand(2))
     print(run(hevo))
     # Now lets use a torch.Tensor as a generator, Now we have to pass the support
     gen = torch.rand(2,2, dtype=torch.complex128)
@@ -996,7 +996,7 @@ class AnalogSWAP(HamEvo):
 
     name = OpName.ANALOGSWAP
 
-    def __init__(self, control: int, target: int, parameter: TParameter = 3 * np.pi / 4):
+    def __init__(self, control: int, target: int, parameter: TParameter = 3 * PI / 4):
         rydberg_ising_hamiltonian_generator = (
             4.0 * kron((I(control) - Z(control)) / 2.0, (I(target) - Z(target)) / 2.0)
             + (2.0 / 3.0) * np.sqrt(2.0) * X(control)
@@ -1180,7 +1180,7 @@ def _analog_rot(
     # assuming some arbitrary omega = π rad/μs
     alpha = _cast(Parameter, angle)
     delta = 0
-    omega = np.pi
+    omega = PI
     duration = alpha / omega * 1000
     h_norm = sympy.sqrt(omega**2 + delta**2)
 
@@ -1239,7 +1239,7 @@ def AnalogRY(
     Returns:
         ConstantAnalogRotation
     """
-    return _analog_rot(angle, qubit_support, phase=-np.pi / 2, add_pattern=add_pattern)
+    return _analog_rot(angle, qubit_support, phase=-PI / 2, add_pattern=add_pattern)
 
 
 def AnalogRZ(
@@ -1255,7 +1255,7 @@ def AnalogRZ(
     """
     q = _cast(QubitSupport, qubit_support)
     alpha = _cast(Parameter, angle)
-    delta = np.pi
+    delta = PI
     omega = 0
     duration = alpha / delta * 1000
     h_norm = sympy.sqrt(omega**2 + delta**2)

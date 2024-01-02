@@ -10,7 +10,7 @@ from qadence.constructors.feature_maps import fm_parameter_func, fm_parameter_sc
 from qadence.logger import get_logger
 from qadence.operations import AnalogRot, AnalogRX, AnalogRY, AnalogRZ
 from qadence.parameters import FeatureParameter, Parameter, VariationalParameter
-from qadence.types import BasisSet, ReuploadScaling, TParameter
+from qadence.types import PI, BasisSet, ReuploadScaling, TParameter
 
 logger = get_logger(__file__)
 
@@ -20,7 +20,7 @@ AnalogRotationTypes = [AnalogRX, AnalogRY, AnalogRZ]
 def rydberg_feature_map(
     n_qubits: int,
     param: str = "phi",
-    max_abs_detuning: float = 2 * np.pi * 10,
+    max_abs_detuning: float = 2 * PI * 10,
     weights: list[float] | None = None,
 ) -> KronBlock:
     """Feature map using semi-local addressing patterns.
@@ -60,7 +60,7 @@ def rydberg_feature_map(
 
 
 def rydberg_tower_feature_map(
-    n_qubits: int, param: str = "phi", max_abs_detuning: float = 2 * np.pi * 10
+    n_qubits: int, param: str = "phi", max_abs_detuning: float = 2 * PI * 10
 ) -> KronBlock:
     weights = list(np.arange(1, n_qubits + 1))
     return rydberg_feature_map(
@@ -94,7 +94,7 @@ def analog_feature_map(
             operation `op` and the second argument the feature parameter
         feature_range: range of data that the input data is assumed to come from.
         target_range: range of data the data encoder assumes as the natural range. For example,
-            in Chebyshev polynomials it is (-1, 1), while for Fourier it may be chosen as (0, 2*pi).
+            in Chebyshev polynomials it is (-1, 1), while for Fourier it may be chosen as (0, 2*PI).
         multiplier: overall multiplier; this is useful for reuploading the feature map serially with
             different scalings; can be a number or parameter/expression.
     """

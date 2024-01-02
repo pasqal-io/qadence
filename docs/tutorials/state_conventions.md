@@ -135,12 +135,11 @@ An important part of having clear state conventions is that we need to make sure
 ```python exec="on" source="material-block" result="json" session="end-0"
 import warnings # markdown-exec: hide
 warnings.filterwarnings("ignore") # markdown-exec: hide
-from qadence import BackendName, RX, run, sample
-import torch
+from qadence import BackendName, RX, run, sample, PI
 
-# RX(pi/4) on qubit 1
+# RX(PI/4) on qubit 1
 n_qubits = 2
-op = RX(1, torch.pi/4)
+op = RX(1, PI/4)
 
 print("Same sampling order in big endian:\n") # markdown-exec: hide
 print(f"On PyQTorch = {sample(n_qubits, op, endianness=Endianness.BIG, backend=BackendName.PYQTORCH)}") # markdown-exec: hide

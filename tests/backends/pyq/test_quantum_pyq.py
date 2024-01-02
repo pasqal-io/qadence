@@ -56,7 +56,7 @@ from qadence.operations import (
 )
 from qadence.parameters import FeatureParameter, Parameter
 from qadence.transpile import set_trainable
-from qadence.types import BackendName, DiffMode
+from qadence.types import PI, BackendName, DiffMode
 
 
 def custom_obs() -> AbstractBlock:
@@ -214,7 +214,7 @@ def test_run_with_nonparametric_single_qubit_gates(
         (
             T(0),
             torch.tensor(
-                [[1.0 + 0.0j, 0.0 + 0.0j], [0.0 + 0.0j, np.exp((np.pi / 4.0) * 1j)]],
+                [[1.0 + 0.0j, 0.0 + 0.0j], [0.0 + 0.0j, np.exp((PI / 4.0) * 1j)]],
                 dtype=torch.complex128,
             ),
         ),
@@ -237,9 +237,9 @@ def test_run_with_nonparametric_single_qubit_gates_and_random_initial_state(
 ) -> None:
     circuit = QuantumCircuit(1, gate)
     backend = Backend()
-    theta1 = random.uniform(0.0, 2.0 * np.pi)
+    theta1 = random.uniform(0.0, 2.0 * PI)
     complex1 = complex(np.cos(theta1), np.sin(theta1))
-    theta2 = random.uniform(0.0, 2.0 * np.pi)
+    theta2 = random.uniform(0.0, 2.0 * PI)
     complex2 = complex(np.cos(theta2), np.sin(theta2))
     initial_state = torch.tensor([[complex1, complex2]], dtype=torch.complex128)
     wf = backend.run(backend.circuit(circuit), state=initial_state)
@@ -343,9 +343,9 @@ def test_run_with_parametric_single_qubit_gates_and_random_initial_state(
     circuit = QuantumCircuit(1, parametric_gate)
     backend = Backend()
     pyqtorch_circ, _, embed, params = backend.convert(circuit)
-    theta1 = random.uniform(0.0, 2.0 * np.pi)
+    theta1 = random.uniform(0.0, 2.0 * PI)
     complex1 = complex(np.cos(theta1), np.sin(theta1))
-    theta2 = random.uniform(0.0, 2.0 * np.pi)
+    theta2 = random.uniform(0.0, 2.0 * PI)
     complex2 = complex(np.cos(theta2), np.sin(theta2))
     initial_state = torch.tensor([[complex1, complex2]], dtype=torch.complex128)
     wf = backend.run(pyqtorch_circ, embed(params, {}), state=initial_state)
@@ -528,9 +528,9 @@ def test_expectation_with_pauli_gates_and_random_state(
     backend = Backend()
     pyqtorch_circ, pyqtorch_obs, embed, params = backend.convert(circuit, observable)
 
-    theta1 = random.uniform(0.0, 2.0 * np.pi)
+    theta1 = random.uniform(0.0, 2.0 * PI)
     complex1 = complex(np.cos(theta1), np.sin(theta1))
-    theta2 = random.uniform(0.0, 2.0 * np.pi)
+    theta2 = random.uniform(0.0, 2.0 * PI)
     complex2 = complex(np.cos(theta2), np.sin(theta2))
     initial_state = torch.tensor([[complex1, complex2]], dtype=torch.complex128)
     expectation_value = backend.expectation(

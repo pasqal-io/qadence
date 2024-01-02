@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 from metrics import ATOL_64
-from torch import Tensor, allclose, cdouble, exp, matmul, pi, tensor, zeros
+from torch import Tensor, allclose, cdouble, exp, matmul, tensor, zeros
 
 from qadence import (
     BackendName,
@@ -14,14 +14,14 @@ from qadence import (
     random_state,
 )
 from qadence.states import equivalent_state
-from qadence.types import Strategy
+from qadence.types import PI, Strategy
 
 
 def test_qft() -> None:
     def qft_matrix(N: int) -> Tensor:
         """Textbook QFT unitary matrix to compare to the circuit solution."""
         matrix = zeros((N, N), dtype=cdouble)
-        w = exp(tensor(2.0j * pi / N, dtype=cdouble))
+        w = exp(tensor(2.0j * PI / N, dtype=cdouble))
         for i in range(N):
             for j in range(N):
                 matrix[i, j] = (N ** (-1 / 2)) * w ** (i * j)

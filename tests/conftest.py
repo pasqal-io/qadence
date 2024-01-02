@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import networkx as nx
-import numpy as np
 import torch.nn as nn
 from openfermion import QubitOperator
 from pytest import fixture  # type: ignore
@@ -17,7 +16,7 @@ from qadence.models import QNN, QuantumModel
 from qadence.operations import CNOT, RX, RY, X, Y, Z
 from qadence.parameters import Parameter
 from qadence.register import Register
-from qadence.types import BackendName, DiffMode
+from qadence.types import PI, BackendName, DiffMode
 
 BASIC_NQUBITS = 4
 FM_NQUBITS = 2
@@ -99,8 +98,8 @@ def parametric_circuit() -> QuantumCircuit:
     block2 = RX(1, "theta1")
     block3 = RX(2, "theta2")
     block4 = RX(3, "theta3")
-    block5 = RY(0, np.pi)
-    block6 = RX(1, np.pi)
+    block5 = RY(0, PI)
+    block6 = RX(1, PI)
     block7 = CNOT(2, 3)
 
     comp_block = chain(
@@ -173,8 +172,8 @@ def pauli_decomposition(observable: AbstractBlock) -> list:
 @fixture
 def expected_rotated_circuit() -> list[QuantumCircuit]:
     layer = X(0) ^ X(1)
-    final_layer1 = chain(layer, RY(0, -np.pi / 2.0))
-    final_layer2 = chain(layer, RX(1, np.pi / 2.0))
+    final_layer1 = chain(layer, RY(0, -PI / 2.0))
+    final_layer2 = chain(layer, RX(1, PI / 2.0))
     return [QuantumCircuit(2, final_layer1), QuantumCircuit(2, final_layer2)]
 
 
