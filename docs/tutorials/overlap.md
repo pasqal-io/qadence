@@ -27,8 +27,8 @@ psi = FeatureParameter("psi")
 circuit_ket = QuantumCircuit(n_qubits, RX(qubits[1], psi))
 
 # Values for the feature parameters
-values_bra = {"phi": torch.tensor([PI / 2, PI])}
-values_ket = {"psi": torch.tensor([PI / 2, PI])}
+values_bra = {"phi": tensor([PI / 2, PI])}
+values_ket = {"psi": tensor([PI / 2, PI])}
 
 # Calculate overlap by assigning values to the given bra and ket circuits
 ovrlp = Overlap(circuit_bra, circuit_ket)
