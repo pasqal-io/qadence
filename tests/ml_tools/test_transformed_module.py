@@ -127,6 +127,10 @@ def test_no_args(n_qubits: int) -> None:
 
 def test_save_load_TM_pyq(tmp_path: Path, BasicTransformedModule: TransformedModule) -> None:
     tm = BasicTransformedModule
+    # tm._input_scaling = torch.rand(1)
+    # tm._input_shifting = torch.rand(1)
+    # tm._output_scaling = torch.rand(1)
+    # tm._output_shifting = torch.rand(1)
     # serialize deserialize
     d = serialize(tm)
     tm_ser = deserialize(d)  # type: ignore[assignment]

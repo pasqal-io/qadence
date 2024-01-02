@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import networkx as nx
 import numpy as np
+import torch
 import torch.nn as nn
 from openfermion import QubitOperator
 from pytest import fixture  # type: ignore
 from sympy import Expr
-from torch import Tensor, rand, tensor
+from torch import Tensor, tensor
 
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.utils import chain, kron, unroll_block_with_scaling
@@ -214,8 +215,8 @@ def BasicTransformedModule(BasicQNN: QNN) -> TransformedModule:
         BasicQNN,
         None,
         None,
-        input_scaling=rand(1),
-        output_scaling=rand(1),
-        input_shifting=rand(1),
-        output_shifting=rand(1),
+        input_scaling=torch.nn.Parameter(torch.rand(1)),
+        output_scaling=torch.nn.Parameter(torch.rand(1)),
+        input_shifting=torch.nn.Parameter(torch.rand(1)),
+        output_shifting=torch.nn.Parameter(torch.rand(1)),
     )
