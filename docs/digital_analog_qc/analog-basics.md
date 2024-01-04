@@ -372,7 +372,7 @@ of the emulated analog interface, and in the next tutorial on Quantum Circuit Le
 in a simple QML example. Here we specify some extra details of this interface.
 
 In the block system, all the Analog rotation operators initialize a [`ConstantAnalogRotation`][qadence.blocks.analog.ConstantAnalogRotation]
-block, while the `AnalogInteraction` operation initializes a [`WaitBlock`][qadence.blocks.analog.WaitBlock]. As we have shown, by default,
+block, while the `AnalogInteraction` operation initializes a [`InteractionBlock`][qadence.blocks.analog.InteractionBlock]. As we have shown, by default,
 these blocks use a global qubit support, which can be passed explicitly by setting `qubit_support = "global"`. However, the blocks do support
 local qubit supports, with some constraints. The main constraint is that using `kron` on operators with different durations is not allowed.
 

@@ -21,7 +21,7 @@ from qadence.blocks import (
     ScaleBlock,
     chain,
 )
-from qadence.blocks.analog import ConstantAnalogRotation, WaitBlock
+from qadence.blocks.analog import ConstantAnalogRotation, InteractionBlock
 from qadence.circuit import QuantumCircuit
 from qadence.models import QuantumModel
 from qadence.operations import RX, RY, RZ, SWAP, HamEvo, I
@@ -213,8 +213,8 @@ def _(
         start, stop = min(block.qubit_support), block.n_qubits
         _make_cluster(qcd, labels, start, stop, qcd.theme.get_add_cluster_attr())
 
-    elif isinstance(block, WaitBlock):
-        labels = ["Wait", f"t = {_expr_string(block.parameters.duration)}"]
+    elif isinstance(block, InteractionBlock):
+        labels = ["Interaction", f"t = {_expr_string(block.parameters.duration)}"]
         is_global = block.qubit_support.is_global
         start = 0 if is_global else min(block.qubit_support)
         stop = qcd.nb_wires if is_global else block.n_qubits

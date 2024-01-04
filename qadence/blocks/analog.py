@@ -99,7 +99,7 @@ class AnalogBlock(AbstractBlock):
 
 
 @dataclass(eq=False, repr=False)
-class WaitBlock(AnalogBlock):
+class InteractionBlock(AnalogBlock):
     """
     Evolves the interaction term for a register of qubits.
 
@@ -215,7 +215,7 @@ class AnalogComposite(AnalogBlock):
 
     def __init__(self, blocks: Tuple[AnalogBlock, ...]):
         self.blocks = blocks
-        # FIXME: add additional Wait block if we have parameterized durations
+        # FIXME: add additional InteractionBlock if we have parameterized durations
 
     @property  # type: ignore[misc, override]
     def qubit_support(self) -> QubitSupport:
@@ -254,7 +254,7 @@ class AnalogChain(AnalogComposite):
         stricter validation than the general `ChainBlock`.
 
         `AnalogChain`s can only be constructed from `AnalogKron` blocks or
-        _**globally supported**_, primitive, analog blocks (like `WaitBlock`s and
+        _**globally supported**_, primitive, analog blocks (like `InteractionBlock`s and
         `ConstantAnalogRotation`s).
 
         Automatically constructed by the [`chain`][qadence.blocks.utils.chain]

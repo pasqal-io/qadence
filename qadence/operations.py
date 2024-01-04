@@ -27,8 +27,8 @@ from qadence.blocks import (
 from qadence.blocks.analog import (
     AnalogBlock,
     ConstantAnalogRotation,
+    InteractionBlock,
     QubitSupport,
-    WaitBlock,
 )
 from qadence.blocks.block_to_tensor import block_to_tensor
 from qadence.blocks.primitive import ProjectorBlock
@@ -1094,34 +1094,34 @@ def AnalogInteraction(
     duration: TNumber | sympy.Basic,
     qubit_support: str | QubitSupport | tuple = "global",
     add_pattern: bool = True,
-) -> WaitBlock:
+) -> InteractionBlock:
     """Evolution of the interaction term for a register of qubits.
 
-    Constructs a [`WaitBlock`][qadence.blocks.analog.WaitBlock].
+    Constructs a [`InteractionBlock`][qadence.blocks.analog.InteractionBlock].
 
     Arguments:
         duration: Time to evolve the interaction for in nanoseconds.
-        qubit_support: Qubits the `WaitBlock` is applied to. Can be either
-            `"global"` to apply the wait block to all qubits or a tuple of integers.
+        qubit_support: Qubits the `InteractionBlock` is applied to. Can be either
+            `"global"` to evolve the interaction block to all qubits or a tuple of integers.
 
     Returns:
-        a `WaitBlock`
+        a `InteractionBlock`
     """
     q = _cast(QubitSupport, qubit_support)
     ps = ParamMap(duration=duration)
-    return WaitBlock(parameters=ps, qubit_support=q, add_pattern=add_pattern)
+    return InteractionBlock(parameters=ps, qubit_support=q, add_pattern=add_pattern)
 
 
 def wait(
     duration: TNumber | sympy.Basic,
     qubit_support: str | QubitSupport | tuple = "global",
     add_pattern: bool = True,
-) -> WaitBlock:
+) -> InteractionBlock:
     logger.warning("The alias `wait` is deprecated, please use `AnalogInteraction`")
     return AnalogInteraction(duration, qubit_support, add_pattern)
 
 
-# FIXME: better name that stresses difference to `Wait`?
+# FIXME: clarify the usage of this gate, rename more formally, and implement in PyQ
 @dataclass(eq=False, repr=False)
 class AnalogEntanglement(AnalogBlock):
     parameters: ParamMap = ParamMap(duration=1.0)

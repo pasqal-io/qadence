@@ -18,7 +18,7 @@ from qadence.blocks.analog import (
     AnalogComposite,
     ConstantAnalogRotation,
     Interaction,
-    WaitBlock,
+    InteractionBlock,
 )
 from qadence.logger import get_logger
 from qadence.operations import RX, RY, RZ, AnalogEntanglement, OpName
@@ -121,25 +121,25 @@ def add_pulses(
     rz = partial(digital_z_rot_pulse, channel=local_channel, phase=PI / 2, config=config)
 
     # TODO: lets move those to `@singledipatch`ed functions
-    if isinstance(block, WaitBlock):
+    if isinstance(block, InteractionBlock):
         if not block.add_pattern:
             logger.warning(
                 "Found block with `add_pattern = False`. This is not yet supported in the Pulser "
                 "backend. If an addressing pattern is specified, it will be added to all blocks."
             )
-        # wait if its a global wait
+        # Apply empty pulse if it's a global InteractionBlock
         if block.qubit_support.is_global:
             (uuid, duration) = block.parameters.uuid_param("duration")
             t = evaluate(duration) if duration.is_number else sequence.declare_variable(uuid)
             pulse = Pulse.ConstantPulse(duration=t, amplitude=0, detuning=0, phase=0)
             sequence.add(pulse, GLOBAL_CHANNEL, "wait-for-all")
 
-        # do nothing if its a non-global wait, because that means we are doing a rotation
-        # on other qubits
+        # Do nothing if its a non-global InteractionBlock, because that means
+        # we are doing a rotation on other qubits which will include the interaction term
         else:
             support = set(block.qubit_support)
             if not support.issubset(sequence.register.qubits):
-                raise ValueError("Trying to wait on qubits outside of support.")
+                raise ValueError("Trying evolve the interaction on qubits outside of support.")
 
     elif isinstance(block, ConstantAnalogRotation):
         if not block.add_pattern:
