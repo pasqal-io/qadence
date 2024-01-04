@@ -56,7 +56,7 @@ Currently, the Pulser backend supports the following operations:
 | `RX`, `RY`     | Single qubit rotations. Notice that the interaction is on and this affects the resulting gate fidelity.          | rotation angle      |
 | `AnalogRX`, `AnalogRY`, `AnalogRZ` | Span a single qubit rotation among the entire register.                                      | rotation angle      |
 | `entangle`  | Fully entangle the register.                                                                     | interaction time    |
-| `AnalogInteraction`      | An idle block to wait for the system to free-evolve for a duration according to the interaction. | free evolution time |
+| `AnalogInteraction`      | An idle block to to free-evolve for a duration according to the interaction. | free evolution time |
 
 ## Sequence the Bell state on a two qubit register
 
