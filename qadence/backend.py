@@ -18,7 +18,7 @@ from qadence.blocks import (
     TimeEvolutionBlock,
     embedding,
 )
-from qadence.blocks.analog import ConstantAnalogRotation, WaitBlock
+from qadence.blocks.analog import ConstantAnalogRotation, InteractionBlock
 from qadence.circuit import QuantumCircuit
 from qadence.logger import get_logger
 from qadence.measurements import Measurements
@@ -81,7 +81,7 @@ class BackendConfiguration:
         """
         param_ids: Tuple
         # FIXME: better type hiearchy?
-        types = (TimeEvolutionBlock, ParametricBlock, ConstantAnalogRotation, WaitBlock)
+        types = (TimeEvolutionBlock, ParametricBlock, ConstantAnalogRotation, InteractionBlock)
         if not isinstance(blk, types):
             raise TypeError(f"Can not infer param name from {type(blk)}")
         else:

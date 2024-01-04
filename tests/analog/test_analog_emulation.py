@@ -13,13 +13,13 @@ from qadence.operations import (
     RX,
     RY,
     RZ,
+    AnalogInteraction,
     AnalogRot,
     AnalogRX,
     AnalogRY,
     AnalogRZ,
     chain,
     kron,
-    wait,
 )
 from qadence.overlap import js_divergence
 from qadence.register import Register
@@ -40,7 +40,7 @@ d = 3.75
         # FIXME: I commented this test because it was still running
         # and failing despite the pytest.mark.xfail.
         # pytest.param(  # enable with next pulser release
-        #     wait(duration=1), lambda n: I(n), marks=pytest.mark.xfail
+        #     AnalogInteraction(duration=1), lambda n: I(n), marks=pytest.mark.xfail
         # ),
         (AnalogRX(angle=PI), lambda n: layer(RX, n, PI)),
         (AnalogRY(angle=PI), lambda n: layer(RY, n, PI)),
@@ -76,12 +76,12 @@ def test_far_add_interaction(analog: AnalogBlock, digital_fn: Callable, register
     [
         AnalogRX(angle=PI),
         AnalogRY(angle=PI),
-        chain(wait(duration=2000), AnalogRX(angle=PI)),
+        chain(AnalogInteraction(duration=2000), AnalogRX(angle=PI)),
         chain(
             AnalogRot(duration=1000, omega=1.0, delta=0.0, phase=0),
             AnalogRot(duration=1000, omega=0.0, delta=1.0, phase=0),
         ),
-        kron(AnalogRX(PI, qubit_support=(0, 1)), wait(1000, qubit_support=(2, 3))),
+        kron(AnalogRX(PI, qubit_support=(0, 1)), AnalogInteraction(1000, qubit_support=(2, 3))),
     ],
 )
 @pytest.mark.parametrize("register", [Register.from_coordinates([(0, 5), (5, 5), (5, 0), (0, 0)])])
@@ -106,7 +106,7 @@ def test_mixing_digital_analog() -> None:
 
 # FIXME: Adapt when custom interaction functions are again supported
 # def test_custom_interaction_function() -> None:
-#     circuit = QuantumCircuit(2, wait(duration=100))
+#     circuit = QuantumCircuit(2, AnalogInteraction(duration=100))
 #     emulated = add_interaction(circuit, interaction=lambda reg, pairs: I(0))
 #     assert emulated.block == HamEvo(I(0), 100 / 1000)
 

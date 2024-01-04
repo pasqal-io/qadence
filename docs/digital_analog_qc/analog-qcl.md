@@ -6,7 +6,7 @@ $8~\mu\text{m}$ as done in the [basic tutorial](analog-basics.md).
 
 ```python exec="on" source="material-block" session="qcl"
 from qadence import Register, FeatureParameter, chain
-from qadence import AnalogRX, AnalogRY, AnalogRZ, wait
+from qadence import AnalogRX, AnalogRY, AnalogRZ, AnalogInteraction
 from sympy import acos
 
 # Line register
@@ -40,15 +40,15 @@ ansatz = chain(
     AnalogRX("tht_0"),
     AnalogRY("tht_1"),
     AnalogRZ("tht_2"),
-    wait(t_0),
+    AnalogInteraction(t_0),
     AnalogRX("tht_3"),
     AnalogRY("tht_4"),
     AnalogRZ("tht_5"),
-    wait(t_1),
+    AnalogInteraction(t_1),
     AnalogRX("tht_6"),
     AnalogRY("tht_7"),
     AnalogRZ("tht_8"),
-    wait(t_2),
+    AnalogInteraction(t_2),
 )
 ```
 
