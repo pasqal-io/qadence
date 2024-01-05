@@ -19,11 +19,14 @@ from qadence.blocks.primitive import PrimitiveBlock
 from qadence.blocks.utils import uuid_to_block, uuid_to_eigen
 from qadence.circuit import QuantumCircuit
 from qadence.extensions import get_gpsr_fns
+from qadence.logger import get_logger
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.ml_tools import promote_to_tensor
 from qadence.noise import Noise
 from qadence.types import DiffMode, Endianness
+
+logger = get_logger(__name__)
 
 
 class PSRExpectation(Function):
@@ -190,7 +193,11 @@ class DifferentiableExpectation:
         if isinstance(self.observable, ConvertedObservable):
             self.observable = [self.observable]
         param_to_psr = self.construct_rules(
-            self.circuit.abstract, [o.abstract for o in self.observable], psr_fn, **psr_args
+            self.circuit,
+            [o for o in self.observable],
+            psr_fn,
+            bknd_expfn=self.backend.expectation,
+            **psr_args,
         )
 
         # Select the subset of all parameters for which PSR apply
@@ -202,14 +209,15 @@ class DifferentiableExpectation:
     # Make PSR construction a static method to avoid unhashability issues.
     @staticmethod
     def construct_rules(
-        circuit: QuantumCircuit,
-        observable: list[AbstractBlock],
+        circuit: ConvertedCircuit,
+        observable: list[ConvertedObservable],
         psr_fn: Callable,
+        bknd_expfn: Callable,
         **psr_args: int | float | None,
     ) -> dict[str, Callable]:
         """Create a mapping between parameters and PSR functions."""
 
-        uuid_to_eigs = uuid_to_eigen(circuit.block)
+        uuid_to_eigs = uuid_to_eigen(circuit.abstract.block)
         # We currently rely on implicit ordering to match the PSR to the parameter,
         # because we want to cache PSRs.
 
@@ -218,18 +226,23 @@ class DifferentiableExpectation:
             if eigenvalues is None:
                 raise ValueError(
                     f"Eigenvalues are not defined for param_id {param_id}\n"
-                    # f"of type {type(block)}.\n"
                     "PSR cannot be defined in that case."
                 )
 
             param_to_psr[param_id] = psr_fn(eigenvalues, **psr_args)
+
+        def ad_expectation(exp_fn: Callable, param_name: str, param_values: dict) -> Tensor:
+            expval = bknd_expfn(circuit, observable, param_values)
+            return torch.autograd.grad(
+                expval, param_values[param_name], torch.ones_like(expval), create_graph=True
+            )[0]
+
         for obs in observable:
-            for param_id, _ in uuid_to_eigen(obs).items():
-                # We need the embedded fixed params of the observable in the param_values dict
-                # to be able to call expectation. Since torch backward requires
-                # a list of param_ids and values of equal length, we need to pass them to PSR too.
-                # Since they are constants their gradients are 0.
-                param_to_psr[param_id] = lambda x: torch.tensor([0.0], requires_grad=False)
+            for param_id, _ in uuid_to_block(obs.abstract).items():
+                # Trainable parameters in the observable can only be differentiated using AD.
+                param_to_psr[param_id] = lambda exp_fn, param_values, param_id: ad_expectation(
+                    exp_fn=exp_fn, param_name=param_id, param_values=param_values
+                )
         return param_to_psr
 
 
@@ -365,7 +378,7 @@ class DifferentiableBackend(Module):
 
     def observable(self, observable: AbstractBlock, n_qubits: int) -> ConvertedObservable:
         if observable is not None and observable.is_parametric:
-            raise ValueError("PSR cannot be applied to a parametric observable.")
+            logger.info("PSR cannot be applied to a parametric observable. Using AD.")
         return self.backend.observable(observable, n_qubits)
 
     def convert(
@@ -373,7 +386,7 @@ class DifferentiableBackend(Module):
         circuit: QuantumCircuit,
         observable: list[AbstractBlock] | AbstractBlock | None = None,
     ) -> Converted:
-        if self.diff_mode != DiffMode.AD and observable is not None:
+        if self.diff_mode == DiffMode.ADJOINT and observable is not None:
             msg = (
                 f"Differentiation mode '{self.diff_mode}' does not support parametric observables."
             )
