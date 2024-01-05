@@ -153,7 +153,6 @@ def test_higher_order_native_finitediff() -> None:
     assert torch.allclose(dydxx_res, gradgrad, atol=ADJOINT_ACCEPTANCE)
 
 
-@pytest.mark.skip("To be added.")
 def test_hybrid_higher_order_fm_derivatives() -> None:
     n_qubits = 2
     observable: list[AbstractBlock] = [Z(0)]
@@ -181,20 +180,20 @@ def test_hybrid_higher_order_fm_derivatives() -> None:
         )
 
         dydphi, dydtheta = torch.autograd.grad(
-            exp, (phi, theta), torch.ones_like(exp), create_graph=True
+            exp, (phi, theta), torch.ones_like(exp), create_graph=True, retain_graph=True
         )
 
         dydphidtheta = torch.autograd.grad(
-            dydphi, theta, torch.ones_like(dydtheta), create_graph=True
+            dydphi, theta, torch.ones_like(dydtheta), create_graph=True, retain_graph=True
         )[0]
         # dydphidtheta = torch.autograd.grad(dydphidtheta,theta,dydphidtheta,create_graph=True)[0]
         # dydphidphi = torch.autograd.grad(
         #     dydphi, phi, torch.ones_like(dydphi), retain_graph=True
         # )[0]
-        # dydthetathetatheta = torch.autograd.grad(
-        #     dydthetatheta, theta, dydthetatheta, retain_graph=True
-        # )[0]
-        return dydphi, dydphidtheta, None
+        dydthetadphidtheta = torch.autograd.grad(
+            dydphidtheta, theta, dydphidtheta, create_graph=True, retain_graph=True
+        )[0]
+        return dydphi, dydphidtheta, dydthetadphidtheta
 
     ad_grad, ad_gradgrad, ad_gradgradgrad = get_grad(theta_0_value, phi_0_value, circ, "ad")
 
@@ -206,7 +205,6 @@ def test_hybrid_higher_order_fm_derivatives() -> None:
     assert torch.allclose(ad_gradgradgrad, adjoint_gradgradgrad, atol=ADJOINT_ACCEPTANCE)
 
 
-@pytest.mark.skip("To be added.")
 def test_hybrid_higher_order_hea_derivatives() -> None:
     n_qubits = 2
     observable: list[AbstractBlock] = [Z(0)]

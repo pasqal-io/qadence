@@ -69,6 +69,7 @@ class AdjointExpectation(Function):
         ctx.circuit = circuit
         ctx.observable = observable
         ctx.param_names = param_names
+        ctx.state = state
         values = param_dict(param_names, param_values)
         ctx.out_state = circuit.run(state, values)
         ctx.projected_state = observable.run(ctx.out_state, values)
@@ -76,10 +77,11 @@ class AdjointExpectation(Function):
         return overlap(ctx.out_state, ctx.projected_state)
 
     @staticmethod
-    @no_grad()
     def backward(ctx: Any, grad_out: Tensor) -> tuple:
         param_values = ctx.saved_tensors
         values = param_dict(ctx.param_names, param_values)
+        ctx.out_state = ctx.circuit.run(ctx.state, values)
+        ctx.projected_state = ctx.observable.run(ctx.out_state, values)
 
         def _apply_adjoint(ctx: Any, op: Module) -> list:
             grads: list = []
@@ -155,5 +157,4 @@ class AdjointExpectation(Function):
         diff = num_params - num_grads
         grads = grads + [tensor([0]) for _ in range(diff)]
         # Set observable grads to 0
-        ctx.save_for_backward(*grads)
         return (None, None, None, None, *grads)
