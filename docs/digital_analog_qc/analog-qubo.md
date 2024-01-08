@@ -71,6 +71,7 @@ from qadence import QuantumModel, QuantumCircuit, Register
 from qadence import RydbergDevice, AnalogRX, AnalogRZ, chain
 from qadence.ml_tools import train_gradient_free, TrainConfig, num_parameters
 import nevergrad as ng
+import matplotlib.pyplot as plt
 
 seed = 0
 np.random.seed(seed)
