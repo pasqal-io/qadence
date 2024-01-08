@@ -137,7 +137,7 @@ By feeding the circuit to a `QuantumModel` we can check the initial
 counts where no clear solution can be found:
 
 ```python exec="on" source="material-block" result="json" session="qubo"
-model = QuantumModel(circuit, backend="pyqtorch", diff_mode='gpsr')
+model = QuantumModel(circuit)
 initial_counts = model.sample({}, n_shots=1000)[0]
 
 print(f"initial_counts = {initial_counts}") # markdown-exec: hide
