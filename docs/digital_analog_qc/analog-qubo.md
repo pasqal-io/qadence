@@ -153,11 +153,10 @@ def loss(model, *args):
     C = model.sample({}, n_shots=1000)[0]
     return cost_qubo(C, Q), {}
 
+config = TrainConfig(max_iter=100)
 optimizer = ng.optimizers.NGOpt(
     budget=config.max_iter, parametrization=num_parameters(model)
 )
-
-config = TrainConfig(max_iter=100)
 train_gradient_free(model, None, optimizer, config, loss)
 
 optimal_count = model.sample({}, n_shots=1000)[0]
