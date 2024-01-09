@@ -78,25 +78,29 @@ def test_qft_inverse() -> None:
         {"inverse": True, "reverse_in": True, "swaps_out": True},
     ],
 )
-@pytest.mark.parametrize("n_qubits", [1, 2, 3])
-def test_qft_digital_analog(n_qubits: int, param_dict: dict) -> None:
+@pytest.mark.parametrize("n_qubits", [1, 2, 5])
+@pytest.mark.parametrize("extra_qubit", [True, False])
+def test_qft_digital_analog(n_qubits: int, extra_qubit: bool, param_dict: dict) -> None:
     """Tests that the digital and digital-analog qfts return the same result."""
+
+    circ_n_qubits = n_qubits + 1 if extra_qubit else n_qubits
+
     qc_qft_digital = QuantumCircuit(
-        n_qubits, qft(n_qubits, strategy=Strategy.DIGITAL, **param_dict)
+        circ_n_qubits, qft(n_qubits, strategy=Strategy.DIGITAL, **param_dict)
     )
 
     qft_analog_block = hamiltonian_factory(
-        n_qubits, interaction=Interaction.NN, random_strength=True
+        circ_n_qubits, interaction=Interaction.NN, random_strength=True
     )
 
     qc_qft_digital_analog = QuantumCircuit(
-        n_qubits,
+        circ_n_qubits,
         qft(n_qubits, strategy=Strategy.SDAQC, gen_build=qft_analog_block, **param_dict),
     )
     model_digital = QuantumModel(qc_qft_digital)
     model_analog = QuantumModel(qc_qft_digital_analog)
 
-    wf_init = random_state(n_qubits)
+    wf_init = random_state(circ_n_qubits)
     wf_digital = model_digital.run(values={}, state=wf_init)
     wf_analog = model_analog.run(values={}, state=wf_init)
 
