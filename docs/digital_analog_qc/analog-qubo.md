@@ -28,28 +28,20 @@ where the same problem is solved using directly the pulse-level interface Pulser
     from scipy.spatial.distance import pdist, squareform
     from qadence import RydbergDevice
 
-    def qubo_register_coords(Q: np.ndarray, device: RydbergDevice) -> list:
+    def qubo_register_coords(Q):
         """Compute coordinates for register."""
-        bitstrings = [np.binary_repr(i, len(Q)) for i in range(len(Q) ** 2)]
-        costs = []
-        # this takes exponential time with the dimension of the QUBO
-        for b in bitstrings:
-            z = np.array(list(b), dtype=int)
-            cost = z.T @ Q @ z
-            costs.append(cost)
 
-        def evaluate_mapping(new_coords: np.ndarray, *args) -> np.ndarray:
+        def evaluate_mapping(new_coords, *args):
             """Cost function to minimize. Ideally, the pairwise
             distances are conserved"""
             Q, shape = args
             new_coords = np.reshape(new_coords, shape)
             rydberg_level = 70
-            interaction_coeff = device.rydberg_level
+            interaction_coeff = C6_DICT[rydberg_level]
             new_Q = squareform(interaction_coeff / pdist(new_coords) ** 6)
             return np.linalg.norm(new_Q - Q)
 
         shape = (len(Q), 2)
-        costs = []
         np.random.seed(0)
         x0 = np.random.random(shape).flatten()
         res = minimize(
@@ -93,16 +85,12 @@ Q = np.array(
     ]
 )
 
-# Cost function for a single bitstring
-def cost_bitstring(bitstring, qubo_mat):
-    z = np.array(list(bitstring), dtype=int)
-    cost = z.T @ qubo_mat @ z
-    return cost
-
-# Cost function for a full measured sample
-def cost_qubo(counter, qubo_mat):
-    cost = sum(counter[key] * cost_bitstring(key, qubo_mat) for key in counter)
-    return cost / sum(counter.values())  # Divide by total samples
+def loss(model: QuantumModel, *args) -> tuple[float, dict]:
+    to_arr_fn = lambda bitstring: np.array(list(bitstring), dtype=int)
+    cost_fn = lambda arr: arr.T @ Q @ arr
+    samples = model.sample({}, n_shots=1000)[0]  # extract samples
+    cost_fn = sum(samples[key] * cost_fn(to_arr_fn(key)) for key in samples)
+    return cost_fn / sum(samples.values()), {}  # We return an optional metrics dict
 ```
 
 The QAOA algorithm needs a variational quantum circuit with optimizable parameters.
@@ -149,10 +137,6 @@ ML facilities to run some gradient-free optimization based on the
 [`nevergrad`](https://facebookresearch.github.io/nevergrad/) library.
 
 ```python exec="on" source="material-block" session="qubo"
-def loss(model, *args):
-    C = model.sample({}, n_shots=1000)[0]
-    return cost_qubo(C, Q), {}
-
 config = TrainConfig(max_iter=100)
 optimizer = ng.optimizers.NGOpt(
     budget=config.max_iter, parametrization=num_parameters(model)
@@ -177,11 +161,11 @@ def plot_distribution(C, ax, title):
     ax.set_xlabel("bitstrings")
     ax.set_ylabel("counts")
     ax.set_xticks([i for i in range(len(C.keys()))], C.keys(), rotation=90)
-    ax.bar(C.keys(), C.values(), width=0.5, color=color_dict.values())
+    ax.bar(list(C.keys())[:20], list(C.values())[:20])
     ax.set_title(title)
 
 plt.tight_layout() # markdown-exec: hide
-fig, axs = plt.subplots(1, 2, figsize=(14, 7))
+fig, axs = plt.subplots(1, 2, figsize=(12, 4))
 plot_distribution(initial_counts, axs[0], "Initial counts")
 plot_distribution(optimal_count, axs[1], "Optimal counts")
 from docs import docsutils # markdown-exec: hide
