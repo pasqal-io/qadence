@@ -4,12 +4,13 @@ from typing import Any, Type, Union
 
 import torch
 
-from qadence.blocks import AbstractBlock, KronBlock, chain, kron, tag
-from qadence.operations import CNOT, CRX, CRY, CRZ, CZ, RX, RY
+from qadence.blocks import AbstractBlock, KronBlock, block_is_qubit_hamiltonian, chain, kron, tag
+from qadence.constructors.hamiltonians import hamiltonian_factory
+from qadence.operations import CNOT, CPHASE, CRX, CRY, CRZ, CZ, RX, RY, HamEvo
 from qadence.parameters import Parameter
-from qadence.types import PI
+from qadence.types import PI, Interaction, Strategy
 
-DigitalEntanglers = Union[CNOT, CZ, CRZ, CRY, CRX]
+DigitalEntanglers = Union[CNOT, CZ, CRZ, CRY, CRX, CPHASE]
 
 
 def _entangler(
@@ -20,11 +21,19 @@ def _entangler(
 ) -> AbstractBlock:
     if entangler in [CNOT, CZ]:
         return entangler(control, target)  # type: ignore
-    elif entangler in [CRZ, CRY, CRX]:
+    elif entangler in [CRZ, CRY, CRX, CPHASE]:
         param = Parameter(param_str, value=0.0, trainable=True)
         return entangler(control, target, param)  # type: ignore
     else:
         raise ValueError("Provided entangler not accepted for digital ansatz.")
+
+
+def _entangler_analog(
+    param_str: str,
+    generator: AbstractBlock | None = None,
+) -> AbstractBlock:
+    param = Parameter(name=param_str, value=0.0, trainable=True)
+    return HamEvo(generator=generator, parameter=param)
 
 
 def _rotations(
@@ -66,8 +75,9 @@ def identity_initialized_ansatz(
     n_qubits: int,
     depth: int = 1,
     param_prefix: str = "iia",
+    strategy: Strategy = Strategy.DIGITAL,
     rotations: Any = [RX, RY],
-    entangler: Any = CNOT,
+    entangler: Any = None,
     periodic: bool = False,
 ) -> AbstractBlock:
     """
@@ -80,12 +90,22 @@ def identity_initialized_ansatz(
     Args:
         n_qubits: number of qubits in the block
         depth: number of layers of the HEA
+        param_prefix (str):
+            The base name of the variational parameter. Defaults to "iia".
+        strategy: (Strategy)
+            Strategy.DIGITAL for fully digital or Strategy.SDAQC for digital-analog.
         rotations (list of AbstractBlocks):
             single-qubit rotations with trainable parameters
         entangler (AbstractBlock):
-            2-qubit entangling operation. Supports CNOT, CZ, CRX, CRY, CRZ, CPHASE.
-            Controlled rotations will have variational parameters on the rotation angles.
-        periodic (bool): if the qubits should be linked periodically.
+            For Digital:
+                2-qubit entangling operation. Supports CNOT, CZ, CRX, CRY, CRZ, CPHASE.
+                Controlled rotations will have variational parameters on the rotation angles.
+                Defaults to CNOT.
+            For Digital-analog:
+                Hamiltonian generator for the analog entangling layer.
+                Time parameter is considered variational.
+                Defaults to a global NN Hamiltonain.
+        periodic (bool): if the qubits should be linked periodically. Valid only for digital.
     """
     initialized_layers = []
     for layer in range(depth):
@@ -102,31 +122,63 @@ def identity_initialized_ansatz(
             ops=rotations,
         )
 
-        ent_param_prefix = f"{param_prefix}_θ_ent_"
-        if not periodic:
+        if strategy == Strategy.DIGITAL:
+            if entangler is None:
+                entangler = CNOT
+
+            if entangler not in [CNOT, CZ, CRZ, CRY, CRX, CPHASE]:
+                raise ValueError(
+                    "Please provide a valid two-qubit entangler operation for digital IIA."
+                )
+
+            ent_param_prefix = f"{param_prefix}_θ_ent_"
+            if not periodic:
+                left_entanglers = [
+                    chain(
+                        _entangler(
+                            control=n,
+                            target=n + 1,
+                            param_str=ent_param_prefix + f"_{layer}{n}",
+                            entangler=entangler,
+                        )
+                        for n in range(n_qubits - 1)
+                    )
+                ]
+            else:
+                left_entanglers = [
+                    chain(
+                        _entangler(
+                            control=n,
+                            target=(n + 1) % n_qubits,
+                            param_str=ent_param_prefix + f"_{layer}{n}",
+                            entangler=entangler,
+                        )
+                        for n in range(n_qubits)
+                    )
+                ]
+
+        elif strategy == Strategy.SDAQC:
+            if entangler is None:
+                entangler = hamiltonian_factory(n_qubits, interaction=Interaction.NN)
+
+            if not block_is_qubit_hamiltonian(entangler):
+                raise ValueError(
+                    "Please provide a valid Pauli Hamiltonian generator for digital-analog IIA."
+                )
+
+            ent_param_prefix = f"{param_prefix}_ent_t"
+
             left_entanglers = [
                 chain(
-                    _entangler(
-                        control=n,
-                        target=n + 1,
-                        param_str=ent_param_prefix + f"_{layer}{n}",
-                        entangler=entangler,
+                    _entangler_analog(
+                        param_str=f"{ent_param_prefix}_{layer}",
+                        generator=entangler,
                     )
-                    for n in range(n_qubits - 1)
                 )
             ]
+
         else:
-            left_entanglers = [
-                chain(
-                    _entangler(
-                        control=n,
-                        target=(n + 1) % n_qubits,
-                        param_str=ent_param_prefix + f"_{layer}{n}",
-                        entangler=entangler,
-                    )
-                    for n in range(n_qubits)
-                )
-            ]
+            raise NotImplementedError
 
         centre_rotations = [
             kron(
