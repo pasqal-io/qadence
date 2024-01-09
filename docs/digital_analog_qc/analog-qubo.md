@@ -96,8 +96,8 @@ The QAOA algorithm needs a variational quantum circuit with optimizable paramete
 For that purpose, we use a fully analog circuit composed of two global rotations per layer on
 different axes of the Bloch sphere.
 The first rotation corresponds to the mixing Hamiltonian and the second one to the
-embedding Hamiltonian (given by the register coordinates and equivalent to a
-free evolution of the neutral atom array) in the QAOA algorithm.
+embedding Hamiltonian [^1]. In this setting, the embedding is realized
+by the appropriate register coordinates and the resulting qubit interaction.
 
 ??? note "Rydberg level"
     The Rydberg level is set to *70*. We
