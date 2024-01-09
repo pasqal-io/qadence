@@ -1,15 +1,14 @@
 !!! warning
     Tutorial to be updated
 
-In this notebook we solve a quadratic unconstrained binary optimization (QUBO) problem with
+In this notebook, we solve a quadratic unconstrained binary optimization (QUBO) problem with
 Qadence. QUBOs are very popular combinatorial optimization problems with a wide range of
 applications. Here, we solve the problem using the QAOA [^1] variational algorithm by embedding
-the QUBO problem weights onto a register. This procedure is used for solving QUBOs on
-neutral atom quantum devices.
+the QUBO problem weights onto a register as standard for neutral atom quantum devices.
 
 Additional background information on QUBOs can be found
-[here](https://pulser.readthedocs.io/en/stable/tutorials/qubo.html)
-where the same problem is solved using directly the pulse-level interface Pulser.
+[here](https://pulser.readthedocs.io/en/stable/tutorials/qubo.html),
+directly solved using the pulse-level interface Pulser.
 
 ## Define and solve QUBO
 
@@ -17,13 +16,13 @@ where the same problem is solved using directly the pulse-level interface Pulser
 
     A basic ingredient for solving a QUBO problem with a neutral atom device is
     to embed the problem onto the atomic register. In short, embedding algorithms cast
-    the problem onto a graph and then find the appropriate atomic coordinates to load the
-    problem graph onto the register. A discussion on the embedding algorithms is beyond
+    the problem onto a graph mapped onto the register by optimally finding atomic coordinates. A discussion on the embedding algorithms is beyond
     the scope of this tutorial and a simplified version taken from
     [here](https://pulser.readthedocs.io/en/stable/tutorials/qubo.html) is added below.
 
     ```python exec="on" source="material-block" session="qubo"
     import numpy as np
+    import numpy.typing as npt
     from scipy.optimize import minimize
     from scipy.spatial.distance import pdist, squareform
     from qadence import RydbergDevice
@@ -70,7 +69,7 @@ np.random.seed(seed)
 torch.manual_seed(seed)
 ```
 
-The QUBO problem is initially defined by a graph of weighted connections and a cost function to be optimized. The weighted connections are organized in a
+The QUBO problem is initially defined by a graph of weighted edges and a cost function to be optimized. The weighted edges are represented by a
 real-valued symmetric matrix `Q` which is used throughout the tutorial.
 
 ```python exec="on" source="material-block" session="qubo"
@@ -94,7 +93,7 @@ def loss(model: QuantumModel, *args) -> tuple[float, dict]:
 ```
 
 The QAOA algorithm needs a variational quantum circuit with optimizable parameters.
-We use a fully analog circuit composed of two global rotations per layer on
+For that purpose, we use a fully analog circuit composed of two global rotations per layer on
 different axes of the Bloch sphere.
 The first rotation corresponds to the mixing Hamiltonian and the second one to the
 embedding Hamiltonian (given by the register coordinates and equivalent to a
@@ -131,9 +130,9 @@ initial_counts = model.sample({}, n_shots=1000)[0]
 print(f"initial_counts = {initial_counts}") # markdown-exec: hide
 ```
 
-Finally, we can proceed to the variational optimization. The cost function
-defined above is based on bitstring and thus non differentiable. We use Qadence
-ML facilities to run some gradient-free optimization based on the
+Finally, we can proceed with the variational optimization. The cost function
+defined above is derived from bitstring computations and therefore non differentiable. We use Qadence
+ML facilities to run gradient-free optimizations using the
 [`nevergrad`](https://facebookresearch.github.io/nevergrad/) library.
 
 ```python exec="on" source="material-block" session="qubo"
