@@ -5,8 +5,9 @@ from typing import Any
 import torch
 
 from qadence.blocks import AbstractBlock, add, chain, kron, tag
+from qadence.constructors import hamiltonian_factory
 from qadence.operations import CPHASE, SWAP, H, HamEvo, I, Z
-from qadence.types import PI, Strategy
+from qadence.types import PI, Interaction, Strategy
 
 from .daqc import daqc_transform
 
@@ -175,7 +176,7 @@ def _qft_layer_sDAQC(
     support: tuple[int, ...],
     layer: int,
     inverse: bool,
-    gen_build: AbstractBlock,
+    gen_build: AbstractBlock | None,
 ) -> AbstractBlock:
     """
     QFT Layer using the sDAQC technique following the paper:
@@ -193,6 +194,9 @@ def _qft_layer_sDAQC(
     allowed_support = tuple(range(n_qubits))
     if support != allowed_support and support != allowed_support[::-1]:
         raise NotImplementedError("Changing support for DigitalAnalog QFT not yet supported.")
+
+    if gen_build is None:
+        gen_build = hamiltonian_factory(n_qubits, interaction=Interaction.NN)
 
     m = layer + 1  # Paper index convention
 
