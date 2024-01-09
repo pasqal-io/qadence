@@ -209,7 +209,7 @@ def _qft_layer_sDAQC(
         # Two-qubit interaction in the CPHASE converted with sDAQC
         gen_cphases = add(*tqg_gen_list)
         transformed_daqc_circuit = daqc_transform(
-            n_qubits=n_qubits,
+            n_qubits=gen_build.n_qubits,
             gen_target=gen_cphases,
             t_f=-1.0,
             gen_build=gen_build,
