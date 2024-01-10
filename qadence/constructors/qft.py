@@ -179,8 +179,8 @@ def _qft_layer_sDAQC(
     gen_build: AbstractBlock | None,
 ) -> AbstractBlock:
     """
-    QFT Layer using the sDAQC technique. 
-    
+    QFT Layer using the sDAQC technique.
+
     Following the paper:
 
     -- [1] https://arxiv.org/abs/1906.07635
