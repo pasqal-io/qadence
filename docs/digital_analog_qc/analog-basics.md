@@ -371,10 +371,10 @@ In the previous section we have exemplified the main ingredients of the current 
 of the emulated analog interface, and in the next tutorial on Quantum Circuit Learning we will exmplify its usage
 in a simple QML example. Here we specify some extra details of this interface.
 
-In the block system, all the Analog rotation operators initialize a [`ConstantAnalogRotation`][qadence.blocks.analog.ConstantAnalogRotation]
-block, while the `AnalogInteraction` operation initializes a [`InteractionBlock`][qadence.blocks.analog.InteractionBlock]. As we have shown, by default,
-these blocks use a global qubit support, which can be passed explicitly by setting `qubit_support = "global"`. However, the blocks do support
-local qubit supports, with some constraints. The main constraint is that using `kron` on operators with different durations is not allowed.
+In the block system, all analog rotation operators initialize a [`ConstantAnalogRotation`][qadence.blocks.analog.ConstantAnalogRotation]
+block, while the `AnalogInteraction` operation initializes an [`InteractionBlock`][qadence.blocks.analog.InteractionBlock]. As we have shown, by default,
+these blocks use a global qubit support, which can be passed explicitly by setting `qubit_support = QubitSupportType.GLOBAL`. However, composing blocks using `kron`
+with local qubit supports and different durations is not allowed.
 
 ```python exec="on" source="material-block" result="json" session="details"
 from qadence import AnalogRX, AnalogRY, Register, kron

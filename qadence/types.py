@@ -386,7 +386,7 @@ class OpName(StrEnum):
     """The analog RZ operation."""
     ANALOGSWAP = "AnalogSWAP"
     """The analog SWAP operation."""
-    ENTANG = "entangle"
+    ENTANGLE = "Entangle"
     """The entanglement operation."""
     ANALOGINTERACTION = "AnalogInteraction"
     """The analog interaction operation."""

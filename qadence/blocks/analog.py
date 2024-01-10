@@ -101,7 +101,7 @@ class AnalogBlock(AbstractBlock):
 @dataclass(eq=False, repr=False)
 class InteractionBlock(AnalogBlock):
     """
-    Evolves the interaction term for a register of qubits.
+    Free-evolution for the interaction term of a register of qubits.
 
     In real interacting quantum devices, it means letting the system evolve freely according
     to the time-dependent Schrodinger equation. With emulators, this block is translated to an

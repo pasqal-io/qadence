@@ -169,7 +169,7 @@ A major advantage of the block-based interface in Qadence is the ease to compose
 operations from a restricted set of primitive ones. In the following, a custom entanglement operation is used as an example.
 
 The operation consists of moving _all_ the qubits to the $X$-basis. This is realized when the atomic interaction performs a
-controlled-$Z$ operation during the free evolution. As seen before, this is implemented with the `AnalogInteraction` and `AnalogRY` blocks and
+controlled-$Z$ operation during the free evolution. As seen before, this is implemented with the `AnalogInteraction` and `AnalogRY` blocks together with
 appropriate parameters.
 
 ```python exec="on" source="material-block" session="pulser-basic"

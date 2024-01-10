@@ -37,7 +37,7 @@ def test_qubit_support() -> None:
 def test_analog_block() -> None:
     b: AnalogBlock
     b = AnalogInteraction(duration=3, qubit_support=(1, 2))
-    assert b.__repr__() == "InteractionBlock(t=3.0, support=(1, 2))"
+    assert repr(b) == "InteractionBlock(t=3.0, support=(1, 2))"
 
     c1 = chain(
         ConstantAnalogRotation(parameters=ParamMap(duration=2000, omega=1, delta=0, phase=0)),
