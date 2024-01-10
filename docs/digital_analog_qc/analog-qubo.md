@@ -1,6 +1,3 @@
-!!! warning
-    Tutorial to be updated
-
 In this notebook, we solve a quadratic unconstrained binary optimization (QUBO) problem with
 Qadence. QUBOs are very popular combinatorial optimization problems with a wide range of
 applications. Here, we solve the problem using the QAOA [^1] variational algorithm by embedding
