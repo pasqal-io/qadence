@@ -142,8 +142,8 @@ optimizer = ng.optimizers.NGOpt(
 )
 train_gradient_free(model, None, optimizer, config, loss)
 
-optimal_count = model.sample({}, n_shots=1000)[0]
-print(f"optimal_count = {optimal_count}") # markdown-exec: hide
+optimal_counts = model.sample({}, n_shots=1000)[0]
+print(f"optimal_count = {optimal_counts}") # markdown-exec: hide
 ```
 
 Finally, let's plot the solution. The expected bitstrings are marked in red.
@@ -166,7 +166,7 @@ def plot_distribution(C, ax, title):
 plt.tight_layout() # markdown-exec: hide
 fig, axs = plt.subplots(1, 2, figsize=(12, 4))
 plot_distribution(initial_counts, axs[0], "Initial counts")
-plot_distribution(optimal_count, axs[1], "Optimal counts")
+plot_distribution(optimal_counts, axs[1], "Optimal counts")
 from docs import docsutils # markdown-exec: hide
 print(docsutils.fig_to_html(fig)) # markdown-exec: hide
 ```
