@@ -24,7 +24,7 @@ directly solved using the pulse-level interface Pulser.
     from scipy.spatial.distance import pdist, squareform
     from qadence import RydbergDevice
 
-    def qubo_register_coords(Q):
+    def qubo_register_coords(Q: np.ndarray, device: RydbergDevice) -> list:
         """Compute coordinates for register."""
 
         def evaluate_mapping(new_coords, *args):
@@ -32,8 +32,7 @@ directly solved using the pulse-level interface Pulser.
             distances are conserved"""
             Q, shape = args
             new_coords = np.reshape(new_coords, shape)
-            rydberg_level = 70
-            interaction_coeff = C6_DICT[rydberg_level]
+            interaction_coeff = device.rydberg_level
             new_Q = squareform(interaction_coeff / pdist(new_coords) ** 6)
             return np.linalg.norm(new_Q - Q)
 
