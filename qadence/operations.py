@@ -1103,6 +1103,8 @@ def AnalogInteraction(
         duration: Time to evolve the interaction for in nanoseconds.
         qubit_support: Qubits the `InteractionBlock` is applied to. Can be either
             `"global"` to evolve the interaction block to all qubits or a tuple of integers.
+        add_pattern: False disables the semi-local addressing pattern
+            for the execution of this specific block.
 
     Returns:
         a `InteractionBlock`
@@ -1161,6 +1163,8 @@ def AnalogRot(
         delta: Rotation frequency [rad/μs]
         phase: Phase angle [rad]
         qubit_support: Defines the (local/global) qubit support
+        add_pattern: False disables the semi-local addressing pattern
+            for the execution of this specific block.
 
     Returns:
         ConstantAnalogRotation
