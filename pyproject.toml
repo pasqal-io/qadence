@@ -16,6 +16,7 @@ authors = [
     { name = "Roland Guichard", email = "roland.guichard@pasqal.com" },
     { name = "Joao P. Moutinho", email = "joao.moutinho@pasqal.com"},
     { name = "Vytautas Abramavicius", email = "vytautas.abramavicius@pasqal.com" },
+    { name = "Gergana Velikova", email = "gergana.velikova@pasqal.com" },
 ]
 requires-python = ">=3.9,<3.12"
 license = {text = "Apache 2.0"}

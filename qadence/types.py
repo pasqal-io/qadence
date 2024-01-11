@@ -386,10 +386,10 @@ class OpName(StrEnum):
     """The analog RZ operation."""
     ANALOGSWAP = "AnalogSWAP"
     """The analog SWAP operation."""
-    ENTANG = "entangle"
+    ENTANGLE = "entangle"
     """The entanglement operation."""
-    WAIT = "wait"
-    """The wait operation."""
+    ANALOGINTERACTION = "AnalogInteraction"
+    """The analog interaction operation."""
     PROJ = "Projector"
     """The projector operation."""
 

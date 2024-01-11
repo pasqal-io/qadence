@@ -17,6 +17,7 @@ from qadence.operations import (
     RX,
     RY,
     RZ,
+    AnalogInteraction,
     AnalogRot,
     AnalogRX,
     AnalogRY,
@@ -25,7 +26,6 @@ from qadence.operations import (
     X,
     Z,
     entangle,
-    wait,
 )
 from qadence.parameters import FeatureParameter
 from qadence.register import Register
@@ -89,7 +89,7 @@ def test_parametrized_analog_rot(
 @pytest.mark.parametrize("n_qubits", [2, 3, 4])
 @pytest.mark.parametrize("spacing", [7.0, 10.0, 15.0])
 @pytest.mark.parametrize("rydberg_level", [60, 70])
-@pytest.mark.parametrize("op", [AnalogRX, AnalogRY, AnalogRZ, AnalogRot, wait])
+@pytest.mark.parametrize("op", [AnalogRX, AnalogRY, AnalogRZ, AnalogRot, AnalogInteraction])
 def test_analog_op_run(
     n_qubits: int, spacing: float, rydberg_level: int, op: AbstractBlock
 ) -> None:
@@ -145,16 +145,16 @@ def get_random_rot(param: str, qubit_support: tuple[int]) -> AbstractBlock:
         ),
         kron(
             get_random_rot("x", (1,)),
-            wait("x", qubit_support=(0, 2)),
+            AnalogInteraction("x", qubit_support=(0, 2)),
         ),
         chain(
             kron(
                 get_random_rot("x", (0,)),
-                wait("x", qubit_support=(1, 2)),
+                AnalogInteraction("x", qubit_support=(1, 2)),
             ),
             kron(
                 get_random_rot("x", (2,)),
-                wait("x", qubit_support=(0, 1)),
+                AnalogInteraction("x", qubit_support=(0, 1)),
             ),
         ),
     ],

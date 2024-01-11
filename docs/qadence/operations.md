@@ -149,7 +149,7 @@ called *gates* elsewhere.
       show_root_heading: true
       show_root_full_path: false
 
-::: qadence.operations.wait
+::: qadence.operations.AnalogInteraction
     options:
       show_root_heading: true
       show_root_full_path: false
