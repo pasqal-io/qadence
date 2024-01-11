@@ -20,7 +20,12 @@ from qadence.blocks import (
     ScaleBlock,
     TimeEvolutionBlock,
 )
-from qadence.blocks.analog import AnalogBlock, AnalogComposite, ConstantAnalogRotation, WaitBlock
+from qadence.blocks.analog import (
+    AnalogBlock,
+    AnalogComposite,
+    ConstantAnalogRotation,
+    InteractionBlock,
+)
 from qadence.blocks.analog import chain as analog_chain
 from qadence.blocks.analog import kron as analog_kron
 from qadence.exceptions import NotPauliBlockError
@@ -218,7 +223,9 @@ def uuid_to_block(block: AbstractBlock, d: dict[str, Expr] = None) -> dict[str, 
         uuid_to_block(block.block, d)
 
     # special analog cases should go away soon
-    elif isinstance(block, (WaitBlock, ConstantAnalogRotation, operations.AnalogEntanglement)):
+    elif isinstance(
+        block, (InteractionBlock, ConstantAnalogRotation, operations.AnalogEntanglement)
+    ):
         for uuid in block.parameters.uuids():
             d[uuid] = block
 

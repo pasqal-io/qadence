@@ -27,8 +27,8 @@ from qadence.blocks import (
 from qadence.blocks.analog import (
     AnalogBlock,
     ConstantAnalogRotation,
+    InteractionBlock,
     QubitSupport,
-    WaitBlock,
 )
 from qadence.blocks.block_to_tensor import block_to_tensor
 from qadence.blocks.primitive import ProjectorBlock
@@ -90,6 +90,7 @@ __all__ = [
     "wait",
     "entangle",
     "AnalogEntanglement",
+    "AnalogInteraction",
     "AnalogRot",
     "AnalogRX",
     "AnalogRY",
@@ -1085,7 +1086,44 @@ class Toffoli(ControlBlock):
         )
 
 
-# FIXME: better name that stresses difference to `Wait`?
+def _cast(T: Any, val: Any) -> Any:
+    return val if isinstance(val, T) else T(val)
+
+
+def AnalogInteraction(
+    duration: TNumber | sympy.Basic,
+    qubit_support: str | QubitSupport | tuple = "global",
+    add_pattern: bool = True,
+) -> InteractionBlock:
+    """Evolution of the interaction term for a register of qubits.
+
+    Constructs a [`InteractionBlock`][qadence.blocks.analog.InteractionBlock].
+
+    Arguments:
+        duration: Time to evolve the interaction for in nanoseconds.
+        qubit_support: Qubits the `InteractionBlock` is applied to. Can be either
+            `"global"` to evolve the interaction block to all qubits or a tuple of integers.
+        add_pattern: False disables the semi-local addressing pattern
+            for the execution of this specific block.
+
+    Returns:
+        a `InteractionBlock`
+    """
+    q = _cast(QubitSupport, qubit_support)
+    ps = ParamMap(duration=duration)
+    return InteractionBlock(parameters=ps, qubit_support=q, add_pattern=add_pattern)
+
+
+def wait(
+    duration: TNumber | sympy.Basic,
+    qubit_support: str | QubitSupport | tuple = "global",
+    add_pattern: bool = True,
+) -> InteractionBlock:
+    logger.warning("The alias `wait` is deprecated, please use `AnalogInteraction`")
+    return AnalogInteraction(duration, qubit_support, add_pattern)
+
+
+# FIXME: clarify the usage of this gate, rename more formally, and implement in PyQ
 @dataclass(eq=False, repr=False)
 class AnalogEntanglement(AnalogBlock):
     parameters: ParamMap = ParamMap(duration=1.0)
@@ -1098,30 +1136,6 @@ class AnalogEntanglement(AnalogBlock):
     @property
     def duration(self) -> Basic:
         return self.parameters.duration
-
-
-def _cast(T: Any, val: Any) -> Any:
-    return val if isinstance(val, T) else T(val)
-
-
-def wait(
-    duration: TNumber | sympy.Basic,
-    qubit_support: str | QubitSupport | tuple = "global",
-    add_pattern: bool = True,
-) -> WaitBlock:
-    """Constructs a [`WaitBlock`][qadence.blocks.analog.WaitBlock].
-
-    Arguments:
-        duration: Time to wait in nanoseconds.
-        qubit_support: Qubits the `WaitBlock` is applied to. Can be either
-            `"global"` to apply the wait block to all qubits or a tuple of integers.
-
-    Returns:
-        a `WaitBlock`
-    """
-    q = _cast(QubitSupport, qubit_support)
-    ps = ParamMap(duration=duration)
-    return WaitBlock(parameters=ps, qubit_support=q, add_pattern=add_pattern)
 
 
 def entangle(
@@ -1149,6 +1163,8 @@ def AnalogRot(
         delta: Rotation frequency [rad/μs]
         phase: Phase angle [rad]
         qubit_support: Defines the (local/global) qubit support
+        add_pattern: False disables the semi-local addressing pattern
+            for the execution of this specific block.
 
     Returns:
         ConstantAnalogRotation
@@ -1284,7 +1300,7 @@ analog_gateset = [
     AnalogRX,
     AnalogRY,
     AnalogRZ,
+    AnalogInteraction,
     entangle,
-    wait,
 ]
 non_unitary_gateset = [Zero, N, Projector]

@@ -10,7 +10,7 @@ from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.analog import (
     AnalogKron,
     ConstantAnalogRotation,
-    WaitBlock,
+    InteractionBlock,
 )
 from qadence.circuit import QuantumCircuit
 from qadence.operations import HamEvo
@@ -92,7 +92,7 @@ def _analog_to_hevo(
     Any other block not covered by the specific conditions below is left unchanged.
     """
 
-    if isinstance(block, WaitBlock):
+    if isinstance(block, InteractionBlock):
         h_background = h_int
         if block.add_pattern and h_addr is not None:
             h_background += h_addr
