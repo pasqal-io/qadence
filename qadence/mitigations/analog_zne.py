@@ -11,7 +11,7 @@ from qadence.backends.api import backend_factory
 from qadence.backends.pulser.backend import Backend
 from qadence.blocks import block_to_tensor
 from qadence.blocks.abstract import AbstractBlock
-from qadence.blocks.analog import ConstantAnalogRotation, WaitBlock
+from qadence.blocks.analog import ConstantAnalogRotation, InteractionBlock
 from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
@@ -52,7 +52,7 @@ def pulse_experiment(
     def mutate_params(block: AbstractBlock, stretch: float) -> AbstractBlock:
         """Closure to retrieve and stretch analog parameters."""
         # Check for stretchable analog block.
-        if isinstance(block, (ConstantAnalogRotation, WaitBlock)):
+        if isinstance(block, (ConstantAnalogRotation, InteractionBlock)):
             stretched_duration = block.parameters.duration * stretch
             stretched_omega = block.parameters.omega / stretch
             stretched_delta = block.parameters.delta / stretch
