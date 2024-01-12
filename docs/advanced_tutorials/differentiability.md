@@ -58,6 +58,9 @@ F_{S} & =4\overset{S}{\underset{s=1}{\sum}}{\rm sin}\left(\frac{\delta_{M}\Delta
 
 Here $F_s=f(x+\delta_s)-f(x-\delta_s)$ denotes the difference between values of functions evaluated at shifted arguments $x\pm\delta_s$.
 
+## Adjoint Differentiation
+Qadence also offers a memory-efficient, non-device compatible alternative to automatic differentation, called 'Adjoint Differentiation'. It is an implementation of [^4] and allows for precisely calculating the gradients of variational parameters in O(P) time and using O(1) state-vectors. Adjoint Differentation is currently only supported by the Torch Engine and allows for first-order derivatives only.
+
 ## Usage
 
 ### Basics
@@ -165,3 +168,5 @@ when the generator $\hat{G}$ or the quantum operation is a dense matrix, for exa
 [^2]: [Schuld et al., Evaluating analytic gradients on quantum hardware (2018).](https://arxiv.org/abs/1811.11184)
 
 [^3]: [Kyriienko et al., General quantum circuit differentiation rules](https://arxiv.org/abs/2108.01218)
+
+[^4]: [Tyson et al., Efficient calculation of gradients in classical simulations of variational quantum algorithms](https://arxiv.org/abs/2009.02823)
