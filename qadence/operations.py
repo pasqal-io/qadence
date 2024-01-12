@@ -96,6 +96,7 @@ __all__ = [
     "AnalogRY",
     "AnalogRZ",
     "AnalogSWAP",
+    "Projector",
 ]
 
 
