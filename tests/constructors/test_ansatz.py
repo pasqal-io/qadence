@@ -7,6 +7,7 @@ from qadence import (
     CNOT,
     CRX,
     RX,
+    RY,
     RZ,
     Interaction,
     QuantumCircuit,
@@ -142,3 +143,29 @@ def test_iia_value(
     )
     state = random_state(n_qubits)
     assert allclose(state, run(iia, state=state))
+
+
+@pytest.mark.parametrize("n_qubits", [2, 3])
+@pytest.mark.parametrize("depth", [2, 3])
+@pytest.mark.parametrize("hamiltonian", ["fixed_global", "parametric_local"])
+def test_iia_sDAQC(n_qubits: int, depth: int, hamiltonian: str) -> None:
+    if hamiltonian == "fixed_global":
+        entangler = hamiltonian_factory(n_qubits, interaction=Interaction.NN)
+    if hamiltonian == "parametric_local":
+        x = VariationalParameter("x")
+        entangler = x * kron(Z(0), Z(1))
+    iia = identity_initialized_ansatz(
+        n_qubits=n_qubits,
+        depth=depth,
+        strategy=Strategy.SDAQC,
+        rotations=[RX, RY],
+        entangler=entangler,
+    )
+    # Variational parameters in the digital-analog entangler
+    # are not created automatically by the hea function, but
+    # by passing them in the entangler. Thus for depth larger
+    # than 1 we do get duplicate vparams:
+    if hamiltonian == "fixed_global":
+        assert not has_duplicate_vparams(iia)
+    if hamiltonian == "parametric_local":
+        assert has_duplicate_vparams(iia)
