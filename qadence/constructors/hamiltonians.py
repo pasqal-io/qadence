@@ -125,7 +125,7 @@ def hamiltonian_factory(
                 if not block_is_qubit_hamiltonian(interaction(0, 1)):
                     raise ValueError("Custom interactions must be composed of Pauli operators.")
             except TypeError:
-                raise TypeError("Please write your custom interaction with two integer inputs.")
+                raise TypeError("Please provide a custom interaction function signed with  two integer parameters.")
         else:
             int_fn = INTERACTION_DICT.get(interaction, None)  # type: ignore [arg-type]
             if int_fn is None:
