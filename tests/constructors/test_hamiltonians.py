@@ -8,15 +8,13 @@ from torch import rand
 
 from qadence.blocks import AbstractBlock, block_is_qubit_hamiltonian
 from qadence.constructors import hamiltonian_factory
-from qadence.operations import N, Projector, X, Y, Z
+from qadence.operations import N, X, Y, Z
 from qadence.register import Register
 from qadence.types import Interaction
 
 
 def custom_interaction(i: int, j: int) -> AbstractBlock:
-    pauli_term = X(i) @ X(j) + Y(i) @ Y(j)
-    projector_term = Projector("00", "11", (i, j)) + Projector("11", "00", (i, j))
-    return pauli_term + projector_term
+    return X(i) @ X(j) + Y(i) @ Y(j)
 
 
 @pytest.mark.parametrize(
@@ -56,8 +54,7 @@ def test_hamiltonian_factory_creation(
             random_strength=random_strength,
         )
 
-        if interaction != custom_interaction:
-            assert block_is_qubit_hamiltonian(hamilt)
+        assert block_is_qubit_hamiltonian(hamilt)
 
 
 @pytest.mark.parametrize(
@@ -93,5 +90,4 @@ def test_hamiltonian_factory_register(
         random_strength=True,
     )
 
-    if interaction != custom_interaction:
-        assert block_is_qubit_hamiltonian(hamilt)
+    assert block_is_qubit_hamiltonian(hamilt)
