@@ -5,9 +5,9 @@ from typing import Callable, List, Type, Union
 import numpy as np
 from torch import Tensor, double, ones, rand
 
-from qadence.blocks import AbstractBlock, add
+from qadence.blocks import AbstractBlock, add, block_is_qubit_hamiltonian
 from qadence.logger import get_logger
-from qadence.operations import N, X, Y, Z
+from qadence.operations import N, Projector, X, Y, Z
 from qadence.register import Register
 from qadence.types import Interaction, TArray
 
@@ -122,7 +122,11 @@ def hamiltonian_factory(
         if callable(interaction):
             int_fn = interaction
             try:
-                interaction(0, 1)
+                int_block = interaction(0, 1)
+                if not block_is_qubit_hamiltonian(int_block) and Projector not in int_block:
+                    raise ValueError(
+                        "Custom interactions must be composed of Pauli or Projector operators."
+                    )
             except TypeError:
                 raise TypeError("Please write your custom interaction with two integer inputs.")
         else:
