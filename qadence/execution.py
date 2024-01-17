@@ -10,6 +10,8 @@ from qadence.backend import BackendConfiguration
 from qadence.backends.api import backend_factory
 from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
+from qadence.measurements import Measurements
+from qadence.mitigations import Mitigations
 from qadence.noise import Noise
 from qadence.qubit_support import QubitSupport
 from qadence.register import Register
@@ -235,7 +237,9 @@ def _(
     state: Tensor = None,
     backend: BackendName = BackendName.PYQTORCH,
     diff_mode: Union[DiffMode, str, None] = None,
+    measurement: Measurements = None,
     noise: Union[Noise, None] = None,
+    mitigation: Mitigations = None,
     endianness: Endianness = Endianness.BIG,
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> Tensor:
@@ -249,7 +253,9 @@ def _(
             observable=conv.observable,  # type: ignore[arg-type]
             param_values=conv.embedding_fn(conv.params, values),
             state=state,
+            measurement=measurement,
             noise=noise,
+            mitigation=mitigation,
             endianness=endianness,
         )
 

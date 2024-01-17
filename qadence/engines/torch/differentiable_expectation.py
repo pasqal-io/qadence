@@ -107,6 +107,7 @@ class DifferentiableExpectation:
                 param_values=self.param_values,
                 options=self.measurement.options,
                 state=self.state,
+                backend=self.backend,
                 noise=self.noise,
                 endianness=self.endianness,
             )
