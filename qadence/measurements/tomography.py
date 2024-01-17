@@ -7,14 +7,15 @@ import numpy as np
 import torch
 from torch import Tensor
 
-from qadence.backends import backend_factory
+from qadence.backend import Backend
+from qadence.backends.pyqtorch import Backend as PyQBackend
 from qadence.blocks import AbstractBlock, PrimitiveBlock
 from qadence.blocks.utils import unroll_block_with_scaling
 from qadence.circuit import QuantumCircuit
+from qadence.engines.differentiable_backend import DifferentiableBackend
 from qadence.noise import Noise
 from qadence.operations import H, SDagger, X, Y, Z, chain
 from qadence.parameters import evaluate
-from qadence.types import BackendName, DiffMode
 from qadence.utils import Endianness
 
 
@@ -83,7 +84,7 @@ def iterate_pauli_decomposition(
     pauli_decomposition: list,
     n_shots: int,
     state: Tensor | None = None,
-    backend_name: BackendName = BackendName.PYQTORCH,
+    backend: Backend | DifferentiableBackend = PyQBackend(),
     noise: Noise | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
@@ -91,7 +92,6 @@ def iterate_pauli_decomposition(
 
     estimated_values = []
 
-    backend = backend_factory(backend=backend_name, diff_mode=DiffMode.GPSR)
     for pauli_term in pauli_decomposition:
         if pauli_term[0].is_identity:
             estimated_values.append(evaluate(pauli_term[1], as_torch=True))
@@ -130,7 +130,7 @@ def compute_expectation(
     param_values: dict,
     options: dict,
     state: Tensor | None = None,
-    backend_name: BackendName = BackendName.PYQTORCH,
+    backend: Backend | DifferentiableBackend = PyQBackend(),
     noise: Noise | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
@@ -171,7 +171,7 @@ def compute_expectation(
                 pauli_decomposition=pauli_decomposition,
                 n_shots=n_shots,
                 state=state,
-                backend_name=backend_name,
+                backend=backend,
                 noise=noise,
                 endianness=endianness,
             )
