@@ -246,19 +246,21 @@ def test_empirical_average() -> None:
 # To keep reasonable run time, less expensive cases are tested.
 # Some observables also contain ScaleBlock for which PSR are not defined.
 @pytest.mark.parametrize(
-    "circuit, values, observable",
+    "circuit, values, observable, diff_mode",
     [
-        (QuantumCircuit(1, H(0)), {}, Z(0)),
-        (QuantumCircuit(2, kron(H(0), H(1))), {}, kron(X(0), X(1))),
+        (QuantumCircuit(1, H(0)), {}, Z(0), DiffMode.AD),
+        (QuantumCircuit(2, kron(H(0), H(1))), {}, kron(X(0), X(1)), DiffMode.GPSR),
         (
             QuantumCircuit(4, feature_map(4, fm_type=BasisSet.CHEBYSHEV), hea(4, depth=2)),
             {"phi": rand(1)},
             total_magnetization(4),
+            DiffMode.AD,
         ),
         (
             QuantumCircuit(4, feature_map(4, fm_type=BasisSet.CHEBYSHEV), hea(4, depth=2)),
             {"phi": rand(1)},
             zz_hamiltonian(4),
+            DiffMode.GPSR,
         ),
         # (
         #     QuantumCircuit(4, feature_map(4, fm_type=BasisSet.CHEBYSHEV), hea(4, depth=2)),
@@ -274,16 +276,15 @@ def test_empirical_average() -> None:
                 1.5 * kron(Y(0), Z(1), Y(2), Z(3)),
                 2.0 * kron(Z(0), X(1), Z(2), X(3)),
             ),
+            DiffMode.AD,
         ),
     ],
 )
 def test_iterate_pauli_decomposition(
-    circuit: QuantumCircuit,
-    values: dict,
-    observable: AbstractBlock,
+    circuit: QuantumCircuit, values: dict, observable: AbstractBlock, diff_mode: DiffMode
 ) -> None:
     pauli_decomposition = unroll_block_with_scaling(observable)
-    pyqtorch_backend = backend_factory(BackendName.PYQTORCH, diff_mode=DiffMode.GPSR)
+    pyqtorch_backend = backend_factory(BackendName.PYQTORCH, diff_mode=diff_mode)
     (conv_circ, conv_obs, embed, params) = pyqtorch_backend.convert(circuit, observable)
     param_values = embed(params, values)
     pyqtorch_expectation = pyqtorch_backend.expectation(conv_circ, conv_obs, param_values)[0]
