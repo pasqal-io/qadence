@@ -7,7 +7,8 @@ import numpy as np
 import torch
 from torch import Tensor
 
-from qadence.backends import backend_factory
+from qadence.backend import Backend
+from qadence.backends.pyqtorch import Backend as PyQBackend
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.block_to_tensor import (
     HMAT,
@@ -23,7 +24,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.noise import Noise
 from qadence.operations import X, Y, Z, chain, kron
 from qadence.states import one_state, zero_state
-from qadence.types import BackendName, DiffMode, Endianness
+from qadence.types import Endianness
 
 pauli_gates = [X, Y, Z]
 
@@ -127,13 +128,12 @@ def classical_shadow(
     circuit: QuantumCircuit,
     param_values: dict,
     state: Tensor | None = None,
-    backend_name: BackendName = BackendName.PYQTORCH,
+    backend: Backend = PyQBackend(),
     # FIXME: Changed below from Little to Big, double-check when Roland is back
     noise: Noise | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> list:
     shadow: list = []
-    backend = backend_factory(backend=backend_name, diff_mode=DiffMode.GPSR)
     # TODO: Parallelize embarrassingly parallel loop.
     for _ in range(shadow_size):
         unitary_ids = np.random.randint(0, 3, size=(1, circuit.n_qubits))[0]
@@ -260,7 +260,7 @@ def estimations(
     accuracy: float = 0.1,
     confidence: float = 0.1,
     state: Tensor | None = None,
-    backend_name: BackendName = BackendName.PYQTORCH,
+    backend: Backend = PyQBackend(),
     noise: Noise | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
@@ -276,7 +276,7 @@ def estimations(
         circuit=circuit,
         param_values=param_values,
         state=state,
-        backend_name=backend_name,
+        backend=backend,
         noise=noise,
         endianness=endianness,
     )
@@ -313,7 +313,7 @@ def compute_expectation(
     param_values: dict,
     options: dict,
     state: Tensor | None = None,
-    backend_name: BackendName = BackendName.PYQTORCH,
+    backend: Backend = PyQBackend(),
     noise: Noise | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
@@ -360,7 +360,7 @@ def compute_expectation(
         accuracy=accuracy,
         confidence=confidence,
         state=state,
-        backend_name=backend_name,
+        backend=backend,
         noise=noise,
         endianness=endianness,
     )
