@@ -25,7 +25,7 @@ is implemented in Qadence leveraging the PyTorch `autograd` engine.
 
 !!! warning "Only available with PyQTorch backend"
     Currently, automatic differentiation mode is only
-    available when the `pyqtorch` backend is selected.
+    available when the `pyqtorch` or `horqrux` backends are selected.
 
 ## Generalized parameter shift rule
 
@@ -59,28 +59,26 @@ F_{S} & =4\overset{S}{\underset{s=1}{\sum}}{\rm sin}\left(\frac{\delta_{M}\Delta
 Here $F_s=f(x+\delta_s)-f(x-\delta_s)$ denotes the difference between values of functions evaluated at shifted arguments $x\pm\delta_s$.
 
 ## Adjoint Differentiation
-Qadence also offers a memory-efficient, non-device compatible alternative to automatic differentation, called 'Adjoint Differentiation'. It is an implementation of [^4] and allows for precisely calculating the gradients of variational parameters in O(P) time and using O(1) state-vectors. Adjoint Differentation is currently only supported by the Torch Engine and allows for first-order derivatives only.
+Qadence also offers a memory-efficient, non-device compatible alternative to automatic differentation, called 'Adjoint Differentiation' [^4] and allows for precisely calculating the gradients of variational parameters in O(P) time and using O(1) state-vectors. Adjoint Differentation is currently only supported by the Torch Engine and allows for first-order derivatives only.
 
 ## Usage
 
 ### Basics
 
-In Qadence, the GPSR differentiation engine can be selected by passing `diff_mode="gpsr"` or, equivalently, `diff_mode=DiffMode.GPSR` to a `QuantumModel` instance. The code in the box below shows how to create `QuantumModel` instances with both AD and GPSR engines.
+In Qadence, the differentiation modes can be selected via the `diff_mode` argument of the QuantumModel class. It either accepts a `DiffMode`(`DiffMode.GSPR`, `DiffMode.AD` or `DiffMode.ADJOINT`) or a string (`"gpsr""`, `"ad"` or `"adjoint"`). The code in the box below shows how to create `QuantumModel` instances with all available differentiation modes.
 
 ```python exec="on" source="material-block" session="differentiability"
-from qadence import (FeatureParameter, HamEvo, X, I, Z,
+from qadence import (FeatureParameter, RX, Z, hea, chain,
                     hamiltonian_factory, QuantumCircuit,
                     QuantumModel, BackendName, DiffMode)
 import torch
 
 n_qubits = 2
 
-# define differentiation parameter
+# Define a symbolic parameter to differentiate with respect to
 x = FeatureParameter("x")
 
-# define generator and HamEvo block
-generator = X(0) + X(1) + 0.2 * (Z(0) + I(1)) * (I(0) + Z(1))
-block = HamEvo(generator, x)
+block = chain(hea(n_qubits, 1), RX(0, x))
 
 # create quantum circuit
 circuit = QuantumCircuit(n_qubits, block)
@@ -88,26 +86,33 @@ circuit = QuantumCircuit(n_qubits, block)
 # create total magnetization cost operator
 obs = hamiltonian_factory(n_qubits, detuning=Z)
 
-# create models with AD and GPSR differentiation engines
+# create models with AD, ADJOINT and GPSR differentiation engines
 model_ad = QuantumModel(circuit, obs,
                         backend=BackendName.PYQTORCH,
                         diff_mode=DiffMode.AD)
+model_adjoint = QuantumModel(circuit, obs,
+                        backend=BackendName.PYQTORCH,
+                        diff_mode=DiffMode.ADJOINT)
 model_gpsr = QuantumModel(circuit, obs,
                           backend=BackendName.PYQTORCH,
                           diff_mode=DiffMode.GPSR)
 
-# generate value for circuit's parameter
+# Create concrete values for the parameter we want to differentiate with respect to
 xs = torch.linspace(0, 2*torch.pi, 100, requires_grad=True)
 values = {"x": xs}
 
 # calculate function f(x)
 exp_val_ad = model_ad.expectation(values)
+exp_val_adjoint = model_adjoint.expectation(values)
 exp_val_gpsr = model_gpsr.expectation(values)
 
 # calculate derivative df/dx using the PyTorch
 # autograd engine
 dexpval_x_ad = torch.autograd.grad(
     exp_val_ad, values["x"], torch.ones_like(exp_val_ad), create_graph=True
+)[0]
+dexpval_x_adjoint = torch.autograd.grad(
+    exp_val_adjoint, values["x"], torch.ones_like(exp_val_ad), create_graph=True
 )[0]
 dexpval_x_gpsr = torch.autograd.grad(
     exp_val_gpsr, values["x"], torch.ones_like(exp_val_gpsr), create_graph=True
@@ -119,7 +124,7 @@ We can plot the resulting derivatives and see that in both cases they coincide.
 ```python exec="on" source="material-block" session="differentiability"
 import matplotlib.pyplot as plt
 
-# plot f(x) and df/dx derivatives calculated using AD and GPSR
+# plot f(x) and df/dx derivatives calculated using AD ,ADJOINT and GPSR
 # differentiation engines
 fig, ax = plt.subplots()
 ax.scatter(xs.detach().numpy(),
@@ -128,6 +133,9 @@ ax.scatter(xs.detach().numpy(),
 ax.scatter(xs.detach().numpy(),
            dexpval_x_ad.detach().numpy(),
            label="df/dx AD")
+ax.scatter(xs.detach().numpy(),
+           dexpval_x_adjoint.detach().numpy(),
+           label="df/dx ADJOINT")
 ax.scatter(xs.detach().numpy(),
            dexpval_x_gpsr.detach().numpy(),
            s=5,
