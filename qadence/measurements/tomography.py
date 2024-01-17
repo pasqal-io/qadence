@@ -12,6 +12,7 @@ from qadence.backends.pyqtorch import Backend as PyQBackend
 from qadence.blocks import AbstractBlock, PrimitiveBlock
 from qadence.blocks.utils import unroll_block_with_scaling
 from qadence.circuit import QuantumCircuit
+from qadence.engines.differentiable_backend import DifferentiableBackend
 from qadence.noise import Noise
 from qadence.operations import H, SDagger, X, Y, Z, chain
 from qadence.parameters import evaluate
@@ -83,7 +84,7 @@ def iterate_pauli_decomposition(
     pauli_decomposition: list,
     n_shots: int,
     state: Tensor | None = None,
-    backend: Backend = PyQBackend(),
+    backend: Backend | DifferentiableBackend = PyQBackend(),
     noise: Noise | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
@@ -129,7 +130,7 @@ def compute_expectation(
     param_values: dict,
     options: dict,
     state: Tensor | None = None,
-    backend: Backend = PyQBackend(),
+    backend: Backend | DifferentiableBackend = PyQBackend(),
     noise: Noise | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:

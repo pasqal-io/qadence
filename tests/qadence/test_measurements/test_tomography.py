@@ -293,6 +293,7 @@ def test_iterate_pauli_decomposition(
         param_values=param_values,
         pauli_decomposition=pauli_decomposition,
         n_shots=1000000,
+        backend=pyqtorch_backend,
     )
     assert allclose(estimated_values, pyqtorch_expectation, atol=LOW_ACCEPTANCE)
 

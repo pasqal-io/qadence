@@ -21,6 +21,7 @@ from qadence.blocks.composite import CompositeBlock
 from qadence.blocks.primitive import PrimitiveBlock
 from qadence.blocks.utils import get_pauli_blocks, unroll_block_with_scaling
 from qadence.circuit import QuantumCircuit
+from qadence.engines.differentiable_backend import DifferentiableBackend
 from qadence.noise import Noise
 from qadence.operations import X, Y, Z, chain, kron
 from qadence.states import one_state, zero_state
@@ -128,7 +129,7 @@ def classical_shadow(
     circuit: QuantumCircuit,
     param_values: dict,
     state: Tensor | None = None,
-    backend: Backend = PyQBackend(),
+    backend: Backend | DifferentiableBackend = PyQBackend(),
     # FIXME: Changed below from Little to Big, double-check when Roland is back
     noise: Noise | None = None,
     endianness: Endianness = Endianness.BIG,
@@ -260,7 +261,7 @@ def estimations(
     accuracy: float = 0.1,
     confidence: float = 0.1,
     state: Tensor | None = None,
-    backend: Backend = PyQBackend(),
+    backend: Backend | DifferentiableBackend = PyQBackend(),
     noise: Noise | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
@@ -313,7 +314,7 @@ def compute_expectation(
     param_values: dict,
     options: dict,
     state: Tensor | None = None,
-    backend: Backend = PyQBackend(),
+    backend: Backend | DifferentiableBackend = PyQBackend(),
     noise: Noise | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
