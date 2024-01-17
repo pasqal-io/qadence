@@ -209,16 +209,18 @@ values2 = {
 
 @pytest.mark.flaky(max_runs=5)
 @pytest.mark.parametrize(
-    "circuit, values",
+    "circuit, values, diff_mode",
     [
-        (QuantumCircuit(2, blocks), values),
-        (QuantumCircuit(2, blocks), values2),
+        (QuantumCircuit(2, blocks), values, DiffMode.AD),
+        (QuantumCircuit(2, blocks), values2, DiffMode.GPSR),
     ],
 )
-def test_estimations_comparison_tomo_forward_pass(circuit: QuantumCircuit, values: dict) -> None:
+def test_estimations_comparison_tomo_forward_pass(
+    circuit: QuantumCircuit, values: dict, diff_mode: DiffMode
+) -> None:
     observable = Z(0) ^ circuit.n_qubits
 
-    pyq_backend = backend_factory(BackendName.PYQTORCH, diff_mode=DiffMode.GPSR)
+    pyq_backend = backend_factory(BackendName.PYQTORCH, diff_mode=diff_mode)
     (conv_circ, conv_obs, embed, params) = pyq_backend.convert(circuit, observable)
     pyq_exp_exact = pyq_backend.expectation(conv_circ, conv_obs, embed(params, values))
     model = QuantumModel(
