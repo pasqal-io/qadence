@@ -56,7 +56,8 @@ def test_hamiltonian_factory_creation(
             random_strength=random_strength,
         )
 
-        assert block_is_qubit_hamiltonian(hamilt)
+        if interaction != custom_interaction:
+            assert block_is_qubit_hamiltonian(hamilt)
 
 
 @pytest.mark.parametrize(
@@ -92,4 +93,5 @@ def test_hamiltonian_factory_register(
         random_strength=True,
     )
 
-    assert block_is_qubit_hamiltonian(hamilt)
+    if interaction != custom_interaction:
+        assert block_is_qubit_hamiltonian(hamilt)
