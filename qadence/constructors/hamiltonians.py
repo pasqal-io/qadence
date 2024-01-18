@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import List, Type, Union
+from typing import Callable, List, Type, Union
 
 import numpy as np
 from torch import Tensor, double, ones, rand
 
-from qadence.blocks import AbstractBlock, add
+from qadence.blocks import AbstractBlock, add, block_is_qubit_hamiltonian
 from qadence.logger import get_logger
 from qadence.operations import N, X, Y, Z
 from qadence.register import Register
@@ -51,7 +51,7 @@ TDetuning = Union[Type[N], Type[X], Type[Y], Type[Z]]
 
 def hamiltonian_factory(
     register: Register | int,
-    interaction: Interaction | None = None,
+    interaction: Interaction | Callable | None = None,
     detuning: TDetuning | None = None,
     interaction_strength: TArray | str | None = None,
     detuning_strength: TArray | str | None = None,
@@ -119,9 +119,19 @@ def hamiltonian_factory(
 
     # Get interaction function
     if interaction is not None:
-        int_fn = INTERACTION_DICT.get(interaction, None)
-        if int_fn is None:
-            raise KeyError(f"Interaction {interaction} not supported.")
+        if callable(interaction):
+            int_fn = interaction
+            try:
+                if not block_is_qubit_hamiltonian(interaction(0, 1)):
+                    raise ValueError("Custom interactions must be composed of Pauli operators.")
+            except TypeError:
+                raise TypeError(
+                    "Please use a custom interaction function signed with two integer parameters."
+                )
+        else:
+            int_fn = INTERACTION_DICT.get(interaction, None)  # type: ignore [arg-type]
+            if int_fn is None:
+                raise KeyError(f"Interaction {interaction} not supported.")
 
     # Check single-qubit detuning
     if (detuning is not None) and (detuning not in DETUNINGS):

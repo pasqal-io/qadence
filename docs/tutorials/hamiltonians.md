@@ -19,6 +19,19 @@ hamilt = hamiltonian_factory(n_qubits, interaction=Interaction.ZZ)
 print(hamilt) # markdown-exec: hide
 ```
 
+Alternatively, a custom interaction function can also be defined. The input should be two integer indices $i$ and $j$ and it should return a composition of pauli terms representing the interaction between qubits $i$ and $j$:
+
+```python exec="on" source="material-block" result="json" session="hamiltonians"
+def custom_int(i: int, j: int):
+    return X(i) @ X(j) + Y(i) @ Y(j)
+
+n_qubits = 2
+
+hamilt = hamiltonian_factory(n_qubits, interaction=custom_int)
+
+print(hamilt) # markdown-exec: hide
+```
+
 Single-qubit terms can also be added by passing the respective operator directly to the `detuning` argument. For example, the total magnetization is commonly used as an observable to be measured:
 
 ```python exec="on" source="material-block" result="json" session="hamiltonians"
