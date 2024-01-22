@@ -79,6 +79,7 @@ edit_uri: edit/main/docs/
 
 theme:
   name: material
+  logo: logo/qadence_logo_small_white.svg
   features:
   - content.code.annotate
   - content.action.view
