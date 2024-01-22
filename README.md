@@ -1,9 +1,11 @@
 ![qadence-logo](docs/logo/qadence_logo.svg)
 
+<p style="text-align: center;">**For a high-level overview of Qadence features, [check out our white paper](https://arxiv.org/abs/2401.09915).**</p>
+
 **Qadence** is a Python package that provides a simple interface to build _**digital-analog quantum
 programs**_ with tunable qubit interaction defined on _**arbitrary register topologies**_ realizable on neutral atom devices.
 
-For a high-level overview of Qadence features, [check out our white paper](https://arxiv.org/abs/2401.09915).
+
 
 [![Linting](https://github.com/pasqal-io/qadence/actions/workflows/lint.yml/badge.svg)](https://github.com/pasqal-io/qadence/actions/workflows/lint.yml)
 [![Tests](https://github.com/pasqal-io/qadence/actions/workflows/test_fast.yml/badge.svg)](https://github.com/pasqal-io/qadence/actions/workflows/test_fast.yml)
