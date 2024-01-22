@@ -187,9 +187,11 @@ python -m hatch run python my_script.py
 If you use Qadence for a publication, we kindly ask you to cite our work using the following BibTex entry:
 
 ```latex
-@misc{qadence2023pasqal,
+@article{qadence2024pasqal,
+  title = {Qadence: a differentiable interface for digital-analog programs.},
+  author={Dominik Seitz and Niklas Heim and João P. Moutinho and Roland Guichard and Vytautas Abramavicius and Aleksander Wennersteen and Gert-Jan Both and Anton Quelle and Caroline de Groot and Gergana V. Velikova and Vincent E. Elfving and Mario Dagrada},
+  journal={arXiv:2401.09915},
   url = {https://github.com/pasqal-io/qadence},
-  title = {Qadence: {A} {D}igital-analog quantum programming interface.},
-  year = {2023}
+  year = {2024}
 }
 ```
