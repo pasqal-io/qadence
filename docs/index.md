@@ -1,6 +1,6 @@
 #
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./logo/qadence_logo_white.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="./logo/qadence_logo.svg">
   <source media="(prefers-color-scheme: light)" srcset="./logo/qadence_logo.svg">
   <img alt="Qadence logo" src="./logo/qadence_logo.svg">
 </picture>
