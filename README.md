@@ -1,7 +1,7 @@
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/logo/qadence_logo_white.svg)">
-  <source media="(prefers-color-scheme: light)" srcset="docs/logo/qadence_logo.svg)">
-  <img alt="Qadence logo" src="docs/logo/qadence_logo.svg)">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/logo/qadence_logo_white.svg">
+  <source media="(prefers-color-scheme: light)" srcset="docs/logo/qadence_logo.svg">
+  <img alt="Qadence logo" src="docs/logo/qadence_logo.svg">
 </picture>
 
 **For a high-level overview of Qadence features, [check out our white paper](https://arxiv.org/abs/2401.09915).**
