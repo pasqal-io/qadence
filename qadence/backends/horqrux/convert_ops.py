@@ -7,9 +7,9 @@ from operator import add
 from typing import Any, Callable, Dict
 
 import jax.numpy as jnp
-from horqrux.gates import NOT, H, I, Rx, Ry, Rz, X, Y, Z
-from horqrux.ops import apply_gate
-from horqrux.types import Gate
+from horqrux import NOT, RX, RY, RZ, H, I, X, Y, Z
+from horqrux.abstract import Operator as Gate
+from horqrux.apply import apply_gate
 from horqrux.utils import overlap
 from jax import Array
 from jax.tree_util import register_pytree_node_class
@@ -34,12 +34,12 @@ ops_map: Dict[str, Callable] = {
     OpName.Y: Y,
     OpName.Z: Z,
     OpName.H: H,
-    OpName.RX: Rx,
-    OpName.RY: Ry,
-    OpName.RZ: Rz,
-    OpName.CRX: Rx,
-    OpName.CRY: Ry,
-    OpName.CRZ: Rz,
+    OpName.RX: RX,
+    OpName.RY: RY,
+    OpName.RZ: RZ,
+    OpName.CRX: RX,
+    OpName.CRY: RY,
+    OpName.CRZ: RZ,
     OpName.CNOT: NOT,
     OpName.I: I,
 }
@@ -134,17 +134,11 @@ def convert_block(
         ]  # in horqrux target and control are swapped
 
     elif isinstance(block, (CRX, CRY, CRZ)):
-        native_op = ops_map[block.name]
+        native_op_fn = ops_map[block.name]
         param_name = config.get_param_name(block)[0]
-
+        control, target = block.qubit_support[0], block.qubit_support[1]
         ops = [
-            HorqParametricGate(
-                gate=native_op,
-                qubit=block.qubit_support[1],
-                parameter_name=param_name,
-                control=block.qubit_support[0],
-                name=block.name,
-            )
+            HorqParametricGate(gate=native_op_fn(target=target, control=control, param=param_name))
         ]
     elif isinstance(block, ScaleBlock):
         op = convert_block(block.block, n_qubits, config=config)[0]
@@ -152,23 +146,18 @@ def convert_block(
         ops = [HorqScaleGate(op, param_name)]
 
     elif isinstance(block, ParametricBlock):
-        native_op = ops_map[block.name]
+        native_op_fn = ops_map[block.name]
         if len(block.parameters._uuid_dict) > 1:
             raise NotImplementedError("Only single-parameter operations are supported.")
         param_name = config.get_param_name(block)[0]
-
         ops = [
-            HorqParametricGate(
-                gate=native_op,
-                qubit=block.qubit_support[0],
-                parameter_name=param_name,
-            )
+            HorqParametricGate(gate=native_op_fn(param=param_name, target=block.qubit_support[0]))
         ]
 
     elif isinstance(block, PrimitiveBlock):
         native_op = ops_map[block.name]
-        qubit = block.qubit_support[0]
-        ops = [HorqPrimitiveGate(gate=native_op, qubit=qubit, name=block.name)]
+        target = block.qubit_support[0]
+        ops = [HorqPrimitiveGate(gate=native_op(target=target))]
 
     else:
         raise NotImplementedError(f"Non-supported operation of type {type(block)}.")
@@ -177,16 +166,14 @@ def convert_block(
 
 
 class HorqPrimitiveGate:
-    def __init__(self, gate: Gate, qubit: int, name: str):
-        self.gates: Gate = gate
-        self.target = qubit
-        self.name = name
+    def __init__(self, gate: Gate):
+        self.gate: Gate = gate
 
     def forward(self, state: Array, values: ParamDictType) -> Array:
-        return apply_gate(state, self.gates(self.target))
+        return apply_gate(state, self.gate)
 
     def __repr__(self) -> str:
-        return self.name + f"(target={self.target})"
+        return self.gate.__repr__
 
 
 class HorqCNOTGate:
@@ -232,24 +219,14 @@ class HorqKronCNOT(HorqruxCircuit):
 
 
 class HorqParametricGate:
-    def __init__(
-        self, gate: Gate, qubit: int, parameter_name: str, control: int = None, name: str = ""
-    ):
-        self.gates: Callable = gate
-        self.target: int = qubit
-        self.parameter: str = parameter_name
-        self.control: int | None = control
-        self.name = name
+    def __init__(self, gate: Gate):
+        self.gate: Any = gate
 
     def forward(self, state: Array, values: ParamDictType) -> Array:
-        val = jnp.array(values[self.parameter])
-        return apply_gate(state, self.gates(val, self.target, self.control))
+        return apply_gate(state, self.gate, values)
 
     def __repr__(self) -> str:
-        return (
-            self.name
-            + f"(target={self.target}, parameter={self.parameter}, control={self.control})"
-        )
+        return self.gate.__repr__()
 
 
 class HorqAddGate(HorqruxCircuit):
