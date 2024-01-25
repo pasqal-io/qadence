@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from functools import reduce
 from itertools import product
+from operator import add
 
 import jax
 import jax.numpy as jnp
@@ -56,19 +58,18 @@ def loss_fn(params: dict[str, Array], x: Array, y: Array) -> Array:
             map(
                 lambda d: exp_fn(params, d),
                 [
-                    {"x": jnp.zeros(1), "y": y},
-                    {"x": jnp.ones(1), "y": y},
-                    {"x": x, "y": jnp.ones(1)},
-                    {"x": jnp.ones(1), "y": jnp.zeros(1)},
+                    {"x": jnp.zeros(1), "y": y},  # u(0,y)=0
+                    {"x": jnp.ones(1), "y": y},  # u(L,y)=0
+                    {"x": x, "y": jnp.ones(1)},  # u(x,H)=0
+                    {"x": x, "y": jnp.zeros(1)},  # u(x,0)=f(x)
                 ],
             )
         )
         b_b -= jnp.sin(jnp.pi * x)
         hessian = jax.jacfwd(jax.grad(lambda d: exp_fn(params, d)))
         dfdxy = hessian({"x": x, "y": y})
-        a = dfdxy["x"]["y"] + dfdxy["y"]["y"]
-        b = dfdxy["y"]["x"] + dfdxy["x"]["x"]
-        return jnp.power(l_b + r_b + t_b + b_b + (a + b), 2)
+        interior = dfdxy["x"]["x"] + dfdxy["y"]["y"]  # uxx+uyy=0
+        return reduce(add, list(map(lambda t: jnp.power(t, 2), [l_b, r_b, t_b, b_b, interior])))
 
     return jnp.mean(vmap(pde_loss, in_axes=(0, 0))(x, y))
 
@@ -96,7 +97,6 @@ def train_step(i: int, inputs: tuple) -> tuple:
 params, opt_state = jax.lax.fori_loop(0, 10, train_step, (params, opt_state))
 # compare the solution to known ground truth
 single_domain = jnp.linspace(0, 1, num=N_POINTS)
-# FIXME correct shapes
 domain = jnp.array(list(product(single_domain, single_domain)))
 # analytical solution
 analytic_sol = (
