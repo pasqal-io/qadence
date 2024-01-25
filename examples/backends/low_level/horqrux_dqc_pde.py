@@ -4,9 +4,10 @@ from itertools import product
 
 import jax
 import jax.numpy as jnp
+import matplotlib.pyplot as plt
 import numpy as np
 import optax
-from jax import Array, grad, jit, value_and_grad, vmap
+from jax import Array, jit, value_and_grad, vmap
 from numpy.random import uniform
 from numpy.typing import ArrayLike
 
@@ -49,24 +50,27 @@ def exp_fn(params: dict[str, Array], inputs: dict[str, Array]) -> ArrayLike:
     return bknd.expectation(conv_circ, conv_obs, embedding_fn(params, inputs))
 
 
-def sample_points(n_inputs: int, n_colpoints: int) -> ArrayLike:
-    return uniform(0, 1.0, (n_inputs, n_colpoints))
-
-
 def loss_fn(params: dict[str, Array], x: Array, y: Array) -> Array:
-    def _loss(x: float, y: float) -> Array:
-        l_b = exp_fn(params, {"x": jnp.zeros(1), "y": y})
-        r_b = exp_fn(params, {"x": jnp.ones(1), "y": y})
-        t_b = exp_fn(params, {"x": x, "y": jnp.ones(1)})
-        b_b = exp_fn(params, {"x": jnp.ones(1), "y": jnp.zeros(1)}) - jnp.sin(jnp.pi * x)
+    def pde_loss(x: float, y: float) -> Array:
+        l_b, r_b, t_b, b_b = list(
+            map(
+                lambda d: exp_fn(params, d),
+                [
+                    {"x": jnp.zeros(1), "y": y},
+                    {"x": jnp.ones(1), "y": y},
+                    {"x": x, "y": jnp.ones(1)},
+                    {"x": jnp.ones(1), "y": jnp.zeros(1)},
+                ],
+            )
+        )
+        b_b -= jnp.sin(jnp.pi * x)
+        hessian = jax.jacfwd(jax.grad(lambda d: exp_fn(params, d)))
+        dfdxy = hessian({"x": x, "y": y})
+        a = dfdxy["x"]["y"] + dfdxy["y"]["y"]
+        b = dfdxy["y"]["x"] + dfdxy["x"]["x"]
+        return jnp.power(l_b + r_b + t_b + b_b + (a + b), 2)
 
-        dfdx_fn = grad(lambda x: exp_fn(params, {"x": x, "y": y}))
-        dfdy_fn = grad(lambda y: exp_fn(params, {"x": x, "y": y}))
-        dfdxx = grad(dfdx_fn)(x)
-        dfdyy = grad(dfdy_fn)(y)
-        return l_b + r_b + t_b + b_b + (dfdxx + dfdyy)
-
-    return jnp.mean(vmap(_loss, in_axes=(0, 0))(x, y))
+    return jnp.mean(vmap(pde_loss, in_axes=(0, 0))(x, y))
 
 
 def optimize_step(params: dict[str, Array], opt_state: Array, grads: dict[str, Array]) -> tuple:
@@ -76,13 +80,16 @@ def optimize_step(params: dict[str, Array], opt_state: Array, grads: dict[str, A
 
 
 # collocation points sampling and training
+def sample_points(n_in: int, n_p: int) -> ArrayLike:
+    return uniform(0, 1.0, (n_in, n_p))
+
+
 @jit
 def train_step(i: int, inputs: tuple) -> tuple:
     params, opt_state = inputs
     x, y = sample_points(2, N_POINTS)
     loss, grads = value_and_grad(loss_fn)(params, x, y)
     params, opt_state = optimize_step(params, opt_state, grads)
-    print(loss)
     return params, opt_state
 
 
@@ -96,17 +103,18 @@ analytic_sol = (
     (np.exp(-np.pi * domain[:, 0]) * np.sin(np.pi * domain[:, 1])).reshape(N_POINTS, N_POINTS).T
 )
 # DQC solution
+
 dqc_sol = vmap(lambda domain: exp_fn(params, {"x": domain[0], "y": domain[1]}), in_axes=(0,))(
     domain
-)
+).reshape(N_POINTS, N_POINTS)
 # # plot results
-# fig, ax = plt.subplots(1, 2, figsize=(7, 7))
-# ax[0].imshow(analytic_sol, cmap="turbo")
-# ax[0].set_xlabel("x")
-# ax[0].set_ylabel("y")
-# ax[0].set_title("Analytical solution u(x,y)")
-# ax[1].imshow(dqc_sol, cmap="turbo")
-# ax[1].set_xlabel("x")
-# ax[1].set_ylabel("y")
-# ax[1].set_title("DQC solution u(x,y)")
-# plt.show()
+fig, ax = plt.subplots(1, 2, figsize=(7, 7))
+ax[0].imshow(analytic_sol, cmap="turbo")
+ax[0].set_xlabel("x")
+ax[0].set_ylabel("y")
+ax[0].set_title("Analytical solution u(x,y)")
+ax[1].imshow(dqc_sol, cmap="turbo")
+ax[1].set_xlabel("x")
+ax[1].set_ylabel("y")
+ax[1].set_title("DQC solution u(x,y)")
+plt.show()
