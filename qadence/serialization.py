@@ -193,6 +193,7 @@ def deserialize(d: dict, as_torch: bool = False) -> SUPPORTED_TYPES:
     ```
     """
     obj: Any
+    logger.debug(f'Deserializing object: {d}')
     if d.get("expression"):
         expr = eval(d["expression"])
         if hasattr(expr, "free_symbols"):
