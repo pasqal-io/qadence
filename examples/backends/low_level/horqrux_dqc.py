@@ -12,7 +12,7 @@ from qadence import *
 from qadence.backends import backend_factory
 from qadence.blocks.utils import chain
 from qadence.circuit import QuantumCircuit
-from qadence.constructors import feature_map, hea
+from qadence.constructors import feature_map, hea, ising_hamiltonian
 from qadence.types import BackendName
 
 diff_mode = "ad"

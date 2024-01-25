@@ -9,7 +9,7 @@ from typing import Any, Callable, Dict
 import jax.numpy as jnp
 from horqrux.abstract import Operator as Gate
 from horqrux.apply import apply_gate
-from horqrux.parameric import RX, RY, RZ
+from horqrux.parametric import RX, RY, RZ
 from horqrux.primitive import NOT, H, I, X, Y, Z
 from horqrux.utils import overlap
 from jax import Array
