@@ -60,7 +60,7 @@ visualization = [
   # "scour",
 ]
 horqrux = [
-    "horqrux==0.3.0",
+    "horqrux==0.4.0",
     "jax",
     "flax",
     "optax",
@@ -75,13 +75,6 @@ all = [
   # FIXME: will be needed once we support latex labels
   # "latex2svg @ git+https://github.com/Moonbase59/latex2svg.git#egg=latex2svg",
   # "scour",
-    "horqrux==0.3.0",
-    "jax",
-    "flax",
-    "optax",
-    "jaxopt",
-    "einops",
-    "sympy2jax"
 ]
 
 [tool.hatch.envs.default]
@@ -99,7 +92,7 @@ dependencies = [
   "ruff",
   "pydocstringformatter",
 ]
-features = ["all"]
+features = ["pulser", "braket","visualization", "horqrux"]
 
 [tool.hatch.envs.default.scripts]
 test = "pytest -n auto --cov-report lcov --cov-config=pyproject.toml --cov=qadence --cov=tests --ignore=./tests/test_examples.py {args}"
