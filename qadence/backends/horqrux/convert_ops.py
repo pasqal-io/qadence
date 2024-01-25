@@ -7,10 +7,8 @@ from operator import add
 from typing import Any, Callable, Dict
 
 import jax.numpy as jnp
-from horqrux import NOT, RX, RY, RZ, H, I, X, Y, Z
+from horqrux import NOT, RX, RY, RZ, H, I, X, Y, Z, apply_gate, overlap
 from horqrux.abstract import Operator as Gate
-from horqrux.apply import apply_gate
-from horqrux.utils import overlap
 from jax import Array
 from jax.tree_util import register_pytree_node_class
 
