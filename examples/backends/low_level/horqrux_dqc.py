@@ -8,14 +8,12 @@ from jax import Array, grad, jit, value_and_grad, vmap
 from numpy.random import uniform
 from numpy.typing import ArrayLike
 
-from qadence import *
 from qadence.backends import backend_factory
 from qadence.blocks.utils import chain
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import feature_map, hea, ising_hamiltonian
-from qadence.types import BackendName
+from qadence.types import BackendName, DiffMode
 
-diff_mode = "ad"
 N_QUBITS, DEPTH, LEARNING_RATE, N_POINTS = 4, 3, 0.01, 20
 # building the DQC model
 ansatz = hea(n_qubits=N_QUBITS, depth=DEPTH)
@@ -25,7 +23,7 @@ fm = feature_map(n_qubits=N_QUBITS, param="x", fm_type="chebyshev")
 obs = ising_hamiltonian(n_qubits=N_QUBITS)
 # building the circuit and the quantum model
 circ = QuantumCircuit(N_QUBITS, chain(fm, ansatz))
-bknd = backend_factory(BackendName.HORQRUX, diff_mode)
+bknd = backend_factory(BackendName.HORQRUX, DiffMode.AD)
 conv_circ, conv_obs, embedding_fn, params = bknd.convert(circ, obs)
 
 optimizer = optax.adam(learning_rate=0.001)
@@ -39,7 +37,7 @@ def exp_fn(params: dict[str, Array], inputs: dict[str, Array]) -> ArrayLike:
 # define a problem-specific MSE loss function
 # for the ODE df/dx=4x^3+x^2-2x-1/2
 def loss_fn(params: dict[str, Array], x: Array) -> Array:
-    def _loss(x: float) -> float:
+    def _loss(x: float) -> Array:
         dfdx = grad(lambda x: exp_fn(params, {"x": x}))(x)
         ode_loss = dfdx - (4 * x**3 + x**2 - 2 * x - 0.5)
         boundary_loss = exp_fn(params, {"x": jnp.zeros_like(x)}) - jnp.ones_like(x)
@@ -55,8 +53,6 @@ def optimize_step(params: dict[str, Array], opt_state: Array, grads: dict[str, A
 
 
 # collocation points sampling and training
-
-
 @jit
 def train_step(i: int, inputs: tuple) -> tuple:
     params, opt_state = inputs
