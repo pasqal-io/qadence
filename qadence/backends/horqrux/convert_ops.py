@@ -7,8 +7,11 @@ from operator import add
 from typing import Any, Callable, Dict
 
 import jax.numpy as jnp
-from horqrux import NOT, RX, RY, RZ, H, I, X, Y, Z, apply_gate, overlap
 from horqrux.abstract import Operator as Gate
+from horqrux.apply import apply_gate
+from horqrux.parameric import RX, RY, RZ
+from horqrux.primitive import NOT, H, I, X, Y, Z
+from horqrux.utils import overlap
 from jax import Array
 from jax.tree_util import register_pytree_node_class
 
@@ -170,9 +173,6 @@ class HorqPrimitiveGate:
     def forward(self, state: Array, values: ParamDictType) -> Array:
         return apply_gate(state, self.gate)
 
-    def __repr__(self) -> str:
-        return self.gate.__repr__
-
 
 class HorqCNOTGate:
     def __init__(self, gate: Gate, control: int, target: int):
@@ -222,9 +222,6 @@ class HorqParametricGate:
 
     def forward(self, state: Array, values: ParamDictType) -> Array:
         return apply_gate(state, self.gate, values)
-
-    def __repr__(self) -> str:
-        return self.gate.__repr__()
 
 
 class HorqAddGate(HorqruxCircuit):

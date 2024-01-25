@@ -6,7 +6,7 @@ from typing import Any
 
 import jax
 import jax.numpy as jnp
-from horqrux import zero_state
+from horqrux.utils import zero_state
 from jax.typing import ArrayLike
 
 from qadence.backend import Backend as BackendInterface

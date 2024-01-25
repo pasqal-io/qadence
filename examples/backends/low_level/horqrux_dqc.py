@@ -2,22 +2,18 @@ from __future__ import annotations
 
 import jax
 import jax.numpy as jnp
+import matplotlib.pyplot as plt
 import optax
 from jax import Array, grad, jit, value_and_grad, vmap
+from numpy.random import uniform
 from numpy.typing import ArrayLike
 
+from qadence import *
 from qadence.backends import backend_factory
 from qadence.blocks.utils import chain
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import feature_map, hea
 from qadence.types import BackendName
-
-backend = BackendName.HORQRUX
-
-import matplotlib.pyplot as plt
-from numpy.random import uniform
-
-from qadence import *
 
 diff_mode = "ad"
 N_QUBITS, DEPTH, LEARNING_RATE, N_POINTS = 4, 3, 0.01, 20
@@ -29,7 +25,7 @@ fm = feature_map(n_qubits=N_QUBITS, param="x", fm_type="chebyshev")
 obs = ising_hamiltonian(n_qubits=N_QUBITS)
 # building the circuit and the quantum model
 circ = QuantumCircuit(N_QUBITS, chain(fm, ansatz))
-bknd = backend_factory(backend, diff_mode)
+bknd = backend_factory(BackendName.HORQRUX, diff_mode)
 conv_circ, conv_obs, embedding_fn, params = bknd.convert(circ, obs)
 
 optimizer = optax.adam(learning_rate=0.001)
