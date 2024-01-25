@@ -4,7 +4,6 @@ from itertools import product
 
 import jax
 import jax.numpy as jnp
-import matplotlib.pyplot as plt
 import numpy as np
 import optax
 from jax import Array, grad, jit, value_and_grad, vmap
