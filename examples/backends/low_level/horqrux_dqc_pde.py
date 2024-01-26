@@ -44,7 +44,7 @@ circ = QuantumCircuit(N_QUBITS, chain(fm, ansatz))
 bknd = backend_factory(BackendName.HORQRUX, DiffMode.AD)
 conv_circ, conv_obs, embedding_fn, params = bknd.convert(circ, obs)
 
-optimizer = optax.adam(learning_rate=0.001)
+optimizer = optax.adam(learning_rate=LEARNING_RATE)
 opt_state = optimizer.init(params)
 
 
@@ -116,4 +116,4 @@ ax[1].imshow(dqc_sol, cmap="turbo")
 ax[1].set_xlabel("x")
 ax[1].set_ylabel("y")
 ax[1].set_title("DQC solution u(x,y)")
-plt.show()
+# plt.show()
