@@ -66,9 +66,8 @@ def loss_fn(params: dict[str, Array], x: Array, y: Array) -> Array:
             )
         )
         b_b -= jnp.sin(jnp.pi * x)
-        hessian = jax.jacfwd(jax.grad(lambda d: exp_fn(params, d)))
-        dfdxy = hessian({"x": x, "y": y})
-        interior = dfdxy["x"]["x"] + dfdxy["y"]["y"]  # uxx+uyy=0
+        hessian = jax.jacfwd(jax.grad(lambda d: exp_fn(params, d)))({"x": x, "y": y})
+        interior = hessian["x"]["x"] + hessian["y"]["y"]  # uxx+uyy=0
         return reduce(add, list(map(lambda t: jnp.power(t, 2), [l_b, r_b, t_b, b_b, interior])))
 
     return jnp.mean(vmap(pde_loss, in_axes=(0, 0))(x, y))

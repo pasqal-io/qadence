@@ -37,13 +37,13 @@ def exp_fn(params: dict[str, Array], inputs: dict[str, Array]) -> ArrayLike:
 # define a problem-specific MSE loss function
 # for the ODE df/dx=4x^3+x^2-2x-1/2
 def loss_fn(params: dict[str, Array], x: Array) -> Array:
-    def _loss(x: float) -> Array:
+    def loss(x: float) -> Array:
         dfdx = grad(lambda x: exp_fn(params, {"x": x}))(x)
         ode_loss = dfdx - (4 * x**3 + x**2 - 2 * x - 0.5)
         boundary_loss = exp_fn(params, {"x": jnp.zeros_like(x)}) - jnp.ones_like(x)
         return jnp.power(ode_loss, 2) + jnp.power(boundary_loss, 2)
 
-    return jnp.mean(vmap(_loss, in_axes=(0,))(x))
+    return jnp.mean(vmap(loss, in_axes=(0,))(x))
 
 
 def optimize_step(params: dict[str, Array], opt_state: Array, grads: dict[str, Array]) -> tuple:
