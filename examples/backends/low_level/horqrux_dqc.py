@@ -26,7 +26,7 @@ circ = QuantumCircuit(N_QUBITS, chain(fm, ansatz))
 bknd = backend_factory(BackendName.HORQRUX, DiffMode.AD)
 conv_circ, conv_obs, embedding_fn, params = bknd.convert(circ, obs)
 
-optimizer = optax.adam(learning_rate=0.001)
+optimizer = optax.adam(learning_rate=LEARNING_RATE)
 opt_state = optimizer.init(params)
 
 
