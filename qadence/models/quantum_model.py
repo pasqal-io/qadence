@@ -321,7 +321,7 @@ class QuantumModel(nn.Module):
         return self.backend.assign_parameters(self._circuit, params)
 
     def to(self, device: torch.DeviceObjType) -> None:
-        self.to(device)
+        self._params.native.to(device)
         self._circuit.native.to(device)
 
         if self._observable is not None:
