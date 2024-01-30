@@ -321,9 +321,12 @@ class QuantumModel(nn.Module):
         return self.backend.assign_parameters(self._circuit, params)
 
     def to(self, device: torch.DeviceObjType) -> QuantumModel:
-        self._params = torch.nn.ParameterDict({k: v.to(device) for k, v in self._params.items()})
-        self._circuit = self._circuit.native.to(device)
         from copy import deepcopy
+
+        self._params = torch.nn.ParameterDict({k: v.to(device) for k, v in self._params.items()})
+        convcirc = deepcopy(self._circuit)
+        convcirc.native = convcirc.native.to(device)
+        self._circuit = convcirc
 
         if self._observable is not None:
             if isinstance(self._observable, ConvertedObservable):
