@@ -197,6 +197,7 @@ class PyQComposedBlock(pyq.QuantumCircuit):
 
     def forward(self, state: Tensor, values: dict[str, Tensor] | None = None) -> Tensor:
         batch_size = infer_batchsize(values)
+        breakpoint()
         return apply_operator(
             state, self.unitary(values, batch_size), self.qubits, self.n_qubits, batch_size
         )
