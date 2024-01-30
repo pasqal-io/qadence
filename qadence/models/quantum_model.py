@@ -324,9 +324,7 @@ class QuantumModel(nn.Module):
         from copy import deepcopy
 
         self._params = torch.nn.ParameterDict({k: v.to(device) for k, v in self._params.items()})
-        convcirc = deepcopy(self._circuit)
-        convcirc.native = convcirc.native.to(device)
-        self._circuit = convcirc
+        self._circuit.native = self._circuit.native.to(device)
 
         if self._observable is not None:
             if isinstance(self._observable, ConvertedObservable):
