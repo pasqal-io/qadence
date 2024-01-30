@@ -320,13 +320,13 @@ class QuantumModel(nn.Module):
         params = self.embedding_fn(self._params, values)
         return self.backend.assign_parameters(self._circuit, params)
 
-    def to(self, device: torch.DeviceObjType) -> None:
-        self._params = {k: v.to(device) for k, v in self._params.items()}
-        self._circuit.native.to(device)
+    # def to(self, device: torch.DeviceObjType) -> None:
+    #     self._params = {k: v.to(device) for k, v in self._params.items()}
+    #     self._circuit.native.to(device)
 
-        if self._observable is not None:
-            if isinstance(self._observable, ConvertedObservable):
-                self._observable.native.to(device)
-            elif isinstance(self._observable, list):
-                for obs in self._observable:
-                    obs.native.to(device)
+    #     if self._observable is not None:
+    #         if isinstance(self._observable, ConvertedObservable):
+    #             self._observable.native.to(device)
+    #         elif isinstance(self._observable, list):
+    #             for obs in self._observable:
+    #                 obs.native.to(device)
