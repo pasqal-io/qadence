@@ -320,13 +320,18 @@ class QuantumModel(nn.Module):
         params = self.embedding_fn(self._params, values)
         return self.backend.assign_parameters(self._circuit, params)
 
-    # def to(self, device: torch.DeviceObjType) -> None:
-    #     self._params = {k: v.to(device) for k, v in self._params.items()}
-    #     self._circuit.native.to(device)
+    def to(self, device: torch.DeviceObjType) -> None:
+        self._params = torch.nn.ParameterDict({k: v.to(device) for k, v in self._params.items()})
+        self._circuit = self._circuit.native.to(device)
+        from copy import deepcopy
 
-    #     if self._observable is not None:
-    #         if isinstance(self._observable, ConvertedObservable):
-    #             self._observable.native.to(device)
-    #         elif isinstance(self._observable, list):
-    #             for obs in self._observable:
-    #                 obs.native.to(device)
+        if self._observable is not None:
+            if isinstance(self._observable, ConvertedObservable):
+                self._observable.native = self._observable.native.to(device)
+            elif isinstance(self._observable, list):
+                obs_dev = []
+                for obs in self._observable:
+                    new_obs = deepcopy(obs)
+                    new_obs.native = new_obs.native.to(device)
+                    obs_dev.append(new_obs)
+                self._observable = obs_dev
