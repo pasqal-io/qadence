@@ -23,7 +23,7 @@ the form of a computer program. Automatic differentiation is a cornerstone of mo
 ingredient of its recent successes. In its so-called *reverse mode*, it follows this sequence of operations in reverse order by systematically applying the chain rule to recover the exact value of derivative. Reverse mode automatic differentiation
 is implemented in Qadence leveraging the PyTorch `autograd` engine.
 
-!!! warning "Only available with PyQTorch backend"
+!!! warning "Only available via the PyQTorch or Horqrux backends"
     Currently, automatic differentiation mode is only
     available when the `pyqtorch` or `horqrux` backends are selected.
 
@@ -168,6 +168,8 @@ Here we passed an additional argument `shift_prefac` to the `DifferentiableBacke
 Tuning parameter $\alpha$ is useful to improve results
 when the generator $\hat{G}$ or the quantum operation is a dense matrix, for example a complex `HamEvo` operation; if many entries of this matrix are sufficiently larger than 0 the operation is equivalent to a strongly interacting system. In such case parameter $\alpha$ should be gradually lowered in order to achieve exact derivative values.
 
+### Low-level differentiation of qadence circuits using JAX
+For users interested in using the `JAX` engine instead, we show how to run and differentiate qadence programs using the `horqrux` backend under [qadence examples](https://github.com/pasqal-io/qadence/tree/main/examples/backends/low_level).
 
 ## References
 
