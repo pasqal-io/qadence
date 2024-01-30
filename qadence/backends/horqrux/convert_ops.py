@@ -10,7 +10,7 @@ import jax.numpy as jnp
 from horqrux.abstract import Operator as Gate
 from horqrux.apply import apply_gate
 from horqrux.parametric import RX, RY, RZ
-from horqrux.primitive import NOT, H, I, X, Y, Z
+from horqrux.primitive import NOT, SWAP, H, I, X, Y, Z
 from horqrux.utils import overlap
 from jax import Array
 from jax.tree_util import register_pytree_node_class
@@ -23,7 +23,17 @@ from qadence.blocks import (
     PrimitiveBlock,
     ScaleBlock,
 )
-from qadence.operations import CNOT, CRX, CRY, CRZ
+from qadence.operations import (
+    CNOT,
+    CRX,
+    CRY,
+    CRZ,
+    MCRX,
+    MCRY,
+    MCRZ,
+    MCZ,
+)
+from qadence.operations import SWAP as QDSWAP
 from qadence.types import OpName, ParamDictType
 
 from .config import Configuration
@@ -41,6 +51,7 @@ ops_map: Dict[str, Callable] = {
     OpName.CRZ: RZ,
     OpName.CNOT: NOT,
     OpName.I: I,
+    OpName.SWAP: SWAP,
 }
 
 supported_gates = list(set(list(ops_map.keys())))
@@ -101,7 +112,7 @@ def convert_block(
         native_op_fn = ops_map[block.name]
         target, control = (
             (block.qubit_support[1], block.qubit_support[0])
-            if isinstance(block, (CNOT, CRX, CRY, CRZ))
+            if isinstance(block, (CNOT, CRX, CRY, CRZ, QDSWAP))
             else (block.qubit_support[0], (None,))
         )
         native_gate: Gate
@@ -112,9 +123,24 @@ def convert_block(
             native_gate = native_op_fn(param=param_name, target=target, control=control)
 
         elif isinstance(block, PrimitiveBlock):
-            native_gate = native_op_fn(target=target, control=control)
+            if isinstance(block, QDSWAP):
+                native_gate = native_op_fn(block.qubit_support[::-1])
+            else:
+                native_gate = native_op_fn(target=target, control=control)
         ops = [HorqOperation(native_gate)]
 
+    elif isinstance(block, (MCRX, MCRY, MCRZ, MCZ)):
+        block_name = block.name[2:] if block.name.startswith("M") else block.name
+        native_op_fn = ops_map[block_name]
+        control = block.qubit_support[:-1]
+        target = block.qubit_support[-1]
+
+        if isinstance(block, ParametricBlock):
+            param = config.get_param_name(block)[0]
+            native_gate = native_op_fn(param=param, target=target, control=control)
+        else:
+            native_gate = native_op_fn(target, control)
+        ops = [HorqOperation(native_gate)]
     else:
         raise NotImplementedError(f"Non-supported operation of type {type(block)}.")
 
