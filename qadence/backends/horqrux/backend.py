@@ -6,7 +6,7 @@ from typing import Any
 
 import jax
 import jax.numpy as jnp
-from horqrux.utils import prepare_state
+from horqrux.utils import zero_state
 from jax.typing import ArrayLike
 
 from qadence.backend import Backend as BackendInterface
@@ -78,7 +78,7 @@ class Backend(BackendInterface):
     ) -> ArrayLike:
         n_qubits = circuit.abstract.n_qubits
         if state is None:
-            state = prepare_state(n_qubits, "0" * n_qubits)
+            state = zero_state(n_qubits)
         else:
             state = tensor_to_jnp(pyqify(state)) if horqify_state else state
         state = circuit.native.forward(state, param_values)
