@@ -319,3 +319,14 @@ class QuantumModel(nn.Module):
         """Return the final, assigned circuit that is used in e.g. `backend.run`."""
         params = self.embedding_fn(self._params, values)
         return self.backend.assign_parameters(self._circuit, params)
+
+    def to(self, device: torch.DeviceObjType) -> None:
+        self.to(device)
+        self._circuit.native.to(device)
+
+        if self._observable is not None:
+            if isinstance(self._observable, ConvertedObservable):
+                self._observable.native.to(device)
+            elif isinstance(self._observable, list):
+                for obs in self._observable:
+                    obs.native.to(device)
