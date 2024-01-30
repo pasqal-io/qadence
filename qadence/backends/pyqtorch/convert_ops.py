@@ -239,11 +239,10 @@ class PyQObservable(Module):
             config = Configuration()
         self.n_qubits = n_qubits
         if block._is_diag_pauli and not block.is_parametric:
-            diag = block_to_diagonal(block, tuple(range(n_qubits)))
-            self.register_buffer("diag", diag)
+            self.register_buffer("diag", block_to_diagonal(block, tuple(range(n_qubits))))
 
             def sparse_operation(state: Tensor, values: dict[str, Tensor] = None) -> Tensor:
-                return pyqify(diag * unpyqify(state), n_qubits=self.n_qubits)
+                return pyqify(self.diag * unpyqify(state), n_qubits=self.n_qubits)
 
             self.operation = sparse_operation
         else:
