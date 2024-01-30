@@ -98,7 +98,7 @@ class Backend(BackendInterface):
             validate_state(state, n_qubits)
             # pyqtorch expects input shape [2] * n_qubits + [batch_size]
             state = pyqify(state, n_qubits) if pyqify_state else state
-        state = state.to(circuit.native._device)
+        state = state.to(list(param_values.values())[0].device)
         breakpoint()
         state = circuit.native.run(state, param_values)
         state = unpyqify(state) if unpyqify_state else state
