@@ -239,20 +239,25 @@ class PyQObservable(Module):
             config = Configuration()
         self.n_qubits = n_qubits
         if block._is_diag_pauli and not block.is_parametric:
-            self.register_buffer("diag", block_to_diagonal(block, tuple(range(n_qubits))))
+            self.register_buffer(
+                "diagonal_observable", block_to_diagonal(block, tuple(range(n_qubits)))
+            )
 
-            def sparse_operation(state: Tensor, values: dict[str, Tensor] = None) -> Tensor:
-                return pyqify(self.diag * unpyqify(state), n_qubits=self.n_qubits)
+            def _forward(
+                pyq_obs: PyQObservable, state: Tensor, values: dict[str, Tensor] = None
+            ) -> Tensor:
+                return pyqify(pyq_obs.diagonal_observable * unpyqify(state), n_qubits=self.n_qubits)
 
-            self.operation = sparse_operation
+            self._forward = _forward
         else:
             self.operation = pyq.QuantumCircuit(
                 n_qubits,
                 convert_block(block, n_qubits, config),
             )
+            self._forward = lambda _, state, values: self.operation(state, values)  # type: ignore[misc, assignment]
 
     def run(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
-        return self.operation(state, values)
+        return self._forward(self, state, values)
 
     def forward(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
         return pyq.overlap(state, self.run(state, values))
