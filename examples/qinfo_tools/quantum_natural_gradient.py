@@ -1,8 +1,11 @@
+from __future__ import annotations
+
+import matplotlib.pyplot as plt
 import torch
 from torch.utils.data import random_split
+
 import qadence as qd
 from qadence.qinfo_tools import QuantumNaturalGradient
-import matplotlib.pyplot as plt
 
 # make sure all tensors are kept on the same device
 # only available from PyTorch 2.0
