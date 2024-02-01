@@ -185,6 +185,8 @@ class QuantumModel(nn.Module):
         params = self.embedding_fn(self._params, values)
         if noise is None:
             noise = self._noise
+        else:
+            self._noise = noise
         if mitigation is None:
             mitigation = self._mitigation
         return self.backend.sample(
