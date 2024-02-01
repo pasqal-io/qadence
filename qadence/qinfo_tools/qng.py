@@ -71,26 +71,29 @@ class QuantumNaturalGradient(Optimizer):
                     p.data.add_(transf_grad[next(it)], alpha=-group["lr"])
 
             elif group["approximation"] == "spsa":
-                data_vec = torch.Tensor([v for v in group["params"] if (v.requires_grad)])
-                grad_vec = torch.Tensor([v.grad.data for v in group["params"] if v.requires_grad])
-                qfi_estimator, qfi_mat_positive_sd = get_quantum_fisher_spsa(
-                    circuit=group["circuit"],
-                    k=self.iteration_number,
-                    var_values=group["params"],
-                    previous_qfi_estimator=self.prev_qfi_estimator,
-                    epsilon=group["epsilon"],
-                    beta=group["beta"],
-                )
-                metric_tensor = (1 / 4) * qfi_mat_positive_sd
-                metric_tensor_inv = torch.inverse(metric_tensor)
-                transf_grad = torch.matmul(metric_tensor_inv, grad_vec)
+                with torch.no_grad():
+                    data_vec = torch.Tensor([v for v in group["params"] if (v.requires_grad)])
+                    grad_vec = torch.Tensor(
+                        [v.grad.data for v in group["params"] if v.requires_grad]
+                    )
+                    qfi_estimator, qfi_mat_positive_sd = get_quantum_fisher_spsa(
+                        circuit=group["circuit"],
+                        k=self.iteration_number,
+                        var_values=group["params"],
+                        previous_qfi_estimator=self.prev_qfi_estimator,
+                        epsilon=group["epsilon"],
+                        beta=group["beta"],
+                    )
+                    metric_tensor = (1 / 4) * qfi_mat_positive_sd
+                    metric_tensor_inv = torch.inverse(metric_tensor)
+                    transf_grad = torch.matmul(metric_tensor_inv, grad_vec)
 
-                it = iter(range(len(data_vec)))
-                for p in group["params"]:
-                    if p.grad is None:
-                        continue
-                    # with torch.no_grad():
-                    p.data.add_(transf_grad[next(it)], alpha=-group["lr"])
+                    it = iter(range(len(data_vec)))
+                    for p in group["params"]:
+                        if p.grad is None:
+                            continue
+                        # with torch.no_grad():
+                        p.data.add_(transf_grad[next(it)], alpha=-group["lr"])
 
                 self.iteration_number += 1
                 self.prev_qfi_estimator = qfi_estimator
