@@ -243,48 +243,63 @@ class QuantumModel(nn.Module):
         raise NotImplementedError("The overlap method is not implemented for this model.")
 
     def _to_dict(self, save_params: bool = False) -> dict[str, Any]:
-        if isinstance(self._observable, list):
-            abs_obs = [obs.abstract._to_dict() for obs in self._observable]
-        else:
-            abs_obs = [dict()]
+        d = dict()
+        try:
+            if isinstance(self._observable, list):
+                abs_obs = [obs.abstract._to_dict() for obs in self._observable]
+            else:
+                abs_obs = [dict()]
 
-        d = {
-            "circuit": self._circuit.abstract._to_dict(),
-            "observable": abs_obs,
-            "backend": self._backend_name,
-            "diff_mode": self._diff_mode,
-            "measurement": self._measurement._to_dict() if self._measurement is not None else {},
-            "backend_configuration": asdict(self.backend.backend.config),  # type: ignore
-        }
-        param_dict_conv = {}
-        if save_params:
-            param_dict_conv = {name: param.data for name, param in self._params.items()}
-        return {self.__class__.__name__: d, "param_dict": param_dict_conv}
+            d = {
+                "circuit": self._circuit.abstract._to_dict(),
+                "observable": abs_obs,
+                "backend": self._backend_name,
+                "diff_mode": self._diff_mode,
+                "measurement": self._measurement._to_dict()
+                if self._measurement is not None
+                else {},
+                "backend_configuration": asdict(self.backend.backend.config),  # type: ignore
+            }
+            param_dict_conv = {}
+            if save_params:
+                param_dict_conv = {name: param.data for name, param in self._params.items()}
+            d = {self.__class__.__name__: d, "param_dict": param_dict_conv}
+            logger.debug(f"{self.__class__.__name__} serialized to {d}.")
+        except Exception as e:
+            logger.warning(f"Unable to serialize {self.__class__.__name__} due to {e}.")
+        return d
 
     @classmethod
     def _from_dict(cls, d: dict, as_torch: bool = False) -> QuantumModel:
         from qadence.serialization import deserialize
 
-        qm_dict = d[cls.__name__]
-        qm = cls(
-            circuit=QuantumCircuit._from_dict(qm_dict["circuit"]),
-            observable=(
-                None
-                if not isinstance(qm_dict["observable"], list)
-                else [deserialize(q_obs) for q_obs in qm_dict["observable"]]  # type: ignore[misc]
-            ),
-            backend=qm_dict["backend"],
-            diff_mode=qm_dict["diff_mode"],
-            measurement=Measurements._from_dict(qm_dict["measurement"]),
-            configuration=config_factory(qm_dict["backend"], qm_dict["backend_configuration"]),
-        )
+        qm: QuantumModel
+        try:
+            qm_dict = d[cls.__name__]
+            qm = cls(
+                circuit=QuantumCircuit._from_dict(qm_dict["circuit"]),
+                observable=(
+                    None
+                    if not isinstance(qm_dict["observable"], list)
+                    else [deserialize(q_obs) for q_obs in qm_dict["observable"]]  # type: ignore[misc]
+                ),
+                backend=qm_dict["backend"],
+                diff_mode=qm_dict["diff_mode"],
+                measurement=Measurements._from_dict(qm_dict["measurement"]),
+                configuration=config_factory(qm_dict["backend"], qm_dict["backend_configuration"]),
+            )
 
-        if as_torch:
-            conv_pd = torch.nn.ParameterDict()
-            param_dict = d["param_dict"]
-            for n, param in param_dict.items():
-                conv_pd[n] = torch.nn.Parameter(param)
-            qm._params = conv_pd
+            if as_torch:
+                conv_pd = torch.nn.ParameterDict()
+                param_dict = d["param_dict"]
+                for n, param in param_dict.items():
+                    conv_pd[n] = torch.nn.Parameter(param)
+                qm._params = conv_pd
+            logger.debug(f"Initialized {cls.__name__} from {d}.")
+
+        except Exception as e:
+            logger.warning(f"Unable to deserialize object {d} to {cls.__name__} due to {e}.")
+
         return qm
 
     def save(
@@ -321,14 +336,18 @@ class QuantumModel(nn.Module):
         return self.backend.assign_parameters(self._circuit, params)
 
     def to(self, device: torch.DeviceObjType) -> QuantumModel:
-        self._params = self._params.to(device)
-        if isinstance(self._circuit.native, torch.nn.Module):
-            # Backends which are not torch-based cannot be moved to 'device'
-            self._circuit.native = self._circuit.native.to(device)
-            if self._observable is not None:
-                if isinstance(self._observable, ConvertedObservable):
-                    self._observable.native = self._observable.native.to(device)
-                elif isinstance(self._observable, list):
-                    for obs in self._observable:
-                        obs.native = obs.native.to(device)
+        try:
+            self._params = self._params.to(device)
+            if isinstance(self._circuit.native, torch.nn.Module):
+                # Backends which are not torch-based cannot be moved to 'device'
+                self._circuit.native = self._circuit.native.to(device)
+                if self._observable is not None:
+                    if isinstance(self._observable, ConvertedObservable):
+                        self._observable.native = self._observable.native.to(device)
+                    elif isinstance(self._observable, list):
+                        for obs in self._observable:
+                            obs.native = obs.native.to(device)
+            logger.debug(f"Moved {self} to device {device}.")
+        except Exception as e:
+            logger.warning(f"Unable to move {self} to device {device} due to {e}.")
         return self
