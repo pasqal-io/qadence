@@ -335,7 +335,7 @@ class QuantumModel(nn.Module):
         params = self.embedding_fn(self._params, values)
         return self.backend.assign_parameters(self._circuit, params)
 
-    def to(self, device: torch.DeviceObjType) -> QuantumModel:
+    def to(self, device: torch.device) -> QuantumModel:
         try:
             self._params = self._params.to(device)
             if isinstance(self._circuit.native, torch.nn.Module):
