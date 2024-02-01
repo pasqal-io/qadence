@@ -243,18 +243,15 @@ class PyQObservable(Module):
                 "diagonal_observable", block_to_diagonal(block, tuple(range(n_qubits)))
             )
 
-            def _forward(
-                pyq_obs: PyQObservable, state: Tensor, values: dict[str, Tensor] = None
-            ) -> Tensor:
-                return pyqify(pyq_obs.diagonal_observable * unpyqify(state), n_qubits=self.n_qubits)
-
-            self._forward = _forward
+            self._forward = lambda self, state, values: pyqify(
+                self.diagonal_observable * unpyqify(state), n_qubits=self.n_qubits
+            )
         else:
             self.operation = pyq.QuantumCircuit(
                 n_qubits,
                 convert_block(block, n_qubits, config),
             )
-            self._forward = lambda _, state, values: self.operation(state, values)  # type: ignore[misc, assignment]
+            self._forward = lambda self, state, values: self.operation(state, values)
 
     def run(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
         return self._forward(self, state, values)
