@@ -337,9 +337,9 @@ class QuantumModel(nn.Module):
 
     def to(self, device: torch.device) -> QuantumModel:
         try:
-            self._params = self._params.to(device)
             if isinstance(self._circuit.native, torch.nn.Module):
                 # Backends which are not torch-based cannot be moved to 'device'
+                self._params = self._params.to(device)
                 self._circuit.native = self._circuit.native.to(device)
                 if self._observable is not None:
                     if isinstance(self._observable, ConvertedObservable):
@@ -347,7 +347,7 @@ class QuantumModel(nn.Module):
                     elif isinstance(self._observable, list):
                         for obs in self._observable:
                             obs.native = obs.native.to(device)
-            logger.debug(f"Moved {self} to device {device}.")
+                logger.debug(f"Moved {self} to device {device}.")
         except Exception as e:
             logger.warning(f"Unable to move {self} to device {device} due to {e}.")
         return self
