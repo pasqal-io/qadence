@@ -177,7 +177,7 @@ required-imports = ["from __future__ import annotations"]
 
 [tool.ruff.per-file-ignores]
 "__init__.py" = ["F401"]
-"operations.py" = ["E742"]  # Avoid ambiguous class name warning for identity.
+"qadence/operations/primitive.py" = ["E742"]  # Avoid ambiguous class name warning for identity.
 "qadence/backends/horqrux/convert_ops.py" = ["E741"]  # Avoid ambiguous class name warning for 0.
 
 [tool.ruff.mccabe]
