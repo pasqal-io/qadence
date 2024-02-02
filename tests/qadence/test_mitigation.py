@@ -14,13 +14,15 @@ from qadence import (
     Mitigations,
     QuantumCircuit,
     QuantumModel,
+    add,
     chain,
     entangle,
     hamiltonian_factory,
+    kron,
 )
 from qadence.divergences import js_divergence
 from qadence.noise.protocols import Noise
-from qadence.operations import CNOT, RX, RY, RZ, HamEvo, X, Y, Z, add, kron
+from qadence.operations import CNOT, RX, RY, RZ, HamEvo, X, Y, Z
 from qadence.types import PI, BackendName, DiffMode, ReadOutOptimization
 
 

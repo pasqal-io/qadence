@@ -21,9 +21,9 @@ from qadence.blocks.analog import (
     InteractionBlock,
 )
 from qadence.logger import get_logger
-from qadence.operations import RX, RY, RZ, AnalogEntanglement, OpName
+from qadence.operations import RX, RY, RZ, AnalogEntanglement
 from qadence.parameters import evaluate
-from qadence.types import PI
+from qadence.types import PI, OpName
 
 from .channels import GLOBAL_CHANNEL, LOCAL_CHANNEL
 from .config import Configuration

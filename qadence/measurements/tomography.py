@@ -9,12 +9,12 @@ from torch import Tensor
 
 from qadence.backend import Backend
 from qadence.backends.pyqtorch import Backend as PyQBackend
-from qadence.blocks import AbstractBlock, PrimitiveBlock
+from qadence.blocks import AbstractBlock, PrimitiveBlock, chain
 from qadence.blocks.utils import unroll_block_with_scaling
 from qadence.circuit import QuantumCircuit
 from qadence.engines.differentiable_backend import DifferentiableBackend
 from qadence.noise import Noise
-from qadence.operations import H, SDagger, X, Y, Z, chain
+from qadence.operations import H, SDagger, X, Y, Z
 from qadence.parameters import evaluate
 from qadence.utils import Endianness
 

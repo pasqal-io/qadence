@@ -187,7 +187,7 @@ def get_pauli_blocks(block: AbstractBlock, raises: bool = False) -> List[Primiti
 
     paulis = []
     for b in primitive_blocks(block):
-        if isinstance(b, get_args(operations.TPauliBlock)):
+        if isinstance(b, get_args(operations.primitive.TPauliBlock)):
             paulis.append(b)
         else:
             if raises:

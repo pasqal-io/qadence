@@ -9,7 +9,7 @@ from torch import Tensor
 
 from qadence.backend import Backend
 from qadence.backends.pyqtorch import Backend as PyQBackend
-from qadence.blocks.abstract import AbstractBlock
+from qadence.blocks import AbstractBlock, chain, kron
 from qadence.blocks.block_to_tensor import (
     HMAT,
     IMAT,
@@ -23,7 +23,7 @@ from qadence.blocks.utils import get_pauli_blocks, unroll_block_with_scaling
 from qadence.circuit import QuantumCircuit
 from qadence.engines.differentiable_backend import DifferentiableBackend
 from qadence.noise import Noise
-from qadence.operations import X, Y, Z, chain, kron
+from qadence.operations import X, Y, Z
 from qadence.states import one_state, zero_state
 from qadence.types import Endianness
 
