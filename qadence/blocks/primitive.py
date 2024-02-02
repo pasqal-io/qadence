@@ -381,10 +381,6 @@ class ControlBlock(PrimitiveBlock):
     def __ascii__(self, console: Console) -> RenderableType:
         raise NotImplementedError
 
-    @property
-    def n_qubits(self) -> int:
-        return len(self.qubit_support)
-
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, AbstractBlock):
             raise TypeError(f"Cant compare {type(self)} to {type(other)}")

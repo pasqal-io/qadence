@@ -691,6 +691,13 @@ def test_swap_cnot_gates(gate: AbstractBlock, n_qubits: int) -> None:
     assert equivalent_state(wf_pyq, wf_mat, atol=ATOL_32)
 
 
+def test_cnot_support() -> None:
+    mat_full = block_to_tensor(CNOT(0, 2), use_full_support=True)
+    mat_small = block_to_tensor(CNOT(0, 2), use_full_support=False)
+    assert len(mat_full.squeeze(0)) == 8
+    assert len(mat_small.squeeze(0)) == 4
+
+
 @pytest.mark.parametrize("n_qubits", [3, 4, 6])
 def test_cswap_gate(n_qubits: int) -> None:
     control, target1, target2 = np.random.choice(
