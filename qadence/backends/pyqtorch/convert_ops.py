@@ -16,6 +16,7 @@ from torch import (
     argsort,
     bmm,
     cdouble,
+    device,
     diag_embed,
     diagonal,
     exp,
@@ -232,9 +233,9 @@ class PyQComposedBlock(pyq.QuantumCircuit):
         )
 
 
-class PyQObservable(Module):
+class PyQObservable(pyq.QuantumCircuit):
     def __init__(self, block: AbstractBlock, n_qubits: int, config: Configuration = None):
-        super().__init__()
+        super().__init__(n_qubits, [])
         if config is None:
             config = Configuration()
         self.n_qubits = n_qubits
@@ -258,6 +259,13 @@ class PyQObservable(Module):
 
     def forward(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
         return pyq.overlap(state, self.run(state, values))
+
+    def to(self, device: device) -> PyQObservable:
+        if hasattr(self, "diagonal_observable"):
+            self.diagonal_observable = self.diagonal_observable.to(device)  # type: ignore[has-type]
+        else:
+            self.operation = self.operation.to(device)
+        return self
 
 
 class PyQHamiltonianEvolution(Module):
