@@ -281,7 +281,8 @@ class PyQHamiltonianEvolution(Module):
                 use_full_support=False,
             )
             hmat = hmat.permute(1, 2, 0)
-            self._hamiltonian = lambda x: hmat
+            self.register_buffer("hmat", hmat)
+            self._hamiltonian = lambda self: self.hmat
 
         elif isinstance(block.generator, Tensor):
             m = block.generator.to(dtype=cdouble)
@@ -291,7 +292,8 @@ class PyQHamiltonianEvolution(Module):
                 use_full_support=False,
             )
             hmat = hmat.permute(1, 2, 0)
-            self._hamiltonian = lambda x: hmat
+            self.register_buffer("hmat", hmat)
+            self._hamiltonian = lambda self: self.hmat
 
         elif isinstance(block.generator, sympy.Basic):
             self._hamiltonian = (
@@ -301,13 +303,14 @@ class PyQHamiltonianEvolution(Module):
         else:
 
             def _hamiltonian(values: dict[str, Tensor]) -> Tensor:
+                _dev = list(values.values())[0].device
                 hmat = _block_to_tensor_embedded(
                     block.generator,  # type: ignore[arg-type]
                     values=values,
                     qubit_support=self.qubit_support,
                     use_full_support=False,
                 )
-                return hmat.permute(1, 2, 0)
+                return hmat.permute(1, 2, 0).to(_dev)
 
             self._hamiltonian = _hamiltonian
 
