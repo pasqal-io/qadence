@@ -7,7 +7,6 @@ from typing import Any
 import numpy as np
 import sympy
 import torch
-from scipy.sparse.linalg import eigs
 from torch.linalg import eigvals
 
 from qadence.logger import get_logger
@@ -184,16 +183,23 @@ def isclose(
 def eigenvalues(
     x: torch.Tensor, max_num_evals: int | None = None, max_num_gaps: int | None = None
 ) -> torch.Tensor:
+    # FIXME: Currently doing full decomposition everytime because it is generally faster
+    # than converting to numpy and using the scipy routines for "top-k" eigenvalues.
+    # Furthermore, we should exploit the matrices being Hermitian.
+
+    # get all eigenvalues of generator
+    eigenvals_full = eigvals(x).squeeze(0)
+
     if max_num_evals and not max_num_gaps:
         # get specified number of eigenvalues of generator
-        eigenvals, _ = eigs(x.squeeze(0).numpy(), k=max_num_evals, which="LM")
+        eigenvals = eigenvals_full[:max_num_evals]
     elif max_num_gaps and not max_num_evals:
         # get eigenvalues of generator corresponding to specified number of spectral gaps
         k = int(np.ceil(0.5 * (1 + np.sqrt(1 + 8 * max_num_gaps))))
-        eigenvals, _ = eigs(x.squeeze(0).numpy(), k=k, which="LM")
+        eigenvals = eigenvals_full[:k]
     else:
-        # get all eigenvalues of generator
-        eigenvals = eigvals(x)
+        eigenvals = eigenvals_full
+
     return eigenvals
 
 
