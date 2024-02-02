@@ -4,16 +4,20 @@ from collections import Counter
 from typing import Callable
 
 import sympy
-from torch import Tensor
+from torch import Tensor, nn
 
 from qadence.backend import BackendConfiguration, ConvertedObservable
+from qadence.backends.api import config_factory
 from qadence.blocks.abstract import AbstractBlock
 from qadence.circuit import QuantumCircuit
+from qadence.logger import get_logger
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.models.quantum_model import QuantumModel
 from qadence.noise import Noise
 from qadence.types import BackendName, DiffMode, Endianness
+
+logger = get_logger(__name__)
 
 
 class QNN(QuantumModel):
@@ -218,3 +222,43 @@ class QNN(QuantumModel):
         assert values.size()[1] == self.in_features, msg
 
         return {var.name: values[:, self.inputs.index(var)] for var in self.inputs}
+
+    def _to_dict(self, save_params: bool = False) -> dict:
+        d = dict()
+        try:
+            d = super()._to_dict(save_params)
+            d[self.__class__.__name__]["inputs"] = [str(i) for i in self.inputs]
+            logger.debug(f"{self.__class__.__name__} serialized to {d}.")
+        except Exception as e:
+            logger.warning(f"Unable to serialize {self.__class__.__name__} due to {e}.")
+        return d
+
+    @classmethod
+    def _from_dict(cls, d: dict, as_torch: bool = False) -> QNN:
+        from qadence.serialization import deserialize
+
+        qnn: QNN
+        try:
+            qm_dict = d[cls.__name__]
+            qnn = cls(
+                circuit=QuantumCircuit._from_dict(qm_dict["circuit"]),
+                observable=[deserialize(q_obs) for q_obs in qm_dict["observable"]],  # type: ignore[misc]
+                backend=qm_dict["backend"],
+                diff_mode=qm_dict["diff_mode"],
+                measurement=Measurements._from_dict(qm_dict["measurement"]),
+                configuration=config_factory(qm_dict["backend"], qm_dict["backend_configuration"]),
+                inputs=qm_dict["inputs"],
+            )
+
+            if as_torch:
+                conv_pd = nn.ParameterDict()
+                param_dict = d["param_dict"]
+                for n, param in param_dict.items():
+                    conv_pd[n] = nn.Parameter(param)
+                qnn._params = conv_pd
+            logger.debug(f"Initialized {cls.__name__} from {d}.")
+
+        except Exception as e:
+            logger.warning(f"Unable to deserialize object {d} to {cls.__name__} due to {e}.")
+
+        return qnn
