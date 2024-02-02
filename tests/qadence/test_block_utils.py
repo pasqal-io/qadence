@@ -3,9 +3,9 @@ from __future__ import annotations
 import pytest
 from sympy import cos, symbols
 
-from qadence.blocks import AbstractBlock
+from qadence.blocks import AbstractBlock, chain
 from qadence.blocks.utils import expression_to_uuids, uuid_to_block, uuid_to_expression
-from qadence.operations import RX, X, chain
+from qadence.operations import RX, X
 
 (alpha, beta) = symbols("alpha beta")
 gamma = cos(alpha + beta)

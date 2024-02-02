@@ -6,8 +6,7 @@ from typing import Any, Callable
 import pytest
 from metrics import JS_ACCEPTANCE
 
-from qadence.blocks.abstract import AbstractBlock
-from qadence.blocks.analog import AnalogBlock
+from qadence.blocks import AbstractBlock, AnalogBlock, chain, kron
 from qadence.execution import run, sample
 from qadence.operations import (
     RX,
@@ -18,8 +17,6 @@ from qadence.operations import (
     AnalogRX,
     AnalogRY,
     AnalogRZ,
-    chain,
-    kron,
 )
 from qadence.overlap import js_divergence
 from qadence.register import Register

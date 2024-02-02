@@ -25,8 +25,8 @@ from braket.parametric import FreeParameter
 
 from qadence.blocks import AbstractBlock, CompositeBlock, PrimitiveBlock
 from qadence.exceptions import NotSupportedError
-from qadence.operations import OpName
 from qadence.parameters import evaluate
+from qadence.types import OpName
 
 single_qubit: Dict[str, Callable] = {
     OpName.I: I.i,
