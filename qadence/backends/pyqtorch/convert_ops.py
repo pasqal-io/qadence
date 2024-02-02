@@ -282,7 +282,7 @@ class PyQHamiltonianEvolution(Module):
             )
             hmat = hmat.permute(1, 2, 0)
             self.register_buffer("hmat", hmat)
-            self._hamiltonian = lambda self: self.hmat
+            self._hamiltonian = lambda self, values: self.hmat
 
         elif isinstance(block.generator, Tensor):
             m = block.generator.to(dtype=cdouble)
@@ -293,16 +293,16 @@ class PyQHamiltonianEvolution(Module):
             )
             hmat = hmat.permute(1, 2, 0)
             self.register_buffer("hmat", hmat)
-            self._hamiltonian = lambda self: self.hmat
+            self._hamiltonian = lambda self, values: self.hmat
 
         elif isinstance(block.generator, sympy.Basic):
             self._hamiltonian = (
-                lambda values: values[self.param_names[1]].squeeze(3).permute(1, 2, 0)
+                lambda self, values: values[self.param_names[1]].squeeze(3).permute(1, 2, 0)
             )
             # FIXME Why are we squeezing
         else:
 
-            def _hamiltonian(values: dict[str, Tensor]) -> Tensor:
+            def _hamiltonian(self: PyQHamiltonianEvolution, values: dict[str, Tensor]) -> Tensor:
                 _dev = list(values.values())[0].device
                 hmat = _block_to_tensor_embedded(
                     block.generator,  # type: ignore[arg-type]
@@ -337,12 +337,12 @@ class PyQHamiltonianEvolution(Module):
 
     def unitary(self, values: dict[str, Tensor]) -> Tensor:
         """The evolved operator given current parameter values for generator and time evolution."""
-        return self._unitary(self._hamiltonian(values), self._time_evolution(values))
+        return self._unitary(self._hamiltonian(self, values), self._time_evolution(values))
 
     def jacobian_time(self, values: dict[str, Tensor]) -> Tensor:
         """Approximate jacobian of the evolved operator with respect to time evolution."""
         return finitediff(
-            lambda t: self._unitary(time_evolution=t, hamiltonian=self._hamiltonian(values)),
+            lambda t: self._unitary(time_evolution=t, hamiltonian=self._hamiltonian(self, values)),
             values[self.param_names[0]],
         )
 
