@@ -319,14 +319,15 @@ class PyQHamiltonianEvolution(Module):
         else:
 
             def _hamiltonian(self: PyQHamiltonianEvolution, values: dict[str, Tensor]) -> Tensor:
-                _dev = list(values.values())[0].device
+                _device = list(values.values())[0].device
                 hmat = _block_to_tensor_embedded(
                     block.generator,  # type: ignore[arg-type]
                     values=values,
                     qubit_support=self.qubit_support,
                     use_full_support=False,
+                    device=_device,
                 )
-                return hmat.permute(1, 2, 0).to(_dev)
+                return hmat.permute(1, 2, 0)
 
             self._hamiltonian = _hamiltonian
 
