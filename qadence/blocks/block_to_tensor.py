@@ -442,24 +442,30 @@ def _block_to_tensor_embedded(
 
     elif isinstance(block, CSWAP):
         cswap_block = _cswap_block(block)
-        mat = _block_to_tensor_embedded(cswap_block, values, qubit_support, endianness=endianness)
+        mat = _block_to_tensor_embedded(
+            cswap_block, values, qubit_support, endianness=endianness, device=device
+        )
 
     elif isinstance(block, (ControlBlock, ParametricControlBlock)):
         c_block, newparams = _controlled_block_with_params(block)
         newparams.update(values)
-        mat = _block_to_tensor_embedded(c_block, newparams, qubit_support, endianness=endianness)
+        mat = _block_to_tensor_embedded(
+            c_block, newparams, qubit_support, endianness=endianness, device=device
+        )
 
     elif isinstance(block, ScaleBlock):
         (scale,) = _gate_parameters(block, values)
         mat = scale * _block_to_tensor_embedded(
-            block.block, values, qubit_support, endianness=endianness
+            block.block, values, qubit_support, endianness=endianness, device=device
         )
 
     elif isinstance(block, ParametricBlock):
-        block_mat = _parametric_matrix(block, values)
+        block_mat = _parametric_matrix(block, values).to(device)
 
         # add missing identities on unused qubits
-        mat = _fill_identities(block_mat, block.qubit_support, qubit_support, endianness=endianness)
+        mat = _fill_identities(
+            block_mat, block.qubit_support, qubit_support, endianness=endianness, device=device
+        )
 
     elif isinstance(block, MatrixBlock):
         mat = block.matrix.unsqueeze(0)
@@ -473,13 +479,17 @@ def _block_to_tensor_embedded(
 
     elif isinstance(block, SWAP):
         swap_block = _swap_block(block)
-        mat = _block_to_tensor_embedded(swap_block, values, qubit_support, endianness=endianness)
+        mat = _block_to_tensor_embedded(
+            swap_block, values, qubit_support, endianness=endianness, device=device
+        )
 
     elif block.name in OPERATIONS_DICT.keys():
         block_mat = OPERATIONS_DICT[block.name]
 
         # add missing identities on unused qubits
-        mat = _fill_identities(block_mat, block.qubit_support, qubit_support, endianness=endianness)
+        mat = _fill_identities(
+            block_mat, block.qubit_support, qubit_support, endianness=endianness, device=device
+        )
 
     elif isinstance(block, ProjectorBlock):
         from qadence.states import product_state
@@ -490,7 +500,13 @@ def _block_to_tensor_embedded(
         block_mat = torch.kron(ket, bra.T)
         block_mat = block_mat.unsqueeze(0) if len(block_mat.size()) == 2 else block_mat
 
-        mat = _fill_identities(block_mat, block.qubit_support, qubit_support, endianness=endianness)
+        mat = _fill_identities(
+            block_mat.to(device),
+            block.qubit_support,
+            qubit_support,
+            endianness=endianness,
+            device=device,
+        )
 
     else:
         raise TypeError(f"Conversion for block type {type(block)} not supported.")
