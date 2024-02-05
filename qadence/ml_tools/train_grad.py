@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Callable, Union
 
 from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, TimeRemainingColumn
-from torch.nn import Module
+from torch.nn import DataParallel, Module
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
@@ -109,8 +109,10 @@ def train(
     """
 
     # Move model to device before optimizer is loaded
-    model = model.to(device)
-
+    if isinstance(model, DataParallel):
+        model = model.module.to(device)
+    else:
+        model = model.to(device)
     # load available checkpoint
     init_iter = 0
     if config.folder:
