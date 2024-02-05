@@ -92,7 +92,7 @@ def _fill_identities(
             else:
                 mat = torch.kron(mat.contiguous(), other.contiguous())
         elif i not in qubit_support:
-            other = torch.diag(IMAT.squeeze(0)) if diag_only else IMAT
+            other = torch.diag(IMAT.squeeze(0).to(device)) if diag_only else IMAT.to(device)
             if endianness == Endianness.LITTLE:
                 mat = torch.kron(other.contiguous(), mat.contiguous())
             else:
