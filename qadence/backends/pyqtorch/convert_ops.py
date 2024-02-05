@@ -187,7 +187,7 @@ class PyQMatrixBlock(Module):
         return self._device
 
     def to(self, device: torch_device) -> PyQMatrixBlock:
-        self.mat = self.mat.to(device)  # type: ignore[has-type]
+        self.mat = self.mat.to(device)
         self._device = device
         return self
 
@@ -419,9 +419,9 @@ class PyQHamiltonianEvolution(Module):
     def device(self) -> torch_device:
         return self._device
 
-    def to(self, device: torch_device) -> PyQObservable:
+    def to(self, device: torch_device) -> PyQHamiltonianEvolution:
         if hasattr(self, "hmat"):
-            self.hmat = self.hmat.to(device)  # type: ignore[has-type]
+            self.hmat = self.hmat.to(device)
         self._device = device
         return self
 
