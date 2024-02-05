@@ -289,6 +289,7 @@ class PyQHamiltonianEvolution(Module):
         self.n_qubits = n_qubits
         self.param_names = config.get_param_name(block)
         self.block = block
+        self.hmat: Tensor
 
         if isinstance(block.generator, AbstractBlock) and not block.generator.is_parametric:
             hmat = block_to_tensor(
@@ -319,23 +320,27 @@ class PyQHamiltonianEvolution(Module):
         else:
 
             def _hamiltonian(self: PyQHamiltonianEvolution, values: dict[str, Tensor]) -> Tensor:
-                _device = list(values.values())[0].device
                 hmat = _block_to_tensor_embedded(
                     block.generator,  # type: ignore[arg-type]
                     values=values,
                     qubit_support=self.qubit_support,
                     use_full_support=False,
-                    device=_device,
+                    device=self.device,
                 )
                 return hmat.permute(1, 2, 0)
 
             self._hamiltonian = _hamiltonian
 
         self._time_evolution = lambda values: values[self.param_names[0]]
+        self._device: torch_device = (
+            self.hmat.device if hasattr(self, "hmat") else torch_device("cpu")
+        )
 
     def _unitary(self, hamiltonian: Tensor, time_evolution: Tensor) -> Tensor:
         self.batch_size = max(hamiltonian.size()[2], len(time_evolution))
-        diag_check = tensor([is_diag(hamiltonian[..., i]) for i in range(hamiltonian.size()[2])])
+        diag_check = tensor(
+            [is_diag(hamiltonian[..., i]) for i in range(hamiltonian.size()[2])], device=self.device
+        )
 
         def _evolve_diag_operator(hamiltonian: Tensor, time_evolution: Tensor) -> Tensor:
             evol_operator = diagonal(hamiltonian) * (-1j * time_evolution).view((-1, 1))
@@ -379,6 +384,7 @@ class PyQHamiltonianEvolution(Module):
                 values=val_copy,
                 qubit_support=self.qubit_support,
                 use_full_support=False,
+                device=self.device,
             )
             return hmat.permute(1, 2, 0)
 
@@ -405,6 +411,16 @@ class PyQHamiltonianEvolution(Module):
             self.n_qubits,
             self.batch_size,
         )
+
+    @property
+    def device(self) -> torch_device:
+        return self._device
+
+    def to(self, device: torch_device) -> PyQObservable:
+        if hasattr(self, "hmat"):
+            self.hmat = self.hmat.to(device)  # type: ignore[has-type]
+        self._device = device
+        return self
 
 
 class AddPyQOperation(pyq.QuantumCircuit):
