@@ -16,7 +16,6 @@ from torch import (
     argsort,
     bmm,
     cdouble,
-    device,
     diag_embed,
     diagonal,
     exp,
@@ -26,6 +25,7 @@ from torch import (
     tensor,
     transpose,
 )
+from torch import device as torch_device
 from torch.nn import Module
 
 from qadence.backends.utils import (
@@ -260,7 +260,14 @@ class PyQObservable(pyq.QuantumCircuit):
     def forward(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
         return pyq.overlap(state, self.run(state, values))
 
-    def to(self, device: device) -> PyQObservable:
+    @property
+    def device(self) -> torch_device:
+        if hasattr(self, "diagonal_observable"):
+            return self.diagonal_observable.device  # type: ignore[has-type]
+        else:
+            return self.operation.device
+
+    def to(self, device: torch_device) -> PyQObservable:
         if hasattr(self, "diagonal_observable"):
             self.diagonal_observable = self.diagonal_observable.to(device)  # type: ignore[has-type]
         else:
