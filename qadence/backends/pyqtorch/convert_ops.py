@@ -272,6 +272,7 @@ class PyQObservable(pyq.QuantumCircuit):
             self.diagonal_observable = self.diagonal_observable.to(device)  # type: ignore[has-type]
         else:
             self.operation = self.operation.to(device)
+        self._device = device
         return self
 
 
