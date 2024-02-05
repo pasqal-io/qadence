@@ -176,9 +176,20 @@ class PyQMatrixBlock(Module):
         self.n_qubits = n_qubits
         self.qubits = block.qubit_support
         self.register_buffer("mat", block.matrix.unsqueeze(2))
+        self.mat: Tensor
+        self._device: torch_device = self.mat.device
 
     def forward(self, state: Tensor, _: dict[str, Tensor] = None) -> Tensor:
         return apply_operator(state, self.mat, self.qubits, self.n_qubits)
+
+    @property
+    def device(self) -> torch_device:
+        return self._device
+
+    def to(self, device: torch_device) -> PyQMatrixBlock:
+        self.mat = self.mat.to(device)  # type: ignore[has-type]
+        self._device = device
+        return self
 
 
 class PyQComposedBlock(pyq.QuantumCircuit):
