@@ -244,19 +244,16 @@ class PyQComposedBlock(pyq.QuantumCircuit):
         )
 
 
-class PyQObservable(pyq.QuantumCircuit):
+class PyQObservable(Module):
     def __init__(self, block: AbstractBlock, n_qubits: int, config: Configuration = None):
-        super().__init__(n_qubits, [])
+        super().__init__()
         if config is None:
             config = Configuration()
         self.n_qubits = n_qubits
         if block._is_diag_pauli and not block.is_parametric:
-            self.register_buffer(
-                "diagonal_observable", block_to_diagonal(block, tuple(range(n_qubits)))
-            )
-
+            self.register_buffer("operation", block_to_diagonal(block, tuple(range(n_qubits))))
             self._forward = lambda self, state, values: pyqify(
-                self.diagonal_observable * unpyqify(state), n_qubits=self.n_qubits
+                self.operation * unpyqify(state), n_qubits=self.n_qubits
             )
         else:
             self.operation = pyq.QuantumCircuit(
@@ -264,6 +261,7 @@ class PyQObservable(pyq.QuantumCircuit):
                 convert_block(block, n_qubits, config),
             )
             self._forward = lambda self, state, values: self.operation(state, values)
+        self._device = self.operation.device
 
     def run(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
         return self._forward(self, state, values)
@@ -273,16 +271,10 @@ class PyQObservable(pyq.QuantumCircuit):
 
     @property
     def device(self) -> torch_device:
-        if hasattr(self, "diagonal_observable"):
-            return self.diagonal_observable.device  # type: ignore[has-type]
-        else:
-            return self.operation.device
+        return self._device
 
     def to(self, device: torch_device) -> PyQObservable:
-        if hasattr(self, "diagonal_observable"):
-            self.diagonal_observable = self.diagonal_observable.to(device)  # type: ignore[has-type]
-        else:
-            self.operation = self.operation.to(device)
+        self.operation = self.operation.to(device)
         self._device = device
         return self
 
