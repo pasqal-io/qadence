@@ -6,7 +6,8 @@ from typing import Any
 
 import numpy as np
 import sympy
-from torch import Tensor, complex, stack, vmap
+from torch import Tensor, stack, vmap
+from torch import complex as make_complex
 from torch.linalg import eigvals
 
 from qadence.logger import get_logger
@@ -207,7 +208,7 @@ def _round_complex(t: Tensor, decimals: int = 4) -> Tensor:
     def _round(_t: Tensor) -> Tensor:
         r = _t.real.round(decimals=decimals)
         i = _t.imag.round(decimals=decimals)
-        return complex(r, i)
+        return make_complex(r, i)
 
     fn = vmap(_round)
     return fn(t)
