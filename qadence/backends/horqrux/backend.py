@@ -76,6 +76,19 @@ class Backend(BackendInterface):
         horqify_state: bool = True,
         unhorqify_state: bool = True,
     ) -> ArrayLike:
+        """Propagate a state through a circuit given and retrieve the wave function.
+
+        Args:
+            circuit: A ConvertedCircuit object holding the native horqrux circuit.
+            param_values: A dict holding the embedded parameters which the native ciruit expects.
+            state: The input state.
+            measurement: The protocol.
+            horqify_state: Reshape the state into [2,2,...]
+            unhorqify_state: Flatten the resulting state.
+
+        Returns:
+            A jax.Array of shape [2,2,...] if unhorqify=True else shape = [1, 2**n_qubits]
+        """
         n_qubits = circuit.abstract.n_qubits
         if state is None:
             state = zero_state(n_qubits)
@@ -112,6 +125,21 @@ class Backend(BackendInterface):
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> ArrayLike:
+        """Compute the expectation value of a circuit given a observable.
+
+        Args:
+            circuit: A ConvertedCircuit object holding the native horqrux circuit.
+            observable: A ConvertedObservable object holding the native horqrux observable.
+            param_values: A dict holding the embedded parameters which the native ciruit expects.
+            state: The input state.
+            measurement: The protocol.
+            noise: The Noise.
+            mitigation: Mitigation strategy.
+            endianness (Endianness): The target endianness of the resulting samples.
+
+        Returns:
+            A jax.Array of shape (batch_size, n_observables)
+        """
         observable = observable if isinstance(observable, list) else [observable]
         batch_size = max([arr.size for arr in param_values.values()])
         n_obs = len(observable)
@@ -149,10 +177,12 @@ class Backend(BackendInterface):
         """Samples from a batch of discrete probability distributions.
 
         Args:
-            circuit: A ConvertedCircuit object holding the native PyQ Circuit.
+            circuit: A ConvertedCircuit object holding the native horqrux circuit.
             param_values: A dict holding the embedded parameters which the native ciruit expects.
             n_shots: The number of samples to generate per distribution.
             state: The input state.
+            noise: The Noise.
+            mitigation: Mitigation strategy.
             endianness (Endianness): The target endianness of the resulting samples.
 
         Returns:
