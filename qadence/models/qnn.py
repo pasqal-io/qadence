@@ -246,6 +246,7 @@ class QNN(QuantumModel):
                 backend=qm_dict["backend"],
                 diff_mode=qm_dict["diff_mode"],
                 measurement=Measurements._from_dict(qm_dict["measurement"]),
+                noise=Noise._from_dict(qm_dict["noise"]),
                 configuration=config_factory(qm_dict["backend"], qm_dict["backend_configuration"]),
                 inputs=qm_dict["inputs"],
             )
