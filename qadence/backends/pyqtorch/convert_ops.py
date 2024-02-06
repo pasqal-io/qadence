@@ -25,6 +25,7 @@ from torch import (
     tensor,
     transpose,
 )
+from torch import device as torch_device
 from torch.nn import Module
 
 from qadence.backends.utils import (
@@ -50,7 +51,6 @@ from qadence.blocks.block_to_tensor import (
 )
 from qadence.blocks.primitive import ProjectorBlock
 from qadence.operations import (
-    OpName,
     U,
     multi_qubit_gateset,
     non_unitary_gateset,
@@ -58,6 +58,7 @@ from qadence.operations import (
     three_qubit_gateset,
     two_qubit_gateset,
 )
+from qadence.types import OpName
 from qadence.utils import infer_batchsize
 
 from .config import Configuration
@@ -175,9 +176,20 @@ class PyQMatrixBlock(Module):
         self.n_qubits = n_qubits
         self.qubits = block.qubit_support
         self.register_buffer("mat", block.matrix.unsqueeze(2))
+        self.mat: Tensor
+        self._device: torch_device = self.mat.device
 
     def forward(self, state: Tensor, _: dict[str, Tensor] = None) -> Tensor:
         return apply_operator(state, self.mat, self.qubits, self.n_qubits)
+
+    @property
+    def device(self) -> torch_device:
+        return self._device
+
+    def to(self, device: torch_device) -> PyQMatrixBlock:
+        self.mat = self.mat.to(device)
+        self._device = device
+        return self
 
 
 class PyQComposedBlock(pyq.QuantumCircuit):
@@ -239,12 +251,9 @@ class PyQObservable(Module):
             config = Configuration()
         self.n_qubits = n_qubits
         if block._is_diag_pauli and not block.is_parametric:
-            self.register_buffer(
-                "diagonal_observable", block_to_diagonal(block, tuple(range(n_qubits)))
-            )
-
+            self.register_buffer("operation", block_to_diagonal(block, tuple(range(n_qubits))))
             self._forward = lambda self, state, values: pyqify(
-                self.diagonal_observable * unpyqify(state), n_qubits=self.n_qubits
+                self.operation * unpyqify(state), n_qubits=self.n_qubits
             )
         else:
             self.operation = pyq.QuantumCircuit(
@@ -252,12 +261,22 @@ class PyQObservable(Module):
                 convert_block(block, n_qubits, config),
             )
             self._forward = lambda self, state, values: self.operation(state, values)
+        self._device = self.operation.device
 
     def run(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
         return self._forward(self, state, values)
 
     def forward(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
         return pyq.overlap(state, self.run(state, values))
+
+    @property
+    def device(self) -> torch_device:
+        return self._device
+
+    def to(self, device: torch_device) -> PyQObservable:
+        self.operation = self.operation.to(device)
+        self._device = device
+        return self
 
 
 class PyQHamiltonianEvolution(Module):
@@ -273,6 +292,7 @@ class PyQHamiltonianEvolution(Module):
         self.n_qubits = n_qubits
         self.param_names = config.get_param_name(block)
         self.block = block
+        self.hmat: Tensor
 
         if isinstance(block.generator, AbstractBlock) and not block.generator.is_parametric:
             hmat = block_to_tensor(
@@ -281,7 +301,8 @@ class PyQHamiltonianEvolution(Module):
                 use_full_support=False,
             )
             hmat = hmat.permute(1, 2, 0)
-            self._hamiltonian = lambda x: hmat
+            self.register_buffer("hmat", hmat)
+            self._hamiltonian = lambda self, values: self.hmat
 
         elif isinstance(block.generator, Tensor):
             m = block.generator.to(dtype=cdouble)
@@ -291,31 +312,38 @@ class PyQHamiltonianEvolution(Module):
                 use_full_support=False,
             )
             hmat = hmat.permute(1, 2, 0)
-            self._hamiltonian = lambda x: hmat
+            self.register_buffer("hmat", hmat)
+            self._hamiltonian = lambda self, values: self.hmat
 
         elif isinstance(block.generator, sympy.Basic):
             self._hamiltonian = (
-                lambda values: values[self.param_names[1]].squeeze(3).permute(1, 2, 0)
+                lambda self, values: values[self.param_names[1]].squeeze(3).permute(1, 2, 0)
             )
             # FIXME Why are we squeezing
         else:
 
-            def _hamiltonian(values: dict[str, Tensor]) -> Tensor:
+            def _hamiltonian(self: PyQHamiltonianEvolution, values: dict[str, Tensor]) -> Tensor:
                 hmat = _block_to_tensor_embedded(
                     block.generator,  # type: ignore[arg-type]
                     values=values,
                     qubit_support=self.qubit_support,
                     use_full_support=False,
+                    device=self.device,
                 )
                 return hmat.permute(1, 2, 0)
 
             self._hamiltonian = _hamiltonian
 
         self._time_evolution = lambda values: values[self.param_names[0]]
+        self._device: torch_device = (
+            self.hmat.device if hasattr(self, "hmat") else torch_device("cpu")
+        )
 
     def _unitary(self, hamiltonian: Tensor, time_evolution: Tensor) -> Tensor:
         self.batch_size = max(hamiltonian.size()[2], len(time_evolution))
-        diag_check = tensor([is_diag(hamiltonian[..., i]) for i in range(hamiltonian.size()[2])])
+        diag_check = tensor(
+            [is_diag(hamiltonian[..., i]) for i in range(hamiltonian.size()[2])], device=self.device
+        )
 
         def _evolve_diag_operator(hamiltonian: Tensor, time_evolution: Tensor) -> Tensor:
             evol_operator = diagonal(hamiltonian) * (-1j * time_evolution).view((-1, 1))
@@ -334,12 +362,12 @@ class PyQHamiltonianEvolution(Module):
 
     def unitary(self, values: dict[str, Tensor]) -> Tensor:
         """The evolved operator given current parameter values for generator and time evolution."""
-        return self._unitary(self._hamiltonian(values), self._time_evolution(values))
+        return self._unitary(self._hamiltonian(self, values), self._time_evolution(values))
 
     def jacobian_time(self, values: dict[str, Tensor]) -> Tensor:
         """Approximate jacobian of the evolved operator with respect to time evolution."""
         return finitediff(
-            lambda t: self._unitary(time_evolution=t, hamiltonian=self._hamiltonian(values)),
+            lambda t: self._unitary(time_evolution=t, hamiltonian=self._hamiltonian(self, values)),
             values[self.param_names[0]],
         )
 
@@ -359,6 +387,7 @@ class PyQHamiltonianEvolution(Module):
                 values=val_copy,
                 qubit_support=self.qubit_support,
                 use_full_support=False,
+                device=self.device,
             )
             return hmat.permute(1, 2, 0)
 
@@ -385,6 +414,16 @@ class PyQHamiltonianEvolution(Module):
             self.n_qubits,
             self.batch_size,
         )
+
+    @property
+    def device(self) -> torch_device:
+        return self._device
+
+    def to(self, device: torch_device) -> PyQHamiltonianEvolution:
+        if hasattr(self, "hmat"):
+            self.hmat = self.hmat.to(device)
+        self._device = device
+        return self
 
 
 class AddPyQOperation(pyq.QuantumCircuit):

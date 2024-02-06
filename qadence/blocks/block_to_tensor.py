@@ -62,6 +62,7 @@ def _fill_identities(
     full_qubit_support: tuple | list,
     diag_only: bool = False,
     endianness: Endianness = Endianness.BIG,
+    device: torch.device = torch.device("cpu"),
 ) -> torch.Tensor:
     """Returns a Kronecker product of a block matrix with identities.
 
@@ -79,7 +80,8 @@ def _fill_identities(
         or a tensor (2**n_qubits) if diag_only
     """
     qubit_support = tuple(sorted(qubit_support))
-    mat = IMAT if qubit_support[0] != full_qubit_support[0] else block_mat
+    block_mat = block_mat.to(device)
+    mat = IMAT.to(device) if qubit_support[0] != full_qubit_support[0] else block_mat
     if diag_only:
         mat = torch.diag(mat.squeeze(0))
     for i in full_qubit_support[1:]:
@@ -90,7 +92,7 @@ def _fill_identities(
             else:
                 mat = torch.kron(mat.contiguous(), other.contiguous())
         elif i not in qubit_support:
-            other = torch.diag(IMAT.squeeze(0)) if diag_only else IMAT
+            other = torch.diag(IMAT.squeeze(0).to(device)) if diag_only else IMAT.to(device)
             if endianness == Endianness.LITTLE:
                 mat = torch.kron(other.contiguous(), mat.contiguous())
             else:
@@ -263,6 +265,7 @@ def block_to_diagonal(
     qubit_support: tuple | list | None = None,
     use_full_support: bool = True,
     endianness: Endianness = Endianness.BIG,
+    device: torch.device = torch.device("cpu"),
 ) -> torch.Tensor:
     if block.is_parametric:
         raise TypeError("Sparse observables cant be parametric.")
@@ -307,6 +310,7 @@ def block_to_tensor(
     use_full_support: bool = True,
     tensor_type: TensorType = TensorType.DENSE,
     endianness: Endianness = Endianness.BIG,
+    device: torch.device = torch.device("cpu"),
 ) -> torch.Tensor:
     """
     Convert a block into a torch tensor.
@@ -343,7 +347,12 @@ def block_to_tensor(
 
         (ps, embed) = embedding(block)
         return _block_to_tensor_embedded(
-            block, embed(ps, values), qubit_support, use_full_support, endianness=endianness
+            block,
+            embed(ps, values),
+            qubit_support,
+            use_full_support,
+            endianness=endianness,
+            device=device,
         )
 
     elif tensor_type == TensorType.SPARSEDIAGONAL:
@@ -360,6 +369,7 @@ def _block_to_tensor_embedded(
     qubit_support: tuple | None = None,
     use_full_support: bool = True,
     endianness: Endianness = Endianness.BIG,
+    device: torch.device = torch.device("cpu"),
 ) -> torch.Tensor:
     from qadence.blocks import MatrixBlock
     from qadence.operations import CSWAP, SWAP, HamEvo
@@ -374,48 +384,52 @@ def _block_to_tensor_embedded(
 
     if isinstance(block, (ChainBlock, KronBlock)):
         # create identity matrix of appropriate dimensions
-        mat = IMAT.clone()
+        mat = IMAT.clone().to(device)
         for i in range(nqubits - 1):
-            mat = torch.kron(mat, IMAT)
+            mat = torch.kron(mat, IMAT.to(device))
 
         # perform matrix multiplications
         for b in block.blocks:
-            other = _block_to_tensor_embedded(b, values, qubit_support, endianness=endianness)
+            other = _block_to_tensor_embedded(
+                b, values, qubit_support, endianness=endianness, device=device
+            )
             mat = torch.matmul(other, mat)
 
     elif isinstance(block, AddBlock):
         # create zero matrix of appropriate dimensions
-        mat = ZEROMAT.clone()
+        mat = ZEROMAT.clone().to(device)
         for _ in range(nqubits - 1):
-            mat = torch.kron(mat, ZEROMAT)
+            mat = torch.kron(mat, ZEROMAT.to(device))
 
         # perform matrix summation
         for b in block.blocks:
-            mat = mat + _block_to_tensor_embedded(b, values, qubit_support, endianness=endianness)
+            mat = mat + _block_to_tensor_embedded(
+                b, values, qubit_support, endianness=endianness, device=device
+            )
 
     elif isinstance(block, HamEvo):
         if block.qubit_support:
             if isinstance(block.generator, AbstractBlock):
                 # get matrix representation of generator
                 gen_mat = _block_to_tensor_embedded(
-                    block.generator, values, qubit_support, endianness=endianness
+                    block.generator, values, qubit_support, endianness=endianness, device=device
                 )
 
                 # calculate evolution matrix
                 (p,) = _gate_parameters(block, values)
-                prefac = -J * p
+                prefac = -J.to(device) * p
                 mat = torch.linalg.matrix_exp(prefac * gen_mat)
             elif isinstance(block.generator, torch.Tensor):
-                gen_mat = block.generator
+                gen_mat = block.generator.to(device)
 
                 # calculate evolution matrix
                 (p, _) = _gate_parameters(block, values)
-                prefac = -J * p
+                prefac = -J.to(device) * p
                 mat = torch.linalg.matrix_exp(prefac * gen_mat)
 
                 # add missing identities on unused qubits
                 mat = _fill_identities(
-                    mat, block.qubit_support, qubit_support, endianness=endianness
+                    mat, block.qubit_support, qubit_support, endianness=endianness, device=device
                 )
             else:
                 raise TypeError(
@@ -428,24 +442,30 @@ def _block_to_tensor_embedded(
 
     elif isinstance(block, CSWAP):
         cswap_block = _cswap_block(block)
-        mat = _block_to_tensor_embedded(cswap_block, values, qubit_support, endianness=endianness)
+        mat = _block_to_tensor_embedded(
+            cswap_block, values, qubit_support, endianness=endianness, device=device
+        )
 
     elif isinstance(block, (ControlBlock, ParametricControlBlock)):
         c_block, newparams = _controlled_block_with_params(block)
         newparams.update(values)
-        mat = _block_to_tensor_embedded(c_block, newparams, qubit_support, endianness=endianness)
+        mat = _block_to_tensor_embedded(
+            c_block, newparams, qubit_support, endianness=endianness, device=device
+        )
 
     elif isinstance(block, ScaleBlock):
         (scale,) = _gate_parameters(block, values)
         mat = scale * _block_to_tensor_embedded(
-            block.block, values, qubit_support, endianness=endianness
+            block.block, values, qubit_support, endianness=endianness, device=device
         )
 
     elif isinstance(block, ParametricBlock):
-        block_mat = _parametric_matrix(block, values)
+        block_mat = _parametric_matrix(block, values).to(device)
 
         # add missing identities on unused qubits
-        mat = _fill_identities(block_mat, block.qubit_support, qubit_support, endianness=endianness)
+        mat = _fill_identities(
+            block_mat, block.qubit_support, qubit_support, endianness=endianness, device=device
+        )
 
     elif isinstance(block, MatrixBlock):
         mat = block.matrix.unsqueeze(0)
@@ -459,13 +479,17 @@ def _block_to_tensor_embedded(
 
     elif isinstance(block, SWAP):
         swap_block = _swap_block(block)
-        mat = _block_to_tensor_embedded(swap_block, values, qubit_support, endianness=endianness)
+        mat = _block_to_tensor_embedded(
+            swap_block, values, qubit_support, endianness=endianness, device=device
+        )
 
     elif block.name in OPERATIONS_DICT.keys():
         block_mat = OPERATIONS_DICT[block.name]
 
         # add missing identities on unused qubits
-        mat = _fill_identities(block_mat, block.qubit_support, qubit_support, endianness=endianness)
+        mat = _fill_identities(
+            block_mat, block.qubit_support, qubit_support, endianness=endianness, device=device
+        )
 
     elif isinstance(block, ProjectorBlock):
         from qadence.states import product_state
@@ -476,7 +500,13 @@ def _block_to_tensor_embedded(
         block_mat = torch.kron(ket, bra.T)
         block_mat = block_mat.unsqueeze(0) if len(block_mat.size()) == 2 else block_mat
 
-        mat = _fill_identities(block_mat, block.qubit_support, qubit_support, endianness=endianness)
+        mat = _fill_identities(
+            block_mat.to(device),
+            block.qubit_support,
+            qubit_support,
+            endianness=endianness,
+            device=device,
+        )
 
     else:
         raise TypeError(f"Conversion for block type {type(block)} not supported.")

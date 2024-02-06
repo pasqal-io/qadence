@@ -20,7 +20,7 @@ authors = [
 ]
 requires-python = ">=3.9,<3.12"
 license = {text = "Apache 2.0"}
-version = "1.2.6"
+version = "1.3.0"
 classifiers=[
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python",
@@ -42,7 +42,7 @@ dependencies = [
     "jsonschema",
     "nevergrad",
     "scipy",
-    "pyqtorch==1.0.4",
+    "pyqtorch==1.0.5",
     "matplotlib",
 ]
 
@@ -177,7 +177,7 @@ required-imports = ["from __future__ import annotations"]
 
 [tool.ruff.per-file-ignores]
 "__init__.py" = ["F401"]
-"operations.py" = ["E742"]  # Avoid ambiguous class name warning for identity.
+"qadence/operations/primitive.py" = ["E742"]  # Avoid ambiguous class name warning for identity.
 "qadence/backends/horqrux/convert_ops.py" = ["E741"]  # Avoid ambiguous class name warning for 0.
 
 [tool.ruff.mccabe]
