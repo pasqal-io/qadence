@@ -6,8 +6,8 @@ from typing import Any
 
 import numpy as np
 import sympy
-import torch
-from scipy.sparse.linalg import eigs
+from torch import Tensor, stack, vmap
+from torch import complex as make_complex
 from torch.linalg import eigvals
 
 from qadence.logger import get_logger
@@ -87,7 +87,7 @@ def nqubits_to_basis(
     n_qubits: int,
     result_type: ResultType = ResultType.STRING,
     endianness: Endianness = Endianness.BIG,
-) -> list[str] | torch.Tensor | np.array:
+) -> list[str] | Tensor | np.array:
     """
     Creates all basis states for a given number of qubits, endianness and format.
 
@@ -113,7 +113,7 @@ def nqubits_to_basis(
     else:
         basis_list = [list(map(int, tuple(basis))) for basis in basis_strings]
         if result_type == ResultType.TORCH:
-            return torch.stack([torch.tensor(basis) for basis in basis_list])
+            return stack([Tensor(basis) for basis in basis_list])
         elif result_type == ResultType.NUMPY:
             return np.stack([np.array(basis) for basis in basis_list])
 
@@ -178,36 +178,43 @@ def isclose(
     if isinstance(x, complex) or isinstance(y, complex):
         return abs(x - y) <= max(rel_tol * max(abs(x), abs(y)), abs_tol)  # type: ignore
 
-    return math.isclose(x, y, rel_tol=rel_tol, abs_tol=abs_tol)
+    return math.isclose(x, y, rel_tol=rel_tol, abs_tol=abs_tol)  # type: ignore
 
 
 def eigenvalues(
-    x: torch.Tensor, max_num_evals: int | None = None, max_num_gaps: int | None = None
-) -> torch.Tensor:
+    x: Tensor, max_num_evals: int | None = None, max_num_gaps: int | None = None
+) -> Tensor:
+    # FIXME: Currently doing full decomposition everytime because it is generally faster
+    # than converting to numpy and using the scipy routines to select first k-eigenvalues.
+    # Furthermore, we should exploit the matrices being Hermitian.
+
+    # get all eigenvalues of generator
+    eigenspectrum = eigvals(x).squeeze(0)
+
     if max_num_evals and not max_num_gaps:
         # get specified number of eigenvalues of generator
-        eigenvals, _ = eigs(x.squeeze(0).numpy(), k=max_num_evals, which="LM")
+        eigenvals = eigenspectrum[:max_num_evals]
     elif max_num_gaps and not max_num_evals:
         # get eigenvalues of generator corresponding to specified number of spectral gaps
         k = int(np.ceil(0.5 * (1 + np.sqrt(1 + 8 * max_num_gaps))))
-        eigenvals, _ = eigs(x.squeeze(0).numpy(), k=k, which="LM")
+        eigenvals = eigenspectrum[:k]
     else:
-        # get all eigenvalues of generator
-        eigenvals = eigvals(x)
+        eigenvals = eigenspectrum
+
     return eigenvals
 
 
-def _round_complex(t: torch.Tensor, decimals: int = 4) -> torch.Tensor:
-    def _round(_t: torch.Tensor) -> torch.Tensor:
+def _round_complex(t: Tensor, decimals: int = 4) -> Tensor:
+    def _round(_t: Tensor) -> Tensor:
         r = _t.real.round(decimals=decimals)
         i = _t.imag.round(decimals=decimals)
-        return torch.complex(r, i)
+        return make_complex(r, i)
 
-    fn = torch.vmap(_round)
+    fn = vmap(_round)
     return fn(t)
 
 
-def is_qadence_shape(state: torch.Tensor, n_qubits: int) -> bool:
+def is_qadence_shape(state: Tensor, n_qubits: int) -> bool:
     if len(state.size()) < 2:
         raise ValueError(
             f"Provided state is required to have atleast two dimensions. Got shape {state.shape}"
@@ -215,7 +222,7 @@ def is_qadence_shape(state: torch.Tensor, n_qubits: int) -> bool:
     return state.shape[1] == 2**n_qubits  # type: ignore[no-any-return]
 
 
-def infer_batchsize(param_values: dict[str, torch.Tensor] = None) -> int:
+def infer_batchsize(param_values: dict[str, Tensor] = None) -> int:
     """Infer the batch_size through the length of the parameter tensors."""
     try:
         return max([len(tensor) for tensor in param_values.values()]) if param_values else 1
@@ -224,7 +231,7 @@ def infer_batchsize(param_values: dict[str, torch.Tensor] = None) -> int:
 
 
 def validate_values_and_state(
-    state: torch.Tensor | None, n_qubits: int, param_values: dict[str, torch.Tensor] = None
+    state: Tensor | None, n_qubits: int, param_values: dict[str, Tensor] = None
 ) -> None:
     if state is not None:
         batch_size_state = (
