@@ -51,7 +51,6 @@ from qadence.blocks.block_to_tensor import (
 )
 from qadence.blocks.primitive import ProjectorBlock
 from qadence.operations import (
-    OpName,
     U,
     multi_qubit_gateset,
     non_unitary_gateset,
@@ -59,6 +58,7 @@ from qadence.operations import (
     three_qubit_gateset,
     two_qubit_gateset,
 )
+from qadence.types import OpName
 from qadence.utils import infer_batchsize
 
 from .config import Configuration

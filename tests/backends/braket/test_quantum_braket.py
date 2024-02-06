@@ -10,11 +10,11 @@ from torch import Tensor, allclose, tensor
 
 from qadence.backends import backend_factory
 from qadence.backends.braket import Backend
-from qadence.blocks import AbstractBlock, PrimitiveBlock
+from qadence.blocks import AbstractBlock, PrimitiveBlock, chain
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import ising_hamiltonian, single_z, total_magnetization
 from qadence.execution import run
-from qadence.operations import CNOT, CPHASE, CSWAP, RX, RY, RZ, SWAP, H, I, S, T, U, X, Y, Z, chain
+from qadence.operations import CNOT, CPHASE, CSWAP, RX, RY, RZ, SWAP, H, I, S, T, U, X, Y, Z
 from qadence.states import equivalent_state
 
 
