@@ -6,12 +6,15 @@ import torch
 from torch.nn import Module
 from torch.optim import Optimizer
 
+from qadence.ml_tools.data import data_to_device
+
 
 def optimize_step(
     model: Module,
     optimizer: Optimizer,
     loss_fn: Callable,
     xs: dict | list | torch.Tensor | None,
+    device: torch.device = torch.device("cpu"),
 ) -> tuple[torch.Tensor | float, dict | None]:
     """Default Torch optimize step with closure.
 
@@ -31,6 +34,7 @@ def optimize_step(
     """
 
     loss, metrics = None, {}
+    xs_to_device = data_to_device(xs, device)
 
     def closure() -> Any:
         # NOTE: We need the nonlocal as we can't return a metric dict and
@@ -38,7 +42,7 @@ def optimize_step(
         # reason the returned loss is always the first one...
         nonlocal metrics, loss
         optimizer.zero_grad()
-        loss, metrics = loss_fn(model, xs)
+        loss, metrics = loss_fn(model, xs_to_device)
         loss.backward(retain_graph=True)
         return loss.item()
 

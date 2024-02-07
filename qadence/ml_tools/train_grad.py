@@ -10,7 +10,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from qadence.logger import get_logger
 from qadence.ml_tools.config import TrainConfig
-from qadence.ml_tools.data import DictDataLoader, data_to_device
+from qadence.ml_tools.data import DictDataLoader
 from qadence.ml_tools.optimize_step import optimize_step
 from qadence.ml_tools.printing import print_metrics, write_tensorboard
 from qadence.ml_tools.saveload import load_checkpoint, write_checkpoint
@@ -139,12 +139,19 @@ def train(
                 # this is the case, for example, of quantum models
                 # which do not have classical input data (e.g. chemistry)
                 if dataloader is None:
-                    loss, metrics = optimize_step(model, optimizer, loss_fn, None)
+                    loss, metrics = optimize_step(
+                        model=model, optimizer=optimizer, loss_fn=loss_fn, xs=None, device=device
+                    )
                     loss = loss.item()
 
                 elif isinstance(dataloader, (DictDataLoader, DataLoader)):
-                    data = data_to_device(next(dl_iter), device)  # type: ignore[arg-type]
-                    loss, metrics = optimize_step(model, optimizer, loss_fn, data)
+                    loss, metrics = optimize_step(
+                        model=model,
+                        optimizer=optimizer,
+                        loss_fn=loss_fn,
+                        xs=next(dl_iter),  # type: ignore[arg-type]
+                        device=device,
+                    )
 
                 else:
                     raise NotImplementedError(

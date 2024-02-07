@@ -86,15 +86,40 @@ def data_to_device(xs: Any, device: str) -> Any:
 
 
 @data_to_device.register
+def _(xs: None, device: str) -> None:
+    return xs
+
+
+@data_to_device.register(Tensor)
 def _(xs: Tensor, device: str) -> Tensor:
-    return xs.to(device, non_blocking=True)
+    return xs.to(device=device, non_blocking=True)
 
 
-@data_to_device.register
+@data_to_device.register(list)
 def _(xs: list, device: str) -> list:
     return [data_to_device(x, device) for x in xs]
 
 
-@data_to_device.register
+@data_to_device.register(dict)
 def _(xs: dict, device: str) -> dict:
     return {key: data_to_device(val, device) for key, val in xs.items()}
+
+
+@data_to_device.register(DataLoader)
+def _(xs: DataLoader, device: str) -> DataLoader:
+    return DataLoader(data_to_device(xs.dataset, device))
+
+
+@data_to_device.register(DictDataLoader)
+def _(xs: DictDataLoader, device: str) -> DictDataLoader:
+    return DictDataLoader({key: data_to_device(val, device) for key, val in xs.dataloaders.items()})
+
+
+@data_to_device.register(InfiniteTensorDataset)
+def _(xs: InfiniteTensorDataset, device: str) -> InfiniteTensorDataset:
+    return InfiniteTensorDataset(*[data_to_device(val, device) for val in xs.tensors])
+
+
+@data_to_device.register(TensorDataset)
+def _(xs: TensorDataset, device: str) -> TensorDataset:
+    return TensorDataset(*[data_to_device(val, device) for val in xs.tensors])
