@@ -93,7 +93,7 @@ dependencies = [
   "ruff",
   "pydocstringformatter",
 ]
-# features = ["pulser", "braket","visualization", "horqrux", "protocols"]
+features = ["pulser", "braket","visualization", "horqrux"]
 
 [tool.hatch.envs.default.scripts]
 test = "pytest -n auto --cov-report lcov --cov-config=pyproject.toml --cov=qadence --cov=tests --ignore=./tests/test_examples.py {args}"
@@ -132,7 +132,7 @@ dependencies = [
   "markdown-exec",
   "mike",
 ]
-features = ["visualization"]
+features = ["pulser", "braket", "horqrux", "visualization"]
 
 [tool.hatch.envs.docs.scripts]
 build = "mkdocs build --clean --strict"
