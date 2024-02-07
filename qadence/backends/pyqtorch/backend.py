@@ -238,7 +238,10 @@ class Backend(BackendInterface):
         if noise is not None:
             samples = apply_noise(noise=noise, samples=samples)
         if mitigation is not None:
-            logger.warning("Mitigation protocol is deprecated. Use qadence-protocols instead.")
+            logger.warning(
+                "Mitigation protocol is deprecated. Use qadence-protocols instead.",
+                DeprecationWarning,
+            )
             assert noise
             samples = apply_mitigation(noise=noise, mitigation=mitigation, samples=samples)
         return samples
