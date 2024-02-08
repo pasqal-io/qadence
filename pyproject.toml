@@ -67,11 +67,12 @@ horqrux = [
     "jaxopt",
     "einops",
     "sympy2jax"]
-
+protocols = ["qadence-protocols"]
 all = [
   "pulser>=0.15.2",
   "amazon-braket-sdk",
   "graphviz",
+  "protocols",
   # FIXME: will be needed once we support latex labels
   # "latex2svg @ git+https://github.com/Moonbase59/latex2svg.git#egg=latex2svg",
   # "scour",
