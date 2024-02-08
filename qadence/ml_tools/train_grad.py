@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Callable, Union
 
 from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, TimeRemainingColumn
+from torch import device as torch_device
 from torch.nn import DataParallel, Module
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
@@ -24,7 +25,7 @@ def train(
     optimizer: Optimizer,
     config: TrainConfig,
     loss_fn: Callable,
-    device: str = "cpu",
+    device: torch_device = None,
     optimize_step: Callable = optimize_step,
     write_tensorboard: Callable = write_tensorboard,
 ) -> tuple[Module, Optimizer]:
