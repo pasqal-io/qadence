@@ -27,6 +27,7 @@ def optimize_step(
         loss_fn (Callable): A custom loss function
         xs (dict | list | torch.Tensor | None): the input data. If None it means
             that the given model does not require any input data
+        device (torch.device): A target device to run computation on.
 
     Returns:
         tuple: tuple containing the model, the optimizer, a dictionary with

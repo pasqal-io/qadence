@@ -83,6 +83,7 @@ def to_dataloader(*tensors: Tensor, batch_size: int = 1, infinite: bool = False)
 
 @singledispatch
 def data_to_device(xs: Any, device: torch_device) -> Any:
+    """Utility method to move arbitrary data to 'device'."""
     raise ValueError(f"Cannot move {type(xs)} to a pytorch device.")
 
 
