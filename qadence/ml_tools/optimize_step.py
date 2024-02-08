@@ -14,7 +14,7 @@ def optimize_step(
     optimizer: Optimizer,
     loss_fn: Callable,
     xs: dict | list | torch.Tensor | None,
-    device: torch.device = torch.device("cpu"),
+    device: torch.device = None,
 ) -> tuple[torch.Tensor | float, dict | None]:
     """Default Torch optimize step with closure.
 
