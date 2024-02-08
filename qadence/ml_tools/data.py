@@ -6,6 +6,7 @@ from itertools import cycle
 from typing import Any, Iterator
 
 from torch import Tensor
+from torch import device as torch_device
 from torch.utils.data import DataLoader, IterableDataset, TensorDataset
 
 
@@ -81,20 +82,46 @@ def to_dataloader(*tensors: Tensor, batch_size: int = 1, infinite: bool = False)
 
 
 @singledispatch
-def data_to_device(xs: Any, device: str) -> Any:
+def data_to_device(xs: Any, device: torch_device) -> Any:
+    """Utility method to move arbitrary data to 'device'."""
     raise ValueError(f"Cannot move {type(xs)} to a pytorch device.")
 
 
 @data_to_device.register
-def _(xs: Tensor, device: str) -> Tensor:
-    return xs.to(device, non_blocking=True)
+def _(xs: None, device: torch_device) -> None:
+    return xs
 
 
-@data_to_device.register
-def _(xs: list, device: str) -> list:
+@data_to_device.register(Tensor)
+def _(xs: Tensor, device: torch_device) -> Tensor:
+    return xs.to(device=device, non_blocking=True)
+
+
+@data_to_device.register(list)
+def _(xs: list, device: torch_device) -> list:
     return [data_to_device(x, device) for x in xs]
 
 
-@data_to_device.register
-def _(xs: dict, device: str) -> dict:
+@data_to_device.register(dict)
+def _(xs: dict, device: torch_device) -> dict:
     return {key: data_to_device(val, device) for key, val in xs.items()}
+
+
+@data_to_device.register(DataLoader)
+def _(xs: DataLoader, device: torch_device) -> DataLoader:
+    return DataLoader(data_to_device(xs.dataset, device))
+
+
+@data_to_device.register(DictDataLoader)
+def _(xs: DictDataLoader, device: torch_device) -> DictDataLoader:
+    return DictDataLoader({key: data_to_device(val, device) for key, val in xs.dataloaders.items()})
+
+
+@data_to_device.register(InfiniteTensorDataset)
+def _(xs: InfiniteTensorDataset, device: torch_device) -> InfiniteTensorDataset:
+    return InfiniteTensorDataset(*[data_to_device(val, device) for val in xs.tensors])
+
+
+@data_to_device.register(TensorDataset)
+def _(xs: TensorDataset, device: torch_device) -> TensorDataset:
+    return TensorDataset(*[data_to_device(val, device) for val in xs.tensors])
