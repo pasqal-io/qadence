@@ -8,7 +8,15 @@ from sympy import Expr
 from sympy2jax import SymbolicModule as JaxSympyModule
 from torch import Tensor, cdouble, from_numpy
 
-from qadence.types import ParamDictType
+from qadence.blocks import (
+    AbstractBlock,
+    AddBlock,
+    ChainBlock,
+    KronBlock,
+    ScaleBlock,
+)
+from qadence.blocks.block_to_tensor import _gate_parameters
+from qadence.types import Endianness, ParamDictType
 
 
 def jarr_to_tensor(arr: Array, dtype: Any = cdouble) -> Tensor:
@@ -43,3 +51,92 @@ def uniform_batchsize(param_values: ParamDictType) -> ParamDictType:
         for k, v in param_values.items()
     }
     return batched_values
+
+
+IMAT = jnp.eye(2, dtype=jnp.cdouble)
+ZEROMAT = jnp.zeros_like(IMAT)
+XMAT = jnp.array([[0, 1], [1, 0]], dtype=jnp.cdouble)
+YMAT = jnp.array([[0, -1j], [1j, 0]], dtype=jnp.cdouble)
+ZMAT = jnp.array([[1, 0], [0, -1]], dtype=jnp.cdouble)
+
+MAT_DICT = {"I": IMAT, "Z": ZMAT, "Y": YMAT, "X": XMAT}
+
+
+def _fill_identities(
+    block_mat: Array,
+    qubit_support: tuple,
+    full_qubit_support: tuple | list,
+    diag_only: bool = False,
+    endianness: Endianness = Endianness.BIG,
+) -> Array:
+    qubit_support = tuple(sorted(qubit_support))
+    mat = IMAT if qubit_support[0] != full_qubit_support[0] else block_mat
+    if diag_only:
+        mat = jnp.diag(mat.squeeze(0))
+    for i in full_qubit_support[1:]:
+        if i == qubit_support[0]:
+            other = jnp.diag(block_mat) if diag_only else block_mat
+            mat = jnp.kron(mat, other)
+        elif i not in qubit_support:
+            other = jnp.diag(IMAT) if diag_only else IMAT
+            mat = jnp.kron(mat, other)
+    return mat
+
+
+def block_to_jax(
+    block: AbstractBlock,
+    values: dict = None,
+    qubit_support: tuple | None = None,
+    use_full_support: bool = True,
+    endianness: Endianness = Endianness.BIG,
+) -> Array:
+    if values is None:
+        from qadence.blocks import embedding
+
+        (ps, embed) = embedding(block)
+        values = embed(ps, {})
+
+    # get number of qubits
+    if qubit_support is None:
+        if use_full_support:
+            qubit_support = tuple(range(0, block.n_qubits))
+        else:
+            qubit_support = block.qubit_support
+    nqubits = len(qubit_support)
+
+    if isinstance(block, (ChainBlock, KronBlock)):
+        # create identity matrix of appropriate dimensions
+        mat = IMAT
+        for i in range(nqubits - 1):
+            mat = jnp.kron(mat, IMAT)
+
+        # perform matrix multiplications
+        for b in block.blocks:
+            other = block_to_jax(b, values, qubit_support, endianness=endianness)
+            mat = jnp.matmul(other, mat)
+
+    elif isinstance(block, AddBlock):
+        # create zero matrix of appropriate dimensions
+        mat = ZEROMAT
+        for _ in range(nqubits - 1):
+            mat = jnp.kron(mat, ZEROMAT)
+
+        # perform matrix summation
+        for b in block.blocks:
+            mat = mat + block_to_jax(b, values, qubit_support, endianness=endianness)
+
+    elif isinstance(block, ScaleBlock):
+        (scale,) = _gate_parameters(block, values)
+        scale = tensor_to_jnp(scale, dtype=jnp.float64)
+        mat = scale * block_to_jax(block.block, values, qubit_support, endianness=endianness)
+
+    elif block.name in MAT_DICT.keys():
+        block_mat = MAT_DICT[block.name]
+
+        # add missing identities on unused qubits
+        mat = _fill_identities(block_mat, block.qubit_support, qubit_support, endianness=endianness)
+
+    else:
+        raise TypeError(f"Conversion for block type {type(block)} not supported.")
+
+    return mat

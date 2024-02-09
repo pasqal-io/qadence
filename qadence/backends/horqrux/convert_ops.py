@@ -8,13 +8,15 @@ from typing import Any, Callable, Dict
 
 import jax.numpy as jnp
 from horqrux.abstract import Operator as Gate
+from horqrux.analog import HamiltonianEvolution as NativeHorqHEvo
 from horqrux.apply import apply_gate
 from horqrux.parametric import RX, RY, RZ
 from horqrux.primitive import NOT, SWAP, H, I, X, Y, Z
-from horqrux.utils import overlap
+from horqrux.utils import inner
 from jax import Array
 from jax.tree_util import register_pytree_node_class
 
+from qadence.backends.jax_utils import block_to_jax
 from qadence.blocks import (
     AbstractBlock,
     AddBlock,
@@ -22,6 +24,7 @@ from qadence.blocks import (
     ParametricBlock,
     PrimitiveBlock,
     ScaleBlock,
+    TimeEvolutionBlock,
 )
 from qadence.operations import (
     CNOT,
@@ -85,7 +88,7 @@ class HorqruxObservable(HorqruxCircuit):
         super().__init__(operators=operators)
 
     def forward(self, state: Array, values: ParamDictType) -> Array:
-        return overlap(state, self._forward(state, values))
+        return jnp.real(inner(state, self._forward(state, values)))
 
 
 def convert_observable(
@@ -141,6 +144,8 @@ def convert_block(
         else:
             native_gate = native_op_fn(target, control)
         ops = [HorqOperation(native_gate)]
+    elif isinstance(block, TimeEvolutionBlock):
+        ops = [HorqHamiltonianEvolution(block, config)]
     else:
         raise NotImplementedError(f"Non-supported operation of type {type(block)}.")
 
@@ -197,3 +202,63 @@ class HorqScaleGate:
     @classmethod
     def tree_unflatten(cls, aux_data: Any, children: Any) -> Any:
         return cls(*children, *aux_data)
+
+
+@register_pytree_node_class
+@dataclass
+class HorqHamiltonianEvolution:
+    def __init__(
+        self,
+        block: TimeEvolutionBlock,
+        config: Configuration,
+    ):
+        super().__init__()
+        self.qubit_support = block.qubit_support
+        self.param_names = config.get_param_name(block)
+        self.block = block
+        self.hmat: Array
+        self.native_hevo = NativeHorqHEvo(self.qubit_support)
+
+        if isinstance(block.generator, AbstractBlock) and not block.generator.is_parametric:
+            hmat = block_to_jax(
+                block.generator,
+                qubit_support=self.qubit_support,
+                use_full_support=False,
+            )
+            self.hmat = hmat
+            self._hamiltonian = lambda self, values: self.hmat
+
+        else:
+
+            def _hamiltonian(self: HorqHamiltonianEvolution, values: dict[str, Array]) -> Array:
+                hmat = block_to_jax(
+                    block.generator,  # type: ignore[arg-type]
+                    values=values,
+                    qubit_support=self.qubit_support,
+                    use_full_support=False,
+                )
+                return hmat
+
+            self._hamiltonian = _hamiltonian
+
+        self._time_evolution = lambda values: values[self.param_names[0]]
+
+    def _unitary(self, hamiltonian: Array, time_evolution: Array) -> Array:
+        return self.native_hevo.unitary(
+            {"hamiltonian": hamiltonian, "time_evolution": time_evolution}
+        )
+
+    def unitary(self, values: dict[str, Array]) -> Array:
+        """The evolved operator given current parameter values for generator and time evolution."""
+        return self._unitary(self._hamiltonian(self, values), self._time_evolution(values))
+
+    def forward(
+        self,
+        state: Array,
+        values: dict[str, Array],
+    ) -> Array:
+        return apply_gate(
+            state,
+            self.unitary(values),
+            self.qubit_support,
+        )
