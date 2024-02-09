@@ -7,13 +7,14 @@ from operator import add
 from typing import Any, Callable, Dict
 
 import jax.numpy as jnp
-from horqrux.abstract import Operator as Gate
-from horqrux.analog import HamiltonianEvolution as NativeHorqHEvo
+from horqrux.abstract import Primitive as Gate
+from horqrux.analog import _HamiltonianEvolution as NativeHorqHEvo
 from horqrux.apply import apply_gate
 from horqrux.parametric import RX, RY, RZ
 from horqrux.primitive import NOT, SWAP, H, I, X, Y, Z
 from horqrux.utils import inner
 from jax import Array
+from jax.scipy.linalg import expm
 from jax.tree_util import register_pytree_node_class
 
 from qadence.backends.jax_utils import block_to_jax
@@ -206,18 +207,17 @@ class HorqScaleGate:
 
 @register_pytree_node_class
 @dataclass
-class HorqHamiltonianEvolution:
+class HorqHamiltonianEvolution(NativeHorqHEvo):
     def __init__(
         self,
         block: TimeEvolutionBlock,
         config: Configuration,
     ):
-        super().__init__()
+        super().__init__("I", block.qubit_support, (None,))
         self.qubit_support = block.qubit_support
         self.param_names = config.get_param_name(block)
         self.block = block
         self.hmat: Array
-        self.native_hevo = NativeHorqHEvo(self.qubit_support)
 
         if isinstance(block.generator, AbstractBlock) and not block.generator.is_parametric:
             hmat = block_to_jax(
@@ -243,22 +243,22 @@ class HorqHamiltonianEvolution:
 
         self._time_evolution = lambda values: values[self.param_names[0]]
 
-    def _unitary(self, hamiltonian: Array, time_evolution: Array) -> Array:
-        return self.native_hevo.unitary(
-            {"hamiltonian": hamiltonian, "time_evolution": time_evolution}
-        )
-
     def unitary(self, values: dict[str, Array]) -> Array:
         """The evolved operator given current parameter values for generator and time evolution."""
-        return self._unitary(self._hamiltonian(self, values), self._time_evolution(values))
+        return expm(self._hamiltonian(self, values) * (-1j * self._time_evolution(values)))
 
     def forward(
         self,
         state: Array,
         values: dict[str, Array],
     ) -> Array:
-        return apply_gate(
-            state,
-            self.unitary(values),
-            self.qubit_support,
-        )
+        return apply_gate(state, self, values)
+
+    def tree_flatten(self) -> tuple[tuple[NativeHorqHEvo], tuple]:
+        children = (self,)
+        aux_data = ()
+        return (children, aux_data)
+
+    @classmethod
+    def tree_unflatten(cls, aux_data: Any, children: Any) -> Any:
+        return cls(*children, *aux_data)
