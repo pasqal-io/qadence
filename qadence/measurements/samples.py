@@ -1,14 +1,14 @@
 from __future__ import annotations
 
+from qadence_protocols.measurements.utils import iterate_pauli_decomposition
+from torch import Tensor
+
 from qadence.blocks import AbstractBlock
 from qadence.blocks.utils import unroll_block_with_scaling
 from qadence.circuit import QuantumCircuit
 from qadence.noise import Noise
 from qadence.types import BackendName
 from qadence.utils import Endianness
-from torch import Tensor
-
-from qadence_protocols.measurements.utils import iterate_pauli_decomposition
 
 
 def compute_expectation(

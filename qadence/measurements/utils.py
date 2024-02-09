@@ -5,9 +5,10 @@ from functools import reduce
 
 import numpy as np
 import torch
+from torch import Tensor
+
 from qadence.blocks import PrimitiveBlock
 from qadence.parameters import evaluate
-from torch import Tensor
 
 
 def get_qubit_indices_for_op(pauli_term: tuple, op: PrimitiveBlock | None = None) -> list[int]:
