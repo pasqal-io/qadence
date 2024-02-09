@@ -54,7 +54,7 @@ def test_endianness_equal_sample(
             assert js_divergence(circ_sample, smple) < JS_ACCEPTANCE + ATOL_DICT[backend]
 
 
-@pytest.mark.parametrize("backend", [BackendName.PYQTORCH])
+@pytest.mark.parametrize("backend", [BackendName.PYQTORCH, BackendName.HORQRUX])
 def test_endianness_hamevo(backend: BackendName) -> None:
     n_qubits = 2
     gen = -0.5 * kron(I(0) - Z(0), I(1) - X(1))
@@ -70,7 +70,10 @@ def test_endianness_hamevo(backend: BackendName) -> None:
         conv_cnot.circuit, conv_cnot.embedding_fn(conv_cnot.params, {}), state=state_10
     )
     wf_hamevo = bkd.run(conv.circuit, conv.embedding_fn(conv.params, {}), state=state_10)
-    assert allclose(wf_cnot, wf_hamevo)
+    if backend == BackendName.PYQTORCH:
+        assert allclose(wf_cnot, wf_hamevo)
+    else:
+        assert jnp.allclose(wf_cnot, wf_hamevo)
     # The first qubit is 1 and we do CNOT(0,1), so we expect "11"
     expected_samples = [Counter({"11": N_SHOTS})]
     hamevo_samples = bkd.sample(

@@ -127,6 +127,8 @@ def block_to_jax(
 
     elif isinstance(block, ScaleBlock):
         (scale,) = _gate_parameters(block, values)
+        if isinstance(scale, Tensor):
+            scale = tensor_to_jnp(scale)
         mat = scale * block_to_jax(block.block, values, qubit_support, endianness=endianness)
 
     elif block.name in MAT_DICT.keys():
