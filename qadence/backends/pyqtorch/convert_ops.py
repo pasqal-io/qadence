@@ -267,7 +267,7 @@ class PyQObservable(Module):
         return self._forward(self, state, values)
 
     def forward(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
-        return pyq.overlap(state, self.run(state, values))
+        return pyq.inner_prod(state, self.run(state, values)).real
 
     @property
     def device(self) -> torch_device:

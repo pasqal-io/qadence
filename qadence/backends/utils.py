@@ -170,13 +170,13 @@ def dydx(
     out_state: Tensor,
     projected_state: Tensor,
 ) -> Tensor:
-    return 2 * pyq.overlap(
+    return 2 * pyq.inner_prod(
         projected_state,
         apply_operator(
             state=out_state,
             operator=jacobian,
             qubits=qubit_support,
-        ),
+        ).real,
     )
 
 
