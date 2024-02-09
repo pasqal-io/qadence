@@ -6,7 +6,7 @@ from pyqtorch.apply import apply_operator
 from pyqtorch.circuit import QuantumCircuit as PyQCircuit
 from pyqtorch.parametric import Parametric as PyQParametric
 from pyqtorch.primitive import Primitive as PyQPrimitive
-from pyqtorch.utils import overlap, param_dict
+from pyqtorch.utils import inner_prod, param_dict
 from torch import Tensor, no_grad, tensor
 from torch.autograd import Function
 from torch.nn import Module
@@ -73,7 +73,7 @@ class AdjointExpectation(Function):
         ctx.out_state = circuit.run(state, values)
         ctx.projected_state = observable.run(ctx.out_state, values)
         ctx.save_for_backward(*param_values)
-        return overlap(ctx.out_state, ctx.projected_state)
+        return inner_prod(ctx.out_state, ctx.projected_state).real
 
     @staticmethod
     @no_grad()
@@ -97,11 +97,11 @@ class AdjointExpectation(Function):
                     mu = apply_operator(
                         ctx.out_state, op.jacobian_generator(values), op.qubit_support
                     )
-                    grads.append(2 * overlap(ctx.projected_state, mu))
+                    grads.append(2 * inner_prod(ctx.projected_state, mu).real)
                 if time_param.requires_grad:
                     # If the time evolution is trainable, we compute its gradient.
                     mu = apply_operator(ctx.out_state, op.jacobian_time(values), op.qubit_support)
-                    grads.append(2 * overlap(ctx.projected_state, mu))
+                    grads.append(2 * inner_prod(ctx.projected_state, mu).real)
                 ctx.projected_state = apply_operator(
                     ctx.projected_state, op.dagger(values), op.qubit_support
                 )
@@ -117,7 +117,7 @@ class AdjointExpectation(Function):
                         scaled_pyq_op.jacobian(values),
                         scaled_pyq_op.qubit_support,
                     )
-                    grads.append(2 * overlap(ctx.projected_state, mu))
+                    grads.append(2 * inner_prod(ctx.projected_state, mu).real)
 
                 if values[op.param_name].requires_grad:
                     grads.append(2 * -values[op.param_name])
@@ -134,7 +134,7 @@ class AdjointExpectation(Function):
                         op.jacobian(values),
                         op.qubit_support,
                     )
-                    grads.append(2 * overlap(ctx.projected_state, mu))
+                    grads.append(2 * inner_prod(ctx.projected_state, mu).real)
                 ctx.projected_state = apply_operator(
                     ctx.projected_state, op.dagger(values), op.qubit_support
                 )
