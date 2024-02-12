@@ -13,6 +13,7 @@ from qadence.blocks import (
     AddBlock,
     ChainBlock,
     KronBlock,
+    ProjectorBlock,
     ScaleBlock,
 )
 from qadence.blocks.block_to_tensor import _gate_parameters
@@ -137,6 +138,20 @@ def block_to_jax(
         # add missing identities on unused qubits
         mat = _fill_identities(block_mat, block.qubit_support, qubit_support, endianness=endianness)
 
+    elif isinstance(block, ProjectorBlock):
+        from qadence.states import product_state
+
+        bra = tensor_to_jnp(product_state(block.bra))
+        ket = tensor_to_jnp(product_state(block.ket))
+
+        block_mat = jnp.kron(ket, bra.T)
+
+        mat = _fill_identities(
+            block_mat,
+            block.qubit_support,
+            qubit_support,
+            endianness=endianness,
+        )
     else:
         raise TypeError(f"Conversion for block type {type(block)} not supported.")
 

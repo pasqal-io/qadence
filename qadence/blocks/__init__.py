@@ -13,6 +13,7 @@ from .primitive import (
     ScaleBlock,
     ParametricControlBlock,
     ControlBlock,
+    ProjectorBlock,
 )
 from .composite import AddBlock, ChainBlock, CompositeBlock, KronBlock, PutBlock
 from .matrix import MatrixBlock
