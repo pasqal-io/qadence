@@ -28,6 +28,21 @@ from .transpile import *
 from .types import *
 from .utils import *
 
+"""Manage imports from extension packages:
+
+For each extension package, tries to import the functions defined in the __all__, making
+them available in the qadence namespace.
+"""
+try:
+    from qadence_libs import *
+except ModuleNotFoundError:
+    pass
+
+# try:
+#    from qadence_protocols import *
+# except ModuleNotFoundError:
+#    pass
+
 DEFAULT_FLOAT_DTYPE = torchfloat64
 DEFAULT_COMPLEX_DTYPE = cdouble
 set_default_dtype(DEFAULT_FLOAT_DTYPE)
