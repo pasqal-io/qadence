@@ -6,10 +6,13 @@ import torch
 
 from qadence.blocks import AbstractBlock, add, chain, kron, tag
 from qadence.constructors import hamiltonian_factory
+from qadence.logger import get_logger
 from qadence.operations import CPHASE, SWAP, H, HamEvo, I, Z
 from qadence.types import PI, Interaction, Strategy
 
 from .daqc import daqc_transform
+
+logger = get_logger(__name__)
 
 
 def qft(
@@ -47,6 +50,12 @@ def qft(
         qft_circuit = qft(n_qubits, strategy = "sDAQC")
         ```
     """
+
+    # FIXME: To remove
+    logger.warning(
+        "Function qft in qadence is deprecated and will be removed. "
+        "Please use the same function from qadence-libs."
+    )
 
     if support is None:
         support = tuple(range(n_qubits))

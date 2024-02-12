@@ -4,6 +4,7 @@ import itertools
 from typing import Any, Optional, Type, Union
 
 from qadence.blocks import AbstractBlock, block_is_qubit_hamiltonian, chain, kron, tag
+from qadence.logger import get_logger
 from qadence.operations import CNOT, CPHASE, CRX, CRY, CRZ, CZ, RX, RY, HamEvo
 from qadence.types import Interaction, Strategy
 
@@ -11,6 +12,8 @@ from .hamiltonians import hamiltonian_factory
 from .utils import build_idx_fms
 
 DigitalEntanglers = Union[CNOT, CZ, CRZ, CRY, CRX]
+
+logger = get_logger(__name__)
 
 
 def hea(
@@ -62,6 +65,12 @@ def hea(
     )
     ```
     """
+
+    # FIXME: To remove
+    logger.warning(
+        "Function hea in qadence is deprecated and will be removed. "
+        "Please use the same function from qadence-libs."
+    )
 
     if support is None:
         support = tuple(range(n_qubits))
@@ -360,6 +369,12 @@ def build_qnn(
     Returns:
         A list of Abstract blocks to be used for constructing a quantum circuit
     """
+
+    # FIXME: To remove
+    logger.warning(
+        "Function build_qnn is deprecated and will be removed (it is not moved to qadence-libs)."
+    )
+
     depth = n_qubits if depth is None else depth
 
     idx_fms = build_idx_fms(basis, fm_pauli, fm_strategy, n_features, n_qubits, spectrum)

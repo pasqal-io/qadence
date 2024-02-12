@@ -182,6 +182,12 @@ def feature_map(
     ```
     """
 
+    # FIXME: To remove
+    logger.warning(
+        "Function feature_map in qadence is deprecated and will be removed. "
+        "Please use the same function from qadence-libs."
+    )
+
     # Process input
     if support is None:
         support = tuple(range(n_qubits))
@@ -298,6 +304,12 @@ def exp_fourier_feature_map(
         param: name of feature `Parameter`
         feature_range: min and max value of the feature, as floats in a Tuple
     """
+
+    # FIXME: To remove
+    logger.warning(
+        "Function exp_fourier_feature_map in qadence is deprecated and will be removed. "
+        "Please use the same function from qadence-libs."
+    )
 
     if feature_range is None:
         feature_range = (0.0, 2.0**n_qubits)

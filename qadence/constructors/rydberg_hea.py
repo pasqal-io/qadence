@@ -7,8 +7,11 @@ import sympy
 import qadence as qd
 from qadence.blocks import AddBlock, ChainBlock, add, chain
 from qadence.constructors import hamiltonian_factory
+from qadence.logger import get_logger
 from qadence.operations import N, X, Y, Z
 from qadence.parameters import Parameter, VariationalParameter
+
+logger = get_logger(__name__)
 
 TPauliOp = Union[Type[X], Type[Y], Type[Z], Type[N]]
 
@@ -74,6 +77,13 @@ def rydberg_hea_layer(
     Returns:
         A block with a single layer of Rydberg HEA
     """
+
+    # FIXME: To remove
+    logger.warning(
+        "Function rydberg_hea_layer in qadence is deprecated and will be removed. "
+        "Please use the same function from qadence-libs."
+    )
+
     n_qubits = register.n_qubits
 
     drive_x = _amplitude_map(n_qubits, qd.X, weights=drives)
@@ -160,6 +170,13 @@ def rydberg_hea(
     Returns:
         The Rydberg HEA block
     """
+
+    # FIXME: To remove
+    logger.warning(
+        "Function rydberg_hea in qadence is deprecated and will be removed. "
+        "Please use the same function from qadence-libs."
+    )
+
     n_qubits = register.n_qubits
     prefix = "" if additional_prefix is None else "_" + additional_prefix
 

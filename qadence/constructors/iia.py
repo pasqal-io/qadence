@@ -6,9 +6,12 @@ import torch
 
 from qadence.blocks import AbstractBlock, KronBlock, block_is_qubit_hamiltonian, chain, kron, tag
 from qadence.constructors.hamiltonians import hamiltonian_factory
+from qadence.logger import get_logger
 from qadence.operations import CNOT, CPHASE, CRX, CRY, CRZ, CZ, RX, RY, HamEvo
 from qadence.parameters import Parameter
 from qadence.types import PI, Interaction, Strategy
+
+logger = get_logger(__name__)
 
 DigitalEntanglers = Union[CNOT, CZ, CRZ, CRY, CRX, CPHASE]
 
@@ -107,6 +110,13 @@ def identity_initialized_ansatz(
                 Defaults to a global NN Hamiltonain.
         periodic (bool): if the qubits should be linked periodically. Valid only for digital.
     """
+
+    # FIXME: To remove
+    logger.warning(
+        "Function exp_fourier_feature_map in qadence is deprecated and will be removed. "
+        "Please use the same function from qadence-libs."
+    )
+
     initialized_layers = []
     for layer in range(depth):
         alpha = 2 * PI * torch.rand(n_qubits * len(rotations))

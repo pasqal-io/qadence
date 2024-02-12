@@ -38,6 +38,12 @@ def rydberg_feature_map(
         The block representing the feature map
     """
 
+    # FIXME: To remove
+    logger.warning(
+        "Function rydberg_feature_map in qadence is deprecated and will be removed. "
+        "Please use the same function from qadence-libs."
+    )
+
     tower_coeffs: list[float | Parameter]
     tower_coeffs = (
         [VariationalParameter(f"w_{param}_{i}") for i in range(n_qubits)]
@@ -62,6 +68,11 @@ def rydberg_feature_map(
 def rydberg_tower_feature_map(
     n_qubits: int, param: str = "phi", max_abs_detuning: float = 2 * PI * 10
 ) -> KronBlock:
+    # FIXME: To remove
+    logger.warning(
+        "Function rydberg_tower_feature_map in qadence is deprecated and will be removed. "
+        "Please use the same function from qadence-libs."
+    )
     weights = list(np.arange(1, n_qubits + 1))
     return rydberg_feature_map(
         n_qubits, param=param, max_abs_detuning=max_abs_detuning, weights=weights
@@ -98,6 +109,12 @@ def analog_feature_map(
         multiplier: overall multiplier; this is useful for reuploading the feature map serially with
             different scalings; can be a number or parameter/expression.
     """
+
+    # FIXME: To remove
+    logger.warning(
+        "Function analog_feature_map in qadence is deprecated and will be removed. "
+        "Please use the same function from qadence-libs."
+    )
 
     scaled_fparam = fm_parameter_scaling(
         fm_type, param, feature_range=feature_range, target_range=target_range
