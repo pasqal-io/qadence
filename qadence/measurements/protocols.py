@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from typing import Callable, cast
 
 PROTOCOL_TO_MODULE = {
-    "samples": "qadence.measurements.samples",
     "shadow": "qadence.measurements.shadow",
     "tomography": "qadence.measurements.tomography",
 }
@@ -14,7 +13,6 @@ PROTOCOL_TO_MODULE = {
 # TODO: make this a StrEnum to keep consistency with the rest of the interface
 @dataclass
 class Measurements:
-    SAMPLES = "samples"
     SHADOW = "shadow"
     TOMOGRAPHY = "tomography"
 
