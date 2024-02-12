@@ -12,6 +12,7 @@ from deepdiff import DeepDiff
 from networkx.classes.reportviews import EdgeView, NodeView
 
 from qadence.analog import IdealDevice, RydbergDevice
+from qadence.qubit_support import QubitSupport
 from qadence.types import LatticeTopology
 
 # Modules to be automatically added to the qadence namespace
@@ -212,8 +213,8 @@ class Register:
         return self.graph.edges
 
     @property
-    def support(self) -> set:
-        return set(self.nodes)
+    def qubit_support(self) -> QubitSupport:
+        return QubitSupport(tuple(self.nodes))
 
     @property
     def coords(self) -> dict:
@@ -221,7 +222,7 @@ class Register:
 
     @property
     def all_node_pairs(self) -> EdgeView:
-        return list(filter(lambda x: x[0] < x[1], product(self.support, self.support)))
+        return list(filter(lambda x: x[0] < x[1], product(set(self.nodes), set(self.nodes))))
 
     @property
     def distances(self) -> dict:

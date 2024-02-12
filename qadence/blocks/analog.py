@@ -46,14 +46,14 @@ class AnalogBlock(AbstractBlock):
 
     @property
     def n_qubits(self) -> int:
-        if self.qubit_support.is_global:
-            raise ValueError("Cannot compute number of qubits of a block with global support.")
+        # if self.qubit_support.is_global:
+        # raise ValueError("Cannot compute number of qubits of a block with global support.")
         return max(self.qubit_support) + 1  # type: ignore[no-any-return]
 
     @property
     def n_supports(self) -> int:
-        if self.qubit_support.is_global:
-            raise ValueError("Cannot compute number of qubits of a block with global support.")
+        # if self.qubit_support.is_global:
+        # raise ValueError("Cannot compute number of qubits of a block with global support.")
         return len(self.qubit_support)  # type: ignore[no-any-return]
 
     @property
@@ -121,7 +121,6 @@ class InteractionBlock(AnalogBlock):
     _eigenvalues_generator: torch.Tensor | None = None
 
     parameters: ParamMap = ParamMap(duration=1000.0)  # ns
-    qubit_support: QubitSupport = QubitSupport("global")
 
     add_pattern: bool = True
 
@@ -159,6 +158,7 @@ class ConstantAnalogRotation(AnalogBlock):
 
     _eigenvalues_generator: torch.Tensor | None = None
 
+    qubit_support: QubitSupport
     parameters: ParamMap = ParamMap(
         alpha=0.0,  # rad
         duration=1000.0,  # ns
@@ -166,7 +166,6 @@ class ConstantAnalogRotation(AnalogBlock):
         delta=0.0,  # rad/μs
         phase=0.0,  # rad
     )
-    qubit_support: QubitSupport = QubitSupport("global")
 
     add_pattern: bool = True
 

@@ -7,7 +7,7 @@ from typing import Iterable
 
 from sympy import Basic
 
-from qadence.blocks import AbstractBlock, AnalogBlock, CompositeBlock, chain
+from qadence.blocks import AbstractBlock, CompositeBlock, chain
 from qadence.blocks.utils import parameters, primitive_blocks, unique_parameters
 from qadence.parameters import Parameter
 from qadence.register import Register
@@ -37,8 +37,8 @@ class QuantumCircuit:
         self.block = chain(*blocks) if len(blocks) != 1 else blocks[0]
         self.register = Register(support) if isinstance(support, int) else support
 
-        global_block = isinstance(self.block, AnalogBlock) and self.block.qubit_support.is_global
-        if not global_block and len(self.block) and self.block.n_qubits > self.register.n_qubits:
+        # global_block = isinstance(self.block, AnalogBlock) and self.block.qubit_support.is_global
+        if len(self.block) and self.block.n_qubits > self.register.n_qubits:
             raise ValueError(
                 f"Register with {self.register.n_qubits} qubits is too small for the "
                 f"given block with {self.block.n_qubits} qubits"

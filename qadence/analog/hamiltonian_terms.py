@@ -45,7 +45,7 @@ def rydberg_interaction_hamiltonian(
     )
 
 
-def rydberg_drive_hamiltonian(block: ConstantAnalogRotation, register: Register) -> AbstractBlock:
+def rydberg_drive_hamiltonian(block: ConstantAnalogRotation) -> AbstractBlock:
     """
     Computes the Rydberg drive Hamiltonian for some local or global rotation.
 
@@ -56,10 +56,7 @@ def rydberg_drive_hamiltonian(block: ConstantAnalogRotation, register: Register)
         register: the register of qubits.
     """
 
-    if block.qubit_support.is_global:
-        qubit_support = tuple(register.nodes)
-    else:
-        qubit_support = block.qubit_support
+    qubit_support = block.qubit_support
 
     omega = block.parameters.omega
     delta = block.parameters.delta

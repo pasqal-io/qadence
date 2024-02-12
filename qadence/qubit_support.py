@@ -10,13 +10,15 @@ def _is_valid_support(t: Any) -> bool:
 
 
 class QubitSupport(tuple):
-    def __new__(cls, *support: Union[QubitSupportType, str, int, tuple]) -> QubitSupport:
+    def __new__(
+        cls, *support: Union[QubitSupportType, str, int, tuple]
+    ) -> QubitSupport:  # REMOVE STR
         if len(support) == 1:
             if isinstance(support[0], tuple):
                 return QubitSupport(*support[0])
-            if support[0] == "global":
-                support = (QubitSupportType.GLOBAL,)
-                valid = True
+            #            if support[0] == "global":
+            #                support = (QubitSupportType.GLOBAL,)
+            #                valid = True
             elif support[0] >= 0:  # type: ignore[operator]
                 valid = True
             else:
@@ -26,7 +28,7 @@ class QubitSupport(tuple):
 
         if not valid:
             raise ValueError(
-                "QubitSupport can be a tuple of ints or 'global'. For example:ℕn"
+                "QubitSupport can be a tuple of ints or 'global'. For example:ℕn"  # REMOVE GLOBAL
                 "QubitSupport(1,2,3) or QubitSupport('global')\n"
                 f"Found: {support}"
             )
@@ -37,25 +39,25 @@ class QubitSupport(tuple):
             raise ValueError(f"Cannot add type '{type(other)}' to QubitSupport.")
         if self == other:
             return self
-        elif self == ("global",):
-            return QubitSupport(*range(max(other) + 1)) if len(other) else QubitSupport("global")
-        elif other == ("global",):
-            return QubitSupport(*range(max(self) + 1)) if len(self) else QubitSupport("global")
+        # elif self == ("global",):
+        #     return QubitSupport(*range(max(other) + 1)) if len(other) else QubitSupport("global")
+        # elif other == ("global",):
+        #     return QubitSupport(*range(max(self) + 1)) if len(self) else QubitSupport("global")
         else:
             return QubitSupport(tuple({*self, *other}))
 
     def __radd__(self, other: Any) -> QubitSupport:
         return self.__add__(other)
 
-    @property
-    def is_global(self) -> bool:
-        return self == ("global",)
+    #    @property
+    #    def is_global(self) -> bool:
+    #        return self == ("global",)
 
     def is_disjoint(self, other: Any) -> bool:
         oth = QubitSupport(other)
-        if self.is_global or oth.is_global:
-            return False
-        else:
-            selfsup = set(self)
-            othersup = set(oth)
-            return selfsup.isdisjoint(othersup)
+        #        if self.is_global or oth.is_global:
+        #            return False
+        #        else:
+        selfsup = set(self)
+        othersup = set(oth)
+        return selfsup.isdisjoint(othersup)
