@@ -65,7 +65,7 @@ def empirical_average(samples: list, support: list) -> Tensor:
 
 def pauli_z_expectation(
     pauli_decomposition: list,
-    samples: list,
+    samples: list[Counter],
 ) -> Tensor:
     """Estimate total expectation value from samples by averaging all Pauli terms."""
 

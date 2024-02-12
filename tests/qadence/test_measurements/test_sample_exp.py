@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import pytest
 import torch
+from torch import Tensor
+
 from qadence import (
     AbstractBlock,
     QuantumCircuit,
@@ -11,11 +13,10 @@ from qadence import (
     kron,
 )
 from qadence.measurements import Measurements
-from qadence.noise.protocols import Noise
+from qadence.measurements.samples import compute_expectation
 from qadence.operations import CNOT, RX, Z
 from qadence.types import BackendName
-from qadence.measurements.samples import compute_expectation
-from torch import Tensor
+
 
 @pytest.mark.parametrize(
     "n_shots, block, observable, backend",
@@ -62,7 +63,6 @@ def test_sample_expectations(
         circuit=circuit, observable=observable, measurement=tomo_measurement, backend=backend
     )
     expectation_tomo = model.expectation(measurement=tomo_measurement)[0]
-    expectation_sampling = Tensor(compute_expectation(observable,model.sample()))
-    # print("output", expectation_tomo,expectation_sampling)
+    expectation_sampling = Tensor(compute_expectation(observable, model.sample()))
 
     assert torch.allclose(expectation_tomo, expectation_sampling, atol=1.0e-2, rtol=5.0e-1)
