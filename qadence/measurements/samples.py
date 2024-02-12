@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from qadence_protocols.measurements.utils import iterate_pauli_decomposition
+from qadence.measurements.utils import iterate_pauli_decomposition
 from torch import Tensor
 
 from qadence.blocks import AbstractBlock
