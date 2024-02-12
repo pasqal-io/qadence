@@ -13,6 +13,9 @@ from qadence.operations import PHASE, RX, X, Z
 from qadence.parameters import FeatureParameter
 from qadence.types import PI, BasisSet, ReuploadScaling
 
+# FIXME: Tests in this file have moved to qadence-libs, to be removed here.
+
+
 PARAM_DICT_0 = {
     "support": None,
     "param": FeatureParameter("x"),

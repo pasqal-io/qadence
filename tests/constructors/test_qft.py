@@ -16,6 +16,8 @@ from qadence import (
 from qadence.states import equivalent_state
 from qadence.types import PI, Strategy
 
+# FIXME: Tests in this file have moved to qadence-libs, to be removed here.
+
 
 def test_qft() -> None:
     def qft_matrix(N: int) -> Tensor:

@@ -20,6 +20,8 @@ from qadence.parameters import VariationalParameter
 from qadence.register import Register
 from qadence.types import PI, BasisSet
 
+# FIXME: Tests in this file have moved to qadence-libs, to be removed here.
+
 
 @pytest.mark.parametrize("detunings", [True, False])
 @pytest.mark.parametrize("drives", [True, False])

@@ -25,6 +25,8 @@ from qadence import (
 from qadence.blocks import AbstractBlock, has_duplicate_vparams
 from qadence.types import Strategy
 
+# FIXME: Tests in this file have moved to qadence-libs, to be removed here.
+
 
 @pytest.mark.parametrize("n_qubits", [2, 3])
 @pytest.mark.parametrize("depth", [2, 3])
