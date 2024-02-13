@@ -5,11 +5,12 @@ from functools import reduce
 
 import numpy as np
 import torch
+from sympy import Basic
 from torch import Tensor
 
 from qadence.backend import Backend
 from qadence.backends.pyqtorch import Backend as PyQBackend
-from qadence.blocks import PrimitiveBlock, chain
+from qadence.blocks import AbstractBlock, PrimitiveBlock, chain
 from qadence.circuit import QuantumCircuit
 from qadence.engines.differentiable_backend import DifferentiableBackend
 from qadence.noise import Noise
@@ -18,7 +19,9 @@ from qadence.parameters import evaluate
 from qadence.utils import Endianness
 
 
-def get_qubit_indices_for_op(pauli_term: tuple, op: PrimitiveBlock | None = None) -> list[int]:
+def get_qubit_indices_for_op(
+    pauli_term: tuple[AbstractBlock, Basic], op: PrimitiveBlock | None = None
+) -> list[int]:
     """Get qubit indices for the given op in the Pauli term if any."""
     blocks = getattr(pauli_term[0], "blocks", None)
     blocks = blocks if blocks is not None else [pauli_term[0]]
@@ -28,7 +31,7 @@ def get_qubit_indices_for_op(pauli_term: tuple, op: PrimitiveBlock | None = None
     return indices
 
 
-def get_counts(samples: list, support: list) -> list:
+def get_counts(samples: list, support: list[int]) -> list[Counter]:
     """Marginalise the probablity mass function to the support."""
     counts = []
     for sample in samples:
@@ -40,7 +43,7 @@ def get_counts(samples: list, support: list) -> list:
     return counts
 
 
-def empirical_average(samples: list, support: list) -> Tensor:
+def empirical_average(samples: list, support: list[int]) -> Tensor:
     """Compute the empirical average."""
     counters = get_counts(samples, support)
     expectations = []
@@ -55,7 +58,7 @@ def empirical_average(samples: list, support: list) -> Tensor:
 
 
 def pauli_z_expectation(
-    pauli_decomposition: list,
+    pauli_decomposition: list[tuple[AbstractBlock, Basic]],
     samples: list[Counter],
 ) -> Tensor:
     """Estimate total expectation value from samples by averaging all Pauli terms."""
@@ -70,7 +73,7 @@ def pauli_z_expectation(
     return res
 
 
-def rotate(circuit: QuantumCircuit, pauli_term: tuple) -> QuantumCircuit:
+def rotate(circuit: QuantumCircuit, pauli_term: tuple[AbstractBlock, Basic]) -> QuantumCircuit:
     """Rotate circuit to measurement basis and return the qubit support."""
     rotations = []
 
@@ -86,8 +89,8 @@ def rotate(circuit: QuantumCircuit, pauli_term: tuple) -> QuantumCircuit:
 
 def iterate_pauli_decomposition(
     circuit: QuantumCircuit,
-    param_values: dict,
-    pauli_decomposition: list,
+    param_values: dict[str, Tensor],
+    pauli_decomposition: list[tuple[AbstractBlock, Basic]],
     n_shots: int,
     state: Tensor | None = None,
     backend: Backend | DifferentiableBackend = PyQBackend(),
