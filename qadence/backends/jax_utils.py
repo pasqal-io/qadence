@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from math import log2
 from typing import Any
 
 import jax.numpy as jnp
@@ -46,7 +47,8 @@ def unhorqify(state: Array) -> Array:
 
 
 def horqify(state: Array) -> Array:
-    return state.reshape([2] * int(jnp.log2(state.shape[1]).item()))
+    n_qubits = int(log2(state.shape[1]))
+    return state.reshape([2] * n_qubits)
 
 
 def uniform_batchsize(param_values: ParamDictType) -> ParamDictType:

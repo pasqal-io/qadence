@@ -13,7 +13,7 @@ from jax import Array
 from metrics import ATOL_DICT, JS_ACCEPTANCE  # type: ignore
 from torch import Tensor
 
-from qadence import hea
+from qadence import Interaction, Register, hamiltonian_factory, hea
 from qadence.backend import BackendConfiguration
 from qadence.backends.api import backend_factory, config_factory
 from qadence.backends.jax_utils import jarr_to_tensor, tensor_to_jnp
@@ -423,3 +423,23 @@ def test_dagger_returning_kernel(backend_name: BackendName) -> None:
     else:
         assert wf_is_normalized(wf)
         assert equivalent_state(wf, initial_state)
+
+
+@pytest.mark.parametrize("n_qubits", [2, 3, 4])
+def test_compare_hevos(n_qubits: int) -> None:
+    register = Register.line(n_qubits)
+
+    gen = hamiltonian_factory(
+        register,
+        interaction=Interaction.ZZ,  # Parameterize for ZZ and XY
+        random_strength=True,
+        use_all_node_pairs=True,
+    )
+
+    t_evo = torch.rand(1)
+    op = HamEvo(gen, t_evo)
+    init_state_torch = random_state(n_qubits)
+    init_state_jax = tensor_to_jnp(init_state_torch)
+    wf_torch = run(op, state=init_state_torch, backend=BackendName.PYQTORCH)
+    wf_jax = jarr_to_tensor(run(op, state=init_state_jax, backend=BackendName.HORQRUX))
+    assert equivalent_state(wf_torch, wf_jax)
