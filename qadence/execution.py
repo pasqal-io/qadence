@@ -24,10 +24,8 @@ __all__ = ["run", "sample", "expectation"]
 def _n_qubits_block(block: AbstractBlock) -> int:
     if isinstance(block.qubit_support, QubitSupport) and block.qubit_support.is_global:
         raise ValueError(
-            "You cannot determine the number of qubits for"
-            "a block with global qubit support. Use a QuantumCircuit"
-            "instead and explicitly supply the number of qubits as follows: "
-            "\nn_qubits = 4\nQuantumCircuit(n_qubits, block)"
+            "Unable to determine the number of qubits for a block with global qubit support.\
+             Please supply the number of qubits explicitly: QuantumCircuit(n_qubits, block)"
         )
     else:
         return block.n_qubits

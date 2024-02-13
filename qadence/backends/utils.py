@@ -7,6 +7,7 @@ from typing import Callable, Sequence
 import numpy as np
 import pyqtorch as pyq
 import torch
+from numpy.typing import ArrayLike
 from pyqtorch.apply import apply_operator
 from pyqtorch.parametric import Parametric as PyQParametric
 from torch import (
@@ -105,16 +106,16 @@ def to_list_of_dicts(param_values: ParamDictType) -> list[ParamDictType]:
     return [{k: v[i] for k, v in batched_values.items()} for i in range(max_batch_size)]
 
 
-def pyqify(state: Tensor, n_qubits: int = None) -> Tensor:
+def pyqify(state: Tensor, n_qubits: int = None) -> ArrayLike:
     """Convert a state of shape (batch_size, 2**n_qubits) to [2] * n_qubits + [batch_size]."""
     if n_qubits is None:
         n_qubits = int(log2(state.shape[1]))
-    if (state.ndim != 2) or (state.size(1) != 2**n_qubits):
+    if len(state.shape) != 2 or (state.shape[1] != 2**n_qubits):
         raise ValueError(
-            "The initial state must be composed of tensors of size "
-            f"(batch_size, 2**n_qubits). Found: {state.size() = }."
+            "The initial state must be composed of tensors/arrays of size "
+            f"(batch_size, 2**n_qubits). Found: {state.shape = }."
         )
-    return state.T.reshape([2] * n_qubits + [state.size(0)])
+    return state.T.reshape([2] * n_qubits + [state.shape[0]])
 
 
 def unpyqify(state: Tensor) -> Tensor:

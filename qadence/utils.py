@@ -6,6 +6,7 @@ from typing import Any
 
 import numpy as np
 import sympy
+from numpy.typing import ArrayLike
 from torch import Tensor, stack, vmap
 from torch import complex as make_complex
 from torch.linalg import eigvals
@@ -214,8 +215,8 @@ def _round_complex(t: Tensor, decimals: int = 4) -> Tensor:
     return fn(t)
 
 
-def is_qadence_shape(state: Tensor, n_qubits: int) -> bool:
-    if len(state.size()) < 2:
+def is_qadence_shape(state: ArrayLike, n_qubits: int) -> bool:
+    if len(state.shape) < 2:
         raise ValueError(
             f"Provided state is required to have atleast two dimensions. Got shape {state.shape}"
         )
@@ -231,19 +232,24 @@ def infer_batchsize(param_values: dict[str, Tensor] = None) -> int:
 
 
 def validate_values_and_state(
-    state: Tensor | None, n_qubits: int, param_values: dict[str, Tensor] = None
+    state: ArrayLike | None, n_qubits: int, param_values: dict[str, Tensor] = None
 ) -> None:
     if state is not None:
-        batch_size_state = (
-            state.shape[0] if is_qadence_shape(state, n_qubits=n_qubits) else state.size(-1)
-        )
-        batch_size_values = infer_batchsize(param_values)
-        if batch_size_state != batch_size_values and (
-            batch_size_values > 1 and batch_size_state > 1
-        ):
-            raise ValueError(
-                "Batching of parameter values and states is only valid for the cases:\
-                            (1) batch_size_values == batch_size_state\
-                            (2) batch_size_values == 1 and batch_size_state > 1\
-                            (3) batch_size_values > 1 and batch_size_state == 1."
-            )
+        if isinstance(state, Tensor):
+            if state is not None:
+                batch_size_state = (
+                    state.shape[0] if is_qadence_shape(state, n_qubits=n_qubits) else state.size(-1)
+                )
+                batch_size_values = infer_batchsize(param_values)
+                if batch_size_state != batch_size_values and (
+                    batch_size_values > 1 and batch_size_state > 1
+                ):
+                    raise ValueError(
+                        "Batching of parameter values and states is only valid for the cases:\
+                                    (1) batch_size_values == batch_size_state\
+                                    (2) batch_size_values == 1 and batch_size_state > 1\
+                                    (3) batch_size_values > 1 and batch_size_state == 1."
+                    )
+        else:
+            if not is_qadence_shape(state, n_qubits) or state.shape[0] > 1:
+                raise ValueError("Jax only supports unbatched states.")
