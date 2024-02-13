@@ -45,6 +45,10 @@ def unhorqify(state: Array) -> Array:
     return jnp.ravel(state)
 
 
+def horqify(state: Array) -> Array:
+    return state.reshape([2] * int(jnp.log2(state.shape[1]).item()))
+
+
 def uniform_batchsize(param_values: ParamDictType) -> ParamDictType:
     max_batch_size = max(p.size for p in param_values.values())
     batched_values = {

@@ -66,6 +66,8 @@ def test_endianness_hamevo(backend: BackendName) -> None:
     conv_cnot = bkd.convert(qc_cnot)
     state_10 = product_state("10")
     conv = bkd.convert(circ)
+    if backend == BackendName.HORQRUX:
+        state_10 = tensor_to_jnp(state_10)
     wf_cnot = bkd.run(
         conv_cnot.circuit, conv_cnot.embedding_fn(conv_cnot.params, {}), state=state_10
     )

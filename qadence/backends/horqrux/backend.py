@@ -12,11 +12,10 @@ from jax.typing import ArrayLike
 from qadence.backend import Backend as BackendInterface
 from qadence.backend import ConvertedCircuit, ConvertedObservable
 from qadence.backends.jax_utils import (
-    tensor_to_jnp,
+    horqify,
     unhorqify,
     uniform_batchsize,
 )
-from qadence.backends.utils import pyqify
 from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
@@ -93,7 +92,7 @@ class Backend(BackendInterface):
         if state is None:
             state = zero_state(n_qubits)
         else:
-            state = tensor_to_jnp(pyqify(state)) if horqify_state else state
+            state = horqify(state) if horqify_state else state
         state = circuit.native.forward(state, param_values)
         if endianness != self.native_endianness:
             state = jnp.reshape(state, (1, 2**n_qubits))  # batch_size is always 1
