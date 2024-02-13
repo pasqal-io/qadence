@@ -20,20 +20,11 @@ from qadence.utils import Endianness
 
 def get_qubit_indices_for_op(pauli_term: tuple, op: PrimitiveBlock | None = None) -> list[int]:
     """Get qubit indices for the given op in the Pauli term if any."""
-    indices = []
     blocks = getattr(pauli_term[0], "blocks", None)
-    if blocks is not None:
-        for block in blocks:
-            if op is None:
-                indices.append(block.qubit_support[0])
-            if isinstance(block, type(op)):
-                indices.append(block.qubit_support[0])
-    else:
-        block = pauli_term[0]
-        if op is None:
-            indices.append(block.qubit_support[0])
-        if isinstance(block, type(op)):
-            indices.append(block.qubit_support[0])
+    blocks = blocks if blocks is not None else [pauli_term[0]]
+    indices = [
+        block.qubit_support[0] for block in blocks if (op is None) or (isinstance(block, type(op)))
+    ]
     return indices
 
 
