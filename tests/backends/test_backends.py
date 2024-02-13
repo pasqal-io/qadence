@@ -425,13 +425,14 @@ def test_dagger_returning_kernel(backend_name: BackendName) -> None:
         assert equivalent_state(wf, initial_state)
 
 
+@pytest.mark.parametrize("interaction", [Interaction.XY, Interaction.ZZ])
 @pytest.mark.parametrize("n_qubits", [2, 3, 4])
-def test_compare_hevos(n_qubits: int) -> None:
+def test_compare_hevos(interaction: Interaction, n_qubits: int) -> None:
     register = Register.line(n_qubits)
 
     gen = hamiltonian_factory(
         register,
-        interaction=Interaction.ZZ,  # Parameterize for ZZ and XY
+        interaction=interaction,
         random_strength=True,
         use_all_node_pairs=True,
     )
