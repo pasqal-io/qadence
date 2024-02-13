@@ -4,7 +4,7 @@ import jax
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import optax
-from jax import Array, grad, jit
+from jax import Array, jit, value_and_grad
 from numpy.typing import ArrayLike
 
 from qadence import (
@@ -21,21 +21,27 @@ from qadence import (
 )
 from qadence.backends import backend_factory
 from qadence.circuit import QuantumCircuit
-from qadence.types import BackendName
+from qadence.logger import get_logger
+from qadence.types import BackendName, DiffMode
 
-backend = BackendName.HORQRUX
-# Line register
-n_qubits = 2
-register = Register.line(n_qubits, spacing=8.0)
+logger = get_logger(__name__)
 
-# The input feature x for the circuit to learn f(x)
-x = FeatureParameter("x")
+N_QUBITS = 4
+N_EPOCHS = 200
+BACKEND_NAME = BackendName.HORQRUX
+DIFF_MODE = DiffMode.AD
+
+bknd = backend_factory(BACKEND_NAME, DIFF_MODE)
+register = Register.line(N_QUBITS, spacing=8.0)
+
+# The input feature phi for the circuit to learn f(x)
+phi = FeatureParameter("phi")
 
 # Feature map with a few global analog rotations
 fm = chain(
-    AnalogRX(x),
-    AnalogRY(2 * x),
-    AnalogRZ(3 * x),
+    AnalogRX(phi),
+    AnalogRY(2 * phi),
+    AnalogRZ(3 * phi),
 )
 
 
@@ -60,19 +66,10 @@ ansatz = chain(
 )
 
 # Total magnetization observable
-observable = hamiltonian_factory(n_qubits, detuning=Z)
-
+observable = hamiltonian_factory(N_QUBITS, detuning=Z)
 # Defining the circuit and observable
 circuit = QuantumCircuit(register, fm, ansatz)
-
-bknd = backend_factory(backend, "ad")
-conv_circ, conv_obs, embedding_fn, vparams = bknd.convert(circuit, observable)
-optimizer = optax.adam(learning_rate=0.01)
-opt_state = optimizer.init(vparams)
-
-loss: Array
-grads: dict[str, Array]  # 'grads' is the same datatype as 'params'
-inputs: dict[str, Array]
+conv_circ, conv_obs, embedding_fn, params = bknd.convert(circuit, observable)
 
 
 # Function to fit:
@@ -82,9 +79,11 @@ def f(x: Array) -> Array:
 
 x_test = jnp.linspace(-1.0, 1.0, 100)
 y_test = f(x_test)
-
 x_train = jnp.linspace(-1.0, 1.0, 10)
 y_train = f(x_train)
+# Initialize an optimizer
+optimizer = optax.adam(learning_rate=0.1)
+opt_state = optimizer.init(params)
 
 
 def optimize_step(params: dict[str, Array], opt_state: Array, grads: dict[str, Array]) -> tuple:
@@ -97,26 +96,28 @@ def exp_fn(params: dict[str, Array], inputs: dict[str, Array]) -> ArrayLike:
     return bknd.expectation(conv_circ, conv_obs, embedding_fn(params, inputs))
 
 
-inputs = {"x": x_train}
-y_pred_initial = exp_fn(vparams, {"x": x_test})
+# Query the model using the initial random parameter values
+y_pred_initial = exp_fn(params, {"phi": x_test})
 
 
-def mse_loss(params: dict[str, Array], y_true: Array = y_train) -> Array:
-    expval = exp_fn(params, inputs)
-    return jnp.mean((expval - y_true) ** 2)
+def loss_fn(params: dict[str, Array], x: Array, y: Array) -> Array:
+    expval = exp_fn(params, {"phi": x})
+    return jnp.mean(optax.l2_loss(jnp.ravel(expval), y))
 
 
 @jit
 def train_step(i: int, res: tuple) -> tuple:
-    vparams, opt_state = res
-    grads = grad(mse_loss)(vparams)
-    vparams, opt_state = optimize_step(vparams, opt_state, grads)
-    return vparams, opt_state
+    params, opt_state = res
+    loss, grads = value_and_grad(loss_fn)(params, x_train, y_train)
+    logger.info(f"epoch {i}: loss {loss}")
+    params, opt_state = optimize_step(params, opt_state, grads)
+    return params, opt_state
 
 
-N_EPOCHS = 200
-vparams, opt_state = jax.lax.fori_loop(0, N_EPOCHS, train_step, (vparams, opt_state))
-y_pred_final = exp_fn(vparams, {"x": x_test})
+# Train the circuit
+params, opt_state = jax.lax.fori_loop(0, N_EPOCHS, train_step, (params, opt_state))
+# Query the model using the optimal parameter values
+y_pred_final = exp_fn(params, {"phi": x_test})
 
 plt.plot(x_test, y_pred_initial, label="Initial prediction")
 plt.plot(x_test, y_pred_final, label="Final prediction")
