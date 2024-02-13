@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import Counter
 
-import jax.numpy as jnp
 import numpy as np
 import pytest
 import strategies as st  # type: ignore
 import sympy
 import torch
+from horqrux.utils import equivalent_state as horq_equivalent_state
 from hypothesis import given, settings
 from jax import Array
 from metrics import ATOL_DICT, JS_ACCEPTANCE  # type: ignore
@@ -419,7 +419,7 @@ def test_dagger_returning_kernel(backend_name: BackendName) -> None:
     run_params = embed(params, inputs)
     wf = backend.run(pyqtorch_circ, run_params, state=initial_state)
     if backend_name == BackendName.HORQRUX:
-        assert jnp.allclose(wf, initial_state)
+        assert horq_equivalent_state(wf, initial_state)
     else:
         assert wf_is_normalized(wf)
-        assert torch.allclose(wf, initial_state)
+        assert equivalent_state(wf, initial_state)
