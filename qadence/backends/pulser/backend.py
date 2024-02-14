@@ -328,7 +328,7 @@ class Backend(BackendInterface):
         observable = observable if isinstance(observable, list) else [observable]
         if mitigation is None:
             state = self.run(circuit, param_values=param_values, state=state, endianness=endianness)
-            support = sorted(list(circuit.abstract.register.support))
+            support = sorted(list(circuit.abstract.register.qubit_support))
             res_list = [
                 obs.native(state, param_values, qubit_support=support) for obs in observable
             ]

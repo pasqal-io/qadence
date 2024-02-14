@@ -37,8 +37,8 @@ def test_single_rotation(block: AbstractBlock, goal: Counter) -> None:
 @pytest.mark.parametrize(
     "single_rotation,global_rotation",
     [
-        (chain(RY(0, -PI / 2), RY(1, -PI / 2)), AnalogRY(-PI / 2)),
-        (chain(RX(0, -PI / 2), RX(1, -PI / 2)), AnalogRX(-PI / 2)),
+        (chain(RY(0, -PI / 2), RY(1, -PI / 2)), AnalogRY((0, 1), -PI / 2)),
+        (chain(RX(0, -PI / 2), RX(1, -PI / 2)), AnalogRX((0, 1), -PI / 2)),
     ],
 )
 def test_single_rotation_multiple_qubits(

@@ -56,7 +56,7 @@ def test_single_qubit_block_conversion(Qadence_op: AbstractBlock, func: Callable
 @pytest.mark.parametrize(
     "Qadence_op, func",
     [
-        (entangle(500), lambda ch: entangle_pulse(500, ch)),
+        (entangle((0, 1), 500), lambda ch: entangle_pulse(500, ch)),
     ],
 )
 def test_multiple_qubit_block_conversion(Qadence_op: AbstractBlock, func: Callable) -> None:
@@ -84,5 +84,5 @@ def test_interaction() -> None:
     with pytest.raises(ValueError, match="Pulser does not support other interactions than 'NN'"):
         device = RydbergDevice(interaction=Interaction.XY)
         reg = QadenceRegister(2, device_specs=device)
-        circ = QuantumCircuit(reg, entangle(100))
+        circ = QuantumCircuit(reg, entangle((0, 1), 100))
         make_sequence(circ, Configuration())

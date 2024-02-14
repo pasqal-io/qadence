@@ -122,12 +122,14 @@ def circuit_analog_rotation_gpsr(n_qubits: int) -> QuantumCircuit:
     coords = [(x_coord, 0) for x_coord in np.linspace(0, (n_qubits - 1) * d, n_qubits)]
     register = Register.from_coordinates(coords)  # type: ignore[arg-type]
 
+    qs = tuple(range(n_qubits))
+
     # circuit with builting primitives
     x = Parameter("x", trainable=False)
     theta = Parameter("theta")
     analog_block = chain(
-        AnalogRot(duration=1000 * x / omega1, omega=omega1, delta=0, phase=0),
-        AnalogRot(duration=1000 * theta / omega2, omega=omega2, delta=0, phase=0),
+        AnalogRot(qs, duration=1000 * x / omega1, omega=omega1, delta=0, phase=0),
+        AnalogRot(qs, duration=1000 * theta / omega2, omega=omega2, delta=0, phase=0),
     )
 
     circ = QuantumCircuit(register, analog_block)

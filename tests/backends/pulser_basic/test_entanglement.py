@@ -19,7 +19,7 @@ DEFAULT_SPACING = 8.0
 
 @pytest.mark.parametrize("device", [IdealDevice(), RealisticDevice()])
 def test_entanglement(device: RydbergDevice) -> None:
-    block = chain(entangle(1000, qubit_support=(0, 1)), RY(0, 3 * PI / 2))
+    block = chain(entangle((0, 1), 1000), RY(0, 3 * PI / 2))
 
     register = Register.line(2, spacing=DEFAULT_SPACING, device_specs=device)
 

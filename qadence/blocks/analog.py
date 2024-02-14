@@ -19,7 +19,7 @@ from qadence.types import Interaction
 
 @dataclass(eq=False, repr=False)
 class AnalogBlock(AbstractBlock):
-    @abstractproperty  # type: ignore[misc, override]
+    @abstractproperty
     def qubit_support(self) -> QubitSupport:
         pass
 
@@ -121,7 +121,6 @@ class InteractionBlock(AnalogBlock):
     _eigenvalues_generator: torch.Tensor | None = None
 
     parameters: ParamMap = ParamMap(duration=1000.0)  # ns
-
     add_pattern: bool = True
 
     @property
@@ -158,7 +157,7 @@ class ConstantAnalogRotation(AnalogBlock):
 
     _eigenvalues_generator: torch.Tensor | None = None
 
-    qubit_support: QubitSupport
+    qubit_support: QubitSupport = QubitSupport((0, 1))
     parameters: ParamMap = ParamMap(
         alpha=0.0,  # rad
         duration=1000.0,  # ns
@@ -270,9 +269,9 @@ class AnalogChain(AnalogComposite):
         print(type(b))  # this is a general `ChainBlock`
         ```
         """
-        for b in blocks:
-            if not (isinstance(b, AnalogKron) or b.qubit_support.is_global):
-                raise ValueError("Only KronBlocks or global blocks can be chain'ed.")
+        # for b in blocks:
+        #    if not (isinstance(b, AnalogKron) or b.qubit_support.is_global):
+        #        raise ValueError("Only KronBlocks or global blocks can be chain'ed.")
         self.blocks = blocks
 
     @property

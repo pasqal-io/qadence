@@ -26,17 +26,17 @@ def block(circ_id: int) -> AbstractBlock:
     if circ_id == 1:
         block = chain(RX(0, x), RY(1, x))
     elif circ_id == 2:
-        block = AnalogRot(duration=1000 * x / 3.0, omega=3.0)
+        block = AnalogRot((0, 1), duration=1000 * x / 3.0, omega=3.0)
     if circ_id == 3:
-        block = AnalogRX(x)
+        block = AnalogRX((0, 1), x)
     elif circ_id == 4:
         block = chain(
-            AnalogRX(PI / 2),
-            AnalogRot(duration=1000 * x / 3.0, omega=4.0, delta=3.0),
+            AnalogRX((0, 1), angle=PI / 2),
+            AnalogRot((0, 1), duration=1000 * x / 3.0, omega=4.0, delta=3.0),
             # FIXME: Re-check these tests after handling:
             # https://github.com/pasqal-io/qadence/issues/266
             # AnalogInteraction(500),
-            AnalogRX(PI / 2),
+            AnalogRX((0, 1), PI / 2),
         )
 
     return block

@@ -217,7 +217,7 @@ def test_compare_readout_methods(
     "analog_block, observable, noise_probs, noise_type",
     [
         (
-            chain(AnalogRX(PI / 2.0), AnalogRZ(PI)),
+            chain(AnalogRX((0, 1), PI / 2.0), AnalogRZ((0, 1), PI)),
             [Z(0) + Z(1)],
             torch.linspace(0.1, 0.5, 8),
             Noise.DEPOLARIZING,
@@ -225,7 +225,7 @@ def test_compare_readout_methods(
         (
             # Hardcoded time and angle for Bell state preparation.
             chain(
-                entangle(383, qubit_support=(0, 1)),
+                entangle((0, 1), 383),
                 RY(0, 3.0 * PI / 2.0),
             ),
             [hamiltonian_factory(2, detuning=Z)],
@@ -254,7 +254,7 @@ def test_analog_zne_with_noise_levels(
     "analog_block, observable, noise_probs, noise_type, param_values",
     [
         (
-            chain(AnalogRX(PI / 2.0), AnalogRZ(PI)),
+            chain(AnalogRX((0, 1), PI / 2.0), AnalogRZ((0, 1), PI)),
             [Z(0) + Z(1)],
             torch.tensor([0.1]),
             Noise.DEPOLARIZING,

@@ -215,9 +215,8 @@ def _(
 
     elif isinstance(block, InteractionBlock):
         labels = ["Interaction", f"t = {_expr_string(block.parameters.duration)}"]
-        is_global = block.qubit_support.is_global
-        start = 0 if is_global else min(block.qubit_support)
-        stop = qcd.nb_wires if is_global else block.n_qubits
+        start = 0
+        stop = qcd.nb_wires
         _make_cluster(qcd, labels, start, stop, qcd.theme.get_add_cluster_attr())
 
     elif isinstance(block, ConstantAnalogRotation):
@@ -229,9 +228,8 @@ def _(
             f"δ = {_expr_string(block.parameters.delta)}",
             f"φ = {_expr_string(block.parameters.phase)}",
         ]
-        is_global = block.qubit_support.is_global
-        start = 0 if is_global else min(block.qubit_support)
-        stop = qcd.nb_wires if is_global else block.n_qubits
+        start = min(block.qubit_support)
+        stop = block.n_qubits
         _make_cluster(qcd, labels, start, stop, qcd.theme.get_add_cluster_attr())
 
     elif isinstance(block, ScaleBlock):

@@ -120,7 +120,6 @@ def add_pulses(
     ry = partial(digital_xy_rot_pulse, channel=local_channel, phase=PI / 2, config=config)
     rz = partial(digital_z_rot_pulse, channel=local_channel, phase=PI / 2, config=config)
 
-    # TODO: lets move those to `@singledipatch`ed functions
     if isinstance(block, InteractionBlock):
         if not block.add_pattern:
             logger.warning(
@@ -128,18 +127,18 @@ def add_pulses(
                 "backend. If an addressing pattern is specified, it will be added to all blocks."
             )
         # Apply empty pulse if it's a global InteractionBlock
-        if block.qubit_support.is_global:
-            (uuid, duration) = block.parameters.uuid_param("duration")
-            t = evaluate(duration) if duration.is_number else sequence.declare_variable(uuid)
-            pulse = Pulse.ConstantPulse(duration=t, amplitude=0, detuning=0, phase=0)
-            sequence.add(pulse, GLOBAL_CHANNEL, "wait-for-all")
+        # if block.qubit_support.is_global:
+        (uuid, duration) = block.parameters.uuid_param("duration")
+        t = evaluate(duration) if duration.is_number else sequence.declare_variable(uuid)
+        pulse = Pulse.ConstantPulse(duration=t, amplitude=0, detuning=0, phase=0)
+        sequence.add(pulse, GLOBAL_CHANNEL, "wait-for-all")
 
         # Do nothing if its a non-global InteractionBlock, because that means
         # we are doing a rotation on other qubits which will include the interaction term
-        else:
-            support = set(block.qubit_support)
-            if not support.issubset(sequence.register.qubits):
-                raise ValueError("Trying evolve the interaction on qubits outside of support.")
+        # else:
+        # support = set(block.qubit_support)
+        # if not support.issubset(sequence.register.qubits):
+        #     raise ValueError("Trying evolve the interaction on qubits outside of support.")
 
     elif isinstance(block, ConstantAnalogRotation):
         if not block.add_pattern:
@@ -161,7 +160,7 @@ def add_pulses(
         # calculate generator eigenvalues
         block.eigenvalues_generator = block.compute_eigenvalues_generator(block, qc_register)
 
-        if block.qubit_support.is_global:
+        if len(qubit_support) == n_qubits:
             pulse = analog_rot_pulse(a, w, p, d, global_channel, config)
             sequence.add(pulse, GLOBAL_CHANNEL, protocol="wait-for-all")
         else:

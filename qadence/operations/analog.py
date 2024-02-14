@@ -70,8 +70,6 @@ def AnalogInteraction(
 
     Arguments:
         duration: Time to evolve the interaction for in nanoseconds.
-        qubit_support: Qubits the `InteractionBlock` is applied to. Can be either
-            `"global"` to evolve the interaction block to all qubits or a tuple of integers.
         add_pattern: False disables the semi-local addressing pattern
             for the execution of this specific block.
 
@@ -79,7 +77,7 @@ def AnalogInteraction(
         a `InteractionBlock`
     """
     ps = ParamMap(duration=duration)
-    return InteractionBlock(parameters=ps, add_pattern=add_pattern)
+    return InteractionBlock(parameters=ps, add_pattern=add_pattern)  # type: ignore [abstract]
 
 
 def wait(
@@ -93,7 +91,7 @@ def wait(
 # FIXME: clarify the usage of this gate, rename more formally, and implement in PyQ
 @dataclass(eq=False, repr=False)
 class AnalogEntanglement(AnalogBlock):
-    qubit_support: QubitSupport
+    qubit_support: QubitSupport = QubitSupport((0, 1))
     parameters: ParamMap = ParamMap(duration=1.0)
 
     @property

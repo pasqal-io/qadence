@@ -10,6 +10,7 @@ from qadence.constructors.feature_maps import fm_parameter_func, fm_parameter_sc
 from qadence.logger import get_logger
 from qadence.operations import AnalogRot, AnalogRX, AnalogRY, AnalogRZ
 from qadence.parameters import FeatureParameter, Parameter, VariationalParameter
+from qadence.qubit_support import QubitSupport
 from qadence.types import PI, BasisSet, ReuploadScaling, TParameter
 
 logger = get_logger(__file__)
@@ -50,10 +51,10 @@ def rydberg_feature_map(
     duration = 1000 * param / tower_detuning
     return kron(
         AnalogRot(
+            qubit_support=(i,),
             duration=duration,
             delta=-tower_detuning * tower_coeffs[i],
             phase=0.0,
-            qubit_support=(i,),
         )
         for i in range(n_qubits)
     )
@@ -69,8 +70,9 @@ def rydberg_tower_feature_map(
 
 
 def analog_feature_map(
+    n_qubits: int,
     param: str = "phi",
-    op: Callable[[Parameter | Basic], AnalogBlock] = AnalogRX,
+    op: Callable[[tuple | QubitSupport, Parameter | Basic], AnalogBlock] = AnalogRX,
     fm_type: BasisSet | Callable | str = BasisSet.FOURIER,
     reupload_scaling: ReuploadScaling | Callable | str = ReuploadScaling.CONSTANT,
     feature_range: tuple[float, float] | None = None,
@@ -99,6 +101,8 @@ def analog_feature_map(
             different scalings; can be a number or parameter/expression.
     """
 
+    qs = tuple(range(n_qubits))
+
     scaled_fparam = fm_parameter_scaling(
         fm_type, param, feature_range=feature_range, target_range=target_range
     )
@@ -112,7 +116,7 @@ def analog_feature_map(
     if callable(reupload_scaling):
         return reupload_scaling(op, multiplier * transformed_feature)  # type: ignore[no-any-return]
     elif reupload_scaling == ReuploadScaling.CONSTANT:
-        return op(multiplier * transformed_feature)
+        return op(qs, multiplier * transformed_feature)
     # TODO: implement tower scaling by reuploading multiple times
     # using different analog rotations
     else:

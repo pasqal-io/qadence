@@ -100,7 +100,7 @@ def _analog_to_hevo(
         return HamEvo(h_background, duration / 1000)
 
     if isinstance(block, ConstantAnalogRotation):
-        h_drive = rydberg_drive_hamiltonian(block, register)
+        h_drive = rydberg_drive_hamiltonian(block)
         return _build_rot_ham_evo(block, h_int, h_addr, h_drive)
 
     if isinstance(block, AnalogKron):
@@ -112,7 +112,7 @@ def _analog_to_hevo(
         ops = []
         for block in block.blocks:
             if isinstance(block, ConstantAnalogRotation):
-                h_drive = rydberg_drive_hamiltonian(block, register)
+                h_drive = rydberg_drive_hamiltonian(block)
                 ops.append(_build_rot_ham_evo(block, h_int, h_addr, h_drive))
         if len(ops) == 0:
             ops.append(HamEvo(h_background, duration / 1000))  # type: ignore [arg-type]

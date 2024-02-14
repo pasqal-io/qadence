@@ -84,7 +84,7 @@ def test_analog_feature_map(basis: BasisSet) -> None:
     pname = "x"
     mname = "mult"
     fm = analog_feature_map(
-        param=pname, op=AnalogRY, fm_type=basis, multiplier=VariationalParameter(mname)
+        n_qubits=2, param=pname, op=AnalogRY, fm_type=basis, multiplier=VariationalParameter(mname)  # type: ignore [arg-type]
     )
     assert isinstance(fm, ConstantAnalogRotation)
     assert fm.parameters.phase == -PI / 2

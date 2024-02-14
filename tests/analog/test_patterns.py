@@ -32,8 +32,10 @@ from qadence.types import PI
 )
 def test_pulser_pyq_addressing(amp: float, det: float, spacing: float) -> None:
     n_qubits = 3
+    qs = tuple(range(n_qubits))
+
     x = Parameter("x")
-    block = chain(AnalogRX(3 * x), AnalogRY(0.5 * x))
+    block = chain(AnalogRX(qs, 3 * x), AnalogRY(qs, 0.5 * x))
 
     # define addressing patterns
     rand_weights_amp = torch.rand(n_qubits)
@@ -86,6 +88,8 @@ def test_addressing_training() -> None:
     n_qubits = 3
     f_value = torch.rand(1)
 
+    qs = tuple(range(n_qubits))
+
     # define training parameters
     w_amp = {i: f"w_amp{i}" for i in range(n_qubits)}
     w_det = {i: f"w_det{i}" for i in range(n_qubits)}
@@ -106,7 +110,7 @@ def test_addressing_training() -> None:
     reg = Register.line(n_qubits, spacing=8.0, device_specs=device_specs)
 
     # some otherwise fixed circuit
-    block = AnalogRX(PI)
+    block = AnalogRX(qs, PI)
     circ = QuantumCircuit(reg, block)
 
     # define quantum model
@@ -149,9 +153,13 @@ def test_pyq_addressing_on_off(n_qubits: int) -> None:
     spacing = 8.0
     x = Parameter("x")
 
-    block_pattern_on = chain(AnalogRX(3 * x, add_pattern=True), AnalogRY(0.5 * x, add_pattern=True))
+    qs = tuple(range(n_qubits))
+
+    block_pattern_on = chain(
+        AnalogRX(qs, 3 * x, add_pattern=True), AnalogRY(qs, 0.5 * x, add_pattern=True)
+    )
     block_pattern_off = chain(
-        AnalogRX(3 * x, add_pattern=False), AnalogRY(0.5 * x, add_pattern=False)
+        AnalogRX(qs, 3 * x, add_pattern=False), AnalogRY(qs, 0.5 * x, add_pattern=False)
     )
 
     # define addressing patterns

@@ -74,9 +74,12 @@ def test_parametrized_analog_rot(
     phase: float | str | Parameter,
     values: dict,
 ) -> None:
-    analog_rot = AnalogRot(duration=duration, omega=omega, delta=delta)
+    n_qubits = 2
+    qs = tuple(range(n_qubits))
 
-    register = Register.line(2, spacing=8)
+    analog_rot = AnalogRot(qs, duration=duration, omega=omega, delta=delta)
+
+    register = Register.line(n_qubits, spacing=8)
     circuit = QuantumCircuit(register, analog_rot)
 
     wf_pyq = run(circuit, values=values, backend=BackendName.PYQTORCH)
@@ -93,19 +96,20 @@ def test_parametrized_analog_rot(
 def test_analog_op_run(
     n_qubits: int, spacing: float, rydberg_level: int, op: AbstractBlock
 ) -> None:
+    qs = tuple(range(n_qubits))
     init_state = random_state(n_qubits)
     batch_size = 3
 
     if op in [AnalogRX, AnalogRY, AnalogRZ]:
         phi = FeatureParameter("phi")
-        block = op(phi)  # type: ignore [operator]
+        block = op(qs, phi)  # type: ignore [operator]
         values = {"phi": 1.0 + torch.rand(batch_size)}
     elif op == AnalogRot:
         t = 5.0
         omega = 1.0 + torch.rand(1)
         delta = 1.0 + torch.rand(1)
         phase = 1.0 + torch.rand(1)
-        block = op(t, omega, delta, phase)  # type: ignore [operator]
+        block = op(qs, t, omega, delta, phase)  # type: ignore [operator]
         values = {}
     else:
         t = FeatureParameter("t")
@@ -145,16 +149,16 @@ def get_random_rot(param: str, qubit_support: tuple[int]) -> AbstractBlock:
         ),
         kron(
             get_random_rot("x", (1,)),
-            AnalogInteraction("x", qubit_support=(0, 2)),
+            AnalogInteraction("x"),
         ),
         chain(
             kron(
                 get_random_rot("x", (0,)),
-                AnalogInteraction("x", qubit_support=(1, 2)),
+                AnalogInteraction("x"),
             ),
             kron(
                 get_random_rot("x", (2,)),
-                AnalogInteraction("x", qubit_support=(0, 1)),
+                AnalogInteraction("x"),
             ),
         ),
     ],
@@ -184,7 +188,7 @@ def test_local_analog_op_run(spacing: float, block: AbstractBlock) -> None:
         # Bell state generation
         (
             chain(H(0), CNOT(0, 1)),
-            chain(entangle(1000, qubit_support=(0, 1)), RY(0, 3 * PI / 2)),
+            chain(entangle((0, 1), 1000), RY(0, 3 * PI / 2)),
         )
     ],
 )
@@ -275,7 +279,7 @@ def test_compatibility_pyqtorch_pulser_analog_rot(obs: AbstractBlock) -> None:
         kron(RY(0, psi), RY(1, psi)),
     )
 
-    b_analog = chain(AnalogRX(phi), AnalogRY(psi))
+    b_analog = chain(AnalogRX((0, 1), phi), AnalogRY((0, 1), psi))
     pyqtorch_circuit = QuantumCircuit(n_qubits, b_digital)
 
     register = Register.line(n_qubits, spacing=LARGE_SPACING)
@@ -321,7 +325,7 @@ def test_compatibility_pyqtorch_pulser_analog_rot_int(obs: AbstractBlock) -> Non
     n_qubits = 2
     register = Register.line(n_qubits, spacing=SMALL_SPACING)
 
-    b_analog = chain(AnalogRX(phi), AnalogRY(psi))
+    b_analog = chain(AnalogRX((0, 1), phi), AnalogRY((0, 1), psi))
 
     circuit = QuantumCircuit(register, b_analog)
 
