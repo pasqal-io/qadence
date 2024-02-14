@@ -48,14 +48,13 @@ def get_counts(samples: List, support: List[int]) -> List[Counter]:
 
     Returns: A List[Counter] of bit strings.
     """
-    counts = []
-    for sample in samples:
-        sample_counts = []
-        for k, v in sample.items():
-            sample_counts.append(Counter({"".join([k[i] for i in support]): sample[k]}))
-        reduced_counts = reduce(lambda x, y: x + y, sample_counts)
-        counts.append(reduced_counts)
-    return counts
+    return [
+        reduce(
+            lambda x, y: x + y,
+            [Counter({"".join([k[i] for i in support]): sample[k]}) for k, v in sample.items()],
+        )
+        for sample in samples
+    ]
 
 
 def empirical_average(samples: List, support: List[int]) -> Tensor:
@@ -67,15 +66,15 @@ def empirical_average(samples: List, support: List[int]) -> Tensor:
 
     Returns: A torch.Tensor of the empirical average.
     """
+    PARITTY = -1
     counters = get_counts(samples, support)
+    N_SHOTS = np.sum(list(counters[0].values()))
     expectations = []
-    n_shots = np.sum(list(counters[0].values()))
-    parity = -1
     for counter in counters:
         counter_exps = []
         for bitstring, count in counter.items():
-            counter_exps.append(count * parity ** (np.sum([int(bit) for bit in bitstring])))
-        expectations.append(np.sum(counter_exps) / n_shots)
+            counter_exps.append(count * PARITTY ** (np.sum([int(bit) for bit in bitstring])))
+        expectations.append(np.sum(counter_exps) / N_SHOTS)
     return torch.tensor(expectations)
 
 
