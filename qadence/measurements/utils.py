@@ -68,13 +68,13 @@ def empirical_average(samples: List, support: List[int]) -> Tensor:
     """
     PARITTY = -1
     counters = get_counts(samples, support)
-    N_SHOTS = np.sum(list(counters[0].values()))
+    n_shots = np.sum(list(counters[0].values()))
     expectations = []
     for counter in counters:
         counter_exps = []
         for bitstring, count in counter.items():
             counter_exps.append(count * PARITTY ** (np.sum([int(bit) for bit in bitstring])))
-        expectations.append(np.sum(counter_exps) / N_SHOTS)
+        expectations.append(np.sum(counter_exps) / n_shots)
     return torch.tensor(expectations)
 
 
