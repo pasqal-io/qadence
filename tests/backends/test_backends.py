@@ -10,7 +10,7 @@ import torch
 from horqrux.utils import equivalent_state as horq_equivalent_state
 from hypothesis import given, settings
 from jax import Array
-from metrics import ATOL_DICT, JS_ACCEPTANCE, JAX_CONVERSION_ATOL  # type: ignore
+from metrics import ATOL_DICT, JAX_CONVERSION_ATOL, JS_ACCEPTANCE  # type: ignore
 from torch import Tensor
 
 from qadence import Interaction, Register, hamiltonian_factory, hea
