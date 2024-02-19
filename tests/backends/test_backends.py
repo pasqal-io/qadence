@@ -10,7 +10,7 @@ import torch
 from horqrux.utils import equivalent_state as horq_equivalent_state
 from hypothesis import given, settings
 from jax import Array
-from metrics import ATOL_DICT, JS_ACCEPTANCE  # type: ignore
+from metrics import ATOL_DICT, JAX_CONVERSION_ATOL, JS_ACCEPTANCE  # type: ignore
 from torch import Tensor
 
 from qadence import Interaction, Register, hamiltonian_factory, hea
@@ -443,4 +443,4 @@ def test_compare_hevos(interaction: Interaction, n_qubits: int) -> None:
     init_state_jax = tensor_to_jnp(init_state_torch)
     wf_torch = run(op, state=init_state_torch, backend=BackendName.PYQTORCH)
     wf_jax = jarr_to_tensor(run(op, state=init_state_jax, backend=BackendName.HORQRUX))
-    assert equivalent_state(wf_torch, wf_jax)
+    assert equivalent_state(wf_torch, wf_jax, atol=JAX_CONVERSION_ATOL)
