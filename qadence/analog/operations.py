@@ -11,6 +11,8 @@ from qadence.types import PI, OpName, TParameter
 
 from .hamiltonian_terms import rydberg_interaction_hamiltonian, rydberg_pattern_hamiltonian
 
+ANALOGDRIVE = "AnalogDrive"  # Temporary, can be added to OpName later
+
 
 class AnalogInteraction(HamEvo):
     """Evolution of the Rydberg interaction Hamiltonian."""
@@ -39,7 +41,7 @@ class AnalogInteraction(HamEvo):
 class AnalogDrive(HamEvo):
     """Evolution of the Rydberg drive Hamiltonian with background interaction."""
 
-    name = OpName.ANALOGDRIVE
+    name = ANALOGDRIVE  # type: ignore [assignment]
 
     def __init__(
         self,
