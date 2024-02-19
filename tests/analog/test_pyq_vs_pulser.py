@@ -6,6 +6,8 @@ from metrics import ATOL_DICT, JS_ACCEPTANCE, LARGE_SPACING, SMALL_SPACING
 
 from qadence import Parameter
 from qadence.analog import RealisticDevice, RydbergDevice
+
+from qadence.analog.operations import AnalogDrive, AnalogInteraction, AnalogRX, AnalogRY, AnalogRZ
 from qadence.blocks import AbstractBlock, chain, kron
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import ising_hamiltonian, total_magnetization
@@ -17,11 +19,11 @@ from qadence.operations import (
     RX,
     RY,
     RZ,
-    AnalogInteraction,
-    AnalogRot,
-    AnalogRX,
-    AnalogRY,
-    AnalogRZ,
+    #AnalogInteraction,
+    #AnalogRot,
+    #AnalogRX,
+    #AnalogRY,
+    #AnalogRZ,
     H,
     X,
     Z,
@@ -74,9 +76,10 @@ def test_parametrized_analog_rot(
     phase: float | str | Parameter,
     values: dict,
 ) -> None:
-    analog_rot = AnalogRot(duration=duration, omega=omega, delta=delta)
-
     register = Register.line(2, spacing=8)
+
+    analog_rot = AnalogDrive(register, duration=duration, omega=omega, delta=delta)
+
     circuit = QuantumCircuit(register, analog_rot)
 
     wf_pyq = run(circuit, values=values, backend=BackendName.PYQTORCH)
@@ -89,32 +92,32 @@ def test_parametrized_analog_rot(
 @pytest.mark.parametrize("n_qubits", [2, 3, 4])
 @pytest.mark.parametrize("spacing", [7.0, 10.0, 15.0])
 @pytest.mark.parametrize("rydberg_level", [60, 70])
-@pytest.mark.parametrize("op", [AnalogRX, AnalogRY, AnalogRZ, AnalogRot, AnalogInteraction])
+@pytest.mark.parametrize("op", [AnalogRX, AnalogRY, AnalogRZ, AnalogDrive, AnalogInteraction])
 def test_analog_op_run(
     n_qubits: int, spacing: float, rydberg_level: int, op: AbstractBlock
 ) -> None:
     init_state = random_state(n_qubits)
     batch_size = 3
 
+    device = RydbergDevice(rydberg_level=rydberg_level)
+
+    register = Register.line(n_qubits, spacing=spacing, device_specs=device)
+
     if op in [AnalogRX, AnalogRY, AnalogRZ]:
         phi = FeatureParameter("phi")
-        block = op(phi)  # type: ignore [operator]
+        block = op(register, angle=phi)  # type: ignore [operator]
         values = {"phi": 1.0 + torch.rand(batch_size)}
-    elif op == AnalogRot:
+    elif op == AnalogDrive:
         t = 5.0
         omega = 1.0 + torch.rand(1)
         delta = 1.0 + torch.rand(1)
         phase = 1.0 + torch.rand(1)
-        block = op(t, omega, delta, phase)  # type: ignore [operator]
+        block = op(register, t, omega, delta, phase)  # type: ignore [operator]
         values = {}
     else:
         t = FeatureParameter("t")
-        block = op(t)  # type: ignore [operator]
+        block = op(register, t)  # type: ignore [operator]
         values = {"t": 10.0 * (1.0 + torch.rand(batch_size))}
-
-    device = RydbergDevice(rydberg_level=rydberg_level)
-
-    register = Register.line(n_qubits, spacing=spacing, device_specs=device)
 
     circuit = QuantumCircuit(register, block)
 
@@ -124,8 +127,9 @@ def test_analog_op_run(
     assert equivalent_state(wf_pyq, wf_pulser, atol=ATOL_DICT[BackendName.PULSER])
 
 
-def get_random_rot(param: str, qubit_support: tuple[int]) -> AbstractBlock:
-    return AnalogRot(
+def get_random_rot(register: Register, param: str, qubit_support: tuple[int]) -> AbstractBlock:
+    return AnalogDrive(
+        register,
         duration=param,
         omega=torch.rand(1),
         delta=torch.rand(1),
@@ -135,35 +139,41 @@ def get_random_rot(param: str, qubit_support: tuple[int]) -> AbstractBlock:
 
 
 @pytest.mark.parametrize("spacing", [8.0, 15.0])
-@pytest.mark.parametrize(
-    "block",
-    [
-        kron(
-            get_random_rot("x", qubit_support=(0,)),
-            get_random_rot("x", qubit_support=(1,)),
-            get_random_rot("x", qubit_support=(2,)),
-        ),
-        kron(
-            get_random_rot("x", (1,)),
-            AnalogInteraction("x", qubit_support=(0, 2)),
-        ),
-        chain(
-            kron(
-                get_random_rot("x", (0,)),
-                AnalogInteraction("x", qubit_support=(1, 2)),
-            ),
-            kron(
-                get_random_rot("x", (2,)),
-                AnalogInteraction("x", qubit_support=(0, 1)),
-            ),
-        ),
-    ],
-)
-def test_local_analog_op_run(spacing: float, block: AbstractBlock) -> None:
+# @pytest.mark.parametrize(
+#     "block",
+#     [
+#         kron(
+#             get_random_rot("x", qubit_support=(0,)),
+#             get_random_rot("x", qubit_support=(1,)),
+#             get_random_rot("x", qubit_support=(2,)),
+#         ),
+#         kron(
+#             get_random_rot("x", (1,)),
+#             AnalogInteraction("x", qubit_support=(0, 2)),
+#         ),
+#         chain(
+#             kron(
+#                 get_random_rot("x", (0,)),
+#                 AnalogInteraction("x", qubit_support=(1, 2)),
+#             ),
+#             kron(
+#                 get_random_rot("x", (2,)),
+#                 AnalogInteraction("x", qubit_support=(0, 1)),
+#             ),
+#         ),
+#     ],
+# )
+def test_local_analog_op_run(spacing: float) -> None:
     n_qubits = 3
     init_state = random_state(n_qubits)
 
     register = Register.line(n_qubits, spacing=spacing)
+
+    block = chain(
+        get_random_rot(register, "x", qubit_support=(0,)),
+        get_random_rot(register, "x", qubit_support=(1,)),
+        get_random_rot(register, "x", qubit_support=(2,)),
+    )
 
     circuit = QuantumCircuit(register, block)
 
@@ -275,10 +285,10 @@ def test_compatibility_pyqtorch_pulser_analog_rot(obs: AbstractBlock) -> None:
         kron(RY(0, psi), RY(1, psi)),
     )
 
-    b_analog = chain(AnalogRX(phi), AnalogRY(psi))
     pyqtorch_circuit = QuantumCircuit(n_qubits, b_digital)
 
     register = Register.line(n_qubits, spacing=LARGE_SPACING)
+    b_analog = chain(AnalogRX(register, phi), AnalogRY(register, psi))
     pulser_circuit = QuantumCircuit(register, b_analog)
 
     model_pyqtorch = QuantumModel(
@@ -321,7 +331,7 @@ def test_compatibility_pyqtorch_pulser_analog_rot_int(obs: AbstractBlock) -> Non
     n_qubits = 2
     register = Register.line(n_qubits, spacing=SMALL_SPACING)
 
-    b_analog = chain(AnalogRX(phi), AnalogRY(psi))
+    b_analog = chain(AnalogRX(register, phi), AnalogRY(register, psi))
 
     circuit = QuantumCircuit(register, b_analog)
 

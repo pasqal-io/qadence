@@ -37,7 +37,7 @@ class AnalogInteraction(HamEvo):
 
         super().__init__(generator, parameter=self.duration / 1000)
 
-        self.parameters = ParamMap(duration=self.duration)
+        self.parameters = ParamMap(parameter=self.duration / 1000, duration=self.duration)
 
 
 class AnalogDrive(HamEvo):
@@ -84,8 +84,9 @@ class AnalogDrive(HamEvo):
         h_norm = sqrt(omega**2 + delta**2)
         alpha = self.duration * h_norm / 1000
         self.parameters = ParamMap(
-            alpha=alpha,
+            parameter=self.duration / 1000,  # Placeholder
             duration=self.duration,
+            alpha=alpha,
             omega=omega,
             delta=delta,
             phase=phase,
