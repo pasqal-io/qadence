@@ -6,7 +6,6 @@ from metrics import ATOL_DICT, JS_ACCEPTANCE, LARGE_SPACING, SMALL_SPACING
 
 from qadence import Parameter
 from qadence.analog import RealisticDevice, RydbergDevice
-
 from qadence.analog.operations import AnalogDrive, AnalogInteraction, AnalogRX, AnalogRY, AnalogRZ
 from qadence.blocks import AbstractBlock, chain, kron
 from qadence.circuit import QuantumCircuit
@@ -19,11 +18,11 @@ from qadence.operations import (
     RX,
     RY,
     RZ,
-    #AnalogInteraction,
-    #AnalogRot,
-    #AnalogRX,
-    #AnalogRY,
-    #AnalogRZ,
+    # AnalogInteraction,
+    # AnalogRot,
+    # AnalogRX,
+    # AnalogRY,
+    # AnalogRZ,
     H,
     X,
     Z,
