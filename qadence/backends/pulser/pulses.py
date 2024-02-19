@@ -12,6 +12,7 @@ from pulser.waveforms import CompositeWaveform, ConstantWaveform, RampWaveform
 
 from qadence import Register
 from qadence.analog import AddressingPattern
+from qadence.analog.operations import AnalogDrive, AnalogInteraction
 from qadence.blocks import AbstractBlock, CompositeBlock
 from qadence.blocks.analog import (
     AnalogBlock,
@@ -120,8 +121,43 @@ def add_pulses(
     ry = partial(digital_xy_rot_pulse, channel=local_channel, phase=PI / 2, config=config)
     rz = partial(digital_z_rot_pulse, channel=local_channel, phase=PI / 2, config=config)
 
-    # TODO: lets move those to `@singledipatch`ed functions
-    if isinstance(block, InteractionBlock):
+    if isinstance(block, AnalogInteraction):
+        if not block.add_pattern:
+            logger.warning(
+                "Found block with `add_pattern = False`. This is not yet supported in the Pulser "
+                "backend. If an addressing pattern is specified, it will be added to all blocks."
+            )
+        (uuid, duration) = block.parameters.uuid_param("duration")
+        t = evaluate(duration) if duration.is_number else sequence.declare_variable(uuid)
+        pulse = Pulse.ConstantPulse(duration=t, amplitude=0, detuning=0, phase=0)
+        sequence.add(pulse, GLOBAL_CHANNEL, "wait-for-all")
+
+    elif isinstance(block, AnalogDrive):
+        if not block.add_pattern:
+            logger.warning(
+                "Found block with `add_pattern = False`. This is not yet supported in the Pulser "
+                "backend. If an addressing pattern is specified, it will be added to all blocks."
+            )
+        ps = block.parameters
+        (a_uuid, alpha) = ps.uuid_param("alpha")
+        (w_uuid, omega) = ps.uuid_param("omega")
+        (p_uuid, phase) = ps.uuid_param("phase")
+        (d_uuid, detuning) = ps.uuid_param("delta")
+
+        a = evaluate(alpha) if alpha.is_number else sequence.declare_variable(a_uuid)
+        w = evaluate(omega) if omega.is_number else sequence.declare_variable(w_uuid)
+        p = evaluate(phase) if phase.is_number else sequence.declare_variable(p_uuid)
+        d = evaluate(detuning) if detuning.is_number else sequence.declare_variable(d_uuid)
+
+        if len(block.qubit_support) == n_qubits:
+            pulse = analog_rot_pulse(a, w, p, d, global_channel, config)
+            sequence.add(pulse, GLOBAL_CHANNEL, protocol="wait-for-all")
+        else:
+            pulse = analog_rot_pulse(a, w, p, d, local_channel, config)
+            sequence.target(qubit_support, LOCAL_CHANNEL)
+            sequence.add(pulse, LOCAL_CHANNEL, protocol="wait-for-all")
+
+    elif isinstance(block, InteractionBlock):
         if not block.add_pattern:
             logger.warning(
                 "Found block with `add_pattern = False`. This is not yet supported in the Pulser "

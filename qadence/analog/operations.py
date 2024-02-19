@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from sympy import cos, sin
+from sympy import cos, sin, sqrt
 
 from qadence.blocks import add
 from qadence.operations import HamEvo, N, X, Y
-from qadence.parameters import Parameter
+from qadence.parameters import Parameter, ParamMap
 from qadence.qubit_support import QubitSupport
 from qadence.register import Register
 from qadence.types import PI, OpName, TParameter
@@ -26,7 +26,7 @@ class AnalogInteraction(HamEvo):
         add_pattern: bool = True,
     ):
         self.add_pattern = add_pattern
-        self.duration = Parameter(duration) / 1000
+        self.duration = Parameter(duration)
 
         generator = rydberg_interaction_hamiltonian(register)
 
@@ -35,7 +35,9 @@ class AnalogInteraction(HamEvo):
         if add_pattern and generator_pattern is not None:
             generator = generator + generator_pattern
 
-        super().__init__(generator, parameter=self.duration)
+        super().__init__(generator, parameter=self.duration / 1000)
+
+        self.parameters = ParamMap(duration=self.duration)
 
 
 class AnalogDrive(HamEvo):
@@ -54,7 +56,7 @@ class AnalogDrive(HamEvo):
         add_pattern: bool = True,
     ):
         self.add_pattern = add_pattern
-        self.duration = Parameter(duration) / 1000
+        self.duration = Parameter(duration)
 
         if omega == 0 and delta == 0:
             raise ValueError("Parameters omega and delta cannot both be 0.")
@@ -62,11 +64,11 @@ class AnalogDrive(HamEvo):
         if qubit_support is None:
             qubit_support = tuple(register.nodes)
 
-        self.omega, self.delta, self.phase = Parameter(omega), Parameter(delta), Parameter(phase)
+        omega, delta, phase = Parameter(omega), Parameter(delta), Parameter(phase)
 
-        x_terms = (self.omega / 2) * add(cos(self.phase) * X(i) for i in qubit_support)
-        y_terms = (self.omega / 2) * add(sin(self.phase) * Y(i) for i in qubit_support)
-        n_terms = self.delta * add(N(i) for i in qubit_support)
+        x_terms = (omega / 2) * add(cos(phase) * X(i) for i in qubit_support)
+        y_terms = (omega / 2) * add(sin(phase) * Y(i) for i in qubit_support)
+        n_terms = delta * add(N(i) for i in qubit_support)
 
         generator_interaction = rydberg_interaction_hamiltonian(register)
 
@@ -77,7 +79,18 @@ class AnalogDrive(HamEvo):
         if add_pattern and generator_pattern is not None:
             generator = generator + generator_pattern
 
-        super().__init__(generator, self.duration)
+        super().__init__(generator, self.duration / 1000)
+
+        h_norm = sqrt(omega**2 + delta**2)
+        alpha = self.duration * h_norm / 1000
+        self.parameters = ParamMap(
+            alpha=alpha,
+            duration=self.duration,
+            omega=omega,
+            delta=delta,
+            phase=phase,
+            h_norm=h_norm,
+        )
 
 
 class AnalogRX(AnalogDrive):
