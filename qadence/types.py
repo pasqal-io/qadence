@@ -377,7 +377,9 @@ class OpName(StrEnum):
     """The Toffoli gate."""
     # Analog operations
     ANALOGENTANG = "AnalogEntanglement"
-    """The analog entanglement operation."""
+    # """The analog entanglement operation."""
+    # ANALOGDRIVE = "AnalogDrive"
+    """The analog drive operation."""
     ANALOGRX = "AnalogRX"
     """The analog RX operation."""
     ANALOGRY = "AnalogRY"
