@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 import torch
+from metrics import MIDDLE_ACCEPTANCE, RTOL_MIDDLE_ACCEPTANCE
 from torch import Tensor
 
 from qadence import (
@@ -16,7 +17,6 @@ from qadence.measurements import Measurements
 from qadence.measurements.samples import compute_expectation
 from qadence.operations import CNOT, RX, Z
 from qadence.types import BackendName
-from metrics import MIDDLE_ACCEPTANCE, RTOL_MIDDLE_ACCEPTANCE
 
 
 @pytest.mark.parametrize(
@@ -66,4 +66,6 @@ def test_sample_expectations(
     expectation_tomo = model.expectation(measurement=tomo_measurement)[0]
     expectation_sampling = Tensor(compute_expectation(observable, model.sample()))
 
-    assert torch.allclose(expectation_tomo, expectation_sampling, atol=MIDDLE_ACCEPTANCE, rtol=RTOL_MIDDLE_ACCEPTANCE)
+    assert torch.allclose(
+        expectation_tomo, expectation_sampling, atol=MIDDLE_ACCEPTANCE, rtol=RTOL_MIDDLE_ACCEPTANCE
+    )
