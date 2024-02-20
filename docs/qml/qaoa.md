@@ -42,7 +42,7 @@ such that if the nodes connected by the $\alpha$ edge are in the same set, it re
 Since in this tutorial we are only dealing with small graphs, we can find the maximum cut by brute force to make sure QAOA works as intended. Recall that every cut is represented by two bitstrings, e.g. cuts "0011" and "1100" are equivalent as they represent the same cut.
 
 ```python exec="on" source="material-block" result="json" session="qaoa"
-# First, let's calculate which one is the maximum cut
+# Calculate the maximum cut and the associated maximum cost
 def calculate_cost(bitstring: str, adjacency_matrix: np.ndarray) -> float:
     """Returns the cost of a given cut (represented by the bitstring)"""
     n = len(bitstring)
@@ -79,7 +79,7 @@ The cost operator  is simply the evolution of the cost Hamiltonian parametrized 
 
 
 The QAOA quantum circuit consists of a number of layers, each layer containing a cost and a mixing operator.
-Below, the QAOA quantum circuit with the cost and mixing operators is defined using
+Below, the QAOA quantum circuit is defined using
 `qadence` operations.
 First, a layer of Hadamard gates is applied to all qubits to prepare the initial state $|+\rangle ^{\otimes n}$.
 The cost operator of each layer can be built "manually", implementing the $e^{iZZ\gamma}$ terms with CNOTs and a $\rm{RZ}(2\gamma)$ rotation, or it can also be automatically decomposed
@@ -150,7 +150,7 @@ and train it using standard gradient based optimization.
 
 The loss function to be minimized reads:
 
-$$\mathcal{L} =\langle \psi | H_c| \psi \rangle= \sum_{i,j}^{N_{\mathcal{E}}} \frac{1}{2} \left(1 - \langle \psi | \sigma_i^z \sigma_j^z | \psi \rangle \right)$$
+$$\mathcal{L} =-\langle \psi | H_c| \psi \rangle= -\sum_{i,j}^{N_{\mathcal{E}}} \frac{1}{2} \left(1 - \langle \psi | \sigma_i^z \sigma_j^z | \psi \rangle \right)$$
 
 where $|\psi\rangle(\beta, \gamma)$ is the wavefunction obtained by propagating the QAQA
 quantum circuit and the sum runs over the edges of the graph $N_{\mathcal{E}}$.
