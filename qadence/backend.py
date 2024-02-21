@@ -183,7 +183,7 @@ class Backend(ABC):
         """
 
         def check_observable(obs_obj: Any) -> AbstractBlock:
-            # FIXME: Remove in v1.5.0
+
             if isinstance(obs_obj, QubitOperator):
                 from qadence.blocks.manipulate import from_openfermion
 
