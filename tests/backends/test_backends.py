@@ -7,11 +7,13 @@ import pytest
 import strategies as st  # type: ignore
 import sympy
 import torch
+from horqrux.utils import equivalent_state as horq_equivalent_state
 from hypothesis import given, settings
 from jax import Array
-from metrics import ATOL_DICT, JS_ACCEPTANCE  # type: ignore
+from metrics import ATOL_DICT, JAX_CONVERSION_ATOL, JS_ACCEPTANCE  # type: ignore
 from torch import Tensor
 
+from qadence import Interaction, Register, hamiltonian_factory, hea
 from qadence.backend import BackendConfiguration
 from qadence.backends.api import backend_factory, config_factory
 from qadence.backends.jax_utils import jarr_to_tensor, tensor_to_jnp
@@ -22,8 +24,8 @@ from qadence.divergences import js_divergence
 from qadence.execution import run
 from qadence.ml_tools.utils import rand_featureparameters
 from qadence.models import QuantumModel
-from qadence.operations import CPHASE, RX, RY, H, I, X
-from qadence.parameters import FeatureParameter
+from qadence.operations import CPHASE, RX, RY, H, HamEvo, I, X, Y, Z
+from qadence.parameters import FeatureParameter, Parameter
 from qadence.states import (
     equivalent_state,
     product_state,
@@ -31,7 +33,7 @@ from qadence.states import (
     random_state,
     zero_state,
 )
-from qadence.transpile import flatten
+from qadence.transpile import flatten, set_trainable
 from qadence.types import PI, BackendName, DiffMode
 from qadence.utils import nqubits_to_basis
 
@@ -388,3 +390,57 @@ def test_braket_parametric_cphase() -> None:
     equivalent_state(
         run(block, values=values, backend="braket"), run(block, values=values, backend="pyqtorch")
     )
+
+
+@pytest.mark.parametrize("backend_name", [BackendName.PYQTORCH, BackendName.HORQRUX])
+def test_dagger_returning_kernel(backend_name: BackendName) -> None:
+    def wf_is_normalized(wf: torch.Tensor) -> torch.Tensor:
+        return torch.isclose(sum(torch.flatten(torch.abs(wf) ** 2)), torch.tensor(1.00))
+
+    generatorx = 3.1 * X(0) + 1.2 * Y(0) + 1.1 * Y(1) + 1.9 * X(1) + 2.4 * Z(0) * Z(1)
+    fmx = HamEvo(generatorx, parameter=sympy.acos(Parameter("x")))
+    set_trainable(fmx, False)
+    fmy = HamEvo(generatorx, parameter=sympy.acos(Parameter("y")))
+    set_trainable(fmy, False)
+    ansatz = hea(2, 2)
+    set_trainable(ansatz, True)
+    circ = QuantumCircuit(2, fmx, ansatz.dagger(), ansatz, fmy.dagger())
+    backend = backend_factory(backend=backend_name, diff_mode=DiffMode.AD)
+    (pyqtorch_circ, _, embed, params) = backend.convert(circ)
+
+    initial_state = torch.rand((1, 2**2), dtype=torch.cdouble) + 1j * torch.rand(
+        (1, 2**2), dtype=torch.cdouble
+    )
+    initial_state = initial_state / torch.sqrt(4 * sum(abs(initial_state) ** 2))
+    inputs = {"x": torch.tensor([0.52]), "y": torch.tensor(0.52)}
+    if backend_name == BackendName.HORQRUX:
+        initial_state = tensor_to_jnp(initial_state)
+        inputs = {k: tensor_to_jnp(v) for k, v in inputs.items()}
+    run_params = embed(params, inputs)
+    wf = backend.run(pyqtorch_circ, run_params, state=initial_state)
+    if backend_name == BackendName.HORQRUX:
+        assert horq_equivalent_state(wf, initial_state)
+    else:
+        assert wf_is_normalized(wf)
+        assert equivalent_state(wf, initial_state)
+
+
+@pytest.mark.parametrize("interaction", [Interaction.XY, Interaction.ZZ])
+@pytest.mark.parametrize("n_qubits", [2, 3, 4])
+def test_compare_hevos(interaction: Interaction, n_qubits: int) -> None:
+    register = Register.line(n_qubits)
+
+    gen = hamiltonian_factory(
+        register,
+        interaction=interaction,
+        random_strength=True,
+        use_all_node_pairs=True,
+    )
+
+    t_evo = torch.rand(1)
+    op = HamEvo(gen, t_evo)
+    init_state_torch = random_state(n_qubits)
+    init_state_jax = tensor_to_jnp(init_state_torch)
+    wf_torch = run(op, state=init_state_torch, backend=BackendName.PYQTORCH)
+    wf_jax = jarr_to_tensor(run(op, state=init_state_jax, backend=BackendName.HORQRUX))
+    assert equivalent_state(wf_torch, wf_jax, atol=JAX_CONVERSION_ATOL)
