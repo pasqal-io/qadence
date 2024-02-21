@@ -84,6 +84,7 @@ def AnalogInteraction(
     return InteractionBlock(parameters=ps, qubit_support=q, add_pattern=add_pattern)
 
 
+# FIXME: Remove in v1.5.0
 def wait(
     duration: TNumber | sympy.Basic,
     qubit_support: str | QubitSupport | tuple = "global",

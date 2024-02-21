@@ -30,6 +30,7 @@ class Configuration(BackendConfiguration):
 
     FIXME: This is deprecated, the device_type is now controlled in the
     Qadence Device, as detailed in the documentation.
+    FIXME: Remove in v1.5.0
     """
 
     sampling_rate: float = 1.0
@@ -44,6 +45,7 @@ class Configuration(BackendConfiguration):
 
     FIXME: This is deprecated, spacing is now controlled in the Register,
     as detailed in the register tutorial.
+    FIXME: Remove in v1.5.0
     """
 
     method_solv: str = "adams"
@@ -89,6 +91,7 @@ class Configuration(BackendConfiguration):
 
     FIXME: This is deprecated, the interaction is now controlled in the
     Qadence Device, as detailed in the documentation.
+    FIXME: Remove in v1.5.0
     """
 
     # configuration for cloud simulations

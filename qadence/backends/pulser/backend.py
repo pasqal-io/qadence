@@ -71,7 +71,7 @@ def make_sequence(circ: QuantumCircuit, config: Configuration) -> Sequence:
         )
 
     ########
-    # FIXME: Remove the block below in V1.1.0
+    # FIXME: Remove the block below in V1.5.0
     if config.spacing is not None:
         logger.warning(
             "Passing register spacing in the backend configuration is deprecated. "

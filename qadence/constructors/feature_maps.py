@@ -35,6 +35,7 @@ RS_FUNC_DICT = {
 }
 
 
+# FIXME: Remove in v1.5.0
 def backwards_compatibility(
     fm_type: BasisSet | Callable | str,
     reupload_scaling: ReuploadScaling | Callable | str,
@@ -224,6 +225,7 @@ def feature_map(
     return fm
 
 
+# FIXME: Remove in v1.5.0
 def fourier_feature_map(
     n_qubits: int, support: tuple[int, ...] = None, param: str = "phi", op: RotationTypes = RX
 ) -> AbstractBlock:
@@ -241,6 +243,7 @@ def fourier_feature_map(
     return fm
 
 
+# FIXME: Remove in v1.5.0
 def chebyshev_feature_map(
     n_qubits: int, support: tuple[int, ...] = None, param: str = "phi", op: RotationTypes = RX
 ) -> AbstractBlock:
@@ -259,6 +262,7 @@ def chebyshev_feature_map(
     return fm
 
 
+# FIXME: Remove in v1.5.0
 def tower_feature_map(
     n_qubits: int, support: tuple[int, ...] = None, param: str = "phi", op: RotationTypes = RX
 ) -> AbstractBlock:
