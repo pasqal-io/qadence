@@ -209,7 +209,6 @@ samples = model.sample(n_shots=100)[0]
 most_frequent = max(samples, key=samples.get)
 
 print(f"Most frequently sampled bitstring corresponding to the maximum cut: {most_frequent}")
-print(f"Was the the optimal bitstring found? {most_frequent in maxcuts}")
 
 # let's now draw the cut obtained with the QAOA procedure
 colors = []
