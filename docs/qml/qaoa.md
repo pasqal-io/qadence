@@ -8,7 +8,7 @@ the nodes into two disjoint sets, such that the number of edges in the
 cut is maximized. This is a very common combinatorial optimization problem known to be computationally hard (NP-hard).
 
 The graph used for this tutorial is an unweighted graph randomly generated using the `networkx` library with
-a $0.5$ probability of having an edge between two arbitrary nodes.
+a certain probability $p$ of having an edge between two arbitrary nodes (known as [Erdős–Rényi](https://en.wikipedia.org/wiki/Erd%C5%91s%E2%80%93R%C3%A9nyi_model) graph).
 
 ```python exec="on" source="material-block" html="1" session="qaoa"
 import numpy as np
@@ -23,7 +23,7 @@ random.seed(seed)
 
 # Create random graph
 n_nodes = 4
-edge_prob = 0.5
+edge_prob = 0.8
 graph = nx.gnp_random_graph(n_nodes, edge_prob)
 
 plt.clf() # markdown-exec: hide
@@ -38,32 +38,36 @@ $$\mathcal{C}(p) = \sum_{\alpha}^m \mathcal{C}_{\alpha}(p)$$
 
 where $p$ is a given cut of the graph, $\alpha$ is an index over the edges and $\mathcal{C}_{\alpha}(p)$ is written
 such that if the nodes connected by the $\alpha$ edge are in the same set, it returns $0$, otherwise it returns $1$.
+We will represent a cut $p$ as a bitstring of length $N$, where $N$ is the number of nodes, and where the bit in position $i$ shows to which partition node $i$ belongs. We assign value 0 to one of the partitions defined by the cut and 1 to the other. Since this choice is arbitrary, every cut is represented by two bitstrings, e.g. "0011" and "1100" are equivalent.
 
-Since in this tutorial we are only dealing with small graphs, we can find the maximum cut by brute force to make sure QAOA works as intended. Recall that every cut is represented by two bitstrings, e.g. cuts "0011" and "1100" are equivalent as they represent the same cut.
-
+Since in this tutorial we are only dealing with small graphs, we can find the maximum cut by brute force to make sure QAOA works as intended.
 ```python exec="on" source="material-block" result="json" session="qaoa"
-# Calculate the maximum cut and the associated maximum cost
-def calculate_cost(bitstring: str, adjacency_matrix: np.ndarray) -> float:
-    """Returns the cost of a given cut (represented by the bitstring)"""
-    n = len(bitstring)
+# Function to calculate the cost associated with a cut
+def calculate_cost(cut: str, graph: nx.graph) -> float:
+    """Returns the cost of a given cut (represented by a bitstring)"""
     cost = 0
-    for i in range(n):
-        for j in range(i + 1, n):
-            if bitstring[i] != bitstring[j]:
-                cost += adjacency_matrix[i, j]
+    for edge in graph.edges():
+        (i, j) = edge
+        if cut[i] != cut[j]:
+            cost += 1
     return cost
 
 
-all_possible_cuts = [bin(k)[2:].rjust(n_nodes, "0") for k in range(2**n_nodes)]
-adjacency_matrix = nx.adjacency_matrix(graph)
-all_costs = [calculate_cost(cut, adjacency_matrix) for cut in all_possible_cuts]
-maxcost = max(all_costs)
-maxcut = all_possible_cuts[all_costs.index(maxcost)]
-other_maxcut_bs = "".join(str((int(i) + 1) % 2) for i in maxcut)
-print(
-    f"The maximum cut is represented by the bitstrings {maxcut} and {other_maxcut_bs}, with a cost of {maxcost}"
-)
+# Function to get a binary representation of an int
+get_binary = lambda x, n: format(x, "b").zfill(n)
 
+# List of all possible cuts
+all_possible_cuts = [bin(k)[2:].rjust(n_nodes, "0") for k in range(2**n_nodes)]
+
+# List with the costs associated to each cut
+all_costs = [calculate_cost(cut, graph) for cut in all_possible_cuts]
+
+# Get the maximum cost
+maxcost = max(all_costs)
+
+# Get all cuts that correspond to the maximum cost
+maxcuts = [get_binary(i, n_nodes) for i, j in enumerate(all_costs) if j == maxcost]
+print(f"The maximum cut is represented by the bitstrings {maxcuts}, with a cost of {maxcost}")
 ```
 
 ## The QAOA quantum circuit
@@ -77,6 +81,11 @@ The cost operator  is simply the evolution of the cost Hamiltonian parametrized 
 * The **mixing operator $U_b$**: a simple set of single-qubit rotations with adjustable
   angles which are tuned during the classical optimization loop to minimize the cost
 
+The cost Hamiltonian of the MaxCut problem can be written as:
+
+$$H_c = \frac12 \sum_{\langle i,j\rangle} (\mathbb{1} - Z_iZ_j)$$
+
+where $\langle i,j\rangle$ represents the edge between nodes $i$ and $j$. The solution of the MaxCut problem is encoded in the ground state of the above Hamiltonian.
 
 The QAOA quantum circuit consists of a number of layers, each layer containing a cost and a mixing operator.
 Below, the QAOA quantum circuit is defined using
@@ -87,20 +96,16 @@ into digital single and two-qubits operations via the `.digital_decomposition()`
 The decomposition is exact since the Hamiltonian generator is diagonal.
 
 ```python exec="on" source="material-block" html="1" session="qaoa"
-from qadence import tag, kron, chain, RX, RZ, Z, H, CNOT, Zero, I
+from qadence import tag, kron, chain, RX, RZ, Z, H, CNOT, I, add
 from qadence import HamEvo, QuantumCircuit, Parameter
 
 n_qubits = graph.number_of_nodes()
 n_edges = graph.number_of_edges()
 n_layers = 6
 
-
 # Generate the cost Hamiltonian
-zz_ops = [kron(Z(edge[0]), Z(edge[1])) for edge in graph.edges()]
-cost_ham = Zero()
-for op in zz_ops:
-    cost_ham += op
-cost_ham = 0.5 * (n_edges * kron(I(i) for i in range(n_qubits)) - cost_ham)
+zz_ops = add(Z(edge[0]) @ Z(edge[1]) for edge in graph.edges)
+cost_ham = 0.5 * (n_edges * kron(I(i) for i in range(n_qubits)) - zz_ops)
 
 
 # QAOA circuit
@@ -150,10 +155,10 @@ and train it using standard gradient based optimization.
 
 The loss function to be minimized reads:
 
-$$\mathcal{L} =-\langle \psi | H_c| \psi \rangle= -\sum_{i,j}^{N_{\mathcal{E}}} \frac{1}{2} \left(1 - \langle \psi | \sigma_i^z \sigma_j^z | \psi \rangle \right)$$
+$$\mathcal{L} =-\langle \psi | H_c| \psi \rangle= -\frac12 \sum_{\langle i,j\rangle}  \left(1 - \langle \psi | Z_i Z_j | \psi \rangle \right)$$
 
-where $|\psi\rangle(\beta, \gamma)$ is the wavefunction obtained by propagating the QAQA
-quantum circuit and the sum runs over the edges of the graph $N_{\mathcal{E}}$.
+where $|\psi\rangle(\beta, \gamma)$ is the wavefunction obtained by running the QAQA
+quantum circuit and the sum runs over the edges of the graph $\langle i,j\rangle$.
 
 ```python exec="on" source="material-block" result="json" session="qaoa"
 import torch
@@ -187,7 +192,6 @@ for i in range(n_epochs):
     optimizer.step()
     if (i + 1) % (n_epochs // 10) == 0:
         print(f"MaxCut cost at iteration {i+1}: {-loss.item()}")
-
 ```
 
 Qadence offers some convenience functions to implement this training loop with advanced
@@ -205,6 +209,7 @@ samples = model.sample(n_shots=100)[0]
 most_frequent = max(samples, key=samples.get)
 
 print(f"Most frequently sampled bitstring corresponding to the maximum cut: {most_frequent}")
+print(f"Was the the optimal bitstring found? {most_frequent in maxcuts}")
 
 # let's now draw the cut obtained with the QAOA procedure
 colors = []
