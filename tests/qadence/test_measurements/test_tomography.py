@@ -28,7 +28,7 @@ from qadence.measurements import Measurements
 from qadence.measurements.tomography import (
     compute_expectation as basic_tomography,
 )
-from qadence.measurements.tomography import (
+from qadence.measurements.utils import (
     empirical_average,
     get_counts,
     get_qubit_indices_for_op,
