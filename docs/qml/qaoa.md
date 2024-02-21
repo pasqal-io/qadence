@@ -167,10 +167,10 @@ from qadence import QuantumModel
 torch.manual_seed(seed)
 
 
-def loss_function(_model: QuantumModel):
+def loss_function(model: QuantumModel):
     # The loss corresponds to the expectation
     # value of the cost Hamiltonian
-    return -1.0 * _model.expectation().squeeze()
+    return -1.0 * model.expectation().squeeze()
 
 
 # initialize the parameters to random values
