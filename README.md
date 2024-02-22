@@ -6,7 +6,7 @@
 
 **For a high-level overview of Qadence features, [check out our white paper](https://arxiv.org/abs/2401.09915).**
 
-**For more detailed information, [check out the documentation](https://pasqal-io.github.io/qadence/latest/)
+**For more detailed information, [check out the documentation](https://pasqal-io.github.io/qadence/latest/).**
 
 **Qadence** is a Python package that provides a simple interface to build _**digital-analog quantum
 programs**_ with tunable qubit interaction defined on _**arbitrary register topologies**_ realizable on neutral atom devices.
