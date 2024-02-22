@@ -1,10 +1,12 @@
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/logo/qadence_logo_white.svg">
-  <source media="(prefers-color-scheme: light)" srcset="./docs/logo/qadence_logo.svg">
-  <img alt="Qadence logo" src="./docs/logo/qadence_logo.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/assets/logo/qadence_logo_white.svg">
+  <source media="(prefers-color-scheme: light)" srcset="./docs/assets/logo/qadence_logo.svg">
+  <img alt="Qadence logo" src="./docs/assets/logo/qadence_logo.svg">
 </picture>
 
 **For a high-level overview of Qadence features, [check out our white paper](https://arxiv.org/abs/2401.09915).**
+
+**For more detailed information, [check out the documentation](https://pasqal-io.github.io/qadence/latest/)
 
 **Qadence** is a Python package that provides a simple interface to build _**digital-analog quantum
 programs**_ with tunable qubit interaction defined on _**arbitrary register topologies**_ realizable on neutral atom devices.
@@ -16,6 +18,12 @@ programs**_ with tunable qubit interaction defined on _**arbitrary register topo
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ## Feature highlights
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/assets/qadence_arch.svg">
+  <source media="(prefers-color-scheme: light)" srcset="./docs/assets/qadence_arch.svg">
+  <img alt="Qadence architecture" src="./docs/assets/qadence_arch.svg">
+</picture>
 
 * A [block-based system](docs/tutorials/getting_started.md) for composing _**complex digital-analog
   programs**_ in a flexible and scalable manner, inspired by the Julia quantum SDK
