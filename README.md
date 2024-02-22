@@ -23,7 +23,9 @@ programs**_ with tunable qubit interaction defined on _**arbitrary register topo
   <source media="(prefers-color-scheme: dark)" srcset="./docs/assets/qadence_arch.svg">
   <source media="(prefers-color-scheme: light)" srcset="./docs/assets/qadence_arch.svg">
   <img alt="Qadence architecture" src="./docs/assets/qadence_arch.svg">
+  <figcaption>High-level Qadence architecture.</figcaption>
 </picture>
+
 
 * A [block-based system](docs/tutorials/getting_started.md) for composing _**complex digital-analog
   programs**_ in a flexible and scalable manner, inspired by the Julia quantum SDK
