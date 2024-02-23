@@ -243,7 +243,7 @@ def uuid_to_block(block: AbstractBlock, d: dict[str, Expr] = None) -> dict[str, 
         return d
 
     else:
-        raise NotImplementedError(f"'uuid_to_block' is not implemented for block: {type(block)}")
+        raise NotImplementedError(f"'uuid_to_block' is not implemented for block '{block}': {type(block)}")
 
     return d
 
