@@ -10,6 +10,7 @@ from typing import (
     Optional,
     Union as TypingUnion
 )
+from abc import ABC
 from dataclasses import dataclass, field, InitVar
 
 import ast
@@ -166,23 +167,27 @@ def eval_expr(expr: list) -> EXPR_TYPES:
 
 
 @dataclass
-class SerialModel:
+class SerialModel(ABC):
     value: Any = field(init=False)
 
 
 @dataclass
 class BlockTypeSerial(SerialModel):
-    d: InitVar[str]
+    d: InitVar[Any]
     value: AbstractBlock = field(init=False)
 
-    def __post_init__(self, d: str) -> None:
-        if isinstance(d, AbstractBlock):
-            self.value = d
-        self.value = (
-            getattr(operations, d)
-            if hasattr(operations, d)
-            else getattr(qadenceblocks, d)
-        )
+    def __post_init__(self, d: Any) -> None:
+        # if isinstance(d, AbstractBlock):
+        #     self.value = d
+        # if d["type"] in ALL_BLOCK_NAMES:
+        block = (
+            getattr(operations, d["type"])
+            if hasattr(operations, d["type"])
+            else getattr(qadenceblocks, d["type"])
+        )._from_dict(d)
+        if d["tag"] is not None:
+            block = tag(block, d["tag"])
+        self.value = block
 
 
 @dataclass
@@ -220,12 +225,12 @@ class ModelSerial(SerialModel):
     def __post_init__(self, d: dict) -> None:
         module_name = list(d.keys())[0]
         obj = globals().get(module_name, False)
-        print(f"{module_name=} | {obj=} | {hasattr(obj, '_from_dict')=}")  # | {globals()=}")
         if hasattr(obj, "_from_dict"):
-            return obj._from_dict(d, self.as_torch)
-        if hasattr(obj, "load_state_dict"):
-            return obj.load_state_dict(d[module_name])
-        raise ValueError(f"Module '{module_name}' not found.")
+            self.value = obj._from_dict(d, self.as_torch)
+        elif hasattr(obj, "load_state_dict"):
+            self.value = obj.load_state_dict(d[module_name])
+        else:
+            raise ValueError(f"Module '{module_name}' not found.")
 
 
 @dataclass
@@ -318,22 +323,16 @@ def serialize(obj: SUPPORTED_TYPES, save_params: bool = False) -> dict:
             if symbs:
                 symb_dict = {"symbols": {str(s): s._to_dict() for s in symbs}}
             d = {**expr_dict, **symb_dict}
-        # elif isinstance(obj, (QuantumModel,)):  # QNN, TransformedModule)):
-        #     d = obj._to_dict(save_params)
-        # elif isinstance(obj, torch.nn.Module):
-        #     d = {type(obj).__name__: obj.state_dict()}
         else:
-            # d = obj._to_dict()
             if hasattr(obj, "_to_dict"):
-                fn: Callable = getattr(obj, "_to_dict")
+                fn: Callable = obj._to_dict
                 d = (
                     fn(save_params)
                     if isinstance(obj, torch.nn.Module)
                     else fn()
                 )
             else:
-                d = {type(obj).__name__: getattr(obj, "state_dict")()}
-            print(f"obj serialized: {d}")
+                d = {type(obj).__name__: obj.state_dict()}
     except Exception as e:
         logger.error(f"Serialization of object {obj} failed due to {e}")
     return d
@@ -387,7 +386,7 @@ def deserialize(d: dict, as_torch: bool = False) -> SUPPORTED_TYPES:
     elif d.get("graph"):
         obj = GraphSerial(d)
     elif d.get("type"):
-        obj = BlockTypeSerial(d["type"])
+        obj = BlockTypeSerial(d)
     else:
         obj = ModelSerial(d, as_torch=as_torch)
     return obj.value
