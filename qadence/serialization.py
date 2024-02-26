@@ -208,11 +208,7 @@ class GraphSerial(SerialModel):
     value: Register = field(init=False)
 
     def __post_init__(self, d: dict) -> None:
-        self.value = (
-            Register._from_dict(d)
-            if isinstance(d, dict)
-            else d
-        )
+        self.value = Register._from_dict(d)
 
 
 @dataclass
@@ -389,7 +385,6 @@ def deserialize(d: dict, as_torch: bool = False) -> SUPPORTED_TYPES:
     assert torch.isclose(qm.expectation({}), qm_deserialized.expectation({}))
     ```
     """
-    print(f"[deserialize]: {d.keys()=}")
     obj: SerialModel
     if d.get("expression"):
         obj = ExpressionSerial(d)
