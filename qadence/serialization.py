@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from pathlib import Path
 from typing import (
     Any,
@@ -11,6 +12,7 @@ from typing import (
     Union as TypingUnion
 )
 from abc import ABC
+from importlib import import_module
 from dataclasses import dataclass, field, InitVar
 
 import ast
@@ -177,9 +179,6 @@ class BlockTypeSerial(SerialModel):
     value: AbstractBlock = field(init=False)
 
     def __post_init__(self, d: Any) -> None:
-        # if isinstance(d, AbstractBlock):
-        #     self.value = d
-        # if d["type"] in ALL_BLOCK_NAMES:
         block = (
             getattr(operations, d["type"])
             if hasattr(operations, d["type"])
@@ -224,13 +223,24 @@ class ModelSerial(SerialModel):
 
     def __post_init__(self, d: dict) -> None:
         module_name = list(d.keys())[0]
-        obj = globals().get(module_name, False)
+        obj = globals().get(module_name, None)
+        if obj is None:
+            obj = self._resolve_module(module_name)
         if hasattr(obj, "_from_dict"):
             self.value = obj._from_dict(d, self.as_torch)
         elif hasattr(obj, "load_state_dict"):
             self.value = obj.load_state_dict(d[module_name])
         else:
             raise ValueError(f"Module '{module_name}' not found.")
+
+    @staticmethod
+    def _resolve_module(module: str) -> Any:
+        for loaded_module in sys.modules.keys():
+            if "qadence" in loaded_module:
+                obj = getattr(sys.modules[loaded_module], module, None)
+                if obj:
+                    return obj
+        raise ValueError(f"Couldn't resolve module '{module}'.")
 
 
 @dataclass
@@ -312,12 +322,12 @@ def serialize(obj: SUPPORTED_TYPES, save_params: bool = False) -> dict:
     assert torch.isclose(qm.expectation({}), qm_deserialized.expectation({}))
     ```
     """
-    if not isinstance(obj, get_args(SUPPORTED_TYPES)):
-        logger.error(TypeError(f"Serialization of object type {type(obj)} not supported."))
-    d: dict = {}
+    # if not isinstance(obj, get_args(SUPPORTED_TYPES)):
+    #     logger.error(TypeError(f"Serialization of object type {type(obj)} not supported."))
+    d: dict = dict()
     try:
         if isinstance(obj, core.Expr):
-            symb_dict = {}
+            symb_dict = dict()
             expr_dict = {"name": str(obj), "expression": srepr(obj)}
             symbs: set[Parameter | core.Basic] = obj.free_symbols
             if symbs:
@@ -347,6 +357,7 @@ def deserialize(d: dict, as_torch: bool = False) -> SUPPORTED_TYPES:
 
     Arguments:
         d (dict): A dict containing a serialized object.
+        as_torch (bool): Whether to transform to torch for the deserialized object.
     Returns:
         AbstractBlock, QuantumCircuit, QuantumModel, TransformedModule, Register, torch.nn.Module.
 
@@ -378,6 +389,7 @@ def deserialize(d: dict, as_torch: bool = False) -> SUPPORTED_TYPES:
     assert torch.isclose(qm.expectation({}), qm_deserialized.expectation({}))
     ```
     """
+    print(f"[deserialize]: {d.keys()=}")
     obj: SerialModel
     if d.get("expression"):
         obj = ExpressionSerial(d)
