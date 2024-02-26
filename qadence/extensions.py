@@ -2,41 +2,72 @@ from __future__ import annotations
 
 import importlib
 from string import Template
+from typing import TypeVar
 
-from qadence.backend import Backend
+from qadence.backend import Backend, BackendConfiguration
 from qadence.blocks.abstract import TAbstractBlock
+from qadence.engines.differentiable_backend import DifferentiableBackend
 from qadence.logger import get_logger
 from qadence.types import BackendName, DiffMode, Engine
 
 backends_namespace = Template("qadence.backends.$name")
+BackendClsType = TypeVar("BackendClsType", bound=Backend)
+EngineClsType = TypeVar("EngineClsType", bound=DifferentiableBackend)
 
 logger = get_logger(__name__)
 
 
-def _available_engines() -> dict:
+def import_config(backend_name: str | BackendName) -> BackendConfiguration:
+    module_path = f"qadence.backends.{backend_name}.config"
+    cfg: BackendConfiguration
+    try:
+        module = importlib.import_module(module_path)
+        cfg = getattr(module, "Configuration")
+    except (ModuleNotFoundError, ImportError) as e:
+        raise Exception(f"Failed to import backend config of {backend_name} due to {e}.")
+    return cfg
+
+
+def import_backend(backend_name: str | BackendName) -> Backend:
+    module_path = f"qadence.backends.{backend_name}.backend"
+    bknd: Backend
+    try:
+        module = importlib.import_module(module_path)
+        bknd = getattr(module, "Backend")
+    except (ModuleNotFoundError, ImportError) as e:
+        raise Exception(f"Failed to import backend {backend_name} due to {e}.")
+    return bknd
+
+
+def import_engine(engine: str | Engine) -> DifferentiableBackend:
+    module_path = f"qadence.engines.{engine}.differentiable_backend"
+    egn: DifferentiableBackend
+    try:
+        module = importlib.import_module(module_path)
+        egn = getattr(module, "DifferentiableBackend")
+    except (ModuleNotFoundError, ImportError) as e:
+        raise Exception(f"Failed to import backend {engine} due to {e}.")
+    return egn
+
+
+def _available_engines() -> dict[Engine, DifferentiableBackend]:
     """Returns a dictionary of currently installed, native qadence engines."""
-    res = {}
+    res: dict[Engine, DifferentiableBackend] = {}
     for engine in Engine.list():
-        module_path = f"qadence.engines.{engine}.differentiable_backend"
         try:
-            module = importlib.import_module(module_path)
-            DifferentiableBackendCls = getattr(module, "DifferentiableBackend")
-            res[engine] = DifferentiableBackendCls
+            res[engine] = import_engine(engine)
         except (ImportError, ModuleNotFoundError):
             pass
     logger.info(f"Found engines: {res.keys()}")
     return res
 
 
-def _available_backends() -> dict:
+def _available_backends() -> dict[BackendName, Backend]:
     """Returns a dictionary of currently installed, native qadence backends."""
-    res = {}
+    res: dict[BackendName, Backend] = {}
     for backend in BackendName.list():
-        module_path = f"qadence.backends.{backend}.backend"
         try:
-            module = importlib.import_module(module_path)
-            BackendCls = getattr(module, "Backend")
-            res[backend] = BackendCls
+            res[backend] = import_backend(backend)
         except (ImportError, ModuleNotFoundError):
             pass
     logger.info(f"Found backends: {res.keys()}")
