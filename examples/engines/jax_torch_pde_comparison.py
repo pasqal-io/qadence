@@ -153,7 +153,7 @@ def torch_solve(circ: QuantumCircuit, obs: AbstractBlock) -> np.ndarray:
         )
         loss.backward()
         opt.step()
-    return model(domain_torch).reshape(N_POINTS, N_POINTS).detach().cpu().numpy()
+    return model(domain_torch.to(TORCH_DEVICE)).reshape(N_POINTS, N_POINTS).detach().cpu().numpy()
 
 
 def jax_solve(circ, obs) -> Array:
