@@ -26,6 +26,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.constructors import feature_map, hea, ising_hamiltonian
 
 logger = get_logger(__name__)
+DIFF_MODE = DiffMode.AD
 TORCH_DEVICE = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 JAX_DEVICE = jax.devices()[0].device_kind
 PLOT = False
@@ -136,8 +137,10 @@ class DomainSampling(nn.Module):
         return (second_both[:, 0] + second_both[:, 1]).pow(2).mean()
 
 
-def torch_solve(circ: QuantumCircuit, obs: AbstractBlock) -> np.ndarray:
-    model = QNN(circuit=circ, observable=obs, inputs=VARIABLES).to(TORCH_DEVICE)
+def torch_solve(circ: QuantumCircuit, obs: AbstractBlock, backend: BackendName) -> np.ndarray:
+    model = QNN(
+        circuit=circ, observable=obs, backend=backend, diff_mode=DIFF_MODE, inputs=VARIABLES
+    ).to(TORCH_DEVICE)
     opt = optim.Adam(model.parameters(), lr=LEARNING_RATE)
     sol = DomainSampling(
         net=model, n_inputs=len(VARIABLES), n_colpoints=N_POINTS, device=TORCH_DEVICE
@@ -157,7 +160,7 @@ def torch_solve(circ: QuantumCircuit, obs: AbstractBlock) -> np.ndarray:
 
 
 def jax_solve(circ, obs) -> Array:
-    bknd = backend_factory(BackendName.HORQRUX, DiffMode.AD)
+    bknd = backend_factory(backend=BackendName.HORQRUX, diff_mode=DIFF_MODE)
     conv_circ, conv_obs, embedding_fn, params = bknd.convert(circ, obs)
 
     optimizer = optax.adam(learning_rate=LEARNING_RATE)
@@ -218,13 +221,25 @@ if __name__ == "__main__":
         "torch_device": TORCH_DEVICE,
     }
     for engine, fn in zip(
-        ["jax", "torch"], ["jax_solve(circ,obs).block_until_ready()", "torch_solve(circ,obs)"]
+        ["horqrux", "pyqtorch", "emu_c"],
+        [
+            "jax_solve(circ,obs).block_until_ready()",
+            "torch_solve(circ,obs, 'pyqtorch')",
+            "torch_solve(circ,obs, 'emu_c')",
+        ],
     ):
         setup = "circ,obs = setup_circ_obs(n_qubits=N_QUBITS, depth=DEPTH)"
-        pp_run_times = timeit.repeat(fn, setup, number=1, repeat=1, globals=globals())
+        pp_run_times = timeit.repeat(fn, setup, number=1, repeat=5, globals=globals())
         pp_mean, pp_std = np.mean(pp_run_times), np.std(pp_run_times)
         res[engine] = f"mean_runtime: {pp_mean}, std_runtime: {pp_std}"
 
+    # {'n_qubits': 4, 'n_epochs': 1000, 'jax_device': 'NVIDIA A100-SXM4-40GB',
+    # 'torch_device': device(type='cuda'),
+
+    # 'horqrux': 'mean_runtime: 51.33197688870132, std_runtime: 0.0',
+    # 'pyqtorch': 'mean_runtime: 251.40893555991352, std_runtime: 0.0'}
+    # 'emu-c- no truncation': 'mean_runtime: 167.01573771610856, std_runtime: 0.0'}
+    # 'emu-c- cotengra truncation': 'mean_runtime: 260.01573771610856, std_runtime: 0.0'}
     print(res)
     logger.info(res)
     import pickle
@@ -233,9 +248,10 @@ if __name__ == "__main__":
         pickle.dump(res, f)
 
     if PLOT:
+        backend = "pyqtorch"
         circ, obs = setup_circ_obs(N_QUBITS, DEPTH)
         dqc_sol_jax = jax_solve(circ, obs).block_until_ready()
-        dqc_sol_torch = torch_solve(circ, obs)
+        dqc_sol_torch = torch_solve(circ, obs, backend)
         analytic_sol = (
             (exp(-np.pi * domain_torch[:, 0]) * sin(np.pi * domain_torch[:, 1]))
             .reshape(N_POINTS, N_POINTS)
