@@ -177,3 +177,28 @@ class U(ParametricBlock):
             RY(self.qubit_support[0], self.parameters.theta),
             RZ(self.qubit_support[0], self.parameters.omega),
         )
+    
+class SX(ParametricBlock):
+    """The Sx gate."""
+
+    name = OpName.SX
+
+    def __init__(self, target: int):
+        self.parameters = sympy.pi / 2.0
+        self.generator = X(target)
+        super().__init__((target,))
+
+    @classmethod
+    def num_parameters(cls) -> int:
+        return 1
+
+    @property
+    def eigenvalues_generator(self) -> Tensor:
+        return torch.tensor([-1, 1], dtype=cdouble)
+
+    @property
+    def eigenvalues(self) -> Tensor:
+        val = evaluate(self.parameters.parameter, as_torch=True)
+        phase = torch.exp(1j * val / 2.0)
+        lmbd =  phase * (torch.cos(val / 2.0) - 1j * torch.sin(val / 2.0))
+        return torch.cat((lmbd, lmbd.conj()))

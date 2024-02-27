@@ -28,7 +28,7 @@ from .control_ops import (
     Toffoli,
 )
 from .ham_evo import HamEvo
-from .parametric import PHASE, RX, RY, RZ, U
+from .parametric import PHASE, RX, RY, RZ, U, SX
 from .primitive import SWAP, H, I, N, Projector, S, SDagger, T, TDagger, X, Y, Z, Zero
 
 # gate sets
@@ -99,4 +99,5 @@ __all__ = [
     "AnalogRZ",
     "AnalogSWAP",
     "Projector",
+    "SX",
 ]
