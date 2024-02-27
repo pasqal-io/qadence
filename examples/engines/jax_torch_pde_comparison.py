@@ -27,7 +27,7 @@ from qadence.constructors import feature_map, hea, ising_hamiltonian
 
 logger = get_logger(__name__)
 TORCH_DEVICE = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-JAX_DEVICE = "cuda" if jax.devices()[0].device_kind == "cuda" else "cpu"
+JAX_DEVICE = jax.devices()[0].device_kind
 PLOT = False
 LEARNING_RATE = 0.01
 N_QUBITS = 4
@@ -94,44 +94,54 @@ class DomainSampling(nn.Module):
     """
 
     def __init__(
-        self, net: nn.Module | QNN, n_inputs: int = len(VARIABLES), n_colpoints: int = N_POINTS
+        self,
+        net: nn.Module | QNN,
+        n_inputs: int = len(VARIABLES),
+        n_colpoints: int = N_POINTS,
+        device=torch.device("cpu"),
     ):
         super().__init__()
         self.net = net
         self.n_colpoints = n_colpoints
         self.n_inputs = n_inputs
+        self.device = device
+
+    def sample(self) -> Tensor:
+        return rand(size=(self.n_colpoints, self.n_inputs), device=self.device)
 
     def left_boundary(self) -> Tensor:  # u(0,y)=0
-        sample = rand(size=(self.n_colpoints, self.n_inputs))
+        sample = self.sample()
         sample[:, 0] = 0.0
         return self.net(sample).pow(2).mean()
 
     def right_boundary(self) -> Tensor:  # u(L,y)=0
-        sample = rand(size=(self.n_colpoints, self.n_inputs))
+        sample = self.sample()
         sample[:, 0] = 1.0
         return self.net(sample).pow(2).mean()
 
     def top_boundary(self) -> Tensor:  # u(x,H)=0
-        sample = rand(size=(self.n_colpoints, self.n_inputs))
+        sample = self.sample()
         sample[:, 1] = 1.0
         return self.net(sample).pow(2).mean()
 
     def bottom_boundary(self) -> Tensor:  # u(x,0)=f(x)
-        sample = rand(size=(self.n_colpoints, self.n_inputs))
+        sample = self.sample()
         sample[:, 1] = 0.0
         return (self.net(sample) - sin(np.pi * sample[:, 0])).pow(2).mean()
 
     def interior(self) -> Tensor:  # uxx+uyy=0
-        sample = rand(size=(self.n_colpoints, self.n_inputs), requires_grad=True)
+        sample = self.sample().requires_grad_()
         first_both = calc_derivative(self.net(sample), sample)
         second_both = calc_derivative(first_both, sample)
         return (second_both[:, 0] + second_both[:, 1]).pow(2).mean()
 
 
 def torch_solve(circ: QuantumCircuit, obs: AbstractBlock) -> np.ndarray:
-    model = QNN(circuit=circ, observable=obs, inputs=VARIABLES)
+    model = QNN(circuit=circ, observable=obs, inputs=VARIABLES).to(TORCH_DEVICE)
     opt = optim.Adam(model.parameters(), lr=LEARNING_RATE)
-    sol = DomainSampling(net=model, n_inputs=len(VARIABLES), n_colpoints=N_POINTS)
+    sol = DomainSampling(
+        net=model, n_inputs=len(VARIABLES), n_colpoints=N_POINTS, device=TORCH_DEVICE
+    )
     for _ in range(N_EPOCHS):
         opt.zero_grad()
         loss = (
@@ -143,7 +153,7 @@ def torch_solve(circ: QuantumCircuit, obs: AbstractBlock) -> np.ndarray:
         )
         loss.backward()
         opt.step()
-    return model(domain_torch).reshape(N_POINTS, N_POINTS).detach().numpy()
+    return model(domain_torch).reshape(N_POINTS, N_POINTS).detach().cpu().numpy()
 
 
 def jax_solve(circ, obs) -> Array:
