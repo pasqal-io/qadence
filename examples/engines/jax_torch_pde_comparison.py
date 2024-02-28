@@ -23,7 +23,7 @@ from torch.autograd import grad
 from qadence import QNN, AbstractBlock, BackendName, DiffMode, backend_factory, get_logger
 from qadence.blocks.utils import chain, kron
 from qadence.circuit import QuantumCircuit
-from qadence.constructors import feature_map, hea, ising_hamiltonian
+from qadence.constructors import feature_map, hea, total_magnetization
 
 logger = get_logger(__name__)
 DIFF_MODE = DiffMode.AD
@@ -57,7 +57,7 @@ def setup_circ_obs(n_qubits: int, depth: int) -> tuple[QuantumCircuit, AbstractB
         ]
     )
     # choosing a cost function
-    obs = ising_hamiltonian(n_qubits=n_qubits)
+    obs = total_magnetization(n_qubits=n_qubits)
     # building the circuit and the quantum model
     circ = QuantumCircuit(n_qubits, chain(fm, ansatz))
     return circ, obs
@@ -271,3 +271,9 @@ if __name__ == "__main__":
         ax[2].set_ylabel("y")
         ax[2].set_title("JAX DQC")
         plt.show()
+
+
+# {'n_qubits': 4, 'n_epochs': 1000, 'jax_device': 'cpu', 'torch_device': device(type='cuda'), 'horqrux': 'mean_runtime: 139.53169030491262, std_runtime: 2.0769610744187563', 'pyqtorch': 'mean_runtime: 237.94209703579546, std_runtime: 1.1005077375594445', 'emu_c': 'mean_runtime: 242.04887232519687, std_runtime: 1.0783225551830007'}
+
+
+# {'n_qubits': 4, 'n_epochs': 1000, 'jax_device': 'cpu', 'torch_device': device(type='cpu'), 'horqrux': 'mean_runtime: 69.70531777479918, std_runtime: 0.49274159367518355', 'pyqtorch': 'mean_runtime: 72.95039291661233, std_runtime: 1.2634803707358608', 'emu_c': 'mean_runtime: 58.82601000840077, std_runtime: 1.219633167820975'}
