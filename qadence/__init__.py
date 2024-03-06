@@ -1,9 +1,38 @@
 from __future__ import annotations
 
+import logging
+import logging.config
+import os
 from importlib import import_module
+from pathlib import Path
 
+import yaml
 from torch import cdouble, set_default_dtype
 from torch import float64 as torchfloat64
+
+DEFAULT_FLOAT_DTYPE = torchfloat64
+DEFAULT_COMPLEX_DTYPE = cdouble
+set_default_dtype(DEFAULT_FLOAT_DTYPE)
+
+logging_levels = {
+    "DEBUG": logging.DEBUG,
+    "INFO": logging.INFO,
+    "WARNING": logging.WARNING,
+    "ERROR": logging.ERROR,
+    "CRITICAL": logging.CRITICAL,
+}
+LOG_CONFIG_PATH = os.environ.get("QADENCE_LOG_CONFIG", f"{Path(__file__).parent}/log_config.yaml")
+LOG_BASE_LEVEL = os.environ.get("QADENCE_LOG_LEVEL", None)
+
+with open(LOG_CONFIG_PATH, "r") as stream:
+    log_config = yaml.load(stream, Loader=yaml.FullLoader)
+logging.config.dictConfig(log_config)
+
+logger: logging.Logger = logging.getLogger("qadence")
+LOG_LEVEL = logging_levels.get(LOG_BASE_LEVEL, logging.INFO)
+logger.setLevel(LOG_LEVEL)
+[h.setLevel(LOG_LEVEL) for h in logger.handlers if h.get_name() == "console"]
+logger.debug("Qadence logger successfully setup")
 
 from .analog import *
 from .backend import *
@@ -27,10 +56,6 @@ from .states import *
 from .transpile import *
 from .types import *
 from .utils import *
-
-DEFAULT_FLOAT_DTYPE = torchfloat64
-DEFAULT_COMPLEX_DTYPE = cdouble
-set_default_dtype(DEFAULT_FLOAT_DTYPE)
 
 """Fetch the functions defined in the __all__ of each sub-module.
 

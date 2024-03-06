@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass, field
+from logging import getLogger
 from typing import Any
 
 import pyqtorch as pyq
@@ -18,7 +19,6 @@ from qadence.backends.utils import (
 )
 from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
-from qadence.logger import get_logger
 from qadence.measurements import Measurements
 from qadence.mitigations.protocols import Mitigations, apply_mitigation
 from qadence.noise import Noise
@@ -36,7 +36,7 @@ from qadence.utils import infer_batchsize, int_to_basis
 from .config import Configuration, default_passes
 from .convert_ops import convert_block, convert_observable
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 @dataclass(frozen=True, eq=True)
@@ -53,6 +53,7 @@ class Backend(BackendInterface):
     native_endianness: Endianness = Endianness.BIG
     config: Configuration = field(default_factory=Configuration)
     engine: Engine = Engine.TORCH
+    logger.debug("Initialised")
 
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:
         passes = self.config.transpilation_passes

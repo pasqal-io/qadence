@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import Callable
 
 import jax.numpy as jnp
@@ -11,14 +12,16 @@ from qadence.backends import backend_factory
 from qadence.blocks.utils import chain
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import feature_map, hea, total_magnetization
+from qadence.logger import get_script_logger
 from qadence.types import BackendName, DiffMode
 
+logger = get_script_logger("Horqrux")
 backend = BackendName.HORQRUX
 
 num_epochs = 10
 n_qubits = 4
 depth = 1
-
+logger.info(f"Running example {os.path.basename(__file__)} with n_qubits = {n_qubits}")
 fm = feature_map(n_qubits)
 circ = QuantumCircuit(n_qubits, chain(fm, hea(n_qubits, depth=depth)))
 obs = total_magnetization(n_qubits)

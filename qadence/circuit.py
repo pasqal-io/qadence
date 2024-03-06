@@ -167,7 +167,7 @@ class QuantumCircuit:
                 with open(path, "w") as file:
                     file.write(qc_dumped)
             except Exception as e:
-                print(f"Unable to write QuantumCircuit to disk due to {e}")
+                logger.error(f"Unable to write QuantumCircuit to disk due to {e}")
 
         return qc_dumped
 
@@ -199,6 +199,6 @@ class QuantumCircuit:
                 loaded_dict = json.load(file)
 
         except Exception as e:
-            print(f"Unable to load QuantumCircuit due to {e}")
+            logger.error(f"Unable to load QuantumCircuit due to {e}")
 
         return QuantumCircuit._from_dict(loaded_dict)

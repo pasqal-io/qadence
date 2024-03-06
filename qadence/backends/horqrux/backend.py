@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass, field
+from logging import getLogger
 from typing import Any
 
 import jax
@@ -28,6 +29,8 @@ from qadence.utils import int_to_basis
 from .config import Configuration, default_passes
 from .convert_ops import HorqruxCircuit, convert_block, convert_observable
 
+logger = getLogger("__name__")
+
 
 @dataclass(frozen=True, eq=True)
 class Backend(BackendInterface):
@@ -43,6 +46,7 @@ class Backend(BackendInterface):
     native_endianness: Endianness = Endianness.BIG
     config: Configuration = field(default_factory=Configuration)
     engine: Engine = Engine.JAX
+    logger.debug("Initialised")
 
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:
         passes = self.config.transpilation_passes

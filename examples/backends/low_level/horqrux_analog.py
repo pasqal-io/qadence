@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 import jax
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
@@ -21,15 +23,17 @@ from qadence import (
 )
 from qadence.backends import backend_factory
 from qadence.circuit import QuantumCircuit
-from qadence.logger import get_logger
+from qadence.logger import get_script_logger
 from qadence.types import BackendName, DiffMode
 
-logger = get_logger(__name__)
+logger = get_script_logger("horqcrux_analog")
 
 N_QUBITS = 4
 N_EPOCHS = 200
 BACKEND_NAME = BackendName.HORQRUX
 DIFF_MODE = DiffMode.AD
+
+logger.info(f"Running example {os.path.basename(__file__)} with n_qubits = {N_QUBITS}")
 
 bknd = backend_factory(BACKEND_NAME, DIFF_MODE)
 register = Register.line(N_QUBITS, spacing=8.0)

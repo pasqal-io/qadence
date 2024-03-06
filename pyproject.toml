@@ -43,6 +43,7 @@ dependencies = [
     "nevergrad",
     "scipy",
     "pyqtorch==1.0.6",
+    "pyyaml",
     "matplotlib",
 ]
 

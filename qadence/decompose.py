@@ -2,20 +2,20 @@ from __future__ import annotations
 
 import itertools
 from enum import Enum
+from logging import getLogger
 from typing import Any, List, Tuple, Union
 
 import sympy
 
 from qadence.blocks import AbstractBlock
 from qadence.blocks.utils import get_pauli_blocks, unroll_block_with_scaling
-from qadence.logger import get_logger
 from qadence.parameters import Parameter, evaluate
 
 # from qadence.types import TNumber, TParameter
 from qadence.types import PI
 from qadence.types import LTSOrder as Order
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 # flatten a doubly-nested list
 flatten = lambda a: list(itertools.chain(*a))  # noqa: E731

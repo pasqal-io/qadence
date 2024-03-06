@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+from logging import getLogger
 from pathlib import Path
 from typing import Any, get_args
 from typing import Union as TypingUnion
@@ -14,7 +15,6 @@ from qadence import QuantumCircuit, operations
 from qadence import blocks as qadenceblocks
 from qadence.blocks import AbstractBlock
 from qadence.blocks.utils import tag
-from qadence.logger import get_logger
 from qadence.ml_tools.models import TransformedModule
 from qadence.models import QNN, QuantumModel
 from qadence.parameters import Parameter
@@ -25,7 +25,7 @@ from qadence.types import SerializationFormat
 __all__ = ["deserialize", "load", "save", "serialize"]
 
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 def file_extension(file: Path | str) -> str:

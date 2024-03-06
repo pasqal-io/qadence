@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections import Counter
 from dataclasses import dataclass, fields
+from logging import getLogger
 from typing import Any, Callable, Iterator, Tuple
 
 from openfermion import QubitOperator
@@ -20,7 +21,6 @@ from qadence.blocks import (
 )
 from qadence.blocks.analog import ConstantAnalogRotation, InteractionBlock
 from qadence.circuit import QuantumCircuit
-from qadence.logger import get_logger
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.noise import Noise
@@ -28,7 +28,7 @@ from qadence.parameters import stringify
 from qadence.types import ArrayLike, BackendName, DiffMode, Endianness, Engine, ParamDictType
 from qadence.utils import validate_values_and_state
 
-logger = get_logger(__file__)
+logger = getLogger(__name__)
 
 
 @dataclass
