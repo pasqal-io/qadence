@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from itertools import chain as flatten
+from logging import getLogger
 from pathlib import Path
 from typing import Iterable
 
@@ -14,6 +15,8 @@ from qadence.register import Register
 
 # Modules to be automatically added to the qadence namespace
 __all__ = ["QuantumCircuit"]
+
+logger = getLogger(__name__)
 
 
 @dataclass(eq=False)  # Avoid unhashability errors due to mutable attributes.

@@ -29,9 +29,13 @@ with open(LOG_CONFIG_PATH, "r") as stream:
 logging.config.dictConfig(log_config)
 
 logger: logging.Logger = logging.getLogger("qadence")
-LOG_LEVEL = logging_levels.get(LOG_BASE_LEVEL, logging.INFO)
+LOG_LEVEL = logging_levels.get(LOG_BASE_LEVEL, logging.INFO)  # type: ignore[arg-type]
 logger.setLevel(LOG_LEVEL)
-[h.setLevel(LOG_LEVEL) for h in logger.handlers if h.get_name() == "console"]
+[
+    h.setLevel(LOG_LEVEL)  # type: ignore[func-returns-value]
+    for h in logger.handlers
+    if h.get_name() == "console"
+]
 logger.debug("Qadence logger successfully setup")
 
 from .analog import *

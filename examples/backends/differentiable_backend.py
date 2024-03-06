@@ -6,6 +6,8 @@ import numpy as np
 import sympy
 import torch
 
+torch.manual_seed(42)
+
 from qadence import (
     CNOT,
     RX,
@@ -17,9 +19,6 @@ from qadence import (
 )
 from qadence.backends.pyqtorch.backend import Backend as PyQTorchBackend
 from qadence.engines.torch.differentiable_backend import DifferentiableBackend
-
-torch.manual_seed(42)
-
 from qadence.logger import get_script_logger
 
 logger = get_script_logger("diff_backend")
@@ -45,9 +44,7 @@ if __name__ == "__main__":
     n_qubits = 2
     batch_size = 5
 
-    logger.info(
-        f"Running example {os.path.basename(__file__)} with n_qubits = {n_qubits} and batch_fize of {batch_size}"
-    )
+    logger.info(f"Running example {os.path.basename(__file__)} with n_qubits = {n_qubits}")
     # Making circuit with AD
     circ = circuit(n_qubits)
     observable = total_magnetization(n_qubits=n_qubits)
