@@ -62,7 +62,7 @@ def _fill_identities(
     full_qubit_support: tuple | list,
     diag_only: bool = False,
     endianness: Endianness = Endianness.BIG,
-    device: torch.device = torch.device("cpu"),
+    device: torch.device = None,
 ) -> torch.Tensor:
     """Returns a Kronecker product of a block matrix with identities.
 
@@ -265,7 +265,7 @@ def block_to_diagonal(
     qubit_support: tuple | list | None = None,
     use_full_support: bool = True,
     endianness: Endianness = Endianness.BIG,
-    device: torch.device = torch.device("cpu"),
+    device: torch.device = None,
 ) -> torch.Tensor:
     if block.is_parametric:
         raise TypeError("Sparse observables cant be parametric.")
@@ -310,7 +310,7 @@ def block_to_tensor(
     use_full_support: bool = True,
     tensor_type: TensorType = TensorType.DENSE,
     endianness: Endianness = Endianness.BIG,
-    device: torch.device = torch.device("cpu"),
+    device: torch.device = None,
 ) -> torch.Tensor:
     """
     Convert a block into a torch tensor.
@@ -369,7 +369,7 @@ def _block_to_tensor_embedded(
     qubit_support: tuple | None = None,
     use_full_support: bool = True,
     endianness: Endianness = Endianness.BIG,
-    device: torch.device = torch.device("cpu"),
+    device: torch.device = None,
 ) -> torch.Tensor:
     from qadence.blocks import MatrixBlock
     from qadence.operations import CSWAP, SWAP, HamEvo

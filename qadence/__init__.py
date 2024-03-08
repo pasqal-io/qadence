@@ -22,13 +22,13 @@ logging_levels = {
     "CRITICAL": logging.CRITICAL,
 }
 LOG_CONFIG_PATH = os.environ.get("QADENCE_LOG_CONFIG", f"{Path(__file__).parent}/log_config.yaml")
-LOG_BASE_LEVEL = os.environ.get("QADENCE_LOG_LEVEL", None)
+LOG_BASE_LEVEL = os.environ.get("QADENCE_LOG_LEVEL", "").upper()
 
 with open(LOG_CONFIG_PATH, "r") as stream:
     log_config = yaml.load(stream, Loader=yaml.FullLoader)
 logging.config.dictConfig(log_config)
 
-logger: logging.Logger = logging.getLogger("qadence")
+logger: logging.Logger = logging.getLogger(__name__)
 LOG_LEVEL = logging_levels.get(LOG_BASE_LEVEL, logging.INFO)  # type: ignore[arg-type]
 logger.setLevel(LOG_LEVEL)
 [

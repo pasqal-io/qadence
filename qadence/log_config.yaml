@@ -14,6 +14,10 @@ loggers:
     level: INFO
     handlers: [console]
     propagate: yes
+  pyqtorch:
+    level: INFO
+    handlers: [console]
+    propagate: yes
   script:
     level: INFO
     handlers: [console]
