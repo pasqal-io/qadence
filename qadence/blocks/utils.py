@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing
 from enum import Enum
 from itertools import chain as _flatten
+from logging import getLogger
 from typing import Generator, List, Type, TypeVar, Union, get_args
 
 from sympy import Array, Basic, Expr
@@ -29,10 +30,9 @@ from qadence.blocks.analog import (
 from qadence.blocks.analog import chain as analog_chain
 from qadence.blocks.analog import kron as analog_kron
 from qadence.exceptions import NotPauliBlockError
-from qadence.logger import get_logger
 from qadence.parameters import Parameter
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 TPrimitiveBlock = TypeVar("TPrimitiveBlock", bound=PrimitiveBlock)

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 from collections import Counter
+from logging import getLogger
 from typing import Any
 
 import numpy as np
@@ -11,14 +12,13 @@ from torch import Tensor, stack, vmap
 from torch import complex as make_complex
 from torch.linalg import eigvals
 
-from qadence.logger import get_logger
 from qadence.types import Endianness, ResultType, TNumber
 
 # Modules to be automatically added to the qadence namespace
 __all__ = []  # type: ignore
 
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 def basis_to_int(basis: str, endianness: Endianness = Endianness.BIG) -> int:

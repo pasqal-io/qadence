@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from logging import getLogger
 from typing import Callable
 
 from qadence.analog import add_background_hamiltonian
 from qadence.backend import BackendConfiguration
-from qadence.logger import get_logger
 from qadence.transpile import (
     blockfn_to_circfn,
     chain_single_qubit_ops,
@@ -14,7 +14,7 @@ from qadence.transpile import (
 )
 from qadence.types import AlgoHEvo
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 def default_passes(config: Configuration) -> list[Callable]:

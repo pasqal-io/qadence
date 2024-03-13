@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from logging import getLogger
 from typing import Callable
 
 import numpy as np
@@ -7,12 +8,11 @@ from sympy import Basic
 
 from qadence.blocks import AnalogBlock, KronBlock, kron
 from qadence.constructors.feature_maps import fm_parameter_func, fm_parameter_scaling
-from qadence.logger import get_logger
 from qadence.operations import AnalogRot, AnalogRX, AnalogRY, AnalogRZ
 from qadence.parameters import FeatureParameter, Parameter, VariationalParameter
 from qadence.types import PI, BasisSet, ReuploadScaling, TParameter
 
-logger = get_logger(__file__)
+logger = getLogger(__name__)
 
 AnalogRotationTypes = [AnalogRX, AnalogRY, AnalogRZ]
 

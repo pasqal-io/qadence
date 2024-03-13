@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 import numpy as np
 import sympy
 from braket.circuits import Noise
@@ -15,7 +17,10 @@ from qadence import (
     chain,
     total_magnetization,
 )
+from qadence.logger import get_script_logger
 from qadence.types import BackendName, DiffMode
+
+logger = get_script_logger("braket_digital")
 
 # def circuit(n_qubits):
 #     # make feature map with input parameters
@@ -60,6 +65,7 @@ if __name__ == "__main__":
     torch.manual_seed(10)
 
     n_qubits = 2
+    logger.info(f"Running example {os.path.basename(__file__)} with n_qubits = {n_qubits}")
     circ = circuit(n_qubits)
 
     observable = total_magnetization(n_qubits=n_qubits)

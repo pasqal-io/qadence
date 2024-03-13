@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from functools import cached_property
+from logging import getLogger
 from typing import Any, Union
 
 import numpy as np
@@ -22,7 +23,6 @@ from qadence.blocks.utils import (
     expressions,
 )
 from qadence.decompose import lie_trotter_suzuki
-from qadence.logger import get_logger
 from qadence.parameters import (
     Parameter,
     ParamMap,
@@ -32,7 +32,7 @@ from qadence.parameters import (
 from qadence.types import LTSOrder, OpName, TGenerator, TParameter
 from qadence.utils import eigenvalues
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class HamEvo(TimeEvolutionBlock):

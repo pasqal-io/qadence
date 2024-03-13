@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from logging import getLogger
+
 import sympy
 import torch
 from rich.console import Console, RenderableType
@@ -16,7 +18,6 @@ from qadence.blocks.utils import (
     chain,
     kron,
 )
-from qadence.logger import get_logger
 from qadence.parameters import (
     Parameter,
     evaluate,
@@ -26,7 +27,7 @@ from qadence.types import OpName, TNumber, TParameter
 from .parametric import PHASE, RX, RY, RZ
 from .primitive import SWAP, I, N, X, Y, Z
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class CNOT(ControlBlock):

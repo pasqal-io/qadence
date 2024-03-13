@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+import os
+
 import numpy as np
 import sympy
 import torch
 
+torch.manual_seed(42)
 from qadence import CNOT, RX, RZ, Parameter, QuantumCircuit, chain, total_magnetization
 from qadence.backends.pyqtorch.backend import Backend as PyQTorchBackend
+from qadence.logger import get_script_logger
 
-torch.manual_seed(42)
+logger = get_script_logger("PyQ")
 
 
 def circuit(n_qubits):
@@ -30,7 +34,7 @@ if __name__ == "__main__":
     torch.manual_seed(42)
     n_qubits = 2
     batch_size = 5
-
+    logger.info(f"Running example {os.path.basename(__file__)} with n_qubits = {n_qubits}")
     # Making circuit with AD
     circ = circuit(n_qubits)
     observable = total_magnetization(n_qubits=n_qubits)
@@ -53,7 +57,7 @@ if __name__ == "__main__":
         expval, values["y"], torch.ones_like(expval), retain_graph=True
     )[0]
 
-    print(f"Statevector: {wf}")
-    print(f"Samples: {samples}")
-    print(f"Gradient w.r.t. 'x': {dexpval_x}")
-    print(f"Gradient w.r.t. 'y': {dexpval_y}")
+    logger.info(f"Statevector: {wf}")
+    logger.info(f"Samples: {samples}")
+    logger.info(f"Gradient w.r.t. 'x': {dexpval_x}")
+    logger.info(f"Gradient w.r.t. 'y': {dexpval_y}")

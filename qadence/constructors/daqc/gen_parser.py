@@ -1,17 +1,18 @@
 from __future__ import annotations
 
+from logging import getLogger
+
 import torch
 
 from qadence.blocks import AbstractBlock, KronBlock
 from qadence.blocks.utils import unroll_block_with_scaling
-from qadence.logger import get_logger
 from qadence.operations import N, Z
 from qadence.parameters import Parameter, evaluate
 from qadence.types import GenDAQC
 
 from .utils import _ix_map
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 def _parse_generator(

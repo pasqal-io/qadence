@@ -1,0 +1,24 @@
+version: 1
+disable_existing_loggers: false
+formatters:
+  base:
+    format: "%(levelname) -5s %(asctime)s - %(name)s: %(message)s"
+    datefmt: "%Y-%m-%d %H:%M:%S"
+handlers:
+  console:
+    class: logging.StreamHandler
+    formatter: base
+    stream: ext://sys.stderr
+loggers:
+  qadence:
+    level: INFO
+    handlers: [console]
+    propagate: yes
+  pyqtorch:
+    level: INFO
+    handlers: [console]
+    propagate: yes
+  script:
+    level: INFO
+    handlers: [console]
+    propagate: yes

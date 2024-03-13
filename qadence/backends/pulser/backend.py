@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass, field
+from logging import getLogger
 from typing import Any
 
 import numpy as np
@@ -19,7 +20,6 @@ from qadence.backend import ConvertedCircuit, ConvertedObservable
 from qadence.backends.utils import to_list_of_dicts
 from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
-from qadence.logger import get_logger
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.mitigations.protocols import apply_mitigation
@@ -37,7 +37,7 @@ from .convert_ops import convert_observable
 from .devices import IdealDevice, RealisticDevice
 from .pulses import add_addressing_pattern, add_pulses
 
-logger = get_logger(__file__)
+logger = getLogger(__name__)
 
 
 def _convert_init_state(state: Tensor) -> np.ndarray:
@@ -160,6 +160,7 @@ class Backend(BackendInterface):
     native_endianness: Endianness = Endianness.BIG
     config: Configuration = field(default_factory=Configuration)
     engine: Engine = Engine.TORCH
+    logger.debug("Initialised")
 
     def circuit(self, circ: QuantumCircuit) -> Sequence:
         passes = self.config.transpilation_passes

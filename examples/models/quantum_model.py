@@ -1,9 +1,13 @@
+#!/bin/python
 from __future__ import annotations
 
 import numpy as np
 import sympy
 import torch
-
+torch.set_default_device("cuda")
+torch.manual_seed(42)
+import nvidia_dlprof_pytorch_nvtx
+nvidia_dlprof_pytorch_nvtx.init()
 from qadence import (
     CNOT,
     RX,
@@ -15,9 +19,9 @@ from qadence import (
     total_magnetization,
 )
 from qadence.types import BackendName, DiffMode
+from qadence.logger import get_script_logger
 
-torch.manual_seed(42)
-
+logger = get_script_logger("diff_backend")
 
 def circuit(n_qubits):
     x = Parameter("x", trainable=False)
@@ -33,7 +37,7 @@ def circuit(n_qubits):
 if __name__ == "__main__":
     n_qubits = 2
     batch_size = 5
-
+    logger.info(f"Running quantum models example with n_qubits {2}")
     observable = total_magnetization(n_qubits)
     model = QuantumModel(
         circuit(n_qubits),
@@ -41,27 +45,28 @@ if __name__ == "__main__":
         backend=BackendName.PYQTORCH,
         diff_mode=DiffMode.AD,
     )
-    print(list(model.parameters()))
+    model.to("cuda")
+    logger.info(list(model.parameters()))
     nx = torch.rand(batch_size, requires_grad=True)
     ny = torch.rand(batch_size, requires_grad=True)
     values = {"x": nx, "y": ny}
 
-    print(f"Expectation values: {model.expectation(values)}")
+    logger.info(f"Expectation values: {model.expectation(values)}")
 
     # This works!
     model.zero_grad()
     loss = torch.mean(model.expectation(values))
     loss.backward()
 
-    print("Gradients using autograd: \n")
-    print("Gradient in model: \n")
+    logger.info("Gradients using autograd: \n")
+    logger.info("Gradient in model: \n")
     for key, param in model.named_parameters():
-        print(f"{key}: {param.grad}")
+        logger.info(f"{key}: {param.grad}")
 
     # This works too!
-    print("Gradient of inputs: \n")
-    print(torch.autograd.grad(torch.mean(model.expectation(values)), nx))
-    print(torch.autograd.grad(torch.mean(model.expectation(values)), ny))
+    logger.info("Gradient of inputs: \n")
+    logger.info(torch.autograd.grad(torch.mean(model.expectation(values)), nx))
+    logger.info(torch.autograd.grad(torch.mean(model.expectation(values)), ny))
 
     # Now using PSR
     model = QuantumModel(
@@ -74,15 +79,15 @@ if __name__ == "__main__":
     loss = torch.mean(model.expectation(values))
     loss.backward()
 
-    print("Gradients using PSR: \n")
-    print("Gradient in model: \n")
+    logger.info("Gradients using PSR: \n")
+    logger.info("Gradient in model: \n")
     for key, param in model.named_parameters():
-        print(f"{key}: {param.grad}")
+        logger.info(f"{key}: {param.grad}")
 
     # This works too!
-    print("Gradient of inputs: \n")
-    print(torch.autograd.grad(torch.mean(model.expectation(values)), nx))
-    print(torch.autograd.grad(torch.mean(model.expectation(values)), ny))
+    logger.info("Gradient of inputs: \n")
+    logger.info(torch.autograd.grad(torch.mean(model.expectation(values)), nx))
+    logger.info(torch.autograd.grad(torch.mean(model.expectation(values)), ny))
 
     # Finally, lets try ADJOINT
     model = QuantumModel(
@@ -95,11 +100,11 @@ if __name__ == "__main__":
     loss = torch.mean(model.expectation(values))
     loss.backward()
 
-    print("Gradients using ADJOINT: \n")
-    print("Gradient in model: \n")
+    logger.info("Gradients using ADJOINT: \n")
+    logger.info("Gradient in model: \n")
     for key, param in model.named_parameters():
-        print(f"{key}: {param.grad}")
+        logger.info(f"{key}: {param.grad}")
 
-    print("Gradient of inputs: \n")
-    print(torch.autograd.grad(torch.mean(model.expectation(values)), nx))
-    print(torch.autograd.grad(torch.mean(model.expectation(values)), ny))
+    logger.info("Gradient of inputs: \n")
+    logger.info(torch.autograd.grad(torch.mean(model.expectation(values)), nx))
+    logger.info(torch.autograd.grad(torch.mean(model.expectation(values)), ny))

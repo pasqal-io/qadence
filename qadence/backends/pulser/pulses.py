@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from functools import partial
+from logging import getLogger
 from typing import Union
 
 import numpy as np
@@ -20,7 +21,6 @@ from qadence.blocks.analog import (
     Interaction,
     InteractionBlock,
 )
-from qadence.logger import get_logger
 from qadence.operations import RX, RY, RZ, AnalogEntanglement
 from qadence.parameters import evaluate
 from qadence.types import PI, OpName
@@ -29,7 +29,7 @@ from .channels import GLOBAL_CHANNEL, LOCAL_CHANNEL
 from .config import Configuration
 from .waveforms import SquareWaveform
 
-logger = get_logger(__file__)
+logger = getLogger(__name__)
 
 TVar = Union[Variable, VariableItem]
 

@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 from functools import cached_property
+from logging import getLogger
 
 import numpy as np
 import torch
 from torch.linalg import eigvals
 
 from qadence.blocks import PrimitiveBlock
-from qadence.logger import get_logger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class MatrixBlock(PrimitiveBlock):

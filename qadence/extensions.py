@@ -1,16 +1,16 @@
 from __future__ import annotations
 
 import importlib
+from logging import getLogger
 from string import Template
 
 from qadence.backend import Backend
 from qadence.blocks.abstract import TAbstractBlock
-from qadence.logger import get_logger
 from qadence.types import BackendName, DiffMode, Engine
 
 backends_namespace = Template("qadence.backends.$name")
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 def _available_engines() -> dict:

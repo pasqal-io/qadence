@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+from logging import getLogger
+
 import torch
 
-from qadence.logger import get_logger
-
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 def _k_d(a: int, b: int) -> int:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from functools import reduce
 from itertools import product
 from operator import add
@@ -17,13 +18,17 @@ from qadence.backends import backend_factory
 from qadence.blocks.utils import chain, kron
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import feature_map, hea, ising_hamiltonian
+from qadence.logger import get_script_logger
 from qadence.types import BackendName, DiffMode
+
+logger = get_script_logger("Horqrux_dqc_pde")
 
 LEARNING_RATE = 0.01
 N_QUBITS = 4
 DEPTH = 3
 VARIABLES = ("x", "y")
 N_POINTS = 150
+logger.info(f"Running example {os.path.basename(__file__)} with n_qubits = {N_QUBITS}")
 # define a simple DQC model
 ansatz = hea(n_qubits=N_QUBITS, depth=DEPTH)
 # parallel Fourier feature map
