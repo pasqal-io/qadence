@@ -62,7 +62,7 @@ def _fill_identities(
     full_qubit_support: tuple | list,
     diag_only: bool = False,
     endianness: Endianness = Endianness.BIG,
-    device: torch.device = None,
+    device: torch.device | None = None,
 ) -> torch.Tensor:
     """Returns a Kronecker product of a block matrix with identities.
 

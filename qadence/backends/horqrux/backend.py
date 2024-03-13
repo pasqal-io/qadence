@@ -29,7 +29,7 @@ from qadence.utils import int_to_basis
 from .config import Configuration, default_passes
 from .convert_ops import HorqruxCircuit, convert_block, convert_observable
 
-logger = getLogger("__name__")
+logger = getLogger(__name__)
 
 
 @dataclass(frozen=True, eq=True)
