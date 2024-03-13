@@ -3,20 +3,16 @@ from __future__ import annotations
 import json
 import os
 import sys
+from dataclasses import dataclass
+from dataclasses import field as dataclass_field
 from pathlib import Path
-from typing import (
-    Any,
-    Callable,
-    get_args,
-    Optional,
-    Union as TypingUnion
-)
-from abc import ABC
-from importlib import import_module
-from dataclasses import dataclass, field, InitVar
+from typing import Any, Callable, get_args
+from typing import Union as TypingUnion
 
-import ast
 import torch
+from arpeggio import NoMatch
+from arpeggio.cleanpeg import ParserPEG
+from sympy import *
 from sympy import core, srepr
 
 from qadence import QuantumCircuit, operations, parameters
@@ -24,8 +20,7 @@ from qadence import blocks as qadenceblocks
 from qadence.blocks import AbstractBlock
 from qadence.blocks.utils import tag
 from qadence.logger import get_logger
-from qadence.models import QuantumModel  #, QNN
-# from qadence.ml_tools.models import TransformedModule
+from qadence.models import QuantumModel
 from qadence.parameters import Parameter
 from qadence.register import Register
 from qadence.types import SerializationFormat
@@ -52,8 +47,6 @@ SUPPORTED_OBJECTS = [
     AbstractBlock,
     QuantumCircuit,
     QuantumModel,
-    # QNN,
-    # TransformedModule,
     Register,
     core.Basic,
     torch.nn.Module,
@@ -62,8 +55,6 @@ SUPPORTED_TYPES = TypingUnion[
     AbstractBlock,
     QuantumCircuit,
     QuantumModel,
-    # QNN,
-    # TransformedModule,
     Register,
     core.Basic,
     torch.nn.Module,
@@ -79,153 +70,78 @@ SYMPY_EXPRS = [n for n in dir(core) if not (n.startswith("__") and n.endswith("_
 QADENCE_PARAMETERS = [n for n in dir(parameters) if not (n.startswith("__") and n.endswith("__"))]
 
 
-def parse_expr(expr: str) -> list:
-    """
-    Parser function for the string deserialization.
-
-    Arguments:
-        expr (str): The expression to be parsed.
-
-    Returns:
-        Nested lists with strings.
-    """
-    s_expr: str = ""
-    parsed_expr: list = []
-    # parenthesis counter
-    p_count: int = 0
-    for k in expr.replace(" ", ""):
-        if k == "(":
-            if s_expr:
-                caller = [s_expr.replace(",", "").replace(" ", "")]
-                if p_count % 2 == 0:
-                    parsed_expr.extend(caller)
-                else:
-                    parsed_expr.append(caller)
-                s_expr = ""
-            p_count += 1
-        elif k == ")":
-            p_count -= 1
-            if s_expr:
-                args: list = []
-                for q in s_expr.split(","):
-                    u = q.split("=")
-                    if len(u) == 1:
-                        args.extend(u)
-                    else:
-                        args.append(tuple(u))
-                if p_count % 2 != 0:
-                    parsed_expr[-1].append(args)
-                else:
-                    parsed_expr.append(args)
-                s_expr = ""
-        else:
-            s_expr += k
-    return parsed_expr
+THIS_PATH = os.path.dirname(__file__)
+GRAMMAR_FILE = os.path.join(THIS_PATH, "serial_expr_grammar.peg")
 
 
-def eval_expr(expr: list) -> EXPR_TYPES:
-    """
-    Evaluate the parsed expression from the `parse_expr` function. This procedure
-    avoids the use of Python's `eval` to execute arbitrary string. Meant for use
-    on `deserialize` function to acquire the expressions back, from either a
-    dictionary or a json file.
+def _parser_fn() -> ParserPEG:
+    with open(GRAMMAR_FILE, "r") as f:
+        grammar = f.read()
+    return ParserPEG(grammar, "Program")
 
-    Arguments:
-        expr (list): The parsed expression from `parse_expr`.
 
-    Returns:
-        The evaluation result.
-    """
-    if isinstance(expr, list):
-        vals: list = []
-        args: dict = dict()
-        caller: Optional[Callable] = None
-        for k in expr:
-            p = eval_expr(k)
-            if isinstance(p, type):
-                caller = p
-            elif isinstance(p, dict):
-                args.update(p)
-            elif isinstance(p, tuple):
-                vals.extend(p[0])
-                args.update(p[1])
-            else:
-                vals.append(p)
-
-        if callable(caller):
-            return caller(*vals, **args)
-        return vals, args
-    elif isinstance(expr, tuple):
-        return {expr[0]: expr[1]}
-    elif isinstance(expr, str):
-        if expr in QADENCE_PARAMETERS:
-            return getattr(parameters, expr)
-        if expr in SYMPY_EXPRS:
-            return getattr(core, expr)
-        try:
-            return ast.literal_eval(expr)
-        except Exception as e:
-            return expr
+def parse_expr_fn(code: str) -> bool:
+    parser = _parser_fn()
+    try:
+        parser.parse(code)
+    except NoMatch as err:
+        print(f"no match error: {err}")
+        return False
+    else:
+        return True
 
 
 @dataclass
-class SerialModel(ABC):
-    value: Any = field(init=False)
+class SerialModel:
+    d: dict = dataclass_field(default_factory=dict)
+    value: Any = dataclass_field(init=False)
 
 
 @dataclass
 class BlockTypeSerial(SerialModel):
-    d: InitVar[Any]
-    value: AbstractBlock = field(init=False)
+    value: AbstractBlock = dataclass_field(init=False)
 
-    def __post_init__(self, d: Any) -> None:
+    def __post_init__(self) -> None:
         block = (
-            getattr(operations, d["type"])
-            if hasattr(operations, d["type"])
-            else getattr(qadenceblocks, d["type"])
-        )._from_dict(d)
-        if d["tag"] is not None:
-            block = tag(block, d["tag"])
+            getattr(operations, self.d["type"])
+            if hasattr(operations, self.d["type"])
+            else getattr(qadenceblocks, self.d["type"])
+        )._from_dict(self.d)
+        if self.d["tag"] is not None:
+            block = tag(block, self.d["tag"])
         self.value = block
 
 
 @dataclass
 class QuantumCircuitSerial(SerialModel):
-    d: InitVar[dict]
-    value: QuantumCircuit = field(init=False)
+    value: QuantumCircuit = dataclass_field(init=False)
 
-    def __post_init__(self, d: dict) -> None:
-        self.value = (
-            QuantumCircuit._from_dict(d)
-            if isinstance(d, dict)
-            else d
-        )
+    def __post_init__(self) -> None:
+        self.value = QuantumCircuit._from_dict(self.d) if isinstance(self.d, dict) else self.d
 
 
 @dataclass
 class GraphSerial(SerialModel):
-    d: InitVar[dict]
-    value: Register = field(init=False)
+    value: Register = dataclass_field(init=False)
 
-    def __post_init__(self, d: dict) -> None:
-        self.value = Register._from_dict(d)
+    def __post_init__(self) -> None:
+        self.value = Register._from_dict(self.d)
 
 
 @dataclass
 class ModelSerial(SerialModel):
-    d: InitVar[dict]
     as_torch: bool = False
-    value: torch.nn.Module = field(init=False)
+    value: torch.nn.Module = dataclass_field(init=False)
 
-    def __post_init__(self, d: dict) -> None:
-        module_name = list(d.keys())[0]
+    def __post_init__(self) -> None:
+        module_name = list(self.d.keys())[0]
         obj = globals().get(module_name, None)
         if obj is None:
             obj = self._resolve_module(module_name)
         if hasattr(obj, "_from_dict"):
-            self.value = obj._from_dict(d, self.as_torch)
+            self.value = obj._from_dict(self.d, self.as_torch)
         elif hasattr(obj, "load_state_dict"):
-            self.value = obj.load_state_dict(d[module_name])
+            self.value = obj.load_state_dict(self.d[module_name])
         else:
             raise ValueError(f"Module '{module_name}' not found.")
 
@@ -241,17 +157,17 @@ class ModelSerial(SerialModel):
 
 @dataclass
 class ExpressionSerial(SerialModel):
-    d: InitVar[dict]
-    value: str | core.Expr | float = field(init=False)
+    value: str | core.Expr | float = dataclass_field(init=False)
 
-    def __post_init__(self, d: dict) -> None:
-        parsed_expr = parse_expr(d["expression"])
-        expr = eval_expr(parsed_expr)
-        if hasattr(expr, "free_symbols"):
-            # TODO: check whether it is really necessary
-            for s in expr.free_symbols:
-                s.value = float(d["symbols"][s.name]["value"])
-        self.value = expr
+    def __post_init__(self) -> None:
+        if parse_expr_fn(self.d["expression"]):
+            expr = eval(self.d["expression"])
+            if hasattr(expr, "free_symbols"):
+                for s in expr.free_symbols:
+                    s.value = float(self.d["symbols"][s.name]["value"])
+            self.value = expr
+        else:
+            raise ValueError(f"Invalid expression: {self.d['expression']}")
 
 
 def save_pt(d: dict, file_path: str | Path) -> None:
@@ -282,11 +198,11 @@ def serialize(obj: SUPPORTED_TYPES, save_params: bool = False) -> dict:
     """
     Supported Types:
 
-    AbstractBlock | QuantumCircuit | QuantumModel | TransformedModule | Register | Module
+    AbstractBlock | QuantumCircuit | QuantumModel | torch.nn.Module | Register | Module
     Serializes a qadence object to a dictionary.
 
     Arguments:
-        obj (AbstractBlock | QuantumCircuit | QuantumModel | Register | Module):
+        obj (AbstractBlock | QuantumCircuit | QuantumModel | Register | torch.nn.Module):
     Returns:
         A dict.
 
@@ -318,8 +234,9 @@ def serialize(obj: SUPPORTED_TYPES, save_params: bool = False) -> dict:
     assert torch.isclose(qm.expectation({}), qm_deserialized.expectation({}))
     ```
     """
-    # if not isinstance(obj, get_args(SUPPORTED_TYPES)):
-    #     logger.error(TypeError(f"Serialization of object type {type(obj)} not supported."))
+    if not isinstance(obj, get_args(SUPPORTED_TYPES)):
+        logger.error(TypeError(f"Serialization of object type {type(obj)} not supported."))
+
     d: dict = dict()
     try:
         if isinstance(obj, core.Expr):
@@ -332,13 +249,11 @@ def serialize(obj: SUPPORTED_TYPES, save_params: bool = False) -> dict:
         else:
             if hasattr(obj, "_to_dict"):
                 fn: Callable = obj._to_dict
-                d = (
-                    fn(save_params)
-                    if isinstance(obj, torch.nn.Module)
-                    else fn()
-                )
-            else:
+                d = fn(save_params) if isinstance(obj, torch.nn.Module) else fn()
+            elif hasattr(obj, "state_dict"):
                 d = {type(obj).__name__: obj.state_dict()}
+            else:
+                raise ValueError(f"Cannot serialize object {obj}.")
     except Exception as e:
         logger.error(f"Serialization of object {obj} failed due to {e}")
     return d
@@ -355,7 +270,7 @@ def deserialize(d: dict, as_torch: bool = False) -> SUPPORTED_TYPES:
         d (dict): A dict containing a serialized object.
         as_torch (bool): Whether to transform to torch for the deserialized object.
     Returns:
-        AbstractBlock, QuantumCircuit, QuantumModel, TransformedModule, Register, torch.nn.Module.
+        AbstractBlock, QuantumCircuit, QuantumModel, Register, torch.nn.Module.
 
     Examples:
     ```python exec="on" source="material-block" result="json"
