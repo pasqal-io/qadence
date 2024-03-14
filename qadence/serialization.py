@@ -5,6 +5,7 @@ import os
 import sys
 from dataclasses import dataclass
 from dataclasses import field as dataclass_field
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Callable, get_args
 from typing import Union as TypingUnion
@@ -71,14 +72,18 @@ THIS_PATH = Path(__file__).parent
 GRAMMAR_FILE = THIS_PATH / "serial_expr_grammar.peg"
 
 
+@lru_cache
 def _parser_fn() -> ParserPEG:
     with open(GRAMMAR_FILE, "r") as f:
         grammar = f.read()
     return ParserPEG(grammar, "Program")
 
 
+_parsing_serialize_expr = _parser_fn()
+
+
 def parse_expr_fn(code: str) -> bool:
-    parser = _parser_fn()
+    parser = _parsing_serialize_expr
     try:
         parser.parse(code)
     except NoMatch as err:
