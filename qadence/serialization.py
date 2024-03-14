@@ -60,9 +60,6 @@ SUPPORTED_TYPES = TypingUnion[
     torch.nn.Module,
 ]
 
-EXPR_TYPES = TypingUnion[core.Expr, float, int, str, tuple, dict]
-
-
 ALL_BLOCK_NAMES = [
     n for n in dir(qadenceblocks) if not (n.startswith("__") and n.endswith("__"))
 ] + [n for n in dir(operations) if not (n.startswith("__") and n.endswith("__"))]
@@ -70,8 +67,8 @@ SYMPY_EXPRS = [n for n in dir(core) if not (n.startswith("__") and n.endswith("_
 QADENCE_PARAMETERS = [n for n in dir(parameters) if not (n.startswith("__") and n.endswith("__"))]
 
 
-THIS_PATH = os.path.dirname(__file__)
-GRAMMAR_FILE = os.path.join(THIS_PATH, "serial_expr_grammar.peg")
+THIS_PATH = Path(__file__).parent
+GRAMMAR_FILE = THIS_PATH / "serial_expr_grammar.peg"
 
 
 def _parser_fn() -> ParserPEG:
@@ -85,20 +82,19 @@ def parse_expr_fn(code: str) -> bool:
     try:
         parser.parse(code)
     except NoMatch as err:
-        print(f"no match error: {err}")
         return False
     else:
         return True
 
 
 @dataclass
-class SerialModel:
+class SerializationModel:
     d: dict = dataclass_field(default_factory=dict)
     value: Any = dataclass_field(init=False)
 
 
 @dataclass
-class BlockTypeSerial(SerialModel):
+class BlockTypeSerial(SerializationModel):
     value: AbstractBlock = dataclass_field(init=False)
 
     def __post_init__(self) -> None:
@@ -113,7 +109,7 @@ class BlockTypeSerial(SerialModel):
 
 
 @dataclass
-class QuantumCircuitSerial(SerialModel):
+class QuantumCircuitSerial(SerializationModel):
     value: QuantumCircuit = dataclass_field(init=False)
 
     def __post_init__(self) -> None:
@@ -121,7 +117,7 @@ class QuantumCircuitSerial(SerialModel):
 
 
 @dataclass
-class GraphSerial(SerialModel):
+class RegisterSerial(SerializationModel):
     value: Register = dataclass_field(init=False)
 
     def __post_init__(self) -> None:
@@ -129,7 +125,7 @@ class GraphSerial(SerialModel):
 
 
 @dataclass
-class ModelSerial(SerialModel):
+class ModelSerial(SerializationModel):
     as_torch: bool = False
     value: torch.nn.Module = dataclass_field(init=False)
 
@@ -143,7 +139,12 @@ class ModelSerial(SerialModel):
         elif hasattr(obj, "load_state_dict"):
             self.value = obj.load_state_dict(self.d[module_name])
         else:
-            raise ValueError(f"Module '{module_name}' not found.")
+            msg = (
+                f"Unable to deserialize object '{module_name}'. "
+                f"Supported types are {SUPPORTED_OBJECTS}."
+            )
+            logger.error(TypeError(msg))
+            raise TypeError(msg)
 
     @staticmethod
     def _resolve_module(module: str) -> Any:
@@ -156,7 +157,7 @@ class ModelSerial(SerialModel):
 
 
 @dataclass
-class ExpressionSerial(SerialModel):
+class ExpressionSerial(SerializationModel):
     value: str | core.Expr | float = dataclass_field(init=False)
 
     def __post_init__(self) -> None:
@@ -248,8 +249,12 @@ def serialize(obj: SUPPORTED_TYPES, save_params: bool = False) -> dict:
             d = {**expr_dict, **symb_dict}
         else:
             if hasattr(obj, "_to_dict"):
-                fn: Callable = obj._to_dict
-                d = fn(save_params) if isinstance(obj, torch.nn.Module) else fn()
+                model_to_dict: Callable = obj._to_dict
+                d = (
+                    model_to_dict(save_params)
+                    if isinstance(obj, torch.nn.Module)
+                    else model_to_dict()
+                )
             elif hasattr(obj, "state_dict"):
                 d = {type(obj).__name__: obj.state_dict()}
             else:
@@ -300,13 +305,13 @@ def deserialize(d: dict, as_torch: bool = False) -> SUPPORTED_TYPES:
     assert torch.isclose(qm.expectation({}), qm_deserialized.expectation({}))
     ```
     """
-    obj: SerialModel
+    obj: SerializationModel
     if d.get("expression"):
         obj = ExpressionSerial(d)
     elif d.get("block") and d.get("register"):
         obj = QuantumCircuitSerial(d)
     elif d.get("graph"):
-        obj = GraphSerial(d)
+        obj = RegisterSerial(d)
     elif d.get("type"):
         obj = BlockTypeSerial(d)
     else:
