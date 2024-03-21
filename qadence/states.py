@@ -14,7 +14,6 @@ from qadence.execution import run
 from qadence.operations import CNOT, RX, RY, RZ, H, I, X
 from qadence.overlap import fidelity
 from qadence.types import PI, BackendName, Endianness, StateGeneratorType
-from qadence.utils import basis_to_int
 
 # Modules to be automatically added to the qadence namespace
 __all__ = [
@@ -86,13 +85,12 @@ def _block_from_bitstring(bitstring: str) -> KronBlock:
 
 
 def _state_from_bitstring(
-    bitstring: str, batch_size: int, endianness: Endianness = Endianness.BIG
+    bitstring: str,
+    batch_size: int,
+    endianness: Endianness = Endianness.BIG,
+    backend: BackendName = BackendName.PYQTORCH,
 ) -> Tensor:
-    n_qubits = len(bitstring)
-    wf_batch = torch.zeros(batch_size, 2**n_qubits, dtype=DTYPE)
-    k = basis_to_int(basis=bitstring, endianness=endianness)
-    wf_batch[:, k] = torch.tensor(1.0 + 0j, dtype=DTYPE)
-    return wf_batch
+    return run(_block_from_bitstring(bitstring), backend=backend).repeat(batch_size, 1)
 
 
 def _abstract_random_state(
