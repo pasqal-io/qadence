@@ -11,5 +11,5 @@
     "labels": [
         "renovate"
     ],
-    "ignoreDeps": ["amazon-braket-sdk"]
+    "ignoreDeps": ["braket"]
 }
