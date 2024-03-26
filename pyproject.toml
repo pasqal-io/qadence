@@ -52,7 +52,7 @@ allow-ambiguous-features = true
 
 [project.optional-dependencies]
 pulser = ["pulser>=v0.15.2", "pasqal-cloud>=0.3.5"]
-braket = ["amazon-braket-sdk"]
+braket = ["amazon-braket-sdk==1.71.0"]
 visualization = [
   "graphviz",
   # FIXME: will be needed once we support latex labels
