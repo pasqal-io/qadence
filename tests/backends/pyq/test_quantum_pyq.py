@@ -182,11 +182,11 @@ def test_run_with_nonparametric_single_qubit_gates(
     circuit = QuantumCircuit(1, gate)
     backend = Backend()
     pyqtorch_circ = backend.circuit(circuit)
-    wf = backend.run(pyqtorch_circ)
+    wf = backend.run(pyqtorch_circ).vectors
     assert torch.allclose(wf, state)
     # Same test by passing explicitly the initial state.
     initial_state = torch.tensor([[1.0, 0.0]], dtype=torch.complex128)
-    wf = backend.run(pyqtorch_circ, state=initial_state)
+    wf = backend.run(pyqtorch_circ, state=initial_state).vectors
     assert torch.allclose(wf, state)
 
 
@@ -242,7 +242,7 @@ def test_run_with_nonparametric_single_qubit_gates_and_random_initial_state(
     theta2 = random.uniform(0.0, 2.0 * PI)
     complex2 = complex(np.cos(theta2), np.sin(theta2))
     initial_state = torch.tensor([[complex1, complex2]], dtype=torch.complex128)
-    wf = backend.run(backend.circuit(circuit), state=initial_state)
+    wf = backend.run(backend.circuit(circuit), state=initial_state).vectors
     expected_state = torch.matmul(matrix, initial_state[0])
     assert torch.allclose(wf, expected_state)
 
@@ -283,7 +283,7 @@ def test_run_with_parametric_single_qubit_gates(
     circuit = QuantumCircuit(1, parametric_gate)
     backend = Backend()
     pyqtorch_circ, _, embed, params = backend.convert(circuit)
-    wf = backend.run(pyqtorch_circ, embed(params, {}))
+    wf = backend.run(pyqtorch_circ, embed(params, {})).vectors
     assert torch.allclose(wf, state)
 
 
@@ -295,7 +295,7 @@ def test_ugate_pure_pyqtorch() -> None:
     backend = Backend()
     convert = backend.convert(circ)
     values = convert.embedding_fn(convert.params, {})
-    Qadence_state = backend.run(convert.circuit, values)
+    Qadence_state = backend.run(convert.circuit, values).vectors
     pyqtorch_u = pyqU(0, *values.keys())
     f_state = torch.reshape(pyqtorch_u(pyq_state, values), (1, 2))
     assert torch.allclose(f_state, Qadence_state)
@@ -348,7 +348,7 @@ def test_run_with_parametric_single_qubit_gates_and_random_initial_state(
     theta2 = random.uniform(0.0, 2.0 * PI)
     complex2 = complex(np.cos(theta2), np.sin(theta2))
     initial_state = torch.tensor([[complex1, complex2]], dtype=torch.complex128)
-    wf = backend.run(pyqtorch_circ, embed(params, {}), state=initial_state)
+    wf = backend.run(pyqtorch_circ, embed(params, {}), state=initial_state).vectors
     expected_state = torch.matmul(matrix, initial_state[0])
     assert torch.allclose(wf, expected_state)
 
@@ -389,7 +389,7 @@ def test_run_with_parametric_two_qubit_gates(
     initial_state = torch.tensor(
         [[0.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j, 1.0 + 0.0j]], dtype=torch.complex128
     )
-    wf = backend.run(pyqtorch_circ, embed(params, {}), state=initial_state)
+    wf = backend.run(pyqtorch_circ, embed(params, {}), state=initial_state).vectors
     assert torch.allclose(wf, state)
 
 
@@ -456,7 +456,7 @@ def test_run_with_parametric_two_qubit_gates_and_random_state(
         ],
         dtype=torch.complex128,
     )
-    wf = backend.run(pyqtorch_circ, embed(params, {}), state=initial_state)
+    wf = backend.run(pyqtorch_circ, embed(params, {}), state=initial_state).vectors
     expected_state = torch.matmul(matrix, initial_state[0])
     assert torch.allclose(wf, expected_state)
 
@@ -582,7 +582,7 @@ def test_controlled_rotation_gates_with_heterogeneous_parameters() -> None:
     conv = backend.convert(circ)
 
     values = {"x": torch.rand(2)}
-    wf = backend.run(conv.circuit, conv.embedding_fn(conv.params, values))
+    wf = backend.run(conv.circuit, conv.embedding_fn(conv.params, values)).vectors
     assert wf.size() == (2, 2**4)
 
 
@@ -600,11 +600,11 @@ def test_scaled_operation(block: AbstractBlock) -> None:
 
     circ = QuantumCircuit(2, block)
     pyqtorch_circ, _, embed, params = backend.convert(circ)
-    wf = backend.run(pyqtorch_circ, embed(params, {}), state=state)
+    wf = backend.run(pyqtorch_circ, embed(params, {}), state=state).vectors
 
     circ = QuantumCircuit(2, block * 2)
     pyqtorch_circ, _, embed, params = backend.convert(circ)
-    wf2 = backend.run(pyqtorch_circ, embed(params, {}), state=state)
+    wf2 = backend.run(pyqtorch_circ, embed(params, {}), state=state).vectors
 
     assert torch.allclose(wf * 2, wf2)
 
@@ -617,8 +617,8 @@ def test_scaled_featureparam_batching(batch_size: int) -> None:
     pyqtorch_circ, _, embed, params = backend.convert(circ)
     rand_vals = torch.rand(batch_size)
     param_values = embed(params, {"x": rand_vals})
-    wf = backend.run(pyqtorch_circ, param_values)
-    wf2 = backend.run(pyqtorch_circ, embed(params, {"x": torch.ones(batch_size)}))
+    wf = backend.run(pyqtorch_circ, param_values).vectors
+    wf2 = backend.run(pyqtorch_circ, embed(params, {"x": torch.ones(batch_size)})).vectors
     assert torch.allclose(wf, wf2 * rand_vals.unsqueeze(1))
 
 
@@ -651,7 +651,7 @@ def test_dagger_returning_fixed_gates(block: AbstractBlock) -> None:
         (1, 2**nqubits), dtype=torch.cdouble
     )
     initial_state = initial_state / torch.sqrt(sum(abs(initial_state) ** 2))
-    wf = backend.run(conv.circuit, state=initial_state)
+    wf = backend.run(conv.circuit, state=initial_state).vectors
     assert torch.allclose(wf, initial_state)
 
 
@@ -684,7 +684,7 @@ def test_dagger_returning_parametric_gates(
         (1, 2**n_qubits), dtype=torch.cdouble
     )
     initial_state = initial_state / torch.sqrt(sum(abs(initial_state) ** 2))
-    wf = backend.run(pyqtorch_circ, run_params, state=initial_state.clone())
+    wf = backend.run(pyqtorch_circ, run_params, state=initial_state.clone()).vectors
     assert torch.allclose(wf, initial_state)
 
 
@@ -706,24 +706,24 @@ def test_dagger_returning_kernel() -> None:
     initial_state = initial_state / torch.sqrt(4 * sum(abs(initial_state) ** 2))
 
     run_params = embed(params, {"x": torch.tensor([0.52]), "y": torch.tensor(0.52)})
-    wf = backend.run(pyqtorch_circ, run_params, state=initial_state.clone())
+    wf = backend.run(pyqtorch_circ, run_params, state=initial_state.clone()).vectors
     assert wf_is_normalized(wf)
     assert torch.allclose(wf, initial_state)
 
     run_params = embed(params, {"x": torch.tensor([0.38]), "y": torch.tensor(0.92)})
-    wf = backend.run(pyqtorch_circ, run_params, state=initial_state.clone())
+    wf = backend.run(pyqtorch_circ, run_params, state=initial_state.clone()).vectors
     assert not torch.allclose(wf, initial_state)
 
 
 def test_scaled_blocks() -> None:
     circuit = QuantumCircuit(1, 3.1 * (X(0) + X(0)))
     model = QuantumModel(circuit, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD)
-    wf = model.run({})
+    wf = model.run({}).vectors
     assert isinstance(wf, torch.Tensor)
 
     circuit = QuantumCircuit(2, 2 * (X(0) @ X(1)))
     model = QuantumModel(circuit, diff_mode=DiffMode.AD)
-    wf = model.run({})
+    wf = model.run({}).vectors
     assert isinstance(wf, torch.Tensor)
 
 
@@ -736,11 +736,11 @@ def test_kron_chain_add_circuit() -> None:
 
     circ = QuantumCircuit(2, chain(X(0), X(1), cnot))
     (circ_conv, _, embedding_fn, params) = backend.convert(circ)
-    res_constructed = backend.run(circ_conv, embedding_fn(params, {}))
+    res_constructed = backend.run(circ_conv, embedding_fn(params, {})).vectors
 
     circ = QuantumCircuit(2, chain(X(0), X(1), CNOT(0, 1)))
     (circ_conv, _, embedding_fn, params) = backend.convert(circ)
-    res_native = backend.run(circ_conv, embedding_fn(params, {}))
+    res_native = backend.run(circ_conv, embedding_fn(params, {})).vectors
 
     assert torch.allclose(res_constructed, res_native)
 
@@ -756,7 +756,7 @@ def test_swap_equivalences() -> None:
     backend = backend_factory(backend=BackendName.PYQTORCH, diff_mode=None)
     (pyqtorch_circ, _, embed, params) = backend.convert(circ)
     run_params = embed(params, {})
-    wf = backend.run(pyqtorch_circ, run_params, state=wf_init.clone())
+    wf = backend.run(pyqtorch_circ, run_params, state=wf_init.clone()).vectors
 
     # check equivalence up to rotation
     angle = torch.angle(wf_init[0, 0]).detach()
@@ -774,7 +774,7 @@ def test_batched_circuits(
     circuit, inputs = circuit_and_inputs
     bknd_pyqtorch = backend_factory(backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD)
     (circ_pyqtorch, _, embed_pyqtorch, params_pyqtorch) = bknd_pyqtorch.convert(circuit)
-    wf_pyqtorch = bknd_pyqtorch.run(circ_pyqtorch, embed_pyqtorch(params_pyqtorch, inputs))
+    wf_pyqtorch = bknd_pyqtorch.run(circ_pyqtorch, embed_pyqtorch(params_pyqtorch, inputs)).vectors
     assert not torch.any(torch.isnan(wf_pyqtorch))
 
 

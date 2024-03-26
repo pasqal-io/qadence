@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import importlib
+from collections import Counter
+from dataclasses import dataclass
 from enum import Enum
 from typing import Callable, Iterable, Tuple, Union
 
@@ -46,6 +48,27 @@ __all__ = [
     "SerializationFormat",
     "PI",
 ]  # type: ignore
+
+
+@dataclass(frozen=True)
+class Vectors:
+    tensor: ArrayLike
+
+
+@dataclass(frozen=True)
+class DensityMatrices:
+    density_matrix: ArrayLike
+
+
+@dataclass(frozen=True)
+class Samples:
+    samples: list[Counter]
+
+
+@dataclass(frozen=True)
+class State:
+    vectors: Vectors | None = None
+    density_matrices: DensityMatrices | None = None
 
 
 class StrEnum(str, Enum):
