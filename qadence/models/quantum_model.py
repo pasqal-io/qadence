@@ -26,7 +26,7 @@ from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.noise import Noise
 from qadence.parameters import Parameter
-from qadence.types import DiffMode, Endianness
+from qadence.types import DiffMode, Endianness, State
 
 logger = get_logger(__name__)
 
@@ -167,7 +167,7 @@ class QuantumModel(nn.Module):
         values: dict[str, Tensor] = None,
         state: Tensor | None = None,
         endianness: Endianness = Endianness.BIG,
-    ) -> Tensor:
+    ) -> State:
         if values is None:
             values = {}
         params = self.embedding_fn(self._params, values)

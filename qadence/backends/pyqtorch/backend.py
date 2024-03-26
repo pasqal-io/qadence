@@ -30,7 +30,7 @@ from qadence.transpile import (
     scale_primitive_blocks_only,
     transpile,
 )
-from qadence.types import BackendName, Endianness, Engine
+from qadence.types import BackendName, Endianness, Engine, State
 from qadence.utils import infer_batchsize, int_to_basis
 
 from .config import Configuration, default_passes
@@ -88,7 +88,7 @@ class Backend(BackendInterface):
         endianness: Endianness = Endianness.BIG,
         pyqify_state: bool = True,
         unpyqify_state: bool = True,
-    ) -> Tensor:
+    ) -> State:
         n_qubits = circuit.abstract.n_qubits
         if state is None:
             # If no state is passed, we infer the batch_size through the length
@@ -101,7 +101,7 @@ class Backend(BackendInterface):
         state = circuit.native.run(state, param_values)
         state = unpyqify(state) if unpyqify_state else state
         state = invert_endianness(state) if endianness != self.native_endianness else state
-        return state
+        return State(vectors=state)
 
     def run_dm(
         self,
@@ -131,7 +131,7 @@ class Backend(BackendInterface):
             pyqify_state=True,
             # we are calling  the native observable directly, so we want to use pyq shapes
             unpyqify_state=False,
-        )
+        ).vectors
         observable = observable if isinstance(observable, list) else [observable]
         _expectation = torch.hstack(
             [obs.native(state, param_values).reshape(-1, 1) for obs in observable]
@@ -161,7 +161,7 @@ class Backend(BackendInterface):
         list_expvals = []
         observables = observable if isinstance(observable, list) else [observable]
         for vals in to_list_of_dicts(param_values):
-            wf = self.run(circuit, vals, state, endianness, pyqify_state=True, unpyqify_state=False)
+            wf = self.run(circuit, vals, state, endianness, pyqify_state=True, unpyqify_state=False).vectors
             exs = torch.cat([obs.native(wf, vals) for obs in observables], 0)
             list_expvals.append(exs)
 
@@ -223,7 +223,7 @@ class Backend(BackendInterface):
             )
 
         with torch.no_grad():
-            wf = self.run(circuit=circuit, param_values=param_values, state=state)
+            wf = self.run(circuit=circuit, param_values=param_values, state=state).vectors
             probs = torch.abs(torch.pow(wf, 2))
             samples = list(
                 map(

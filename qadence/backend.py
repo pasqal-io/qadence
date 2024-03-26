@@ -25,7 +25,9 @@ from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.noise import Noise
 from qadence.parameters import stringify
-from qadence.types import ArrayLike, BackendName, DiffMode, Endianness, Engine, ParamDictType
+
+# from qadence.states import State
+from qadence.types import ArrayLike, BackendName, DiffMode, Endianness, Engine, ParamDictType, State
 from qadence.utils import validate_values_and_state
 
 logger = get_logger(__file__)
@@ -266,7 +268,7 @@ class Backend(ABC):
         param_values: dict[str, ArrayLike] = {},
         state: ArrayLike | None = None,
         endianness: Endianness = Endianness.BIG,
-    ) -> ArrayLike:
+    ) -> State:
         """Run a circuit and return the resulting wave function.
 
         Arguments:
@@ -290,7 +292,7 @@ class Backend(ABC):
         endianness: Endianness = Endianness.BIG,
         *args: Any,
         **kwargs: Any,
-    ) -> ArrayLike:
+    ) -> State:
         """Run a circuit and return the resulting wave function.
 
         Arguments:
