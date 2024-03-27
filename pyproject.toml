@@ -68,6 +68,7 @@ horqrux = [
     "einops",
     "sympy2jax"]
 protocols = ["qadence-protocols"]
+libs = ["qadence-libs"]
 all = [
   "pulser>=0.15.2",
   "amazon-braket-sdk",
