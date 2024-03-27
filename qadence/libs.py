@@ -11,6 +11,5 @@ try:
     available_libs = getattr(module, "available_libs")
 except ModuleNotFoundError:
     raise ModuleNotFoundError(
-        "The 'qadence_libs' module is not present."
-        " Please install the 'qadence-libs' package."
+        "The 'qadence_libs' module is not present." " Please install the 'qadence-libs' package."
     )
