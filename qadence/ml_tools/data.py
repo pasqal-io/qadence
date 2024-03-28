@@ -82,34 +82,34 @@ def to_dataloader(*tensors: Tensor, batch_size: int = 1, infinite: bool = False)
 
 
 @singledispatch
-def data_to_device(xs: Any, device: torch_device) -> Any:
+def data_to_device(xs: Any, *args: Any, **kwargs: Any) -> Any:
     """Utility method to move arbitrary data to 'device'."""
-    raise ValueError(f"Cannot move {type(xs)} to a pytorch device.")
+    raise ValueError(f"Unable to move {type(xs)} to {args}, {kwargs}.")
 
 
 @data_to_device.register
-def _(xs: None, device: torch_device) -> None:
+def _(xs: None, *args: Any, **kwargs: Any) -> None:
     return xs
 
 
 @data_to_device.register(Tensor)
-def _(xs: Tensor, device: torch_device) -> Tensor:
-    return xs.to(device=device, non_blocking=True)
+def _(xs: Tensor, *args: Any, **kwargs: Any) -> Tensor:
+    return xs.to(*args, **kwargs)
 
 
 @data_to_device.register(list)
-def _(xs: list, device: torch_device) -> list:
-    return [data_to_device(x, device) for x in xs]
+def _(xs: list, *args: Any, **kwargs: Any) -> list:
+    return [data_to_device(x, *args, **kwargs) for x in xs]
 
 
 @data_to_device.register(dict)
-def _(xs: dict, device: torch_device) -> dict:
-    return {key: data_to_device(val, device) for key, val in xs.items()}
+def _(xs: dict, *args: Any, **kwargs: Any) -> dict:
+    return {key: data_to_device(val, *args, **kwargs) for key, val in xs.items()}
 
 
 @data_to_device.register(DataLoader)
-def _(xs: DataLoader, device: torch_device) -> DataLoader:
-    return DataLoader(data_to_device(xs.dataset, device))
+def _(xs: DataLoader, *args: Any, **kwargs: Any) -> DataLoader:
+    return DataLoader(data_to_device(xs.dataset, *args, **kwargs))
 
 
 @data_to_device.register(DictDataLoader)
