@@ -98,8 +98,8 @@ Let's see it in action with a simple example.
 
 ### Fitting a funtion with a QNN using `ml_tools`
 
-In Quantum Machine Learning, the general consensus is to use complex128 precision for states/ operators and float64 precision for parameters, which is also the convention which is used in `qadence`.
-However, for specific usecases, using lower precision can greatly speed up training and reduce memory consumption. When using the `pyqtorch` backend, `qadence` offers the option to move a `QuantumModel` instance to a specific precision using the torch `to` syntax.
+In Quantum Machine Learning, the general consensus is to use `complex128` precision for states and operators and `float64` precision for parameters. This is also the convention which is used in `qadence`.
+However, for specific usecases, lower precision can greatly speed up training and reduce memory consumption. When using the `pyqtorch` backend, `qadence` offers the option to move a `QuantumModel` instance to a specific precision using the torch `to` syntax.
 
 Let's look at a complete example of how to use `train_with_grad` now.
 
