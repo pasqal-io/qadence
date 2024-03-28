@@ -4,7 +4,7 @@ from functools import reduce
 from itertools import chain as flatten
 from math import prod
 from operator import add
-from typing import Sequence, Tuple
+from typing import Any, Sequence, Tuple
 
 import pyqtorch as pyq
 import sympy
@@ -26,6 +26,7 @@ from torch import (
     transpose,
 )
 from torch import device as torch_device
+from torch import dtype as torch_dtype
 from torch.nn import Module
 
 from qadence.backends.utils import (
@@ -178,6 +179,7 @@ class PyQMatrixBlock(Module):
         self.register_buffer("mat", block.matrix.unsqueeze(2))
         self.mat: Tensor
         self._device: torch_device = self.mat.device
+        self._dtype: torch_dtype = self.mat.dtype
 
     def forward(self, state: Tensor, _: dict[str, Tensor] = None) -> Tensor:
         return apply_operator(state, self.mat, self.qubits, self.n_qubits)
@@ -186,9 +188,10 @@ class PyQMatrixBlock(Module):
     def device(self) -> torch_device:
         return self._device
 
-    def to(self, device: torch_device) -> PyQMatrixBlock:
-        self.mat = self.mat.to(device)
-        self._device = device
+    def to(self, *args: Any, **kwargs: Any) -> PyQMatrixBlock:
+        self.mat = self.mat.to(*args, **kwargs)
+        self._device = self.mat.device
+        self._dtype = self.mat.dtype
         return self
 
 
@@ -262,6 +265,7 @@ class PyQObservable(Module):
             )
             self._forward = lambda self, state, values: self.operation(state, values)
         self._device = self.operation.device
+        self._dtype = self.operation.dtype
 
     def run(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
         return self._forward(self, state, values)
@@ -273,9 +277,14 @@ class PyQObservable(Module):
     def device(self) -> torch_device:
         return self._device
 
-    def to(self, device: torch_device) -> PyQObservable:
-        self.operation = self.operation.to(device)
-        self._device = device
+    @property
+    def dtype(self) -> torch_dtype:
+        return self._dtype
+
+    def to(self, *args: Any, **kwargs: Any) -> PyQObservable:
+        self.operation = self.operation.to(*args, **kwargs)
+        self._device = self.operation.device
+        self._dtype = self.operation.dtype
         return self
 
 
@@ -338,6 +347,7 @@ class PyQHamiltonianEvolution(Module):
         self._device: torch_device = (
             self.hmat.device if hasattr(self, "hmat") else torch_device("cpu")
         )
+        self._dtype: torch_dtype = self.hmat.dtype if hasattr(self, "hmat") else cdouble
 
     def _unitary(self, hamiltonian: Tensor, time_evolution: Tensor) -> Tensor:
         self.batch_size = max(hamiltonian.size()[2], len(time_evolution))
@@ -419,10 +429,15 @@ class PyQHamiltonianEvolution(Module):
     def device(self) -> torch_device:
         return self._device
 
-    def to(self, device: torch_device) -> PyQHamiltonianEvolution:
+    @property
+    def dtype(self) -> torch_dtype:
+        return self._dtype
+
+    def to(self, *args: Any, **kwargs: Any) -> PyQHamiltonianEvolution:
         if hasattr(self, "hmat"):
-            self.hmat = self.hmat.to(device)
-        self._device = device
+            self.hmat = self.hmat.to(*args, **kwargs)
+            self._device = self.hmat.device
+            self._dtype = self.hmat.dtype
         return self
 
 

@@ -98,11 +98,16 @@ Let's see it in action with a simple example.
 
 ### Fitting a funtion with a QNN using `ml_tools`
 
+In Quantum Machine Learning, the general consensus is to use `complex128` precision for states and operators and `float64` precision for parameters. This is also the convention which is used in `qadence`.
+However, for specific usecases, lower precision can greatly speed up training and reduce memory consumption. When using the `pyqtorch` backend, `qadence` offers the option to move a `QuantumModel` instance to a specific precision using the torch `to` syntax.
+
 Let's look at a complete example of how to use `train_with_grad` now.
 
 ```python exec="on" source="material-block" html="1"
 from pathlib import Path
 import torch
+from functools import reduce
+from operator import add
 from itertools import count
 import matplotlib.pyplot as plt
 
@@ -111,14 +116,16 @@ from qadence import hamiltonian_factory, hea, feature_map, chain
 from qadence.models import QNN
 from qadence.ml_tools import  TrainConfig, train_with_grad, to_dataloader
 
-n_qubits = 2
+DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+DTYPE = torch.complex64
+n_qubits = 4
 fm = feature_map(n_qubits)
 ansatz = hea(n_qubits=n_qubits, depth=3)
 observable = hamiltonian_factory(n_qubits, detuning=Z)
 circuit = QuantumCircuit(n_qubits, fm, ansatz)
 
 model = QNN(circuit, observable, backend="pyqtorch", diff_mode="ad")
-batch_size = 1
+batch_size = 100
 input_values = {"phi": torch.rand(batch_size, requires_grad=True)}
 pred = model(input_values)
 
@@ -133,35 +140,30 @@ def loss_fn(model: torch.nn.Module, data: torch.Tensor) -> tuple[torch.Tensor, d
     loss = criterion(out, y)
     return loss, {}
 
-tmp_path = Path("/tmp")
-
-n_epochs = 50
+n_epochs = 300
 
 config = TrainConfig(
-    folder=tmp_path,
     max_iter=n_epochs,
-    checkpoint_every=100,
-    write_every=100,
     batch_size=batch_size,
 )
 
-batch_size = 25
+fn = lambda x, degree: .05 * reduce(add, (torch.cos(i*x) + torch.sin(i*x) for i in range(degree)), 0.)
+x = torch.linspace(0, 10, batch_size, dtype=torch.float32).reshape(-1, 1)
+y = fn(x, 5)
 
-x = torch.linspace(0, 1, batch_size).reshape(-1, 1)
-y = torch.sin(x)
 data = to_dataloader(x, y, batch_size=batch_size, infinite=True)
 
-train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
+train_with_grad(model, data, optimizer, config, loss_fn=loss_fn,device=DEVICE, dtype=DTYPE)
 
-plt.clf() # markdown-exec: hide
-plt.plot(x, y)
-plt.plot(x, model(x).detach())
+plt.clf()
+plt.plot(x.numpy(), y.numpy(), label='truth')
+plt.plot(x.numpy(), model(x).detach().numpy(), "--", label="final", linewidth=3)
+plt.legend()
 from docs import docsutils # markdown-exec: hide
 print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
 ```
 
-For users who want to use the low-level API of `qadence`, here is the example from above
-written without `train_with_grad`.
+For users who want to use the low-level API of `qadence`, here an example written without `train_with_grad`.
 
 ### Fitting a function - Low-level API
 
@@ -213,7 +215,7 @@ for i in range(n_epochs):
 
 ## Custom `train` loop
 
-If you need custom training functionality that goes beyon what is available in
+If you need custom training functionality that goes beyond what is available in
 `qadence.ml_tools.train_with_grad` and `qadence.ml_tools.train_gradient_free` you can write your own
 training loop based on the building blocks that are available in Qadence.
 

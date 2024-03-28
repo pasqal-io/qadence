@@ -55,6 +55,7 @@ from qadence.operations import (
     Z,
 )
 from qadence.parameters import FeatureParameter, Parameter
+from qadence.states import random_state, uniform_state, zero_state
 from qadence.transpile import set_trainable
 from qadence.types import PI, BackendName, DiffMode
 
@@ -811,3 +812,35 @@ def test_sparse_obs_expectation_value(
     expval_s = qm_sparse.expectation(inputs)
 
     assert torch.allclose(expval, expval_s)
+
+
+@pytest.mark.parametrize("state_fn", [uniform_state, random_state, zero_state])
+@pytest.mark.parametrize("dtype", [torch.complex64, torch.complex128])
+@pytest.mark.parametrize("obs", [total_magnetization, zz_hamiltonian])
+@given(st.batched_digital_circuits())
+@settings(deadline=None)
+def test_move_to_dtype(
+    state_fn: Callable,
+    dtype: torch.dtype,
+    obs: Callable,
+    circuit_and_inputs: tuple[QuantumCircuit, dict[str, torch.Tensor]],
+) -> None:
+    circuit, inputs = circuit_and_inputs
+    observable = obs(circuit.n_qubits)
+    qm = QuantumModel(
+        circuit=circuit,
+        observable=observable,
+        backend=BackendName.PYQTORCH,
+    )
+    qm = qm.to(dtype=dtype)
+    inputs = {k: v.to(dtype=dtype) for k, v in inputs.items()}
+    assert qm._circuit.native.dtype == dtype
+    assert all([obs.native.dtype == dtype for obs in qm._observable])  # type: ignore[union-attr]
+    state = state_fn(circuit.n_qubits)
+    state = state.to(dtype=dtype)
+    assert state.dtype == dtype
+    # breakpoint()
+    wf = qm.run(inputs, state=state)
+    assert wf.dtype == dtype
+    expval = qm.expectation(inputs, state=state)
+    assert expval.dtype == torch.float64 if dtype == torch.cdouble else torch.float32

@@ -4,6 +4,7 @@ from typing import Callable, Union
 
 from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, TimeRemainingColumn
 from torch import device as torch_device
+from torch import dtype as torch_dtype
 from torch.nn import DataParallel, Module
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
@@ -28,6 +29,7 @@ def train(
     device: torch_device = None,
     optimize_step: Callable = optimize_step,
     write_tensorboard: Callable = write_tensorboard,
+    dtype: torch_dtype = None,
 ) -> tuple[Module, Optimizer]:
     """Runs the training loop with gradient-based optimizer.
 
@@ -111,9 +113,9 @@ def train(
 
     # Move model to device before optimizer is loaded
     if isinstance(model, DataParallel):
-        model = model.module.to(device)
+        model = model.module.to(device=device, dtype=dtype)
     else:
-        model = model.to(device)
+        model = model.to(device=device, dtype=dtype)
     # load available checkpoint
     init_iter = 0
     if config.folder:
