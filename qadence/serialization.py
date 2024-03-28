@@ -2,21 +2,26 @@ from __future__ import annotations
 
 import json
 import os
+import sys
+from dataclasses import dataclass
+from dataclasses import field as dataclass_field
+from functools import lru_cache
 from pathlib import Path
-from typing import Any, get_args
+from typing import Any, Callable, get_args
 from typing import Union as TypingUnion
 
 import torch
+from arpeggio import NoMatch
+from arpeggio.cleanpeg import ParserPEG
 from sympy import *
-from sympy import Basic, Expr, srepr
+from sympy import core, srepr
 
-from qadence import QuantumCircuit, operations
+from qadence import QuantumCircuit, operations, parameters
 from qadence import blocks as qadenceblocks
 from qadence.blocks import AbstractBlock
 from qadence.blocks.utils import tag
 from qadence.logger import get_logger
-from qadence.ml_tools.models import TransformedModule
-from qadence.models import QNN, QuantumModel
+from qadence.models import QuantumModel
 from qadence.parameters import Parameter
 from qadence.register import Register
 from qadence.types import SerializationFormat
@@ -43,27 +48,132 @@ SUPPORTED_OBJECTS = [
     AbstractBlock,
     QuantumCircuit,
     QuantumModel,
-    QNN,
-    TransformedModule,
     Register,
-    Basic,
+    core.Basic,
     torch.nn.Module,
 ]
 SUPPORTED_TYPES = TypingUnion[
     AbstractBlock,
     QuantumCircuit,
     QuantumModel,
-    QNN,
-    TransformedModule,
     Register,
-    Basic,
+    core.Basic,
     torch.nn.Module,
 ]
-
 
 ALL_BLOCK_NAMES = [
     n for n in dir(qadenceblocks) if not (n.startswith("__") and n.endswith("__"))
 ] + [n for n in dir(operations) if not (n.startswith("__") and n.endswith("__"))]
+SYMPY_EXPRS = [n for n in dir(core) if not (n.startswith("__") and n.endswith("__"))]
+QADENCE_PARAMETERS = [n for n in dir(parameters) if not (n.startswith("__") and n.endswith("__"))]
+
+
+THIS_PATH = Path(__file__).parent
+GRAMMAR_FILE = THIS_PATH / "serial_expr_grammar.peg"
+
+
+@lru_cache
+def _parser_fn() -> ParserPEG:
+    with open(GRAMMAR_FILE, "r") as f:
+        grammar = f.read()
+    return ParserPEG(grammar, "Program")
+
+
+_parsing_serialize_expr = _parser_fn()
+
+
+def parse_expr_fn(code: str) -> bool:
+    parser = _parsing_serialize_expr
+    try:
+        parser.parse(code)
+    except NoMatch as err:
+        return False
+    else:
+        return True
+
+
+@dataclass
+class SerializationModel:
+    d: dict = dataclass_field(default_factory=dict)
+    value: Any = dataclass_field(init=False)
+
+
+@dataclass
+class BlockTypeSerial(SerializationModel):
+    value: AbstractBlock = dataclass_field(init=False)
+
+    def __post_init__(self) -> None:
+        block = (
+            getattr(operations, self.d["type"])
+            if hasattr(operations, self.d["type"])
+            else getattr(qadenceblocks, self.d["type"])
+        )._from_dict(self.d)
+        if self.d["tag"] is not None:
+            block = tag(block, self.d["tag"])
+        self.value = block
+
+
+@dataclass
+class QuantumCircuitSerial(SerializationModel):
+    value: QuantumCircuit = dataclass_field(init=False)
+
+    def __post_init__(self) -> None:
+        self.value = QuantumCircuit._from_dict(self.d) if isinstance(self.d, dict) else self.d
+
+
+@dataclass
+class RegisterSerial(SerializationModel):
+    value: Register = dataclass_field(init=False)
+
+    def __post_init__(self) -> None:
+        self.value = Register._from_dict(self.d)
+
+
+@dataclass
+class ModelSerial(SerializationModel):
+    as_torch: bool = False
+    value: torch.nn.Module = dataclass_field(init=False)
+
+    def __post_init__(self) -> None:
+        module_name = list(self.d.keys())[0]
+        obj = globals().get(module_name, None)
+        if obj is None:
+            obj = self._resolve_module(module_name)
+        if hasattr(obj, "_from_dict"):
+            self.value = obj._from_dict(self.d, self.as_torch)
+        elif hasattr(obj, "load_state_dict"):
+            self.value = obj.load_state_dict(self.d[module_name])
+        else:
+            msg = (
+                f"Unable to deserialize object '{module_name}'. "
+                f"Supported types are {SUPPORTED_OBJECTS}."
+            )
+            logger.error(TypeError(msg))
+            raise TypeError(msg)
+
+    @staticmethod
+    def _resolve_module(module: str) -> Any:
+        for loaded_module in sys.modules.keys():
+            if "qadence" in loaded_module:
+                obj = getattr(sys.modules[loaded_module], module, None)
+                if obj:
+                    return obj
+        raise ValueError(f"Couldn't resolve module '{module}'.")
+
+
+@dataclass
+class ExpressionSerial(SerializationModel):
+    value: str | core.Expr | float = dataclass_field(init=False)
+
+    def __post_init__(self) -> None:
+        if parse_expr_fn(self.d["expression"]):
+            expr = eval(self.d["expression"])
+            if hasattr(expr, "free_symbols"):
+                for s in expr.free_symbols:
+                    s.value = float(self.d["symbols"][s.name]["value"])
+            self.value = expr
+        else:
+            raise ValueError(f"Invalid expression: {self.d['expression']}")
 
 
 def save_pt(d: dict, file_path: str | Path) -> None:
@@ -94,11 +204,11 @@ def serialize(obj: SUPPORTED_TYPES, save_params: bool = False) -> dict:
     """
     Supported Types:
 
-    AbstractBlock | QuantumCircuit | QuantumModel | TransformedModule | Register | Module
+    AbstractBlock | QuantumCircuit | QuantumModel | torch.nn.Module | Register | Module
     Serializes a qadence object to a dictionary.
 
     Arguments:
-        obj (AbstractBlock | QuantumCircuit | QuantumModel | Register | Module):
+        obj (AbstractBlock | QuantumCircuit | QuantumModel | Register | torch.nn.Module):
     Returns:
         A dict.
 
@@ -132,21 +242,28 @@ def serialize(obj: SUPPORTED_TYPES, save_params: bool = False) -> dict:
     """
     if not isinstance(obj, get_args(SUPPORTED_TYPES)):
         logger.error(TypeError(f"Serialization of object type {type(obj)} not supported."))
-    d: dict = {}
+
+    d: dict = dict()
     try:
-        if isinstance(obj, Expr):
-            symb_dict = {}
+        if isinstance(obj, core.Expr):
+            symb_dict = dict()
             expr_dict = {"name": str(obj), "expression": srepr(obj)}
-            symbs: set[Parameter | Basic] = obj.free_symbols
+            symbs: set[Parameter | core.Basic] = obj.free_symbols
             if symbs:
                 symb_dict = {"symbols": {str(s): s._to_dict() for s in symbs}}
             d = {**expr_dict, **symb_dict}
-        elif isinstance(obj, (QuantumModel, QNN, TransformedModule)):
-            d = obj._to_dict(save_params)
-        elif isinstance(obj, torch.nn.Module):
-            d = {type(obj).__name__: obj.state_dict()}
         else:
-            d = obj._to_dict()
+            if hasattr(obj, "_to_dict"):
+                model_to_dict: Callable = obj._to_dict
+                d = (
+                    model_to_dict(save_params)
+                    if isinstance(obj, torch.nn.Module)
+                    else model_to_dict()
+                )
+            elif hasattr(obj, "state_dict"):
+                d = {type(obj).__name__: obj.state_dict()}
+            else:
+                raise ValueError(f"Cannot serialize object {obj}.")
     except Exception as e:
         logger.error(f"Serialization of object {obj} failed due to {e}")
     return d
@@ -156,13 +273,14 @@ def deserialize(d: dict, as_torch: bool = False) -> SUPPORTED_TYPES:
     """
     Supported Types:
 
-    AbstractBlock | QuantumCircuit | QuantumModel | TransformedModule | Register | Module
+    AbstractBlock | QuantumCircuit | QuantumModel | Register | torch.nn.Module
     Deserializes a dict to one of the supported types.
 
     Arguments:
         d (dict): A dict containing a serialized object.
+        as_torch (bool): Whether to transform to torch for the deserialized object.
     Returns:
-        AbstractBlock, QuantumCircuit, QuantumModel, TransformedModule, Register, Module.
+        AbstractBlock, QuantumCircuit, QuantumModel, Register, torch.nn.Module.
 
     Examples:
     ```python exec="on" source="material-block" result="json"
@@ -192,51 +310,18 @@ def deserialize(d: dict, as_torch: bool = False) -> SUPPORTED_TYPES:
     assert torch.isclose(qm.expectation({}), qm_deserialized.expectation({}))
     ```
     """
-    obj: Any
+    obj: SerializationModel
     if d.get("expression"):
-        expr = eval(d["expression"])
-        if hasattr(expr, "free_symbols"):
-            for symb in expr.free_symbols:
-                symb.value = float(d["symbols"][symb.name]["value"])
-        obj = expr
-    elif d.get("QuantumModel"):
-        obj = QuantumModel._from_dict(d, as_torch)
-    elif d.get("QNN"):
-        obj = QNN._from_dict(d, as_torch)
-    elif d.get("TransformedModule"):
-        obj = TransformedModule._from_dict(d, as_torch)
+        obj = ExpressionSerial(d)
     elif d.get("block") and d.get("register"):
-        obj = QuantumCircuit._from_dict(d)
+        obj = QuantumCircuitSerial(d)
     elif d.get("graph"):
-        obj = Register._from_dict(d)
+        obj = RegisterSerial(d)
     elif d.get("type"):
-        if d["type"] in ALL_BLOCK_NAMES:
-            block: AbstractBlock = (
-                getattr(operations, d["type"])._from_dict(d)
-                if hasattr(operations, d["type"])
-                else getattr(qadenceblocks, d["type"])._from_dict(d)
-            )
-            if d["tag"] is not None:
-                block = tag(block, d["tag"])
-            obj = block
+        obj = BlockTypeSerial(d)
     else:
-        import warnings
-
-        msg = warnings.warn(
-            "In order to load a custom torch.nn.Module, make sure its imported in the namespace."
-        )
-        try:
-            module_name = list(d.keys())[0]
-            obj = getattr(globals(), module_name)
-            obj.load_state_dict(d[module_name])
-        except Exception as e:
-            logger.error(
-                TypeError(
-                    f"{msg}. Unable to deserialize object due to {e}.\
-                    Supported objects are: {SUPPORTED_OBJECTS}"
-                )
-            )
-    return obj
+        obj = ModelSerial(d, as_torch=as_torch)
+    return obj.value
 
 
 def save(
