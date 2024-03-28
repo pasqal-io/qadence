@@ -151,7 +151,9 @@ class Backend(BackendInterface):
         if state is None:
             from qadence.states import zero_state
 
-            state = zero_state(circuit.abstract.n_qubits, batch_size=1)
+            state = zero_state(circuit.abstract.n_qubits, batch_size=1).to(
+                dtype=circuit.native.dtype
+            )
         if state.size(0) != 1:
             raise ValueError(
                 "Looping expectation does not make sense with batched initial state. "
