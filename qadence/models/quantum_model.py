@@ -345,7 +345,6 @@ class QuantumModel(nn.Module):
         try:
             if isinstance(self._circuit.native, torch.nn.Module):
                 # Backends which are not torch-based cannot be moved to 'device'
-                self._params = self._params.to(*args, **kwargs)
                 self._circuit.native = self._circuit.native.to(*args, **kwargs)
                 if self._observable is not None:
                     if isinstance(self._observable, ConvertedObservable):
@@ -353,6 +352,12 @@ class QuantumModel(nn.Module):
                     elif isinstance(self._observable, list):
                         for obs in self._observable:
                             obs.native = obs.native.to(*args, **kwargs)
+                self._params = self._params.to(
+                    device=self._circuit.native.device,
+                    dtype=torch.float64
+                    if self._circuit.native.dtype == torch.cdouble
+                    else torch.float32,
+                )
                 logger.debug(f"Moved {self} to {args}, {kwargs}.")
         except Exception as e:
             logger.warning(f"Unable to move {self} to {args}, {kwargs} due to {e}.")

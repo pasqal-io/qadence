@@ -13,6 +13,7 @@ from pyqtorch.parametric import Parametric as PyQParametric
 from torch import (
     Tensor,
     cat,
+    complex64,
     complex128,
     mean,
     no_grad,
@@ -129,7 +130,7 @@ def is_pyq_shape(state: Tensor, n_qubits: int) -> bool:
 
 def validate_state(state: Tensor, n_qubits: int) -> None:
     """Check if a custom initial state conforms to the qadence or the pyqtorch format."""
-    if state.dtype != complex128:
+    if state.dtype not in [complex128, complex64]:
         raise TypeError(f"Expected type complex128, got {state.dtype}")
     elif len(state.size()) < 2:
         raise ValueError(f"Invalid state shape. Got {state.shape}")
