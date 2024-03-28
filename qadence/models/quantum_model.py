@@ -341,19 +341,19 @@ class QuantumModel(nn.Module):
         params = self.embedding_fn(self._params, values)
         return self.backend.assign_parameters(self._circuit, params)
 
-    def to(self, device: torch.device) -> QuantumModel:
+    def to(self, *args: Any, **kwargs: Any) -> QuantumModel:
         try:
             if isinstance(self._circuit.native, torch.nn.Module):
                 # Backends which are not torch-based cannot be moved to 'device'
-                self._params = self._params.to(device)
-                self._circuit.native = self._circuit.native.to(device)
+                self._params = self._params.to(*args, **kwargs)
+                self._circuit.native = self._circuit.native.to(*args, **kwargs)
                 if self._observable is not None:
                     if isinstance(self._observable, ConvertedObservable):
-                        self._observable.native = self._observable.native.to(device)
+                        self._observable.native = self._observable.native.to(*args, **kwargs)
                     elif isinstance(self._observable, list):
                         for obs in self._observable:
-                            obs.native = obs.native.to(device)
-                logger.debug(f"Moved {self} to device {device}.")
+                            obs.native = obs.native.to(*args, **kwargs)
+                logger.debug(f"Moved {self} to {args}, {kwargs}.")
         except Exception as e:
-            logger.warning(f"Unable to move {self} to device {device} due to {e}.")
+            logger.warning(f"Unable to move {self} to {args}, {kwargs} due to {e}.")
         return self

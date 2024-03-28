@@ -286,15 +286,15 @@ class TransformedModule(torch.nn.Module):
             output_shifting=torch.tensor(d["_output_shifting"]),
         )
 
-    def to(self, device: torch.device) -> TransformedModule:
+    def to(self, *args: Any, **kwargs: Any) -> TransformedModule:
         try:
-            self.model = self.model.to(device)
-            self._input_scaling = self._input_scaling.to(device)
-            self._input_shifting = self._input_shifting.to(device)
-            self._output_scaling = self._output_scaling.to(device)
-            self._output_shifting = self._output_shifting.to(device)
+            self.model = self.model.to(*args, **kwargs)
+            self._input_scaling = self._input_scaling.to(*args, **kwargs)
+            self._input_shifting = self._input_shifting.to(*args, **kwargs)
+            self._output_scaling = self._output_scaling.to(*args, **kwargs)
+            self._output_shifting = self._output_shifting.to(*args, **kwargs)
 
-            logger.debug(f"Moved {self} to device {device}.")
+            logger.debug(f"Moved {self} to {args}, {kwargs}.")
         except Exception as e:
-            logger.warning(f"Unable to move {self} to device {device} due to {e}.")
+            logger.warning(f"Unable to move {self} to {args}, {kwargs} due to {e}.")
         return self
