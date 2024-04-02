@@ -28,6 +28,11 @@ from .transpile import *
 from .types import *
 from .utils import *
 
+DEFAULT_FLOAT_DTYPE = torchfloat64
+DEFAULT_COMPLEX_DTYPE = cdouble
+set_default_dtype(DEFAULT_FLOAT_DTYPE)
+
+
 """Fetch the functions defined in the __all__ of each sub-module.
 
 Import to the qadence name space. Make sure each added submodule has the respective definition:
