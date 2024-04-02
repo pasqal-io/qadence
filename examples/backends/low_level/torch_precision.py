@@ -26,7 +26,7 @@ N_QUBITS = 4
 DEPTH = 3
 VARIABLES = ("x", "y")
 BATCH_SIZE = 1
-N_EPOCHS = 10
+N_EPOCHS = 1
 
 
 def setup_circ_obs(n_qubits: int, depth: int) -> tuple[QuantumCircuit, AbstractBlock]:
@@ -143,7 +143,7 @@ if __name__ == "__main__":
     res = {"n_qubits": N_QUBITS, "n_epochs": N_EPOCHS, "device": DEVICE}
     for dtype in [torch.cdouble, torch.cfloat]:
         batch_sizes = []
-        for batch_size in [1, 50, 100, 1000, 5000, 10000]:
+        for batch_size in [1, 50, 100, 1000]:
             pp_run_times = timeit.repeat(
                 "torch_solve(dtype=dtype, batch_size=batch_size)",
                 f"print({dtype},{batch_size})",
@@ -154,5 +154,3 @@ if __name__ == "__main__":
             pp_mean, pp_std = np.mean(pp_run_times), np.std(pp_run_times)
             batch_sizes.append(pp_mean)
         res[f"dtype={dtype}"] = batch_sizes
-    print(res)
-    breakpoint()
