@@ -84,7 +84,7 @@ def to_dataloader(*tensors: Tensor, batch_size: int = 1, infinite: bool = False)
 @singledispatch
 def data_to_device(xs: Any, *args: Any, **kwargs: Any) -> Any:
     """Utility method to move arbitrary data to 'device'."""
-    raise ValueError(f"Unable to move {type(xs)} to {args}, {kwargs}.")
+    raise ValueError(f"Unable to move {type(xs)} with input args: {args} and kwargs: {kwargs}.")
 
 
 @data_to_device.register
