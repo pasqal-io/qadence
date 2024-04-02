@@ -25,14 +25,12 @@ LEARNING_RATE = 0.01
 N_QUBITS = 4
 DEPTH = 3
 VARIABLES = ("x", "y")
-N_POINTS = 150
-N_EPOCHS = 1000
+BATCH_SIZE = 1
+N_EPOCHS = 10
 
 
 def setup_circ_obs(n_qubits: int, depth: int) -> tuple[QuantumCircuit, AbstractBlock]:
-    # define a simple DQC model
     ansatz = hea(n_qubits=n_qubits, depth=depth)
-    # parallel Fourier feature map
     split = n_qubits // len(VARIABLES)
     fm = kron(
         *[
@@ -47,23 +45,16 @@ def setup_circ_obs(n_qubits: int, depth: int) -> tuple[QuantumCircuit, AbstractB
             )
         ]
     )
-    # choosing a cost function
     obs = total_magnetization(n_qubits=n_qubits)
-    # building the circuit and the quantum model
     circ = QuantumCircuit(n_qubits, chain(fm, ansatz))
     return circ, obs
 
 
-single_domain_torch = linspace(0, 1, steps=N_POINTS)
+single_domain_torch = linspace(0, 1, steps=BATCH_SIZE)
 domain_torch = tensor(list(product(single_domain_torch, single_domain_torch)))
 
 
-def calc_derivative(outputs, inputs) -> Tensor:
-    """
-    Returns the derivative of a function output.
-
-    with respect to its inputs
-    """
+def _grad(outputs, inputs) -> Tensor:
     if not inputs.requires_grad:
         inputs.requires_grad = True
     return grad(
@@ -76,69 +67,64 @@ def calc_derivative(outputs, inputs) -> Tensor:
 
 
 class DomainSampling(nn.Module):
-    """
-    Collocation points sampling from domains uses uniform random sampling.
-
-    Problem-specific MSE loss function for solving the 2D Laplace equation.
-    """
-
     def __init__(
         self,
-        net: nn.Module | QNN,
+        ufa: nn.Module | QNN,
         n_inputs: int = len(VARIABLES),
-        n_colpoints: int = N_POINTS,
+        batch_size: int = BATCH_SIZE,
         device: torch.device = torch.device("cpu"),
         dtype: torch.dtype = torch.float64,
     ):
         super().__init__()
-        self.net = net
-        self.n_colpoints = n_colpoints
+        self.ufa = ufa
+        self.batch_size = batch_size
+        print(f"batchsize is {batch_size}")
         self.n_inputs = n_inputs
         self.device = device
         self.dtype = dtype
 
     def sample(self) -> Tensor:
-        return rand(size=(self.n_colpoints, self.n_inputs), device=self.device, dtype=self.dtype)
+        return rand(size=(self.batch_size, self.n_inputs), device=self.device, dtype=self.dtype)
 
     def left_boundary(self) -> Tensor:  # u(0,y)=0
         sample = self.sample()
         sample[:, 0] = 0.0
-        return self.net(sample).pow(2).mean()
+        return self.ufa(sample).pow(2).mean()
 
     def right_boundary(self) -> Tensor:  # u(L,y)=0
         sample = self.sample()
         sample[:, 0] = 1.0
-        return self.net(sample).pow(2).mean()
+        return self.ufa(sample).pow(2).mean()
 
     def top_boundary(self) -> Tensor:  # u(x,H)=0
         sample = self.sample()
         sample[:, 1] = 1.0
-        return self.net(sample).pow(2).mean()
+        return self.ufa(sample).pow(2).mean()
 
     def bottom_boundary(self) -> Tensor:  # u(x,0)=f(x)
         sample = self.sample()
         sample[:, 1] = 0.0
-        return (self.net(sample) - sin(np.pi * sample[:, 0])).pow(2).mean()
+        return (self.ufa(sample) - sin(np.pi * sample[:, 0])).pow(2).mean()
 
     def interior(self) -> Tensor:  # uxx+uyy=0
         sample = self.sample().requires_grad_()
-        first_both = calc_derivative(self.net(sample), sample)
-        second_both = calc_derivative(first_both, sample)
+        first_both = _grad(self.ufa(sample), sample)
+        second_both = _grad(first_both, sample)
         return (second_both[:, 0] + second_both[:, 1]).pow(2).mean()
 
 
-def torch_solve() -> None:
+def torch_solve(dtype, batch_size) -> None:
     circ, obs = setup_circ_obs(N_QUBITS, DEPTH)
     model = QNN(
         circuit=circ, observable=obs, backend="pyqtorch", diff_mode="ad", inputs=VARIABLES
-    ).to(device=DEVICE, dtype=DTYPE)
+    ).to(device=DEVICE, dtype=dtype)
     opt = optim.Adam(model.parameters(), lr=LEARNING_RATE)
     sol = DomainSampling(
-        net=model,
+        ufa=model,
         n_inputs=len(VARIABLES),
-        n_colpoints=N_POINTS,
+        batch_size=batch_size,
         device=DEVICE,
-        dtype=torch.float64 if DTYPE == torch.cdouble else torch.float32,
+        dtype=torch.float64 if dtype == torch.cdouble else torch.float32,
     )
     for _ in range(N_EPOCHS):
         opt.zero_grad()
@@ -155,11 +141,18 @@ def torch_solve() -> None:
 
 if __name__ == "__main__":
     res = {"n_qubits": N_QUBITS, "n_epochs": N_EPOCHS, "device": DEVICE}
-    for dtype in ["torch.cdouble", "torch.cfloat"]:
-        pp_run_times = timeit.repeat(
-            "torch_solve()", f"DTYPE={dtype}", number=1, repeat=1, globals=globals()
-        )
-        pp_mean, pp_std = np.mean(pp_run_times), np.std(pp_run_times)
-        res[dtype] = f"mean_runtime: {pp_mean}, std_runtime: {pp_std}"
+    for dtype in [torch.cdouble, torch.cfloat]:
+        batch_sizes = []
+        for batch_size in [1, 50, 100, 1000, 5000, 10000]:
+            pp_run_times = timeit.repeat(
+                "torch_solve(dtype=dtype, batch_size=batch_size)",
+                f"print({dtype},{batch_size})",
+                number=1,
+                repeat=10,
+                globals=globals(),
+            )
+            pp_mean, pp_std = np.mean(pp_run_times), np.std(pp_run_times)
+            batch_sizes.append(pp_mean)
+        res[f"dtype={dtype}"] = batch_sizes
     print(res)
     breakpoint()
