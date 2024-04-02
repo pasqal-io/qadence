@@ -155,9 +155,11 @@ def torch_solve() -> None:
 
 if __name__ == "__main__":
     res = {"n_qubits": N_QUBITS, "n_epochs": N_EPOCHS, "device": DEVICE}
-    for dtype in ["torch.cfloat", "torch.cdouble"]:
+    for dtype in ["torch.cdouble", "torch.cfloat"]:
         pp_run_times = timeit.repeat(
             "torch_solve()", f"DTYPE={dtype}", number=1, repeat=1, globals=globals()
         )
         pp_mean, pp_std = np.mean(pp_run_times), np.std(pp_run_times)
         res[dtype] = f"mean_runtime: {pp_mean}, std_runtime: {pp_std}"
+    print(res)
+    breakpoint()
