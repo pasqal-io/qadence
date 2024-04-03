@@ -80,7 +80,7 @@ class Backend(BackendInterface):
         (native,) = convert_observable(block, n_qubits=n_qubits, config=self.config)
         return ConvertedObservable(native=native, abstract=block, original=observable)
 
-    def _run(
+    def run(
         self,
         circuit: ConvertedCircuit,
         param_values: dict[str, Tensor] = {},
