@@ -15,7 +15,6 @@ from qadence import blocks as qadenceblocks
 from qadence.blocks import AbstractBlock
 from qadence.blocks.utils import tag
 from qadence.logger import get_logger
-from qadence.ml_tools.models import TransformedModule
 from qadence.models import QNN, QuantumModel
 from qadence.parameters import Parameter
 from qadence.register import Register
@@ -44,7 +43,6 @@ SUPPORTED_OBJECTS = [
     QuantumCircuit,
     QuantumModel,
     QNN,
-    TransformedModule,
     Register,
     Basic,
     torch.nn.Module,
@@ -54,7 +52,6 @@ SUPPORTED_TYPES = TypingUnion[
     QuantumCircuit,
     QuantumModel,
     QNN,
-    TransformedModule,
     Register,
     Basic,
     torch.nn.Module,
@@ -94,7 +91,7 @@ def serialize(obj: SUPPORTED_TYPES, save_params: bool = False) -> dict:
     """
     Supported Types:
 
-    AbstractBlock | QuantumCircuit | QuantumModel | TransformedModule | Register | Module
+    AbstractBlock | QuantumCircuit | QuantumModel | Register | Module
     Serializes a qadence object to a dictionary.
 
     Arguments:
@@ -141,7 +138,7 @@ def serialize(obj: SUPPORTED_TYPES, save_params: bool = False) -> dict:
             if symbs:
                 symb_dict = {"symbols": {str(s): s._to_dict() for s in symbs}}
             d = {**expr_dict, **symb_dict}
-        elif isinstance(obj, (QuantumModel, QNN, TransformedModule)):
+        elif isinstance(obj, (QuantumModel, QNN)):
             d = obj._to_dict(save_params)
         elif isinstance(obj, torch.nn.Module):
             d = {type(obj).__name__: obj.state_dict()}
@@ -156,13 +153,13 @@ def deserialize(d: dict, as_torch: bool = False) -> SUPPORTED_TYPES:
     """
     Supported Types:
 
-    AbstractBlock | QuantumCircuit | QuantumModel | TransformedModule | Register | Module
+    AbstractBlock | QuantumCircuit | QuantumModel | Register | Module
     Deserializes a dict to one of the supported types.
 
     Arguments:
         d (dict): A dict containing a serialized object.
     Returns:
-        AbstractBlock, QuantumCircuit, QuantumModel, TransformedModule, Register, Module.
+        AbstractBlock, QuantumCircuit, QuantumModel, Register, Module.
 
     Examples:
     ```python exec="on" source="material-block" result="json"
@@ -203,8 +200,6 @@ def deserialize(d: dict, as_torch: bool = False) -> SUPPORTED_TYPES:
         obj = QuantumModel._from_dict(d, as_torch)
     elif d.get("QNN"):
         obj = QNN._from_dict(d, as_torch)
-    elif d.get("TransformedModule"):
-        obj = TransformedModule._from_dict(d, as_torch)
     elif d.get("block") and d.get("register"):
         obj = QuantumCircuit._from_dict(d)
     elif d.get("graph"):
@@ -249,12 +244,12 @@ def save(
     Same as serialize/deserialize but for storing/loading files.
 
     Supported types:
-    AbstractBlock | QuantumCircuit | QuantumModel | TransformedModule | Register | torch.nn.Module
+    AbstractBlock | QuantumCircuit | QuantumModel | Register | torch.nn.Module
     Saves a qadence object to a json/.pt.
 
     Arguments:
         obj (AbstractBlock | QuantumCircuit | QuantumModel | Register):
-                Either AbstractBlock, QuantumCircuit, QuantumModel, TransformedModule, Register.
+                Either AbstractBlock, QuantumCircuit, QuantumModel, Register.
         file_name (str): The name of the file.
         format (str): The type of file to save.
     Returns:
@@ -306,14 +301,14 @@ def load(file_path: str | Path, map_location: str = "cpu") -> SUPPORTED_TYPES:
     """
     Same as serialize/deserialize but for storing/loading files.
 
-    Supported types: AbstractBlock | QuantumCircuit | QuantumModel | TransformedModule | Register
+    Supported types: AbstractBlock | QuantumCircuit | QuantumModel | Register
     Loads a .json or .pt file to one of the supported types.
 
     Arguments:
         file_path (str): The name of the file.
         map_location (str): In case of a .pt file, on which device to load the object (cpu,cuda).
     Returns:
-        A object of type AbstractBlock, QuantumCircuit, QuantumModel, TransformedModule, Register.
+        A object of type AbstractBlock, QuantumCircuit, QuantumModel, Register.
 
     Examples:
     ```python exec="on" source="material-block" result="json"

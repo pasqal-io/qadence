@@ -48,7 +48,7 @@ def format_to_dict_fn(
         assert len(values.size()) == 2, msg
         assert values.size()[1] == in_features, msg
 
-        return {fparam.name: values[:, inputs.index(fparam)] for fparam in inputs}
+        return {fparam.name: values[:, inputs.index(fparam)] for fparam in inputs}  # type: ignore[union-attr]
 
     return to_dict
 
@@ -188,7 +188,7 @@ class QNN(QuantumModel):
                 You can also pass a list of sympy symbols.
             """
             )
-        self.format_to_dict = format_to_dict_fn(self.inputs)
+        self.format_to_dict = format_to_dict_fn(self.inputs)  # type: ignore[arg-type]
         self.input_transform = input_transform
         self.output_transform = output_transform
 
