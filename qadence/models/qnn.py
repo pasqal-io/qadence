@@ -15,9 +15,81 @@ from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.models.quantum_model import QuantumModel
 from qadence.noise import Noise
-from qadence.types import BackendName, DiffMode, Endianness
+from qadence.types import BackendName, DiffMode, Endianness, ParamDictType
 
 logger = get_logger(__name__)
+
+
+def transform_output(output_scaling: Tensor, output_shifting: Tensor) -> Callable[[Tensor], Tensor]:
+    def transform(outputs: Tensor) -> Tensor:
+        return output_scaling * outputs + output_shifting
+
+    return transform
+
+
+def format_to_dict_fn(
+    inputs: list[sympy.Symbol | str] = [],
+) -> Callable[[Tensor | ParamDictType], ParamDictType]:
+    """Format an input tensor into the format required by the forward pass.
+
+    The tensor is assumed to have dimensions: n_batches x in_features where in_features
+    corresponds to the number of input features of the QNN
+    """
+    in_features = len(inputs)
+
+    def to_dict(values: Tensor | ParamDictType) -> ParamDictType:
+        # for backwards compat...
+        if isinstance(values, dict):
+            return values
+
+        if len(values.size()) == 1:
+            values = values.reshape(-1, 1)
+        msg = f"Model expects in_features={in_features} but got {values.size()[1]}."
+        assert len(values.size()) == 2, msg
+        assert values.size()[1] == in_features, msg
+
+        return {fparam.name: values[:, inputs.index(fparam)] for fparam in inputs}
+
+    return to_dict
+
+
+def transform_input(
+    input_scaling: Tensor, input_shifting: Tensor, inputs: list[sympy.Symbol | str]
+) -> Callable[[ParamDictType | Tensor], ParamDictType | Tensor]:
+    """
+    Returns a function which scales and shifts the input values/ FeatureParameters 'values'.
+
+    which can either be a torch Tensor in when using torch.nn.Module, or a standard values dict.
+
+    Scales and shifts the tensors in the values dict, containing Featureparameters.
+    Transformation of inputs can be used to speed up training and avoid potential issues
+    with numerical stability that can arise due to differing feature scales.
+    If none are provided, it uses 0. for shifting and 1. for scaling (hence, identity).
+
+    Arguments:
+        values: A torch Tensor or a dict containing values for Featureparameters.
+
+    Returns:
+        A Tensor or dict containing transformed (scaled and/or shifted) Featureparameters.
+    """
+    in_features = len(inputs)
+    format_to_dict = format_to_dict_fn(inputs)
+
+    def transform(values: ParamDictType | Tensor, to_dict: bool = True) -> ParamDictType | Tensor:
+        if not isinstance(values, dict):
+            values = format_to_dict(values)
+            if in_features == 1:
+                values = {
+                    key: input_scaling * (val + input_shifting) for key, val in values.items()
+                }
+            else:
+                values = {
+                    key: input_scaling[idx] * (val + input_shifting[idx])
+                    for idx, (key, val) in enumerate(values.items())
+                }
+        return values
+
+    return transform
 
 
 class QNN(QuantumModel):
@@ -53,13 +125,14 @@ class QNN(QuantumModel):
         self,
         circuit: QuantumCircuit,
         observable: list[AbstractBlock] | AbstractBlock,
-        transform: Callable[[Tensor], Tensor] = None,  # transform output of the QNN
         backend: BackendName = BackendName.PYQTORCH,
         diff_mode: DiffMode = DiffMode.AD,
         measurement: Measurements | None = None,
         noise: Noise | None = None,
         configuration: BackendConfiguration | dict | None = None,
         inputs: list[sympy.Basic | str] | None = None,
+        input_transform: Callable[[Tensor], Tensor] = lambda x: x,
+        output_transform: Callable[[Tensor], Tensor] = lambda x: x,
     ):
         """Initialize the QNN.
 
@@ -69,16 +142,18 @@ class QNN(QuantumModel):
 
         Args:
             circuit: The quantum circuit to use for the QNN.
-            transform: A transformation applied to the output of the QNN.
-            inputs: Tuple that indicates the order of variables of the tensors that are passed
-                to the model. Given input tensors `xs = torch.rand(batch_size, input_size:=2)` a QNN
-                with `inputs=("t", "x")` will assign `t, x = xs[:,0], xs[:,1]`.
+            observable: The observable.
             backend: The chosen quantum backend.
             diff_mode: The differentiation engine to use. Choices 'gpsr' or 'ad'.
             measurement: optional measurement protocol. If None,
                 use exact expectation value with a statevector simulator
             noise: A noise model to use.
             configuration: optional configuration for the backend
+            inputs: Tuple that indicates the order of variables of the tensors that are passed
+                to the model. Given input tensors `xs = torch.rand(batch_size, input_size:=2)` a QNN
+                with `inputs=("t", "x")` will assign `t, x = xs[:,0], xs[:,1]`.
+            input_transform: A function to scale and shift the featureparameters
+            output_transform: A function to scale and shift the outputs
         """
         super().__init__(
             circuit,
@@ -91,8 +166,6 @@ class QNN(QuantumModel):
         )
         if self.out_features is None:
             raise ValueError("You need to provide at least one observable in the QNN constructor")
-        self.transform = transform if transform else lambda x: x
-
         if (inputs is not None) and (len(self.inputs) == len(inputs)):
             self.inputs = [sympy.symbols(x) if isinstance(x, str) else x for x in inputs]  # type: ignore[union-attr]
         elif (inputs is None) and len(self.inputs) <= 1:
@@ -115,6 +188,9 @@ class QNN(QuantumModel):
                 You can also pass a list of sympy symbols.
             """
             )
+        self.format_to_dict = format_to_dict_fn(self.inputs)
+        self.input_transform = input_transform
+        self.output_transform = output_transform
 
     def forward(
         self,
@@ -159,7 +235,11 @@ class QNN(QuantumModel):
         state: Tensor | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
-        return super().run(values=self._format_to_dict(values), state=state, endianness=endianness)
+        return super().run(
+            values=self.format_to_dict(self.input_transform(values)),
+            state=state,
+            endianness=endianness,
+        )
 
     def sample(
         self,
@@ -171,7 +251,7 @@ class QNN(QuantumModel):
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         return super().sample(
-            values=self._format_to_dict(values),
+            values=self.format_to_dict(self.input_transform(values)),
             n_shots=n_shots,
             state=state,
             noise=noise,
@@ -195,33 +275,15 @@ class QNN(QuantumModel):
             measurement = self._measurement
         if noise is None:
             noise = self._noise
-        return self.transform(
+        return self.output_transform(
             super().expectation(
-                values=self._format_to_dict(values),
+                values=self.format_to_dict(self.input_transform(values)),
                 state=state,
                 measurement=measurement,
                 endianness=endianness,
                 noise=noise,
             )
         )
-
-    def _format_to_dict(self, values: Tensor) -> dict[str, Tensor]:
-        """Format an input tensor into the format required by the forward pass.
-
-        The tensor is assumed to have dimensions: n_batches x in_features where in_features
-        corresponds to the number of input features of the QNN
-        """
-        # for backwards compat...
-        if isinstance(values, dict):
-            return values
-
-        if len(values.size()) == 1:
-            values = values.reshape(-1, 1)
-        msg = f"Model expects in_features={self.in_features} but got {values.size()[1]}."
-        assert len(values.size()) == 2, msg
-        assert values.size()[1] == self.in_features, msg
-
-        return {var.name: values[:, self.inputs.index(var)] for var in self.inputs}
 
     def _to_dict(self, save_params: bool = False) -> dict:
         d = dict()
