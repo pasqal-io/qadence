@@ -267,8 +267,8 @@ def get_qnn(
         backend=BackendName.PYQTORCH,
         diff_mode=DiffMode.AD,
         inputs=inputs,
-        input_transform=input_transform,
-        output_transform=output_transform,
+        transform_input=input_transform,
+        transform_output=output_transform,
     )
     return model
 

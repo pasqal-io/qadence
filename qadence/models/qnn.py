@@ -20,7 +20,9 @@ from qadence.types import BackendName, DiffMode, Endianness, ParamDictType
 logger = get_logger(__name__)
 
 
-def transform_output(output_scaling: Tensor, output_shifting: Tensor) -> Callable[[Tensor], Tensor]:
+def transform_output(
+    output_scaling: Tensor | nn.Parameter, output_shifting: Tensor | nn.Parameter
+) -> Callable[[Tensor], Tensor]:
     def transform(outputs: Tensor) -> Tensor:
         return output_scaling * outputs + output_shifting
 
@@ -37,56 +39,56 @@ def format_to_dict_fn(
     """
     in_features = len(inputs)
 
-    def to_dict(values: Tensor | ParamDictType) -> ParamDictType:
-        # for backwards compat...
-        if isinstance(values, dict):
-            return values
+    def tensor_to_dict(values: Tensor | ParamDictType) -> ParamDictType:
+        if isinstance(values, Tensor):
+            values = values.reshape(-1, 1) if len(values.size()) == 1 else values
+            if not values.shape[1] == in_features:
+                logger.error(f"Model expects in_features={in_features} but got {values.shape[1]}.")
+            values = {fparam.name: values[:, inputs.index(fparam)] for fparam in inputs}  # type: ignore[union-attr]
+        return values
 
-        if len(values.size()) == 1:
-            values = values.reshape(-1, 1)
-        msg = f"Model expects in_features={in_features} but got {values.size()[1]}."
-        assert len(values.size()) == 2, msg
-        assert values.size()[1] == in_features, msg
-
-        return {fparam.name: values[:, inputs.index(fparam)] for fparam in inputs}  # type: ignore[union-attr]
-
-    return to_dict
+    return tensor_to_dict
 
 
 def transform_input(
-    input_scaling: Tensor, input_shifting: Tensor, inputs: list[sympy.Symbol | str]
+    input_scaling: Tensor | nn.Parameter,
+    input_shifting: Tensor | nn.Parameter,
+    inputs: list[sympy.Symbol | str],
 ) -> Callable[[ParamDictType | Tensor], ParamDictType | Tensor]:
     """
-    Returns a function which scales and shifts the input values/ FeatureParameters 'values'.
+    Returns a function which scales and shifts the user-provided values for the FeatureParameters.
 
-    which can either be a torch Tensor in when using torch.nn.Module, or a standard values dict.
-
-    Scales and shifts the tensors in the values dict, containing Featureparameters.
-    Transformation of inputs can be used to speed up training and avoid potential issues
-    with numerical stability that can arise due to differing feature scales.
-    If none are provided, it uses 0. for shifting and 1. for scaling (hence, identity).
-
+    Note that 'input_scaling' and 'input_shifting' have to contain values for each FeatureParameter.
     Arguments:
-        values: A torch Tensor or a dict containing values for Featureparameters.
+        input_scaling: A torch tensor or torch.nn.Parameter for scaling the input.
+        input_shifting: A torch tensor or torch.nn.Parameter for shifting the input.
+        inputs: A list of sympy symbols or strings of the FeatureParameters.
 
     Returns:
-        A Tensor or dict containing transformed (scaled and/or shifted) Featureparameters.
+        A function for scaling and shifting FeatureParameters passed either as a dict or Tensor.
     """
-    in_features = len(inputs)
+    input_scaling, input_shifting = list(
+        map(lambda t: t.reshape(-1, 1) if len(t.shape) < 2 else t, [input_scaling, input_shifting])
+    )
     format_to_dict = format_to_dict_fn(inputs)
 
-    def transform(values: ParamDictType | Tensor, to_dict: bool = True) -> ParamDictType | Tensor:
-        if not isinstance(values, dict):
+    def transform(values: ParamDictType | Tensor) -> ParamDictType | Tensor:
+        """Scales and shifts user-provided FeatureParameters 'values'.
+
+        'values' has to either be a Tensor when using torch.nn.Module, or a standard values dict.
+
+        Arguments:
+            values: A torch Tensor or a dict containing values for Featureparameters.
+        Returns:
+            A dict containing scaled and shifted FeatureParameters.
+        """
+        if isinstance(values, Tensor):
             values = format_to_dict(values)
-            if in_features == 1:
-                values = {
-                    key: input_scaling * (val + input_shifting) for key, val in values.items()
-                }
-            else:
-                values = {
-                    key: input_scaling[idx] * (val + input_shifting[idx])
-                    for idx, (key, val) in enumerate(values.items())
-                }
+        values = {
+            fparam: input_scaling[:, inputs.index(fparam)]
+            * (values[fparam] + input_shifting[:, inputs.index(fparam)])
+            for fparam in inputs
+        }
         return values
 
     return transform
@@ -131,8 +133,8 @@ class QNN(QuantumModel):
         noise: Noise | None = None,
         configuration: BackendConfiguration | dict | None = None,
         inputs: list[sympy.Basic | str] | None = None,
-        input_transform: Callable[[Tensor], Tensor] = lambda x: x,
-        output_transform: Callable[[Tensor], Tensor] = lambda x: x,
+        transform_input: Callable[[Tensor], Tensor] = lambda x: x,
+        transform_output: Callable[[Tensor], Tensor] = lambda x: x,
     ):
         """Initialize the QNN.
 
@@ -152,8 +154,8 @@ class QNN(QuantumModel):
             inputs: Tuple that indicates the order of variables of the tensors that are passed
                 to the model. Given input tensors `xs = torch.rand(batch_size, input_size:=2)` a QNN
                 with `inputs=("t", "x")` will assign `t, x = xs[:,0], xs[:,1]`.
-            input_transform: A function to scale and shift the featureparameters
-            output_transform: A function to scale and shift the outputs
+            transform_input: An optional function to scale and shift the FeatureParameters.
+            transform_output: A optional function to scale and shift the outputs.
         """
         super().__init__(
             circuit,
@@ -164,7 +166,7 @@ class QNN(QuantumModel):
             configuration=configuration,
             noise=noise,
         )
-        if self.out_features is None:
+        if self._observable is None:
             raise ValueError("You need to provide at least one observable in the QNN constructor")
         if (inputs is not None) and (len(self.inputs) == len(inputs)):
             self.inputs = [sympy.symbols(x) if isinstance(x, str) else x for x in inputs]  # type: ignore[union-attr]
@@ -189,8 +191,8 @@ class QNN(QuantumModel):
             """
             )
         self.format_to_dict = format_to_dict_fn(self.inputs)  # type: ignore[arg-type]
-        self.input_transform = input_transform
-        self.output_transform = output_transform
+        self.transform_input = transform_input
+        self.transform_output = transform_output
 
     def forward(
         self,
@@ -236,7 +238,7 @@ class QNN(QuantumModel):
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         return super().run(
-            values=self.format_to_dict(self.input_transform(values)),
+            values=self.format_to_dict(self.transform_input(values)),
             state=state,
             endianness=endianness,
         )
@@ -251,7 +253,7 @@ class QNN(QuantumModel):
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         return super().sample(
-            values=self.format_to_dict(self.input_transform(values)),
+            values=self.format_to_dict(self.transform_input(values)),
             n_shots=n_shots,
             state=state,
             noise=noise,
@@ -275,9 +277,9 @@ class QNN(QuantumModel):
             measurement = self._measurement
         if noise is None:
             noise = self._noise
-        return self.output_transform(
+        return self.transform_output(
             super().expectation(
-                values=self.format_to_dict(self.input_transform(values)),
+                values=self.format_to_dict(self.transform_input(values)),
                 state=state,
                 measurement=measurement,
                 endianness=endianness,
