@@ -43,7 +43,9 @@ def format_to_dict_fn(
         if isinstance(values, Tensor):
             values = values.reshape(-1, 1) if len(values.size()) == 1 else values
             if not values.shape[1] == in_features:
-                logger.error(f"Model expects in_features={in_features} but got {values.shape[1]}.")
+                raise ValueError(
+                    f"Model expects in_features={in_features} but got {values.shape[1]}."
+                )
             values = {fparam.name: values[:, inputs.index(fparam)] for fparam in inputs}  # type: ignore[union-attr]
         return values
 
