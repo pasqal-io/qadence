@@ -1,22 +1,10 @@
 from __future__ import annotations
 
-from typing import Callable
-
 import pytest
 import torch
 
 import qadence as qd
-from qadence.finitediff import finitediff
-
-
-def _torch_derivative(
-    ufa: Callable, x: torch.Tensor, derivative_indices: tuple[int, ...]
-) -> torch.Tensor:
-    y = ufa(x)
-    for idx in derivative_indices:
-        out = torch.autograd.grad(y, x, torch.ones_like(y), create_graph=True)[0]
-        y = out[:, idx]
-    return y.reshape(-1, 1)
+from qadence.backends.utils import _torch_derivative, finitediff
 
 
 @pytest.mark.parametrize(

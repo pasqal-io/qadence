@@ -378,7 +378,8 @@ class PyQHamiltonianEvolution(Module):
         """Approximate jacobian of the evolved operator with respect to time evolution."""
         return finitediff(
             lambda t: self._unitary(time_evolution=t, hamiltonian=self._hamiltonian(self, values)),
-            values[self.param_names[0]],
+            values[self.param_names[0]].reshape(-1, 1),
+            (0,),
         )
 
     def jacobian_generator(self, values: dict[str, Tensor]) -> Tensor:
@@ -405,7 +406,8 @@ class PyQHamiltonianEvolution(Module):
             lambda v: self._unitary(
                 time_evolution=self._time_evolution(values), hamiltonian=_generator(v)
             ),
-            values[self.param_names[1]],
+            values[self.param_names[1]].reshape(-1, 1),
+            (0,),
         )
 
     def dagger(self, values: dict[str, Tensor]) -> Tensor:

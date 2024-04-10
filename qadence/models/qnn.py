@@ -8,6 +8,7 @@ from torch import Tensor, nn
 
 from qadence.backend import BackendConfiguration, ConvertedObservable
 from qadence.backends.api import config_factory
+from qadence.backends.utils import _torch_derivative, finitediff
 from qadence.blocks.abstract import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.logger import get_logger
@@ -15,7 +16,7 @@ from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.models.quantum_model import QuantumModel
 from qadence.noise import Noise
-from qadence.types import BackendName, DiffMode, Endianness, ParamDictType
+from qadence.types import BackendName, DiffMode, Endianness, InputDiffMode, ParamDictType
 
 logger = get_logger(__name__)
 
@@ -137,6 +138,7 @@ class QNN(QuantumModel):
         inputs: list[sympy.Basic | str] | None = None,
         transform_input: Callable[[Tensor], Tensor] = lambda x: x,
         transform_output: Callable[[Tensor], Tensor] = lambda x: x,
+        input_diff_mode: InputDiffMode | str = InputDiffMode.AD,
     ):
         """Initialize the QNN.
 
@@ -195,6 +197,14 @@ class QNN(QuantumModel):
         self.format_to_dict = format_to_dict_fn(self.inputs)  # type: ignore[arg-type]
         self.transform_input = transform_input
         self.transform_output = transform_output
+
+        self.input_diff_mode = InputDiffMode(input_diff_mode)
+        if self.input_diff_mode == InputDiffMode.FD:
+            self.__derivative = finitediff
+        elif self.input_diff_mode == InputDiffMode.AD:
+            self.__derivative = _torch_derivative  # type: ignore[assignment]
+        else:
+            raise ValueError(f"Unkown forward diff mode: {self.input_diff_mode}")
 
     def forward(
         self,
@@ -288,6 +298,9 @@ class QNN(QuantumModel):
                 noise=noise,
             )
         )
+
+    def _derivative(self, x: Tensor, derivative_indices: tuple[int, ...]) -> Tensor:
+        return self.__derivative(self, x, derivative_indices)
 
     def _to_dict(self, save_params: bool = False) -> dict:
         d = dict()

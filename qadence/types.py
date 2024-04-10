@@ -401,3 +401,15 @@ class ReadOutOptimization(StrEnum):
 
 ParamDictType = dict[str, ArrayLike]
 DifferentiableExpression = Callable[..., ArrayLike]
+
+
+class InputDiffMode(StrEnum):
+    """Derivative modes w.r.t.
+
+    inputs of UFAs.
+    """
+
+    AD = "ad"
+    """Reverse automatic differentiation."""
+    FD = "fd"
+    """Central finite differencing."""
