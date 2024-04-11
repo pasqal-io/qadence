@@ -289,11 +289,23 @@ class TransformedModule(torch.nn.Module):
     def to(self, *args: Any, **kwargs: Any) -> TransformedModule:
         try:
             self.model = self.model.to(*args, **kwargs)
-            self._input_scaling = self._input_scaling.to(*args, **kwargs)
-            self._input_shifting = self._input_shifting.to(*args, **kwargs)
-            self._output_scaling = self._output_scaling.to(*args, **kwargs)
-            self._output_shifting = self._output_shifting.to(*args, **kwargs)
+            if isinstance(self.model, QuantumModel):
+                device = self.model._circuit.native.device
+                dtype = (
+                    torch.float64
+                    if self.model._circuit.native.dtype == torch.cdouble
+                    else torch.float32
+                )
 
+                self._input_scaling = self._input_scaling.to(device=device, dtype=dtype)
+                self._input_shifting = self._input_shifting.to(device=device, dtype=dtype)
+                self._output_scaling = self._output_scaling.to(device=device, dtype=dtype)
+                self._output_shifting = self._output_shifting.to(device=device, dtype=dtype)
+            elif isinstance(self.model, torch.nn.Module):
+                self._input_scaling = self._input_scaling.to(*args, **kwargs)
+                self._input_shifting = self._input_shifting.to(*args, **kwargs)
+                self._output_scaling = self._output_scaling.to(*args, **kwargs)
+                self._output_shifting = self._output_shifting.to(*args, **kwargs)
             logger.debug(f"Moved {self} to {args}, {kwargs}.")
         except Exception as e:
             logger.warning(f"Unable to move {self} to {args}, {kwargs} due to {e}.")
