@@ -1,16 +1,18 @@
-<h1 align="center" style="display: inline-block;">
+<p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./docs/assets/logo/qadence_logo_white.svg" width="75%">
     <source media="(prefers-color-scheme: light)" srcset="./docs/assets/logo/qadence_logo.svg" width="75%">
     <img alt="Qadence logo" src="./docs/assets/logo/qadence_logo.svg" width="75%">
   </picture>
-</h1>
+</p>
 
+<p align="center">
 [![Linting](https://github.com/pasqal-io/qadence/actions/workflows/lint.yml/badge.svg)](https://github.com/pasqal-io/qadence/actions/workflows/lint.yml)
 [![Tests](https://github.com/pasqal-io/qadence/actions/workflows/test_fast.yml/badge.svg)](https://github.com/pasqal-io/qadence/actions/workflows/test_fast.yml)
 [![Documentation](https://github.com/pasqal-io/qadence/actions/workflows/build_docs.yml/badge.svg)](https://pasqal-io.github.io/qadence/latest)
 [![Pypi](https://badge.fury.io/py/qadence.svg)](https://pypi.org/project/qadence/)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+</p>
 
 **Qadence** is a Python package that provides a simple interface to build **digital-analog quantum
 programs** with tunable qubit interactions and arbitrary register topologies realizable on neutral atom devices.
