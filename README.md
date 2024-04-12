@@ -52,11 +52,10 @@ pip install qadence
 
 The default, pre-installed backend for Qadence is [PyQTorch](https://github.com/pasqal-io/pyqtorch), a differentiable state vector simulator for digital-analog simulation based on `PyTorch`. It is possible to install additional, `PyTorch` -based backends and the circuit visualization library using the following extras:
 
-* `pulser`: The [Pulser](https://github.com/pasqal-io/Pulser) backend for composing, simulating and executing pulse sequences for neutral-atom quantum devices.
-* `braket`: The [Braket](https://github.com/amazon-braket/amazon-braket-sdk-python) backend, an open source library that provides a framework for interacting with quantum computing hardware devices through Amazon Braket.
 * `visualization`: A visualization library to display quantum circuit diagrams.
 * `protocols`: A collection of [protocols](https://github.com/pasqal-io/qadence-protocols) for error mitigation in Qadence.
 * `libs`: A collection of [functionalities](https://github.com/pasqal-io/qadence-libs) for graph machine learning problems build on top of Qadence.
+* `pulser`: The [Pulser](https://github.com/pasqal-io/Pulser) backend for composing, simulating and executing pulse sequences for neutral-atom quantum devices (experimental).
 
 Qadence also supports a `JAX` engine which is currently supporting the [Horqrux](https://github.com/pasqal-io/horqrux) backend. `horqrux` is currently only available via the [low-level API](examples/backends/low_level/horqrux_backend.py).
 
@@ -64,7 +63,7 @@ Qadence also supports a `JAX` engine which is currently supporting the [Horqrux]
 To install individual extras, use the following syntax (**IMPORTANT** Make sure to use quotes):
 
 ```bash
-pip install "qadence[braket,pulser,visualization]"
+pip install "qadence[pulser,visualization]"
 ```
 
 To install all available extras, simply do:
