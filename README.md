@@ -1,10 +1,4 @@
-<style>
-h1 {
-  display: inline-block;
-}
-</style>
-
-<h1 align="center">
+<h1 align="center" style="display: inline-block;">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./docs/assets/logo/qadence_logo_white.svg" width="75%">
     <source media="(prefers-color-scheme: light)" srcset="./docs/assets/logo/qadence_logo.svg" width="75%">
@@ -27,7 +21,7 @@ programs** with tunable qubit interactions and arbitrary register topologies rea
 
 ## Feature highlights
 
-<h1 align="center">
+<h1 align="center" style="display: inline-block;">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/assets/qadence_arch.svg" width="75%">
   <source media="(prefers-color-scheme: light)" srcset="./docs/assets/qadence_arch.svg" width="75%">
