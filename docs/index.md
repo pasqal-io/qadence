@@ -1,12 +1,6 @@
 #
-<div style="width:75%; margin: auto; margin-top: 50px; margin-bottom: 50px;">
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./assets/logo/qadence_logo_white.svg">
-  <source media="(prefers-color-scheme: light)" srcset="./assets/logo/qadence_logo.svg">
-  <img alt="Qadence logo" src="./assets/logo/qadence_logo.svg">
-</picture>
-</div>
+![qadence-logo](./assets/logo/qadence_logo_white.svg#only-dark)
+![qadence-logo](./assets/logo/qadence_logo.svg#only-light)
 
 **For a high-level overview of Qadence features, [check out our white paper](https://arxiv.org/abs/2401.09915).**
 
