@@ -1,4 +1,4 @@
-<div style="width:75%; margin: auto; margin-top: 50px; margin-bottom: 50px;">
+<div style="margin-left: 100px; margin-right: 100px; margin-top: 100px; margin-bottom: 100px;">
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/assets/logo/qadence_logo_white.svg">
