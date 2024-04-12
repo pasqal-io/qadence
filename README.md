@@ -21,13 +21,11 @@ programs** with tunable qubit interactions and arbitrary register topologies rea
 
 ## Feature highlights
 
-<h1 align="center" style="display: inline-block;">
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/assets/qadence_arch.svg" width="75%">
-  <source media="(prefers-color-scheme: light)" srcset="./docs/assets/qadence_arch.svg" width="75%">
-  <img alt="Qadence architecture" src="./docs/assets/qadence_arch.svg" width="75%">
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/assets/qadence_arch.svg" width="75%" align="center">
+  <source media="(prefers-color-scheme: light)" srcset="./docs/assets/qadence_arch.svg" width="75%" align="center">
+  <img alt="Qadence architecture" src="./docs/assets/qadence_arch.svg" width="75%" align="center">
 </picture>
-</h1>
 
 * A [block-based system](docs/tutorials/getting_started.md) for composing _**complex digital-analog
   programs**_ in a flexible and scalable manner, inspired by the Julia quantum SDK
