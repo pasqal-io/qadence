@@ -1,3 +1,8 @@
+<style>
+h1 {
+  display: inline-block;
+}
+</style>
 
 <h1 align="center">
   <picture>
