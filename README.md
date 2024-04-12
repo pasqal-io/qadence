@@ -13,14 +13,12 @@
 [![Pypi](https://badge.fury.io/py/qadence.svg)](https://pypi.org/project/qadence/)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
+**Qadence** is a Python package that provides a simple interface to build **digital-analog quantum
+programs** with tunable qubit interactions and arbitrary register topologies realizable on neutral atom devices.
 
 **For a high-level overview of Qadence features, [check out our white paper](https://arxiv.org/abs/2401.09915).**
 
 **For more detailed information, [check out the documentation](https://pasqal-io.github.io/qadence/latest/).**
-
-**Qadence** is a Python package that provides a simple interface to build _**digital-analog quantum
-programs**_ with tunable qubit interaction defined on _**arbitrary register topologies**_ realizable on neutral atom devices.
-
 
 ## Feature highlights
 
