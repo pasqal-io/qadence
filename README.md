@@ -1,10 +1,11 @@
 
-<h1 align="center" style="margin-top: 50px; margin-bottom: 50px;">
+<h1 align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./docs/assets/logo/qadence_logo_white.svg" width="75%">
     <source media="(prefers-color-scheme: light)" srcset="./docs/assets/logo/qadence_logo.svg" width="75%">
     <img alt="Qadence logo" src="./docs/assets/logo/qadence_logo.svg" width="75%">
   </picture>
+  </br>
 </h1>
 
 
