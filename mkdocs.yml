@@ -91,6 +91,13 @@ theme:
   - content.code.annotate
 
   palette:
+  - media: "(prefers-color-scheme)"
+    scheme: default
+    primary: custom
+    accent: custom
+    toggle:
+      icon: material/brightness-auto
+      name: Switch to light mode
   - media: "(prefers-color-scheme: light)"
     scheme: default
     primary: custom
