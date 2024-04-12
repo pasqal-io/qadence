@@ -82,8 +82,6 @@ theme:
   logo: assets/logo/qadence_logo_small_white.svg
   features:
   - content.code.annotate
-  - content.action.view
-  - content.action.edit
   - navigation.tabs
   - navigation.indexes
   - navigation.sections
@@ -95,23 +93,14 @@ theme:
     scheme: default
     primary: custom
     accent: custom
-    toggle:
-      icon: material/brightness-auto
-      name: Switch to light mode
   - media: "(prefers-color-scheme: light)"
     scheme: default
     primary: custom
     accent: custom
-    toggle:
-      icon: material/weather-sunny
-      name: Switch to dark mode
   - media: "(prefers-color-scheme: dark)"
     scheme: slate
     primary: custom
     accent: custom
-    toggle:
-      icon: material/weather-night
-      name: Switch to light mode
 
 markdown_extensions:
 - admonition  # for notes
