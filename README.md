@@ -1,5 +1,5 @@
 
-<h1 align="center" margin-top="50px" margin-bottom="50px">
+<h1 align="center" margin-top="50px" margin-bottom="100px">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./docs/assets/logo/qadence_logo_white.svg" width="75%">
     <source media="(prefers-color-scheme: light)" srcset="./docs/assets/logo/qadence_logo.svg" width="75%">
