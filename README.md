@@ -3,7 +3,7 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/assets/logo/qadence_logo_white.svg">
   <source media="(prefers-color-scheme: light)" srcset="./docs/assets/logo/qadence_logo.svg">
-  <img alt="Qadence logo" src="./assets/logo/qadence_logo.svg">
+  <img alt="Qadence logo" src="./docs/assets/logo/qadence_logo.svg">
 </picture>
 </div>
 
