@@ -6,10 +6,10 @@ repo_name: "qadence"
 nav:
 
   - Home: index.md
-  - Qadence:
-    - Qadence: qadence.md
+  - Getting started:
+    - getting_started.md
     - Code of conduct: CODE_OF_CONDUCT.md
-    - Getting started: tutorials/getting_started.md
+    - Block system: tutorials/getting_started.md
     - Quantum models: tutorials/quantummodels.md
     - Parametric programs: tutorials/parameters.md
     - Quantum registers: tutorials/register.md
