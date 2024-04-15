@@ -1,27 +1,4 @@
 #
-![qadence-logo](./assets/logo/qadence_logo_white.svg#only-dark)
-![qadence-logo](./assets/logo/qadence_logo.svg#only-light)
-
-**Qadence** is a Python package that provides a simple interface to build **digital-analog quantum
-programs** with tunable qubit interactions and arbitrary register topologies realizable on neutral atom devices.
-
-**For a high-level overview of Qadence features, [check out our white paper](https://arxiv.org/abs/2401.09915).**
-
-## Feature highlights
-
-* A [block-based system](tutorials/getting_started.md) for composing _**complex digital-analog
-  programs**_ in a flexible and scalable manner, inspired by the Julia quantum SDK
-  [Yao.jl](https://github.com/QuantumBFS/Yao.jl) and functional programming concepts.
-
-* An intuitive [expression-based system](tutorials/parameters.md) developed on top of the symbolic library [Sympy](https://www.sympy.org/en/index.html) to construct _**parametric quantum programs**_ easily.
-
-* Out-of-the-box _**automatic differentiability**_ of quantum programs with [PyTorch](https://pytorch.org/) integration.
-
-* [High-order generalized parameter shift rules](advanced_tutorials/differentiability.md) for _**differentiating parametrized quantum operations**_.
-
-* A [simple interface](digital_analog_qc/analog-basics.md) to work with _**interacting neutral-atom qubit systems**_
-  using [arbitrary registers topologies](tutorials/register.md).
-
 In following are some examples of Qadence possibilites in the analog, digital-analog and digital paradigms.
 
 ## Analog emulation of a perfect state transfer

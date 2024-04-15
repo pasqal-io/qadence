@@ -1,0 +1,68 @@
+<!-- Custom HTML site displayed as the Home chapter -->
+
+{% extends "main.html" %}
+{% block tabs %}
+{{ super() }}
+
+<link rel="css" type="text/css" href="./css/home.css" />
+
+<!-- Main site Entry button descriptions -->
+<section class="hero-container">
+    <div class="md-grid md-typeset">
+        <div class="hero-section">
+            <div class="logo-container">
+                <div class="logo-image">
+                    <img src="./assets/logo/qadence_logo_white.svg" draggable="false">
+                </div>
+            </div>
+            <div class="button-container">
+                <a href="{{ page.next_page.url | url }}" class="md-button md-button--primary">
+                    Get started
+                </a>
+                <a href="{{ config.repo_url }}" class="md-button">
+                    Go to GitHub
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="main-features">
+    <div class="md-grid md-typeset">
+        <div class="header">
+            <p>A Python package for differentiable digital-analog quantum programs.</p>
+        </div>
+        <div class="features">
+            <ul>
+                <li>A</li>
+                <li>B</li>
+                <li>C</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- THINGS TO INCLUDE:
+ **Qadence** is a Python package that provides a simple interface to build **digital-analog quantum
+programs** with tunable qubit interactions and arbitrary register topologies realizable on neutral atom devices.
+
+**For a high-level overview of Qadence features, [check out our white paper](https://arxiv.org/abs/2401.09915).**
+
+## Feature highlights
+
+* A [block-based system](tutorials/getting_started.md) for composing _**complex digital-analog
+  programs**_ in a flexible and scalable manner, inspired by the Julia quantum SDK
+  [Yao.jl](https://github.com/QuantumBFS/Yao.jl) and functional programming concepts.
+
+* An intuitive [expression-based system](tutorials/parameters.md) developed on top of the symbolic library [Sympy](https://www.sympy.org/en/index.html) to construct _**parametric quantum programs**_ easily.
+
+* Out-of-the-box _**automatic differentiability**_ of quantum programs with [PyTorch](https://pytorch.org/) integration.
+
+* [High-order generalized parameter shift rules](advanced_tutorials/differentiability.md) for _**differentiating parametrized quantum operations**_.
+
+* A [simple interface](digital_analog_qc/analog-basics.md) to work with _**interacting neutral-atom qubit systems**_
+  using [arbitrary registers topologies](tutorials/register.md). -->
+
+{% endblock %}
+{% block content %}{% endblock %}
+{% block footer %}{% endblock %}

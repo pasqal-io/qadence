@@ -1,0 +1,88 @@
+/*
+CSS for the homepage
+*/
+
+/*
+TOP IMAGE
+*/
+.md-main {
+    flex-grow: 0
+}
+
+.md-main__inner {
+    display: flex;
+    height: 100%;
+}
+
+.hero-container {
+    background: var(--md-primary-fg-color);
+}
+
+.hero-section {
+    color: var(--md-primary-bg-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.logo-container{
+    padding-top: 3.0rem;
+    padding-bottom: 1.5rem;
+    width:100%;
+}
+
+.logo-image{
+    margin: auto;
+    width: 60%;
+    min-width: 20rem;
+}
+
+.button-container {
+    max-width: 20rem;
+    margin-top: 1.0rem;
+    margin-bottom: 3.5rem;
+}
+
+.hero-section .md-button {
+    margin: 10px;
+    color: var(--md-primary-bg-color)
+}
+
+.hero-section .md-button--primary {
+    background-color: var(--md-primary-bg-color);
+    color: var(--md-primary-fg-color);
+    border-color: var(--md-primary-bg-color)
+}
+
+.hero-section .md-button:focus,
+.hero-section .md-button:hover {
+    background-color: var(--md-accent-fg-color);
+    color: var(--md-default-bg-color);
+    border-color: var(--md-accent-fg-color)
+}
+
+/*
+FEATURE SECTION
+*/
+.main-features{
+    margin-top: 50px;
+}
+
+.header{
+    width:100%;
+    text-align: center;
+    margin-right: auto;
+    margin-left: auto;
+    font-size: 25px;
+    font-weight: 500;
+}
+
+.features{
+    width:60%;
+    margin-right: auto;
+    margin-left: auto;
+    font-size: 25px;
+    font-weight: 500;
+}
+
