@@ -1,16 +1,11 @@
 #
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./assets/logo/qadence_logo.svg">
-  <source media="(prefers-color-scheme: light)" srcset="./assets/logo/qadence_logo.svg">
-  <img alt="Qadence logo" src="./assets/logo/qadence_logo.svg">
-</picture>
+![qadence-logo](./assets/logo/qadence_logo_white.svg#only-dark)
+![qadence-logo](./assets/logo/qadence_logo.svg#only-light)
 
+**Qadence** is a Python package that provides a simple interface to build **digital-analog quantum
+programs** with tunable qubit interactions and arbitrary register topologies realizable on neutral atom devices.
 
 **For a high-level overview of Qadence features, [check out our white paper](https://arxiv.org/abs/2401.09915).**
-
-**Qadence** is a Python package that provides a simple interface to build _**digital-analog quantum
-programs**_ with tunable qubit interaction defined on _**arbitrary register topologies**_
-realizable on neutral atom devices.
 
 ## Feature highlights
 
@@ -18,16 +13,14 @@ realizable on neutral atom devices.
   programs**_ in a flexible and scalable manner, inspired by the Julia quantum SDK
   [Yao.jl](https://github.com/QuantumBFS/Yao.jl) and functional programming concepts.
 
-* A [simple interface](digital_analog_qc/analog-basics.md) to work with _**interacting neutral-atom qubit systems**_
-  using [arbitrary registers topologies](tutorials/register.md).
-
 * An intuitive [expression-based system](tutorials/parameters.md) developed on top of the symbolic library [Sympy](https://www.sympy.org/en/index.html) to construct _**parametric quantum programs**_ easily.
-
-* [High-order generalized parameter shift rules](advanced_tutorials/differentiability.md) for _**differentiating parametrized quantum operations**_.
 
 * Out-of-the-box _**automatic differentiability**_ of quantum programs with [PyTorch](https://pytorch.org/) integration.
 
-* _**Efficient execution**_ on a variety of different purpose backends: from state vector simulators to tensor network emulators and real devices.
+* [High-order generalized parameter shift rules](advanced_tutorials/differentiability.md) for _**differentiating parametrized quantum operations**_.
+
+* A [simple interface](digital_analog_qc/analog-basics.md) to work with _**interacting neutral-atom qubit systems**_
+  using [arbitrary registers topologies](tutorials/register.md).
 
 In following are some examples of Qadence possibilites in the analog, digital-analog and digital paradigms.
 
