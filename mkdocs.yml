@@ -80,7 +80,7 @@ edit_uri: edit/main/docs/
 
 theme:
   name: material
-  custom_dir: docs/home/
+  custom_dir: docs/overrides/
   logo: assets/logo/qadence_logo_small_white.svg
   features:
   - content.code.annotate
