@@ -58,7 +58,7 @@ nav:
     - Constructors: qadence/constructors.md
     - Transpilation: qadence/transpile.md
     - Execution: qadence/execution.md
-    - Quantum models: models.md
+    - Quantum models: qadence/models.md
     - QML tools: qadence/ml_tools.md
     - Serialization: qadence/serialization.md
     - Types: qadence/types.md
