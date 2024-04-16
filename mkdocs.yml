@@ -4,11 +4,16 @@ site_url: "https://pasqal-io.github.io/qadence/"
 repo_name: "qadence"
 
 nav:
-
   - Home: index.md
   - Getting started:
-    - getting_started.md
-    - Code of conduct: CODE_OF_CONDUCT.md
+    - What is Qadence?: markdowns/getting_started/what_is_qadence.md
+    - Installation: markdowns/getting_started/installation.md
+    - First example: markdowns/getting_started/first_example.md
+    - Contributing: markdowns/CONTRIBUTING.md
+    - Code of conduct: markdowns/CODE_OF_CONDUCT.md
+    
+
+  - Contents:
     - Block system: tutorials/getting_started.md
     - Quantum models: tutorials/quantummodels.md
     - Parametric programs: tutorials/parameters.md

@@ -1,29 +1,23 @@
-## Installation guide
-
 Qadence can be installed from PyPI with `pip` as follows:
 
 ```bash
 pip install qadence
 ```
 
-The default backend for Qadence is [PyQTorch](https://github.com/pasqal-io/pyqtorch), a differentiable state vector simulator for digital-analog simulation. It is possible to install additional backends and the circuit visualization library using the following extras:
+By default, this will also install [PyQTorch](https://github.com/pasqal-io/pyqtorch), a differentiable state vector simulator which serves as the main numerical backend for Qadence.
 
+It is possible to install additional backends and the circuit visualization library using the following extras:
+
+* `visualization`: to display quantum circuits.
 * `pulser`: the [Pulser](https://github.com/pasqal-io/Pulser) backend for composing, simulating and executing pulse sequences for neutral-atom quantum devices (in development).
-* `visualization`: to display diagrammatically quantum circuits.
-
-To just get qadence with the `pyqtorch` backend, simply run:
-
-```bash
-pip install qadence
-```
 
 To install other backends or the visualization tool, please use:
 
 ```bash
-pip install "qadence[pulser,visualization]"
+pip install "qadence[pulser, visualization]"
 ```
 
-!!! warning
+!!! note
     In order to correctly install the `visualization` extra, the `graphviz` package needs to be installed
     in your system:
 
