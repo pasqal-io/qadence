@@ -5,10 +5,11 @@ repo_name: "qadence"
 
 nav:
 
-  - Qadence:
-    - Qadence: index.md
+  - Home: index.md
+  - Getting started:
+    - getting_started.md
     - Code of conduct: CODE_OF_CONDUCT.md
-    - Getting started: tutorials/getting_started.md
+    - Block system: tutorials/getting_started.md
     - Quantum models: tutorials/quantummodels.md
     - Parametric programs: tutorials/parameters.md
     - Quantum registers: tutorials/register.md
@@ -57,7 +58,7 @@ nav:
     - Constructors: qadence/constructors.md
     - Transpilation: qadence/transpile.md
     - Execution: qadence/execution.md
-    - Quantum models: models.md
+    - Quantum models: qadence/models.md
     - QML tools: qadence/ml_tools.md
     - Serialization: qadence/serialization.md
     - Types: qadence/types.md
@@ -79,6 +80,7 @@ edit_uri: edit/main/docs/
 
 theme:
   name: material
+  custom_dir: docs/overrides/
   logo: assets/logo/qadence_logo_small_white.svg
   features:
   - content.code.annotate
@@ -98,7 +100,7 @@ theme:
         name: Switch to dark mode
   - media: "(prefers-color-scheme: dark)"
     scheme: slate
-    primary: custom
+    primary: black
     accent: custom
     toggle:
         icon: material/weather-night
@@ -148,6 +150,8 @@ extra:
 # To get nice tabs
 extra_css:
 - css/mkdocstrings.css
+- css/colors.css
+- css/home.css
 
 # For mathjax
 extra_javascript:
