@@ -6,11 +6,11 @@ repo_name: "qadence"
 nav:
   - Home: index.md
   - Getting started:
-    - Installation: markdowns/getting_started/installation.md
+    - Installation: getting_started/installation.md
     - Development & Info:
-      - Contributing: markdowns/getting_started/CONTRIBUTING.md
-      - Code of conduct: markdowns/getting_started/CODE_OF_CONDUCT.md
-      - License: markdowns/getting_started/LICENSE.md
+      - Contributing: getting_started/CONTRIBUTING.md
+      - Code of conduct: getting_started/CODE_OF_CONDUCT.md
+      - License: getting_started/LICENSE.md
     
   - Contents:
     - Block system: tutorials/getting_started.md
@@ -84,8 +84,8 @@ edit_uri: edit/main/docs/
 
 theme:
   name: material
-  custom_dir: docs/overrides/
-  logo: assets/logo/qadence_logo_small_white.svg
+  custom_dir: docs/extras/overrides/
+  logo: extras/assets/logo/qadence_logo_small_white.svg
   features:
   - content.code.annotate
   - navigation.tabs
@@ -153,13 +153,13 @@ extra:
 
 # To get nice tabs
 extra_css:
-- css/mkdocstrings.css
-- css/colors.css
-- css/home.css
+- extras/css/mkdocstrings.css
+- extras/css/colors.css
+- extras/css/home.css
 
 # For mathjax
 extra_javascript:
-  - javascripts/mathjax.js
+  - extras/javascripts/mathjax.js
   - https://polyfill.io/v3/polyfill.min.js?features=es6
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
 
