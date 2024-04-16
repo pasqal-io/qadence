@@ -7,10 +7,11 @@ nav:
   - Home: index.md
   - Getting started:
     - Installation: markdowns/getting_started/installation.md
-    - Contributing: markdowns/CONTRIBUTING.md
-    - Code of conduct: markdowns/CODE_OF_CONDUCT.md
+    - Development & Info:
+      - Contributing: markdowns/getting_started/CONTRIBUTING.md
+      - Code of conduct: markdowns/getting_started/CODE_OF_CONDUCT.md
+      - License: markdowns/getting_started/LICENCE.md
     
-
   - Contents:
     - Block system: tutorials/getting_started.md
     - Quantum models: tutorials/quantummodels.md
