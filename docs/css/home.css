@@ -37,10 +37,21 @@ TOP IMAGE
     min-width: 20rem;
 }
 
+
 .button-container {
-    max-width: 20rem;
+    font-size: 11px;
+    max-width: 30rem;
     margin-top: 1.0rem;
     margin-bottom: 3.5rem;
+}
+
+@media screen and (min-width:60em) {
+    .button-container {
+        font-size: 16px;
+        max-width: 30rem;
+        margin-top: 1.0rem;
+        margin-bottom: 3.5rem;
+    }
 }
 
 .hero-section .md-button {
@@ -65,23 +76,57 @@ TOP IMAGE
 FEATURE SECTION
 */
 .main-features{
-    margin-top: 50px;
+    margin-top: 30px;
 }
+
 
 .header{
     width:100%;
     text-align: center;
     margin-right: auto;
     margin-left: auto;
-    font-size: 25px;
+    font-size: 18px;
     font-weight: 500;
 }
+
 
 .features{
-    width:60%;
+    width:100%;
     margin-right: auto;
     margin-left: auto;
-    font-size: 25px;
+    font-size: 16px;
     font-weight: 500;
+    text-align:justify;
 }
 
+.arch-container{
+    display:grid;
+    align-items:center;
+    grid-template-columns: 1fr;
+    column-gap:10px;
+    min-width:20rem;
+}
+
+.arch-image{
+    width:80%;
+    min-width:20rem;
+    margin:auto;
+}
+
+@media screen and (min-width:60em) {
+    .arch-container{
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .arch-image{
+        width:100%;
+    }
+
+    .header{
+        font-size: 28px;
+    }
+    
+    .features{
+        font-size: 25px;
+    }
+}
