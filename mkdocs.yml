@@ -75,11 +75,11 @@ nav:
     - Drawing: api/draw.md
 
     - Backends:
-      - Abstract backend: backends/backend.md
-      - PyQTorch: backends/pyqtorch.md
-      - Amazon Braket: backends/braket.md
-      - Pulser: backends/pulser.md
-      - DifferentiableBackend: backends/differentiable.md
+      - Abstract backend: api/backends/backend.md
+      - PyQTorch: api/backends/pyqtorch.md
+      - Amazon Braket: api/backends/braket.md
+      - Pulser: api/backends/pulser.md
+      - DifferentiableBackend: api/backends/differentiable.md
 
 edit_uri: edit/main/docs/
 
