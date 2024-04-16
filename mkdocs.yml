@@ -5,13 +5,14 @@ repo_name: "qadence"
 
 nav:
   - Home: index.md
+
   - Getting started:
     - Installation: getting_started/installation.md
     - Development & Info:
       - Contributing: getting_started/CONTRIBUTING.md
       - Code of conduct: getting_started/CODE_OF_CONDUCT.md
       - License: getting_started/LICENSE.md
-    
+
   - Contents:
     - Block system: content/block_system.md
     - Quantum models: content/quantummodels.md
@@ -24,33 +25,38 @@ nav:
     - Serialization: content/serializ_and_prep.md
     - Backends: content/backends.md
 
-  - Digital-analog quantum computing:
-    - digital_analog_qc/index.md
-    - Basic operations on neutral-atoms: digital_analog_qc/analog-basics.md
-    - Fitting a simple function: digital_analog_qc/analog-qcl.md
-    - Restricted local addressability: digital_analog_qc/semi-local-addressing.md
-    - Pulse-level programming with Pulser: digital_analog_qc/pulser-basic.md
-    - Solve a QUBO problem: digital_analog_qc/analog-qubo.md
-    - CNOT with interacting qubits: digital_analog_qc/daqc-cnot.md
+  - Tutorials:
+    - Digital-analog quantum computing:
+      - digital_analog_qc/index.md
+      - Basic operations on neutral-atoms: digital_analog_qc/analog-basics.md
+      - Fitting a simple function: digital_analog_qc/analog-qcl.md
+      - Restricted local addressability: digital_analog_qc/semi-local-addressing.md
+      - Pulse-level programming with Pulser: digital_analog_qc/pulser-basic.md
+      - Solve a QUBO problem: digital_analog_qc/analog-qubo.md
+      - CNOT with interacting qubits: digital_analog_qc/daqc-cnot.md
 
-  - Variational quantum algorithms:
-    - qml/index.md
-    - Constructors: qml/qml_constructors.md
-    - Training tools: qml/ml_tools.md
-    - Quantum circuit learning: qml/qcl.md
-    - Solving MaxCut with QAOA: qml/qaoa.md
+    - Variational quantum algorithms:
+      - qml/index.md
+      - Constructors: qml/qml_constructors.md
+      - Training tools: qml/ml_tools.md
+      - Quantum circuit learning: qml/qcl.md
+      - Solving MaxCut with QAOA: qml/qaoa.md
 
-  - Advanced Tutorials:
-    - advanced_tutorials/index.md
-    - Quantum circuits differentiation: advanced_tutorials/differentiability.md
-    - Custom quantum models: advanced_tutorials/custom-models.md
-    - Projector blocks: advanced_tutorials/projectors.md
+    - Advanced Tutorials:
+      - advanced_tutorials/index.md
+      - Quantum circuits differentiation: advanced_tutorials/differentiability.md
+      - Custom quantum models: advanced_tutorials/custom-models.md
+      - Projector blocks: advanced_tutorials/projectors.md
 
-  - Realistic simulations:
-    - realistic_sims/index.md
-    - Measurement protocols: realistic_sims/measurements.md
-    - Simulated errors: realistic_sims/noise.md
-    - Error mitigation: realistic_sims/mitigation.md
+    - Realistic simulations:
+      - realistic_sims/index.md
+      - Measurement protocols: realistic_sims/measurements.md
+      - Simulated errors: realistic_sims/noise.md
+      - Error mitigation: realistic_sims/mitigation.md
+
+    - Development:
+      - Architecture and sharp bits: development/architecture.md
+      - Drawing: development/draw.md
 
   - API:
     - Block system: qadence/blocks.md
@@ -74,11 +80,6 @@ nav:
       - Amazon Braket: backends/braket.md
       - Pulser: backends/pulser.md
       - DifferentiableBackend: backends/differentiable.md
-
-  - Development:
-    - Architecture and sharp bits: development/architecture.md
-    - Drawing: development/draw.md
-    - Contributing: CONTRIBUTING.md
 
 edit_uri: edit/main/docs/
 

@@ -66,7 +66,7 @@ designated in writing by the copyright owner as "Not a Contribution."
 on behalf of whom a Contribution has been received by Licensor and
 subsequently incorporated within the Work.
 
-### 2. Grant of Copyright License. 
+### 2. Grant of Copyright License.
 
 Subject to the terms and conditions of
 this License, each Contributor hereby grants to You a perpetual,
@@ -75,7 +75,7 @@ copyright license to reproduce, prepare Derivative Works of,
 publicly display, publicly perform, sublicense, and distribute the
 Work and such Derivative Works in Source or Object form.
 
-### 3. Grant of Patent License. 
+### 3. Grant of Patent License.
 
 Subject to the terms and conditions of
 this License, each Contributor hereby grants to You a perpetual,
@@ -93,7 +93,7 @@ or contributory patent infringement, then any patent licenses
 granted to You under this License for that Work shall terminate
 as of the date such litigation is filed.
 
-### 4. Redistribution. 
+### 4. Redistribution.
 
 You may reproduce and distribute copies of the
 Work or Derivative Works thereof in any medium, with or without
@@ -136,7 +136,7 @@ for any such Derivative Works as a whole, provided Your use,
 reproduction, and distribution of the Work otherwise complies with
 the conditions stated in this License.
 
-### 5. Submission of Contributions. 
+### 5. Submission of Contributions.
 
 Unless You explicitly state otherwise,
 any Contribution intentionally submitted for inclusion in the Work
@@ -146,14 +146,14 @@ Notwithstanding the above, nothing herein shall supersede or modify
 the terms of any separate license agreement you may have executed
 with Licensor regarding such Contributions.
 
-### 6. Trademarks. 
+### 6. Trademarks.
 
 This License does not grant permission to use the trade
 names, trademarks, service marks, or product names of the Licensor,
 except as required for reasonable and customary use in describing the
 origin of the Work and reproducing the content of the NOTICE file.
 
-### 7. Disclaimer of Warranty. 
+### 7. Disclaimer of Warranty.
 
 Unless required by applicable law or
 agreed to in writing, Licensor provides the Work (and each
@@ -179,7 +179,7 @@ work stoppage, computer failure or malfunction, or any and all
 other commercial damages or losses), even if such Contributor
 has been advised of the possibility of such damages.
 
-### 9. Accepting Warranty or Additional Liability. 
+### 9. Accepting Warranty or Additional Liability.
 
 While redistributing
 the Work or Derivative Works thereof, You may choose to offer,
