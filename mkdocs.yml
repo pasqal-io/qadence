@@ -27,8 +27,8 @@ nav:
 
   - Tutorials:
     - Digital-analog quantum computing:
-      - digital_analog_qc/index.md
-      - Basic operations on neutral-atoms: digital_analog_qc/analog-basics.md
+      - tutorials/digital_analog_qc/index.md
+      - Basic operations on neutral-atoms: tutorials/digital_analog_qc/analog-basics.md
       - Fitting a simple function: digital_analog_qc/analog-qcl.md
       - Restricted local addressability: digital_analog_qc/semi-local-addressing.md
       - Pulse-level programming with Pulser: digital_analog_qc/pulser-basic.md
@@ -36,43 +36,43 @@ nav:
       - CNOT with interacting qubits: digital_analog_qc/daqc-cnot.md
 
     - Variational quantum algorithms:
-      - qml/index.md
-      - Constructors: qml/qml_constructors.md
-      - Training tools: qml/ml_tools.md
-      - Quantum circuit learning: qml/qcl.md
-      - Solving MaxCut with QAOA: qml/qaoa.md
+      - tutorials/qml/index.md
+      - Constructors: tutorials/qml/qml_constructors.md
+      - Training tools: tutorials/qml/ml_tools.md
+      - Quantum circuit learning: tutorials/qml/qcl.md
+      - Solving MaxCut with QAOA: tutorials/qml/qaoa.md
 
     - Advanced Tutorials:
-      - advanced_tutorials/index.md
-      - Quantum circuits differentiation: advanced_tutorials/differentiability.md
-      - Custom quantum models: advanced_tutorials/custom-models.md
-      - Projector blocks: advanced_tutorials/projectors.md
+      - tutorials/advanced_tutorials/index.md
+      - Quantum circuits differentiation: tutorials/advanced_tutorials/differentiability.md
+      - Custom quantum models: tutorials/advanced_tutorials/custom-models.md
+      - Projector blocks: tutorials/advanced_tutorials/projectors.md
 
     - Realistic simulations:
-      - realistic_sims/index.md
-      - Measurement protocols: realistic_sims/measurements.md
-      - Simulated errors: realistic_sims/noise.md
-      - Error mitigation: realistic_sims/mitigation.md
+      - tutorials/realistic_sims/index.md
+      - Measurement protocols: tutorials/realistic_sims/measurements.md
+      - Simulated errors: tutorials/realistic_sims/noise.md
+      - Error mitigation: tutorials/realistic_sims/mitigation.md
 
     - Development:
-      - Architecture and sharp bits: development/architecture.md
-      - Drawing: development/draw.md
+      - Architecture and sharp bits: tutorials/development/architecture.md
+      - Drawing: tutorials/development/draw.md
 
   - API:
-    - Block system: qadence/blocks.md
-    - Operations: qadence/operations.md
-    - Register: qadence/register.md
-    - QuantumCircuit: qadence/quantumcircuit.md
-    - Parameters: qadence/parameters.md
-    - State preparation: qadence/states.md
-    - Constructors: qadence/constructors.md
-    - Transpilation: qadence/transpile.md
-    - Execution: qadence/execution.md
-    - Quantum models: qadence/models.md
-    - QML tools: qadence/ml_tools.md
-    - Serialization: qadence/serialization.md
-    - Types: qadence/types.md
-    - Drawing: qadence/draw.md
+    - Block system: api/blocks.md
+    - Operations: api/operations.md
+    - Register: api/register.md
+    - QuantumCircuit: api/quantumcircuit.md
+    - Parameters: api/parameters.md
+    - State preparation: api/states.md
+    - Constructors: api/constructors.md
+    - Transpilation: api/transpile.md
+    - Execution: api/execution.md
+    - Quantum models: api/models.md
+    - QML tools: api/ml_tools.md
+    - Serialization: api/serialization.md
+    - Types: api/types.md
+    - Drawing: api/draw.md
 
     - Backends:
       - Abstract backend: backends/backend.md
