@@ -26,6 +26,7 @@ nav:
     - Backends: content/backends.md
 
   - Tutorials:
+    - tutorials/index.md
     - Digital-analog quantum computing:
       - tutorials/digital_analog_qc/index.md
       - Basic operations on neutral-atoms: tutorials/digital_analog_qc/analog-basics.md
