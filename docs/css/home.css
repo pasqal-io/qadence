@@ -19,7 +19,6 @@ TOP IMAGE
 }
 
 .hero-section {
-    color: var(--md-primary-bg-color);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -58,8 +57,8 @@ TOP IMAGE
 .hero-section .md-button:focus,
 .hero-section .md-button:hover {
     background-color: var(--md-accent-fg-color);
-    color: var(--md-default-bg-color);
-    border-color: var(--md-accent-fg-color)
+    color: light-dark(var(--md-default-bg-color), white);
+    border-color: var(--md-accent-fg-color);
 }
 
 /*
