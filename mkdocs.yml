@@ -10,7 +10,7 @@ nav:
     - Development & Info:
       - Contributing: markdowns/getting_started/CONTRIBUTING.md
       - Code of conduct: markdowns/getting_started/CODE_OF_CONDUCT.md
-      - License: markdowns/getting_started/LICENCE.md
+      - License: markdowns/getting_started/LICENSE.md
     
   - Contents:
     - Block system: tutorials/getting_started.md
