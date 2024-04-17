@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./docs/assets/logo/qadence_logo_white.svg" width="75%">
-    <source media="(prefers-color-scheme: light)" srcset="./docs/assets/logo/qadence_logo.svg" width="75%">
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/extras/assets/logo/qadence_logo_white.svg" width="75%">
+    <source media="(prefers-color-scheme: light)" srcset="./docs/extras/assets/logo/qadence_logo.svg" width="75%">
     <img alt="Qadence logo" src="./docs/assets/logo/qadence_logo.svg" width="75%">
   </picture>
 </p>
@@ -23,24 +23,24 @@ programs** with tunable qubit interactions and arbitrary register topologies rea
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./docs/assets/qadence_arch.svg" width="75%">
-    <source media="(prefers-color-scheme: light)" srcset="./docs/assets/qadence_arch.svg" width="75%">
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/extras/assets/qadence_arch.svg" width="75%">
+    <source media="(prefers-color-scheme: light)" srcset="./docs/extras/assets/qadence_arch.svg" width="75%">
     <img alt="Qadence architecture" src="./docs/assets/qadence_arch.svg" width="75%">
   </picture>
 <p align="center">
 
-* A [block-based system](docs/tutorials/getting_started.md) for composing _**complex digital-analog
+* A [block-based system](docs/content/block_system.md) for composing _**complex digital-analog
   programs**_ in a flexible and scalable manner, inspired by the Julia quantum SDK
   [Yao.jl](https://github.com/QuantumBFS/Yao.jl) and functional programming concepts.
 
-* An intuitive [expression-based system](docs/tutorials/parameters.md) developed on top of the symbolic library [Sympy](https://www.sympy.org/en/index.html) to construct _**parametric quantum programs**_ easily.
+* An intuitive [expression-based system](docs/content/parameters.md) developed on top of the symbolic library [Sympy](https://www.sympy.org/en/index.html) to construct _**parametric quantum programs**_ easily.
 
 * Out-of-the-box _**automatic differentiability**_ of quantum programs with [PyTorch](https://pytorch.org/) integration.
 
-* [High-order generalized parameter shift rules](docs/advanced_tutorials/differentiability.md) for _**differentiating parametrized quantum operations**_.
+* [High-order generalized parameter shift rules](docs/tutorials/advanced_tutorials/differentiability.md) for _**differentiating parametrized quantum operations**_.
 
-* A [simple interface](docs/digital_analog_qc/analog-basics.md) to work with _**interacting neutral-atom qubit systems**_
-  using [arbitrary registers topologies](docs/tutorials/register.md).
+* A [simple interface](docs/tutorials/digital_analog_qc/analog-basics.md) to work with _**interacting neutral-atom qubit systems**_
+  using [arbitrary registers topologies](docs/content/register.md).
 
 ## Installation guide
 
@@ -89,10 +89,10 @@ conda install python-graphviz
 
 ## Contributing
 
-Before making a contribution, please review our [code of conduct](docs/CODE_OF_CONDUCT.md).
+Before making a contribution, please review our [code of conduct](docs/getting_started/CODE_OF_CONDUCT.md).
 
 - **Submitting Issues:** To submit bug reports or feature requests, please use our [issue tracker](https://github.com/pasqal-io/qadence/issues).
-- **Developing in qadence:** To learn more about how to develop within `qadence`, please refer to [contributing guidelines](docs/CONTRIBUTING.md).
+- **Developing in qadence:** To learn more about how to develop within `qadence`, please refer to [contributing guidelines](docs/getting_started/CONTRIBUTING.md).
 
 ### Setting up qadence in development mode
 
