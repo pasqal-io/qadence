@@ -78,7 +78,7 @@ assert len(res) == batch_size
 ## Quantum model with wavefunction overlaps
 
 `QuantumModel`'s can also use different quantum operations in their forward
-pass, such as wavefunction overlaps described [here](../tutorials/overlap.md). Beware that the resulting overlap tensor
+pass, such as wavefunction overlaps described [here](../../content/overlap.md). Beware that the resulting overlap tensor
 has to be differentiable to apply gradient-based optimization. This is only applicable to the `"EXACT"` overlap method.
 
 Here we show how to use overlap calculation when fitting a parameterized quantum circuit to act as a standard Hadamard gate.
