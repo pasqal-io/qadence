@@ -151,7 +151,7 @@ print(docsutils.fig_to_html(fig)) # markdown-exec: hide
 ## Connectivity graphs
 
 Register topology is often assumed in digital simulations to be an all-to-all qubit connectivity.
-When running on real devices that enable the [digital-analog](../digital_analog_qc/index.md) computing paradigm,
+When running on real devices that enable the [digital-analog](../tutorials/digital_analog_qc/index.md) computing paradigm,
 qubit interactions must be specified either by specifying distances between qubits,
 or by defining edges in the register connectivity graph.
 
@@ -172,4 +172,4 @@ There is also an `all_node_pairs` property for convencience:
 print(reg.all_node_pairs)
 ```
 
-More details about the usage of `Register` types in the digital-analog paradigm can be found in the [digital-analog basics](../digital_analog_qc/analog-basics.md) section.
+More details about the usage of `Register` types in the digital-analog paradigm can be found in the [digital-analog basics](../tutorials/digital_analog_qc/analog-basics.md) section.

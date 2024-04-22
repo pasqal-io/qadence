@@ -1,12 +1,12 @@
 Variational algorithms on noisy devices and quantum machine learning (QML)[^1] in particular are one of the main
 target applications for Qadence. For this purpose, the library offers both flexible symbolic expressions for the
-quantum circuit parameters via `sympy` (see [here](../tutorials/parameters.md) for more details) and native automatic
+quantum circuit parameters via `sympy` (see [here](../../content/parameters.md) for more details) and native automatic
 differentiation via integration with [PyTorch](https://pytorch.org/) deep learning framework.
 
 Furthermore, Qadence offers a wide range of utilities for helping building and researching quantum machine learning algorithms, including:
 
 * [a set of constructors](qml_constructors.md) for circuits commonly used in quantum machine learning such as feature maps and ansatze
-* [a set of tools](ml_tools) for training and optimizing quantum neural networks and loading classical data into a QML algorithm
+* [a set of tools](ml_tools.md) for training and optimizing quantum neural networks and loading classical data into a QML algorithm
 
 ## Some simple examples
 
