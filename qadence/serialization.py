@@ -83,10 +83,24 @@ _parsing_serialize_expr = _parser_fn()
 
 
 def parse_expr_fn(code: str) -> bool:
+    """
+    A parsing expressions function that checks whether a given code is valid on.
+
+    the parsing grammar. The grammar is defined to be compatible with `sympy`
+    expressions, such as `Float('-0.33261030434342942', precision=53)`, while
+    avoiding code injection such as `2*3` or `__import__('os').system('ls -la')`.
+
+    Args:
+        code (str): code to be parsed and checked.
+
+    Returns:
+        Boolean indicating whether the code matches the defined grammar or not.
+    """
+
     parser = _parsing_serialize_expr
     try:
         parser.parse(code)
-    except NoMatch as err:
+    except NoMatch:
         return False
     else:
         return True
@@ -94,12 +108,38 @@ def parse_expr_fn(code: str) -> bool:
 
 @dataclass
 class SerializationModel:
+    """
+    A serialization model class to serialize data from `QuantumModel`s,.
+
+    `torch.nn.Module` and similar structures. The data included in the
+    serialization logic includes: the `AbstractBlock` and its children
+    classes, `QuantumCircuit`, `Register`, and `sympy` expressions
+    (including `Parameter` class from `qadence.parameters`).
+
+    A children class must define the `value` attribute type and how to
+    handle it, since it is the main property for the class to be used
+    by the serialization process. For instance:
+
+    ```python
+    @dataclass
+    class QuantumCircuitSerialization(SerializationModel):
+        value: QuantumCircuit = dataclass_field(init=False)
+
+        def __post_init__(self) -> None:
+            self.value = (
+                QuantumCircuit._from_dict(self.d)
+                if isinstance(self.d, dict)
+                else self.d
+            )
+    ```
+    """
+
     d: dict = dataclass_field(default_factory=dict)
     value: Any = dataclass_field(init=False)
 
 
 @dataclass
-class BlockTypeSerial(SerializationModel):
+class BlockTypeSerialization(SerializationModel):
     value: AbstractBlock = dataclass_field(init=False)
 
     def __post_init__(self) -> None:
@@ -114,7 +154,7 @@ class BlockTypeSerial(SerializationModel):
 
 
 @dataclass
-class QuantumCircuitSerial(SerializationModel):
+class QuantumCircuitSerialization(SerializationModel):
     value: QuantumCircuit = dataclass_field(init=False)
 
     def __post_init__(self) -> None:
@@ -122,7 +162,7 @@ class QuantumCircuitSerial(SerializationModel):
 
 
 @dataclass
-class RegisterSerial(SerializationModel):
+class RegisterSerialization(SerializationModel):
     value: Register = dataclass_field(init=False)
 
     def __post_init__(self) -> None:
@@ -130,7 +170,7 @@ class RegisterSerial(SerializationModel):
 
 
 @dataclass
-class ModelSerial(SerializationModel):
+class ModelSerialization(SerializationModel):
     as_torch: bool = False
     value: torch.nn.Module = dataclass_field(init=False)
 
@@ -162,7 +202,7 @@ class ModelSerial(SerializationModel):
 
 
 @dataclass
-class ExpressionSerial(SerializationModel):
+class ExpressionSerialization(SerializationModel):
     value: str | core.Expr | float = dataclass_field(init=False)
 
     def __post_init__(self) -> None:
@@ -312,15 +352,15 @@ def deserialize(d: dict, as_torch: bool = False) -> SUPPORTED_TYPES:
     """
     obj: SerializationModel
     if d.get("expression"):
-        obj = ExpressionSerial(d)
+        obj = ExpressionSerialization(d)
     elif d.get("block") and d.get("register"):
-        obj = QuantumCircuitSerial(d)
+        obj = QuantumCircuitSerialization(d)
     elif d.get("graph"):
-        obj = RegisterSerial(d)
+        obj = RegisterSerialization(d)
     elif d.get("type"):
-        obj = BlockTypeSerial(d)
+        obj = BlockTypeSerialization(d)
     else:
-        obj = ModelSerial(d, as_torch=as_torch)
+        obj = ModelSerialization(d, as_torch=as_torch)
     return obj.value
 
 
