@@ -17,6 +17,7 @@ authors = [
     { name = "Joao P. Moutinho", email = "joao.moutinho@pasqal.com"},
     { name = "Vytautas Abramavicius", email = "vytautas.abramavicius@pasqal.com" },
     { name = "Gergana Velikova", email = "gergana.velikova@pasqal.com" },
+    { name = "Eduardo Maschio", email = "eduardo.maschio@pasqal.com" },
 ]
 requires-python = ">=3.9,<3.13"
 license = {text = "Apache 2.0"}
@@ -44,6 +45,7 @@ dependencies = [
     "scipy",
     "pyqtorch==1.1.0",
     "matplotlib",
+    "Arpeggio==2.0.2",
 ]
 
 [tool.hatch.metadata]
@@ -71,7 +73,7 @@ protocols = ["qadence-protocols"]
 libs = ["qadence-libs"]
 all = [
   "pulser>=0.15.2",
-  "amazon-braket-sdk",
+  "amazon-braket-sdk==1.71.0",
   "graphviz",
   "protocols",
   "libs",
