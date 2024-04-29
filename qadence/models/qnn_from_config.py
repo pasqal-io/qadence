@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import numpy as np
+from torch import tensor
+from torch.nn import Parameter
 
 from qadence.blocks import chain, kron
 from qadence.blocks.abstract import AbstractBlock
-from qadence.blocks.composite import ChainBlock
+from qadence.blocks.composite import ChainBlock, KronBlock
+from qadence.blocks.utils import add
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import (
     analog_feature_map,
@@ -18,7 +21,7 @@ from qadence.constructors import (
 from qadence.constructors.ansatze import hea_digital, hea_sDAQC
 from qadence.models import QNN
 from qadence.models.configs import AnsatzConfig, FeatureMapConfig, ObservableConfig
-from qadence.operations import CNOT, RX, RY, H
+from qadence.operations import CNOT, RX, RY, H, I, N
 from qadence.register import Register
 from qadence.types import Interaction, ReuploadScaling, Strategy
 
@@ -625,6 +628,38 @@ def _interleave_ansatz_in_fm(
     return chain(*full_fm)
 
 
+def _get_observable_shifting_and_scaling(config: ObservableConfig) -> tuple[float, float]:
+    """
+    Get the observable shifting and scaling factors.
+
+    Args:
+        config (ObservableConfig): Observable configuration.
+
+    Returns:
+        tuple[float, float]: The observable shifting and scaling factors.
+    """
+    if config.output_range is None:
+        shift = 0.0
+        scale = 1.0
+
+    else:
+        if config.detuning is N:
+            shift = config.output_range[0]
+            scale = config.output_range[1] - config.output_range[0]
+        else:
+            shift = 0.5 * (config.output_range[0] + config.output_range[1])
+            scale = 0.5 * (config.output_range[1] - config.output_range[0])
+
+    return shift, scale
+
+
+def _global_identity(register: int | Register) -> KronBlock:
+    """Create a global identity block."""
+    return kron(
+        *[I(i) for i in range(register if isinstance(register, int) else register.n_qubits)]
+    )
+
+
 def _create_observable(
     register: int | Register,
     config: ObservableConfig,
@@ -639,11 +674,28 @@ def _create_observable(
     Returns:
         AbstractBlock: The observable block.
     """
-    return hamiltonian_factory(
-        register=register,
-        detuning=config.detuning,
-        detuning_strength=config.detuning_strength,
-    )
+    shifting, scaling = _get_observable_shifting_and_scaling(config)
+
+    num_qubits = register if isinstance(register, int) else register.n_qubits
+    detuning_strength = tensor([scaling if i == 0 else 1.0 for i in range(num_qubits)])
+
+    if config.trainable_transform:
+        shifting_term = Parameter(tensor(shifting)) * _global_identity(register)
+        detuning_hamiltonian = hamiltonian_factory(
+            register=register,
+            detuning=config.detuning,
+            detuning_strength=Parameter(detuning_strength),
+        )
+
+    else:
+        shifting_term = shifting * _global_identity(register)
+        detuning_hamiltonian = hamiltonian_factory(
+            register=register,
+            detuning=config.detuning,
+            detuning_strength=detuning_strength,
+        )
+
+    return add(shifting_term, detuning_hamiltonian)
 
 
 def build_qnn_from_configs(

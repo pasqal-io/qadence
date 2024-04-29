@@ -10,7 +10,7 @@ from qadence.blocks.primitive import ParametricBlock
 from qadence.logger import get_logger
 from qadence.operations import RX, AnalogRX, Z
 from qadence.parameters import Parameter
-from qadence.types import BasisSet, ReuploadScaling, TArray
+from qadence.types import BasisSet, ReuploadScaling
 
 logger = get_logger(__file__)
 
@@ -273,11 +273,12 @@ class ObservableConfig:
     Defaults to Z.
     """
 
-    detuning_strength: TArray | str | None = None
-    """
-    List of values to be used as the detuning strength for each qubit.
+    output_range: tuple[float, float] | None = None
+    """The expected range of the output of the observable."""
 
-    Alternatively, some string "x" can be passed, which will create a parameterized
-    detuning for each qubit, each labelled as `"x_i"`.
-    Defaults to 1.0 for each qubit.
+    trainable_transform: bool = False
+    """
+    Whether to have a trainable transformation on the output of the observable.
+
+    If True, the output shifting and scaling will be learned during training.
     """
