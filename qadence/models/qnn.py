@@ -14,8 +14,11 @@ from qadence.circuit import QuantumCircuit
 from qadence.logger import get_logger
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
+from qadence.models.configs import AnsatzConfig, FeatureMapConfig, ObservableConfig
+from qadence.models.qnn_from_config import build_qnn_from_configs
 from qadence.models.quantum_model import QuantumModel
 from qadence.noise import Noise
+from qadence.register import Register
 from qadence.types import BackendName, DiffMode, Endianness, InputDiffMode, ParamDictType
 
 logger = get_logger(__name__)
@@ -205,6 +208,17 @@ class QNN(QuantumModel):
             self.__derivative = _torch_derivative  # type: ignore[assignment]
         else:
             raise ValueError(f"Unkown forward diff mode: {self.input_diff_mode}")
+
+    @classmethod
+    def from_configs(
+        cls,
+        register: int | Register,
+        fm_config: FeatureMapConfig,
+        ansatz_config: AnsatzConfig,
+        obs_config: ObservableConfig,
+    ) -> QNN:
+        """Create a QNN from a set of configurations."""
+        return build_qnn_from_configs(register, fm_config, ansatz_config, obs_config)
 
     def forward(
         self,
