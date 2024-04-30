@@ -12,7 +12,7 @@ $$
 f(x)=x^4+\frac13x^3-x^2-\frac12x
 $$
 
-Our goal will be to find this solution for $x\in[0, 1]$.
+Our goal will be to find this solution for $x\in[-1, 1]$.
 
 ```python exec="on" source="material-block" session="dqc"
 import torch
@@ -28,9 +28,9 @@ For the purpose of this tutorial, we will compute the derivative of the circuit 
 def calc_deriv(outputs: torch.Tensor, inputs: torch.Tensor) -> torch.Tensor:
     """Compute a derivative of model that learns f(x), computes df/dx using torch.autograd."""
     grad = torch.autograd.grad(
-        outputs=outputs, 
-        inputs=inputs, 
-        grad_outputs = torch.ones_like(inputs), 
+        outputs=outputs,
+        inputs=inputs,
+        grad_outputs = torch.ones_like(inputs),
         create_graph = True,
         retain_graph = True,
     )[0]
@@ -41,7 +41,7 @@ def calc_deriv(outputs: torch.Tensor, inputs: torch.Tensor) -> torch.Tensor:
 
 The essential part of solving this problem is to define the right loss function to represent our goal. In this case, we want to define a model that has the capacity to learn the target solution, and we want to minimize:
 - The derivative of this model in comparison with the exact derivative in the equation;
-- The output of the model at the boundary in comparison with the value for the boundary condition; 
+- The output of the model at the boundary in comparison with the value for the boundary condition;
 
 We can write it like so:
 
