@@ -3,13 +3,13 @@ In this tutorial we will show how to use Qadence to solve a basic 1D Ordinary Di
 Consider the following non-linear ODE and boundary condition:
 
 $$
-\frac{df}{dx}=4x^3+x^2-2x-\frac12, \qquad f(0)=0
+\frac{df}{dx}= 5\times(4x^3+x^2-2x-\frac12), \qquad f(0)=0
 $$
 
 It admits an exact solution:
 
 $$
-f(x)=x^4+\frac13x^3-x^2-\frac12x
+f(x)=5\times(x^4+\frac13x^3-x^2-\frac12x)
 $$
 
 Our goal will be to find this solution for $x\in[-1, 1]$.
@@ -19,7 +19,7 @@ import torch
 
 def dfdx_equation(x: torch.Tensor) -> torch.Tensor:
     """Derivative as per the equation."""
-    return 4*x**3 + x**2 - 2*x - 0.5
+    return 5*(4*x**3 + x**2 - 2*x - 0.5)
 ```
 
 For the purpose of this tutorial, we will compute the derivative of the circuit using `torch.autograd`. The point of the DQC algorithm is to use differentiable circuits with parameter shift rules. In Qadence, PSR is implemented directly as custom overrides of the derivative function in the autograd engine, and thus we can later change the derivative method for the model itself if we wish.
@@ -99,9 +99,16 @@ circuit = QuantumCircuit(n_qubits, chain(fm, ansatz))
 model = QNN(circuit = circuit, observable = observable, inputs = ["x"])
 ```
 
-We used a Chebyshev feature map with a tower-like scaling of the input reupload, and a standard hardware-efficient ansatz. You can check the [qml constructors tutorial](qml_constructors.md) to see how you can customize these components.
+We used a Chebyshev feature map with a tower-like scaling of the input reupload, and a standard hardware-efficient ansatz. You can check the [qml constructors tutorial](qml_constructors.md) to see how you can customize these components. In the observable, for now we consider the simple case of measuring the magnetization of the first qubit.
 
-For the observable, for now we will try the simplest case of measuring the magnetization on the first qubit.
+```python exec="on" source="material-block" html="1" session="dqc"
+from qadence.draw import html_string # markdown-exec: hide
+from qadence.draw import display
+
+display(circuit)
+
+print(html_string(circuit)) # markdown-exec: hide
+```
 
 ## Training the model
 
@@ -110,11 +117,11 @@ Now that the model is defined we can proceed with the training. the `QNN` class 
 To train the model, we will select a random set of collocation points uniformly distributed within $x\in[-1.0, 1.0]$ and compute the loss function for those points.
 
 ```python exec="on" source="material-block" session="dqc"
-n_epochs = 500
-n_points = 20
+n_epochs = 200
+n_points = 10
 
-xmin = -1.0
-xmax = 1.0
+xmin = -0.99
+xmax = 0.99
 
 optimizer = torch.optim.Adam(model.parameters(), lr = 0.1)
 
@@ -135,7 +142,7 @@ for epoch in range(n_epochs):
 import matplotlib.pyplot as plt
 
 def f_exact(x: torch.Tensor) -> torch.Tensor:
-    return (x**4 + (1/3)*x**3 - x**2 - 0.5*x)
+    return 5*(x**4 + (1/3)*x**3 - x**2 - 0.5*x)
 
 x_test = torch.arange(xmin, xmax, step = 0.01).unsqueeze(1)
 
@@ -149,12 +156,63 @@ plt.plot(x_test, result_model, label = " Trained model")
 plt.xlabel("x")  # markdown-exec: hide
 plt.ylabel("f(x)")  # markdown-exec: hide
 plt.xlim((-1.1, 1.1))  # markdown-exec: hide
-plt.ylim((-0.5, 0.2))  # markdown-exec: hide
+plt.ylim((-3, 2))  # markdown-exec: hide
 plt.legend()  # markdown-exec: hide
 
 from docs import docsutils # markdown-exec: hide
 print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
 ```
+
+Clearly, the result is not optimal.
+
+## Improving the solution
+
+One point to consider when defining the QNN is the possible output range, which is bounded by the spectrum of the chosen observable. For the magnetization of a single qubit, this means that the output is bounded between -1 and 1, which we can clearly see in the plot.
+
+One option would be to define the observable as the total magnetization over all qubits, which would allow a range of -3 to 3.
+
+```python exec="on" source="material-block" session="dqc"
+from qadence import add
+
+observable = add(Z(i) for i in range(n_qubits))
+
+model = QNN(circuit = circuit, observable = observable, inputs = ["x"])
+
+optimizer = torch.optim.Adam(model.parameters(), lr = 0.1)
+
+for epoch in range(n_epochs):
+    optimizer.zero_grad()
+
+    # Training data. We unsqueeze essentially making each batch have a single x value.
+    x_train = (xmin + (xmax-xmin)*torch.rand(n_points, requires_grad = True)).unsqueeze(1)
+
+    loss = loss_fn(inputs = x_train, model = model)
+    loss.backward()
+    optimizer.step()
+```
+
+And we again plot the result:
+
+```python exec="on" source="material-block" html="1" session="dqc"
+x_test = torch.arange(xmin, xmax, step = 0.01).unsqueeze(1)
+
+result_exact = f_exact(x_test).flatten()
+
+result_model = model(x_test).flatten().detach()
+
+plt.clf()  # markdown-exec: hide
+plt.plot(x_test, result_exact, label = "Exact solution")
+plt.plot(x_test, result_model, label = "Trained model")
+plt.xlabel("x")  # markdown-exec: hide
+plt.ylabel("f(x)")  # markdown-exec: hide
+plt.xlim((-1.1, 1.1))  # markdown-exec: hide
+plt.ylim((-3, 2))  # markdown-exec: hide
+plt.legend()  # markdown-exec: hide
+
+from docs import docsutils # markdown-exec: hide
+print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
+```
+
 
 ## References
 
