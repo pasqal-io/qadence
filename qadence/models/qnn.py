@@ -15,22 +15,13 @@ from qadence.logger import get_logger
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.models.configs import AnsatzConfig, FeatureMapConfig, ObservableConfig
-from qadence.models.qnn_from_config import build_qnn_from_configs
+from qadence.models.constructors import build_qnn_from_configs
 from qadence.models.quantum_model import QuantumModel
 from qadence.noise import Noise
 from qadence.register import Register
 from qadence.types import BackendName, DiffMode, Endianness, InputDiffMode, ParamDictType
 
 logger = get_logger(__name__)
-
-
-def transform_output(
-    output_scaling: Tensor | nn.Parameter, output_shifting: Tensor | nn.Parameter
-) -> Callable[[Tensor], Tensor]:
-    def transform(outputs: Tensor) -> Tensor:
-        return output_scaling * outputs + output_shifting
-
-    return transform
 
 
 def format_to_dict_fn(
@@ -54,50 +45,6 @@ def format_to_dict_fn(
         return values
 
     return tensor_to_dict
-
-
-def transform_input(
-    input_scaling: Tensor | nn.Parameter,
-    input_shifting: Tensor | nn.Parameter,
-    inputs: list[sympy.Symbol | str],
-) -> Callable[[ParamDictType | Tensor], ParamDictType | Tensor]:
-    """
-    Returns a function which scales and shifts the user-provided values for the FeatureParameters.
-
-    Note that 'input_scaling' and 'input_shifting' have to contain values for each FeatureParameter.
-    Arguments:
-        input_scaling: A torch tensor or torch.nn.Parameter for scaling the input.
-        input_shifting: A torch tensor or torch.nn.Parameter for shifting the input.
-        inputs: A list of sympy symbols or strings of the FeatureParameters.
-
-    Returns:
-        A function for scaling and shifting FeatureParameters passed either as a dict or Tensor.
-    """
-    input_scaling, input_shifting = list(
-        map(lambda t: t.reshape(-1, 1) if len(t.shape) < 2 else t, [input_scaling, input_shifting])
-    )
-    format_to_dict = format_to_dict_fn(inputs)
-
-    def transform(values: ParamDictType | Tensor) -> ParamDictType | Tensor:
-        """Scales and shifts user-provided FeatureParameters 'values'.
-
-        'values' has to either be a Tensor when using torch.nn.Module, or a standard values dict.
-
-        Arguments:
-            values: A torch Tensor or a dict containing values for Featureparameters.
-        Returns:
-            A dict containing scaled and shifted FeatureParameters.
-        """
-        if isinstance(values, Tensor):
-            values = format_to_dict(values)
-        values = {
-            fparam: input_scaling[:, inputs.index(fparam)]
-            * (values[fparam] + input_shifting[:, inputs.index(fparam)])
-            for fparam in inputs
-        }
-        return values
-
-    return transform
 
 
 class QNN(QuantumModel):
@@ -139,8 +86,6 @@ class QNN(QuantumModel):
         noise: Noise | None = None,
         configuration: BackendConfiguration | dict | None = None,
         inputs: list[sympy.Basic | str] | None = None,
-        transform_input: Callable[[Tensor], Tensor] = lambda x: x,
-        transform_output: Callable[[Tensor], Tensor] = lambda x: x,
         input_diff_mode: InputDiffMode | str = InputDiffMode.AD,
     ):
         """Initialize the QNN.
@@ -198,9 +143,6 @@ class QNN(QuantumModel):
             """
             )
         self.format_to_dict = format_to_dict_fn(self.inputs)  # type: ignore[arg-type]
-        self.transform_input = transform_input
-        self.transform_output = transform_output
-
         self.input_diff_mode = InputDiffMode(input_diff_mode)
         if self.input_diff_mode == InputDiffMode.FD:
             self.__derivative = finitediff
@@ -264,7 +206,7 @@ class QNN(QuantumModel):
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         return super().run(
-            values=self.format_to_dict(self.transform_input(values)),
+            values=self.format_to_dict(values),
             state=state,
             endianness=endianness,
         )
@@ -279,7 +221,7 @@ class QNN(QuantumModel):
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         return super().sample(
-            values=self.format_to_dict(self.transform_input(values)),
+            values=self.format_to_dict(values),
             n_shots=n_shots,
             state=state,
             noise=noise,
@@ -303,14 +245,12 @@ class QNN(QuantumModel):
             measurement = self._measurement
         if noise is None:
             noise = self._noise
-        return self.transform_output(
-            super().expectation(
-                values=self.format_to_dict(self.transform_input(values)),
-                state=state,
-                measurement=measurement,
-                endianness=endianness,
-                noise=noise,
-            )
+        return super().expectation(
+            values=self.format_to_dict(values),
+            state=state,
+            measurement=measurement,
+            endianness=endianness,
+            noise=noise,
         )
 
     def _derivative(self, x: Tensor, derivative_indices: tuple[int, ...]) -> Tensor:
