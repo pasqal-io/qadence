@@ -676,23 +676,18 @@ def _create_observable(
     """
     shifting, scaling = _get_observable_shifting_and_scaling(config)
 
-    num_qubits = register if isinstance(register, int) else register.n_qubits
-    detuning_strength = tensor([scaling if i == 0 else 1.0 for i in range(num_qubits)])
-
     if config.trainable_transform:
         shifting_term = Parameter(tensor(shifting)) * _global_identity(register)
-        detuning_hamiltonian = hamiltonian_factory(
+        detuning_hamiltonian = Parameter(tensor(scaling)) * hamiltonian_factory(
             register=register,
             detuning=config.detuning,
-            detuning_strength=Parameter(detuning_strength),
         )
 
     else:
         shifting_term = shifting * _global_identity(register)
-        detuning_hamiltonian = hamiltonian_factory(
+        detuning_hamiltonian = scaling * hamiltonian_factory(
             register=register,
             detuning=config.detuning,
-            detuning_strength=detuning_strength,
         )
 
     return add(shifting_term, detuning_hamiltonian)
