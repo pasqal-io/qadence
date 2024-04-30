@@ -42,6 +42,7 @@ nav:
       - Training tools: tutorials/qml/ml_tools.md
       - Quantum circuit learning: tutorials/qml/qcl.md
       - Solving MaxCut with QAOA: tutorials/qml/qaoa.md
+      - Solving a 1D ODE: tutorials/qml/dqc_1d.md
 
     - Advanced Tutorials:
       - tutorials/advanced_tutorials/index.md
