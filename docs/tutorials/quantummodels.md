@@ -1,4 +1,4 @@
-A quantum program can be expressed and executed using the [`QuantumModel`][qadence.quantum_model.QuantumModel] type.
+A quantum program can be expressed and executed using the [`QuantumModel`][qadence.model.QuantumModel] type.
 It serves three primary purposes:
 
 _**Parameter handling**_: by conveniently handling and embedding the two parameter types that Qadence supports:
