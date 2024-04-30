@@ -9,6 +9,7 @@ import pytest
 import torch
 from metrics import ATOL_32, DIGITAL_DECOMP_ACCEPTANCE_HIGH, DIGITAL_DECOMP_ACCEPTANCE_LOW
 
+from qadence import QuantumModel
 from qadence.blocks import (
     AbstractBlock,
     add,
@@ -23,7 +24,6 @@ from qadence.constructors import (
     total_magnetization,
     zz_hamiltonian,
 )
-from qadence.models import QuantumModel
 from qadence.operations import (
     CNOT,
     RX,

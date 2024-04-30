@@ -56,7 +56,9 @@ def load_checkpoint(
 def write_checkpoint(
     folder: Path, model: Module, optimizer: Optimizer | NGOptimizer, iteration: int
 ) -> None:
-    from qadence.models import QNN, QuantumModel
+    from qadence import QuantumModel
+
+    from .models import QNN
 
     model_checkpoint_name: str = f"model_{type(model).__name__}_ckpt_" + f"{iteration:03n}" + ".pt"
     opt_checkpoint_name: str = f"opt_{type(optimizer).__name__}_ckpt_" + f"{iteration:03n}" + ".pt"
@@ -85,7 +87,7 @@ def write_checkpoint(
 def load_model(
     folder: Path, model: Module, model_ckpt_name: str | Path = "", *args: Any, **kwargs: Any
 ) -> tuple[Module, int]:
-    from qadence.models import QNN, QuantumModel
+    from qadence import QNN, QuantumModel
 
     iteration = 0
     if model_ckpt_name == "":

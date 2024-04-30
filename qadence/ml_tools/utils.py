@@ -5,9 +5,9 @@ from typing import Any
 
 from torch import Tensor, rand
 
+from qadence import QNN, QuantumModel
 from qadence.blocks import AbstractBlock, parameters
 from qadence.circuit import QuantumCircuit
-from qadence.models import QNN, QuantumModel
 from qadence.parameters import Parameter, stringify
 
 

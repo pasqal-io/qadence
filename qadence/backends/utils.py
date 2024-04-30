@@ -20,9 +20,8 @@ from torch import (
     rand,
 )
 
-from qadence.models import QNN
-from qadence.types import ParamDictType
-from qadence.utils import Endianness, int_to_basis, is_qadence_shape
+from qadence.types import Endianness, ParamDictType
+from qadence.utils import int_to_basis, is_qadence_shape
 
 FINITE_DIFF_EPS = 1e-06
 # Dict of NumPy dtype -> torch dtype (when the correspondence exists)
@@ -244,9 +243,7 @@ def _torch_derivative(
     return y.reshape(-1, 1)
 
 
-def derivative(
-    ufa: QNN | torch.nn.Module, x: Tensor, derivative_indices: tuple[int, ...]
-) -> Tensor:
+def derivative(ufa: torch.nn.Module, x: Tensor, derivative_indices: tuple[int, ...]) -> Tensor:
     """Compute derivatives w.r.t.
 
     inputs of a UFA with a single output. The
@@ -265,7 +262,7 @@ def derivative(
     to those inputs:
     ```py exec="on" source="material-block"
     import torch
-    from qadence.models import QNN
+    from qadence import QNN
     from qadence.backends.utils import derivative
 
     f = MLP([3,3,1])

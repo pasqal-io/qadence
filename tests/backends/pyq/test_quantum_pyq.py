@@ -16,6 +16,7 @@ from pyqtorch.circuit import QuantumCircuit as PyQQuantumCircuit
 from sympy import acos
 from torch import Tensor
 
+from qadence import QuantumModel
 from qadence.backends import backend_factory
 from qadence.backends.pyqtorch.backend import Backend
 from qadence.backends.pyqtorch.config import Configuration as PyqConfig
@@ -32,7 +33,6 @@ from qadence.constructors import (
     total_magnetization,
     zz_hamiltonian,
 )
-from qadence.models import QuantumModel
 from qadence.operations import (
     CNOT,
     CPHASE,

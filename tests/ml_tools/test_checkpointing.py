@@ -7,6 +7,7 @@ from pathlib import Path
 import torch
 from torch.utils.data import DataLoader
 
+from qadence import QNN, QuantumModel
 from qadence.ml_tools import (
     TrainConfig,
     load_checkpoint,
@@ -16,7 +17,6 @@ from qadence.ml_tools import (
 from qadence.ml_tools.data import to_dataloader
 from qadence.ml_tools.parameters import get_parameters, set_parameters
 from qadence.ml_tools.utils import rand_featureparameters
-from qadence.models import QNN, QuantumModel
 
 
 def dataloader(batch_size: int = 25) -> DataLoader:

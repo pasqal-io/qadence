@@ -13,8 +13,8 @@ from qadence.blocks.utils import chain, kron, tag
 from qadence.circuit import QuantumCircuit
 from qadence.divergences import js_divergence
 from qadence.measurements import Measurements
-from qadence.models.quantum_model import QuantumModel
 from qadence.operations import SWAP, H, I, S, Z
+from qadence.quantum_model import QuantumModel
 from qadence.transpile import reassign
 from qadence.types import BackendName, DiffMode, OverlapMethod
 

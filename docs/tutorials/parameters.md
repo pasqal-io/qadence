@@ -142,7 +142,7 @@ Please note the different colors for the parametrization with different types. T
 ## Parametrized QuantumModels
 
 As a quick reminder: `FeatureParameter` are used for data input and data encoding into a quantum state.
-`VariationalParameter` are trainable parameters in a variational ansatz. When used within a [`QuantumModel`][qadence.models.quantum_model.QuantumModel], an abstract quantum circuit is made differentiable with respect to both variational and feature
+`VariationalParameter` are trainable parameters in a variational ansatz. When used within a [`QuantumModel`][qadence.quantum_model.QuantumModel], an abstract quantum circuit is made differentiable with respect to both variational and feature
 parameters which are uniquely identified by their name.
 
 ```python exec="on" source="material-block" session="parametrized-models"

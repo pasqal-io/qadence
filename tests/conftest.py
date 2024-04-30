@@ -7,11 +7,11 @@ from pytest import fixture  # type: ignore
 from sympy import Expr
 from torch import Tensor, tensor
 
+from qadence import QNN, QuantumModel
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.utils import chain, kron, unroll_block_with_scaling
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import feature_map, hea, total_magnetization
-from qadence.models import QNN, QuantumModel
 from qadence.operations import CNOT, RX, RY, X, Y, Z
 from qadence.parameters import Parameter
 from qadence.register import Register

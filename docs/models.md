@@ -1,3 +1,3 @@
-::: qadence.models.quantum_model
+::: qadence.quantum_model
 
-::: qadence.models.qnn
+::: qadence.ml_tools.qnn

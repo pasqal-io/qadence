@@ -1,4 +1,4 @@
-A quantum program can be expressed and executed using the [`QuantumModel`][qadence.models.quantum_model.QuantumModel] type.
+A quantum program can be expressed and executed using the [`QuantumModel`][qadence.quantum_model.QuantumModel] type.
 It serves three primary purposes:
 
 _**Parameter handling**_: by conveniently handling and embedding the two parameter types that Qadence supports:
@@ -85,5 +85,5 @@ print(f"{ex = }") # markdown-exec: hide
 ### Quantum Neural Network (QNN)
 
 The `QNN` is a subclass of the `QuantumModel` geared towards quantum machine learning and parameter optimisation. See the
-[quantum machine learning section](../qml/index.md) section or the [`QNN` API reference][qadence.models.QNN] for more detailed
+[quantum machine learning section](../qml/index.md) section or the [`QNN` API reference][qadence.QNN] for more detailed
 information, and the [parametric program tutorial](parameters.md) for parameterization.

@@ -16,11 +16,11 @@ from .exceptions import *
 from .execution import *
 from .measurements import *
 from .ml_tools import *
-from .models import *
 from .noise import *
 from .operations import *
 from .overlap import *
 from .parameters import *
+from .quantum_model import *
 from .register import *
 from .serialization import *
 from .states import *
@@ -54,7 +54,6 @@ list_of_submodules = [
     ".execution",
     ".measurements",
     ".ml_tools",
-    ".models",
     ".operations",
     ".overlap",
     ".parameters",
@@ -64,6 +63,7 @@ list_of_submodules = [
     ".transpile",
     ".types",
     ".utils",
+    ".quantum_model",
 ]
 
 __all__ = []

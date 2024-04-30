@@ -5,10 +5,9 @@ from pathlib import Path
 from sympy import Expr
 from torch import isclose
 
-from qadence import QuantumCircuit
+from qadence import QNN, QuantumCircuit, QuantumModel
 from qadence.blocks import AbstractBlock, KronBlock
 from qadence.ml_tools.utils import rand_featureparameters
-from qadence.models import QNN, QuantumModel
 from qadence.register import Register
 from qadence.serialization import (
     FORMAT_DICT,

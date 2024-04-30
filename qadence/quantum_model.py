@@ -362,3 +362,7 @@ class QuantumModel(nn.Module):
         except Exception as e:
             logger.warning(f"Unable to move {self} to {args}, {kwargs} due to {e}.")
         return self
+
+
+# Modules to be automatically added to the qadence namespace
+__all__ = ["QuantumModel"]  # type: ignore

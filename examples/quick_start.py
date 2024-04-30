@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import torch
 
+from qadence import QuantumModel  # quantum model for execution
+
 # qadence has many submodules
 from qadence.blocks import kron  # block system
 from qadence.circuit import QuantumCircuit  # circuit to assemble quantum operations
 from qadence.ml_tools import TrainConfig, train_with_grad  # tools for ML simulations
-from qadence.models import QuantumModel  # quantum model for execution
 from qadence.operations import RX, HamEvo, X, Y, Zero  # quantum operations
 from qadence.parameters import VariationalParameter  # trainable parameters
 

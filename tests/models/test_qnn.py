@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 import torch
 
+from qadence import QNN
 from qadence.blocks import (
     chain,
     kron,
@@ -13,7 +14,6 @@ from qadence.blocks import (
 )
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import hamiltonian_factory, hea, ising_hamiltonian, total_magnetization
-from qadence.models import QNN
 from qadence.operations import RX, RY, Z
 from qadence.parameters import FeatureParameter, Parameter
 from qadence.states import uniform_state

@@ -14,7 +14,7 @@ In Qadence there are 4 main objects spread across 3 different levels of abstract
     * [`QuantumCircuit`][qadence.circuit.QuantumCircuit]: A class representing an abstract quantum
       circuit not tight not any particular framework. Parameters are represented symbolically using
       `sympy` expressions.
-    * [`QuantumModel`][qadence.models.QuantumModel]: The models are higher-level abstraction
+    * [`QuantumModel`][qadence.QuantumModel]: The models are higher-level abstraction
       providing an interface for executing different kinds of common quantum computing models such
       quantum neural networks (QNNs), quantum kernels etc.
 

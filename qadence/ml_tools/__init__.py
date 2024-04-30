@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from .config import TrainConfig
 from .data import DictDataLoader, InfiniteTensorDataset, to_dataloader
+from .models import QNN
 from .optimize_step import optimize_step as default_optimize_step
 from .parameters import get_parameters, num_parameters, set_parameters
 from .printing import print_metrics, write_tensorboard
@@ -18,4 +19,5 @@ __all__ = [
     "train_gradient_free",
     "load_checkpoint",
     "write_checkpoint",
+    "QNN",
 ]

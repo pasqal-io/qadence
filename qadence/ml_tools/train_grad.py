@@ -68,7 +68,7 @@ def train(
     from itertools import count
     from qadence import Parameter, QuantumCircuit, Z
     from qadence import hamiltonian_factory, hea, feature_map, chain
-    from qadence.models import QNN
+    from qadence import QNN
     from qadence.ml_tools import TrainConfig, train_with_grad, to_dataloader
 
     n_qubits = 2

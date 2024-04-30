@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 import torch
 
+from qadence import QuantumModel
 from qadence.blocks import CompositeBlock
 from qadence.blocks.analog import ConstantAnalogRotation
 from qadence.circuit import QuantumCircuit
@@ -14,7 +15,6 @@ from qadence.constructors import (
     rydberg_tower_feature_map,
     total_magnetization,
 )
-from qadence.models import QuantumModel
 from qadence.operations import AnalogRY, X
 from qadence.parameters import VariationalParameter
 from qadence.register import Register
