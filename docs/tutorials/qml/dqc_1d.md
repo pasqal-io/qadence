@@ -114,7 +114,7 @@ print(html_string(circuit)) # markdown-exec: hide
 
 Now that the model is defined we can proceed with the training. the `QNN` class can be used like any other `torch.nn.Module`. Here we write a simple training loop, but you can also look at the [ml tools tutorial](ml_tools.md) to use the convenience training functions that Qadence provides.
 
-To train the model, we will select a random set of collocation points uniformly distributed within $x\in[-1.0, 1.0]$ and compute the loss function for those points.
+To train the model, we will select a random set of collocation points uniformly distributed within $-1.0< x <1.0$ and compute the loss function for those points.
 
 ```python exec="on" source="material-block" session="dqc"
 n_epochs = 200
@@ -136,6 +136,8 @@ for epoch in range(n_epochs):
     optimizer.step()
 ```
 
+Note the values of $x$ are only picked from $x\in[-0.99, 0.99]$ since we are using a Chebyshev feature map, and derivative of $\acos(x)$ diverges at $-1$ and $1$.
+
 ## Plotting the results
 
 ```python exec="on" source="material-block" html="1" session="dqc"
@@ -151,6 +153,7 @@ result_exact = f_exact(x_test).flatten()
 result_model = model(x_test).flatten().detach()
 
 plt.clf()  # markdown-exec: hide
+plt.figure(figsize=(6, 5))  # markdown-exec: hide
 plt.plot(x_test, result_exact, label = "Exact solution")
 plt.plot(x_test, result_model, label = " Trained model")
 plt.xlabel("x")  # markdown-exec: hide
@@ -183,7 +186,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr = 0.1)
 for epoch in range(n_epochs):
     optimizer.zero_grad()
 
-    # Training data. We unsqueeze essentially making each batch have a single x value.
+    # Training data
     x_train = (xmin + (xmax-xmin)*torch.rand(n_points, requires_grad = True)).unsqueeze(1)
 
     loss = loss_fn(inputs = x_train, model = model)
@@ -201,6 +204,7 @@ result_exact = f_exact(x_test).flatten()
 result_model = model(x_test).flatten().detach()
 
 plt.clf()  # markdown-exec: hide
+plt.figure(figsize=(6, 5))  # markdown-exec: hide
 plt.plot(x_test, result_exact, label = "Exact solution")
 plt.plot(x_test, result_model, label = "Trained model")
 plt.xlabel("x")  # markdown-exec: hide
