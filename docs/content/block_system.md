@@ -138,7 +138,8 @@ print(allclose(block_digital.tensor(), block_analog.tensor()))
 As seen above, arbitrary Hamiltonians can be constructed using the Pauli operators, and their evolution can be fully combined with other digital operations and incorporated into any quantum program
 
 ```python exec="on" source="material-block" session="getting_started" html="1"
-from qadence import X, Y, RX, add, PI, HamEvo
+from qadence import X, Y, RX, HamEvo
+from qadence import add, kron, PI
 
 def xy_int(i: int, j: int):
 	return (1/2) * (X(i)@X(j) + Y(i)@Y(j))

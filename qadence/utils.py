@@ -155,7 +155,16 @@ def format_number(x: float | complex, num_digits: int = 3) -> str:
 
 
 def format_parameter(p: sympy.Basic) -> str:
-    return "{:.3f}".format(p)
+    n_round = 3  # Number of decimal cases
+
+    def round_expr(expr: sympy.Basic, num_digits: int) -> sympy.Basic:
+        return expr.xreplace({n: round(n, num_digits) for n in expr.atoms(sympy.Number)})
+    conv_str = str(round_expr(p, n_round))
+    
+    if len(conv_str) > n_round+2:  
+        conv_str = conv_str[0:n_round+2]
+    
+    return conv_str
 
 
 def print_sympy_expr(expr: sympy.Expr, num_digits: int = 3) -> str:
