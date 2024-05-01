@@ -10,7 +10,7 @@ Passing fixed parameters to blocks can be done by simply passing a Python numeri
 
 ```python exec="on" source="material-block" result="json"
 import torch
-from qadence import RX, run
+from qadence import RX, run, PI
 
 wf = run(RX(0, torch.tensor(PI)))
 print(f"{wf = }") # markdown-exec: hide
@@ -57,21 +57,22 @@ The integration with Sympy becomes useful when one wishes to write arbitrary par
 
 ```python exec="on" source="material-block" result="json"
 from torch import tensor
-from qadence import RX, PI, VariationalParameter, FeatureParameter, run
-from sympy import acos
+from qadence import RX, Z, HamEvo, PI
+from qadence import VariationalParameter, FeatureParameter, run
+from sympy import sin
 
 theta, phi = VariationalParameter("theta"), FeatureParameter("phi")
 
 # Arbitrary parameter composition
-expr = PI * acos(theta + phi)
+expr = PI * sin(theta + phi)
 
 # Use as unitary gate arguments
 gate = RX(0, expr)
 
 # Or as scaling coefficients for Hermitian operators
-h_op = expr * (X(0)@X(1) + Y(0)@Y(1))
+h_op = expr * (Z(0) @ Z(1))
 
-wf = run(HamEvo(h_op, 1.0), values = {"phi": tensor([PI, PI/2])})
+wf = run(gate * HamEvo(h_op, phi), values = {"phi": tensor(PI)})
 print(f"{wf = }") # markdown-exec: hide
 ```
 
@@ -81,7 +82,7 @@ Parameters are uniquely defined by their name and redundancy is allowed in compo
 
 ```python exec="on" source="material-block" result="json"
 import torch
-from qadence import RY, run, , kron
+from qadence import RY, run, kron
 
 n_qubits = 3
 
