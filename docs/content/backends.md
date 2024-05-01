@@ -29,7 +29,7 @@ The [`DifferentiableBackend`][qadence.engines.torch.DifferentiableBackend] class
 for the given backend. This can be chosen from two types:
 
 - Automatic differentiation (AD): available for PyTorch based backends (PyQTorch).
-- Parameter Shift Rules (PSR): available for all backends. See this [section](../advanced_tutorials/differentiability.md) for more information on differentiability and PSR.
+- Parameter Shift Rules (PSR): available for all backends. See this [section](../tutorials/advanced_tutorials/differentiability.md) for more information on differentiability and PSR.
 
 In practice, only a `diff_mode` should be provided in the `QuantumModel`. Please note that `diff_mode` defaults to `None`:
 
@@ -73,7 +73,7 @@ print(f"{dexp_dx = }") # markdown-exec: hide
 ## Low-level `backend_factory` interface
 
 Every backend in Qadence inherits from the abstract `Backend` class:
-[`Backend`](../backends/backend.md) and implement the following methods:
+[`Backend`](../api/backends/backend.md) and implement the following methods:
 
 - [`run`][qadence.backend.Backend.run]: propagate the initial state according to the quantum circuit and return the final wavefunction object.
 - [`sample`][qadence.backend.Backend.sample]: sample from a circuit.

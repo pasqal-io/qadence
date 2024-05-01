@@ -342,9 +342,10 @@ class QuantumModel(nn.Module):
         return self.backend.assign_parameters(self._circuit, params)
 
     def to(self, *args: Any, **kwargs: Any) -> QuantumModel:
+        from pyqtorch import QuantumCircuit as PyQCircuit
+
         try:
-            if isinstance(self._circuit.native, torch.nn.Module):
-                # Backends which are not torch-based cannot be moved to 'device'
+            if isinstance(self._circuit.native, PyQCircuit):
                 self._circuit.native = self._circuit.native.to(*args, **kwargs)
                 if self._observable is not None:
                     if isinstance(self._observable, ConvertedObservable):
@@ -359,6 +360,8 @@ class QuantumModel(nn.Module):
                     else torch.float32,
                 )
                 logger.debug(f"Moved {self} to {args}, {kwargs}.")
+            else:
+                logger.debug("QuantumModel.to only supports pyqtorch.QuantumCircuits.")
         except Exception as e:
             logger.warning(f"Unable to move {self} to {args}, {kwargs} due to {e}.")
         return self

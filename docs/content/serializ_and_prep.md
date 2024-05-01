@@ -46,6 +46,7 @@ Finally, we can save the quantum circuit and the model with the two supported fo
 
 ```python exec="on" source="material-block" session="seralize_2"
 from qadence.serialization import serialize, deserialize, save, load, SerializationFormat
+
 qc_fname = "circuit"
 save(qc, folder=".", file_name=qc_fname, format=SerializationFormat.PT)
 loaded_qc = load(f"{qc_fname}.pt")
@@ -55,7 +56,8 @@ qm_fname = "model"
 save(qm, folder=".", file_name=qm_fname, format=SerializationFormat.JSON)
 model = load(f"{qm_fname}.json")
 assert isinstance(model, QuantumModel)
-import os # markdown-exec: hide
-os.remove(f"{qc_fname}.pt") # markdown-exec: hide
-os.remove(f"{qm_fname}.json") # markdown-exec: hide
+import os  # markdown-exec: hide
+
+os.remove(f"{qc_fname}.pt")  # markdown-exec: hide
+os.remove(f"{qm_fname}.json")  # markdown-exec: hide
 ```

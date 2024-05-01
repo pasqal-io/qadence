@@ -10,7 +10,7 @@
 ## Analog blocks
 
 To learn how to use analog blocks and how to mix digital & analog blocks, check out the
-[digital-analog section](../digital_analog_qc/analog-basics.md) of the documentation.
+[digital-analog section](../tutorials/digital_analog_qc/analog-basics.md) of the documentation.
 
 Examples on how to use digital-analog blocks can be found in the
 *examples folder of the qadence repo:
