@@ -155,10 +155,7 @@ def format_number(x: float | complex, num_digits: int = 3) -> str:
 
 
 def format_parameter(p: sympy.Basic) -> str:
-    def round_expr(expr: sympy.Basic, num_digits: int) -> sympy.Basic:
-        return expr.xreplace({n: round(n, num_digits) for n in expr.atoms(sympy.Number)})
-
-    return str(round_expr(p, 3))
+    return "{:.3f}".format(p)
 
 
 def print_sympy_expr(expr: sympy.Expr, num_digits: int = 3) -> str:

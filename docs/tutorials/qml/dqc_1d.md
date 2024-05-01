@@ -136,7 +136,7 @@ for epoch in range(n_epochs):
     optimizer.step()
 ```
 
-Note the values of $x$ are only picked from $x\in[-0.99, 0.99]$ since we are using a Chebyshev feature map, and derivative of $\acos(x)$ diverges at $-1$ and $1$.
+Note the values of $x$ are only picked from $x\in[-0.99, 0.99]$ since we are using a Chebyshev feature map, and derivative of $\text{acos}(x)$ diverges at $-1$ and $1$.
 
 ## Plotting the results
 

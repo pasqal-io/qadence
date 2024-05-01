@@ -99,18 +99,18 @@ def qft_layer(qs: tuple, l: int):
 	cphases = chain(CPHASE(qs[j], qs[l], PI/2**(j-l)) for j in range(l+1, len(qs)))
 	return H(qs[l]) * cphases
 
-def QFT(qs: tuple):
+def qft(qs: tuple):
 	return chain(qft_layer(qs, l) for l in range(len(qs)))
 
 from qadence.draw import html_string # markdown-exec: hide
-print(html_string(QFT((0, 1, 2)))) # markdown-exec: hide
+print(html_string(qft((0, 1, 2)))) # markdown-exec: hide
 ```
 
 Other functionalities are directly built in the block system. For example, the inverse operation can be created with the `dagger()` method.
 
 ```python exec="on" source="material-block" html="1" session="getting_started"
 
-qft_inv = QFT((0, 1, 2)).dagger()
+qft_inv = qft((0, 1, 2)).dagger()
 
 from qadence.draw import html_string # markdown-exec: hide
 print(html_string(qft_inv)) # markdown-exec: hide
@@ -118,9 +118,48 @@ print(html_string(qft_inv)) # markdown-exec: hide
 
 ## Digital-analog composition
 
+In Qadence, analog operations are a first-class citizen. Generally speaking, an analog operation is one whose unitary is best described by the evolution of some hermitian generator, or Hamiltonian, acting on an arbitrary number of qubits. Qadence provides the `HamEvo` class to initialize analog operations. For a time-independent generator $\mathcal{H}$ and some time variable $t$, `HamEvo(H, t)` represents the evolution operator $\exp(-i\mathcal{H}t)$.
+
+Analog operations constitute a generalization of digital operations, and all digital operations can also be represented as the evolution of some hermitian generator. For example, the `RX` gate is the evolution of `X`.
+
+```python exec="on" source="material-block" session="getting_started" result="json"
+from qadence import X, RX, HamEvo, PI
+from torch import allclose
+
+angle = PI/2
+
+block_digital = RX(0, angle)
+
+block_analog = HamEvo(0.5*X(0), angle)
+
+print(allclose(block_digital.tensor(), block_analog.tensor()))
+```
+
+As seen above, arbitrary Hamiltonians can be constructed using the Pauli operators, and their evolution can be fully combined with other digital operations and incorporated into any quantum program
+
+```python exec="on" source="material-block" session="getting_started" html="1"
+from qadence import X, Y, RX, add, PI, HamEvo
+
+def xy_int(i: int, j: int):
+	return (1/2) * (X(i)@X(j) + Y(i)@Y(j))
+
+n_qubits = 3
+
+xy_ham = add(xy_int(i, i+1) for i in range(n_qubits-1))
+
+analog_evo = HamEvo(xy_ham, 1.0)
+
+digital_block = kron(RX(i, i*PI/2) for i in range(n_qubits))
+
+program = digital_block * analog_evo * digital_block
+
+from qadence.draw import html_string # markdown-exec: hide
+print(html_string(program)) # markdown-exec: hide
+```
+
 ## Block execution
 
-To quickly run quantum operations and access wavefunctions, samples or expectation values of observables, one can use the convenience functions `run`, `sample` and `expectation`. The following example shows an execution workflow with the natively available `PyQTorch` backend:
+To quickly run block operations and access wavefunctions, samples or expectation values of observables, one can use the convenience functions `run`, `sample` and `expectation`.
 
 ```python exec="on" source="material-block" result="json" session="index"
 from qadence import chain, add, H, Z, run, sample, expectation
