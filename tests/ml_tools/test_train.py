@@ -9,7 +9,7 @@ import pytest
 import torch
 from torch.utils.data import DataLoader
 
-from qadence.ml_tools import DictDataLoader, TrainConfig, to_dataloader, train_with_grad
+from qadence.ml_tools import QNN, DictDataLoader, TrainConfig, to_dataloader, train_with_grad
 
 torch.manual_seed(42)
 np.random.seed(42)
@@ -124,7 +124,7 @@ def test_train_dictdataloader(tmp_path: Path, Basic: torch.nn.Module) -> None:
 @pytest.mark.flaky(max_runs=10)
 def test_train_tensor_tuple(Basic: torch.nn.Module, BasicQNN: QNN) -> None:
     for cls, dtype in [(Basic, torch.float32), (BasicQNN, torch.complex64)]:
-        model = TransformedModule(cls, 1, 1, *[torch.nn.Parameter(t) for t in torch.rand(4)])
+        model = cls
         batch_size = 25
         x = torch.linspace(0, 1, batch_size).reshape(-1, 1)
         y = torch.sin(x)

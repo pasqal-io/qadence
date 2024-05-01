@@ -16,12 +16,11 @@ from arpeggio.cleanpeg import ParserPEG
 from sympy import *
 from sympy import core, srepr
 
-from qadence import QuantumCircuit, operations, parameters
+from qadence import QNN, QuantumCircuit, QuantumModel, operations, parameters
 from qadence import blocks as qadenceblocks
 from qadence.blocks import AbstractBlock
 from qadence.blocks.utils import tag
 from qadence.logger import get_logger
-from qadence.models import QuantumModel
 from qadence.parameters import Parameter
 from qadence.register import Register
 from qadence.types import SerializationFormat
@@ -49,7 +48,6 @@ SUPPORTED_OBJECTS = [
     QuantumCircuit,
     QuantumModel,
     QNN,
-    TransformedModule,
     Register,
     core.Basic,
     torch.nn.Module,
