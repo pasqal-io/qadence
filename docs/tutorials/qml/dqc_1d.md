@@ -105,7 +105,7 @@ We used a Chebyshev feature map with a tower-like scaling of the input reupload,
 from qadence.draw import html_string # markdown-exec: hide
 from qadence.draw import display
 
-display(circuit)
+# display(circuit)
 
 print(html_string(circuit)) # markdown-exec: hide
 ```

@@ -15,8 +15,8 @@ nav:
 
   - Contents:
     - Block system: content/block_system.md
-    - Quantum models: content/quantummodels.md
     - Parametric programs: content/parameters.md
+    - Quantum models: content/quantummodels.md
     - Quantum registers: content/register.md
     - State conventions: content/state_conventions.md
     - State initialization: content/state_init.md
