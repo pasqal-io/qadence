@@ -143,7 +143,7 @@ from qadence import add, kron, PI
 
 def xy_int(i: int, j: int):
 	return (1/2) * (X(i)@X(j) + Y(i)@Y(j))
-	
+
 n_qubits = 3
 
 xy_ham = add(xy_int(i, i+1) for i in range(n_qubits-1))
@@ -163,68 +163,29 @@ print(html_string(program)) # markdown-exec: hide
 To quickly run block operations and access wavefunctions, samples or expectation values of observables, one can use the convenience functions `run`, `sample` and `expectation`.
 
 ```python exec="on" source="material-block" result="json" session="index"
-from qadence import chain, add, H, Z, run, sample, expectation
+from qadence import kron, add, H, Z, run, sample, expectation
 
 n_qubits = 2
-block = chain(H(0), H(1))
 
-# Compute the wavefunction.
-# Please check the documentation for other available backends.
-wf = run(block)
+# Prepares a uniform state
+h_block = kron(H(i) for i in range(n_qubits))
+
+wf = run(h_block)
 print(f"{wf = }") # markdown-exec: hide
 
-# Sample the resulting wavefunction with a given number of shots.
-xs = sample(block, n_shots=1000)
+xs = sample(h_block, n_shots=1000)
 print(f"{xs = }") # markdown-exec: hide
 
-# Compute an expectation based on an observable of Pauli-Z operators.
 obs = add(Z(i) for i in range(n_qubits))
-ex = expectation(block, obs)
+ex = expectation(h_block, obs)
 print(f"{ex = }") # markdown-exec: hide
 ```
 
-More fine-grained control and better performance is provided via the high-level `QuantumModel` abstraction.
-
 ## Execution via `QuantumCircuit` and `QuantumModel`
 
-Quantum programs in Qadence are constructed in two steps:
+More fine-grained control and better performance is provided via the high-level `QuantumModel` abstraction. Quantum programs in Qadence are constructed in two steps:
 
 1. Build a [`QuantumCircuit`][qadence.circuit.QuantumCircuit] which ties together a composite block and a register.
 2. Define a [`QuantumModel`](quantummodels.md) which differentiates, compiles and executes the circuit.
 
-`QuantumCircuit` is a central class in Qadence and circuits are abstract
-objects from the actual hardware/simulator that they are expected to be executed on.
-They require to specify the `Register` of resources to execute your program on. Previous examples
-were already using `QuantumCircuit` with a `Register` that fits the qubit support for the given block.
-
-```python exec="on" source="material-block" result="json"
-from qadence import QuantumCircuit, Register, H, chain
-
-# NOTE: Run a block which supports two qubits
-# on a register of three qubits.
-register = Register(3)
-circuit = QuantumCircuit(register, chain(H(0), H(1)))
-print(f"circuit = {circuit}") # markdown-exec: hide
-```
-
-!!! note "Registers and qubit supports"
-    Registers can also be constructed from qubit coordinates to create arbitrary register
-    topologies. See details in the [digital-analog](../tutorials/digital_analog_qc/analog-basics.md) section.
-	Qubit supports are subsets of the circuit register tied to blocks.
-
-
-`QuantumModel` is another central class in Qadence. It specifies a [Backend](backends.md) for
-the differentiation, compilation and execution of the abstract circuit.
-
-```python exec="on" source="material-block" result="json"
-from qadence import BackendName, DiffMode, QuantumCircuit, QuantumModel, Register, H, chain
-
-reg = Register(3)
-circ = QuantumCircuit(reg, chain(H(0), H(1)))
-model = QuantumModel(circ, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD)
-
-xs = model.sample(n_shots=100)
-print(f"{xs = }") # markdown-exec: hide
-```
-
-For more details on `QuantumModel`, see [here](quantummodels.md).
+Execution of more complex Qadence programs will be explored in the next tutorials.
