@@ -82,7 +82,7 @@ Parameters are uniquely defined by their name and redundancy is allowed in compo
 
 ```python exec="on" source="material-block" result="json"
 import torch
-from qadence import RY, run, kron
+from qadence import RY, run, kron, FeatureParameter
 
 n_qubits = 3
 
