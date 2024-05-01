@@ -143,7 +143,7 @@ from qadence import add, kron, PI
 
 def xy_int(i: int, j: int):
 	return (1/2) * (X(i)@X(j) + Y(i)@Y(j))
-
+	
 n_qubits = 3
 
 xy_ham = add(xy_int(i, i+1) for i in range(n_qubits-1))

@@ -154,10 +154,8 @@ def format_number(x: float | complex, num_digits: int = 3) -> str:
         raise ValueError(f"Unknown number type: {type(x)}")
 
 
-def format_parameter(p: sympy.Basic) -> str:
-    # Number of digits to round to
-    num_digits = 3
-
+def format_parameter(p: sympy.Basic, num_digits: int = 3) -> str:
+    """Format numerical values within a sympy expression."""
     def round_expr(expr: sympy.Basic, num_digits: int) -> sympy.Basic:
         return expr.xreplace({n: round(n, num_digits) for n in expr.atoms(sympy.Number)})
 
