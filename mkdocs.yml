@@ -20,6 +20,7 @@ nav:
     - Quantum registers: content/register.md
     - State initialization: content/state_init.md
     - Arbitrary Hamiltonians: content/hamiltonians.md
+    - QML Constructors: content/qml_constructors.md
     - Wavefunction overlaps: content/overlap.md
     - Backends: content/backends.md
     - Useful info:
@@ -39,7 +40,6 @@ nav:
 
     - Variational quantum algorithms:
       - tutorials/qml/index.md
-      - Constructors: tutorials/qml/qml_constructors.md
       - Training tools: tutorials/qml/ml_tools.md
       - Quantum circuit learning: tutorials/qml/qcl.md
       - Solving MaxCut with QAOA: tutorials/qml/qaoa.md
