@@ -319,19 +319,23 @@ def _create_rydberg_fm(
     return fm_blocks
 
 
-def _create_fm(
+def create_fm_blocks(
     register: int | Register,
     config: FeatureMapConfig,
 ) -> list[AbstractBlock]:
     """
-    Create the feature map based on the configuration.
+    Create a list of feature map blocks based on the given configuration.
+
+    In case of series encoding or even parallel encoding with data reuploads,
+    the outputs is a list of blocks that still need to be interleaved with non
+    commuting blocks.
 
     Args:
         register (int | Register): The number of qubits or the register.
         config (FeatureMapConfig): The configuration for the feature map.
 
     Returns:
-        list[AbstractBlock]: The feature map blocks.
+        list[AbstractBlock]: A list of feature map blocks.
 
     Raises:
         ValueError: If the feature map strategy is not 'digital', 'analog' or 'rydberg'.
@@ -373,7 +377,7 @@ def _ansatz_layer(
         param_prefix=f"fm_{index}",
     )
 
-    return _create_ansatz(register=register, config=new_config)
+    return create_ansatz(register=register, config=new_config)
 
 
 def _create_iia_digital(
@@ -574,7 +578,7 @@ def _create_hea_ansatz(
         )
 
 
-def _create_ansatz(
+def create_ansatz(
     register: int | Register,
     config: AnsatzConfig,
 ) -> AbstractBlock:
@@ -661,7 +665,7 @@ def _global_identity(register: int | Register) -> KronBlock:
     )
 
 
-def _create_observable(
+def create_observable(
     register: int | Register,
     config: ObservableConfig,
 ) -> AbstractBlock:
@@ -712,14 +716,14 @@ def build_qnn_from_configs(
     Returns:
         QNN: A QNN model.
     """
-    fm_blocks = _create_fm(register=register, config=fm_config)
+    fm_blocks = create_fm_blocks(register=register, config=fm_config)
     full_fm = _interleave_ansatz_in_fm(
         register=register,
         fm_blocks=fm_blocks,
         ansatz_config=ansatz_config,
     )
 
-    ansatz = _create_ansatz(register=register, config=ansatz_config)
+    ansatz = create_ansatz(register=register, config=ansatz_config)
 
     # Add a block before the Featuer Map to move from 0 state to an
     # equal superposition of all states. This needs to be here only for rydberg
@@ -738,9 +742,9 @@ def build_qnn_from_configs(
     )
 
     if isinstance(observable_config, list):
-        observable = [_create_observable(register=register, config=oc) for oc in observable_config]
+        observable = [create_observable(register=register, config=oc) for oc in observable_config]
     else:
-        observable = _create_observable(register=register, config=observable_config)  # type: ignore[assignment]
+        observable = create_observable(register=register, config=observable_config)  # type: ignore[assignment]
 
     ufa = QNN(circ, observable, inputs=fm_config.inputs)
 
