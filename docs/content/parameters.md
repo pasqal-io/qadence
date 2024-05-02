@@ -81,7 +81,7 @@ print(f"{wf = }") # markdown-exec: hide
 Parameters are uniquely defined by their name and redundancy is allowed in composite blocks to assign the same value to different blocks. This is useful, for example, when defining layers of rotation gates typically used as feature maps.
 
 ```python exec="on" source="material-block" result="json"
-import torch
+from torch import tensor
 from qadence import RY, run, kron, FeatureParameter
 
 n_qubits = 3
@@ -135,6 +135,7 @@ Let's construct a parametric quantum circuit.
 
 ```python exec="on" source="material-block" result="json" session="parametrized-models"
 from qadence import QuantumCircuit, RX, RY, chain, kron
+from qadence import FeatureParameter, VariationalParameter
 
 theta = VariationalParameter("theta")
 phi = FeatureParameter("phi")
