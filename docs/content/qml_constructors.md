@@ -1,7 +1,6 @@
 # Quantum machine learning constructors
 
-Besides the [arbitrary Hamiltonian constructors](../../content/hamiltonians.md), Qadence also provides a complete set of
-program constructors useful for digital-analog quantum machine learning programs.
+Besides the [arbitrary Hamiltonian constructors](hamiltonians.md), Qadence also provides a complete set of program constructors useful for digital-analog quantum machine learning programs.
 
 ## Feature maps
 
