@@ -154,11 +154,17 @@ def format_number(x: float | complex, num_digits: int = 3) -> str:
         raise ValueError(f"Unknown number type: {type(x)}")
 
 
-def format_parameter(p: sympy.Basic) -> str:
+def format_parameter(p: sympy.Basic, num_digits: int = 3) -> str:
+    """Format numerical values within a sympy expression."""
+
     def round_expr(expr: sympy.Basic, num_digits: int) -> sympy.Basic:
         return expr.xreplace({n: round(n, num_digits) for n in expr.atoms(sympy.Number)})
 
-    return str(round_expr(p, 3))
+    expr = round_expr(p, num_digits)
+    conv_str = str(expr)
+    if expr.is_real and len(conv_str) > num_digits + 2:
+        conv_str = conv_str[0 : num_digits + 2]
+    return conv_str
 
 
 def print_sympy_expr(expr: sympy.Expr, num_digits: int = 3) -> str:

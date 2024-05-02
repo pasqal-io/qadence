@@ -155,8 +155,7 @@ When running on real devices that enable the [digital-analog](../tutorials/digit
 qubit interactions must be specified either by specifying distances between qubits,
 or by defining edges in the register connectivity graph.
 
-It is possible to access the abstract graph nodes and edges to work with if needed as in the [perfect state
-transfer](../index.md#analog-emulation-of-a-perfect-state-transfer) example.
+It is possible to access the abstract graph nodes and edges to work with if needed.
 
 ```python exec="on" source="material-block" result="json" session="reg-usage"
 from qadence import Register
