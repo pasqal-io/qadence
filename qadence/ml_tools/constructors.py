@@ -698,7 +698,7 @@ def build_qnn_from_configs(
     register: int | Register,
     fm_config: FeatureMapConfig,
     ansatz_config: AnsatzConfig,
-    observable_config: ObservableConfig,
+    observable_config: ObservableConfig | list[ObservableConfig],
 ) -> QNN:
     """
     Build a QNN model.
@@ -737,7 +737,10 @@ def build_qnn_from_configs(
         ansatz,
     )
 
-    observable = _create_observable(register=register, config=observable_config)
+    if isinstance(observable_config, list):
+        observable = [_create_observable(register=register, config=oc) for oc in observable_config]
+    else:
+        observable = _create_observable(register=register, config=observable_config)  # type: ignore[assignment]
 
     ufa = QNN(circ, observable, inputs=fm_config.inputs)
 
