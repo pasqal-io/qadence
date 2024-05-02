@@ -18,12 +18,13 @@ nav:
     - Parametric programs: content/parameters.md
     - Quantum models: content/quantummodels.md
     - Quantum registers: content/register.md
-    - State conventions: content/state_conventions.md
     - State initialization: content/state_init.md
     - Arbitrary Hamiltonians: content/hamiltonians.md
     - Wavefunction overlaps: content/overlap.md
-    - Serialization: content/serializ_and_prep.md
     - Backends: content/backends.md
+    - Useful info:
+      - State conventions: content/state_conventions.md
+      - Serialization: content/serializ_and_prep.md
 
   - Tutorials:
     - tutorials/index.md

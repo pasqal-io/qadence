@@ -1,4 +1,4 @@
-Quantum programs in Qadence are constructed via a block-system, with an emphasis on composability of blocks to obtain larger, composite blocks. This functional approach is different from other frameworks which follow a more object-oriented way to construct circuits and express programs.
+Quantum programs in Qadence are constructed using a block-system, with an emphasis on composability of primitive blocks to obtain larger, composite blocks. This functional approach is different from other frameworks which follow a more object-oriented way to construct circuits and express programs.
 
 ## Primitive blocks
 
@@ -65,7 +65,7 @@ from qadence.draw import html_string # markdown-exec: hide
 print(html_string(kron_block)) # markdown-exec: hide
 ```
 
-Each composition function directly supports list comprehension syntax. Below we can exemplify the creation of an XY Hamiltonian on a line.
+All composition functions support list comprehension syntax. Below we exemplify the creation of an XY Hamiltonian for qubits laid out on a line.
 
 ```python exec="on" source="material-block" result="json" session="getting_started"
 from qadence import X, Y, add
@@ -80,7 +80,7 @@ xy_ham = add(xy_int(i, i+1) for i in range(n_qubits-1))
 print(xy_ham) # markdown-exec: hide
 ```
 
-Qadence blocks can be directly translated to matrix form by calling `block.tensor()`. Note that first dimension is the batch dimension, following PyTorch conventions.
+Qadence blocks can be directly translated to matrix form by calling `block.tensor()`. Note that first dimension is the batch dimension, following PyTorch conventions. This becomes relevant if the block are parameterized and batched input values are passed, as we will see later.
 
 ```python exec="on" source="material-block" result="json" session="getting_started"
 from qadence import X, Y
@@ -118,7 +118,7 @@ print(html_string(qft_inv)) # markdown-exec: hide
 
 ## Digital-analog composition
 
-In Qadence, analog operations are a first-class citizen. Generally speaking, an analog operation is one whose unitary is best described by the evolution of some hermitian generator, or Hamiltonian, acting on an arbitrary number of qubits. Qadence provides the `HamEvo` class to initialize analog operations. For a time-independent generator $\mathcal{H}$ and some time variable $t$, `HamEvo(H, t)` represents the evolution operator $\exp(-i\mathcal{H}t)$.
+In Qadence, analog operations are first-class citizens. An analog operation is one whose unitary is best described by the evolution of some hermitian generator, or Hamiltonian, acting on an arbitrary number of qubits. Qadence provides the `HamEvo` class to initialize analog operations. For a time-independent generator $\mathcal{H}$ and some time variable $t$, `HamEvo(H, t)` represents the evolution operator $\exp(-i\mathcal{H}t)$.
 
 Analog operations constitute a generalization of digital operations, and all digital operations can also be represented as the evolution of some hermitian generator. For example, the `RX` gate is the evolution of `X`.
 
@@ -135,7 +135,7 @@ block_analog = HamEvo(0.5*X(0), angle)
 print(allclose(block_digital.tensor(), block_analog.tensor()))
 ```
 
-As seen above, arbitrary Hamiltonians can be constructed using the Pauli operators, and their evolution can be fully combined with other digital operations and incorporated into any quantum program
+As seen in the previous section, arbitrary Hamiltonians can be constructed using Pauli operators. Their evolution can be combined with other arbitrary digital operations and incorporated into any quantum program.
 
 ```python exec="on" source="material-block" session="getting_started" html="1"
 from qadence import X, Y, RX, HamEvo
