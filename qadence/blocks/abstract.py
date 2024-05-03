@@ -300,6 +300,13 @@ class AbstractBlock(ABC):
         params: list[sympy.Basic] = parameters(self)
         return any(isinstance(p, Parameter) for p in params)
 
+    @property
+    def is_time_dependent(self) -> bool:
+        from qadence.blocks.utils import parameters
+
+        params: list[sympy.Basic] = parameters(self)
+        return any(p.is_time for p in params)
+
     def tensor(self, values: dict[str, TNumber | torch.Tensor] = {}) -> torch.Tensor:
         from .block_to_tensor import block_to_tensor
 

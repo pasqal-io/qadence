@@ -107,28 +107,42 @@ def embedding(
 
     def embedding_fn(params: ParamDictType, inputs: ParamDictType) -> ParamDictType:
         embedded_params: dict[sympy.Expr, ArrayLike] = {}
+        print("embeddings:")
+        print(embeddings)
+        print("params:", params)
+        print("inputs:", inputs)
+        print("----------------------------")
+        print()
         for expr, fn in embeddings.items():
             angle: ArrayLike
             values = {}
+            print("expr:", expr, fn)
+            print("$$$$$$$$$ free symbols:", expr.free_symbols)
             for symbol in expr.free_symbols:
-                if symbol.name in inputs:
-                    value = inputs[symbol.name]
-                elif symbol.name in params:
-                    value = params[symbol.name]
+                print("**** symbol:", symbol, type(symbol), symbol.is_time)
+                if not symbol.is_time:
+                    if symbol.name in inputs:
+                        value = inputs[symbol.name]
+                    elif symbol.name in params:
+                        value = params[symbol.name]
+                    else:
+                        # print('symbol:', symbol, type(symbol))
+                        msg_trainable = "Trainable" if symbol.trainable else "Non-trainable"
+                        raise KeyError(
+                            f"{msg_trainable} parameter '{symbol.name}' not found in the "
+                            f"inputs list: {list(inputs.keys())} nor the "
+                            f"params list: {list(params.keys())}."
+                        )
+                    values[symbol.name] = value
                 else:
-                    msg_trainable = "Trainable" if symbol.trainable else "Non-trainable"
-                    raise KeyError(
-                        f"{msg_trainable} parameter '{symbol.name}' not found in the "
-                        f"inputs list: {list(inputs.keys())} nor the "
-                        f"params list: {list(params.keys())}."
-                    )
-                values[symbol.name] = value
+                    values[symbol.name] = tensor(1.0)
             angle = fn(**values)
             # do not reshape parameters which are multi-dimensional
             # tensors, such as for example generator matrices
             if not len(angle.squeeze().shape) > 1:
                 angle = angle.reshape(-1)
             embedded_params[expr] = angle
+            print()
 
         for e in constant_expressions + unique_const_matrices:
             embedded_params[e] = params[stringify(e)]

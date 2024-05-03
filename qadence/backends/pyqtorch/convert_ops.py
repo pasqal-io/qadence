@@ -6,6 +6,7 @@ from typing import Any, Sequence, Tuple
 
 import pyqtorch as pyq
 import sympy
+import torch
 from pyqtorch.apply import apply_operator
 from pyqtorch.matrices import _dagger
 from pyqtorch.utils import is_diag
@@ -24,6 +25,7 @@ from torch import device as torch_device
 from torch import dtype as torch_dtype
 from torch.nn import Module
 
+from qadence.backends.pyqtorch.sesolve import sesolve_krylov
 from qadence.backends.utils import (
     finitediff,
 )
@@ -38,8 +40,14 @@ from qadence.blocks import (
     ScaleBlock,
     TimeEvolutionBlock,
 )
-from qadence.blocks.block_to_tensor import _block_to_tensor_embedded, block_to_tensor
+from qadence.blocks.block_to_tensor import (
+    _block_to_tensor_embedded,
+    block_to_diagonal,
+    block_to_tensor,
+)
+from qadence.blocks.embedding import embedding
 from qadence.blocks.primitive import ProjectorBlock
+from qadence.blocks.utils import expressions
 from qadence.operations import (
     U,
     multi_qubit_gateset,
@@ -178,6 +186,10 @@ class PyQHamiltonianEvolution(Module):
         self.block = block
         self.hmat: Tensor
 
+        print("here")
+        # print(self.param_names)
+        print(expressions(block))
+
         if isinstance(block.generator, AbstractBlock) and not block.generator.is_parametric:
             hmat = block_to_tensor(
                 block.generator,
@@ -217,6 +229,10 @@ class PyQHamiltonianEvolution(Module):
                 return hmat.permute(1, 2, 0)
 
             self._hamiltonian = _hamiltonian
+
+            if block.generator.is_time_dependent:
+                # get embedding function so it can be used to change time parameter
+                self.params_var, self.embedding_fn = embedding(block.generator)
 
         self._time_evolution = lambda values: values[self.param_names[0]]
         self._device: torch_device = (
@@ -294,13 +310,44 @@ class PyQHamiltonianEvolution(Module):
         state: Tensor,
         values: dict[str, Tensor],
     ) -> Tensor:
-        return apply_operator(
-            state,
-            self.unitary(values),
-            self.qubit_support,
-            self.n_qubits,
-            self.batch_size,
-        )
+        print("init state:")
+        print(state)
+        print("values:")
+        print(values)
+
+        if self.block.generator.is_time_dependent:
+
+            def Ht(t: Tensor | float) -> Tensor:
+                # values dict has to change with new value of t
+                # initial value of a feature parameter inside generator block
+                # has to be inferred here
+
+                hmat = _block_to_tensor_embedded(
+                    self.block.generator,  # type: ignore[arg-type]
+                    values=values,
+                    qubit_support=self.qubit_support,
+                    use_full_support=False,
+                    device=self.device,
+                )
+
+                return hmat
+
+            for t in torch.linspace(0, 1, 10):
+                print(t)
+                print(Ht(t))
+                print("***********")
+
+            result = sesolve_krylov(Ht, state)
+        else:
+            result = apply_operator(
+                state,
+                self.unitary(values),
+                self.qubit_support,
+                self.n_qubits,
+                self.batch_size,
+            )
+
+        return result
 
     @property
     def device(self) -> torch_device:

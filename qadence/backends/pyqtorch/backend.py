@@ -28,7 +28,6 @@ from qadence.transpile import (
     chain_single_qubit_ops,
     flatten,
     invert_endianness,
-    scale_primitive_blocks_only,
     transpile,
 )
 from qadence.types import BackendName, Endianness, Engine
@@ -74,7 +73,7 @@ class Backend(BackendInterface):
             lambda block: chain_single_qubit_ops(block)
             if self.config.use_single_qubit_composition
             else flatten(block),
-            scale_primitive_blocks_only,
+            # scale_primitive_blocks_only,
         ]
         block = transpile(*transpilations)(observable)  # type: ignore[call-overload]
         operations = convert_block(block, n_qubits, self.config)
@@ -96,6 +95,12 @@ class Backend(BackendInterface):
         unpyqify_state: bool = True,
     ) -> Tensor:
         n_qubits = circuit.abstract.n_qubits
+
+        print()
+        print("PyQ backend run param values:")
+        print(param_values)
+        print()
+
         if state is None:
             # If no state is passed, we infer the batch_size through the length
             # of the individual parameter value tensors.
