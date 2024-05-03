@@ -99,7 +99,7 @@ circuit = QuantumCircuit(n_qubits, chain(fm, ansatz))
 model = QNN(circuit = circuit, observable = observable, inputs = ["x"])
 ```
 
-We used a Chebyshev feature map with a tower-like scaling of the input reupload, and a standard hardware-efficient ansatz. You can check the [qml constructors tutorial](qml_constructors.md) to see how you can customize these components. In the observable, for now we consider the simple case of measuring the magnetization of the first qubit.
+We used a Chebyshev feature map with a tower-like scaling of the input reupload, and a standard hardware-efficient ansatz. You can check the [qml constructors tutorial](../../content/qml_constructors.md) to see how you can customize these components. In the observable, for now we consider the simple case of measuring the magnetization of the first qubit.
 
 ```python exec="on" source="material-block" html="1" session="dqc"
 from qadence.draw import html_string # markdown-exec: hide
