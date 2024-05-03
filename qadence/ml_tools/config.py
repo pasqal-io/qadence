@@ -144,11 +144,11 @@ class FeatureMapConfig:
     """
     Number of feature map layers repeated in the data reuploadig step.
 
-    If all are to be \
-    repeated the same number of times, then can give a single `int`. For different number \
-    of repeatitions for each feature, provide a list of `int`s corresponding to desired \
-    number of repeatitions. This amounts to the number of additional reuploads. So if \
-    `num_repeats` is N, the data gets uploaded N+1 times. Defaults to no repeatition.
+    If all are to be repeated the same number of times, then can give a single
+    `int`. For different number of repeatitions for each feature, provide a list
+    of `int`s corresponding to desired number of repeatitions. This amounts to
+    the number of additional reuploads. So if `num_repeats` is N, the data gets
+    uploaded N+1 times. Defaults to no repeatition.
     """
 
     operation: Callable[[Parameter | Basic], AnalogBlock] | Type[RX] | None = None

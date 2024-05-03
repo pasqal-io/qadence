@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import numpy as np
-from torch import tensor
-from torch.nn import Parameter
 
 from qadence.blocks import chain, kron
 from qadence.blocks.abstract import AbstractBlock
@@ -20,6 +18,7 @@ from qadence.constructors import (
 )
 from qadence.constructors.ansatze import hea_digital, hea_sDAQC
 from qadence.operations import CNOT, RX, RY, H, I, N
+from qadence.parameters import Parameter
 from qadence.register import Register
 from qadence.types import Interaction, ReuploadScaling, Strategy
 
@@ -655,6 +654,9 @@ def _get_observable_shifting_and_scaling(config: ObservableConfig) -> tuple[floa
             shift = 0.5 * (config.output_range[0] + config.output_range[1])
             scale = 0.5 * (config.output_range[1] - config.output_range[0])
 
+    shift = Parameter(name="shift", value=shift, trainable=config.trainable_transform)
+    scale = Parameter(name="scale", value=scale, trainable=config.trainable_transform)
+
     return shift, scale
 
 
@@ -679,21 +681,13 @@ def create_observable(
     Returns:
         AbstractBlock: The observable block.
     """
-    shifting, scaling = _get_observable_shifting_and_scaling(config)
+    shift, scale = _get_observable_shifting_and_scaling(config)
 
-    if config.trainable_transform:
-        shifting_term = Parameter(tensor(shifting)) * _global_identity(register)
-        detuning_hamiltonian = Parameter(tensor(scaling)) * hamiltonian_factory(
-            register=register,
-            detuning=config.detuning,
-        )
-
-    else:
-        shifting_term = shifting * _global_identity(register)
-        detuning_hamiltonian = scaling * hamiltonian_factory(
-            register=register,
-            detuning=config.detuning,
-        )
+    shifting_term = shift * _global_identity(register)
+    detuning_hamiltonian = scale * hamiltonian_factory(
+        register=register,
+        detuning=config.detuning,
+    )
 
     return add(shifting_term, detuning_hamiltonian)
 
