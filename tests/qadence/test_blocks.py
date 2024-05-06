@@ -30,7 +30,6 @@ from qadence.blocks.utils import (
 from qadence.constructors import (
     hea,
     ising_hamiltonian,
-    single_z,
     total_magnetization,
     zz_hamiltonian,
 )
@@ -56,7 +55,7 @@ def test_1qubit_blocks() -> None:
 def test_block_is_qubit_ham_constructors() -> None:
     n_qubits = 4
 
-    assert block_is_qubit_hamiltonian(single_z(0))
+    assert block_is_qubit_hamiltonian(Z(0))
     assert block_is_qubit_hamiltonian(total_magnetization(n_qubits))
     assert block_is_qubit_hamiltonian(zz_hamiltonian(n_qubits))
     assert block_is_qubit_hamiltonian(ising_hamiltonian(n_qubits))

@@ -8,7 +8,6 @@ from pasqal_cloud.device import EmulatorType
 from pulser_simulation.simconfig import SimConfig
 
 from qadence.backend import BackendConfiguration
-from qadence.types import DeviceType, Interaction
 
 DEFAULT_CLOUD_ENV = "prod"
 
@@ -25,27 +24,11 @@ class CloudConfiguration:
 
 @dataclass
 class Configuration(BackendConfiguration):
-    device_type: DeviceType = DeviceType.IDEALIZED
-    """The type of quantum Device to use in the simulations.
-
-    FIXME: This is deprecated, the device_type is now controlled in the
-    Qadence Device, as detailed in the documentation.
-    FIXME: Remove in v1.5.0
-    """
-
     sampling_rate: float = 1.0
     """Sampling rate to be used for local simulations.
 
     Set to 1.0
     to avoid any interpolation in the solving procedure
-    """
-
-    spacing: Optional[float] = None
-    """Spacing that multiplies the coordinates of the register.
-
-    FIXME: This is deprecated, spacing is now controlled in the Register,
-    as detailed in the register tutorial.
-    FIXME: Remove in v1.5.0
     """
 
     method_solv: str = "adams"
@@ -81,17 +64,6 @@ class Configuration(BackendConfiguration):
     """Default value for the detuning pulses.
 
     FIXME: To be deprecated.
-    """
-
-    interaction: Interaction = Interaction.NN
-    """Type of interaction introduced in the Hamiltonian.
-
-    Currently, only
-    NN interaction is support. XY interaction is possible but not implemented
-
-    FIXME: This is deprecated, the interaction is now controlled in the
-    Qadence Device, as detailed in the documentation.
-    FIXME: Remove in v1.5.0
     """
 
     # configuration for cloud simulations
