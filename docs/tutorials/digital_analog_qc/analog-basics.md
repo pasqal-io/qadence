@@ -66,7 +66,7 @@ few examples of the standard operations available in Qadence.
 ### Arbitrary rotation
 
 To start, we will exemplify the a general rotation on a set of atoms. To create an arbitrary
-register of atoms, we refer the user to the [register creation tutorial](../tutorials/register.md).
+register of atoms, we refer the user to the [register creation tutorial](../../content/register.md).
 Below, we create a line register of three qubits with a separation of $8~\mu\text{m}$. This is a typical
 value used in combination with a standard experimental setup of neutral atoms such that the interaction
 term in the Hamiltonian can effectively be used for computations.

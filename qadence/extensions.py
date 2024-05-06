@@ -79,6 +79,7 @@ def _validate_diff_mode(backend: Backend, diff_mode: DiffMode) -> None:
 
 def _validate_backend_config(backend: Backend) -> None:
     if backend.config.use_gradient_checkpointing:
+        # FIXME: Remove in v1.5.0
         msg = "use_gradient_checkpointing is deprecated."
         import warnings
 

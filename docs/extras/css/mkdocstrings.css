@@ -15,10 +15,6 @@ td code {
     word-break: normal !important;
 }
 
-:root {
-  --md-primary-fg-color:        #023e8a;
-}
-
 .md-content p {
     text-align: justify;
 }

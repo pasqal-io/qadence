@@ -1,12 +1,12 @@
 Variational algorithms on noisy devices and quantum machine learning (QML)[^1] in particular are one of the main
 target applications for Qadence. For this purpose, the library offers both flexible symbolic expressions for the
-quantum circuit parameters via `sympy` (see [here](../tutorials/parameters.md) for more details) and native automatic
+quantum circuit parameters via `sympy` (see [here](../../content/parameters.md) for more details) and native automatic
 differentiation via integration with [PyTorch](https://pytorch.org/) deep learning framework.
 
 Furthermore, Qadence offers a wide range of utilities for helping building and researching quantum machine learning algorithms, including:
 
-* [a set of constructors](qml_constructors.md) for circuits commonly used in quantum machine learning such as feature maps and ansatze
-* [a set of tools](ml_tools) for training and optimizing quantum neural networks and loading classical data into a QML algorithm
+* [a set of constructors](../../content/qml_constructors.md) for circuits commonly used in quantum machine learning such as feature maps and ansatze
+* [a set of tools](ml_tools.md) for training and optimizing quantum neural networks and loading classical data into a QML algorithm
 
 ## Some simple examples
 
@@ -36,13 +36,13 @@ print(f"samples = {samples[0]}")  # markdown-exec: hide
 The [`constructors.feature_map`][qadence.constructors.feature_map] module provides
 convenience functions to build commonly used feature maps where the input parameter
 is encoded in the single-qubit gates rotation angle. This function will be further
-demonstrated in the [QML constructors tutorial](qml_constructors.md).
+demonstrated in the [QML constructors tutorial](../../content/qml_constructors.md).
 
 Furthermore, Qadence is natively integrated with PyTorch automatic differentiation engine thus
 Qadence quantum models can be used seamlessly in a PyTorch workflow.
 
 Let's create a quantum neural network model using the feature map just defined, a
-digital-analog variational ansatz ([also explained here](qml_constructors.md)) and a
+digital-analog variational ansatz ([also explained here](../../content/qml_constructors.md)) and a
 simple observable $X(0) \otimes X(1)$. We use the convenience `QNN` quantum model abstraction.
 
 ```python exec="on" source="material-block" result="json" session="qml"

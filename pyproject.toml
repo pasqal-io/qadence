@@ -17,10 +17,11 @@ authors = [
     { name = "Joao P. Moutinho", email = "joao.moutinho@pasqal.com"},
     { name = "Vytautas Abramavicius", email = "vytautas.abramavicius@pasqal.com" },
     { name = "Gergana Velikova", email = "gergana.velikova@pasqal.com" },
+    { name = "Eduardo Maschio", email = "eduardo.maschio@pasqal.com" },
 ]
-requires-python = ">=3.9,<3.12"
+requires-python = ">=3.9,<3.13"
 license = {text = "Apache 2.0"}
-version = "1.4.0"
+version = "1.5.2"
 classifiers=[
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python",
@@ -42,8 +43,9 @@ dependencies = [
     "jsonschema",
     "nevergrad",
     "scipy",
-    "pyqtorch==1.0.6",
+    "pyqtorch==1.1.0",
     "matplotlib",
+    "Arpeggio==2.0.2",
 ]
 
 [tool.hatch.metadata]
@@ -52,7 +54,7 @@ allow-ambiguous-features = true
 
 [project.optional-dependencies]
 pulser = ["pulser>=v0.15.2", "pasqal-cloud>=0.3.5"]
-braket = ["amazon-braket-sdk"]
+braket = ["amazon-braket-sdk==1.71.0"]
 visualization = [
   "graphviz",
   # FIXME: will be needed once we support latex labels
@@ -68,11 +70,13 @@ horqrux = [
     "einops",
     "sympy2jax"]
 protocols = ["qadence-protocols"]
+libs = ["qadence-libs"]
 all = [
   "pulser>=0.15.2",
-  "amazon-braket-sdk",
+  "amazon-braket-sdk==1.71.0",
   "graphviz",
   "protocols",
+  "libs",
   # FIXME: will be needed once we support latex labels
   # "latex2svg @ git+https://github.com/Moonbase59/latex2svg.git#egg=latex2svg",
   # "scour",

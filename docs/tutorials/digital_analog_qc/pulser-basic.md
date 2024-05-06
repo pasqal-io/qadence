@@ -126,7 +126,7 @@ all the properties for the definition of a real neutral atoms processor, includi
 to the maximum laser amplitude for pulses, the maximum distance between two qubits and the maximum duration
 of the pulse. For more information, please check this [tutorial](https://pulser.readthedocs.io/en/stable/tutorials/virtual_devices.html).
 
-Qadence offers a simplified interface with only two devices which are detailed [here](../backends/pulser.md):
+Qadence offers a simplified interface with only two devices which are detailed [here](../../api/backends/pulser.md):
 
 * `IDEALIZED` (default): ideal device which should be used only for testing purposes. It does not restrict the
 simulation of pulse sequences.

@@ -80,7 +80,7 @@ class Backend(BackendInterface):
         (native,) = convert_observable(block, n_qubits=n_qubits, config=self.config)
         return ConvertedObservable(native=native, abstract=block, original=observable)
 
-    def _run(
+    def run(
         self,
         circuit: ConvertedCircuit,
         param_values: dict[str, Tensor] = {},
@@ -151,7 +151,9 @@ class Backend(BackendInterface):
         if state is None:
             from qadence.states import zero_state
 
-            state = zero_state(circuit.abstract.n_qubits, batch_size=1)
+            state = zero_state(circuit.abstract.n_qubits, batch_size=1).to(
+                dtype=circuit.native.dtype
+            )
         if state.size(0) != 1:
             raise ValueError(
                 "Looping expectation does not make sense with batched initial state. "
@@ -222,28 +224,29 @@ class Backend(BackendInterface):
                 }
             )
 
-        wf = self.run(circuit=circuit, param_values=param_values, state=state)
-        probs = torch.abs(torch.pow(wf, 2))
-        samples = list(
-            map(
-                lambda _probs: _sample(
-                    _probs=_probs,
-                    n_shots=n_shots,
-                    endianness=endianness,
-                    n_qubits=circuit.abstract.n_qubits,
-                ),
-                probs,
+        with torch.no_grad():
+            wf = self.run(circuit=circuit, param_values=param_values, state=state)
+            probs = torch.abs(torch.pow(wf, 2))
+            samples = list(
+                map(
+                    lambda _probs: _sample(
+                        _probs=_probs,
+                        n_shots=n_shots,
+                        endianness=endianness,
+                        n_qubits=circuit.abstract.n_qubits,
+                    ),
+                    probs,
+                )
             )
-        )
-        if noise is not None:
-            samples = apply_noise(noise=noise, samples=samples)
-        if mitigation is not None:
-            logger.warning(
-                "Mitigation protocol is deprecated. Use qadence-protocols instead.",
-            )
-            assert noise
-            samples = apply_mitigation(noise=noise, mitigation=mitigation, samples=samples)
-        return samples
+            if noise is not None:
+                samples = apply_noise(noise=noise, samples=samples)
+            if mitigation is not None:
+                logger.warning(
+                    "Mitigation protocol is deprecated. Use qadence-protocols instead.",
+                )
+                assert noise
+                samples = apply_mitigation(noise=noise, mitigation=mitigation, samples=samples)
+            return samples
 
     def assign_parameters(self, circuit: ConvertedCircuit, param_values: dict[str, Tensor]) -> Any:
         raise NotImplementedError

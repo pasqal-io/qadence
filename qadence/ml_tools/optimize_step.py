@@ -15,6 +15,7 @@ def optimize_step(
     loss_fn: Callable,
     xs: dict | list | torch.Tensor | None,
     device: torch.device = None,
+    dtype: torch.dtype = None,
 ) -> tuple[torch.Tensor | float, dict | None]:
     """Default Torch optimize step with closure.
 
@@ -35,7 +36,7 @@ def optimize_step(
     """
 
     loss, metrics = None, {}
-    xs_to_device = data_to_device(xs, device)
+    xs_to_device = data_to_device(xs, device=device, dtype=dtype)
 
     def closure() -> Any:
         # NOTE: We need the nonlocal as we can't return a metric dict and

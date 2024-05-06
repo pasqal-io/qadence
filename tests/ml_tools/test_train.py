@@ -148,37 +148,37 @@ def test_modules_save_load(BasicQNN: QNN, BasicTransformedModule: TransformedMod
 
 
 @pytest.mark.flaky(max_runs=10)
-def test_train_tensor_tuple(tmp_path: Path, Basic: torch.nn.Module) -> None:
-    model = Basic
-    batch_size = 25
-    x = torch.linspace(0, 1, batch_size).reshape(-1, 1)
-    y = torch.sin(x)
+def test_train_tensor_tuple(Basic: torch.nn.Module, BasicQNN: QNN) -> None:
+    for cls, dtype in [(Basic, torch.float32), (BasicQNN, torch.complex64)]:
+        model = TransformedModule(cls, 1, 1, *[torch.nn.Parameter(t) for t in torch.rand(4)])
+        batch_size = 25
+        x = torch.linspace(0, 1, batch_size).reshape(-1, 1)
+        y = torch.sin(x)
 
-    cnt = count()
-    criterion = torch.nn.MSELoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
+        cnt = count()
+        criterion = torch.nn.MSELoss()
+        optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
 
-    def loss_fn(model: torch.nn.Module, data: torch.Tensor) -> tuple[torch.Tensor, dict]:
-        next(cnt)
-        x, y = data[0], data[1]
-        out = model(x)
-        loss = criterion(out, y)
-        return loss, {}
+        def loss_fn(model: torch.nn.Module, data: torch.Tensor) -> tuple[torch.Tensor, dict]:
+            next(cnt)
+            x, y = data[0], data[1]
+            out = model(x)
+            loss = criterion(out, y)
+            return loss, {}
 
-    n_epochs = 100
-    config = TrainConfig(
-        folder=tmp_path,
-        max_iter=n_epochs,
-        checkpoint_every=100,
-        write_every=100,
-        batch_size=batch_size,
-    )
-    data = to_dataloader(x, y, batch_size=batch_size, infinite=True)
-    train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
-    assert next(cnt) == n_epochs
+        n_epochs = 100
+        config = TrainConfig(
+            max_iter=n_epochs,
+            checkpoint_every=100,
+            write_every=100,
+            batch_size=batch_size,
+        )
+        data = to_dataloader(x, y, batch_size=batch_size, infinite=True)
+        model, _ = train_with_grad(model, data, optimizer, config, loss_fn=loss_fn, dtype=dtype)
+        assert next(cnt) == n_epochs
 
-    x = torch.rand(5, 1)
-    assert torch.allclose(torch.sin(x), model(x), rtol=1e-1, atol=1e-1)
+        x = torch.rand(5, 1, dtype=torch.float32)
+        assert torch.allclose(torch.sin(x), model(x), rtol=1e-1, atol=1e-1)
 
 
 @pytest.mark.flaky(max_runs=10)

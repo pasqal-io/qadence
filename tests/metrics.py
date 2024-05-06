@@ -5,9 +5,15 @@ from qadence.types import BackendName
 ATOL_64 = 1e-14  # 64 bit precision
 ATOL_32 = 1e-07  # 32 bit precision
 ATOL_E6 = 1e-06  # some tests do not pass ATOL_32; to fix
+
+RTOL_LOW_ACCEPTANCE = 1.0e-2
+RTOL_MIDDLE_ACCEPTANCE = 5.0e-2
+RTOL_HIGH_ACCEPTANCE = 1.0e-1
+
 LOW_ACCEPTANCE = 2.0e-2
 MIDDLE_ACCEPTANCE = 6.0e-2
 HIGH_ACCEPTANCE = 0.5
+
 JS_ACCEPTANCE = 7.5e-2
 PSR_ACCEPTANCE = 1e-5
 GPSR_ACCEPTANCE = 1e-1

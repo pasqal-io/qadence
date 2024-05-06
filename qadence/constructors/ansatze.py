@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+import warnings
 from typing import Any, Optional, Type, Union
 
 from qadence.blocks import AbstractBlock, block_is_qubit_hamiltonian, chain, kron, tag
@@ -328,6 +329,7 @@ def hea_analog(*args: Any, **kwargs: Any) -> Any:
 #########
 
 
+# FIXME: Remove in v1.5.0
 def build_qnn(
     n_qubits: int,
     n_features: int,
@@ -360,6 +362,9 @@ def build_qnn(
     Returns:
         A list of Abstract blocks to be used for constructing a quantum circuit
     """
+
+    warnings.warn("Function build_qnn is deprecated and will be removed in v1.5.0.", FutureWarning)
+
     depth = n_qubits if depth is None else depth
 
     idx_fms = build_idx_fms(basis, fm_pauli, fm_strategy, n_features, n_qubits, spectrum)

@@ -179,7 +179,7 @@ class Backend(BackendInterface):
 
         return circuit.native.build(**numpy_param_values)
 
-    def _run(
+    def run(
         self,
         circuit: ConvertedCircuit,
         param_values: dict[str, Tensor] = {},
