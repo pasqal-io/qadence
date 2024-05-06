@@ -15,11 +15,6 @@ It also offers analog computing for time-independent pulses. See [`PyQTorchBacke
 [_**Pulser**_](https://github.com/pasqal-io/Pulser): A Python library for pulse-level/analog control of
 neutral atom devices. Execution via [QuTiP](https://qutip.org/). See [`PulserBackend`][qadence.backends.pulser.backend.Backend].
 
-[_**Braket**_](https://github.com/aws/amazon-braket-sdk-python): A Python SDK for interacting with
-quantum devices on Amazon Braket. Currently, only the devices with the digital interface of Amazon Braket
-are supported and execution is performed using the local simulator. Execution on remote simulators and
-quantum processing units will be available soon. See [`BraketBackend`][qadence.backends.braket.backend.Backend]
-
 _**More**_: Proprietary Qadence extensions provide more high-performance backends based on tensor networks or differentiation engines.
 For more enquiries, please contact: [`info@pasqal.com`](mailto:info@pasqal.com).
 

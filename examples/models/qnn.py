@@ -8,8 +8,7 @@ import numpy as np
 import torch
 from torch.autograd import grad
 
-from qadence import QNN, QuantumCircuit, chebyshev_feature_map, hea, total_magnetization
-from qadence.transpile import set_trainable
+from qadence import QNN, BasisSet, QuantumCircuit, feature_map, hea, total_magnetization
 
 torch.manual_seed(42)
 np.random.seed(42)
@@ -49,9 +48,9 @@ x = torch.linspace(-0.5, 0.5, batch_size).reshape(batch_size, 1).requires_grad_(
 x0 = torch.zeros((1, 1), requires_grad=True)
 x1 = torch.zeros((1, 1), requires_grad=True)
 
-feature_map = set_trainable(chebyshev_feature_map(n_qubits=5), False)
-ansatz = set_trainable(hea(n_qubits=5, depth=5, periodic=True))
-circ = QuantumCircuit(5, feature_map, ansatz)
+fm = feature_map(n_qubits=5, fm_type=BasisSet.CHEBYSHEV)
+ansatz = hea(n_qubits=5, depth=5, periodic=True)
+circ = QuantumCircuit(5, fm, ansatz)
 ufa = QNN(circ, observable=total_magnetization(n_qubits=5))
 
 x = torch.linspace(-0.5, 0.5, 100).reshape(-1, 1)

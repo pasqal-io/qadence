@@ -80,7 +80,6 @@ nav:
     - Backends:
       - Abstract backend: api/backends/backend.md
       - PyQTorch: api/backends/pyqtorch.md
-      - Amazon Braket: api/backends/braket.md
       - Pulser: api/backends/pulser.md
       - DifferentiableBackend: api/backends/differentiable.md
 
