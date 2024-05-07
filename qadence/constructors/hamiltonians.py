@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Callable, List, Type, Union
 
 import numpy as np
@@ -9,7 +10,7 @@ from qadence.blocks import AbstractBlock, add, block_is_qubit_hamiltonian
 from qadence.logger import get_logger
 from qadence.operations import N, X, Y, Z
 from qadence.register import Register
-from qadence.types import Interaction, TArray
+from qadence.types import Interaction, TArray, TObservableTransform
 
 logger = get_logger(__name__)
 
@@ -233,3 +234,24 @@ def ising_hamiltonian(
     zz_ham = zz_hamiltonian(n_qubits, z_terms=z_terms, zz_terms=zz_terms)
     x_ham = hamiltonian_factory(n_qubits, detuning=X, detuning_strength=x_terms)
     return zz_ham + x_ham
+
+
+@dataclass
+class ObservableConfig:
+    n_qubits: int
+    """The register / number of qubits of the full system."""
+    detuning: TDetuning
+    """
+    Single qubit detuning of the observable Hamiltonian.
+
+    Accepts single-qubit operator N, X, Y, or Z.
+    Defaults to Z.
+    """
+    scale: float
+    """The scale by which to multiply the output of the observable."""
+    shift: float
+    """The shift to add to the output of the observable."""
+    transformation_type: TObservableTransform
+    """The type of transformation."""
+    trainable_transform: bool | None
+    """Whether to have a trainable transformation on the output of the observable."""

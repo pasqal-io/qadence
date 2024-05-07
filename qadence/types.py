@@ -413,3 +413,9 @@ class InputDiffMode(StrEnum):
     """Reverse automatic differentiation."""
     FD = "fd"
     """Central finite differencing."""
+
+
+class TObservableTransform:
+    SCALE = "scale"
+    RANGE = "range"
+    NONE = "none"

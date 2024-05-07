@@ -13,7 +13,11 @@ from qadence.blocks import (
     tag,
 )
 from qadence.circuit import QuantumCircuit
-from qadence.constructors import hamiltonian_factory, hea, ising_hamiltonian, total_magnetization
+from qadence.constructors import hea, ising_hamiltonian, total_magnetization
+from qadence.ml_tools.constructors import (
+    ObservableConfig,
+    observable_from_config,
+)
 from qadence.operations import RX, RY, Z
 from qadence.parameters import FeatureParameter, Parameter
 from qadence.states import uniform_state
@@ -254,8 +258,13 @@ def get_qnn(
     n_qubits: int,
     depth: int,
     inputs: list = None,
+    scale: float = 1.0,
+    shift: float = 0.0,
+    trainable_transform: bool | None = None,
 ) -> QNN:
-    observable = hamiltonian_factory(n_qubits, detuning=Z)
+    observable = observable_from_config(
+        ObservableConfig(n_qubits, Z, scale, shift, "scale", trainable_transform)
+    )
     circuit = quantum_circuit(n_qubits=n_qubits, depth=depth)
     model = QNN(
         circuit,
@@ -267,22 +276,51 @@ def get_qnn(
     return model
 
 
-@pytest.mark.parametrize("output_scale", [1.0, 2.0])
-@pytest.mark.parametrize("batch_size", [2, 4, 8])
-@pytest.mark.parametrize("n_qubits", [2, 4, 8])
-def test_transformed_module(output_scale: float, batch_size: int, n_qubits: int) -> None:
+@pytest.mark.parametrize("output_range", [(1.0, 0.0, False), (2.0, 0.0, None), (3.0, 1.0, False)])
+@pytest.mark.parametrize("batch_size", [1])
+@pytest.mark.parametrize("n_qubits", [2])
+def test_constant_and_feature_transformed_module(
+    output_range: tuple[float, float, bool], batch_size: int, n_qubits: int
+) -> None:
+    scale, shift, trainable = output_range
     depth = 1
     fparam = "phi"
+    inputs = [fparam]
     input_values = {fparam: torch.rand(batch_size, requires_grad=True)}
+    if trainable is False:
+        inputs += ["scale", "shift"]
+        input_values["scale"] = torch.tensor([output_range[0]])
+        input_values["shift"] = torch.tensor([output_range[1]])
     model = get_qnn(n_qubits, depth, inputs=[fparam])
-    transformed_model = get_qnn(
-        n_qubits,
-        depth,
-        inputs=[fparam],
+    tm = get_qnn(
+        n_qubits, depth, inputs=inputs, scale=scale, shift=shift, trainable_transform=trainable
     )
-    init_params = torch.rand(model.num_vparams)
-    model.reset_vparams(init_params)
-    transformed_model.reset_vparams(init_params)
+    tm.reset_vparams(list(model.vparams.values()))
     pred = model(input_values)
-    transformed_pred = transformed_model(input_values)
-    assert torch.allclose(output_scale * pred, transformed_pred)
+    tm_pred = tm(input_values)
+
+    assert torch.allclose(tm_pred, (output_range[0] * pred) + output_range[1])
+
+
+@pytest.mark.parametrize("output_range", [(1.0, 0.0, True), (2.0, 0.0, True), (3.0, 1.0, True)])
+@pytest.mark.parametrize("batch_size", [1])
+@pytest.mark.parametrize("n_qubits", [2])
+def test_variational_transformed_module(
+    output_range: tuple[float, float, bool], batch_size: int, n_qubits: int
+) -> None:
+    scale, shift, trainable = output_range
+    depth = 1
+    fparam = "phi"
+    inputs = [fparam]
+    input_values = {fparam: torch.rand(batch_size, requires_grad=True)}
+    model = get_qnn(
+        n_qubits, depth, inputs=[fparam], scale=1.0, shift=0.0, trainable_transform=True
+    )
+    tm = get_qnn(
+        n_qubits, depth, inputs=inputs, scale=scale, shift=shift, trainable_transform=trainable
+    )
+    model.reset_vparams(list(tm.vparams.values()))
+    pred = model({**input_values, **{"shift": torch.zeros(1), "scale": torch.ones(1)}})
+    tm_pred = tm(input_values)
+
+    assert torch.allclose(tm_pred, (output_range[0] * pred) + output_range[1])

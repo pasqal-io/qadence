@@ -11,7 +11,7 @@ from sympy import Basic
 from qadence.blocks.analog import AnalogBlock
 from qadence.blocks.primitive import ParametricBlock
 from qadence.logger import get_logger
-from qadence.operations import RX, AnalogRX, Z
+from qadence.operations import RX, AnalogRX
 from qadence.parameters import Parameter
 from qadence.types import BasisSet, ReuploadScaling
 
@@ -319,24 +319,3 @@ class AnsatzConfig:
             assert (
                 self.ansatz_strategy != "rydberg"
             ), "Rydberg strategy not allowed for Identity-initialized ansatz."
-
-
-@dataclass
-class ObservableConfig:
-    detuning: Type[Z] = Z
-    """
-    Single qubit detuning of the observable Hamiltonian.
-
-    Accepts single-qubit operator N, X, Y, or Z.
-    Defaults to Z.
-    """
-
-    output_range: tuple[float, float] | None = None
-    """The expected range of the output of the observable."""
-
-    trainable_transform: bool = False
-    """
-    Whether to have a trainable transformation on the output of the observable.
-
-    If True, the output shifting and scaling will be learned during training.
-    """

@@ -17,12 +17,13 @@ from qadence.constructors import (
     rydberg_tower_feature_map,
 )
 from qadence.constructors.ansatze import hea_digital, hea_sDAQC
-from qadence.operations import CNOT, RX, RY, H, I, N
+from qadence.constructors.hamiltonians import ObservableConfig, TDetuning
+from qadence.operations import CNOT, RX, RY, H, I, N, Z
 from qadence.parameters import Parameter
 from qadence.register import Register
-from qadence.types import Interaction, ReuploadScaling, Strategy
+from qadence.types import Interaction, ReuploadScaling, Strategy, TObservableTransform, TParameter
 
-from .config import AnsatzConfig, FeatureMapConfig, ObservableConfig
+from .config import AnsatzConfig, FeatureMapConfig
 from .models import QNN
 
 
@@ -632,7 +633,7 @@ def _interleave_ansatz_in_fm(
     return chain(*full_fm)
 
 
-def _get_observable_shifting_and_scaling(config: ObservableConfig) -> tuple[float, float]:
+def load_observable_transformations(config: ObservableConfig) -> tuple[Parameter, Parameter]:
     """
     Get the observable shifting and scaling factors.
 
@@ -642,22 +643,23 @@ def _get_observable_shifting_and_scaling(config: ObservableConfig) -> tuple[floa
     Returns:
         tuple[float, float]: The observable shifting and scaling factors.
     """
-    if config.output_range is None:
-        shift = 0.0
-        scale = 1.0
-
+    shift = config.shift
+    scale = config.scale
+    if config.trainable_transform is not None:
+        shift = Parameter(name="shift", value=shift, trainable=config.trainable_transform)
+        scale = Parameter(name="scale", value=scale, trainable=config.trainable_transform)
     else:
-        if config.detuning is N:
-            shift = config.output_range[0]
-            scale = config.output_range[1] - config.output_range[0]
-        else:
-            shift = 0.5 * (config.output_range[0] + config.output_range[1])
-            scale = 0.5 * (config.output_range[1] - config.output_range[0])
+        shift = Parameter(shift)
+        scale = Parameter(scale)
+    return scale, shift
 
-    shift = Parameter(name="shift", value=shift, trainable=config.trainable_transform)
-    scale = Parameter(name="scale", value=scale, trainable=config.trainable_transform)
 
-    return shift, scale
+ObservableTransformMap = {
+    TObservableTransform.RANGE: lambda detuning, scale, shift: (shift, shift - scale)
+    if detuning is N
+    else (0.5 * (shift - scale), 0.5 * (scale + shift)),
+    TObservableTransform.SCALE: lambda _, scale, shift: (scale, shift),
+}
 
 
 def _global_identity(register: int | Register) -> KronBlock:
@@ -667,8 +669,7 @@ def _global_identity(register: int | Register) -> KronBlock:
     )
 
 
-def create_observable(
-    register: int | Register,
+def observable_from_config(
     config: ObservableConfig,
 ) -> AbstractBlock:
     """
@@ -681,14 +682,39 @@ def create_observable(
     Returns:
         AbstractBlock: The observable block.
     """
-    shift, scale = _get_observable_shifting_and_scaling(config)
+    scale, shift = load_observable_transformations(config)
+    # breakpoint()
+    return create_observable(
+        config.n_qubits, config.detuning, scale, shift, config.transformation_type
+    )
 
+
+def create_observable(
+    register: int | Register,
+    detuning: TDetuning = Z,
+    scale: TParameter | None = None,
+    shift: TParameter | None = None,
+    transformation_type: TObservableTransform = TObservableTransform.NONE,
+) -> AbstractBlock:
+    """
+    Create an observable block.
+
+    Args:
+        register (int | Register): Number of qubits or a register object.
+        detuning: The type of detuning.
+        scale: A parameter for the scale.
+        shift: A parameter for the shift.
+
+    Returns:
+        AbstractBlock: The observable block.
+    """
+    if transformation_type == TObservableTransform.RANGE:
+        scale, shift = ObservableTransformMap[transformation_type](detuning, scale, shift)
     shifting_term = shift * _global_identity(register)
     detuning_hamiltonian = scale * hamiltonian_factory(
         register=register,
-        detuning=config.detuning,
+        detuning=detuning,
     )
-
     return add(shifting_term, detuning_hamiltonian)
 
 
@@ -736,7 +762,7 @@ def build_qnn_from_configs(
     )
 
     if isinstance(observable_config, list):
-        observable = [create_observable(register=register, config=oc) for oc in observable_config]
+        observable = [create_observable(register=register, config=cfg) for cfg in observable_config]
     else:
         observable = create_observable(register=register, config=observable_config)  # type: ignore[assignment]
 
