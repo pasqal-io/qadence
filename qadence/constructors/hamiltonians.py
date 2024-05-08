@@ -207,10 +207,6 @@ def total_magnetization(n_qubits: int, z_terms: np.ndarray | list | None = None)
     return hamiltonian_factory(n_qubits, detuning=Z, detuning_strength=z_terms)
 
 
-def single_z(qubit: int = 0, z_coefficient: float = 1.0) -> AbstractBlock:
-    return Z(qubit) * z_coefficient
-
-
 def zz_hamiltonian(
     n_qubits: int,
     z_terms: np.ndarray | None = None,
