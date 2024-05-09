@@ -7,6 +7,9 @@ from typing import Any, Sequence, Tuple
 import pyqtorch as pyq
 import sympy
 import torch
+
+# from pulser_diff.dq.sesolve import sesolve as sesolve_dq  # import dynamiqs solver
+# from pulser_diff.dq.time_tensor import CallableTimeTensor
 from pyqtorch.apply import apply_operator
 from pyqtorch.matrices import _dagger
 from pyqtorch.utils import is_diag
@@ -45,9 +48,7 @@ from qadence.blocks.block_to_tensor import (
     block_to_diagonal,
     block_to_tensor,
 )
-from qadence.blocks.embedding import embedding
 from qadence.blocks.primitive import ProjectorBlock
-from qadence.blocks.utils import expressions
 from qadence.operations import (
     U,
     multi_qubit_gateset,
@@ -186,10 +187,6 @@ class PyQHamiltonianEvolution(Module):
         self.block = block
         self.hmat: Tensor
 
-        print("here")
-        # print(self.param_names)
-        print(expressions(block))
-
         if isinstance(block.generator, AbstractBlock) and not block.generator.is_parametric:
             hmat = block_to_tensor(
                 block.generator,
@@ -229,10 +226,6 @@ class PyQHamiltonianEvolution(Module):
                 return hmat.permute(1, 2, 0)
 
             self._hamiltonian = _hamiltonian
-
-            if block.generator.is_time_dependent:
-                # get embedding function so it can be used to change time parameter
-                self.params_var, self.embedding_fn = embedding(block.generator)
 
         self._time_evolution = lambda values: values[self.param_names[0]]
         self._device: torch_device = (
@@ -310,34 +303,64 @@ class PyQHamiltonianEvolution(Module):
         state: Tensor,
         values: dict[str, Tensor],
     ) -> Tensor:
-        print("init state:")
-        print(state)
-        print("values:")
-        print(values)
-
-        if self.block.generator.is_time_dependent:
+        if self.block.generator.is_time_dependent:  # type: ignore [union-attr]
 
             def Ht(t: Tensor | float) -> Tensor:
                 # values dict has to change with new value of t
                 # initial value of a feature parameter inside generator block
                 # has to be inferred here
+                new_vals = {}
+                for str_expr, val in values.items():
+                    expr = sympy.sympify(str_expr)
+                    t_symb = sympy.Symbol("t")
+                    free_symbols = expr.free_symbols
+                    if t_symb in free_symbols:
+                        # expression has time dependence
+                        if len(free_symbols) == 2:
+                            # expression has a single additional feature parameter
+                            feat_symb = free_symbols.difference(set([t_symb])).pop()
+                            feat_val = sympy.nsolve(
+                                expr.subs(t_symb, 1.0) - float(val), feat_symb, 1.0
+                            )
+                            new_vals[str_expr] = torch.tensor(
+                                float(expr.subs([(t_symb, t), (feat_symb, feat_val)]))
+                            )
+                        elif len(free_symbols) == 1:
+                            # expression contains only time parameters
+                            new_vals[str_expr] = torch.tensor(float(expr.subs(t_symb, t)))
+                        else:
+                            raise ValueError(
+                                "Time-dependent generator supports only a single feature parameter."
+                            )
+                    else:
+                        # expression doesn't contain time parameter - copy it as is
+                        new_vals[str_expr] = val
 
+                # get matrix form of generator
                 hmat = _block_to_tensor_embedded(
                     self.block.generator,  # type: ignore[arg-type]
-                    values=values,
+                    values=new_vals,
                     qubit_support=self.qubit_support,
                     use_full_support=False,
                     device=self.device,
-                )
+                ).squeeze(0)
 
                 return hmat
 
-            for t in torch.linspace(0, 1, 10):
-                print(t)
-                print(Ht(t))
-                print("***********")
+            tsave = torch.linspace(0, self.block.duration, self.block.duration + 1) / 1000.0  # type: ignore [attr-defined]
+            result = pyqify(sesolve_krylov(Ht, unpyqify(state).T, tsave)[-1].T)
 
-            result = sesolve_krylov(Ht, state)
+            # TODO: decide how to select solver type
+            # result = pyqify(
+            #     sesolve_dq(
+            #         CallableTimeTensor(Ht, Ht(0.0)),
+            #         unpyqify(state).T,
+            #         tsave,
+            #         options={"verbose": False},
+            #     )
+            #     .states[-1]
+            #     .T
+            # )
         else:
             result = apply_operator(
                 state,

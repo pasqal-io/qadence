@@ -305,7 +305,7 @@ class AbstractBlock(ABC):
         from qadence.blocks.utils import parameters
 
         params: list[sympy.Basic] = parameters(self)
-        return any(p.is_time for p in params)
+        return any(getattr(p, "is_time", False) for p in params)
 
     def tensor(self, values: dict[str, TNumber | torch.Tensor] = {}) -> torch.Tensor:
         from .block_to_tensor import block_to_tensor

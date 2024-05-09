@@ -96,11 +96,6 @@ class Backend(BackendInterface):
     ) -> Tensor:
         n_qubits = circuit.abstract.n_qubits
 
-        print()
-        print("PyQ backend run param values:")
-        print(param_values)
-        print()
-
         if state is None:
             # If no state is passed, we infer the batch_size through the length
             # of the individual parameter value tensors.

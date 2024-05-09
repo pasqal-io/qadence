@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Callable
 
 import torch
 from torch import Tensor
-from tqdm import tqdm
 
 
 def krylov_exp(
@@ -82,17 +80,12 @@ def krylov_exp(
     return result
 
 
-def sesolve_krylov(
-    H: Tensor | Callable, psi0: Tensor, tsave: list | Tensor, progress_bar: bool = False
-) -> Tensor:
+def sesolve_krylov(H: Tensor | Callable, psi0: Tensor, tsave: list | Tensor) -> Tensor:
     t_tot = 0.0
     psi = [psi0]
     psi_init = psi0
-    if progress_bar:
-        pbar = tqdm(total=len(tsave))
-        pbar.update()
     for i, t in enumerate(tsave):
-        if isinstance(H, Callable):
+        if isinstance(H, Callable):  # type: ignore [arg-type]
             if i < len(tsave) - 1:
                 ham = H(t)
         else:
@@ -107,13 +100,4 @@ def sesolve_krylov(
         else:
             continue
 
-        if progress_bar:
-            pbar.update()
-
-    result = KrylovResult(psi)
-    return result
-
-
-@dataclass
-class KrylovResult:
-    states: Tensor
+    return psi
