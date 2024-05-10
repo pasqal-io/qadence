@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+import pyqtorch as pyq
 from pyqtorch.apply import apply_operator
 from pyqtorch.circuit import QuantumCircuit as PyQCircuit
 from pyqtorch.parametric import Parametric as PyQParametric
@@ -11,7 +12,7 @@ from torch import Tensor, no_grad, tensor
 from torch.autograd import Function
 from torch.nn import Module
 
-from qadence.backends.pyqtorch.convert_ops import PyQHamiltonianEvolution, ScalePyQOperation
+from qadence.backends.pyqtorch.convert_ops import PyQHamiltonianEvolution
 from qadence.blocks.abstract import AbstractBlock
 
 
@@ -105,9 +106,10 @@ class AdjointExpectation(Function):
                 ctx.projected_state = apply_operator(
                     ctx.projected_state, op.dagger(values), op.qubit_support
                 )
-            elif isinstance(op, ScalePyQOperation):
-                ctx.out_state = apply_operator(ctx.out_state, op.dagger(values), op.qubit_support)
+            elif isinstance(op, pyq.Scale):
+                qubit_support = op.operations[0].qubit_support
                 scaled_pyq_op = op.operations[0]
+                ctx.out_state = apply_operator(ctx.out_state, op.dagger(values), qubit_support)
                 if (
                     isinstance(scaled_pyq_op, PyQParametric)
                     and values[scaled_pyq_op.param_name].requires_grad
@@ -115,17 +117,17 @@ class AdjointExpectation(Function):
                     mu = apply_operator(
                         ctx.out_state,
                         scaled_pyq_op.jacobian(values),
-                        scaled_pyq_op.qubit_support,
+                        qubit_support,
                     )
                     grads.append(2 * inner_prod(ctx.projected_state, mu).real)
 
                 if values[op.param_name].requires_grad:
                     grads.append(2 * -values[op.param_name])
                 ctx.projected_state = apply_operator(
-                    ctx.projected_state, op.dagger(values), op.qubit_support
+                    ctx.projected_state, op.dagger(values), qubit_support
                 )
-            elif isinstance(op, PyQCircuit):
-                grads = [g for sub_op in op.reverse() for g in _apply_adjoint(ctx, sub_op)]
+            elif isinstance(op, pyq.Sequence):
+                grads = [g for sub_op in op.operations[::-1] for g in _apply_adjoint(ctx, sub_op)]
             elif isinstance(op, PyQPrimitive):
                 ctx.out_state = apply_operator(ctx.out_state, op.dagger(values), op.qubit_support)
                 if isinstance(op, PyQParametric) and values[op.param_name].requires_grad:
@@ -147,7 +149,11 @@ class AdjointExpectation(Function):
 
         grads = list(
             reversed(
-                [grad_out * g for op in ctx.circuit.reverse() for g in _apply_adjoint(ctx, op)]
+                [
+                    grad_out * g
+                    for op in ctx.circuit.operations[::-1]
+                    for g in _apply_adjoint(ctx, op)
+                ]
             )
         )
         num_grads = len(grads)

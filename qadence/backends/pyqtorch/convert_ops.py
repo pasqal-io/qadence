@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from functools import reduce
 from itertools import chain as flatten
 from math import prod
-from operator import add
 from typing import Any, Sequence, Tuple
 
 import pyqtorch as pyq
@@ -13,15 +11,11 @@ from pyqtorch.matrices import _dagger
 from pyqtorch.utils import is_diag
 from torch import (
     Tensor,
-    argsort,
-    bmm,
     cdouble,
     diag_embed,
     diagonal,
     exp,
     linalg,
-    ones_like,
-    permute,
     tensor,
     transpose,
 )
@@ -60,7 +54,6 @@ from qadence.operations import (
     two_qubit_gateset,
 )
 from qadence.types import OpName
-from qadence.utils import infer_batchsize
 
 from .config import Configuration
 
@@ -98,11 +91,15 @@ def convert_block(
         config = Configuration()
 
     if isinstance(block, ScaleBlock):
-        return [ScalePyQOperation(n_qubits, block, config)]
+        return [
+            pyq.Scale(
+                convert_block(block.block, n_qubits, config)[0], *config.get_param_name(block)
+            )
+        ]
 
     elif isinstance(block, AddBlock):
         ops = list(flatten(*(convert_block(b, n_qubits, config) for b in block.blocks)))
-        return [AddPyQOperation(n_qubits, ops)]
+        return [pyq.Add(ops)]
 
     elif isinstance(block, TimeEvolutionBlock):
         return [
@@ -118,7 +115,7 @@ def convert_block(
     elif isinstance(block, CompositeBlock):
         ops = list(flatten(*(convert_block(b, n_qubits, config) for b in block.blocks)))
         if is_single_qubit_chain(block) and config.use_single_qubit_composition:
-            return [PyQComposedBlock(ops, qubit_support, n_qubits, config)]
+            return [pyq.Merge(ops)]
         else:
             # NOTE: without wrapping in a pyq.QuantumCircuit here the kron/chain
             # blocks won't be properly nested which leads to incorrect results from
@@ -128,7 +125,7 @@ def convert_block(
             # as opposed to
             # AddPyQOperation(Z, Z)
             # which would be wrong.
-            return [pyq.QuantumCircuit(n_qubits, ops)]
+            return [pyq.Sequence(ops)]
     elif isinstance(block, tuple(non_unitary_gateset)):
         if isinstance(block, ProjectorBlock):
             projector = getattr(pyq, block.name)
@@ -193,58 +190,6 @@ class PyQMatrixBlock(Module):
         self._device = self.mat.device
         self._dtype = self.mat.dtype
         return self
-
-
-class PyQComposedBlock(pyq.QuantumCircuit):
-    def __init__(
-        self,
-        ops: list[Module],
-        qubits: Tuple[int, ...],
-        n_qubits: int,
-        config: Configuration = None,
-    ):
-        """Compose a chain of single qubit operations on the same qubit into a single.
-
-        call to _apply_batch_gate.
-        """
-        super().__init__(n_qubits, ops)
-        self.qubits = qubits
-
-    def forward(self, state: Tensor, values: dict[str, Tensor] | None = None) -> Tensor:
-        batch_size = infer_batchsize(values)
-        return apply_operator(
-            state, self.unitary(values, batch_size), self.qubits, self.n_qubits, batch_size
-        )
-
-    def unitary(self, values: dict[str, Tensor] | None, batch_size: int) -> Tensor:
-        batch_first_perm = (2, 0, 1)
-        undo_perm = tuple(argsort(tensor(batch_first_perm)))
-
-        def _expand(m: Tensor) -> Tensor:
-            if len(m.size()) == 2:
-                m = m.unsqueeze(2).repeat(
-                    1, 1, batch_size
-                )  # Primitive gates are 2D, so we expand them.
-            elif m.shape != (2, 2, batch_size):
-                m = m.repeat(1, 1, batch_size)  # In case a tensor is 3D doesnt have batch_size.
-            return m
-
-        def _batch_first(m: Tensor) -> Tensor:
-            return permute(m, batch_first_perm)  # This returns shape (batch_size, 2, 2)
-
-        def _batch_last(m: Tensor) -> Tensor:
-            return permute(
-                m, undo_perm
-            )  # We need to undo the permute since PyQ expects (2, 2, batch_size).
-
-        # We reverse the list of tensors here since matmul is not commutative.
-
-        return _batch_last(
-            reduce(
-                bmm,
-                (_batch_first(_expand(op.unitary(values))) for op in reversed(self.operations)),
-            )
-        )
 
 
 class PyQObservable(Module):
@@ -439,39 +384,3 @@ class PyQHamiltonianEvolution(Module):
             self._device = self.hmat.device
             self._dtype = self.hmat.dtype
         return self
-
-
-class AddPyQOperation(pyq.QuantumCircuit):
-    def __init__(self, n_qubits: int, operations: list[Module]):
-        super().__init__(n_qubits=n_qubits, operations=operations)
-
-    def forward(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
-        return reduce(add, (op(state, values) for op in self.operations))
-
-
-class ScalePyQOperation(pyq.QuantumCircuit):
-    def __init__(self, n_qubits: int, block: ScaleBlock, config: Configuration):
-        if not isinstance(block.block, PrimitiveBlock):
-            raise NotImplementedError(
-                "The pyqtorch backend can currently only scale `PrimitiveBlock` types.\
-                Please use the following transpile function on your circuit first:\
-                from qadence.transpile import scale_primitive_blocks_only"
-            )
-        ops = convert_block(block.block, n_qubits, config)
-        assert len(ops) == 1
-        super().__init__(n_qubits, ops)
-        (self.param_name,) = config.get_param_name(block)
-        self.qubit_support = self.operations[0].qubit_support
-
-    def forward(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
-        return apply_operator(state, self.unitary(values), self.qubit_support, self.n_qubits)
-
-    def unitary(self, values: dict[str, Tensor]) -> Tensor:
-        thetas = values[self.param_name]
-        return thetas * self.operations[0].unitary(values)
-
-    def dagger(self, values: dict[str, Tensor]) -> Tensor:
-        return _dagger(self.unitary(values))
-
-    def jacobian(self, values: dict[str, Tensor]) -> Tensor:
-        return values[self.param_name] * ones_like(self.unitary(values))
