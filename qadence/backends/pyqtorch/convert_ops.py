@@ -204,8 +204,7 @@ class PyQObservable(Module):
                 self.operation * unpyqify(state), n_qubits=self.n_qubits
             )
         else:
-            self.operation = pyq.QuantumCircuit(
-                n_qubits,
+            self.operation = pyq.Sequence(
                 convert_block(block, n_qubits, config),
             )
             self._forward = lambda self, state, values: self.operation(state, values)
