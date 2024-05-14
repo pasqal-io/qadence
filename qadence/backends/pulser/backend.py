@@ -243,7 +243,7 @@ class Backend(BackendInterface):
         # Pulser requires numpy types.
         for noise_prob in noise_probs.numpy():
             batched_dm = []
-            sim_config = {"noise": noise.protocol, noise.protocol + "_prob": noise_prob}
+            sim_config = {"noise": noise.protocol, noise.protocol + "_rate": noise_prob}
             self.config.sim_config = SimConfig(**sim_config)
 
             for i, param_values_el in enumerate(vals):
