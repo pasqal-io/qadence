@@ -53,7 +53,7 @@ allow-direct-references = true
 allow-ambiguous-features = true
 
 [project.optional-dependencies]
-pulser = ["pulser==v0.15.2", "pasqal-cloud==0.3.5"]
+pulser = ["pulser==0.18.0", "pasqal-cloud==0.8.1"]
 braket = ["amazon-braket-sdk==1.71.0"]
 visualization = [
   "graphviz",
