@@ -91,33 +91,30 @@ def convert_block(
         config = Configuration()
 
     if isinstance(block, ScaleBlock):
+        scaled_ops = list(flatten(*(convert_block(b, n_qubits, config) for b in block.block)))
         return [
-            pyq.Scale(
-                convert_block(block.block, n_qubits, config)[0], *config.get_param_name(block)
-            )
+            pyq.Scale(scaled_ops, config.get_param_name(block)[0])
+            
         ]
-
-    elif isinstance(block, AddBlock):
-        ops = list(flatten(*(convert_block(b, n_qubits, config) for b in block.blocks)))
-        return [pyq.Add(ops)]
 
     elif isinstance(block, TimeEvolutionBlock):
         return [
-            PyQHamiltonianEvolution(
+            pyq.HamiltonianEvolution(
                 qubit_support=qubit_support,
-                n_qubits=n_qubits,
-                block=block,
-                config=config,
+                generator=convert_block(block.generator)[0],
+                time=config.get_param_name(block)[0]
             )
         ]
     elif isinstance(block, MatrixBlock):
         return [PyQMatrixBlock(block, n_qubits, config)]
     elif isinstance(block, CompositeBlock):
         ops = list(flatten(*(convert_block(b, n_qubits, config) for b in block.blocks)))
-        if is_single_qubit_chain(block) and config.use_single_qubit_composition:
+        if isinstance(block, AddBlock):
+            return [pyq.Add(ops)]
+        elif is_single_qubit_chain(block) and config.use_single_qubit_composition:
             return [pyq.Merge(ops)]
         else:
-            # NOTE: without wrapping in a pyq.QuantumCircuit here the kron/chain
+            # NOTE: without wrapping in a pyq.Sequence here the kron/chain
             # blocks won't be properly nested which leads to incorrect results from
             # the `AddBlock`s. For example:
             # add(chain(Z(0), Z(1))) has to result in the following (pseudo-code)
@@ -232,17 +229,14 @@ class PyQObservable(Module):
         return self
 
 
-class PyQHamiltonianEvolution(Module):
+class PyQHamiltonianEvolution(pyq.HamiltonianEvolution):
     def __init__(
         self,
         qubit_support: Tuple[int, ...],
-        n_qubits: int,
         block: TimeEvolutionBlock,
         config: Configuration,
     ):
-        super().__init__()
-        self.qubit_support = qubit_support
-        self.n_qubits = n_qubits
+        super().__init__(qubit_support)
         self.param_names = config.get_param_name(block)
         self.block = block
         self.hmat: Tensor
