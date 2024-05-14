@@ -5,7 +5,8 @@
     ],
     "prHeader": "Renovate Update",
     "reviewers": [
-        "Roland-djee"
+        "Roland-djee",
+	"dominikandreasseitz",
     ],
     "labels": [
         "renovate"
