@@ -72,7 +72,7 @@ horqrux = [
 protocols = ["qadence-protocols"]
 libs = ["qadence-libs"]
 all = [
-  "pulser==0.15.2",
+  "pulser==0.18.0",
   "amazon-braket-sdk==1.71.0",
   "graphviz",
   "protocols",
