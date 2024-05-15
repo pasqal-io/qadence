@@ -4,7 +4,9 @@ from logging import getLogger
 from typing import Callable, Union
 
 from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, TimeRemainingColumn
+from torch import complex128, float32, float64
 from torch import device as torch_device
+from torch import dtype as torch_dtype
 from torch.nn import DataParallel, Module
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
@@ -28,6 +30,7 @@ def train(
     device: torch_device = None,
     optimize_step: Callable = optimize_step,
     write_tensorboard: Callable = write_tensorboard,
+    dtype: torch_dtype = None,
 ) -> tuple[Module, Optimizer]:
     """Runs the training loop with gradient-based optimizer.
 
@@ -108,17 +111,17 @@ def train(
     train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
     ```
     """
-
-    # Move model to device before optimizer is loaded
-    if isinstance(model, DataParallel):
-        model = model.module.to(device)
-    else:
-        model = model.to(device)
     # load available checkpoint
     init_iter = 0
     if config.folder:
         model, optimizer, init_iter = load_checkpoint(config.folder, model, optimizer)
         logger.debug(f"Loaded model and optimizer from {config.folder}")
+
+    # Move model to device before optimizer is loaded
+    if isinstance(model, DataParallel):
+        model = model.module.to(device=device, dtype=dtype)
+    else:
+        model = model.to(device=device, dtype=dtype)
     # initialize tensorboard
     writer = SummaryWriter(config.folder, purge_step=init_iter)
 
@@ -129,7 +132,9 @@ def train(
         TaskProgressColumn(),
         TimeRemainingColumn(elapsed_when_finished=True),
     )
-
+    data_dtype = None
+    if dtype:
+        data_dtype = float64 if dtype == complex128 else float32
     with progress:
         dl_iter = iter(dataloader) if dataloader is not None else None
 
@@ -141,7 +146,12 @@ def train(
                 # which do not have classical input data (e.g. chemistry)
                 if dataloader is None:
                     loss, metrics = optimize_step(
-                        model=model, optimizer=optimizer, loss_fn=loss_fn, xs=None, device=device
+                        model=model,
+                        optimizer=optimizer,
+                        loss_fn=loss_fn,
+                        xs=None,
+                        device=device,
+                        dtype=data_dtype,
                     )
                     loss = loss.item()
 
@@ -152,6 +162,7 @@ def train(
                         loss_fn=loss_fn,
                         xs=next(dl_iter),  # type: ignore[arg-type]
                         device=device,
+                        dtype=data_dtype,
                     )
 
                 else:

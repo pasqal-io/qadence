@@ -1,0 +1,18 @@
+{
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "extends": [
+        "config:recommended"
+    ],
+    "prHeader": "Renovate Update",
+    "reviewers": [
+        "Roland-djee",
+	"dominikandreasseitz"
+    ],
+    "labels": [
+        "renovate"
+    ],
+    "ignoreDeps": [
+	"braket/amazon-braket-sdk",
+	"all/amazon-braket-sdk"
+    ]
+}

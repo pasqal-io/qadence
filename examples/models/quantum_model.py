@@ -4,9 +4,11 @@ from __future__ import annotations
 import numpy as np
 import sympy
 import torch
+
 torch.set_default_device("cuda")
 torch.manual_seed(42)
 import nvidia_dlprof_pytorch_nvtx
+
 nvidia_dlprof_pytorch_nvtx.init()
 from qadence import (
     CNOT,
@@ -18,10 +20,11 @@ from qadence import (
     chain,
     total_magnetization,
 )
-from qadence.types import BackendName, DiffMode
 from qadence.logger import get_script_logger
+from qadence.types import BackendName, DiffMode
 
 logger = get_script_logger("diff_backend")
+
 
 def circuit(n_qubits):
     x = Parameter("x", trainable=False)

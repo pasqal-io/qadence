@@ -2,19 +2,17 @@ from __future__ import annotations
 
 import os
 from json import loads
+from pathlib import Path
 from typing import no_type_check
 
 import numpy as np
 import pytest
 import torch
-from metrics import (ATOL_32, DIGITAL_DECOMP_ACCEPTANCE_HIGH,
-                     DIGITAL_DECOMP_ACCEPTANCE_LOW)
+from metrics import ATOL_32, DIGITAL_DECOMP_ACCEPTANCE_HIGH, DIGITAL_DECOMP_ACCEPTANCE_LOW
 
-from qadence.blocks import (AbstractBlock, add, chain, get_pauli_blocks, kron,
-                            primitive_blocks)
+from qadence.blocks import AbstractBlock, add, chain, get_pauli_blocks, kron, primitive_blocks
 from qadence.circuit import QuantumCircuit
-from qadence.constructors import (ising_hamiltonian, total_magnetization,
-                                  zz_hamiltonian)
+from qadence.constructors import ising_hamiltonian, total_magnetization, zz_hamiltonian
 from qadence.models import QuantumModel
 from qadence.operations import CNOT, RX, RZ, H, HamEvo, X, Y, Z
 from qadence.parameters import Parameter, VariationalParameter, evaluate
@@ -200,8 +198,6 @@ def test_composite_hamevo_edge_cases(generator: AbstractBlock) -> None:
     wf2 = model2.run({})
 
     assert torch.allclose(wf1, wf2, atol=1.0e-2)
-
-from pathlib import Path
 
 
 def open_chem_obs() -> AbstractBlock:

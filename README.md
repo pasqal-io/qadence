@@ -1,15 +1,17 @@
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/assets/logo/qadence_logo_white.svg">
-  <source media="(prefers-color-scheme: light)" srcset="./docs/assets/logo/qadence_logo.svg">
-  <img alt="Qadence logo" src="./docs/assets/logo/qadence_logo.svg">
-</picture>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/extras/assets/logo/qadence_logo_white.svg" width="75%">
+    <source media="(prefers-color-scheme: light)" srcset="./docs/extras/assets/logo/qadence_logo.svg" width="75%">
+    <img alt="Qadence logo" src="./docs/assets/logo/qadence_logo.svg" width="75%">
+  </picture>
+</p>
+
+**Qadence** is a Python package that provides a simple interface to build **digital-analog quantum
+programs** with tunable qubit interactions and arbitrary register topologies realizable on neutral atom devices.
 
 **For a high-level overview of Qadence features, [check out our white paper](https://arxiv.org/abs/2401.09915).**
 
 **For more detailed information, [check out the documentation](https://pasqal-io.github.io/qadence/latest/).**
-
-**Qadence** is a Python package that provides a simple interface to build _**digital-analog quantum
-programs**_ with tunable qubit interaction defined on _**arbitrary register topologies**_ realizable on neutral atom devices.
 
 [![Linting](https://github.com/pasqal-io/qadence/actions/workflows/lint.yml/badge.svg)](https://github.com/pasqal-io/qadence/actions/workflows/lint.yml)
 [![Tests](https://github.com/pasqal-io/qadence/actions/workflows/test_fast.yml/badge.svg)](https://github.com/pasqal-io/qadence/actions/workflows/test_fast.yml)
@@ -19,27 +21,26 @@ programs**_ with tunable qubit interaction defined on _**arbitrary register topo
 
 ## Feature highlights
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/assets/qadence_arch.svg">
-  <source media="(prefers-color-scheme: light)" srcset="./docs/assets/qadence_arch.svg">
-  <img alt="Qadence architecture" src="./docs/assets/qadence_arch.svg">
-</picture>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/extras/assets/qadence_arch.svg" width="75%">
+    <source media="(prefers-color-scheme: light)" srcset="./docs/extras/assets/qadence_arch.svg" width="75%">
+    <img alt="Qadence architecture" src="./docs/assets/qadence_arch.svg" width="75%">
+  </picture>
+<p align="center">
 
-
-* A [block-based system](docs/tutorials/getting_started.md) for composing _**complex digital-analog
+* A [block-based system](docs/content/block_system.md) for composing _**complex digital-analog
   programs**_ in a flexible and scalable manner, inspired by the Julia quantum SDK
   [Yao.jl](https://github.com/QuantumBFS/Yao.jl) and functional programming concepts.
 
-* A [simple interface](docs/digital_analog_qc/analog-basics.md) to work with _**interacting neutral-atom qubit systems**_
-  using [arbitrary registers topologies](docs/tutorials/register.md).
-
-* An intuitive [expression-based system](docs/tutorials/parameters.md) developed on top of the symbolic library [Sympy](https://www.sympy.org/en/index.html) to construct _**parametric quantum programs**_ easily.
-
-* [High-order generalized parameter shift rules](docs/advanced_tutorials/differentiability.md) for _**differentiating parametrized quantum operations**_.
+* An intuitive [expression-based system](docs/content/parameters.md) developed on top of the symbolic library [Sympy](https://www.sympy.org/en/index.html) to construct _**parametric quantum programs**_ easily.
 
 * Out-of-the-box _**automatic differentiability**_ of quantum programs with [PyTorch](https://pytorch.org/) integration.
 
-* _**Efficient execution**_ on a variety of different purpose backends: from state vector simulators to tensor network emulators and real devices.
+* [High-order generalized parameter shift rules](docs/tutorials/advanced_tutorials/differentiability.md) for _**differentiating parametrized quantum operations**_.
+
+* A [simple interface](docs/tutorials/digital_analog_qc/analog-basics.md) to work with _**interacting neutral-atom qubit systems**_
+  using [arbitrary registers topologies](docs/content/register.md).
 
 ## Installation guide
 
@@ -51,9 +52,10 @@ pip install qadence
 
 The default, pre-installed backend for Qadence is [PyQTorch](https://github.com/pasqal-io/pyqtorch), a differentiable state vector simulator for digital-analog simulation based on `PyTorch`. It is possible to install additional, `PyTorch` -based backends and the circuit visualization library using the following extras:
 
-* `pulser`: The [Pulser](https://github.com/pasqal-io/Pulser) backend for composing, simulating and executing pulse sequences for neutral-atom quantum devices.
-* `braket`: The [Braket](https://github.com/amazon-braket/amazon-braket-sdk-python) backend, an open source library that provides a framework for interacting with quantum computing hardware devices through Amazon Braket.
 * `visualization`: A visualization library to display quantum circuit diagrams.
+* `protocols`: A collection of [protocols](https://github.com/pasqal-io/qadence-protocols) for error mitigation in Qadence.
+* `libs`: A collection of [functionalities](https://github.com/pasqal-io/qadence-libs) for graph machine learning problems build on top of Qadence.
+* `pulser`: The [Pulser](https://github.com/pasqal-io/Pulser) backend for composing, simulating and executing pulse sequences for neutral-atom quantum devices (experimental).
 
 Qadence also supports a `JAX` engine which is currently supporting the [Horqrux](https://github.com/pasqal-io/horqrux) backend. `horqrux` is currently only available via the [low-level API](examples/backends/low_level/horqrux_backend.py).
 
@@ -61,7 +63,7 @@ Qadence also supports a `JAX` engine which is currently supporting the [Horqrux]
 To install individual extras, use the following syntax (**IMPORTANT** Make sure to use quotes):
 
 ```bash
-pip install "qadence[braket,pulser,visualization]"
+pip install "qadence[pulser,visualization]"
 ```
 
 To install all available extras, simply do:
@@ -87,10 +89,10 @@ conda install python-graphviz
 
 ## Contributing
 
-Before making a contribution, please review our [code of conduct](docs/CODE_OF_CONDUCT.md).
+Before making a contribution, please review our [code of conduct](docs/getting_started/CODE_OF_CONDUCT.md).
 
 - **Submitting Issues:** To submit bug reports or feature requests, please use our [issue tracker](https://github.com/pasqal-io/qadence/issues).
-- **Developing in qadence:** To learn more about how to develop within `qadence`, please refer to [contributing guidelines](docs/CONTRIBUTING.md).
+- **Developing in qadence:** To learn more about how to develop within `qadence`, please refer to [contributing guidelines](docs/getting_started/CONTRIBUTING.md).
 
 ### Setting up qadence in development mode
 

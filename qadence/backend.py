@@ -26,7 +26,6 @@ from qadence.mitigations import Mitigations
 from qadence.noise import Noise
 from qadence.parameters import stringify
 from qadence.types import ArrayLike, BackendName, DiffMode, Endianness, Engine, ParamDictType
-from qadence.utils import validate_values_and_state
 
 logger = getLogger(__name__)
 
@@ -259,29 +258,6 @@ class Backend(ABC):
         """
         raise NotImplementedError
 
-    @abstractmethod
-    def _run(
-        self,
-        circuit: ConvertedCircuit,
-        param_values: dict[str, ArrayLike] = {},
-        state: ArrayLike | None = None,
-        endianness: Endianness = Endianness.BIG,
-    ) -> ArrayLike:
-        """Run a circuit and return the resulting wave function.
-
-        Arguments:
-            circuit: A converted circuit as returned by `backend.circuit`.
-            param_values: _**Already embedded**_ parameters of the circuit. See
-                [`embedding`][qadence.blocks.embedding.embedding] for more info.
-            state: Initial state.
-            endianness: Endianness of the resulting wavefunction.
-
-        Returns:
-            A list of Counter objects where each key represents a bitstring
-            and its value the number of times it has been sampled from the given wave function.
-        """
-        raise NotImplementedError
-
     def run(
         self,
         circuit: ConvertedCircuit,
@@ -304,8 +280,7 @@ class Backend(ABC):
             A list of Counter objects where each key represents a bitstring
             and its value the number of times it has been sampled from the given wave function.
         """
-        validate_values_and_state(state, circuit.abstract.n_qubits, param_values)
-        return self._run(circuit, param_values, state, endianness, *args, **kwargs)
+        raise NotImplementedError
 
     @abstractmethod
     def run_dm(

@@ -7,9 +7,8 @@ from importlib import import_module
 from pathlib import Path
 
 import yaml
-from torch import cdouble
+from torch import cdouble, set_default_dtype
 from torch import float64 as torchfloat64
-from torch import set_default_dtype
 
 DEFAULT_FLOAT_DTYPE = torchfloat64
 DEFAULT_COMPLEX_DTYPE = cdouble

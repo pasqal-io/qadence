@@ -15,7 +15,7 @@ from qadence.blocks.utils import chain
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import feature_map, hea, ising_hamiltonian
 from qadence.logger import get_script_logger
-from qadence.types import BackendName, DiffMode
+from qadence.types import BackendName, BasisSet, DiffMode
 
 logger = get_script_logger("Horqrux DQC")
 N_QUBITS, DEPTH, LEARNING_RATE, N_POINTS = 4, 3, 0.01, 20
@@ -23,7 +23,7 @@ logger.info(f"Running example {os.path.basename(__file__)} with n_qubits = {N_QU
 # building the DQC model
 ansatz = hea(n_qubits=N_QUBITS, depth=DEPTH)
 # the input data is encoded via a feature map
-fm = feature_map(n_qubits=N_QUBITS, param="x", fm_type="chebyshev")
+fm = feature_map(n_qubits=N_QUBITS, param="x", fm_type=BasisSet.CHEBYSHEV)
 # choosing a cost function
 obs = ising_hamiltonian(n_qubits=N_QUBITS)
 # building the circuit and the quantum model

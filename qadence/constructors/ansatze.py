@@ -1,15 +1,13 @@
 from __future__ import annotations
 
 import itertools
-import warnings
-from typing import Any, Optional, Type, Union
+from typing import Any, Type, Union
 
 from qadence.blocks import AbstractBlock, block_is_qubit_hamiltonian, chain, kron, tag
 from qadence.operations import CNOT, CPHASE, CRX, CRY, CRZ, CZ, RX, RY, HamEvo
 from qadence.types import Interaction, Strategy
 
 from .hamiltonians import hamiltonian_factory
-from .utils import build_idx_fms
 
 DigitalEntanglers = Union[CNOT, CZ, CRZ, CRY, CRX]
 
@@ -322,65 +320,3 @@ def hea_bDAQC(*args: Any, **kwargs: Any) -> Any:
 
 def hea_analog(*args: Any, **kwargs: Any) -> Any:
     raise NotImplementedError
-
-
-#########
-## QNN ##
-#########
-
-
-# FIXME: Remove in v1.5.0
-def build_qnn(
-    n_qubits: int,
-    n_features: int,
-    depth: int = None,
-    ansatz: Optional[AbstractBlock] = None,
-    fm_pauli: Type[RY] = RY,
-    spectrum: str = "simple",
-    basis: str = "fourier",
-    fm_strategy: str = "parallel",
-) -> list[AbstractBlock]:
-    """Helper function to build a qadence QNN quantum circuit.
-
-    Args:
-        n_qubits (int): The number of qubits.
-        n_features (int): The number of input dimensions.
-        depth (int): The depth of the ansatz.
-        ansatz (Optional[AbstractBlock]):  An optional argument to pass a custom qadence ansatz.
-        fm_pauli (str): The type of Pauli gate for the feature map. Must be one of 'RX',
-            'RY', or 'RZ'.
-        spectrum (str): The desired spectrum of the feature map generator. The options simple,
-            tower and exponential produce a spectrum with linear, quadratic and exponential
-            eigenvalues with respect to the number of qubits.
-        basis (str): The encoding function. The options fourier and chebyshev correspond to Φ(x)=x
-            and arcos(x) respectively.
-        fm_strategy (str): The feature map encoding strategy. If "parallel", the features
-            are encoded in one block of rotation gates, with each feature given
-            an equal number of qubits. If "serial", the features are encoded
-            sequentially, with a HEA block between.
-
-    Returns:
-        A list of Abstract blocks to be used for constructing a quantum circuit
-    """
-
-    warnings.warn("Function build_qnn is deprecated and will be removed in v1.5.0.", FutureWarning)
-
-    depth = n_qubits if depth is None else depth
-
-    idx_fms = build_idx_fms(basis, fm_pauli, fm_strategy, n_features, n_qubits, spectrum)
-
-    if fm_strategy == "parallel":
-        _fm = kron(*idx_fms)
-        fm = tag(_fm, tag="FM")
-
-    elif fm_strategy == "serial":
-        fm_components: list[AbstractBlock] = []
-        for j, fm_idx in enumerate(idx_fms[:-1]):
-            fm_idx = tag(fm_idx, tag=f"FM{j}")  # type: ignore[assignment]
-            fm_component = (fm_idx, hea(n_qubits, 1, f"theta_{j}"))
-            fm_components.extend(fm_component)
-        fm_components.append(tag(idx_fms[-1], tag=f"FM{len(idx_fms) - 1}"))
-        fm = chain(*fm_components)  # type: ignore[assignment]
-
-    ansatz = hea(n_qubits, depth=depth) if ansatz is None else ansatz
-    return [fm, ansatz]

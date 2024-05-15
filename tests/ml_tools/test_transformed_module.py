@@ -169,3 +169,14 @@ def test_basic_save_load_ckpts(Basic: torch.nn.Module, tmp_path: Path) -> None:
     exp_tm = tm(x)
     assert exp_no.shape == exp_tm.shape
     assert torch.allclose(exp_no, exp_tm)
+
+
+@pytest.mark.parametrize("dtype", [torch.cdouble, torch.cfloat])
+def test_change_dtype(dtype: torch.dtype, BasicTransformedModule: TransformedModule) -> None:
+    tm = BasicTransformedModule
+    tm = tm.to(dtype)
+    assert tm.model._circuit.native.dtype == dtype
+    assert tm._input_scaling.dtype == torch.float32 if dtype == torch.cfloat else torch.float64
+    assert tm._input_shifting.dtype == torch.float32 if dtype == torch.cfloat else torch.float64
+    assert tm._output_scaling.dtype == torch.float32 if dtype == torch.cfloat else torch.float64
+    assert tm._output_shifting.dtype == torch.float32 if dtype == torch.cfloat else torch.float64

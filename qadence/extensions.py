@@ -77,16 +77,6 @@ def _validate_diff_mode(backend: Backend, diff_mode: DiffMode) -> None:
         raise TypeError(f"Backend {backend.name} does not support diff_mode {DiffMode.ADJOINT}.")
 
 
-def _validate_backend_config(backend: Backend) -> None:
-    if backend.config.use_gradient_checkpointing:
-        # FIXME: Remove in v1.5.0
-        msg = "use_gradient_checkpointing is deprecated."
-        import warnings
-
-        warnings.warn(msg, UserWarning)
-        logger.warn(msg)
-
-
 def _set_backend_config(backend: Backend, diff_mode: DiffMode) -> None:
     """Fallback function for native Qadence backends if extensions is not present.
 
@@ -96,7 +86,6 @@ def _set_backend_config(backend: Backend, diff_mode: DiffMode) -> None:
     """
 
     _validate_diff_mode(backend, diff_mode)
-    _validate_backend_config(backend)
 
     # (1) When using PSR with any backend or (2) we use the backends Pulser or Braket,
     # we have to use gate-level parameters

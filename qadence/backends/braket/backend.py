@@ -89,7 +89,7 @@ class Backend(BackendInterface):
         ).squeeze(0)
         return ConvertedObservable(native=native, abstract=obs, original=obs)
 
-    def _run(
+    def run(
         self,
         circuit: ConvertedCircuit,
         param_values: dict[str, Tensor] = {},

@@ -81,7 +81,7 @@ class Backend(BackendInterface):
         (native,) = convert_observable(block, n_qubits=n_qubits, config=self.config)
         return ConvertedObservable(native=native, abstract=block, original=observable)
 
-    def _run(
+    def run(
         self,
         circuit: ConvertedCircuit,
         param_values: dict[str, Tensor] = {},
@@ -152,7 +152,9 @@ class Backend(BackendInterface):
         if state is None:
             from qadence.states import zero_state
 
-            state = zero_state(circuit.abstract.n_qubits, batch_size=1)
+            state = zero_state(circuit.abstract.n_qubits, batch_size=1).to(
+                dtype=circuit.native.dtype
+            )
         if state.size(0) != 1:
             raise ValueError(
                 "Looping expectation does not make sense with batched initial state. "

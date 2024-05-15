@@ -70,27 +70,6 @@ def make_sequence(circ: QuantumCircuit, config: Configuration) -> Sequence:
             f"Specified device of type {device_specs.type} is not supported by the pulser backend."
         )
 
-    ########
-    # FIXME: Remove the block below in V1.5.0
-    if config.spacing is not None:
-        logger.warning(
-            "Passing register spacing in the backend configuration is deprecated. "
-            "Please pass it in the register directly, as detailed in the register tutorial."
-        )
-        # Rescales the register coordinates, as was done with the previous "spacing" argument.
-        qadence_register = qadence_register.rescale_coords(scaling=config.spacing)
-    else:
-        if qadence_register.min_distance < 4.0:
-            # Throws warning for minimum distance below 4 because the typical values used
-            # for the standard pulser device parameters is ~7-8, so this likely means the user
-            # forgot to set the spacing at register creation.
-            logger.warning(
-                "Register with distance between atoms smaller than 4µm detected. "
-                "Pulser backend no longer has a default spacing of 8µm applied to the register. "
-                "Make sure you set the desired spacing as detailed in the register tutorial."
-            )
-    ########
-
     pulser_register = create_register(qadence_register)
 
     sequence = Sequence(pulser_register, device)
@@ -201,7 +180,7 @@ class Backend(BackendInterface):
 
         return circuit.native.build(**numpy_param_values)
 
-    def _run(
+    def run(
         self,
         circuit: ConvertedCircuit,
         param_values: dict[str, Tensor] = {},
@@ -265,7 +244,7 @@ class Backend(BackendInterface):
         # Pulser requires numpy types.
         for noise_prob in noise_probs.numpy():
             batched_dm = []
-            sim_config = {"noise": noise.protocol, noise.protocol + "_prob": noise_prob}
+            sim_config = {"noise": noise.protocol, noise.protocol + "_rate": noise_prob}
             self.config.sim_config = SimConfig(**sim_config)
 
             for i, param_values_el in enumerate(vals):

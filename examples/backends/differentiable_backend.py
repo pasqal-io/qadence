@@ -6,9 +6,11 @@ import os
 import numpy as np
 import sympy
 import torch
+
 torch.set_default_device("cuda")
 torch.manual_seed(42)
 import nvidia_dlprof_pytorch_nvtx
+
 nvidia_dlprof_pytorch_nvtx.init()
 from qadence import (
     CNOT,

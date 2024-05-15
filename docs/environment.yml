@@ -10,8 +10,8 @@ dependencies:
     - mkdocs-exclude
     - mkdocs-jupyter
     - mkdocs-material
-    - mkdocs-section-index==0.3.6
-    - mkdocs==1.5.2
+    - mkdocs-section-index
+    - mkdocs
     - mkdocstrings
     - mkdocstrings-python
     - -e ../
