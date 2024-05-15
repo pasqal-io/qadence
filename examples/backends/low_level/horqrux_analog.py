@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import os
+from pathlib import Path
 
 import jax
 import jax.numpy as jnp
@@ -33,7 +33,7 @@ N_EPOCHS = 200
 BACKEND_NAME = BackendName.HORQRUX
 DIFF_MODE = DiffMode.AD
 
-logger.info(f"Running example {os.path.basename(__file__)} with n_qubits = {N_QUBITS}")
+logger.info(f"Running example {Path(__file__).name} with n_qubits = {N_QUBITS}")
 
 bknd = backend_factory(BACKEND_NAME, DIFF_MODE)
 register = Register.line(N_QUBITS, spacing=8.0)

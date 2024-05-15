@@ -1,7 +1,7 @@
 #!/bin/python
 from __future__ import annotations
 
-import os
+from pathlib import Path
 
 import numpy as np
 import sympy
@@ -12,15 +12,7 @@ torch.manual_seed(42)
 import nvidia_dlprof_pytorch_nvtx
 
 nvidia_dlprof_pytorch_nvtx.init()
-from qadence import (
-    CNOT,
-    RX,
-    RY,
-    Parameter,
-    QuantumCircuit,
-    chain,
-    total_magnetization,
-)
+from qadence import CNOT, RX, RY, Parameter, QuantumCircuit, chain, total_magnetization
 from qadence.backends.pyqtorch.backend import Backend as PyQTorchBackend
 from qadence.engines.torch.differentiable_backend import DifferentiableBackend
 from qadence.logger import get_script_logger
@@ -48,7 +40,7 @@ if __name__ == "__main__":
     n_qubits = 2
     batch_size = 5
 
-    logger.info(f"Running example {os.path.basename(__file__)} with n_qubits = {n_qubits}")
+    logger.info(f"Running example {Path(__file__).name} with n_qubits = {n_qubits}")
     # Making circuit with AD
     circ = circuit(n_qubits)
     observable = total_magnetization(n_qubits=n_qubits)

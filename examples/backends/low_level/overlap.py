@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import os
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -25,7 +25,7 @@ from qadence.logger import get_script_logger
 logger = get_script_logger("Overlap")
 
 n_qubits = 1
-logger.info(f"Running example {os.path.basename(__file__)} with n_qubits = {n_qubits}")
+logger.info(f"Running example {Path(__file__).name} with n_qubits = {n_qubits}")
 
 # prepare circuit for bras
 param_bra = FeatureParameter("phi")

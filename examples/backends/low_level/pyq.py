@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import os
+from pathlib import Path
 
 import numpy as np
 import sympy
@@ -34,7 +34,7 @@ if __name__ == "__main__":
     torch.manual_seed(42)
     n_qubits = 2
     batch_size = 5
-    logger.info(f"Running example {os.path.basename(__file__)} with n_qubits = {n_qubits}")
+    logger.info(f"Running example {Path(__file__).name} with n_qubits = {n_qubits}")
     # Making circuit with AD
     circ = circuit(n_qubits)
     observable = total_magnetization(n_qubits=n_qubits)

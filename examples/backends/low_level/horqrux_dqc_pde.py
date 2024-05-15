@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import os
 from functools import reduce
 from itertools import product
 from operator import add
+from pathlib import Path
 
 import jax
 import jax.numpy as jnp
@@ -28,7 +28,7 @@ N_QUBITS = 4
 DEPTH = 3
 VARIABLES = ("x", "y")
 N_POINTS = 150
-logger.info(f"Running example {os.path.basename(__file__)} with n_qubits = {N_QUBITS}")
+logger.info(f"Running example {Path(__file__).name} with n_qubits = {N_QUBITS}")
 # define a simple DQC model
 ansatz = hea(n_qubits=N_QUBITS, depth=DEPTH)
 # parallel Fourier feature map
