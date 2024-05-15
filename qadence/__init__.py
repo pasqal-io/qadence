@@ -7,8 +7,9 @@ from importlib import import_module
 from pathlib import Path
 
 import yaml
-from torch import cdouble, set_default_dtype
+from torch import cdouble
 from torch import float64 as torchfloat64
+from torch import set_default_dtype
 
 DEFAULT_FLOAT_DTYPE = torchfloat64
 DEFAULT_COMPLEX_DTYPE = cdouble
@@ -36,7 +37,7 @@ logger.setLevel(LOG_LEVEL)
     for h in logger.handlers
     if h.get_name() == "console"
 ]
-logger.debug("Qadence logger successfully setup")
+logger.debug(f"Qadence logger successfully setup with log level {LOG_LEVEL}")
 
 from .analog import *
 from .backend import *

@@ -35,9 +35,9 @@ def circuit(n_qubits):
 
 
 if __name__ == "__main__":
-    n_qubits = 2
+    n_qubits = 16
     batch_size = 5
-    logger.info(f"Running quantum models example with n_qubits {2}")
+    logger.info(f"Running quantum models example with n_qubits {n_qubits}")
     observable = total_magnetization(n_qubits)
     model = QuantumModel(
         circuit(n_qubits),
@@ -76,6 +76,7 @@ if __name__ == "__main__":
         diff_mode=DiffMode.GPSR,
     )
     model.zero_grad()
+    model.to("cuda")
     loss = torch.mean(model.expectation(values))
     loss.backward()
 
@@ -97,6 +98,7 @@ if __name__ == "__main__":
         diff_mode=DiffMode.ADJOINT,
     )
     model.zero_grad()
+    model.to("cuda")
     loss = torch.mean(model.expectation(values))
     loss.backward()
 

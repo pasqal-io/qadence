@@ -7,33 +7,16 @@ from typing import no_type_check
 import numpy as np
 import pytest
 import torch
-from metrics import ATOL_32, DIGITAL_DECOMP_ACCEPTANCE_HIGH, DIGITAL_DECOMP_ACCEPTANCE_LOW
+from metrics import (ATOL_32, DIGITAL_DECOMP_ACCEPTANCE_HIGH,
+                     DIGITAL_DECOMP_ACCEPTANCE_LOW)
 
-from qadence.blocks import (
-    AbstractBlock,
-    add,
-    chain,
-    get_pauli_blocks,
-    kron,
-    primitive_blocks,
-)
+from qadence.blocks import (AbstractBlock, add, chain, get_pauli_blocks, kron,
+                            primitive_blocks)
 from qadence.circuit import QuantumCircuit
-from qadence.constructors import (
-    ising_hamiltonian,
-    total_magnetization,
-    zz_hamiltonian,
-)
+from qadence.constructors import (ising_hamiltonian, total_magnetization,
+                                  zz_hamiltonian)
 from qadence.models import QuantumModel
-from qadence.operations import (
-    CNOT,
-    RX,
-    RZ,
-    H,
-    HamEvo,
-    X,
-    Y,
-    Z,
-)
+from qadence.operations import CNOT, RX, RZ, H, HamEvo, X, Y, Z
 from qadence.parameters import Parameter, VariationalParameter, evaluate
 from qadence.serialization import deserialize
 from qadence.types import BackendName, DiffMode, LTSOrder
@@ -218,11 +201,13 @@ def test_composite_hamevo_edge_cases(generator: AbstractBlock) -> None:
 
     assert torch.allclose(wf1, wf2, atol=1.0e-2)
 
+from pathlib import Path
+
 
 def open_chem_obs() -> AbstractBlock:
     """A tiny helper function."""
-    directory = os.getcwd()
-    with open(os.path.join(directory, "tests/test_files/h4.json"), "r") as js:
+    directory = Path(__file__).parent.parent
+    with open(os.path.join(directory, "test_files/h4.json"), "r") as js:
         obs = loads(js.read())
     return deserialize(obs)  # type: ignore[return-value]
 
