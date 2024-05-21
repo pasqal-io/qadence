@@ -246,8 +246,7 @@ class Backend(BackendInterface):
 
         noisy_batched_dm = []
 
-        # Pulser requires numpy types.
-        for noise_prob in noise_probs:
+        def run_noisy_sim(noise_prob: float) -> list:
             batched_dm = []
             sim_config = {"noise": noise.protocol, noise.protocol + "_rate": noise_prob}
             self.config.sim_config = SimConfig(**sim_config)
@@ -256,7 +255,14 @@ class Backend(BackendInterface):
                 sequence = self.assign_parameters(circuit, param_values_el)
                 sim_result = simulate_sequence(sequence, self.config, state)
                 batched_dm.append(sim_result)
-            noisy_batched_dm.append(batched_dm)
+            return [batched_dm]
+
+        # Pulser requires numpy types.
+        if isinstance(noise_probs, Iterable):
+            for noise_prob in noise_probs:
+                noisy_batched_dm.append(run_noisy_sim(noise_prob))
+        else:
+            noisy_batched_dm = run_noisy_sim(noise_probs)
 
         return noisy_batched_dm
 
