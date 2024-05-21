@@ -59,7 +59,7 @@ def test_noisy_simulations(noiseless_pulser_sim: Tensor, noisy_pulser_sim: Tenso
     noiseless_expectation = model_noiseless.expectation()
 
     noise_type = "depolarizing"
-    options = {"noise_probs": [0.1]}
+    options = {"noise_probs": 0.1}
     noise = Noise(protocol=noise_type, options=options)
     model_noisy = QuantumModel(
         circuit=circuit,
