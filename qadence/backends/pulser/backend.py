@@ -307,14 +307,26 @@ class Backend(BackendInterface):
     ) -> Tensor:
         observable = observable if isinstance(observable, list) else [observable]
         if mitigation is None:
-            state = self.run(circuit, param_values=param_values, state=state, endianness=endianness)
-            support = sorted(list(circuit.abstract.register.support))
-            res_list = [
-                obs.native(state, param_values, qubit_support=support) for obs in observable
-            ]
-            res = torch.transpose(torch.stack(res_list), 0, 1)
-            res = res if len(res.shape) > 0 else res.reshape(1)
-            return res.real
+            if noise is None:
+                state = self.run(
+                    circuit, param_values=param_values, state=state, endianness=endianness
+                )
+                support = sorted(list(circuit.abstract.register.support))
+                res_list = [
+                    obs.native(state, param_values, qubit_support=support) for obs in observable
+                ]
+                res = torch.transpose(torch.stack(res_list), 0, 1)
+                res = res if len(res.shape) > 0 else res.reshape(1)
+                return res.real
+            elif noise is not None:
+                dm = self.run_dm(
+                    circuit=circuit,
+                    noise=noise,
+                    param_values=param_values,
+                    state=state,
+                    endianness=endianness,
+                )
+                return dm
         elif mitigation is not None:
             logger.warning(
                 "Mitigation protocol is deprecated. Use qadence-protocols instead.",
