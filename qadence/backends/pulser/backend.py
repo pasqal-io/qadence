@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -235,13 +236,13 @@ class Backend(BackendInterface):
     ) -> list:
         vals = to_list_of_dicts(param_values)
         noise_probs = noise.options.get("noise_probs", None)
-        if noise_probs is None:
-            KeyError(f"A range of noise probabilies should be passed. Got {noise_probs}.")
+        if noise_probs is None or not isinstance(noise_probs, Iterable):
+            KeyError(f"A range of noise probabilies should be passed. Got {type(noise_probs)}.")
 
         noisy_batched_dm = []
 
         # Pulser requires numpy types.
-        for noise_prob in noise_probs.numpy():
+        for noise_prob in noise_probs:
             batched_dm = []
             sim_config = {"noise": noise.protocol, noise.protocol + "_rate": noise_prob}
             self.config.sim_config = SimConfig(**sim_config)
