@@ -20,7 +20,7 @@ def general_psr(spectrum: Tensor, n_eqs: int | None = None, shift_prefac: float 
     sorted_unique_spectral_gaps = torch.tensor(list(sorted_unique_spectral_gaps))
 
     if n_eqs == 1:
-        return partial(single_gap_psr, spectral_gap=sorted_unique_spectral_gaps.item())
+        return single_gap_psr
     else:
         return partial(
             multi_gap_psr,
