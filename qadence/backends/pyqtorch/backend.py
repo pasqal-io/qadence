@@ -31,7 +31,7 @@ from qadence.transpile import (
     transpile,
 )
 from qadence.types import BackendName, Endianness, Engine
-from qadence.utils import infer_batchsize, int_to_basis
+from qadence.utils import infer_batchsize
 
 from .config import Configuration, default_passes
 from .convert_ops import convert_block, convert_observable
@@ -208,7 +208,9 @@ class Backend(BackendInterface):
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
-        samples = circuit.native.sample(values=param_values, n_shots=n_shots, state=state)
+        samples: list[Counter] = circuit.native.sample(
+            values=param_values, n_shots=n_shots, state=state
+        )
         samples = invert_endianness(samples) if endianness != Endianness.BIG else samples
         if noise is not None:
             samples = apply_noise(noise=noise, samples=samples)
