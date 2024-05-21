@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import networkx as nx
+import torch
 import torch.nn as nn
 from openfermion import QubitOperator
 from pytest import fixture  # type: ignore
@@ -20,6 +21,47 @@ from qadence.types import PI, BackendName, DiffMode
 
 BASIC_NQUBITS = 4
 FM_NQUBITS = 2
+
+
+@fixture
+def noisy_pulser_sim() -> Tensor:
+    return torch.tensor(
+        [
+            [
+                [
+                    [
+                        4.3313e-02 + 0.0000e00j,
+                        1.8131e-08 - 6.8481e-09j,
+                        1.8131e-08 - 6.8481e-09j,
+                        0.0000e00 + 2.1973e-11j,
+                    ],
+                    [
+                        1.8131e-08 + 6.8481e-09j,
+                        3.6676e-01 + 0.0000e00j,
+                        3.0200e-01 + 0.0000e00j,
+                        3.2741e-04 + 2.2623e-01j,
+                    ],
+                    [
+                        1.8131e-08 + 6.8481e-09j,
+                        3.0200e-01 + 0.0000e00j,
+                        3.6676e-01 + 0.0000e00j,
+                        3.2741e-04 + 2.2623e-01j,
+                    ],
+                    [
+                        0.0000e00 - 2.1973e-11j,
+                        3.2741e-04 - 2.2623e-01j,
+                        3.2741e-04 - 2.2623e-01j,
+                        2.2317e-01 + 0.0000e00j,
+                    ],
+                ]
+            ]
+        ]
+    )
+
+
+@fixture
+def noiseless_pulser_sim() -> Tensor:
+    return torch.tensor([[0.3961]])
 
 
 @fixture

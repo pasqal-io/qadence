@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import pytest
-from torch import tensor
+import torch
+from torch import Tensor, tensor
 
+from qadence import DiffMode, Noise, QuantumModel
 from qadence.backends import backend_factory
-from qadence.blocks import kron
+from qadence.blocks import chain, kron
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import total_magnetization
-from qadence.operations import RX
+from qadence.operations import RX, AnalogRX, AnalogRZ, Z
 from qadence.parameters import FeatureParameter, VariationalParameter
 from qadence.types import PI, BackendName
 
@@ -45,3 +47,27 @@ def test_run_batched(batched_circuit: QuantumCircuit) -> None:
     wf = backend.run(circ, param_values=embed(params, values))
 
     assert wf.shape == (batch_size, 2**batched_circuit.n_qubits)
+
+
+def test_noisy_simulations(noiseless_pulser_sim: Tensor, noisy_pulser_sim: Tensor) -> None:
+    analog_block = chain(AnalogRX(PI / 2.0), AnalogRZ(PI))
+    observable = [Z(0) + Z(1)]
+    circuit = QuantumCircuit(2, analog_block)
+    model_noiseless = QuantumModel(
+        circuit=circuit, observable=observable, backend=BackendName.PULSER, diff_mode=DiffMode.GPSR
+    )
+    noiseless_expectation = model_noiseless.expectation()
+
+    noise_type = "depolarizing"
+    options = {"noise_probs": [0.1]}
+    noise = Noise(protocol=noise_type, options=options)
+    model_noisy = QuantumModel(
+        circuit=circuit,
+        observable=observable,
+        backend=BackendName.PULSER,
+        diff_mode=DiffMode.GPSR,
+        noise=noise,
+    )
+    noisy_expectation = model_noisy.expectation()
+    assert torch.allclose(noiseless_expectation, noiseless_pulser_sim, atol=1.0e-3)
+    assert torch.allclose(noisy_expectation, noisy_pulser_sim, atol=1.0e-5)
