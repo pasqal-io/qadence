@@ -9,7 +9,7 @@ import sympy
 from numpy.typing import ArrayLike
 from torch import Tensor, pi
 
-TNumber = Union[int, float, complex]
+TNumber = Union[int, float, complex, np.int64, np.float64]
 """Union of python number types."""
 
 TDrawColor = Tuple[float, float, float, float]
