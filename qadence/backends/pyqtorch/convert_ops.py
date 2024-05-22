@@ -4,6 +4,7 @@ from itertools import chain as flatten
 from typing import Any, Sequence
 
 import pyqtorch as pyq
+import sympy
 from torch import Tensor, float64, tensor
 from torch import device as torch_device
 from torch import dtype as torch_dtype
@@ -65,7 +66,11 @@ def convert_observable(
 
 def convert_block(
     block: AbstractBlock, n_qubits: int = None, config: Configuration = None
-) -> Sequence[Module]:
+) -> Sequence[Module | Tensor | str | sympy.Expr]:
+    if isinstance(block, (Tensor, str, sympy.Expr)):  # case for hamevo generators
+        if isinstance(block, Tensor):
+            block = block.permute(1, 2, 0)  # put batch size in the back
+        return [block]
     qubit_support = block.qubit_support
     if n_qubits is None:
         n_qubits = max(qubit_support) + 1
@@ -85,12 +90,15 @@ def convert_block(
     elif isinstance(block, TimeEvolutionBlock):
         generator = convert_block(block.generator, n_qubits, config)[0]  # type: ignore[arg-type]
         time_param = config.get_param_name(block)[0]
+        is_parametric = (
+            block.generator.is_parametric if isinstance(block.generator, AbstractBlock) else False
+        )
         return [
             pyq.HamiltonianEvolution(
                 qubit_support=qubit_support,
                 generator=generator,
                 time=time_param,
-                generator_parametric=block.generator.is_parametric,  # type: ignore[union-attr]
+                generator_parametric=is_parametric,  # type: ignore[union-attr]
             )
         ]
     elif isinstance(block, MatrixBlock):
