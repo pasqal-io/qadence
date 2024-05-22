@@ -359,3 +359,8 @@ def test_sympy_modules() -> None:
     loaded_expr = deserialize(d)
     assert loaded_expr == expr
     assert evaluate(expr) == evaluate(loaded_expr)
+
+
+def test_numpy_paramtypes() -> None:
+    Parameter(np.array([1.0]).item())
+    Parameter(np.array([1]).item())
