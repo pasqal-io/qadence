@@ -34,7 +34,7 @@ from qadence.types import BackendName, Endianness, Engine
 from qadence.utils import infer_batchsize
 
 from .config import Configuration, default_passes
-from .convert_ops import convert_block, convert_observable
+from .convert_ops import convert_block
 
 logger = get_logger(__name__)
 
@@ -76,8 +76,13 @@ class Backend(BackendInterface):
             scale_primitive_blocks_only,
         ]
         block = transpile(*transpilations)(observable)  # type: ignore[call-overload]
-
-        (native,) = convert_observable(block, n_qubits=n_qubits, config=self.config)
+        ops = convert_block(block, n_qubits, self.config)[0]
+        cls = (
+            pyq.DiagonalObservable
+            if block._is_diag_pauli and not block.is_parametric
+            else pyq.Observable
+        )
+        native = cls(ops)
         return ConvertedObservable(native=native, abstract=block, original=observable)
 
     def run(

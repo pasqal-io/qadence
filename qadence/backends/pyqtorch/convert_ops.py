@@ -1,19 +1,13 @@
 from __future__ import annotations
 
 from itertools import chain as flatten
-from typing import Any, Sequence
+from typing import Sequence
 
 import pyqtorch as pyq
 import sympy
 from torch import Tensor, float64, tensor
-from torch import device as torch_device
-from torch import dtype as torch_dtype
 from torch.nn import Module
 
-from qadence.backends.utils import (
-    pyqify,
-    unpyqify,
-)
 from qadence.blocks import (
     AbstractBlock,
     AddBlock,
@@ -24,9 +18,6 @@ from qadence.blocks import (
     PrimitiveBlock,
     ScaleBlock,
     TimeEvolutionBlock,
-)
-from qadence.blocks.block_to_tensor import (
-    block_to_diagonal,
 )
 from qadence.blocks.primitive import ProjectorBlock
 from qadence.operations import (
@@ -56,12 +47,6 @@ def is_single_qubit_chain(block: AbstractBlock) -> bool:
         and all([isinstance(b, (ParametricBlock, PrimitiveBlock)) for b in block])
         and not any([isinstance(b, (ScaleBlock, U)) for b in block])
     )
-
-
-def convert_observable(
-    block: AbstractBlock, n_qubits: int, config: Configuration = None
-) -> Sequence[Module]:
-    return [PyQObservable(block, n_qubits, config)]
 
 
 def convert_block(
@@ -106,19 +91,11 @@ def convert_block(
     elif isinstance(block, CompositeBlock):
         ops = list(flatten(*(convert_block(b, n_qubits, config) for b in block.blocks)))
         if isinstance(block, AddBlock):
-            return [pyq.Add(ops)]
+            return [pyq.Add(ops)]  # add
         elif is_single_qubit_chain(block) and config.use_single_qubit_composition:
-            return [pyq.Merge(ops)]
+            return [pyq.Merge(ops)]  # for chains of single qubit ops on the same qubit
         else:
-            # NOTE: without wrapping in a pyq.Sequence here the kron/chain
-            # blocks won't be properly nested which leads to incorrect results from
-            # the `AddBlock`s. For example:
-            # add(chain(Z(0), Z(1))) has to result in the following (pseudo-code)
-            # AddPyQOperation(pyq.QuantumCircuit(Z, Z))
-            # as opposed to
-            # AddPyQOperation(Z, Z)
-            # which would be wrong.
-            return [pyq.Sequence(ops)]
+            return [pyq.Sequence(ops)]  # for kron and chain
     elif isinstance(block, tuple(non_unitary_gateset)):
         if isinstance(block, ProjectorBlock):
             projector = getattr(pyq, block.name)
@@ -159,43 +136,3 @@ def convert_block(
             "In case you are trying to run an `AnalogBlock`, make sure you "
             "specify the `device_specs` in your `Register` first."
         )
-
-
-class PyQObservable(Module):
-    def __init__(self, block: AbstractBlock, n_qubits: int, config: Configuration = None):
-        super().__init__()
-        if config is None:
-            config = Configuration()
-        self.n_qubits = n_qubits
-        if block._is_diag_pauli and not block.is_parametric:
-            self.register_buffer("operation", block_to_diagonal(block, tuple(range(n_qubits))))
-            self._forward = lambda self, state, values: pyqify(
-                self.operation * unpyqify(state), n_qubits=self.n_qubits
-            )
-        else:
-            self.operation = pyq.Sequence(
-                convert_block(block, n_qubits, config),
-            )
-            self._forward = lambda self, state, values: self.operation(state, values)
-        self._device = self.operation.device
-        self._dtype = self.operation.dtype
-
-    def run(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
-        return self._forward(self, state, values)
-
-    def forward(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
-        return pyq.inner_prod(state, self.run(state, values)).real
-
-    @property
-    def device(self) -> torch_device:
-        return self._device
-
-    @property
-    def dtype(self) -> torch_dtype:
-        return self._dtype
-
-    def to(self, *args: Any, **kwargs: Any) -> PyQObservable:
-        self.operation = self.operation.to(*args, **kwargs)
-        self._device = self.operation.device
-        self._dtype = self.operation.dtype
-        return self
