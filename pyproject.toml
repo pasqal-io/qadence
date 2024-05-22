@@ -99,7 +99,7 @@ dependencies = [
   "ruff",
   "pydocstringformatter",
 ]
-features = ["pulser", "braket","visualization", "horqrux"]
+features = ["pulser-core==0.18.0", "pulser-simulation==0.18.0", "braket","visualization", "horqrux"]
 
 [tool.hatch.envs.default.scripts]
 test = "pytest -n auto --cov-report lcov --cov-config=pyproject.toml --cov=qadence --cov=tests --ignore=./tests/test_examples.py {args}"
