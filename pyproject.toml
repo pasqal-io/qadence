@@ -46,6 +46,7 @@ dependencies = [
     "pyqtorch==1.1.0",
     "matplotlib",
     "Arpeggio==2.0.2",
+    "pasqal-cloud==0.8.1",
 ]
 
 [tool.hatch.metadata]
@@ -53,7 +54,7 @@ allow-direct-references = true
 allow-ambiguous-features = true
 
 [project.optional-dependencies]
-pulser = ["pulser==0.18.0", "pasqal-cloud==0.9.0"]
+pulser = ["pulser-core==0.18.0", "pulser-simulation==0.18.0"]
 braket = ["amazon-braket-sdk==1.71.0"]
 visualization = [
   "graphviz",
@@ -72,7 +73,8 @@ horqrux = [
 protocols = ["qadence-protocols"]
 libs = ["qadence-libs"]
 all = [
-  "pulser==0.18.0",
+  "pulser-core==0.18.0",
+  "pulser-simulation==0.18.0",
   "amazon-braket-sdk==1.71.0",
   "graphviz",
   "protocols",
