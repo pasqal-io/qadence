@@ -240,7 +240,7 @@ class Backend(BackendInterface):
             KeyError("A `noise probs` option should be passed to the <class QuantumModel>.")
         if not (isinstance(noise_probs, float) or isinstance(noise_probs, Iterable)):
             KeyError(
-                "A single or a range of noise probabilies"
+                "A single or a range of noise probabilities"
                 " should be passed. Got {type(noise_probs)}."
             )
 
