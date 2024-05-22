@@ -6,12 +6,12 @@ import sympy
 import torch
 
 from qadence.backends.api import backend_factory
+from qadence.backends.utils import finitediff as finite_diff
 from qadence.blocks import AbstractBlock, add, chain, kron
 from qadence.circuit import QuantumCircuit
 from qadence.operations import CNOT, RX, RZ, Z
 from qadence.parameters import Parameter, VariationalParameter
 from qadence.types import PI
-from qadence.utils import finite_diff
 
 torch.manual_seed(42)
 

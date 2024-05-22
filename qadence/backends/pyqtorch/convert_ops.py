@@ -4,9 +4,7 @@ from itertools import chain as flatten
 from typing import Any, Sequence
 
 import pyqtorch as pyq
-from torch import (
-    Tensor,
-)
+from torch import Tensor, float64, tensor
 from torch import device as torch_device
 from torch import dtype as torch_dtype
 from torch.nn import Module
@@ -77,14 +75,22 @@ def convert_block(
 
     if isinstance(block, ScaleBlock):
         scaled_ops = convert_block(block.block, n_qubits, config)
-        return [pyq.Scale(pyq.Sequence(scaled_ops), config.get_param_name(block)[0])]
+        scale = (
+            tensor([block.parameters.parameter], dtype=float64)
+            if not block.is_parametric
+            else config.get_param_name(block)[0]
+        )
+        return [pyq.Scale(pyq.Sequence(scaled_ops), scale)]
 
     elif isinstance(block, TimeEvolutionBlock):
+        generator = convert_block(block.generator, n_qubits, config)[0]  # type: ignore[arg-type]
+        time_param = config.get_param_name(block)[0]
         return [
             pyq.HamiltonianEvolution(
                 qubit_support=qubit_support,
-                generator=convert_block(block.generator, n_qubits, config)[0],
-                time=config.get_param_name(block)[0],
+                generator=generator,
+                time=time_param,
+                generator_parametric=block.generator.is_parametric,  # type: ignore[union-attr]
             )
         ]
     elif isinstance(block, MatrixBlock):
