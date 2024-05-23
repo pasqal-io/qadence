@@ -82,7 +82,7 @@ class Backend(BackendInterface):
             if block._is_diag_pauli and not block.is_parametric
             else pyq.Observable
         )
-        native = cls(ops)
+        native = cls(ops, n_qubits)
         return ConvertedObservable(native=native, abstract=block, original=observable)
 
     def run(
