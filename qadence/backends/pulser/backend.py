@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
 from collections import Counter
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -245,7 +245,10 @@ class Backend(BackendInterface):
             )
 
         def run_noisy_sim(noise_prob: float) -> Tensor:
-            batched_dm = np.zeros((len(vals), 2**circuit.abstract.n_qubits, 2**circuit.abstract.n_qubits), dtype=np.complex128)
+            batched_dm = np.zeros(
+                (len(vals), 2**circuit.abstract.n_qubits, 2**circuit.abstract.n_qubits),
+                dtype=np.complex128,
+            )
             sim_config = {"noise": noise.protocol, noise.protocol + "_rate": noise_prob}
             self.config.sim_config = SimConfig(**sim_config)
 
