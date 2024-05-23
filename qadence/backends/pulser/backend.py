@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from collections import Counter
 from dataclasses import dataclass, field
 from typing import Any
@@ -236,9 +237,12 @@ class Backend(BackendInterface):
         vals = to_list_of_dicts(param_values)
         noise_probs = noise.options.get("noise_probs", None)
         if noise_probs is None:
-            KeyError(f"A range of noise probabilies should be passed. Got {noise_probs}.")
-
-        noisy_batched_dm = []
+            KeyError("A `noise probs` option should be passed to the <class QuantumModel>.")
+        if not (isinstance(noise_probs, float) or isinstance(noise_probs, Iterable)):
+            KeyError(
+                "A single or a range of noise probabilities"
+                " should be passed. Got {type(noise_probs)}."
+            )
 
         # Pulser requires numpy types.
         for noise_prob in noise_probs.numpy():
