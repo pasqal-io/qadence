@@ -11,7 +11,7 @@ import torch
 from pulser import Register as PulserRegister
 from pulser import Sequence
 from pulser_simulation import SimConfig
-from pulser_simulation.simresults import SimulationResults
+from pulser_simulation.simresults import CoherentResults, SimulationResults
 from pulser_simulation.simulation import QutipEmulator
 from torch import Tensor
 
@@ -251,7 +251,7 @@ class Backend(BackendInterface):
 
             for i, param_values_el in enumerate(vals):
                 sequence = self.assign_parameters(circuit, param_values_el)
-                sim_result: CoherentResult = simulate_sequence(sequence, self.config, state)
+                sim_result: CoherentResults = simulate_sequence(sequence, self.config, state)
                 final_state = sim_result.get_final_state().data.toarray()
                 batched_dm[i] = np.flip(final_state)
             return torch.from_numpy(batched_dm)
