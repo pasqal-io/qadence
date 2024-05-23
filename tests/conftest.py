@@ -23,6 +23,16 @@ FM_NQUBITS = 2
 
 
 @fixture
+def noisy_pulser_sim() -> Tensor:
+    return tensor([[[0.3043, 0.0000, 0.0000, -0.0038]]])
+
+
+@fixture
+def noiseless_pulser_sim() -> Tensor:
+    return tensor([[0.3961]])
+
+
+@fixture
 def BasicFeatureMap() -> AbstractBlock:
     return feature_map(BASIC_NQUBITS)
 
