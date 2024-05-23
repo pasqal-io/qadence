@@ -256,7 +256,16 @@ class Backend(BackendInterface):
                 batched_dm[i] = np.flip(final_state)
             return torch.from_numpy(batched_dm)
 
-        return noisy_batched_dm
+        # Pulser requires numpy types.
+        if isinstance(noise_probs, Iterable):
+            noisy_batched_dms = []
+            for noise_prob in noise_probs:
+                noisy_batched_dms.append(run_noisy_sim(noise_prob))
+            noisy_batched_dms = torch.tensor(noisy_batched_dms)
+        else:
+            noisy_batched_dms = run_noisy_sim(noise_probs)
+
+        return noisy_batched_dms
 
     def sample(
         self,
