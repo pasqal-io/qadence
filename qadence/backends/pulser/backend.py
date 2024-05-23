@@ -244,17 +244,17 @@ class Backend(BackendInterface):
                 " should be passed. Got {type(noise_probs)}."
             )
 
-        # Pulser requires numpy types.
-        for noise_prob in noise_probs.numpy():
-            batched_dm = []
+        def run_noisy_sim(noise_prob: float) -> Tensor:
+            batched_dm = np.zeros((len(vals), 2**circuit.abstract.n_qubits, 2**circuit.abstract.n_qubits), dtype=np.complex128)
             sim_config = {"noise": noise.protocol, noise.protocol + "_rate": noise_prob}
             self.config.sim_config = SimConfig(**sim_config)
 
             for i, param_values_el in enumerate(vals):
                 sequence = self.assign_parameters(circuit, param_values_el)
-                sim_result = simulate_sequence(sequence, self.config, state)
-                batched_dm.append(sim_result)
-            noisy_batched_dm.append(batched_dm)
+                sim_result: CoherentResult = simulate_sequence(sequence, self.config, state)
+                final_state = sim_result.get_final_state().data.toarray()
+                batched_dm[i] = np.flip(final_state)
+            return torch.from_numpy(batched_dm)
 
         return noisy_batched_dm
 
