@@ -230,7 +230,7 @@ class Backend(BackendInterface):
         self,
         circuit: ConvertedCircuit,
         noise: Noise,
-        param_values: dict[str, Tensor] = {},
+        param_values: dict[str, Tensor] = dict(),
         state: Tensor | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list:
