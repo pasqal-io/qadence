@@ -264,7 +264,7 @@ class Backend(BackendInterface):
             noisy_batched_dms = []
             for noise_prob in noise_probs:
                 noisy_batched_dms.append(run_noisy_sim(noise_prob))
-            noisy_batched_dms = torch.tensor(noisy_batched_dms)
+            noisy_batched_dms = torch.stack(noisy_batched_dms)
         else:
             noisy_batched_dms = run_noisy_sim(noise_probs)
 
