@@ -233,7 +233,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = dict(),
         state: Tensor | None = None,
         endianness: Endianness = Endianness.BIG,
-    ) -> list:
+    ) -> Tensor:
         vals = to_list_of_dicts(param_values)
         noise_probs = noise.options.get("noise_probs", None)
         if noise_probs is None:
