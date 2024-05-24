@@ -23,6 +23,22 @@ FM_NQUBITS = 2
 
 
 @fixture
+def batched_noisy_pulser_sim() -> Tensor:
+    return tensor(
+        [
+            [
+                [
+                    [3.3899e-01, 0.0000e00, 0.0000e00, -3.4090e-16],
+                    [2.9550e-01, 0.0000e00, 0.0000e00, -1.2603e-15],
+                    [2.6286e-01, 0.0000e00, 0.0000e00, -7.7857e-16],
+                    [2.3889e-01, 0.0000e00, 0.0000e00, -1.6384e-16],
+                ]
+            ]
+        ]
+    )
+
+
+@fixture
 def noisy_pulser_sim() -> Tensor:
     return tensor([[[0.3043, 0.0000, 0.0000, -0.0038]]])
 

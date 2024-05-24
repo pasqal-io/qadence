@@ -71,3 +71,29 @@ def test_noisy_simulations(noiseless_pulser_sim: Tensor, noisy_pulser_sim: Tenso
     noisy_expectation = model_noisy.expectation()
     assert torch.allclose(noiseless_expectation, noiseless_pulser_sim, atol=1.0e-3)
     assert torch.allclose(noisy_expectation, noisy_pulser_sim, atol=1.0e-3)
+
+
+def test_batched_noisy_simulations(
+    noiseless_pulser_sim: Tensor, batched_noisy_pulser_sim: Tensor
+) -> None:
+    analog_block = chain(AnalogRX(PI / 2.0), AnalogRZ(PI))
+    observable = [Z(0) + Z(1)]
+    circuit = QuantumCircuit(2, analog_block)
+    model_noiseless = QuantumModel(
+        circuit=circuit, observable=observable, backend=BackendName.PULSER, diff_mode=DiffMode.GPSR
+    )
+    noiseless_expectation = model_noiseless.expectation()
+
+    noise_type = "dephasing"
+    options = {"noise_probs": [0.1, 0.2, 0.3, 0.4]}
+    noise = Noise(protocol=noise_type, options=options)
+    model_noisy = QuantumModel(
+        circuit=circuit,
+        observable=observable,
+        backend=BackendName.PULSER,
+        diff_mode=DiffMode.GPSR,
+        noise=noise,
+    )
+    batched_noisy_expectation = model_noisy.expectation()
+    assert torch.allclose(noiseless_expectation, noiseless_pulser_sim, atol=1.0e-3)
+    assert torch.allclose(batched_noisy_expectation, batched_noisy_pulser_sim, atol=1.0e-3)
