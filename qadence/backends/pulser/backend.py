@@ -268,6 +268,10 @@ class Backend(BackendInterface):
         else:
             noisy_batched_dms = run_noisy_sim(noise_probs)
 
+        if endianness != self.native_endianness:
+            from qadence.transpile import invert_endianness
+
+            noisy_batched_dms = invert_endianness(noisy_batched_dms)
         return noisy_batched_dms
 
     def sample(
