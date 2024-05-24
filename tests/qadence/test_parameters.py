@@ -361,6 +361,7 @@ def test_sympy_modules() -> None:
     assert evaluate(expr) == evaluate(loaded_expr)
 
 
-def test_numpy_paramtypes() -> None:
-    Parameter(np.array([1.0]).item())
-    Parameter(np.array([1]).item())
+def test_numeric_paramtypes() -> None:
+    # We test every numeric type allowed in Parameter
+    for _numeric_type in [int, float, complex, np.int64, np.float64]:
+        Parameter(_numeric_type(1.0))
