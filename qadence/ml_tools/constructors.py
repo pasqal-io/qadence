@@ -83,36 +83,44 @@ def _encode_features_series_digital(
     """
     num_qubits = register if isinstance(register, int) else register.n_qubits
 
-    support_arrays = _create_support_arrays(
+    support_arrays_list = _create_support_arrays(
         num_qubits=num_qubits,
         num_features=config.num_features,
         multivariate_strategy=config.multivariate_strategy,
     )
 
-    reuploads = config.num_repeats[:]  # type: ignore[index]
+    support_arrays = {
+        key: support for key, support in zip(config.inputs.keys(), support_arrays_list)  # type: ignore[union-attr]
+    }
 
-    fm_blocks = []
+    num_uploads = {key: value + 1 for key, value in config.num_repeats.items()}  # type: ignore[union-attr]
 
-    for i in range(max(reuploads) + 1):
-        for j in range(config.num_features):
-            if i == 0 or reuploads[j] > 0:
+    if config.param_prefix is None:
+        param_prefixes = {feature: None for feature in config.inputs}  # type: ignore[union-attr]
+    else:
+        param_prefixes = {feature: f"{config.param_prefix}_{feature}" for feature in config.inputs}  # type: ignore
+
+    fm_blocks: list[AbstractBlock] = []
+
+    for i in range(max(num_uploads.values())):
+        for feature in config.inputs:  # type: ignore[union-attr]
+            if num_uploads[feature] > 0:
                 fm_blocks.append(
                     feature_map(
                         num_qubits,
-                        support=support_arrays[j],
-                        param=f"{config.param_prefix}_{j}",
+                        support=support_arrays[feature],
+                        param=feature,
                         op=config.operation,  # type: ignore[arg-type]
-                        fm_type=config.basis_set[j],
-                        reupload_scaling=config.reupload_scaling[j],
-                        feature_range=config.feature_range[j],  # type: ignore[arg-type, index]
-                        target_range=config.target_range[j],  # type: ignore[arg-type, index]
+                        fm_type=config.basis_set[feature],  # type: ignore[arg-type, index]
+                        reupload_scaling=config.reupload_scaling[feature],  # type: ignore[arg-type, index]
+                        feature_range=config.feature_range[feature],  # type: ignore[arg-type, index]
+                        target_range=config.target_range[feature],  # type: ignore[arg-type, index]
+                        param_prefix=param_prefixes[feature],
                     )
                 )
+            num_uploads[feature] -= 1
 
-        if i != 0:
-            reuploads = [x - 1 if x > 0 else x for x in reuploads]
-
-    return fm_blocks  # type: ignore[return-value]
+    return fm_blocks
 
 
 def _encode_features_parallel_digital(
@@ -131,39 +139,47 @@ def _encode_features_parallel_digital(
     """
     num_qubits = register if isinstance(register, int) else register.n_qubits
 
-    support_arrays = _create_support_arrays(
+    support_arrays_list = _create_support_arrays(
         num_qubits=num_qubits,
         num_features=config.num_features,
         multivariate_strategy=config.multivariate_strategy,
     )
 
-    reuploads = config.num_repeats[:]  # type: ignore[index]
+    support_arrays = {
+        key: support for key, support in zip(config.inputs.keys(), support_arrays_list)  # type: ignore[union-attr]
+    }
 
-    fm_blocks = []
+    num_uploads = {key: value + 1 for key, value in config.num_repeats.items()}  # type: ignore[union-attr]
 
-    for i in range(max(reuploads) + 1):
+    if config.param_prefix is None:
+        param_prefixes = {feature: None for feature in config.inputs}  # type: ignore[union-attr]
+    else:
+        param_prefixes = {feature: f"{config.param_prefix}_{feature}" for feature in config.inputs}  # type: ignore
+
+    fm_blocks: list[AbstractBlock] = []
+
+    for i in range(max(num_uploads.values())):
         fm_layer = []
-        for j in range(config.num_features):
-            if i == 0 or reuploads[j] > 0:
+        for feature in config.inputs:  # type: ignore[union-attr]
+            if num_uploads[feature] > 0:
                 fm_layer.append(
                     feature_map(
-                        len(support_arrays[j]),
-                        support=support_arrays[j],
-                        param=f"{config.param_prefix}_{j}",
+                        len(support_arrays[feature]),
+                        support=support_arrays[feature],
+                        param=feature,
                         op=config.operation,  # type: ignore[arg-type]
-                        fm_type=config.basis_set[j],
-                        reupload_scaling=config.reupload_scaling[j],
-                        feature_range=config.feature_range[j],  # type: ignore[arg-type, index]
-                        target_range=config.target_range[j],  # type: ignore[arg-type, index]
+                        fm_type=config.basis_set[feature],  # type: ignore[index]
+                        reupload_scaling=config.reupload_scaling[feature],  # type: ignore[index]
+                        feature_range=config.feature_range[feature],  # type: ignore[arg-type, index]
+                        target_range=config.target_range[feature],  # type: ignore[arg-type, index]
+                        param_prefix=param_prefixes[feature],
                     )
                 )
+            num_uploads[feature] -= 1
 
         fm_blocks.append(kron(*fm_layer))
 
-        if i != 0:
-            reuploads = [x - 1 if x > 0 else x for x in reuploads]
-
-    return fm_blocks  # type: ignore[return-value]
+    return fm_blocks
 
 
 def _create_digital_fm(
@@ -211,30 +227,26 @@ def _create_analog_fm(
         list[AbstractBlock]: The list of analog feature map blocks.
     """
 
-    reuploads = config.num_repeats[:]  # type: ignore[index]
+    num_uploads = {key: value + 1 for key, value in config.num_repeats.items()}  # type: ignore[union-attr]
 
-    fm_blocks = []
+    fm_blocks: list[AbstractBlock] = []
 
-    for i in range(max(reuploads) + 1):
-        for j in range(config.num_features):
-            if (
-                i == 0 or reuploads[j] > 0
-            ):  # If it is the first pass or if there are reuploads left to do
+    for i in range(max(num_uploads.values())):
+        for feature in config.inputs:  # type: ignore[union-attr]
+            if num_uploads[feature] > 0:
                 fm_blocks.append(
                     analog_feature_map(
-                        param=f"{config.param_prefix}_{j}",
+                        param=feature,
                         op=config.operation,  # type: ignore[arg-type]
-                        fm_type=config.basis_set[j],
-                        reupload_scaling=config.reupload_scaling[j],
-                        feature_range=config.feature_range[j],  # type: ignore[arg-type, index]
-                        target_range=config.target_range[j],  # type: ignore[arg-type, index]
+                        fm_type=config.basis_set[feature],  # type: ignore[arg-type, index]
+                        reupload_scaling=config.reupload_scaling[feature],  # type: ignore[arg-type, index]
+                        feature_range=config.feature_range[feature],  # type: ignore[arg-type, index]
+                        target_range=config.target_range[feature],  # type: ignore[arg-type, index]
                     )
                 )
+            num_uploads[feature] -= 1
 
-        if i != 0:
-            reuploads = [x - 1 if x > 0 else x for x in reuploads]
-
-    return fm_blocks  # type: ignore[return-value]
+    return fm_blocks
 
 
 def _encode_feature_rydberg(
@@ -283,23 +295,21 @@ def _create_rydberg_fm(
     """
     num_qubits = register if isinstance(register, int) else register.n_qubits
 
-    reuploads = config.num_repeats[:]  # type: ignore[index]
+    num_uploads = {key: value + 1 for key, value in config.num_repeats.items()}  # type: ignore[union-attr]
 
     fm_blocks = []
 
-    for i in range(max(reuploads) + 1):
-        for j in range(config.num_features):
-            if i == 0 or reuploads[j] > 0:
+    for i in range(max(num_uploads.values())):
+        for feature in config.inputs:  # type: ignore[union-attr]
+            if num_uploads[feature] > 0:
                 fm_blocks.append(
                     _encode_feature_rydberg(
                         num_qubits=num_qubits,
-                        param=f"{config.param_prefix}_{j}",
-                        reupload_scaling=config.reupload_scaling[j],  # type: ignore[arg-type]
+                        param=feature,
+                        reupload_scaling=config.reupload_scaling[feature],  # type: ignore[arg-type, index]
                     )
                 )
-
-        if i != 0:
-            reuploads = [x - 1 if x > 0 else x for x in reuploads]
+            num_uploads[feature] -= 1
 
     return fm_blocks
 

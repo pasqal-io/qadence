@@ -78,43 +78,47 @@ class FeatureMapConfig:
     num_features: int = 1
     """Number of feature parameters to be encoded."""
 
-    basis_set: BasisSet | list[BasisSet] = BasisSet.FOURIER
+    basis_set: BasisSet | dict[str, BasisSet] = BasisSet.FOURIER
     """
     Basis set for feature encoding.
 
     Takes qadence.BasisSet.
     Give a single BasisSet to use the same for all features.
-    Give a list of BasisSet to apply each item for a corresponding variable.
+    Give a dict of (str, BasisSet) where the key is the name of the variable and the
+    value is the BasisSet to use for encoding that feature.
     BasisSet.FOURIER for Fourier encoding.
     BasisSet.CHEBYSHEV for Chebyshev encoding.
     """
 
-    reupload_scaling: ReuploadScaling | list[ReuploadScaling] = ReuploadScaling.CONSTANT
+    reupload_scaling: ReuploadScaling | dict[str, ReuploadScaling] = ReuploadScaling.CONSTANT
     """
     Scaling for encoding the same feature on different qubits in the.
 
     same layer of the feature maps. Takes qadence.ReuploadScaling.
     Give a single ReuploadScaling to use the same for all features.
-    Give a list of ReuploadScaling to apply each item for a corresponding variable.
+    Give a dict of (str, ReuploadScaling) where the key is the name of the variable and the
+    value is the ReuploadScaling to use for encoding that feature.
     ReuploadScaling.CONSTANT for constant scaling.
     ReuploadScaling.TOWER for linearly increasing scaling.
     ReuploadScaling.EXP for exponentially increasing scaling.
     """
 
-    feature_range: tuple[float, float] | list[tuple[float, float]] | None = None
+    feature_range: tuple[float, float] | dict[str, tuple[float, float]] | None = None
     """
     Range of data that the input data is assumed to come from.
 
     Give a single tuple to use the same range for all features.
-    Give a list of tuples to use each item for a corresponding variable.
+    Give a dict of (str, tuple) where the key is the name of the variable and the
+    value is the feature range to use for that feature.
     """
 
-    target_range: tuple[float, float] | list[tuple[float, float]] | None = None
+    target_range: tuple[float, float] | dict[str, tuple[float, float]] | None = None
     """
     Range of data the data encoder assumes as natural range.
 
     Give a single tuple to use the same range for all features.
-    Give a list of tuples to use each item for a corresponding variable.
+    Give a dict of (str, tuple) where the key is the name of the variable and the
+    value is the target range to use for that feature.
     """
 
     multivariate_strategy: str = "parallel"
@@ -124,7 +128,7 @@ class FeatureMapConfig:
     If "parallel",
     the features are encoded in one block of rotation gates. with each
     feature given an equal number of qubits. If "serial", the features are
-    encoded sequentially, with a HEA block between. "parallel" is allowed
+    encoded sequentially, with an ansatz block between. "parallel" is allowed
     only for "digital" `feature_map_strategy`.
     """
 
@@ -132,23 +136,33 @@ class FeatureMapConfig:
     """Strategy for feature map.
 
     Accepts 'digital', 'analog' or 'rydberg'. Defaults to "digital".
+    If the strategy is incompatible with the `operation` chosen, then `operation`
+    gets preference and the given strategy is ignored.
     """
 
-    param_prefix: str = "phi"
-    """The base name of the feature map parameter.
+    param_prefix: str | None = None
+    """
+    String prefix to create trainable parameters in Feature Map.
 
-    Defaults to `phi`.
+    A string prefix to create trainable parameters multiplying the feature parameter
+    inside the feature-encoding function. Note that currently this does not take into
+    account the domain of the feature-encoding function.
+    Defaults to `None` and thus, the feature map is not trainable.
+    Note that this is separate from the name of the parameter.
+    The user can provide a single prefix for all features, and they will be appended
+    by appropriate feature name automatically.
     """
 
-    num_repeats: int | list[int] = 0
+    num_repeats: int | dict[str, int] = 0
     """
     Number of feature map layers repeated in the data reuploadig step.
 
     If all are to be repeated the same number of times, then can give a single
-    `int`. For different number of repeatitions for each feature, provide a list
-    of `int`s corresponding to desired number of repeatitions. This amounts to
-    the number of additional reuploads. So if `num_repeats` is N, the data gets
-    uploaded N+1 times. Defaults to no repeatition.
+    `int`. For different number of repeatitions for each feature, provide a dict
+    of (str, int) where the key is the name of the variable and the value is the
+    number of repeatitions for that feature.
+    This amounts to the number of additional reuploads. So if `num_repeats` is N,
+    the data gets uploaded N+1 times. Defaults to no repeatition.
     """
 
     operation: Callable[[Parameter | Basic], AnalogBlock] | Type[RX] | None = None
@@ -156,15 +170,18 @@ class FeatureMapConfig:
     Type of operation.
 
     Choose among the analog or digital rotations or a custom
-    callable function returning an AnalogBlock instance
+    callable function returning an AnalogBlock instance. If the type of operation is
+    incompatible with the `strategy` chosen, then `operation` gets preference and
+    the given strategy is ignored.
     """
 
     inputs: list[Basic | str] | None = None
     """
     List that indicates the order of variables of the tensors that are passed.
 
-    to the model. Given input tensors `xs = torch.rand(batch_size, input_size:=2)` a QNN
-    with `inputs=("t", "x")` will assign `t, x = xs[:,0], xs[:,1]`.
+    Optional if a single feature is being encoded, required otherwise. Given input tensors
+    `xs = torch.rand(batch_size, input_size:=2)` a QNN with `inputs=("t", "x")` will
+    assign `t, x = xs[:,0], xs[:,1]`.
     """
 
     def __post_init__(self) -> None:
@@ -201,50 +218,49 @@ class FeatureMapConfig:
 
                     self.feature_map_strategy = "digital"
 
-        if isinstance(self.basis_set, BasisSet):
-            self.basis_set = [self.basis_set for i in range(self.num_features)]
-        else:
+        if self.inputs is not None:
             assert (
-                len(self.basis_set) == self.num_features
-            ), f"Length of set of bases {len(self.basis_set)} must match the number \
-                of features {self.num_features}. Or provide a single `BasisSet` to \
-                use same basis for all features."
+                len(self.inputs) == self.num_features
+            ), "Inputs list must be of same size as the number of features"
+        else:
+            if self.num_features == 1:
+                self.inputs = ["x"]
+            else:
+                raise ValueError(
+                    """
+                    Your QNN has more than one input. Please provide a list of inputs in the order
+                    of your tensor domain. For example, if you want to pass
+                    `xs = torch.rand(batch_size, input_size:=3)` to you QNN, where
+                    ```
+                    t = x[:,0]
+                    x = x[:,1]
+                    y = x[:,2]
+                    ```
+                    you have to specify
+                    ```
+                    inputs=["t", "x", "y"]
+                    ```
+                    You can also pass a list of sympy symbols.
+                """
+                )
 
-        if isinstance(self.reupload_scaling, ReuploadScaling):
-            self.reupload_scaling = [self.reupload_scaling for i in range(self.num_features)]
-        else:
-            assert (
-                len(self.reupload_scaling) == self.num_features
-            ), f"Length of the reupload scalings {len(self.reupload_scaling)} must match the \
-                number of features {self.num_features}. Or provide a single `ReuploadScaling` for \
-                same scaling for all features."
+        property_dict = {
+            "basis_set": self.basis_set,
+            "reupload_scaling": self.reupload_scaling,
+            "feature_range": self.feature_range,
+            "target_range": self.target_range,
+            "num_repeats": self.num_repeats,
+        }
 
-        if self.feature_range is None or isinstance(self.feature_range, tuple):
-            self.feature_range = [self.feature_range for i in range(self.num_features)]  # type: ignore[assignment, misc]
-        else:
-            assert (
-                len(self.feature_range) == self.num_features
-            ), f"Length of the feature ranges {len(self.feature_range)} must match the number \
-                of features {self.num_features}. Or provide a single tuple(float, float) for \
-                same expected feature range for all features."
-
-        if self.target_range is None or isinstance(self.target_range, tuple):
-            self.target_range = [self.target_range for i in range(self.num_features)]  # type: ignore[assignment, misc]
-        else:
-            assert (
-                len(self.target_range) == self.num_features
-            ), f"Length of the feature ranges {len(self.target_range)} must match the number \
-                of features {self.num_features}. Or provide a single tuple(float, float) for \
-                same expected feature range for all features."
-
-        if isinstance(self.num_repeats, int):
-            self.num_repeats = [self.num_repeats for i in range(self.num_features)]
-        else:
-            assert (
-                len(self.num_repeats) == self.num_features
-            ), f"Length of the repeat array {len(self.num_repeats)} must match the number \
-                of features {self.num_features}. Or provide a single integer for same number \
-                of repeatitions for all features."
+        for name, prop in property_dict.items():
+            if isinstance(prop, dict):
+                assert set(prop.keys()) == set(
+                    self.inputs
+                ), f"The keys in {name} must be the same as the inputs provided. \
+                Alternatively, provide a single value of {name} to use the same {name}\
+                for all features."
+            else:
+                prop = {key: prop for key in self.inputs}  # type: ignore[assignment]
 
 
 @dataclass
