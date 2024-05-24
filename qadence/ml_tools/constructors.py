@@ -108,7 +108,7 @@ def _encode_features_series_digital(
                         op=config.operation,  # type: ignore[arg-type]
                         fm_type=config.basis_set[j],
                         reupload_scaling=config.reupload_scaling[j],
-                        feature_range=config.feature_range[j],  # type: ignore[arg-type]
+                        feature_range=config.feature_range[j],  # type: ignore[arg-type, index]
                         target_range=config.target_range[j],  # type: ignore[arg-type, index]
                     )
                 )
@@ -161,7 +161,7 @@ def _encode_features_parallel_digital(
                         op=config.operation,  # type: ignore[arg-type]
                         fm_type=config.basis_set[j],
                         reupload_scaling=config.reupload_scaling[j],
-                        feature_range=config.feature_range[j],  # type: ignore[arg-type]
+                        feature_range=config.feature_range[j],  # type: ignore[arg-type, index]
                         target_range=config.target_range[j],  # type: ignore[arg-type, index]
                     )
                 )
@@ -237,7 +237,7 @@ def _create_analog_fm(
                         op=config.operation,  # type: ignore[arg-type]
                         fm_type=config.basis_set[j],
                         reupload_scaling=config.reupload_scaling[j],
-                        feature_range=config.feature_range[j],  # type: ignore[arg-type]
+                        feature_range=config.feature_range[j],  # type: ignore[arg-type, index]
                         target_range=config.target_range[j],  # type: ignore[arg-type, index]
                     )
                 )
@@ -370,7 +370,7 @@ def _ansatz_layer(
         AbstractBlock: The layer of the ansatz.
     """
     new_config = AnsatzConfig(
-        num_layers=1,
+        depth=1,
         ansatz_type=ansatz_config.ansatz_type,
         ansatz_strategy=ansatz_config.ansatz_strategy,
         strategy_args=ansatz_config.strategy_args,
@@ -400,7 +400,7 @@ def _create_iia_digital(
 
     return identity_initialized_ansatz(
         n_qubits=num_qubits,
-        depth=config.num_layers,
+        depth=config.depth,
         param_prefix=config.param_prefix,
         strategy=Strategy.DIGITAL,
         rotations=operations,
@@ -429,7 +429,7 @@ def _create_iia_sdaqc(
 
     return identity_initialized_ansatz(
         n_qubits=num_qubits,
-        depth=config.num_layers,
+        depth=config.depth,
         param_prefix=config.param_prefix,
         strategy=Strategy.SDAQC,
         rotations=operations,
@@ -483,7 +483,7 @@ def _create_hea_digital(num_qubits: int, config: AnsatzConfig) -> AbstractBlock:
 
     return hea_digital(
         n_qubits=num_qubits,
-        depth=config.num_layers,
+        depth=config.depth,
         param_prefix=config.param_prefix,
         operations=operations,
         entangler=entangler,
@@ -509,7 +509,7 @@ def _create_hea_sdaqc(num_qubits: int, config: AnsatzConfig) -> AbstractBlock:
 
     return hea_sDAQC(
         n_qubits=num_qubits,
-        depth=config.num_layers,
+        depth=config.depth,
         param_prefix=config.param_prefix,
         operations=operations,
         entangler=entangler,
@@ -538,7 +538,7 @@ def _create_hea_rydberg(
 
     return rydberg_hea(
         register=register,
-        n_layers=config.num_layers,
+        n_layers=config.depth,
         addressable_detuning=addressable_detuning,
         addressable_drive=addressable_drive,
         tunable_phase=tunable_phase,
@@ -694,7 +694,7 @@ def create_observable(
     detuning: TDetuning = Z,
     scale: TParameter | None = None,
     shift: TParameter | None = None,
-    transformation_type: TObservableTransform = TObservableTransform.NONE,
+    transformation_type: TObservableTransform = TObservableTransform.NONE,  # type: ignore[assignment]
 ) -> AbstractBlock:
     """
     Create an observable block.
@@ -709,9 +709,9 @@ def create_observable(
         AbstractBlock: The observable block.
     """
     if transformation_type == TObservableTransform.RANGE:
-        scale, shift = ObservableTransformMap[transformation_type](detuning, scale, shift)
-    shifting_term = shift * _global_identity(register)
-    detuning_hamiltonian = scale * hamiltonian_factory(
+        scale, shift = ObservableTransformMap[transformation_type](detuning, scale, shift)  # type: ignore[index]
+    shifting_term = shift * _global_identity(register)  # type: ignore[operator]
+    detuning_hamiltonian = scale * hamiltonian_factory(  # type: ignore[operator]
         register=register,
         detuning=detuning,
     )
@@ -762,9 +762,9 @@ def build_qnn_from_configs(
     )
 
     if isinstance(observable_config, list):
-        observable = [create_observable(register=register, config=cfg) for cfg in observable_config]
+        observable = [observable_from_config(config=cfg) for cfg in observable_config]
     else:
-        observable = create_observable(register=register, config=observable_config)  # type: ignore[assignment]
+        observable = observable_from_config(config=observable_config)  # type: ignore[assignment]
 
     ufa = QNN(circ, observable, inputs=fm_config.inputs)
 

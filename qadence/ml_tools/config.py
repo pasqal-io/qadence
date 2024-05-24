@@ -75,10 +75,10 @@ class TrainConfig:
 
 @dataclass
 class FeatureMapConfig:
-    num_features: int
+    num_features: int = 1
     """Number of feature parameters to be encoded."""
 
-    basis_set: BasisSet | list[BasisSet]
+    basis_set: BasisSet | list[BasisSet] = BasisSet.FOURIER
     """
     Basis set for feature encoding.
 
@@ -89,7 +89,7 @@ class FeatureMapConfig:
     BasisSet.CHEBYSHEV for Chebyshev encoding.
     """
 
-    reupload_scaling: ReuploadScaling | list[ReuploadScaling]
+    reupload_scaling: ReuploadScaling | list[ReuploadScaling] = ReuploadScaling.CONSTANT
     """
     Scaling for encoding the same feature on different qubits in the.
 
@@ -101,7 +101,7 @@ class FeatureMapConfig:
     ReuploadScaling.EXP for exponentially increasing scaling.
     """
 
-    feature_range: tuple[float, float] | list[tuple[float, float]]
+    feature_range: tuple[float, float] | list[tuple[float, float]] | None = None
     """
     Range of data that the input data is assumed to come from.
 
@@ -206,7 +206,7 @@ class FeatureMapConfig:
         else:
             assert (
                 len(self.basis_set) == self.num_features
-            ), f"Length of set of bases {len(self.feature_range)} must match the number \
+            ), f"Length of set of bases {len(self.basis_set)} must match the number \
                 of features {self.num_features}. Or provide a single `BasisSet` to \
                 use same basis for all features."
 
@@ -215,12 +215,12 @@ class FeatureMapConfig:
         else:
             assert (
                 len(self.reupload_scaling) == self.num_features
-            ), f"Length of the reupload scalings {len(self.feature_range)} must match the number \
-                of features {self.num_features}. Or provide a single `ReuploadScaling` for \
+            ), f"Length of the reupload scalings {len(self.reupload_scaling)} must match the \
+                number of features {self.num_features}. Or provide a single `ReuploadScaling` for \
                 same scaling for all features."
 
-        if isinstance(self.feature_range, tuple):
-            self.feature_range = [self.feature_range for i in range(self.num_features)]
+        if self.feature_range is None or isinstance(self.feature_range, tuple):
+            self.feature_range = [self.feature_range for i in range(self.num_features)]  # type: ignore[assignment, misc]
         else:
             assert (
                 len(self.feature_range) == self.num_features
@@ -228,14 +228,12 @@ class FeatureMapConfig:
                 of features {self.num_features}. Or provide a single tuple(float, float) for \
                 same expected feature range for all features."
 
-        if self.target_range is None:
-            self.target_range = [None for i in range(self.num_features)]  # type: ignore
-        elif isinstance(self.target_range, tuple):
-            self.target_range = [self.target_range for i in range(self.num_features)]
+        if self.target_range is None or isinstance(self.target_range, tuple):
+            self.target_range = [self.target_range for i in range(self.num_features)]  # type: ignore[assignment, misc]
         else:
             assert (
                 len(self.target_range) == self.num_features
-            ), f"Length of the feature ranges {len(self.feature_range)} must match the number \
+            ), f"Length of the feature ranges {len(self.target_range)} must match the number \
                 of features {self.num_features}. Or provide a single tuple(float, float) for \
                 same expected feature range for all features."
 
@@ -248,23 +246,20 @@ class FeatureMapConfig:
                 of features {self.num_features}. Or provide a single integer for same number \
                 of repeatitions for all features."
 
-        if self.inputs is None:
-            self.inputs = [f"phi_{i}" for i in range(self.num_features)]
-
 
 @dataclass
 class AnsatzConfig:
-    num_layers: int
+    depth: int = 1
     """Number of layers of the ansatz."""
 
-    ansatz_type: str
+    ansatz_type: str = "hea"
     """What type of ansatz.
 
     "hea" for Hardware Efficient Ansatz.
     "iia" for Identity intialized Ansatz.
     """
 
-    ansatz_strategy: str
+    ansatz_strategy: str = "digital"
     """Ansatz strategy.
 
     "digital" for fully digital ansatz. Required if `ansatz_type` is `iia`.
