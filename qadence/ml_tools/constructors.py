@@ -89,11 +89,7 @@ def _encode_features_series_digital(
         multivariate_strategy=config.multivariate_strategy,
     )
 
-    reuploads = (
-        [config.num_repeats for i in range(config.num_features)]
-        if isinstance(config.num_repeats, int)
-        else config.num_repeats[:]
-    )
+    reuploads = config.num_repeats[:]  # type: ignore[index]
 
     fm_blocks = []
 
@@ -141,11 +137,7 @@ def _encode_features_parallel_digital(
         multivariate_strategy=config.multivariate_strategy,
     )
 
-    reuploads = (
-        [config.num_repeats for i in range(config.num_features)]
-        if isinstance(config.num_repeats, int)
-        else config.num_repeats[:]
-    )
+    reuploads = config.num_repeats[:]  # type: ignore[index]
 
     fm_blocks = []
 
@@ -218,11 +210,8 @@ def _create_analog_fm(
     Returns:
         list[AbstractBlock]: The list of analog feature map blocks.
     """
-    reuploads = (
-        [config.num_repeats for i in range(config.num_features)]
-        if isinstance(config.num_repeats, int)
-        else config.num_repeats[:]
-    )
+
+    reuploads = config.num_repeats[:]  # type: ignore[index]
 
     fm_blocks = []
 
@@ -294,11 +283,7 @@ def _create_rydberg_fm(
     """
     num_qubits = register if isinstance(register, int) else register.n_qubits
 
-    reuploads = (
-        [config.num_repeats for i in range(config.num_features)]
-        if isinstance(config.num_repeats, int)
-        else config.num_repeats[:]
-    )
+    reuploads = config.num_repeats[:]  # type: ignore[index]
 
     fm_blocks = []
 
