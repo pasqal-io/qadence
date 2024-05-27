@@ -159,7 +159,52 @@ class QNN(QuantumModel):
     ) -> QNN:
         from .constructors import build_qnn_from_configs
 
-        """Create a QNN from a set of configurations."""
+        """Create a QNN from a set of configurations.
+
+        Args:
+            register: The number of qubits or a register object.
+            fm_config: The configuration for the feature map.
+            ansatz_config: The configuration for the ansatz.
+            obs_config: The configuration for the observable.
+
+        Returns:
+            A QNN object.
+
+        Example:
+        ```python exec="on" source="material-block" result="json"
+        from qadence.ml_tools.config import AnsatzConfig, FeatureMapConfig
+        from qadence.ml_tools.qnn import QNN
+        from qadence.constructors import ObservableConfig
+        from qadence.operations import Z
+        from qadence.types import BasisSet, ReuploadScaling, TObservableTransform
+
+        register = 4
+        fm_config = FeatureMapConfig(
+            num_features=2,
+            inputs=["x", "y"],
+            basis_set=BasisSet.FOURIER,
+            reupload_scaling=ReuploadScaling.CONSTANT,
+            feature_range={
+                "x": (-1.0, 1.0),
+                "y": (0.0, 1.0),
+            },
+        )
+        ansatz_config = AnsatzConfig(
+            depth=2,
+            ansatz_type="hea",
+            ansatz_strategy="digital",
+        )
+        obs_config = ObservableConfig(
+            detuning=Z
+            scale=5.0,
+            shift=0.0,
+            transform=TObservableTransform.SCALE,
+            trainable_transform=False,
+        )
+
+        qnn = QNN.from_configs(register, fm_config, ansatz_config, obs_config)
+
+        """
         return build_qnn_from_configs(register, fm_config, ansatz_config, obs_config)
 
     def forward(

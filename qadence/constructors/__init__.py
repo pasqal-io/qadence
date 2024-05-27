@@ -17,6 +17,7 @@ from .daqc import daqc_transform
 from .hamiltonians import (
     hamiltonian_factory,
     ising_hamiltonian,
+    ObservableConfig,
     single_z,
     total_magnetization,
     zz_hamiltonian,
@@ -39,6 +40,7 @@ __all__ = [
     "build_qnn",
     "hamiltonian_factory",
     "ising_hamiltonian",
+    "ObservableConfig",
     "single_z",
     "total_magnetization",
     "zz_hamiltonian",
