@@ -44,7 +44,7 @@ dependencies = [
     "jsonschema",
     "nevergrad",
     "scipy",
-    "pyqtorch==1.1.3",
+    "pyqtorch",
     "pyyaml",
     "matplotlib",
     "Arpeggio==2.0.2",
