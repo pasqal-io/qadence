@@ -24,7 +24,7 @@ def _available_engines() -> dict:
             res[engine] = DifferentiableBackendCls
         except (ImportError, ModuleNotFoundError):
             pass
-    logger.info(f"Found engines: {res.keys()}")
+    logger.debug(f"Found engines: {res.keys()}")
     return res
 
 
@@ -39,7 +39,7 @@ def _available_backends() -> dict:
             res[backend] = BackendCls
         except (ImportError, ModuleNotFoundError):
             pass
-    logger.info(f"Found backends: {res.keys()}")
+    logger.debug(f"Found backends: {res.keys()}")
     return res
 
 

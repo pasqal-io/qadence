@@ -125,7 +125,7 @@ class AdjointExpectation(Function):
                     ctx.projected_state, op.dagger(values), op.qubit_support
                 )
             elif isinstance(op, PyQCircuit):
-                grads = [g for sub_op in op.reverse() for g in _apply_adjoint(ctx, sub_op)]
+                grads = [g for sub_op in op.operations[::-1] for g in _apply_adjoint(ctx, sub_op)]
             elif isinstance(op, PyQPrimitive):
                 ctx.out_state = apply_operator(ctx.out_state, op.dagger(values), op.qubit_support)
                 if isinstance(op, PyQParametric) and values[op.param_name].requires_grad:
@@ -147,7 +147,11 @@ class AdjointExpectation(Function):
 
         grads = list(
             reversed(
-                [grad_out * g for op in ctx.circuit.reverse() for g in _apply_adjoint(ctx, op)]
+                [
+                    grad_out * g
+                    for op in ctx.circuit.operations[::-1]
+                    for g in _apply_adjoint(ctx, op)
+                ]
             )
         )
         num_grads = len(grads)
