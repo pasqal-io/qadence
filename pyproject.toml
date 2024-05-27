@@ -44,7 +44,7 @@ dependencies = [
     "jsonschema",
     "nevergrad",
     "scipy",
-    "pyqtorch",
+    "pyqtorch==1.1.1",
     "pyyaml",
     "matplotlib",
     "Arpeggio==2.0.2",
@@ -75,7 +75,7 @@ protocols = ["qadence-protocols"]
 libs = ["qadence-libs"]
 all = [
   "pulser==0.18.0",
-  "amazon-braket-sdk==1.71.0",
+  "amazon-braket-sdk<1.71.2",
   "graphviz",
   "protocols",
   "libs",
