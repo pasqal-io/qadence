@@ -238,8 +238,6 @@ def ising_hamiltonian(
 
 @dataclass
 class ObservableConfig:
-    n_qubits: int
-    """The register / number of qubits of the full system."""
     detuning: TDetuning
     """
     Single qubit detuning of the observable Hamiltonian.

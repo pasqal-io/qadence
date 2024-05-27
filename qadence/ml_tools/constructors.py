@@ -665,6 +665,7 @@ def _global_identity(register: int | Register) -> KronBlock:
 
 
 def observable_from_config(
+    register: int | Register,
     config: ObservableConfig,
 ) -> AbstractBlock:
     """
@@ -679,9 +680,7 @@ def observable_from_config(
     """
     scale, shift = load_observable_transformations(config)
     # breakpoint()
-    return create_observable(
-        config.n_qubits, config.detuning, scale, shift, config.transformation_type
-    )
+    return create_observable(register, config.detuning, scale, shift, config.transformation_type)
 
 
 def create_observable(
@@ -757,9 +756,11 @@ def build_qnn_from_configs(
     )
 
     if isinstance(observable_config, list):
-        observable = [observable_from_config(config=cfg) for cfg in observable_config]
+        observable = [
+            observable_from_config(register=register, config=cfg) for cfg in observable_config
+        ]
     else:
-        observable = observable_from_config(config=observable_config)  # type: ignore[assignment]
+        observable = observable_from_config(register=register, config=observable_config)  # type: ignore[assignment]
 
     ufa = QNN(circ, observable, inputs=fm_config.inputs)
 

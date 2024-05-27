@@ -263,7 +263,7 @@ def get_qnn(
     trainable_transform: bool | None = None,
 ) -> QNN:
     observable = observable_from_config(
-        ObservableConfig(n_qubits, Z, scale, shift, "scale", trainable_transform)
+        n_qubits, ObservableConfig(Z, scale, shift, "scale", trainable_transform)  # type: ignore[arg-type]
     )
     circuit = quantum_circuit(n_qubits=n_qubits, depth=depth)
     model = QNN(
