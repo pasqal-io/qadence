@@ -7,11 +7,21 @@ import numpy as np
 import sympy
 import torch
 
-torch.set_default_device("cuda")
+DEVICE = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+torch.set_default_device(DEVICE)
 torch.manual_seed(42)
-import nvidia_dlprof_pytorch_nvtx
+if DEVICE == torch.device("cuda"):
+    try:
+        import os
 
-nvidia_dlprof_pytorch_nvtx.init()
+        os.system("pip install nvidia-pyindex")
+        os.system("pip install nvidia-dlprof[pytorch]")
+        import nvidia_dlprof_pytorch_nvtx
+
+        nvidia_dlprof_pytorch_nvtx.init()
+    except Exception as e:
+        pass
+
 from qadence import CNOT, RX, RY, Parameter, QuantumCircuit, chain, total_magnetization
 from qadence.backends.pyqtorch.backend import Backend as PyQTorchBackend
 from qadence.engines.torch.differentiable_backend import DifferentiableBackend

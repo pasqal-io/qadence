@@ -26,7 +26,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.logger import get_script_logger
 from qadence.types import BackendName, DiffMode
 
-logger = get_script_logger("horqcrux_analog")
+logger = get_script_logger("horqrux_analog")
 
 N_QUBITS = 4
 N_EPOCHS = 200

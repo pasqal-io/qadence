@@ -5,11 +5,21 @@ import numpy as np
 import sympy
 import torch
 
-torch.set_default_device("cuda")
+DEVICE = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+torch.set_default_device(DEVICE)
 torch.manual_seed(42)
-import nvidia_dlprof_pytorch_nvtx
 
-nvidia_dlprof_pytorch_nvtx.init()
+if DEVICE == torch.device("cuda"):
+    try:
+        import os
+
+        os.system("pip install nvidia-pyindex")
+        os.system("pip install nvidia-dlprof[pytorch]")
+        import nvidia_dlprof_pytorch_nvtx
+
+        nvidia_dlprof_pytorch_nvtx.init()
+    except Exception as e:
+        pass
 from qadence import (
     CNOT,
     RX,
@@ -38,7 +48,7 @@ def circuit(n_qubits):
 
 
 if __name__ == "__main__":
-    n_qubits = 16
+    n_qubits = 4
     batch_size = 5
     logger.info(f"Running quantum models example with n_qubits {n_qubits}")
     observable = total_magnetization(n_qubits)
@@ -48,7 +58,7 @@ if __name__ == "__main__":
         backend=BackendName.PYQTORCH,
         diff_mode=DiffMode.AD,
     )
-    model.to("cuda")
+    model.to(DEVICE)
     logger.info(list(model.parameters()))
     nx = torch.rand(batch_size, requires_grad=True)
     ny = torch.rand(batch_size, requires_grad=True)
@@ -79,7 +89,7 @@ if __name__ == "__main__":
         diff_mode=DiffMode.GPSR,
     )
     model.zero_grad()
-    model.to("cuda")
+    model.to(DEVICE)
     loss = torch.mean(model.expectation(values))
     loss.backward()
 
@@ -101,7 +111,7 @@ if __name__ == "__main__":
         diff_mode=DiffMode.ADJOINT,
     )
     model.zero_grad()
-    model.to("cuda")
+    model.to(DEVICE)
     loss = torch.mean(model.expectation(values))
     loss.backward()
 
