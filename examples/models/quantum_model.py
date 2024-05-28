@@ -9,17 +9,6 @@ DEVICE = torch.device("cuda") if torch.cuda.is_available() else torch.device("cp
 torch.set_default_device(DEVICE)
 torch.manual_seed(42)
 
-if DEVICE == torch.device("cuda"):
-    try:
-        import os
-
-        os.system("pip install nvidia-pyindex")
-        os.system("pip install nvidia-dlprof[pytorch]")
-        import nvidia_dlprof_pytorch_nvtx
-
-        nvidia_dlprof_pytorch_nvtx.init()
-    except Exception as e:
-        pass
 from qadence import (
     CNOT,
     RX,
