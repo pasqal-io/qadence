@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from collections import Counter, OrderedDict
 from dataclasses import asdict
+from logging import getLogger
 from pathlib import Path
 from typing import Any, Callable, Optional, Sequence
 
@@ -21,14 +22,13 @@ from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.utils import chain, unique_parameters
 from qadence.circuit import QuantumCircuit
 from qadence.engines.differentiable_backend import DifferentiableBackend
-from qadence.logger import get_logger
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.noise import Noise
 from qadence.parameters import Parameter
 from qadence.types import DiffMode, Endianness
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class QuantumModel(nn.Module):
@@ -44,6 +44,7 @@ class QuantumModel(nn.Module):
     _params: nn.ParameterDict
     _circuit: ConvertedCircuit
     _observable: list[ConvertedObservable] | None
+    logger.debug("Initialised")
 
     def __init__(
         self,
@@ -314,7 +315,7 @@ class QuantumModel(nn.Module):
         try:
             torch.save(self._to_dict(save_params), folder / Path(file_name))
         except Exception as e:
-            print(f"Unable to write QuantumModel to disk due to {e}")
+            logger.error(f"Unable to write QuantumModel to disk due to {e}")
 
     @classmethod
     def load(
@@ -331,7 +332,7 @@ class QuantumModel(nn.Module):
         try:
             qm_pt = torch.load(file_path, map_location=map_location)
         except Exception as e:
-            print(f"Unable to load QuantumModel due to {e}")
+            logger.error(f"Unable to load QuantumModel due to {e}")
         return cls._from_dict(qm_pt, as_torch)
 
     def assign_parameters(self, values: dict[str, Tensor]) -> Any:

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from logging import getLogger
+
 import numpy as np
 import sympy
 import torch
@@ -13,7 +15,6 @@ from qadence.blocks.utils import (
     add,  # noqa
     chain,
 )
-from qadence.logger import get_logger
 from qadence.parameters import (
     Parameter,
     ParamMap,
@@ -23,7 +24,7 @@ from qadence.types import OpName, TNumber, TParameter
 
 from .primitive import I, X, Y, Z
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class PHASE(ParametricBlock):

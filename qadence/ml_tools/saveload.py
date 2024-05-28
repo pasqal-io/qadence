@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import re
+from logging import getLogger
 from pathlib import Path
 from typing import Any
 
@@ -10,9 +11,7 @@ from nevergrad.optimization.base import Optimizer as NGOptimizer
 from torch.nn import Module
 from torch.optim import Optimizer
 
-from qadence.logger import get_logger
-
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 def get_latest_checkpoint_name(folder: Path, type: str) -> Path:
