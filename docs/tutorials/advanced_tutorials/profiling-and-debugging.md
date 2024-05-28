@@ -1,6 +1,5 @@
 
 
-
 For this to work, you'll have to have the right to access perf counters on your machine (for example with sudo or inside a Docker container).
 See: https://docs.nvidia.com/deeplearning/frameworks/dlprof-user-guide/index.html.
 
@@ -52,5 +51,5 @@ root@2a85826c4e7b:/opt/qadence# pip3 install nvidia-dlprof[pytorch]
 root@2a85826c4e7b:/opt/qadence# PYQ_LOG_LEVEL=debug QADENCE_LOG_LEVEL=debug dlprof --mode=pytorch --nsys_opts="-t cuda,nvtx,cublas,cusparse,cusparse-verbose,cublas-verbose --force-overwrite true" examples/models/quantum_model.py
 ```
 
-Where we have `--force-overwrite true` to always store the latest profiling result (hence you must rename the file) if you wish to keep several). We add `cublas,cusparse,cusparse-verbose,cublas-verbose` do get more details
+Where we have `--force-overwrite true` to always store the latest profiling result (hence you must rename the file) if you wish to keep several. We add `cublas,cusparse,cusparse-verbose,cublas-verbose` do get more details
 about the numerical backend pacakges being used.
