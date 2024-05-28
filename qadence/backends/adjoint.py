@@ -7,7 +7,7 @@ from pyqtorch.circuit import QuantumCircuit as PyQCircuit
 from pyqtorch.parametric import Parametric as PyQParametric
 from pyqtorch.primitive import Primitive as PyQPrimitive
 from pyqtorch.utils import inner_prod, param_dict
-from torch import Tensor, no_grad, tensor
+from torch import Tensor, no_grad, zeros
 from torch.autograd import Function
 from torch.nn import Module
 
@@ -157,7 +157,7 @@ class AdjointExpectation(Function):
         num_grads = len(grads)
         num_params = len(ctx.saved_tensors)
         diff = num_params - num_grads
-        grads = grads + [tensor([0]) for _ in range(diff)]
+        grads = grads + [zeros(1, device=ctx.circuit.device) for _ in range(diff)]
         # Set observable grads to 0
         ctx.save_for_backward(*grads)
         return (None, None, None, None, *grads)
