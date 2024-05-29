@@ -10,12 +10,22 @@ import torch
 DEVICE = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 torch.set_default_device(DEVICE)
 torch.manual_seed(42)
+assert DEVICE == torch.device("cuda"), "GPU profiling requires a CUDA device."
+
+# Before running this script, please install:
+# pip install nvidia-pyindex
+# pip install nvidia-dlprof[pytorch]
+
+import nvidia_dlprof_pytorch_nvtx
+
+nvidia_dlprof_pytorch_nvtx.init()
+
 from qadence import CNOT, RX, RY, Parameter, QuantumCircuit, chain, total_magnetization
 from qadence.backends.pyqtorch.backend import Backend as PyQTorchBackend
 from qadence.engines.torch.differentiable_backend import DifferentiableBackend
 from qadence.logger import get_script_logger
 
-logger = get_script_logger("diff_backend")
+logger = get_script_logger("profiling_and_debugging")
 
 
 def circuit(n_qubits):

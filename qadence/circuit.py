@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from itertools import chain as flatten
+from logging import getLogger
 from pathlib import Path
 from typing import Iterable
 
@@ -14,6 +15,8 @@ from qadence.register import Register
 
 # Modules to be automatically added to the qadence namespace
 __all__ = ["QuantumCircuit"]
+
+logger = getLogger(__name__)
 
 
 @dataclass(eq=False)  # Avoid unhashability errors due to mutable attributes.
@@ -167,7 +170,7 @@ class QuantumCircuit:
                 with open(path, "w") as file:
                     file.write(qc_dumped)
             except Exception as e:
-                print(f"Unable to write QuantumCircuit to disk due to {e}")
+                logger.error(f"Unable to write QuantumCircuit to disk due to {e}")
 
         return qc_dumped
 
@@ -199,6 +202,6 @@ class QuantumCircuit:
                 loaded_dict = json.load(file)
 
         except Exception as e:
-            print(f"Unable to load QuantumCircuit due to {e}")
+            logger.error(f"Unable to load QuantumCircuit due to {e}")
 
         return QuantumCircuit._from_dict(loaded_dict)

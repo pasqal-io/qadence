@@ -2,14 +2,13 @@ from __future__ import annotations
 
 from collections import Counter
 from enum import Enum
+from logging import getLogger
 
 import torch
 from torch import Tensor
 from torch.distributions import normal, poisson, uniform
 
-from qadence.logger import get_logger
-
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class WhiteNoise(Enum):
