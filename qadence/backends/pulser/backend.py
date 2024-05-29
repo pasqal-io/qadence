@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from logging import getLogger
 from typing import Any
@@ -11,7 +12,7 @@ import torch
 from pulser import Register as PulserRegister
 from pulser import Sequence
 from pulser_simulation import SimConfig
-from pulser_simulation.simresults import SimulationResults
+from pulser_simulation.simresults import CoherentResults, SimulationResults
 from pulser_simulation.simulation import QutipEmulator
 from torch import Tensor
 
@@ -230,30 +231,49 @@ class Backend(BackendInterface):
         self,
         circuit: ConvertedCircuit,
         noise: Noise,
-        param_values: dict[str, Tensor] = {},
+        param_values: dict[str, Tensor] = dict(),
         state: Tensor | None = None,
         endianness: Endianness = Endianness.BIG,
-    ) -> list:
+    ) -> Tensor:
         vals = to_list_of_dicts(param_values)
         noise_probs = noise.options.get("noise_probs", None)
         if noise_probs is None:
-            KeyError(f"A range of noise probabilies should be passed. Got {noise_probs}.")
+            KeyError("A `noise probs` option should be passed to the <class QuantumModel>.")
+        if not (isinstance(noise_probs, float) or isinstance(noise_probs, Iterable)):
+            KeyError(
+                "A single or a range of noise probabilities"
+                " should be passed. Got {type(noise_probs)}."
+            )
 
-        noisy_batched_dm = []
-
-        # Pulser requires numpy types.
-        for noise_prob in noise_probs.numpy():
-            batched_dm = []
+        def run_noisy_sim(noise_prob: float) -> Tensor:
+            batched_dm = np.zeros(
+                (len(vals), 2**circuit.abstract.n_qubits, 2**circuit.abstract.n_qubits),
+                dtype=np.complex128,
+            )
             sim_config = {"noise": noise.protocol, noise.protocol + "_rate": noise_prob}
             self.config.sim_config = SimConfig(**sim_config)
 
             for i, param_values_el in enumerate(vals):
                 sequence = self.assign_parameters(circuit, param_values_el)
-                sim_result = simulate_sequence(sequence, self.config, state)
-                batched_dm.append(sim_result)
-            noisy_batched_dm.append(batched_dm)
+                sim_result: CoherentResults = simulate_sequence(sequence, self.config, state)
+                final_state = sim_result.get_final_state().data.toarray()
+                batched_dm[i] = np.flip(final_state)
+            return torch.from_numpy(batched_dm)
 
-        return noisy_batched_dm
+        # Pulser requires numpy types.
+        if isinstance(noise_probs, Iterable):
+            noisy_batched_dms = []
+            for noise_prob in noise_probs:
+                noisy_batched_dms.append(run_noisy_sim(noise_prob))
+            noisy_batched_dms = torch.stack(noisy_batched_dms)
+        else:
+            noisy_batched_dms = run_noisy_sim(noise_probs)
+
+        if endianness != self.native_endianness:
+            from qadence.transpile import invert_endianness
+
+            noisy_batched_dms = invert_endianness(noisy_batched_dms)
+        return noisy_batched_dms
 
     def sample(
         self,
@@ -307,14 +327,40 @@ class Backend(BackendInterface):
     ) -> Tensor:
         observable = observable if isinstance(observable, list) else [observable]
         if mitigation is None:
-            state = self.run(circuit, param_values=param_values, state=state, endianness=endianness)
-            support = sorted(list(circuit.abstract.register.support))
-            res_list = [
-                obs.native(state, param_values, qubit_support=support) for obs in observable
-            ]
-            res = torch.transpose(torch.stack(res_list), 0, 1)
-            res = res if len(res.shape) > 0 else res.reshape(1)
-            return res.real
+            if noise is None:
+                state = self.run(
+                    circuit, param_values=param_values, state=state, endianness=endianness
+                )
+                support = sorted(list(circuit.abstract.register.support))
+                res_list = [
+                    obs.native(state, param_values, qubit_support=support) for obs in observable
+                ]
+                res = torch.transpose(torch.stack(res_list), 0, 1)
+                res = res if len(res.shape) > 0 else res.reshape(1)
+                return res.real
+            elif noise is not None:
+                dms = self.run_dm(
+                    circuit=circuit,
+                    noise=noise,
+                    param_values=param_values,
+                    state=state,
+                    endianness=endianness,
+                )
+                support = sorted(list(circuit.abstract.register.support))
+                # TODO: There should be a better check for batched density matrices.
+                if dms.size()[0] > 1:
+                    res_list = [
+                        [obs.native(dm, param_values, qubit_support=support) for dm in dms]
+                        for obs in observable
+                    ]
+                    res = torch.stack([torch.transpose(torch.stack(res), 0, 1) for res in res_list])
+                else:
+                    res_list = [
+                        obs.native(dms, param_values, qubit_support=support) for obs in observable
+                    ]
+                    res = torch.transpose(torch.stack(res_list), 0, 1)
+                res = res if len(res.shape) > 0 else res.reshape(1)
+                return res.real
         elif mitigation is not None:
             logger.warning(
                 "Mitigation protocol is deprecated. Use qadence-protocols instead.",
