@@ -364,3 +364,11 @@ class QuantumModel(nn.Module):
         except Exception as e:
             logger.warning(f"Unable to move {self} to {args}, {kwargs} due to {e}.")
         return self
+
+    @property
+    def device(self) -> torch.device:
+        return (
+            self._circuit.native.device
+            if self.backend.backend.name == "pyqtorch"  # type: ignore[union-attr]
+            else torch.device("cpu")
+        )

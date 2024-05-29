@@ -58,8 +58,18 @@ def write_checkpoint(
     from qadence.ml_tools.models import TransformedModule
     from qadence.models import QNN, QuantumModel
 
-    model_checkpoint_name: str = f"model_{type(model).__name__}_ckpt_" + f"{iteration:03n}" + ".pt"
-    opt_checkpoint_name: str = f"opt_{type(optimizer).__name__}_ckpt_" + f"{iteration:03n}" + ".pt"
+    device = None
+    try:
+        # We extract the device from the pyqtorch native circuit
+        device = str(model.device).split(":")[0]  # in case of using several CUDA devices
+    except Exception:
+        pass
+    model_checkpoint_name: str = (
+        f"model_{type(model).__name__}_ckpt_" + f"{iteration:03n}" + f"_device_{device}" + ".pt"
+    )
+    opt_checkpoint_name: str = (
+        f"opt_{type(optimizer).__name__}_ckpt_" + f"{iteration:03n}" + f"_device_{device}" + ".pt"
+    )
     try:
         d = (
             model._to_dict(save_params=True)
