@@ -61,7 +61,7 @@ def write_checkpoint(
     device = None
     try:
         # We extract the device from the pyqtorch native circuit
-        device = model.device
+        device = str(model.device).split(":")[0]  # in case of using several CUDA devices
     except Exception:
         pass
     model_checkpoint_name: str = (
