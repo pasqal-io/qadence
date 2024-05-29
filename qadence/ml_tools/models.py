@@ -310,3 +310,11 @@ class TransformedModule(torch.nn.Module):
         except Exception as e:
             logger.warning(f"Unable to move {self} to {args}, {kwargs} due to {e}.")
         return self
+
+    @property
+    def device(self) -> torch.device:
+        return (
+            self.model.device
+            if isinstance(self.model, QuantumModel)
+            else self._input_scaling.device
+        )
