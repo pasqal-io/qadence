@@ -5,7 +5,6 @@ from logging import getLogger
 from typing import Any, Callable
 
 import sympy
-import torch
 from torch import Tensor, nn
 
 from qadence.backend import BackendConfiguration, ConvertedObservable
@@ -342,11 +341,3 @@ class QNN(QuantumModel):
             logger.warning(f"Unable to deserialize object {d} to {cls.__name__} due to {e}.")
 
         return qnn
-
-    @property
-    def device(self) -> torch.device:
-        return (
-            self.model.device
-            if isinstance(self.model, QuantumModel)
-            else self._input_scaling.device
-        )
