@@ -27,7 +27,7 @@ def train(
     optimizer: Optimizer,
     config: TrainConfig,
     loss_fn: Callable,
-    device: torch_device = None,
+    device: torch_device | str | None = None,
     optimize_step: Callable = optimize_step,
     write_tensorboard: Callable = write_tensorboard,
     dtype: torch_dtype = None,
@@ -114,7 +114,9 @@ def train(
     # load available checkpoint
     init_iter = 0
     if config.folder:
-        model, optimizer, init_iter = load_checkpoint(config.folder, model, optimizer)
+        model, optimizer, init_iter = load_checkpoint(
+            config.folder, model, optimizer, "", "", device
+        )
         logger.debug(f"Loaded model and optimizer from {config.folder}")
 
     # Move model to device before optimizer is loaded
