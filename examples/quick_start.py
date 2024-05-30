@@ -7,11 +7,15 @@ from qadence import QuantumModel  # quantum model for execution
 # qadence has many submodules
 from qadence.blocks import kron  # block system
 from qadence.circuit import QuantumCircuit  # circuit to assemble quantum operations
+from qadence.logger import get_script_logger  # Extend Qadence logging to your scripts
 from qadence.ml_tools import TrainConfig, train_with_grad  # tools for ML simulations
 from qadence.operations import RX, HamEvo, X, Y, Zero  # quantum operations
 from qadence.parameters import VariationalParameter  # trainable parameters
 
 # all of the above can also be imported directly from the qadence namespace
+
+# The logger object much be initialised and later used
+logger = get_script_logger("Quick start")
 
 n_qubits = 4
 n_circ_params = n_qubits
@@ -38,11 +42,11 @@ circuit = QuantumCircuit(n_qubits, rot_block, ent_block)
 model = QuantumModel(circuit, observable=obs, diff_mode="ad")
 
 samples = model.sample({}, n_shots=1000)
-print(samples)  # this returns a Counter instance
+logger.info(samples)  # this logs a Counter instance
 
 # compute the expectation value of the observable
 expval = model.expectation({})
-print(expval)
+logger.info(expval)
 
 
 # define a loss function and train the model

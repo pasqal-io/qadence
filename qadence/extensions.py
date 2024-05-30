@@ -1,16 +1,16 @@
 from __future__ import annotations
 
 import importlib
+from logging import getLogger
 from string import Template
 
 from qadence.backend import Backend
 from qadence.blocks.abstract import TAbstractBlock
-from qadence.logger import get_logger
 from qadence.types import BackendName, DiffMode, Engine
 
 backends_namespace = Template("qadence.backends.$name")
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 def _available_engines() -> dict:
@@ -24,7 +24,7 @@ def _available_engines() -> dict:
             res[engine] = DifferentiableBackendCls
         except (ImportError, ModuleNotFoundError):
             pass
-    logger.info(f"Found engines: {res.keys()}")
+    logger.debug(f"Found engines: {res.keys()}")
     return res
 
 
@@ -39,7 +39,7 @@ def _available_backends() -> dict:
             res[backend] = BackendCls
         except (ImportError, ModuleNotFoundError):
             pass
-    logger.info(f"Found backends: {res.keys()}")
+    logger.debug(f"Found backends: {res.keys()}")
     return res
 
 
@@ -77,16 +77,6 @@ def _validate_diff_mode(backend: Backend, diff_mode: DiffMode) -> None:
         raise TypeError(f"Backend {backend.name} does not support diff_mode {DiffMode.ADJOINT}.")
 
 
-def _validate_backend_config(backend: Backend) -> None:
-    if backend.config.use_gradient_checkpointing:
-        # FIXME: Remove in v1.5.0
-        msg = "use_gradient_checkpointing is deprecated."
-        import warnings
-
-        warnings.warn(msg, UserWarning)
-        logger.warn(msg)
-
-
 def _set_backend_config(backend: Backend, diff_mode: DiffMode) -> None:
     """Fallback function for native Qadence backends if extensions is not present.
 
@@ -96,7 +86,6 @@ def _set_backend_config(backend: Backend, diff_mode: DiffMode) -> None:
     """
 
     _validate_diff_mode(backend, diff_mode)
-    _validate_backend_config(backend)
 
     # (1) When using PSR with any backend or (2) we use the backends Pulser or Braket,
     # we have to use gate-level parameters

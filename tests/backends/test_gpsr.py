@@ -11,9 +11,10 @@ from metrics import GPSR_ACCEPTANCE, PSR_ACCEPTANCE
 from qadence import DiffMode, Parameter, QuantumCircuit
 from qadence.analog import add_background_hamiltonian
 from qadence.backends.pyqtorch import Backend as PyQBackend
-from qadence.blocks import add, chain
+from qadence.blocks import AbstractBlock, add, chain
 from qadence.constructors import total_magnetization
 from qadence.engines.torch.differentiable_backend import DifferentiableBackend
+from qadence.execution import expectation
 from qadence.operations import CNOT, CRX, CRY, RX, RY, AnalogRot, HamEvo, X, Y, Z
 from qadence.register import Register
 from qadence.types import PI
@@ -231,3 +232,38 @@ def test_expectation_psr(n_qubits: int, batch_size: int, n_obs: int, circuit_fn:
         assert torch.allclose(
             dexpval_xxtheta, dexpval_psr_xxtheta, atol=atol
         ), "d3f/dx2dtheta not equal."
+
+
+# Keeping the tests failing below so we can re-activate them once
+# GPSR can handle fully generic generators. This will likely require
+# a HamEvo specific GPSR function that also takes care of parameter dimensions
+@pytest.mark.parametrize(
+    ["n_qubits", "generator"],
+    [
+        (1, 0.5 * X(0)),
+        # (1, X(0)), # FAILS
+        (2, X(0) + Y(1)),
+        (3, X(0) + 0.5 * Z(2)),
+        # (3, 10*(X(0)+0.5*Z(2))), # FAILS
+    ],
+)
+def test_hamevo_gpsr(n_qubits: int, generator: AbstractBlock) -> None:
+    x = Parameter("x", trainable=False)
+    hamevo_block = HamEvo(generator, x)
+
+    xs = torch.linspace(0, 2 * torch.pi, 100, requires_grad=True)
+    values = {"x": xs}
+
+    # Calculate function f(x)
+    obs = add(Z(i) for i in range(n_qubits))
+    exp_ad = expectation(hamevo_block, observable=obs, values=values, diff_mode=DiffMode.AD)
+    exp_gpsr = expectation(hamevo_block, observable=obs, values=values, diff_mode=DiffMode.GPSR)
+
+    # Check we are indeed computing the same thing
+    assert torch.allclose(exp_ad, exp_gpsr)
+
+    # calculate derivative df/dx using the PyTorch
+    dfdx_ad = torch.autograd.grad(exp_ad, xs, torch.ones_like(exp_ad), create_graph=True)[0]
+    dfdx_gpsr = torch.autograd.grad(exp_gpsr, xs, torch.ones_like(exp_gpsr), create_graph=True)[0]
+
+    assert torch.allclose(dfdx_ad, dfdx_gpsr, atol=GPSR_ACCEPTANCE)

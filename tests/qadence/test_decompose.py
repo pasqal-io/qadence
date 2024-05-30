@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from json import loads
+from pathlib import Path
 from typing import no_type_check
 
 import numpy as np
@@ -221,8 +222,8 @@ def test_composite_hamevo_edge_cases(generator: AbstractBlock) -> None:
 
 def open_chem_obs() -> AbstractBlock:
     """A tiny helper function."""
-    directory = os.getcwd()
-    with open(os.path.join(directory, "tests/test_files/h4.json"), "r") as js:
+    directory = Path(__file__).parent.parent
+    with open(os.path.join(directory, "test_files/h4.json"), "r") as js:
         obs = loads(js.read())
     return deserialize(obs)  # type: ignore[return-value]
 

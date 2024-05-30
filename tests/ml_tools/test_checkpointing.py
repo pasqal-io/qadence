@@ -70,8 +70,8 @@ def test_random_basicqQM_save_load_ckpts(BasicQuantumModel: QuantumModel, tmp_pa
         tmp_path,
         BasicQuantumModel,
         optimizer,
-        "model_QuantumModel_ckpt_009.pt",
-        "opt_Adam_ckpt_006.pt",
+        "model_QuantumModel_ckpt_009_device_cpu.pt",
+        "opt_Adam_ckpt_006_device_cpu.pt",
     )
     assert torch.allclose(loaded_model.expectation({}), model.expectation({}))
 
@@ -91,7 +91,7 @@ def test_check_ckpts_exist(BasicQuantumModel: QuantumModel, tmp_path: Path) -> N
 
     config = TrainConfig(folder=tmp_path, max_iter=10, checkpoint_every=1, write_every=1)
     train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
-    ckpts = [tmp_path / Path(f"model_QuantumModel_ckpt_00{i}.pt") for i in range(1, 9)]
+    ckpts = [tmp_path / Path(f"model_QuantumModel_ckpt_00{i}_device_cpu.pt") for i in range(1, 9)]
     assert all(os.path.isfile(ckpt) for ckpt in ckpts)
     for ckpt in ckpts:
         loaded_model, optimizer, _ = load_checkpoint(
@@ -122,8 +122,8 @@ def test_random_basicqQNN_save_load_ckpts(BasicQNN: QNN, tmp_path: Path) -> None
         tmp_path,
         BasicQNN,
         optimizer,
-        "model_QNN_ckpt_009.pt",
-        "opt_Adam_ckpt_006.pt",
+        "model_QNN_ckpt_009_device_cpu.pt",
+        "opt_Adam_ckpt_006_device_cpu.pt",
     )
     assert torch.allclose(loaded_model.expectation(inputs), model.expectation(inputs))
 
@@ -144,7 +144,7 @@ def test_check_QNN_ckpts_exist(BasicQNN: QNN, tmp_path: Path) -> None:
 
     config = TrainConfig(folder=tmp_path, max_iter=10, checkpoint_every=1, write_every=1)
     train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
-    ckpts = [tmp_path / Path(f"model_QNN_ckpt_00{i}.pt") for i in range(1, 9)]
+    ckpts = [tmp_path / Path(f"model_QNN_ckpt_00{i}_device_cpu.pt") for i in range(1, 9)]
     assert all(os.path.isfile(ckpt) for ckpt in ckpts)
     for ckpt in ckpts:
         loaded_model, optimizer, _ = load_checkpoint(tmp_path, BasicQNN, optimizer, ckpt, "")

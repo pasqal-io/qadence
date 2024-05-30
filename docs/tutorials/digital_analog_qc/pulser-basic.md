@@ -213,7 +213,7 @@ version of a quantum neural network circuit with feature map and variational
 ansatz.
 
 ```python exec="on" source="material-block" html="1" session="pulser-basic"
-from qadence import kron, fourier_feature_map
+from qadence import kron, feature_map, BasisSet
 from qadence.operations import RX, RY, AnalogRX
 
 hea_one_layer = chain(
@@ -224,7 +224,7 @@ hea_one_layer = chain(
 )
 
 protocol = chain(
-    fourier_feature_map(1, param="x"),
+    feature_map(1, param="x", fm_type=BasisSet.FOURIER),
     hea_one_layer,
     AnalogRX(PI/4)
 )

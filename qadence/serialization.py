@@ -6,6 +6,7 @@ import sys
 from dataclasses import dataclass
 from dataclasses import field as dataclass_field
 from functools import lru_cache
+from logging import getLogger
 from pathlib import Path
 from typing import Any, Callable, get_args
 from typing import Union as TypingUnion
@@ -20,7 +21,6 @@ from qadence import QNN, QuantumCircuit, QuantumModel, operations, parameters
 from qadence import blocks as qadenceblocks
 from qadence.blocks import AbstractBlock
 from qadence.blocks.utils import tag
-from qadence.logger import get_logger
 from qadence.parameters import Parameter
 from qadence.register import Register
 from qadence.types import SerializationFormat
@@ -29,7 +29,7 @@ from qadence.types import SerializationFormat
 __all__ = ["deserialize", "load", "save", "serialize"]
 
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 def file_extension(file: Path | str) -> str:

@@ -1,19 +1,18 @@
 from __future__ import annotations
 
-import warnings
 from collections.abc import Callable
+from logging import getLogger
 from math import isclose
 from typing import Union
 
 from sympy import Basic, acos
 
 from qadence.blocks import AbstractBlock, KronBlock, chain, kron, tag
-from qadence.logger import get_logger
 from qadence.operations import PHASE, RX, RY, RZ, H
 from qadence.parameters import FeatureParameter, Parameter, VariationalParameter
 from qadence.types import PI, BasisSet, ReuploadScaling, TParameter
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 ROTATIONS = [RX, RY, RZ, PHASE]
 RotationTypes = type[Union[RX, RY, RZ, PHASE]]
@@ -33,28 +32,6 @@ RS_FUNC_DICT = {
     ReuploadScaling.TOWER: lambda i: float(i + 1),
     ReuploadScaling.EXP: lambda i: float(2**i),
 }
-
-
-# FIXME: Remove in v1.5.0
-def backwards_compatibility(
-    fm_type: BasisSet | Callable | str,
-    reupload_scaling: ReuploadScaling | Callable | str,
-) -> tuple:
-    if fm_type in ("fourier", "chebyshev", "tower"):
-        logger.warning(
-            "Selecting `fm_type` as 'fourier', 'chebyshev' or 'tower' is deprecated. "
-            "Please use the respective enumerations: 'fm_type = BasisSet.FOURIER', "
-            "'fm_type = BasisSet.CHEBYSHEV' or 'reupload_scaling = ReuploadScaling.TOWER'."
-        )
-        if fm_type == "fourier":
-            fm_type = BasisSet.FOURIER
-        elif fm_type == "chebyshev":
-            fm_type = BasisSet.CHEBYSHEV
-        elif fm_type == "tower":
-            fm_type = BasisSet.CHEBYSHEV
-            reupload_scaling = ReuploadScaling.TOWER
-
-    return fm_type, reupload_scaling
 
 
 def fm_parameter_scaling(
@@ -195,9 +172,6 @@ def feature_map(
             f"Please provide one from {[rot.__name__ for rot in ROTATIONS]}."
         )
 
-    # Backwards compatibility
-    fm_type, reupload_scaling = backwards_compatibility(fm_type, reupload_scaling)
-
     scaled_fparam = fm_parameter_scaling(
         fm_type, param, feature_range=feature_range, target_range=target_range
     )
@@ -222,68 +196,6 @@ def feature_map(
 
     fm.tag = rs_tag + " " + basis_tag + " FM"
 
-    return fm
-
-
-# FIXME: Remove in v1.5.0
-def fourier_feature_map(
-    n_qubits: int, support: tuple[int, ...] = None, param: str = "phi", op: RotationTypes = RX
-) -> AbstractBlock:
-    """Construct a Fourier feature map.
-
-    Args:
-        n_qubits: number of qubits across which the FM is created
-        param: The base name for the feature `Parameter`
-    """
-    warnings.warn(
-        "Function 'fourier_feature_map' is deprecated. Please use 'feature_map' directly.",
-        FutureWarning,
-    )
-    fm = feature_map(n_qubits, support=support, param=param, op=op, fm_type=BasisSet.FOURIER)
-    return fm
-
-
-# FIXME: Remove in v1.5.0
-def chebyshev_feature_map(
-    n_qubits: int, support: tuple[int, ...] = None, param: str = "phi", op: RotationTypes = RX
-) -> AbstractBlock:
-    """Construct a Chebyshev feature map.
-
-    Args:
-        n_qubits: number of qubits across which the FM is created
-        support (Iterable[int]): The qubit support
-        param: The base name for the feature `Parameter`
-    """
-    warnings.warn(
-        "Function 'chebyshev_feature_map' is deprecated. Please use 'feature_map' directly.",
-        FutureWarning,
-    )
-    fm = feature_map(n_qubits, support=support, param=param, op=op, fm_type=BasisSet.CHEBYSHEV)
-    return fm
-
-
-# FIXME: Remove in v1.5.0
-def tower_feature_map(
-    n_qubits: int, support: tuple[int, ...] = None, param: str = "phi", op: RotationTypes = RX
-) -> AbstractBlock:
-    """Construct a Chebyshev tower feature map.
-
-    Args:
-        n_qubits: number of qubits across which the FM is created
-        param: The base name for the feature `Parameter`
-    """
-    warnings.warn(
-        "Function 'tower_feature_map' is deprecated. Please use feature_map directly.",
-        FutureWarning,
-    )
-    fm = feature_map(
-        n_qubits,
-        support=support,
-        param=param,
-        op=op,
-        fm_type=BasisSet.CHEBYSHEV,
-        reupload_scaling=ReuploadScaling.TOWER,
-    )
     return fm
 
 

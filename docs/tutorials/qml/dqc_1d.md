@@ -99,13 +99,13 @@ circuit = QuantumCircuit(n_qubits, chain(fm, ansatz))
 model = QNN(circuit = circuit, observable = observable, inputs = ["x"])
 ```
 
-We used a Chebyshev feature map with a tower-like scaling of the input reupload, and a standard hardware-efficient ansatz. You can check the [qml constructors tutorial](qml_constructors.md) to see how you can customize these components. In the observable, for now we consider the simple case of measuring the magnetization of the first qubit.
+We used a Chebyshev feature map with a tower-like scaling of the input reupload, and a standard hardware-efficient ansatz. You can check the [qml constructors tutorial](../../content/qml_constructors.md) to see how you can customize these components. In the observable, for now we consider the simple case of measuring the magnetization of the first qubit.
 
 ```python exec="on" source="material-block" html="1" session="dqc"
 from qadence.draw import html_string # markdown-exec: hide
 from qadence.draw import display
 
-display(circuit)
+# display(circuit)
 
 print(html_string(circuit)) # markdown-exec: hide
 ```
@@ -136,7 +136,7 @@ for epoch in range(n_epochs):
     optimizer.step()
 ```
 
-Note the values of $x$ are only picked from $x\in[-0.99, 0.99]$ since we are using a Chebyshev feature map, and derivative of $\acos(x)$ diverges at $-1$ and $1$.
+Note the values of $x$ are only picked from $x\in[-0.99, 0.99]$ since we are using a Chebyshev feature map, and derivative of $\text{acos}(x)$ diverges at $-1$ and $1$.
 
 ## Plotting the results
 

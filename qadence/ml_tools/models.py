@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from collections import Counter
+from logging import getLogger
 from typing import Any, Callable
 
 import sympy
+import torch
 from torch import Tensor, nn
 
 from qadence.backend import BackendConfiguration, ConvertedObservable
@@ -11,7 +13,6 @@ from qadence.backends.api import config_factory
 from qadence.backends.utils import _torch_derivative, finitediff
 from qadence.blocks.abstract import AbstractBlock
 from qadence.circuit import QuantumCircuit
-from qadence.logger import get_logger
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.model import QuantumModel
@@ -19,7 +20,7 @@ from qadence.noise import Noise
 from qadence.register import Register
 from qadence.types import BackendName, DiffMode, Endianness, InputDiffMode, ParamDictType
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 def format_to_dict_fn(
@@ -341,3 +342,11 @@ class QNN(QuantumModel):
             logger.warning(f"Unable to deserialize object {d} to {cls.__name__} due to {e}.")
 
         return qnn
+
+    @property
+    def device(self) -> torch.device:
+        return (
+            self.model.device
+            if isinstance(self.model, QuantumModel)
+            else self._input_scaling.device
+        )

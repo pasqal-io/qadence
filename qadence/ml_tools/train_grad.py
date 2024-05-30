@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from logging import getLogger
 from typing import Callable, Union
 
 from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, TimeRemainingColumn
@@ -11,14 +12,13 @@ from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
-from qadence.logger import get_logger
 from qadence.ml_tools.config import TrainConfig
 from qadence.ml_tools.data import DictDataLoader
 from qadence.ml_tools.optimize_step import optimize_step
 from qadence.ml_tools.printing import print_metrics, write_tensorboard
 from qadence.ml_tools.saveload import load_checkpoint, write_checkpoint
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 def train(
@@ -182,7 +182,7 @@ def train(
                         write_checkpoint(config.folder, model, optimizer, iteration)
 
             except KeyboardInterrupt:
-                print("Terminating training gracefully after the current iteration.")
+                logger.info("Terminating training gracefully after the current iteration.")
                 break
 
     # Final writing and checkpointing

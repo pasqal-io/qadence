@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 from collections import Counter
+from logging import getLogger
 from typing import Any
 
 import numpy as np
@@ -11,14 +12,13 @@ from torch import Tensor, stack, vmap
 from torch import complex as make_complex
 from torch.linalg import eigvals
 
-from qadence.logger import get_logger
 from qadence.types import Endianness, ResultType, TNumber
 
 # Modules to be automatically added to the qadence namespace
 __all__ = []  # type: ignore
 
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 def basis_to_int(basis: str, endianness: Endianness = Endianness.BIG) -> int:
@@ -154,11 +154,17 @@ def format_number(x: float | complex, num_digits: int = 3) -> str:
         raise ValueError(f"Unknown number type: {type(x)}")
 
 
-def format_parameter(p: sympy.Basic) -> str:
+def format_parameter(p: sympy.Basic, num_digits: int = 3) -> str:
+    """Format numerical values within a sympy expression."""
+
     def round_expr(expr: sympy.Basic, num_digits: int) -> sympy.Basic:
         return expr.xreplace({n: round(n, num_digits) for n in expr.atoms(sympy.Number)})
 
-    return str(round_expr(p, 3))
+    expr = round_expr(p, num_digits)
+    conv_str = str(expr)
+    if expr.is_real and len(conv_str) > num_digits + 2:
+        conv_str = conv_str[0 : num_digits + 2]
+    return conv_str
 
 
 def print_sympy_expr(expr: sympy.Expr, num_digits: int = 3) -> str:

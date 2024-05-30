@@ -15,15 +15,17 @@ nav:
 
   - Contents:
     - Block system: content/block_system.md
-    - Quantum models: content/quantummodels.md
     - Parametric programs: content/parameters.md
+    - Quantum models: content/quantummodels.md
     - Quantum registers: content/register.md
-    - State conventions: content/state_conventions.md
     - State initialization: content/state_init.md
     - Arbitrary Hamiltonians: content/hamiltonians.md
+    - QML Constructors: content/qml_constructors.md
     - Wavefunction overlaps: content/overlap.md
-    - Serialization: content/serializ_and_prep.md
     - Backends: content/backends.md
+    - Useful info:
+      - State conventions: content/state_conventions.md
+      - Serialization: content/serializ_and_prep.md
 
   - Tutorials:
     - tutorials/index.md
@@ -38,7 +40,6 @@ nav:
 
     - Variational quantum algorithms:
       - tutorials/qml/index.md
-      - Constructors: tutorials/qml/qml_constructors.md
       - Training tools: tutorials/qml/ml_tools.md
       - Quantum circuit learning: tutorials/qml/qcl.md
       - Solving MaxCut with QAOA: tutorials/qml/qaoa.md
@@ -49,6 +50,7 @@ nav:
       - Quantum circuits differentiation: tutorials/advanced_tutorials/differentiability.md
       - Custom quantum models: tutorials/advanced_tutorials/custom-models.md
       - Projector blocks: tutorials/advanced_tutorials/projectors.md
+      - Profiling and debugging on CUDA devices: tutorials/advanced_tutorials/profiling-and-debugging.md
 
     - Realistic simulations:
       - tutorials/realistic_sims/index.md
@@ -79,7 +81,6 @@ nav:
     - Backends:
       - Abstract backend: api/backends/backend.md
       - PyQTorch: api/backends/pyqtorch.md
-      - Amazon Braket: api/backends/braket.md
       - Pulser: api/backends/pulser.md
       - DifferentiableBackend: api/backends/differentiable.md
 

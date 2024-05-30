@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import timeit
 from itertools import product
+from pathlib import Path
 
 import numpy as np
 
@@ -11,12 +12,13 @@ import torch
 from torch import Tensor, linspace, nn, ones_like, optim, rand, sin, tensor
 from torch.autograd import grad
 
-from qadence import QNN, AbstractBlock, DiffMode, get_logger
+from qadence import QNN, AbstractBlock, DiffMode
 from qadence.blocks.utils import chain, kron
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import feature_map, hea, total_magnetization
+from qadence.logger import get_script_logger
 
-logger = get_logger(__name__)
+logger = get_script_logger(__name__)
 DIFF_MODE = DiffMode.AD
 DTYPE = torch.complex128
 DEVICE = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -78,7 +80,7 @@ class DomainSampling(nn.Module):
         super().__init__()
         self.ufa = ufa
         self.batch_size = batch_size
-        print(f"batchsize is {batch_size}")
+        logger.info(f"batchsize is {batch_size}")
         self.n_inputs = n_inputs
         self.device = device
         self.dtype = dtype
@@ -140,6 +142,7 @@ def torch_solve(dtype, batch_size) -> None:
 
 
 if __name__ == "__main__":
+    logger.info(f"Running example {Path(__file__).name} with n_qubits = {N_QUBITS}")
     res = {"n_qubits": N_QUBITS, "n_epochs": N_EPOCHS, "device": DEVICE}
     for dtype in [torch.cdouble, torch.cfloat]:
         batch_sizes = []

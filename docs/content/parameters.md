@@ -1,142 +1,131 @@
-Qadence base `Parameter` type is a subtype of `sympy.Symbol`. There are three kinds of parameter subtypes used:
+Qadence provides a flexible parameter system built on top of Sympy. Parameters can be of different types:
 
-- _**Fixed Parameter**_: A constant with a fixed, non-trainable value (_e.g._ $\dfrac{\pi}{2}$).
-- _**Variational Parameter**_: A trainable parameter which can be optimized.
-- _**Feature Parameter**_: A non-trainable parameter which can be used to encode classical data into a quantum state.
+- Fixed parameter: a constant with a fixed, non-trainable value (_e.g._ $\dfrac{\pi}{2}$).
+- Variational parameter: a trainable parameter which will be automatically picked up by the optimizer.
+- Feature parameter: a non-trainable parameter which can be used to pass input values.
 
-## Fixed Parameters
+## Fixed parameters
 
-To pass a fixed parameter to a gate (or any parametrizable block), one can simply use either Python numeric types or wrapped in
-a `torch.Tensor`.
+Passing fixed parameters to blocks can be done by simply passing a Python numeric type or a `torch.Tensor`.
 
 ```python exec="on" source="material-block" result="json"
+import torch
 from qadence import RX, run, PI
 
-# Let's use a torch type.
-block = RX(0, PI)
-wf = run(block)
+wf = run(RX(0, torch.tensor(PI)))
 print(f"{wf = }") # markdown-exec: hide
 
-# Let's pass a simple float.
-block = RX(0, 1.)
-wf = run(block)
+wf = run(RX(0, PI))
 print(f"{wf = }") # markdown-exec: hide
 ```
 
-## Variational Parameters
+## Variational parameters
 
-To parametrize a block by an angle `theta`, either a Python `string` or an instance of  `VariationalParameter` can be passed instead of a numeric type to the gate constructor:
+To parametrize a block a `VariationalParameter` instance is required. In most cases Qadence also accepts a Python string, which will be used to automatically initialize a `VariationalParameter`:
 
 ```python exec="on" source="material-block" result="json"
 from qadence import RX, run, VariationalParameter
 
-block = RX(0, "theta")
-# This is equivalent to:
 block = RX(0, VariationalParameter("theta"))
+block = RX(0, "theta")  # Equivalent
 
 wf = run(block)
 print(f"{wf = }") # markdown-exec: hide
 ```
 
-In the first case in the above example, `theta` is automatically inferred as a `VariationalParameter` (_i.e._ trainable). It is initialized to a random value for the purposes of execution. In the context of a `QuantumModel`, there is no need to pass a value for `theta` to the `run` method since it is stored within the underlying model parameter dictionary.
+By calling `run`, a random value for `"theta"` is initialized at execution. In a `QuantumModel`, variational parameters are stored in the underlying model parameter dictionary.
 
-## Feature Parameters
+## Feature parameters
 
-`FeatureParameter` types (_i.e._ inputs), always need to be provided with a value or a batch of values as a dictionary:
+A `FeatureParameter` type can also be used. It requires an input value or a batch of values. In most cases, Qadence accepts a `values` dictionary to set the input of feature parameters.
 
 ```python exec="on" source="material-block" result="json"
 from torch import tensor
-from qadence import RX, run, FeatureParameter
+from qadence import RX, PI, run, FeatureParameter
 
 block = RX(0, FeatureParameter("phi"))
 
-wf = run(block, values={"phi": tensor([1., 2.])})
+wf = run(block, values = {"phi": tensor([PI, PI/2])})
 print(f"{wf = }") # markdown-exec: hide
 ```
 
-Now, `run` returns a batch of states, one for every provided angle which coincides with the value of the particular `FeatureParameter`.
+Since a batch of input values was passed, the `run` function returns a batch of output states. Note that `FeatureParameter("x")` and `VariationalParameter("x")` are simply aliases for `Parameter("x", trainable = False)` and `Parameter("x", trainable = True)`.
 
-## Multiparameter Expressions
+## Multiparameter expressions and analog integration
 
-However, an angle can itself be an expression `Parameter` types of any kind.
-As such, any sympy expression `expr: sympy.Basic` consisting of a combination of free symbols (_i.e._ `sympy` types) and Qadence `Parameter` can
-be passed to a block, including trigonometric functions.
+The integration with Sympy becomes useful when one wishes to write arbitrary parameter compositions. Parameters can also be used as scaling coefficients in the block system, which is essential when defining arbitrary analog operations.
 
 ```python exec="on" source="material-block" result="json"
 from torch import tensor
-from qadence import RX, Parameter, run, FeatureParameter
+from qadence import RX, Z, HamEvo, PI
+from qadence import VariationalParameter, FeatureParameter, run
 from sympy import sin
 
-theta, phi = Parameter("theta"), FeatureParameter("phi")
-block = RX(0, sin(theta+phi))
+theta, phi = VariationalParameter("theta"), FeatureParameter("phi")
 
-# Remember, to run the block, only FeatureParameter values have to be provided:
-values = {"phi": tensor([1.0, 2.0])}
-wf = run(block, values=values)
+# Arbitrary parameter composition
+expr = PI * sin(theta + phi)
+
+# Use as unitary gate arguments
+gate = RX(0, expr)
+
+# Or as scaling coefficients for Hermitian operators
+h_op = expr * (Z(0) @ Z(1))
+
+wf = run(gate * HamEvo(h_op, phi), values = {"phi": tensor(PI)})
 print(f"{wf = }") # markdown-exec: hide
 ```
 
-## Parameters Redundancy
+## Parameter redundancy
 
-Parameters are uniquely defined by their name and redundancy is allowed in composite blocks to
-assign the same value to different blocks.
+Parameters are uniquely defined by their name and redundancy is allowed in composite blocks to assign the same value to different blocks. This is useful, for example, when defining layers of rotation gates typically used as feature maps.
 
 ```python exec="on" source="material-block" result="json"
-import torch
-from qadence import RX, RY, run, chain, kron
+from torch import tensor
+from qadence import RY, PI, run, kron, FeatureParameter
 
-block = chain(
-    kron(RX(0, "phi"), RY(1, "theta")),
-    kron(RX(0, "phi"), RY(1, "theta")),
-)
+n_qubits = 3
 
-wf = run(block)  # Same random initialization for all instances of phi and theta.
+param = FeatureParameter("phi")
+
+block = kron(RY(i, (i+1) * param) for i in range(n_qubits))
+
+wf = run(block, values = {"phi": tensor(PI)})
 print(f"{wf = }") # markdown-exec: hide
 ```
 
-## Parametrized Circuits
+## Parametrized circuits
 
-Now, let's have a look at the construction of a variational ansatz which composes `FeatureParameter` and `VariationalParameter` types:
+Let's look at a final example of an arbitrary composition of digital and analog parameterized blocks:
 
 ```python exec="on" source="material-block" html="1"
 import sympy
-from qadence import RX, RY, RZ, CNOT, Z, run, chain, kron, FeatureParameter, VariationalParameter
+from qadence import RX, RY, RZ, CNOT, CPHASE, Z, HamEvo
+from qadence import run, chain, add, kron, FeatureParameter, VariationalParameter, PI
 
-phi = FeatureParameter("phi")
-theta = VariationalParameter("theta")
+n_qubits = 3
 
-block = chain(
-    kron(
-        RX(0, phi/theta),
-        RY(1, theta*2),
-        RZ(2, sympy.cos(phi)),
-    ),
-    kron(
-        RX(0, phi),
-        RY(1, theta),
-        RZ(2, phi),
-    ),
-    kron(
-        RX(0, phi),
-        RY(1, theta),
-        RZ(2, phi),
-    ),
-    kron(
-        RX(0, phi + theta),
-        RY(1, theta**2),
-        RZ(2, sympy.cos(phi)),
-    ),
-    chain(CNOT(0,1), CNOT(1,2))
+phi = FeatureParameter("Φ")
+theta = VariationalParameter("θ")
+
+rotation_block = kron(
+    RX(0, phi/theta),
+    RY(1, theta*2),
+    RZ(2, sympy.cos(phi))
 )
-block.tag = "Rotations"
+digital_entangler = CNOT(0, 1) * CPHASE(1, 2, PI)
 
-obs = 2*kron(*map(Z, range(3)))
-block = chain(block, obs)
+hamiltonian = add(theta * (Z(i) @ Z(i+1)) for i in range(n_qubits-1))
+
+analog_evo = HamEvo(hamiltonian, phi)
+
+program = chain(rotation_block, digital_entangler, analog_evo)
 
 from qadence.draw import html_string # markdown-exec: hide
-print(html_string(block)) # markdown-exec: hide
+print(html_string(program)) # markdown-exec: hide
 ```
 
+<<<<<<< HEAD
 Please note the different colors for the parametrization with different types. The default palette assigns light blue for `VariationalParameter`, light green for `FeatureParameter` and shaded red for observables.
 
 ## Parametrized QuantumModels
@@ -322,3 +311,6 @@ circuit = QuantumCircuit(4, block)
 model = QuantumModel(circuit)  # BackendName.PYQTORCH and DiffMode.AD by default.
 print(f"wf = {model.run({})}") # markdown-exec: hide
 ```
+=======
+Please note the different colors for the parametrization with different types. The default palette assigns blue for `VariationalParameter`, green for `FeatureParameter`, orange for numeric values, and shaded red for non-parametric gates.
+>>>>>>> main
