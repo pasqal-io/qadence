@@ -113,9 +113,10 @@ def train(
     """
     # load available checkpoint
     init_iter = 0
+    log_device = "cpu" if device is None else device
     if config.folder:
         model, optimizer, init_iter = load_checkpoint(
-            config.folder, model, optimizer, "", "", device
+            config.folder, model, optimizer, "", "", log_device
         )
         logger.debug(f"Loaded model and optimizer from {config.folder}")
 
@@ -181,7 +182,7 @@ def train(
 
                 if config.folder:
                     if iteration % config.checkpoint_every == 0:
-                        write_checkpoint(config.folder, model, optimizer, iteration)
+                        write_checkpoint(config.folder, model, optimizer, iteration, log_device)
 
             except KeyboardInterrupt:
                 logger.info("Terminating training gracefully after the current iteration.")
@@ -189,7 +190,7 @@ def train(
 
     # Final writing and checkpointing
     if config.folder:
-        write_checkpoint(config.folder, model, optimizer, iteration)
+        write_checkpoint(config.folder, model, optimizer, iteration, log_device)
     write_tensorboard(writer, loss, metrics, iteration)
     writer.close()
 

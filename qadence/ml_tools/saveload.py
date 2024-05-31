@@ -14,7 +14,9 @@ from torch.optim import Optimizer
 logger = getLogger(__name__)
 
 
-def get_latest_checkpoint_name(folder: Path, type: str, device: str = "cpu") -> Path:
+def get_latest_checkpoint_name(
+    folder: Path, type: str, device: str | torch.device | None = "cpu"
+) -> Path:
     file = Path("")
     files = [f for f in os.listdir(folder) if f.endswith(".pt") and type in f]
     if len(files) == 0:
@@ -56,17 +58,16 @@ def load_checkpoint(
 
 
 def write_checkpoint(
-    folder: Path, model: Module, optimizer: Optimizer | NGOptimizer, iteration: int
+    folder: Path,
+    model: Module,
+    optimizer: Optimizer | NGOptimizer,
+    iteration: int,
+    device: str | torch.device | None = "cpu",
 ) -> None:
     from qadence.ml_tools.models import TransformedModule
     from qadence.models import QNN, QuantumModel
 
-    device = None
-    try:
-        # We extract the device from the pyqtorch native circuit
-        device = str(model.device).split(":")[0]  # in case of using several CUDA devices
-    except Exception:
-        pass
+    device = str(device).split(":")[0]  # in case of using several CUDA devices
     model_checkpoint_name: str = (
         f"model_{type(model).__name__}_ckpt_" + f"{iteration:03n}" + f"_device_{device}" + ".pt"
     )
@@ -96,16 +97,16 @@ def write_checkpoint(
 
 
 def load_model(
-    folder: Path, model: Module, model_ckpt_name: str | Path = "", *args: Any, **kwargs: Any
+    folder: Path,
+    model: Module,
+    model_ckpt_name: str | Path = "",
+    device: str | torch.device | None = "cpu",
+    *args: Any,
+    **kwargs: Any,
 ) -> tuple[Module, int]:
     from qadence.ml_tools.models import TransformedModule
     from qadence.models import QNN, QuantumModel
 
-    device = ""
-    try:
-        device = model.device
-    except Exception:
-        pass
     iteration = 0
     if model_ckpt_name == "":
         model_ckpt_name = get_latest_checkpoint_name(folder, "model", device)
