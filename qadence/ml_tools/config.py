@@ -46,11 +46,15 @@ class TrainConfig:
     """The batch_size to use when passing a list/tuple of torch.Tensors."""
     verbose: bool = True
     """Whether or not to print out metrics values during training."""
+    from_model_checkpoint: Optional[Path] = None
+    """Use a pre-existing model checkpoint for training."""
+    from_opt_checkpoint: Optional[Path] = None
+    """Use a pre-existing optimizer checkpoint for training."""
 
     def __post_init__(self) -> None:
         if self.folder:
-            if isinstance(self.folder, str):  # type: ignore [unreachable]
-                self.folder = Path(self.folder)  # type: ignore [unreachable]
+            if isinstance(self.folder, str):
+                self.folder = Path(self.folder)
             if self.create_subfolder_per_run:
                 subfoldername = (
                     datetime.datetime.now().strftime("%Y%m%dT%H%M%S") + "_" + hex(os.getpid())[2:]
@@ -60,3 +64,5 @@ class TrainConfig:
             self.trainstop_criterion = lambda x: x <= self.max_iter
         if self.validation_criterion is None:
             self.validation_criterion = lambda x: False
+        if self.checkpoint_best_only:
+            raise NotImplementedError

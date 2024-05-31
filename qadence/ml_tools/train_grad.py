@@ -114,9 +114,14 @@ def train(
     # load available checkpoint
     init_iter = 0
     log_device = "cpu" if device is None else device
-    if config.folder:
+    if config.from_model_checkpoint:
         model, optimizer, init_iter = load_checkpoint(
-            config.folder, model, optimizer, "", "", log_device
+            config.folder,
+            model,
+            optimizer,
+            config.from_model_checkpoint,
+            config.from_opt_checkpoint,
+            log_device,
         )
         logger.debug(f"Loaded model and optimizer from {config.folder}")
 

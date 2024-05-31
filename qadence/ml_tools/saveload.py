@@ -41,8 +41,8 @@ def load_checkpoint(
     folder: Path,
     model: Module,
     optimizer: Optimizer | NGOptimizer,
-    model_ckpt_name: str | Path = "",
-    opt_ckpt_name: str | Path = "",
+    model_ckpt_name: Path,
+    opt_ckpt_name: Path,
     device: str | torch.device | None = None,
 ) -> tuple[Module, Optimizer | NGOptimizer, int]:
     if device is None:
@@ -68,6 +68,7 @@ def write_checkpoint(
     from qadence.models import QNN, QuantumModel
 
     device = str(device).split(":")[0]  # in case of using several CUDA devices
+    circuit_hash = hash(model._circuit.abstract)
     model_checkpoint_name: str = (
         f"model_{type(model).__name__}_ckpt_" + f"{iteration:03n}" + f"_device_{device}" + ".pt"
     )
