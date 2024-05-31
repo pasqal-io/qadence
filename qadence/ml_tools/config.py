@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 import os
 from dataclasses import dataclass, field
+from logging import getLogger
 from pathlib import Path
 from typing import Callable, Optional, Type
 
@@ -10,12 +11,11 @@ from sympy import Basic
 
 from qadence.blocks.analog import AnalogBlock
 from qadence.blocks.primitive import ParametricBlock
-from qadence.logger import get_logger
 from qadence.operations import RX, AnalogRX
 from qadence.parameters import Parameter
 from qadence.types import BasisSet, ReuploadScaling
 
-logger = get_logger(__file__)
+logger = getLogger(__file__)
 
 
 @dataclass
