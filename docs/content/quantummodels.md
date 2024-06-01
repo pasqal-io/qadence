@@ -122,7 +122,7 @@ model = QuantumModel(circuit, observable)
 ## Quantum Neural Network (QNN)
 
 The `QNN` is a subclass of the `QuantumModel` geared towards quantum machine learning and parameter optimisation. See the
-[quantum machine learning section](../tutorials/qml/index.md) section or the [`QNN` API reference][qadence.models.QNN] for more detailed
+[quantum machine learning section](../tutorials/qml/index.md) section or the [`QNN` API reference][qadence.ml_tools.models.QNN] for more detailed
 information. There are three main differences in interface when compared with the `QuantumModel`:
 
 - It is initialized with a list of the input parameter names, and then supports direct `torch.Tensor` inputs instead of the values dictionary shown above. The ordering of the input values should respect the order given in the input names.

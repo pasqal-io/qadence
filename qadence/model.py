@@ -36,7 +36,7 @@ class QuantumModel(nn.Module):
 
     This class should be used as base class for any new quantum model supported in the qadence
     framework for information on the implementation of custom models see
-    [here](/advanced_tutorials/custom-models.md).
+    [here](../tutorials/advanced_tutorials/custom-models.md).
     """
 
     backend: Backend | DifferentiableBackend

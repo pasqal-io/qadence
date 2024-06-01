@@ -104,8 +104,7 @@ class QNN(QuantumModel):
             inputs: Tuple that indicates the order of variables of the tensors that are passed
                 to the model. Given input tensors `xs = torch.rand(batch_size, input_size:=2)` a QNN
                 with `inputs=("t", "x")` will assign `t, x = xs[:,0], xs[:,1]`.
-            transform_input: An optional function to scale and shift the FeatureParameters.
-            transform_output: A optional function to scale and shift the outputs.
+            input_diff_mode: The differentiation mode for the input tensor.
         """
         super().__init__(
             circuit,

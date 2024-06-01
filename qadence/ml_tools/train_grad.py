@@ -51,16 +51,12 @@ def train(
         device: String defining device to train on, pass 'cuda' for GPU.
         optimize_step: Customizable optimization callback which is called at every iteration.=
             The function must have the signature `optimize_step(model,
-            optimizer, loss_fn, xs, device="cpu")` (see the example below).
-            Apart from the default we already supply three other optimization
-            functions `optimize_step_evo`, `optimize_step_grad_norm`, and
-            `optimize_step_inv_dirichlet`. Learn more about how to use this in
-            the [Advancded features](../../tutorials/advanced) tutorial of the
-            documentation.
+            optimizer, loss_fn, xs, device="cpu")`.
         write_tensorboard: Customizable tensorboard logging callback which is
             called every `config.write_every` iterations. The function must have
             the signature `write_tensorboard(writer, loss, metrics, iteration)`
             (see the example below).
+        dtype: The dtype to use for the data.
 
     Example:
     ```python exec="on" source="material-block"

@@ -42,7 +42,7 @@ x_test, y_test = x[test_ind], y[test_ind]
 
 ## Train the QCL model
 
-Qadence provides the [`QNN`][qadence.ml_tools.qnn.QNN] convenience constructor to build a quantum neural network.
+Qadence provides the [`QNN`][qadence.ml_tools.models.QNN] convenience constructor to build a quantum neural network.
 The `QNN` class needs a circuit and a list of observables; the number of feature parameters in the input circuit
 determines the number of input features (i.e. the dimensionality of the classical data given as input) whereas
 the number of observables determines the number of outputs of the quantum neural network.
