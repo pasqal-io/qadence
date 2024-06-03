@@ -66,7 +66,8 @@ def train(
             called every `config.write_every` iterations. The function must have
             the signature `write_tensorboard(writer, loss, metrics, iteration)`
             (see the example below).
-        epsilon: TODO
+        epsilon: Safety margin to check if validation loss is smaller than the lowest
+            validation loss across previous iterations.
         perform_val_check: Whether to use validation data for calculating metrics.
             If True, dataloader must be of type DictDataLoader.
 
