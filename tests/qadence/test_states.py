@@ -58,6 +58,7 @@ def test_product_state(n_qubits: int, backend: str) -> None:
 
     if backend is "horqrux":
         import numpy as np
+
         state_direct = torch.tensor(np.asarray(state_direct))
         state_block = torch.tensor(np.asarray(state_block))
 
