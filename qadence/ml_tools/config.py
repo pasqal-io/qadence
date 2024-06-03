@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from logging import getLogger
 from pathlib import Path
 from typing import Callable, Optional, Type
@@ -244,23 +244,26 @@ class FeatureMapConfig:
                 """
                 )
 
-        property_dict = {
-            "basis_set": self.basis_set,
-            "reupload_scaling": self.reupload_scaling,
-            "feature_range": self.feature_range,
-            "target_range": self.target_range,
-            "num_repeats": self.num_repeats,
-        }
+        property_list = [
+            "basis_set",
+            "reupload_scaling",
+            "feature_range",
+            "target_range",
+            "num_repeats",
+        ]
 
-        for name, prop in property_dict.items():
-            if isinstance(prop, dict):
-                assert set(prop.keys()) == set(
-                    self.inputs
-                ), f"The keys in {name} must be the same as the inputs provided. \
-                Alternatively, provide a single value of {name} to use the same {name}\
-                for all features."
-            else:
-                prop = {key: prop for key in self.inputs}  # type: ignore[assignment]
+        for field in fields(self):
+            if field.name in property_list:
+                prop = getattr(self, field.name)
+                if isinstance(prop, dict):
+                    assert set(prop.keys()) == set(
+                        self.inputs
+                    ), f"The keys in {field.name} must be the same as the inputs provided. \
+                    Alternatively, provide a single value of {field.name} to use the same {field.name}\
+                    for all features."
+                else:
+                    prop = {key: prop for key in self.inputs}
+                    setattr(self, field.name, prop)
 
 
 @dataclass
