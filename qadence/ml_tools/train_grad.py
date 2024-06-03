@@ -34,8 +34,6 @@ def train(
     optimize_step: Callable = optimize_step,
     write_tensorboard: Callable = write_tensorboard,
     dtype: torch_dtype = None,
-    epsilon: float = 1e-5,
-    perform_val_check=False,
 ) -> tuple[Module, Optimizer]:
     """Runs the training loop with gradient-based optimizer.
 
@@ -66,10 +64,6 @@ def train(
             called every `config.write_every` iterations. The function must have
             the signature `write_tensorboard(writer, loss, metrics, iteration)`
             (see the example below).
-        epsilon: Safety margin to check if validation loss is smaller than the lowest
-            validation loss across previous iterations.
-        perform_val_check: Whether to use validation data for calculating metrics.
-            If True, dataloader must be of type DictDataLoader.
 
     Example:
     ```python exec="on" source="material-block"
@@ -134,9 +128,9 @@ def train(
     # initialize tensorboard
     writer = SummaryWriter(config.folder, purge_step=init_iter)
 
-    if perform_val_check and not isinstance(dataloader, DictDataLoader):
-        raise ValueError("If `perform_val_check` is True, dataloader must be an instance of `DictDataLoader`")
-    if perform_val_check:
+    if config.perform_val_check and not isinstance(dataloader, DictDataLoader):
+        raise ValueError("If `config.perform_val_check` is True, dataloader must be an instance of `DictDataLoader`")
+    if config.perform_val_check:
         iter_keys = list(dataloader.dataloaders.keys())
         val_dataloader = dataloader.dataloaders[iter_keys[1]]
         dataloader = dataloader.dataloaders[iter_keys[0]]
@@ -155,7 +149,7 @@ def train(
     best_val_loss = math.inf
     with progress:
         dl_iter = iter(dataloader) if dataloader is not None else None
-        if perform_val_check:
+        if config.perform_val_check:
             dl_iter_val = iter(val_dataloader) if val_dataloader is not None else None
 
         # outer epoch loop
@@ -197,7 +191,7 @@ def train(
                 if iteration % config.write_every == 0:
                     write_tensorboard(writer, loss, metrics, iteration)
 
-                if iteration % config.val_every == 0 and perform_val_check:
+                if iteration % config.val_every == 0 and config.perform_val_check:
                     # TODO: It may be desired that the entire validation set be used
                     # since a random batch of validation data may not be indicative.
                     # If that's the case, the `next(dl_iter_val)` will need change.
@@ -206,7 +200,7 @@ def train(
                     xs_to_device = data_to_device(xs, device=device, dtype=data_dtype)
                     val_loss, _ = loss_fn(model, xs_to_device)
                     if config.validation_criterion(
-                            val_loss, best_val_loss, epsilon
+                            val_loss, best_val_loss, config.epsilon
                     ):
                         best_val_loss = val_loss
                         if config.folder and config.checkpoint_best_only:

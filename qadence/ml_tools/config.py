@@ -38,8 +38,15 @@ class TrainConfig:
     """
     checkpoint_best_only: bool = False
     """Write model/optimizer checkpoint only if a metric has improved."""
+    perform_val_check: bool = False
+    """Whether to use validation data for calculating metrics.
+
+    If True, dataloader must be of type DictDataLoader.
+    """
     val_every: int = 10
     """Calculate validation metric."""
+    epsilon: float = 1e-5
+    """Safety margin to check if validation loss is smaller than the lowest validation loss across previous iterations."""
     validation_criterion: Optional[Callable] = None
     """A boolean function which evaluates a given validation metric is satisfied."""
     trainstop_criterion: Optional[Callable] = None
