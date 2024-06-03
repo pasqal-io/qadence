@@ -12,7 +12,7 @@ def print_metrics(loss: float | None, metrics: dict, iteration: int) -> None:
 
 
 def write_tensorboard(
-    writer: SummaryWriter, loss: float | None, metrics: dict, iteration: int
+    writer: SummaryWriter, loss: float, metrics: dict, iteration: int
 ) -> None:
     writer.add_scalar("loss", loss, iteration)
     for key, arg in metrics.items():
