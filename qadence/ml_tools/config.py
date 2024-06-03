@@ -38,6 +38,8 @@ class TrainConfig:
     """
     checkpoint_best_only: bool = False
     """Write model/optimizer checkpoint only if a metric has improved."""
+    val_every: int = 10
+    """Calculate validation metric."""
     validation_criterion: Optional[Callable] = None
     """A boolean function which evaluates a given validation metric is satisfied."""
     trainstop_criterion: Optional[Callable] = None
