@@ -24,11 +24,15 @@ def get_latest_checkpoint_name(
     if len(files) == 1:
         file = Path(files[0])
     else:
+        legacy_pattern = re.compile(".*_(\d+).pt$")
         pattern = re.compile(f".*_(\d+)_device_{device}.pt$")
         max_index = -1
         for f in files:
             match = pattern.search(f)
-            if match:
+            legacy_match = legacy_pattern.search(f)
+            if match or legacy_match:
+                if legacy_match:
+                    logger.warn(f"Found checkpoint(s) in legacy format: {f}.")
                 index_str = match.group(1).replace("_", "")
                 index = int(index_str)
                 if index > max_index:
@@ -68,7 +72,8 @@ def write_checkpoint(
     from qadence.models import QNN, QuantumModel
 
     device = str(device).split(":")[0]  # in case of using several CUDA devices
-    circuit_hash = hash(model._circuit.abstract)
+    # TODO Include a hash of the circuit into the checkpoint to differentiate between underlying circuits
+    # circuit_hash = hash(model._circuit.abstract)
     model_checkpoint_name: str = (
         f"model_{type(model).__name__}_ckpt_" + f"{iteration:03n}" + f"_device_{device}" + ".pt"
     )
