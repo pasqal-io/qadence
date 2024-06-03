@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import math
 from logging import getLogger
 from typing import Callable, Union
 
 from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, TimeRemainingColumn
+
+import torch
 from torch import complex128, float32, float64
 from torch import device as torch_device
 from torch import dtype as torch_dtype
@@ -13,7 +16,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 from qadence.ml_tools.config import TrainConfig
-from qadence.ml_tools.data import DictDataLoader
+from qadence.ml_tools.data import DictDataLoader, data_to_device
 from qadence.ml_tools.optimize_step import optimize_step
 from qadence.ml_tools.printing import print_metrics, write_tensorboard
 from qadence.ml_tools.saveload import load_checkpoint, write_checkpoint
@@ -31,6 +34,8 @@ def train(
     optimize_step: Callable = optimize_step,
     write_tensorboard: Callable = write_tensorboard,
     dtype: torch_dtype = None,
+    epsilon: float = 1e-5,
+    perform_val_check=False,
 ) -> tuple[Module, Optimizer]:
     """Runs the training loop with gradient-based optimizer.
 
@@ -61,6 +66,9 @@ def train(
             called every `config.write_every` iterations. The function must have
             the signature `write_tensorboard(writer, loss, metrics, iteration)`
             (see the example below).
+        epsilon: TODO
+        perform_val_check: Whether to use validation data for calculating metrics.
+            If True, dataloader must be of type DictDataLoader.
 
     Example:
     ```python exec="on" source="material-block"
@@ -125,6 +133,13 @@ def train(
     # initialize tensorboard
     writer = SummaryWriter(config.folder, purge_step=init_iter)
 
+    if perform_val_check and not isinstance(dataloader, DictDataLoader):
+        raise ValueError("If `perform_val_check` is True, dataloader must be an instance of `DictDataLoader`")
+    if perform_val_check:
+        iter_keys = list(dataloader.dataloaders.keys())
+        val_dataloader = dataloader.dataloaders[iter_keys[1]]
+        dataloader = dataloader.dataloaders[iter_keys[0]]
+
     ## Training
     progress = Progress(
         TextColumn("[progress.description]{task.description}"),
@@ -135,8 +150,12 @@ def train(
     data_dtype = None
     if dtype:
         data_dtype = float64 if dtype == complex128 else float32
+
+    best_val_loss = math.inf
     with progress:
         dl_iter = iter(dataloader) if dataloader is not None else None
+        if perform_val_check:
+            dl_iter_val = iter(val_dataloader) if val_dataloader is not None else None
 
         # outer epoch loop
         for iteration in progress.track(range(init_iter, init_iter + config.max_iter)):
@@ -177,8 +196,25 @@ def train(
                 if iteration % config.write_every == 0:
                     write_tensorboard(writer, loss, metrics, iteration)
 
+                if iteration % config.val_every == 0 and perform_val_check:
+                    # TODO: It may be desired that the entire validation set be used
+                    # since a random batch of validation data may not be indicative.
+                    # If that's the case, the `next(dl_iter_val)` will need change.
+                    # But the change may be massive may require substantial refactoring.
+                    xs = next(dl_iter_val)
+                    xs_to_device = data_to_device(xs, device=device, dtype=data_dtype)
+                    val_loss, _ = loss_fn(model, xs_to_device)
+                    if config.validation_criterion(
+                            val_loss, best_val_loss, epsilon
+                    ):
+                        best_val_loss = val_loss
+                        if config.folder and config.checkpoint_best_only:
+                            write_checkpoint(config.folder, model, optimizer, iteration='best')
+                        metrics['val_loss'] = val_loss
+                        write_tensorboard(writer, math.nan, metrics, iteration)
+
                 if config.folder:
-                    if iteration % config.checkpoint_every == 0:
+                    if iteration % config.checkpoint_every == 0 and not config.checkpoint_best_only:
                         write_checkpoint(config.folder, model, optimizer, iteration)
 
             except KeyboardInterrupt:
@@ -186,7 +222,7 @@ def train(
                 break
 
     # Final writing and checkpointing
-    if config.folder:
+    if config.folder and not config.checkpoint_best_only:
         write_checkpoint(config.folder, model, optimizer, iteration)
     write_tensorboard(writer, loss, metrics, iteration)
     writer.close()
