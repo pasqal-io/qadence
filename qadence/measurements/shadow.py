@@ -10,21 +10,14 @@ from torch import Tensor
 from qadence.backend import Backend
 from qadence.backends.pyqtorch import Backend as PyQBackend
 from qadence.blocks import AbstractBlock, chain, kron
-from qadence.blocks.block_to_tensor import (
-    HMAT,
-    IMAT,
-    SDAGMAT,
-    ZMAT,
-    block_to_tensor,
-)
+from qadence.blocks.block_to_tensor import HMAT, IMAT, SDAGMAT, ZMAT, block_to_tensor
 from qadence.blocks.composite import CompositeBlock
 from qadence.blocks.primitive import PrimitiveBlock
 from qadence.blocks.utils import get_pauli_blocks, unroll_block_with_scaling
 from qadence.circuit import QuantumCircuit
 from qadence.engines.differentiable_backend import DifferentiableBackend
 from qadence.noise import Noise
-from qadence.operations import X, Y, Z
-from qadence.states import one_state, zero_state
+from qadence.operations import Projector, X, Y, Z
 from qadence.types import Endianness
 
 pauli_gates = [X, Y, Z]
@@ -39,8 +32,8 @@ UNITARY_TENSOR = [
 
 # Projector matrices in Big-Endian convention.
 PROJECTOR_MATRICES = {
-    "0": zero_state(n_qubits=1).t() @ zero_state(n_qubits=1),
-    "1": one_state(n_qubits=1).t() @ one_state(n_qubits=1),
+    "0": Projector(bra="0", ket="0", qubit_support=0).tensor()[0],
+    "1": Projector(bra="1", ket="1", qubit_support=0).tensor()[0],
 }
 
 

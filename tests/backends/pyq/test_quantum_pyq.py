@@ -19,12 +19,7 @@ from torch import Tensor
 from qadence.backends import backend_factory
 from qadence.backends.pyqtorch.backend import Backend
 from qadence.backends.pyqtorch.config import Configuration as PyqConfig
-from qadence.blocks import (
-    AbstractBlock,
-    PrimitiveBlock,
-    chain,
-    kron,
-)
+from qadence.blocks import AbstractBlock, PrimitiveBlock, chain, kron
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import (
     hea,
@@ -47,6 +42,7 @@ from qadence.operations import (
     H,
     HamEvo,
     I,
+    Projector,
     S,
     T,
     U,
@@ -729,8 +725,8 @@ def test_scaled_blocks() -> None:
 
 
 def test_kron_chain_add_circuit() -> None:
-    p0 = I(0) * 0.5 + Z(0) * 0.5
-    p1 = I(0) * 0.5 + Z(0) * (-0.5)
+    p0 = Projector(ket="0", bra="0", qubit_support=0)
+    p1 = Projector(ket="1", bra="1", qubit_support=0)
     cnot = kron(p0, I(1)) + kron(p1, X(1))
 
     backend = backend_factory(backend=BackendName.PYQTORCH, diff_mode=None)

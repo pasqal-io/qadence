@@ -181,12 +181,12 @@ def _controlled_block_with_params(
         AbstractBlock: redefined controlled rotation block
         dict with new parameters which are added
     """
-    from qadence.operations import I, Z
+    from qadence.operations import I, Projector
 
     # redefine controlled rotation block in a way suitable for matrix evaluation
     control = block.qubit_support[:-1]
     target = block.qubit_support[-1]
-    p1 = kron(0.5 * I(qubit) + (-0.5) * Z(qubit) for qubit in control)
+    p1 = kron(Projector(ket="1", bra="1", qubit_support=qubit) for qubit in control)
     p0 = I(control[0]) - p1
     c_block = kron(p0, I(target)) + kron(p1, block.blocks[0])
 
