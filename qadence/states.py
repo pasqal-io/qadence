@@ -9,7 +9,7 @@ from torch import Tensor, concat
 from torch.distributions import Categorical, Distribution
 
 from qadence.blocks import ChainBlock, KronBlock, PrimitiveBlock, chain, kron
-from qadence.circuit import QuantumCircuit
+from qadence.circuit import QuantumCircuit, Register
 from qadence.execution import run
 from qadence.operations import CNOT, RX, RY, RZ, H, I, X
 from qadence.overlap import fidelity
@@ -185,7 +185,7 @@ def one_state(n_qubits: int, batch_size: int = 1) -> Tensor:
 
 @singledispatch
 def product_state(
-    bitstring: str, batch_size: int = 1, endianness: Endianness = Endianness.BIG
+    bitstring: str, backend: str, batch_size: int = 1, endianness: Endianness = Endianness.BIG
 ) -> Tensor:
     """
     Creates a product state from a bitstring.
@@ -193,6 +193,7 @@ def product_state(
     Arguments:
         bitstring (str): A bitstring.
         batch_size (int) : Batch size.
+        backend (str): The backend to use.
 
     Returns:
         A torch.Tensor.
@@ -204,7 +205,9 @@ def product_state(
     print(product_state("1100"))
     ```
     """
-    return _state_from_bitstring(bitstring, batch_size, endianness=endianness)
+    # return _state_from_bitstring(bitstring, batch_size, endianness=endianness)
+    circuit = QuantumCircuit(Register(len(list(bitstring))), _block_from_bitstring(bitstring))
+    return run(circuit, backend=backend, endianness=endianness)
 
 
 @product_state.register
