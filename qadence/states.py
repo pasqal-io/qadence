@@ -2,14 +2,17 @@ from __future__ import annotations
 
 import random
 from functools import singledispatch
-from typing import List
+from typing import List, Union
 
 import torch
 from torch import Tensor, concat
 from torch.distributions import Categorical, Distribution
 
+import jax.numpy as jnp
+from jax.typing import ArrayLike
+
 from qadence.blocks import ChainBlock, KronBlock, PrimitiveBlock, chain, kron
-from qadence.circuit import QuantumCircuit, Register
+from qadence.circuit import QuantumCircuit
 from qadence.execution import run
 from qadence.operations import CNOT, RX, RY, RZ, H, I, X
 from qadence.overlap import fidelity
@@ -185,15 +188,15 @@ def one_state(n_qubits: int, batch_size: int = 1) -> Tensor:
 
 @singledispatch
 def product_state(
-    bitstring: str, backend: str, batch_size: int = 1, endianness: Endianness = Endianness.BIG
-) -> Tensor:
+    bitstring: str, backend: str = "pyqtorch", batch_size: int = 1, endianness: Endianness = Endianness.BIG
+) -> Union[Tensor, ArrayLike]:
     """
     Creates a product state from a bitstring.
 
     Arguments:
         bitstring (str): A bitstring.
         batch_size (int) : Batch size.
-        backend (str): The backend to use.
+        backend (str): The backend to use. Default is "pyqtorch".
 
     Returns:
         A torch.Tensor.
@@ -202,12 +205,15 @@ def product_state(
     ```python exec="on" source="material-block" result="json"
     from qadence.states import product_state
 
-    print(product_state("1100"))
+    print(product_state("1100", backend="pyqtorch"))
+    print(product_state("1100", backend="horqrux"))
     ```
     """
-    # return _state_from_bitstring(bitstring, batch_size, endianness=endianness)
-    circuit = QuantumCircuit(Register(len(list(bitstring))), _block_from_bitstring(bitstring))
-    return run(circuit, backend=backend, endianness=endianness)
+    _state = [run(product_block(bitstring), backend=backend, endianness=endianness) for _ in range(batch_size)]
+    if backend in ["pyqtorch", "braket"]:
+        return torch.cat(_state)
+    elif backend in ["horqrux"]:
+        return jnp.array(_state)
 
 
 @product_state.register

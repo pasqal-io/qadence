@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Callable
 
 import pytest
+import torch
 
 from qadence.execution import run
 from qadence.states import (
@@ -46,14 +47,20 @@ def test_base_states(n_qubits: int, state_generators: tuple[Callable, Callable])
 
 
 @pytest.mark.parametrize(
-    "n_qubits",
-    [2, 4, 6],
+    "n_qubits, backend",
+    [(2, "pyqtorch"), (4, "horqrux"), (6, "braket")],
 )
-def test_product_state(n_qubits: int) -> None:
+def test_product_state(n_qubits: int, backend: str) -> None:
     bitstring = rand_bitstring(n_qubits)
-    state_direct = product_state(bitstring)
+    state_direct = product_state(bitstring, backend)
     block = product_block(bitstring)
-    state_block = run(block)
+    state_block = run(block, backend=backend)
+
+    if backend is "horqrux":
+        import numpy as np
+        state_direct = torch.tensor(np.asarray(state_direct))
+        state_block = torch.tensor(np.asarray(state_block))
+
     assert is_normalized(state_direct)
     assert is_normalized(state_block)
     assert equivalent_state(state_direct, state_block)
