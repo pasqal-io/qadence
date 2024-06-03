@@ -194,7 +194,6 @@ class PyQMatrixBlock(Module):
         self._dtype = self.mat.dtype
         return self
 
-
 class PyQComposedBlock(pyq.QuantumCircuit):
     def __init__(
         self,
@@ -209,23 +208,43 @@ class PyQComposedBlock(pyq.QuantumCircuit):
         """
         super().__init__(n_qubits, ops)
         self.qubits = qubits
+        self.merged_qubits_support = [grouped_op[-1].qubit_support for grouped_op in self.grouped_operations()]
+        
 
-    def forward(self, state: Tensor, values: dict[str, Tensor] | None = None) -> Tensor:
-        batch_size = infer_batchsize(values)
-        return apply_operator(
-            state, self.unitary(values, batch_size), self.qubits, self.n_qubits, batch_size
-        )
 
-    def unitary(self, values: dict[str, Tensor] | None, batch_size: int) -> Tensor:
+    def grouped_operations(self)->list[list[Primitive]]:
+            
+            #takes a list of operations and group adjacent operations into sublist if those operations have the same control qubits
+
+           
+            
+            def _sublist_grouper(x:list[list[Primitive]],y:Primitive)->list[list[Primitive]]:
+                
+                #Appends the element y with the last sublist in the list x if they have the same qubit_domain. It appends the element y as a new sublist to x if it has different qubit_domain
+                
+                if y.qubit_support == x[-1][-1].qubit_support:
+                    x[-1].append(y)
+                    return x
+                else:
+                    x.append([y])
+                    return x
+            return list(reduce(_sublist_grouper,self.operations[1:],[[ self.operations[0] ]]  ))
+    
+
+    
+
+    def merged_unitary(self, values: dict[str, Tensor] | None, batch_size: int) -> list[Tensor]:
+
+        
         batch_first_perm = (2, 0, 1)
         undo_perm = tuple(argsort(tensor(batch_first_perm)))
-
+        
         def _expand(m: Tensor) -> Tensor:
             if len(m.size()) == 2:
                 m = m.unsqueeze(2).repeat(
                     1, 1, batch_size
                 )  # Primitive gates are 2D, so we expand them.
-            elif m.shape != (2, 2, batch_size):
+            elif tuple(m.shape) != (2, 2, batch_size)  and tuple(m.shape) != (4, 4, batch_size):
                 m = m.repeat(1, 1, batch_size)  # In case a tensor is 3D doesnt have batch_size.
             return m
 
@@ -237,14 +256,26 @@ class PyQComposedBlock(pyq.QuantumCircuit):
                 m, undo_perm
             )  # We need to undo the permute since PyQ expects (2, 2, batch_size).
 
-        # We reverse the list of tensors here since matmul is not commutative.
+    
+            
+        def _list_wise_bmm(ops:list[Primitive]):
+            
+            #Takes a list of operations and apply torch.bmm to all the unitaries of the list 
 
-        return _batch_last(
-            reduce(
-                bmm,
-                (_batch_first(_expand(op.unitary(values))) for op in reversed(self.operations)),
-            )
-        )
+            
+            return _batch_last(reduce(bmm,[_batch_first(_expand(op.unitary(values))) for op in reversed(ops)] )) # We reverse the list of tensors here since matmul is not commutative.
+        
+
+        
+        #return list(map(_list_wise_bmm,_operations_grouper(operators)))[::-1]
+        return list( map(_list_wise_bmm,reversed(self.grouped_operations())) )[::-1]
+    
+
+    
+    def  forward(self, state: Tensor, values: dict[str, Tensor] | None = None) -> Tensor:
+        batch_size = infer_batchsize(values)
+        return reduce(lambda y,x: apply_operator(y,x[0],x[1])  ,zip( self.merged_unitary(values,batch_size),self.merged_qubits_support ),state)
+
 
 
 class PyQObservable(Module):
