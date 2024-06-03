@@ -6,12 +6,12 @@ from torch import equal
 
 
 def test_PyQComposedBlock():
-
+    values = None
     ops = [CX(target=0,control=1),CX(target=1,control=0),X(0),X(2),CX(target=0,control=2),CY(target=0,control=2)]
     composed_block = PyQComposedBlock( ops = ops, qubits=[0,1,2],n_qubits=3)
 
     qubits_strings = [str(i)+str(j)+str(k) for i in range(2) for j in range(2) for k in range(2)]
-    
+
     for qubits_string in qubits_strings:
         state = product_state(qubits_string)
         
