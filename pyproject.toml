@@ -73,6 +73,7 @@ horqrux = [
     "sympy2jax"]
 protocols = ["qadence-protocols"]
 libs = ["qadence-libs"]
+dlprof = ["nvidia-pyindex", "nvidia-dlprof[pytorch]"]
 all = [
   "pulser-core==0.18.0",
   "pulser-simulation==0.18.0",
@@ -81,8 +82,6 @@ all = [
   "graphviz",
   "protocols",
   "libs",
-  "nvidia-pyindex",
-  "nvidia-dlprof[pytorch]",
   # FIXME: will be needed once we support latex labels
   # "latex2svg @ git+https://github.com/Moonbase59/latex2svg.git#egg=latex2svg",
   # "scour",
