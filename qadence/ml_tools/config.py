@@ -4,7 +4,7 @@ import datetime
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable, Optional, Union
 
 
 @dataclass
@@ -38,12 +38,7 @@ class TrainConfig:
     """
     checkpoint_best_only: bool = False
     """Write model/optimizer checkpoint only if a metric has improved."""
-    perform_val_check: bool = False
-    """Whether to use validation data for calculating metrics.
-
-    If True, dataloader must be of type DictDataLoader.
-    """
-    val_every: int = 10
+    val_every: Union[int, None] = None
     """Calculate validation metric."""
     epsilon: float = 1e-5
     """Safety margin to check if validation loss is smaller than the lowest validation loss across previous iterations."""

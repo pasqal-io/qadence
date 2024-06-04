@@ -128,9 +128,12 @@ def train(
     # initialize tensorboard
     writer = SummaryWriter(config.folder, purge_step=init_iter)
 
-    if config.perform_val_check and not isinstance(dataloader, DictDataLoader):
-        raise ValueError("If `config.perform_val_check` is True, dataloader must be an instance of `DictDataLoader`")
-    if config.perform_val_check:
+    perform_val = isinstance(config.val_every, int)
+    if perform_val and not isinstance(dataloader, DictDataLoader):
+        raise ValueError(
+            "If `config.val_every` is provided as an integer, dataloader must be an instance of `DictDataLoader`"
+        )
+    if perform_val:
         iter_keys = list(dataloader.dataloaders.keys())
         val_dataloader = dataloader.dataloaders[iter_keys[1]]
         dataloader = dataloader.dataloaders[iter_keys[0]]
@@ -149,7 +152,7 @@ def train(
     best_val_loss = math.inf
     with progress:
         dl_iter = iter(dataloader) if dataloader is not None else None
-        if config.perform_val_check:
+        if perform_val:
             dl_iter_val = iter(val_dataloader) if val_dataloader is not None else None
 
         # outer epoch loop
@@ -191,22 +194,21 @@ def train(
                 if iteration % config.write_every == 0:
                     write_tensorboard(writer, loss, metrics, iteration)
 
-                if iteration % config.val_every == 0 and config.perform_val_check:
-                    # TODO: It may be desired that the entire validation set be used
-                    # since a random batch of validation data may not be indicative.
-                    # If that's the case, the `next(dl_iter_val)` will need change.
-                    # But the change may be massive may require substantial refactoring.
-                    xs = next(dl_iter_val)
-                    xs_to_device = data_to_device(xs, device=device, dtype=data_dtype)
-                    val_loss, _ = loss_fn(model, xs_to_device)
-                    if config.validation_criterion(
-                            val_loss, best_val_loss, config.epsilon
-                    ):
-                        best_val_loss = val_loss
-                        if config.folder and config.checkpoint_best_only:
-                            write_checkpoint(config.folder, model, optimizer, iteration='best')
-                        metrics['val_loss'] = val_loss
-                        write_tensorboard(writer, math.nan, metrics, iteration)
+                if perform_val:
+                    if iteration % config.val_every == 0:
+                        # TODO: It may be desired that the entire validation set be used
+                        # since a random batch of validation data may not be indicative.
+                        # If that's the case, the `next(dl_iter_val)` will need change.
+                        # But the change may be massive may require substantial refactoring.
+                        xs = next(dl_iter_val)
+                        xs_to_device = data_to_device(xs, device=device, dtype=data_dtype)
+                        val_loss, _ = loss_fn(model, xs_to_device)
+                        if config.validation_criterion(val_loss, best_val_loss, config.epsilon):
+                            best_val_loss = val_loss
+                            if config.folder and config.checkpoint_best_only:
+                                write_checkpoint(config.folder, model, optimizer, iteration="best")
+                            metrics["val_loss"] = val_loss
+                            write_tensorboard(writer, math.nan, metrics, iteration)
 
                 if config.folder:
                     if iteration % config.checkpoint_every == 0 and not config.checkpoint_best_only:

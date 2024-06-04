@@ -203,11 +203,11 @@ def test_fit_sin_adjoint(BasicAdjointQNN: torch.nn.Module) -> None:
     assert torch.allclose(torch.sin(x_test), model(x_test), rtol=1e-1, atol=1e-1)
 
 
-def test_train_dataloader_raisesError_if_val_check_is_True_but_non_dict_dataloader(tmp_path: Path, Basic: torch.nn.Module) -> None:
+def test_train_dataloader_raisesError_if_val_check_is_True_but_non_dict_dataloader(
+    tmp_path: Path, Basic: torch.nn.Module
+) -> None:
     data = dataloader()
     model = Basic
-
-    perform_val_check = True
 
     cnt = count()
     criterion = torch.nn.MSELoss()
@@ -221,24 +221,33 @@ def test_train_dataloader_raisesError_if_val_check_is_True_but_non_dict_dataload
 
     n_epochs = 100
     checkpoint_every = 20
+
     def validation_criterion(current_validation_loss, current_best_validation_loss, epsilon):
         return current_validation_loss <= current_best_validation_loss - epsilon
+
     config = TrainConfig(
-        folder=tmp_path, max_iter=n_epochs, print_every=10, checkpoint_every=checkpoint_every, write_every=100,
-        val_every=10, checkpoint_best_only=True, validation_criterion=validation_criterion, epsilon=1e-5,
-        perform_val_check=perform_val_check
+        folder=tmp_path,
+        max_iter=n_epochs,
+        print_every=10,
+        checkpoint_every=checkpoint_every,
+        write_every=100,
+        val_every=10,
+        checkpoint_best_only=True,
+        validation_criterion=validation_criterion,
+        epsilon=1e-5,
     )
     with pytest.raises(ValueError) as exc_info:
         train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
-    assert "If `config.perform_val_check` is True, dataloader must be an instance of `DictDataLoader`" in exc_info.exconly()
+    assert (
+        "If `config.val_every` is provided as an integer, dataloader must be an instance of `DictDataLoader`"
+        in exc_info.exconly()
+    )
 
 
 def test_train_dictdataloader_checkpoint_best_only(tmp_path: Path, Basic: torch.nn.Module) -> None:
     batch_size = 25
     data = dictdataloader(batch_size=batch_size)
     model = Basic
-
-    perform_val_check = True
 
     cnt = count()
     criterion = torch.nn.MSELoss()
@@ -256,10 +265,17 @@ def test_train_dictdataloader_checkpoint_best_only(tmp_path: Path, Basic: torch.
 
     def validation_criterion(current_validation_loss, current_best_validation_loss, epsilon):
         return current_validation_loss <= current_best_validation_loss - epsilon
+
     config = TrainConfig(
-        folder=tmp_path, max_iter=n_epochs, print_every=10, checkpoint_every=checkpoint_every, write_every=100,
-        val_every=val_every, checkpoint_best_only=True, validation_criterion=validation_criterion, epsilon=1e-5,
-        perform_val_check=perform_val_check
+        folder=tmp_path,
+        max_iter=n_epochs,
+        print_every=10,
+        checkpoint_every=checkpoint_every,
+        write_every=100,
+        val_every=val_every,
+        checkpoint_best_only=True,
+        validation_criterion=validation_criterion,
+        epsilon=1e-5,
     )
     train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
     assert next(cnt) == n_epochs + n_epochs // val_every
