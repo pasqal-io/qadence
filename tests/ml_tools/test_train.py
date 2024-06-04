@@ -222,8 +222,10 @@ def test_train_dataloader_raisesError_if_val_check_is_True_but_non_dict_dataload
     n_epochs = 100
     checkpoint_every = 20
 
-    def validation_criterion(current_validation_loss, current_best_validation_loss, epsilon):
-        return current_validation_loss <= current_best_validation_loss - epsilon
+    def validation_criterion(
+        current_validation_loss: float, current_best_validation_loss: float, val_epsilon: float
+    ) -> bool:
+        return current_validation_loss <= current_best_validation_loss - val_epsilon
 
     config = TrainConfig(
         folder=tmp_path,
@@ -234,13 +236,13 @@ def test_train_dataloader_raisesError_if_val_check_is_True_but_non_dict_dataload
         val_every=10,
         checkpoint_best_only=True,
         validation_criterion=validation_criterion,
-        epsilon=1e-5,
+        val_epsilon=1e-5,
     )
     with pytest.raises(ValueError) as exc_info:
         train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
     assert (
-        "If `config.val_every` is provided as an integer, dataloader must be an instance of `DictDataLoader`"
-        in exc_info.exconly()
+        "If `config.val_every` is provided as an integer, dataloader must"
+        "be an instance of `DictDataLoader`" in exc_info.exconly()
     )
 
 
@@ -263,8 +265,10 @@ def test_train_dictdataloader_checkpoint_best_only(tmp_path: Path, Basic: torch.
     checkpoint_every = 20
     val_every = 10
 
-    def validation_criterion(current_validation_loss, current_best_validation_loss, epsilon):
-        return current_validation_loss <= current_best_validation_loss - epsilon
+    def validation_criterion(
+        current_validation_loss: float, current_best_validation_loss: float, val_epsilon: float
+    ) -> bool:
+        return current_validation_loss <= current_best_validation_loss - val_epsilon
 
     config = TrainConfig(
         folder=tmp_path,
@@ -275,7 +279,7 @@ def test_train_dictdataloader_checkpoint_best_only(tmp_path: Path, Basic: torch.
         val_every=val_every,
         checkpoint_best_only=True,
         validation_criterion=validation_criterion,
-        epsilon=1e-5,
+        val_epsilon=1e-5,
     )
     train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
     assert next(cnt) == n_epochs + n_epochs // val_every
@@ -283,4 +287,5 @@ def test_train_dictdataloader_checkpoint_best_only(tmp_path: Path, Basic: torch.
     files = [f for f in os.listdir(tmp_path) if f.endswith(".pt") and "model" in f]
     assert len(files) == 1  # Since only the best checkpoint must be stored.
 
-    # TODO: Also need to somehow check that the saved checkpoint is indeed the best? Probably too time-consuming.
+    # TODO: Also need to somehow check that the saved checkpoint is indeed the best?
+    # Probably too time-consuming.

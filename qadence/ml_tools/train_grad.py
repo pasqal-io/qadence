@@ -5,8 +5,6 @@ from logging import getLogger
 from typing import Callable, Union
 
 from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, TimeRemainingColumn
-
-import torch
 from torch import complex128, float32, float64
 from torch import device as torch_device
 from torch import dtype as torch_dtype
@@ -131,7 +129,8 @@ def train(
     perform_val = isinstance(config.val_every, int)
     if perform_val and not isinstance(dataloader, DictDataLoader):
         raise ValueError(
-            "If `config.val_every` is provided as an integer, dataloader must be an instance of `DictDataLoader`"
+            "If `config.val_every` is provided as an integer, dataloader must"
+            "be an instance of `DictDataLoader`"
         )
     if perform_val:
         iter_keys = list(dataloader.dataloaders.keys())
@@ -203,7 +202,7 @@ def train(
                         xs = next(dl_iter_val)
                         xs_to_device = data_to_device(xs, device=device, dtype=data_dtype)
                         val_loss, _ = loss_fn(model, xs_to_device)
-                        if config.validation_criterion(val_loss, best_val_loss, config.epsilon):
+                        if config.validation_criterion(val_loss, best_val_loss, config.val_epsilon):
                             best_val_loss = val_loss
                             if config.folder and config.checkpoint_best_only:
                                 write_checkpoint(config.folder, model, optimizer, iteration="best")

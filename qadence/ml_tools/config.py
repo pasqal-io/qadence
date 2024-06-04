@@ -40,8 +40,11 @@ class TrainConfig:
     """Write model/optimizer checkpoint only if a metric has improved."""
     val_every: Union[int, None] = None
     """Calculate validation metric."""
-    epsilon: float = 1e-5
-    """Safety margin to check if validation loss is smaller than the lowest validation loss across previous iterations."""
+    val_epsilon: float = 1e-5
+    """Safety margin to check if validation loss is smaller than the lowest.
+
+    validation loss across previous iterations.
+    """
     validation_criterion: Optional[Callable] = None
     """A boolean function which evaluates a given validation metric is satisfied."""
     trainstop_criterion: Optional[Callable] = None
