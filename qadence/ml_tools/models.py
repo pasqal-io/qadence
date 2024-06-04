@@ -156,8 +156,6 @@ class QNN(QuantumModel):
         ansatz_config: Any,
         obs_config: Any,
     ) -> QNN:
-        from .constructors import build_qnn_from_configs
-
         """Create a QNN from a set of configurations.
 
         Args:
@@ -204,6 +202,8 @@ class QNN(QuantumModel):
         qnn = QNN.from_configs(register, fm_config, ansatz_config, obs_config)
 
         """
+        from .constructors import build_qnn_from_configs
+
         return build_qnn_from_configs(register, fm_config, ansatz_config, obs_config)
 
     def forward(
