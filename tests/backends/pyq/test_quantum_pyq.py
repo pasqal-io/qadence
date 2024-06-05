@@ -853,7 +853,7 @@ def test_move_to_dtype(
 
 
 @pytest.mark.parametrize('ops,state',product([ [pyq.X(1),pyq.Y(1),pyq.Z(1),pyq.X(2),pyq.Y(2),pyq.Z(0)],
-                                              [pyq.CX(target=0,control=1),pyq.CX(target=1,control=0),pyq.X(0),pyq.X(2),pyq.CX(target=0,control=2),pyq.CY(target=0,control=2)]
+                                              [pyq.CNOT(target=0,control=1),pyq.CNOT(target=1,control=0),pyq.X(0),pyq.X(2),pyq.CNOT(target=0,control=2),pyq.CY(target=0,control=2)]
                                               ],
                                              [product_state(str(i)+str(j)+str(k)) for i in range(2) for j in range(2) for k in range(2)]
                                              )
