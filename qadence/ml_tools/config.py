@@ -4,7 +4,7 @@ import datetime
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Optional, Union
+from typing import Callable, Optional
 
 
 @dataclass
@@ -38,7 +38,7 @@ class TrainConfig:
     """
     checkpoint_best_only: bool = False
     """Write model/optimizer checkpoint only if a metric has improved."""
-    val_every: Union[int, None] = None
+    val_every: int | None = None
     """Calculate validation metric.
 
     If None, validation check is not performed.
