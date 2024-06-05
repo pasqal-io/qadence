@@ -130,12 +130,17 @@ def train(
     if perform_val and not isinstance(dataloader, DictDataLoader):
         raise ValueError(
             "If `config.val_every` is provided as an integer, dataloader must"
-            "be an instance of `DictDataLoader`"
+            "be an instance of `DictDataLoader`."
         )
     if perform_val:
-        iter_keys = list(dataloader.dataloaders.keys())
-        val_dataloader = dataloader.dataloaders[iter_keys[1]]
-        dataloader = dataloader.dataloaders[iter_keys[0]]
+        iter_keys = dataloader.dataloaders.keys()
+        if "train" not in iter_keys or "val" not in iter_keys:
+            raise ValueError(
+                "If `config.val_every` is provided as an integer, the dictdataloader"
+                "must have `train` and `val` keys to access the respective dataloaders."
+            )
+        val_dataloader = dataloader.dataloaders["val"]
+        dataloader = dataloader.dataloaders["train"]
 
     ## Training
     progress = Progress(
