@@ -302,13 +302,29 @@ class PyQHamiltonianEvolution(Module):
         self.param_names = config.get_param_name(block)
         self.block = block
         self.hmat: Tensor
-
-        if isinstance(block.generator, AbstractBlock) and not block.generator.is_parametric:
+        if (
+            isinstance(block.generator, AbstractBlock)
+            and not block.generator.is_parametric
+            and not block.generator._is_diag_pauli
+        ):
             hmat = block_to_tensor(
                 block.generator,
                 qubit_support=self.qubit_support,
                 use_full_support=False,
             )
+            hmat = hmat.permute(1, 2, 0)
+            self.register_buffer("hmat", hmat)
+            self._hamiltonian = lambda self, values: self.hmat
+
+        if (
+            isinstance(block.generator, AbstractBlock)
+            and not block.is_parametric
+            and block.generator._is_diag_pauli
+        ):
+            hmat = block_to_diagonal(
+                block.generator, qubit_support=self.qubit_support, use_full_support=False
+            )
+
             hmat = hmat.permute(1, 2, 0)
             self.register_buffer("hmat", hmat)
             self._hamiltonian = lambda self, values: self.hmat
