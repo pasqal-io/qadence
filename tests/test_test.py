@@ -4,6 +4,7 @@ from pyqtorch.utils import product_state
 from pyqtorch.apply import apply_operator
 from torch import equal
 from itertools import product
+from functools import reduce
 import pytest
 
 # def test_PyQComposedBlock():
@@ -33,8 +34,8 @@ import pytest
 
 def test_PyQComposedBlock(ops,state):
     values = None
-    
-    composed_block = PyQComposedBlock( ops = ops, qubits=[0,1,2],n_qubits=3)
+    qubits_list = list(set(reduce(lambda x,y: x+list(y), [op.qubit_support for op in ops] )))
+    composed_block = PyQComposedBlock( ops = ops, qubits=qubits_list,n_qubits=len(qubits_list))
     composed_state = composed_block.forward(state=state,values=values)
     state_ev=state
     for op in ops:
