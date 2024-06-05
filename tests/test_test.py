@@ -33,7 +33,7 @@ import pytest
                         )
 
 def test_PyQComposedBlock(ops,state):
-    values = None
+    values = None # test for different value of parameter values
     qubits_list = list(set(reduce(lambda x,y: x+list(y), [list(op.qubit_support) for op in ops] )))
     composed_block = PyQComposedBlock( ops = ops, qubits=qubits_list,n_qubits=len(qubits_list))
     composed_state = composed_block.forward(state=state,values=values)
@@ -41,10 +41,6 @@ def test_PyQComposedBlock(ops,state):
     for op in ops:
         state_ev = apply_operator(state_ev,op.unitary(values=values),op.qubit_support)
     
-
-   
-        
-        
     assert equal(composed_state,state_ev)
 
 
