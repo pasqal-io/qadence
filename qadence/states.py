@@ -1,15 +1,14 @@
 from __future__ import annotations
 
 import random
+import warnings
 from functools import singledispatch
-from typing import List, Union
+from typing import List
 
 import torch
+from jax.typing import ArrayLike
 from torch import Tensor, concat
 from torch.distributions import Categorical, Distribution
-
-import jax.numpy as jnp
-from jax.typing import ArrayLike
 
 from qadence.blocks import ChainBlock, KronBlock, PrimitiveBlock, chain, kron
 from qadence.circuit import QuantumCircuit
@@ -189,10 +188,10 @@ def one_state(n_qubits: int, batch_size: int = 1) -> Tensor:
 @singledispatch
 def product_state(
     bitstring: str,
-    backend: str = "pyqtorch",
     batch_size: int = 1,
     endianness: Endianness = Endianness.BIG,
-) -> Union[Tensor, ArrayLike]:
+    backend: str = "pyqtorch",
+) -> ArrayLike:
     """
     Creates a product state from a bitstring.
 
@@ -212,14 +211,14 @@ def product_state(
     print(product_state("1100", backend="horqrux"))
     ```
     """
-    _state = [
-        run(product_block(bitstring), backend=backend, endianness=endianness)
-        for _ in range(batch_size)
-    ]
-    if backend in ["pyqtorch", "braket"]:
-        return torch.cat(_state)
-    elif backend in ["horqrux"]:
-        return jnp.array(_state)
+    if batch_size:
+        warnings.warn(
+            "The input `batch_size` is going to be deprecated. "
+            "For now, default batch_size is set to 1.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+    return run(product_block(bitstring), backend=backend, endianness=endianness)
 
 
 @product_state.register
