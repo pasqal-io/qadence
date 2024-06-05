@@ -27,7 +27,7 @@ import pytest
 #         assert equal(composed_state,state_ev)
 
 
-@pytest.mark.parametrize('ops,state',product([[CX(target=0,control=1),CX(target=1,control=0),X(0),X(2),CX(target=0,control=2),CY(target=0,control=2)]],
+@pytest.mark.parametrize('ops,state',product([ [X(1),Y(1),Z(1),X(2),Y(2),Z(3)] ,[CX(target=0,control=1),CX(target=1,control=0),X(0),X(2),CX(target=0,control=2),CY(target=0,control=2)]],
                                              [product_state(str(i)+str(j)+str(k)) for i in range(2) for j in range(2) for k in range(2)]
                                              )
                         )
