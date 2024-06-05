@@ -28,6 +28,12 @@ class PulserObservable(Module):
         self.block = block
         self.n_qubits = n_qubits
 
+        if not self.block.is_parametric:
+            block_mat = block_to_tensor(self.block, {}, qubit_support=block.qubit_support).squeeze(
+                0
+            )
+            self.register_buffer("block_mat", block_mat)
+
     def forward(
         self,
         state: torch.Tensor,
@@ -35,8 +41,11 @@ class PulserObservable(Module):
         qubit_support: tuple | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> torch.Tensor:
-        # FIXME: cache this, it is very inefficient for non-parametric observables
-        block_mat = block_to_tensor(
-            self.block, values, qubit_support=qubit_support, endianness=endianness  # type: ignore [arg-type]  # noqa
-        ).squeeze(0)
+        if self.block.is_parametric:
+            block_mat = block_to_tensor(
+                self.block, values, qubit_support=qubit_support, endianness=endianness  # type: ignore [arg-type]  # noqa
+            ).squeeze(0)
+        else:
+            block_mat = self.block_mat
+
         return torch.sum(torch.matmul(state, block_mat) * state.conj(), dim=1)
