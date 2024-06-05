@@ -212,13 +212,13 @@ class PyQComposedBlock(pyq.QuantumCircuit):
         
 
 
-    def grouped_operations(self)->list[list[Primitive]]:
+    def grouped_operations(self)->list[list[Module]]:
             
             #takes a list of operations and group adjacent operations into sublist if those operations have the same control qubits
 
            
             
-            def _sublist_grouper(x:list[list[Primitive]],y:Primitive)->list[list[Primitive]]:
+            def _sublist_grouper(x:list[list[Module]],y:Module)->list[list[Module]]:
                 
                 #Appends the element y with the last sublist in the list x if they have the same qubit_domain. It appends the element y as a new sublist to x if it has different qubit_domain
                 
@@ -258,7 +258,7 @@ class PyQComposedBlock(pyq.QuantumCircuit):
 
     
             
-        def _list_wise_bmm(ops:list[Primitive]):
+        def _list_wise_bmm(ops:list[Module]):
             
             #Takes a list of operations and apply torch.bmm to all the unitaries of the list 
 
