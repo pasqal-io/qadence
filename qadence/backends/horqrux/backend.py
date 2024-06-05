@@ -204,6 +204,9 @@ class Backend(BackendInterface):
         )
         probs = jnp.abs(jnp.float_power(wf, 2.0)).ravel()
         key = jax.random.PRNGKey(0)
+        # JAX avoids implicit global random states,
+        # and instead tracks state explicitly via a random key
+        # For more details, see https://jax.readthedocs.io/en/latest/random-numbers.html
         samples = jax.vmap(
             lambda subkey: jax.random.choice(
                 key=subkey, a=jnp.arange(0, 2**circuit.abstract.n_qubits), p=probs
