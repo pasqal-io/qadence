@@ -234,7 +234,7 @@ class PyQComposedBlock(pyq.QuantumCircuit):
                 m = m.unsqueeze(2).repeat(
                     1, 1, batch_size
                 )  # Primitive gates are 2D, so we expand them.
-            elif tuple(m.shape) != (2, 2, batch_size)  and tuple(m.shape) != (4, 4, batch_size):
+            elif m.shape != (2, 2, batch_size)  and m.shape != (4, 4, batch_size):
                 m = m.repeat(1, 1, batch_size)  # In case a tensor is 3D doesnt have batch_size.
             return m
         
