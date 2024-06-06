@@ -322,7 +322,7 @@ def test_train_dictdataloader_checkpoint_best_only(tmp_path: Path, Basic: torch.
     assert next(cnt) == n_epochs + n_epochs // val_every
 
     files = [f for f in os.listdir(tmp_path) if f.endswith(".pt") and "model" in f]
+    # Ideally it can be ensured if the (only) saved checkpoint is indeed the best,
+    # but that is time-consuming since training must be run twice for comparison.
+    # The below check may be plausible enough.
     assert len(files) == 1  # Since only the best checkpoint must be stored.
-
-    # TODO: Also need to somehow check that the saved checkpoint is indeed the best?
-    # Probably too time-consuming.
