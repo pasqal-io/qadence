@@ -860,12 +860,12 @@ def test_move_to_dtype(
                         )
 
 def test_PyQComposedBlock(ops,state):
-    values = None # test for different value of parameter values
+    values = None 
     qubits_list = list(set(reduce(lambda x,y: x+list(y), [list(op.qubit_support) for op in ops] )))
     composed_block = PyQComposedBlock( ops = ops, qubits=qubits_list,n_qubits=len(qubits_list))
     composed_state = composed_block.forward(state=state,values=values)
-    state_ev=state
+    state_wo_merge=state
     for op in ops:
-        state_ev = apply_operator(state_ev,op.unitary(values=values),op.qubit_support)
+        state_wo_merge = apply_operator(state_wo_merge,op.unitary(values=values),op.qubit_support)
     
-    assert equal(composed_state,state_ev)
+    assert equal(composed_state,state_wo_merge)
