@@ -39,6 +39,7 @@ class PulserObservable(Module):
         state: torch.Tensor,
         values: dict[str, torch.Tensor] = dict(),
         qubit_support: tuple | None = None,
+        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> torch.Tensor:
         if self.block.is_parametric:
