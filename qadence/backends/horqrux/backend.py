@@ -195,28 +195,6 @@ class Backend(BackendInterface):
         if n_shots < 1:
             raise ValueError("You can only call sample with n_shots>0.")
 
-        def _sample(
-            _probs: ArrayLike, n_shots: int, endianness: Endianness, n_qubits: int
-        ) -> Counter:
-            _logits = jax.vmap(lambda _p: jnp.log(_p / (1 - _p)))(_probs)
-
-            def _smple(accumulator: ArrayLike, i: int) -> tuple[ArrayLike, None]:
-                accumulator = accumulator.at[i].set(
-                    jax.random.categorical(jax.random.PRNGKey(i), _logits)
-                )
-                return accumulator, None
-
-            samples = jax.lax.scan(
-                _smple, jnp.empty_like(jnp.arange(n_shots)), jnp.arange(n_shots)
-            )[0]
-            return Counter(
-                {
-                    int_to_basis(k=k, n_qubits=n_qubits, endianness=endianness): count.item()
-                    for k, count in enumerate(jnp.bincount(samples))
-                    if count > 0
-                }
-            )
-
         wf = self.run(
             circuit=circuit,
             param_values=param_values,
@@ -225,16 +203,26 @@ class Backend(BackendInterface):
             unhorqify_state=False,
         )
         probs = jnp.abs(jnp.float_power(wf, 2.0)).ravel()
-        samples = [
-            _sample(
-                _probs=probs,
-                n_shots=n_shots,
-                endianness=endianness,
-                n_qubits=circuit.abstract.n_qubits,
-            ),
-        ]
+        key = jax.random.PRNGKey(0)
+        # JAX handles pseudo random number generation by tracking an explicit state via a random key
+        # For more details, see https://jax.readthedocs.io/en/latest/random-numbers.html
+        samples = jax.vmap(
+            lambda subkey: jax.random.choice(
+                key=subkey, a=jnp.arange(0, 2**circuit.abstract.n_qubits), p=probs
+            )
+        )(jax.random.split(key, n_shots))
 
-        return samples
+        return [
+            Counter(
+                {
+                    int_to_basis(
+                        k=k, n_qubits=circuit.abstract.n_qubits, endianness=endianness
+                    ): count.item()
+                    for k, count in enumerate(jnp.bincount(samples))
+                    if count > 0
+                }
+            )
+        ]
 
     def assign_parameters(self, circuit: ConvertedCircuit, param_values: ParamDictType) -> Any:
         raise NotImplementedError
