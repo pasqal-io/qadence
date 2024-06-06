@@ -353,10 +353,15 @@ class Backend(BackendInterface):
                 # TODO: There should be a better check for batched density matrices.
                 if dms.size()[0] > 1:
                     res_list = [
-                        [obs.native(dm, param_values, qubit_support=support, noise=noise) for dm in dms]
+                        [
+                            obs.native(dm, param_values, qubit_support=support, noise=noise)
+                            for dm in dms
+                        ]
                         for obs in observable
                     ]
-                    res = torch.stack([torch.transpose(torch.stack(res), 0, -1) for res in res_list])
+                    res = torch.stack(
+                        [torch.transpose(torch.stack(res), 0, -1) for res in res_list]
+                    )
                 else:
                     res_list = [
                         obs.native(dms, param_values, qubit_support=support) for obs in observable

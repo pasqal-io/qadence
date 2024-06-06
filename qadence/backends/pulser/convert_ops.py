@@ -5,6 +5,7 @@ from typing import Sequence
 import torch
 from torch.nn import Module
 
+from qadence import Noise
 from qadence.blocks import (
     AbstractBlock,
 )
