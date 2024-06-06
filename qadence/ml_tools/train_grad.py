@@ -127,12 +127,12 @@ def train(
     writer = SummaryWriter(config.folder, purge_step=init_iter)
 
     perform_val = isinstance(config.val_every, int)
-    if perform_val and not isinstance(dataloader, DictDataLoader):
-        raise ValueError(
-            "If `config.val_every` is provided as an integer, dataloader must"
-            "be an instance of `DictDataLoader`."
-        )
     if perform_val:
+        if not isinstance(dataloader, DictDataLoader):
+            raise ValueError(
+                "If `config.val_every` is provided as an integer, dataloader must"
+                "be an instance of `DictDataLoader`."
+            )
         iter_keys = dataloader.dataloaders.keys()
         if "train" not in iter_keys or "val" not in iter_keys:
             raise ValueError(
@@ -200,10 +200,6 @@ def train(
 
                 if perform_val:
                     if iteration % config.val_every == 0:
-                        # TODO: It may be desired that the entire validation set be used
-                        # since a random batch of validation data may not be indicative.
-                        # If that's the case, the `next(dl_iter_val)` will need change.
-                        # But the change may be massive may require substantial refactoring.
                         xs = next(dl_iter_val)
                         xs_to_device = data_to_device(xs, device=device, dtype=data_dtype)
                         val_loss, _ = loss_fn(model, xs_to_device)
