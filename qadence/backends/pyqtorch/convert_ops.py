@@ -316,7 +316,7 @@ class PyQHamiltonianEvolution(Module):
             self.register_buffer("hmat", hmat)
             self._hamiltonian = lambda self, values: self.hmat
 
-        if (
+        elif (
             isinstance(block.generator, AbstractBlock)
             and not block.is_parametric
             and block.generator._is_diag_pauli
