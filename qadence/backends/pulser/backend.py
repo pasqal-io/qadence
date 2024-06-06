@@ -264,7 +264,10 @@ class Backend(BackendInterface):
         if isinstance(noise_probs, Iterable):
             noisy_batched_dms = []
             for noise_prob in noise_probs:
-                noisy_batched_dms.append(run_noisy_sim(noise_prob))
+                noisy_sim = run_noisy_sim(noise_prob)
+                if not param_values:
+                    noisy_sim = noisy_sim[0]
+                noisy_batched_dms.append(noisy_sim)
             noisy_batched_dms = torch.stack(noisy_batched_dms)
         else:
             noisy_batched_dms = run_noisy_sim(noise_probs)
