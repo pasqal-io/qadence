@@ -354,7 +354,7 @@ class Backend(BackendInterface):
                 if dms.size()[0] > 1:
                     res_list = [
                         [
-                            obs.native(dm, param_values, qubit_support=support, noise=noise)
+                            obs.native(dm.squeeze(), param_values, qubit_support=support, noise=noise)
                             for dm in dms
                         ]
                         for obs in observable
@@ -362,6 +362,7 @@ class Backend(BackendInterface):
                     res = torch.stack(
                         [torch.transpose(torch.stack(res), 0, -1) for res in res_list]
                     )
+
                 else:
                     res_list = [
                         obs.native(dms, param_values, qubit_support=support) for obs in observable
