@@ -228,6 +228,7 @@ class PyQComposedBlock(pyq.QuantumCircuit):
         # compute the tensor multiplication of each group of operations
         batch_first_perm = (2, 0, 1)
         undo_perm = tuple(argsort(tensor(batch_first_perm)))
+        
         def _expand(m: Tensor) -> Tensor:
             if len(m.size()) == 2:
                 m = m.unsqueeze(2).repeat(
@@ -236,12 +237,15 @@ class PyQComposedBlock(pyq.QuantumCircuit):
             elif tuple(m.shape) != (2, 2, batch_size)  and tuple(m.shape) != (4, 4, batch_size):
                 m = m.repeat(1, 1, batch_size)  # In case a tensor is 3D doesnt have batch_size.
             return m
+        
         def _batch_first(m: Tensor) -> Tensor:
             return permute(m, batch_first_perm)  # This returns shape (batch_size, 2, 2)
+        
         def _batch_last(m: Tensor) -> Tensor:
             return permute(
                 m, undo_perm
             )  # We need to undo the permute since PyQ expects (2, 2, batch_size).
+        
         def _list_wise_bmm(ops:list[Module]):
             #Takes a list of operations and apply torch.bmm to all the unitaries of the list
             return _batch_last(reduce(bmm,[_batch_first(_expand(op.unitary(values))) for op in reversed(ops)] )) # We reverse the list of tensors here since matmul is not commutative.
