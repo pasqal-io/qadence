@@ -21,3 +21,7 @@ def write_tensorboard(
 
 def log_hyperparams(writer: SummaryWriter, hyperparams: dict, metrics: dict) -> None:
     writer.add_hparams(hyperparams, metrics)
+
+
+def write_mflow():
+    pass
