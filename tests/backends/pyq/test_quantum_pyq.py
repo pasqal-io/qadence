@@ -1,9 +1,8 @@
 from __future__ import annotations
 
+import itertools
 import random
 from collections import Counter
-from functools import reduce
-from itertools import product
 from typing import Callable
 
 import numpy as np
@@ -119,7 +118,7 @@ def test_list_observables(observable: AbstractBlock, result: Tensor) -> None:
     assert torch.allclose(expval, result)
 
 
-@pytest.mark.parametrize("n_obs, loop_expectation", product([1, 2, 3], [True, False]))
+@pytest.mark.parametrize("n_obs, loop_expectation", itertools.product([1, 2, 3], [True, False]))
 def test_list_observables_with_batches(n_obs: int, loop_expectation: bool) -> None:
     n_qubits = 4
     x = FeatureParameter("x")
@@ -854,7 +853,7 @@ def test_move_to_dtype(
 
 @pytest.mark.parametrize(
     "ops,state",
-    product(
+    itertools.product(
         [
             [pyq.X(1), pyq.Y(1), pyq.Z(1), pyq.X(2), pyq.Y(2), pyq.Z(0)],
             [
@@ -876,9 +875,8 @@ def test_move_to_dtype(
 )
 def test_PyQComposedBlock(ops: list[Module], state: Tensor) -> None:
     values = None
-    qubits_list = tuple(
-        set(reduce(lambda x, y: x + list(y), [list(op.qubit_support) for op in ops]))
-    )
+    qubits_list = tuple(set(itertools.chain(*[op.qubit_support for op in ops])))
+
     composed_block = PyQComposedBlock(ops=ops, qubits=qubits_list, n_qubits=len(qubits_list))
     composed_state = composed_block.forward(state=state, values=values)
     state_wo_merge = state
