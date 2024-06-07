@@ -4,7 +4,7 @@ from functools import reduce
 from itertools import chain as flatten
 from math import prod
 from operator import add
-from typing import Any, Sequence, Tuple
+from typing import Any, Iterable, Sequence, Tuple
 
 import pyqtorch as pyq
 import sympy
@@ -215,10 +215,13 @@ class PyQComposedBlock(pyq.QuantumCircuit):
         ]
 
     def grouped_operations(self) -> list[list[Module]]:
-        # takes a list of operations and group adjacent operations into sublist if those operations have the same control qubits
-        def _sublist_grouper(x: list[list[Module]], y: Module) -> list[list[Module]]:
-            # Appends the element y with the last sublist in the list x if they have the same qubit_support.
+        # takes a list of operations and group adjacent operations into sublist
+        # if those operations have the same control qubits
+        def _sublist_grouper(x: Iterable[list[Module]], y: Module) -> list[list[Module]]:
+            # Appends the element y with the last sublist in the list x
+            # if they have the same qubit_support.
             # Appends the element y as a new sublist to x if it has different qubit_domain
+            x = list(x)
             if y.qubit_support == x[-1][-1].qubit_support:
                 x[-1].append(y)
                 return x
@@ -226,7 +229,7 @@ class PyQComposedBlock(pyq.QuantumCircuit):
                 x.append([y])
                 return x
 
-        return list(reduce(_sublist_grouper, self.operations[1:], [[self.operations[0]]]))
+        return list(reduce(_sublist_grouper, iter(self.operations[1:]), [[self.operations[0]]]))
 
     def merged_unitary(self, values: dict[str, Tensor] | None, batch_size: int) -> list[Tensor]:
         # compute the tensor multiplication of each group of operations
@@ -250,7 +253,7 @@ class PyQComposedBlock(pyq.QuantumCircuit):
                 m, undo_perm
             )  # We need to undo the permute since PyQ expects (2, 2, batch_size).
 
-        def _list_wise_bmm(ops: list[Module])-> list[Tensor]:
+        def _list_wise_bmm(ops: list[Module]) -> Tensor:
             # Takes a list of operations and apply torch.bmm to all the unitaries of the list
             return _batch_last(
                 reduce(bmm, [_batch_first(_expand(op.unitary(values))) for op in reversed(ops)])

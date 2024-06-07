@@ -19,6 +19,7 @@ from pyqtorch.circuit import QuantumCircuit as PyQQuantumCircuit
 from pyqtorch.utils import product_state
 from sympy import acos
 from torch import Tensor, equal
+from torch.nn import Module
 
 from qadence.backends import backend_factory
 from qadence.backends.pyqtorch.backend import Backend
@@ -873,9 +874,9 @@ def test_move_to_dtype(
         ],
     ),
 )
-def test_PyQComposedBlock(ops, state)-> None:
+def test_PyQComposedBlock(ops: list[Module], state: Tensor) -> None:
     values = None
-    qubits_list = list(
+    qubits_list = tuple(
         set(reduce(lambda x, y: x + list(y), [list(op.qubit_support) for op in ops]))
     )
     composed_block = PyQComposedBlock(ops=ops, qubits=qubits_list, n_qubits=len(qubits_list))
