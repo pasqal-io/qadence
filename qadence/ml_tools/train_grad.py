@@ -203,7 +203,7 @@ def train(
                         xs = next(dl_iter_val)
                         xs_to_device = data_to_device(xs, device=device, dtype=data_dtype)
                         val_loss, _ = loss_fn(model, xs_to_device)
-                        if config.validation_criterion(val_loss, best_val_loss, config.val_epsilon):
+                        if config.validation_criterion(val_loss, best_val_loss, config.val_epsilon):  # type: ignore[misc]
                             best_val_loss = val_loss
                             if config.folder and config.checkpoint_best_only:
                                 write_checkpoint(config.folder, model, optimizer, iteration="best")
