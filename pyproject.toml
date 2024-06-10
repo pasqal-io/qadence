@@ -75,8 +75,8 @@ protocols = ["qadence-protocols"]
 libs = ["qadence-libs"]
 dlprof = ["nvidia-pyindex", "nvidia-dlprof[pytorch]"]
 all = [
-  "pulser-core==0.18.0",
-  "pulser-simulation==0.18.0",
+  "pulser-core==0.18.1",
+  "pulser-simulation==0.18.1",
   "pasqal-cloud==0.8.1",
   "amazon-braket-sdk<1.71.2",
   "graphviz",
