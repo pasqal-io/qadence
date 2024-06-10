@@ -2,8 +2,11 @@ from __future__ import annotations
 
 from typing import Callable
 
+import numpy as np
 import pytest
+from torch import Tensor
 
+from qadence.backends.jax_utils import jarr_to_tensor
 from qadence.execution import run
 from qadence.states import (
     equivalent_state,
@@ -46,14 +49,20 @@ def test_base_states(n_qubits: int, state_generators: tuple[Callable, Callable])
 
 
 @pytest.mark.parametrize(
-    "n_qubits",
-    [2, 4, 6],
+    "n_qubits, backend",
+    [(2, "pyqtorch"), (4, "horqrux"), (6, "braket")],
 )
-def test_product_state(n_qubits: int) -> None:
+def test_product_state(n_qubits: int, backend: str) -> None:
     bitstring = rand_bitstring(n_qubits)
-    state_direct = product_state(bitstring)
+    state_direct = product_state(bitstring, backend=backend)
     block = product_block(bitstring)
-    state_block = run(block)
+    state_block = run(block, backend=backend)
+
+    if not isinstance(state_direct, Tensor):
+        state_direct = jarr_to_tensor(np.asarray([state_direct]))
+    if not isinstance(state_block, Tensor):
+        state_block = jarr_to_tensor(np.asarray([state_block]))
+
     assert is_normalized(state_direct)
     assert is_normalized(state_block)
     assert equivalent_state(state_direct, state_block)
