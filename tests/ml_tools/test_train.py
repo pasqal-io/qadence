@@ -40,7 +40,9 @@ def validation_criterion(
     return current_validation_loss <= current_best_validation_loss - val_epsilon
 
 
-def get_train_config_validation(tmp_path, n_epochs, checkpoint_every, val_every):
+def get_train_config_validation(
+    tmp_path: Path, n_epochs: int, checkpoint_every: int, val_every: int
+) -> TrainConfig:
     config = TrainConfig(
         folder=tmp_path,
         max_iter=n_epochs,
@@ -253,9 +255,7 @@ def test_train_dataloader_val_check_and_non_dict_dataloader(
     )
 
 
-def test_train_dataloader_val_check_incorrect_keys(
-    tmp_path: Path, Basic: torch.nn.Module
-) -> None:
+def test_train_dataloader_val_check_incorrect_keys(tmp_path: Path, Basic: torch.nn.Module) -> None:
     batch_size = 25
     data = dictdataloader(batch_size=batch_size, val=False)  # Passing val=False to raise an error.
     model = Basic
