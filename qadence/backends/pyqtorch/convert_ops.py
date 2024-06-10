@@ -128,7 +128,10 @@ def convert_block(
         if isinstance(block, ParametricBlock):
             op = pyq_cls(qubit_support[:-1], qubit_support[-1], config.get_param_name(block)[0])
         else:
-            op = pyq_cls(qubit_support[:-1], qubit_support[-1])
+            if "CSWAP" in block_name:
+                op = pyq_cls(qubit_support[:-2], qubit_support[-2:])
+            else:
+                op = pyq_cls(qubit_support[:-1], qubit_support[-1])
         return [op]
     else:
         raise NotImplementedError(
