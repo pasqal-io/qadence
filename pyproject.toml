@@ -55,7 +55,7 @@ allow-direct-references = true
 allow-ambiguous-features = true
 
 [project.optional-dependencies]
-pulser = ["pulser-core==0.18.0", "pulser-simulation==0.18.0","pasqal-cloud==0.8.1"]
+pulser = ["pulser-core==0.18.1", "pulser-simulation==0.18.1","pasqal-cloud==0.8.1"]
 braket = ["amazon-braket-sdk<1.71.2"]
 visualization = [
   "graphviz",
@@ -75,16 +75,11 @@ protocols = ["qadence-protocols"]
 libs = ["qadence-libs"]
 dlprof = ["nvidia-pyindex", "nvidia-dlprof[pytorch]"]
 all = [
-  "pulser-core==0.18.1",
-  "pulser-simulation==0.18.1",
-  "pasqal-cloud==0.8.1",
-  "amazon-braket-sdk<1.71.2",
-  "graphviz",
+  "pulser",
+  "braket",
+  "visualization",
   "protocols",
   "libs",
-  # FIXME: will be needed once we support latex labels
-  # "latex2svg @ git+https://github.com/Moonbase59/latex2svg.git#egg=latex2svg",
-  # "scour",
 ]
 
 [tool.hatch.envs.default]
