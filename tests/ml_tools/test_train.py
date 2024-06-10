@@ -40,6 +40,21 @@ def validation_criterion(
     return current_validation_loss <= current_best_validation_loss - val_epsilon
 
 
+def get_train_config_validation(tmp_path, n_epochs, checkpoint_every, val_every):
+    config = TrainConfig(
+        folder=tmp_path,
+        max_iter=n_epochs,
+        print_every=10,
+        checkpoint_every=checkpoint_every,
+        write_every=100,
+        val_every=val_every,
+        checkpoint_best_only=True,
+        validation_criterion=validation_criterion,
+        val_epsilon=1e-5,
+    )
+    return config
+
+
 def FMdictdataloader(param_name: str = "phi", n_qubits: int = 2) -> DictDataLoader:
     batch_size = 1
     x = torch.rand(batch_size, 1)
@@ -209,7 +224,7 @@ def test_fit_sin_adjoint(BasicAdjointQNN: torch.nn.Module) -> None:
     assert torch.allclose(torch.sin(x_test), model(x_test), rtol=1e-1, atol=1e-1)
 
 
-def test_train_dataloader_raisesError_if_val_check_is_True_but_non_dict_dataloader(
+def test_train_dataloader_val_check_and_non_dict_dataloader(
     tmp_path: Path, Basic: torch.nn.Module
 ) -> None:
     data = dataloader()
@@ -227,18 +242,9 @@ def test_train_dataloader_raisesError_if_val_check_is_True_but_non_dict_dataload
 
     n_epochs = 100
     checkpoint_every = 20
+    val_every = 10
 
-    config = TrainConfig(
-        folder=tmp_path,
-        max_iter=n_epochs,
-        print_every=10,
-        checkpoint_every=checkpoint_every,
-        write_every=100,
-        val_every=10,
-        checkpoint_best_only=True,
-        validation_criterion=validation_criterion,
-        val_epsilon=1e-5,
-    )
+    config = get_train_config_validation(tmp_path, n_epochs, checkpoint_every, val_every)
     with pytest.raises(ValueError) as exc_info:
         train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
     assert (
@@ -247,7 +253,7 @@ def test_train_dataloader_raisesError_if_val_check_is_True_but_non_dict_dataload
     )
 
 
-def test_train_dataloader_raisesError_if_val_check_is_True_but_dict_dataloader_incorrect_keys(
+def test_train_dataloader_val_check_incorrect_keys(
     tmp_path: Path, Basic: torch.nn.Module
 ) -> None:
     batch_size = 25
@@ -268,17 +274,7 @@ def test_train_dataloader_raisesError_if_val_check_is_True_but_dict_dataloader_i
     checkpoint_every = 20
     val_every = 10
 
-    config = TrainConfig(
-        folder=tmp_path,
-        max_iter=n_epochs,
-        print_every=10,
-        checkpoint_every=checkpoint_every,
-        write_every=100,
-        val_every=val_every,
-        checkpoint_best_only=True,
-        validation_criterion=validation_criterion,
-        val_epsilon=1e-5,
-    )
+    config = get_train_config_validation(tmp_path, n_epochs, checkpoint_every, val_every)
     with pytest.raises(ValueError) as exc_info:
         train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
     assert (
@@ -307,17 +303,7 @@ def test_train_dictdataloader_checkpoint_best_only(tmp_path: Path, Basic: torch.
     checkpoint_every = 20
     val_every = 10
 
-    config = TrainConfig(
-        folder=tmp_path,
-        max_iter=n_epochs,
-        print_every=10,
-        checkpoint_every=checkpoint_every,
-        write_every=100,
-        val_every=val_every,
-        checkpoint_best_only=True,
-        validation_criterion=validation_criterion,
-        val_epsilon=1e-5,
-    )
+    config = get_train_config_validation(tmp_path, n_epochs, checkpoint_every, val_every)
     train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
     assert next(cnt) == n_epochs + n_epochs // val_every
 
