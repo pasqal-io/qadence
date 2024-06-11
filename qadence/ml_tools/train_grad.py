@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 from logging import getLogger
 from typing import Callable, Union
 
@@ -15,8 +16,9 @@ from torch.utils.tensorboard import SummaryWriter
 from qadence.ml_tools.config import TrainConfig
 from qadence.ml_tools.data import DictDataLoader
 from qadence.ml_tools.optimize_step import optimize_step
-from qadence.ml_tools.printing import print_metrics, write_tensorboard
+from qadence.ml_tools.printing import print_metrics, write_tracker
 from qadence.ml_tools.saveload import load_checkpoint, write_checkpoint
+from qadence.types import ExperimentTrackingTool
 
 logger = getLogger(__name__)
 
@@ -29,7 +31,7 @@ def train(
     loss_fn: Callable,
     device: torch_device = None,
     optimize_step: Callable = optimize_step,
-    write_tensorboard: Callable = write_tensorboard,
+    write_tensorboard: Callable = write_tracker,
     dtype: torch_dtype = None,
 ) -> tuple[Module, Optimizer]:
     """Runs the training loop with gradient-based optimizer.
@@ -122,9 +124,16 @@ def train(
         model = model.module.to(device=device, dtype=dtype)
     else:
         model = model.to(device=device, dtype=dtype)
-    # initialize tensorboard
-    writer = SummaryWriter(config.folder, purge_step=init_iter)
-
+    # initialize tracking tool
+    if config.tracking_tool == ExperimentTrackingTool.TENSORBOARD:
+        writer = SummaryWriter(config.folder, purge_step=init_iter)
+    else:
+        writer = importlib.import_module("mflow")
+        with writer.run:
+            pass
+        writer.mlflow.pytorch.autolog(
+            log_every_n_step=config.write_every, log_models=False, log_datasets=False
+        )
     ## Training
     progress = Progress(
         TextColumn("[progress.description]{task.description}"),
@@ -175,7 +184,7 @@ def train(
                     print_metrics(loss, metrics, iteration)
 
                 if iteration % config.write_every == 0:
-                    write_tensorboard(writer, loss, metrics, iteration)
+                    write_tracker(writer, loss, metrics, iteration)
 
                 if config.folder:
                     if iteration % config.checkpoint_every == 0:
@@ -188,7 +197,7 @@ def train(
     # Final writing and checkpointing
     if config.folder:
         write_checkpoint(config.folder, model, optimizer, iteration)
-    write_tensorboard(writer, loss, metrics, iteration)
+    write_tracker(writer, loss, metrics, iteration)
     writer.close()
 
     return model, optimizer

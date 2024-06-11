@@ -74,6 +74,7 @@ horqrux = [
 protocols = ["qadence-protocols"]
 libs = ["qadence-libs"]
 dlprof = ["nvidia-pyindex", "nvidia-dlprof[pytorch]"]
+mlflow = ["mlflow"]
 all = [
   "pulser-core==0.18.0",
   "pulser-simulation==0.18.0",

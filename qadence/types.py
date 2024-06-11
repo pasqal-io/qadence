@@ -401,3 +401,10 @@ class ReadOutOptimization(StrEnum):
 
 ParamDictType = dict[str, ArrayLike]
 DifferentiableExpression = Callable[..., ArrayLike]
+
+
+class ExperimentTrackingTool(StrEnum):
+    TENSORBOARD = "tensorboard"
+    """Use the tensorboard experiment tracker."""
+    MLFLOW = "mlflow"
+    """Use the ml-flow experiment tracker."""

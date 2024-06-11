@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Optional
 
+from qadence.types import ExperimentTrackingTool
+
 
 @dataclass
 class TrainConfig:
@@ -46,6 +48,7 @@ class TrainConfig:
     """The batch_size to use when passing a list/tuple of torch.Tensors."""
     verbose: bool = True
     """Whether or not to print out metrics values during training."""
+    tracking_tool: ExperimentTrackingTool = ExperimentTrackingTool.TENSORBOARD
 
     def __post_init__(self) -> None:
         if self.folder:
