@@ -293,7 +293,7 @@ def test_compare_run_to_sample(backend: BackendName, circuit: QuantumCircuit) ->
     probs = list(torch.abs(torch.pow(wf, 2)).flatten().detach().numpy())
     bitstrngs = nqubits_to_basis(circuit.n_qubits)
     wf_counter = Counter(
-        {bitstring: prob for (bitstring, prob) in zip(bitstrngs, probs) if prob > 0.0}
+        {bitstring: int(prob) for (bitstring, prob) in zip(bitstrngs, probs) if prob > 0.0}
     )
     assert js_divergence(samples[0], wf_counter) < JS_ACCEPTANCE + ATOL_DICT[backend]
 
