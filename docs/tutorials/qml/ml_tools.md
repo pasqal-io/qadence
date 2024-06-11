@@ -94,6 +94,15 @@ config = TrainConfig(
 )
 ```
 
+If it is desired to only the save the "best" checkpoint, the following must be ensured:
+
+(a) `checkpoint_best_only = True` is used while creating the configuration through `TrainConfig`,
+(b) `val_every` is set to a valid integer value (for example, `val_every = 10`) which controls the no. of iterations after which the validation data should be used to evaluate the model during training, which can also be set through `TrainConfig`,
+(c) a validation criterion is provided through the `validation_criterion`, set through `TrainConfig` to quantify the definition of "best", and
+(d) the dataloader passed to `train_grad` is of type `DictDataLoader`. In this case, it is expected that a validation dataloader is also provided along with the train dataloader since the validation data will be used to decide the "best" checkpoint. The dataloaders must be accessible with specific keys: "train" and "val".
+
+The criterion used to decide the "best" checkpoint can be customized by `validation_criterion`, which should be a function that can take any number of arguments and return a boolean value (True or False) indicating whether some validation metric is satisfied or not. Typical choices are to return True when the validation loss (accuracy) has decreased (increased) compared to smallest (largest) value from previous iterations at which a validation check was performed.
+
 Let's see it in action with a simple example.
 
 ### Fitting a funtion with a QNN using `ml_tools`
@@ -101,7 +110,7 @@ Let's see it in action with a simple example.
 In Quantum Machine Learning, the general consensus is to use `complex128` precision for states and operators and `float64` precision for parameters. This is also the convention which is used in `qadence`.
 However, for specific usecases, lower precision can greatly speed up training and reduce memory consumption. When using the `pyqtorch` backend, `qadence` offers the option to move a `QuantumModel` instance to a specific precision using the torch `to` syntax.
 
-Let's look at a complete example of how to use `train_with_grad` now.
+Let's look at a complete example of how to use `train_with_grad` now. Here we perform a validation check during training and use a validation criterion that checks whether the validation loss in the current iteration has decreased compared to the lowest validation loss from all previous iterations. For demonstration, the train and the validation data are kept the same here. However, it is beneficial and encouraged to keep them distinct in practice to understand model's generalization capabilities.
 
 ```python exec="on" source="material-block" html="1"
 from pathlib import Path
@@ -114,7 +123,7 @@ import matplotlib.pyplot as plt
 from qadence import Parameter, QuantumCircuit, Z
 from qadence import hamiltonian_factory, hea, feature_map, chain
 from qadence.models import QNN
-from qadence.ml_tools import  TrainConfig, train_with_grad, to_dataloader
+from qadence.ml_tools import  TrainConfig, train_with_grad, to_dataloader, DictDataLoader
 
 DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 DTYPE = torch.complex64
@@ -140,18 +149,31 @@ def loss_fn(model: torch.nn.Module, data: torch.Tensor) -> tuple[torch.Tensor, d
     loss = criterion(out, y)
     return loss, {}
 
+def validation_criterion(
+    current_validation_loss: float, current_best_validation_loss: float, val_epsilon: float
+) -> bool:
+    return current_validation_loss <= current_best_validation_loss - val_epsilon
+
 n_epochs = 300
 
 config = TrainConfig(
     max_iter=n_epochs,
     batch_size=batch_size,
+    checkpoint_best_only=True,
+    val_every=10,  # The model will be run on the validation data after every `val_every` epochs.
+    validation_criterion=validation_criterion
 )
 
 fn = lambda x, degree: .05 * reduce(add, (torch.cos(i*x) + torch.sin(i*x) for i in range(degree)), 0.)
 x = torch.linspace(0, 10, batch_size, dtype=torch.float32).reshape(-1, 1)
 y = fn(x, 5)
 
-data = to_dataloader(x, y, batch_size=batch_size, infinite=True)
+data = DictDataLoader(
+    {
+        "train": to_dataloader(x, y, batch_size=batch_size, infinite=True),
+        "val": to_dataloader(x, y, batch_size=batch_size, infinite=True),
+    }
+)
 
 train_with_grad(model, data, optimizer, config, loss_fn=loss_fn,device=DEVICE, dtype=DTYPE)
 
@@ -174,7 +196,7 @@ from itertools import count
 from qadence.constructors import hamiltonian_factory, hea, feature_map
 from qadence import chain, Parameter, QuantumCircuit, Z
 from qadence.models import QNN
-from qadence.ml_tools import train_with_grad, TrainConfig
+from qadence.ml_tools import TrainConfig
 
 n_qubits = 2
 fm = feature_map(n_qubits)
