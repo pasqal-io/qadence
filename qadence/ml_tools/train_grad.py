@@ -18,6 +18,7 @@ from qadence.ml_tools.data import DictDataLoader
 from qadence.ml_tools.optimize_step import optimize_step
 from qadence.ml_tools.printing import print_metrics, write_tracker
 from qadence.ml_tools.saveload import load_checkpoint, write_checkpoint
+from qadence.ml_tools.utils import MLFlowConfig
 from qadence.types import ExperimentTrackingTool
 
 logger = getLogger(__name__)
@@ -31,7 +32,7 @@ def train(
     loss_fn: Callable,
     device: torch_device = None,
     optimize_step: Callable = optimize_step,
-    write_tensorboard: Callable = write_tracker,
+    write_tracker: Callable = write_tracker,
     dtype: torch_dtype = None,
 ) -> tuple[Module, Optimizer]:
     """Runs the training loop with gradient-based optimizer.
@@ -128,12 +129,13 @@ def train(
     if config.tracking_tool == ExperimentTrackingTool.TENSORBOARD:
         writer = SummaryWriter(config.folder, purge_step=init_iter)
     else:
+        mlflowconfig = MLFlowConfig()  # Set up credentials for mlflow tracking
         writer = importlib.import_module("mflow")
-        with writer.run:
-            pass
-        writer.mlflow.pytorch.autolog(
-            log_every_n_step=config.write_every, log_models=False, log_datasets=False
-        )
+        writer.set_experiment(mlflowconfig.EXPERIMENT)
+
+        # writer.mlflow.pytorch.autolog(
+        #     log_every_n_step=config.write_every, log_models=False, log_datasets=False
+        # )
     ## Training
     progress = Progress(
         TextColumn("[progress.description]{task.description}"),

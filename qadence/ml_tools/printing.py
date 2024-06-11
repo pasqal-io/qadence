@@ -29,8 +29,8 @@ def log_hyperparams(writer: SummaryWriter, hyperparams: dict, metrics: dict) -> 
 
 def write_mflow(writer: Any, loss: float | None, metrics: dict, iteration: int) -> None:
     # TODO for giorgio
-    # if we use the pytorch.autolog, we can just open a context
-    pass
+    writer.log_params({"loss": loss}, {"iteration": iteration})
+    writer.log_params(metrics)
 
 
 TRACKER_MAPPING = {
