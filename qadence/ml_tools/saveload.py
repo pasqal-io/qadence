@@ -53,7 +53,7 @@ def load_checkpoint(
 
 
 def write_checkpoint(
-    folder: Path, model: Module, optimizer: Optimizer | NGOptimizer, iteration: int
+    folder: Path, model: Module, optimizer: Optimizer | NGOptimizer, iteration: int | str
 ) -> None:
     from qadence.ml_tools.models import TransformedModule
     from qadence.models import QNN, QuantumModel
@@ -64,11 +64,19 @@ def write_checkpoint(
         device = str(model.device).split(":")[0]  # in case of using several CUDA devices
     except Exception:
         pass
+
+    iteration_substring = f"{iteration:03n}" if isinstance(iteration, int) else iteration
     model_checkpoint_name: str = (
-        f"model_{type(model).__name__}_ckpt_" + f"{iteration:03n}" + f"_device_{device}" + ".pt"
+        f"model_{type(model).__name__}_ckpt_"
+        + f"{iteration_substring}"
+        + f"_device_{device}"
+        + ".pt"
     )
     opt_checkpoint_name: str = (
-        f"opt_{type(optimizer).__name__}_ckpt_" + f"{iteration:03n}" + f"_device_{device}" + ".pt"
+        f"opt_{type(optimizer).__name__}_ckpt_"
+        + f"{iteration_substring}"
+        + f"_device_{device}"
+        + ".pt"
     )
     try:
         d = (

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from logging import getLogger
 from typing import Callable, Union
 
@@ -13,7 +14,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 from qadence.ml_tools.config import TrainConfig
-from qadence.ml_tools.data import DictDataLoader
+from qadence.ml_tools.data import DictDataLoader, data_to_device
 from qadence.ml_tools.optimize_step import optimize_step
 from qadence.ml_tools.printing import print_metrics, write_tensorboard
 from qadence.ml_tools.saveload import load_checkpoint, write_checkpoint
@@ -125,6 +126,22 @@ def train(
     # initialize tensorboard
     writer = SummaryWriter(config.folder, purge_step=init_iter)
 
+    perform_val = isinstance(config.val_every, int)
+    if perform_val:
+        if not isinstance(dataloader, DictDataLoader):
+            raise ValueError(
+                "If `config.val_every` is provided as an integer, dataloader must"
+                "be an instance of `DictDataLoader`."
+            )
+        iter_keys = dataloader.dataloaders.keys()
+        if "train" not in iter_keys or "val" not in iter_keys:
+            raise ValueError(
+                "If `config.val_every` is provided as an integer, the dictdataloader"
+                "must have `train` and `val` keys to access the respective dataloaders."
+            )
+        val_dataloader = dataloader.dataloaders["val"]
+        dataloader = dataloader.dataloaders["train"]
+
     ## Training
     progress = Progress(
         TextColumn("[progress.description]{task.description}"),
@@ -135,8 +152,12 @@ def train(
     data_dtype = None
     if dtype:
         data_dtype = float64 if dtype == complex128 else float32
+
+    best_val_loss = math.inf
     with progress:
         dl_iter = iter(dataloader) if dataloader is not None else None
+        if perform_val:
+            dl_iter_val = iter(val_dataloader) if val_dataloader is not None else None
 
         # outer epoch loop
         for iteration in progress.track(range(init_iter, init_iter + config.max_iter)):
@@ -177,8 +198,20 @@ def train(
                 if iteration % config.write_every == 0:
                     write_tensorboard(writer, loss, metrics, iteration)
 
+                if perform_val:
+                    if iteration % config.val_every == 0:
+                        xs = next(dl_iter_val)
+                        xs_to_device = data_to_device(xs, device=device, dtype=data_dtype)
+                        val_loss, _ = loss_fn(model, xs_to_device)
+                        if config.validation_criterion(val_loss, best_val_loss, config.val_epsilon):  # type: ignore[misc]
+                            best_val_loss = val_loss
+                            if config.folder and config.checkpoint_best_only:
+                                write_checkpoint(config.folder, model, optimizer, iteration="best")
+                            metrics["val_loss"] = val_loss
+                            write_tensorboard(writer, math.nan, metrics, iteration)
+
                 if config.folder:
-                    if iteration % config.checkpoint_every == 0:
+                    if iteration % config.checkpoint_every == 0 and not config.checkpoint_best_only:
                         write_checkpoint(config.folder, model, optimizer, iteration)
 
             except KeyboardInterrupt:
@@ -186,7 +219,7 @@ def train(
                 break
 
     # Final writing and checkpointing
-    if config.folder:
+    if config.folder and not config.checkpoint_best_only:
         write_checkpoint(config.folder, model, optimizer, iteration)
     write_tensorboard(writer, loss, metrics, iteration)
     writer.close()
