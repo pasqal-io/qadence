@@ -7,6 +7,7 @@ from typing import Any, Sequence, Tuple
 import pyqtorch as pyq
 import sympy
 import torch
+from pasqal_solvers.sesolve import sesolve
 
 # from pulser_diff.dq.sesolve import sesolve as sesolve_dq  # import dynamiqs solver
 # from pulser_diff.dq.time_tensor import CallableTimeTensor
@@ -28,7 +29,6 @@ from torch import device as torch_device
 from torch import dtype as torch_dtype
 from torch.nn import Module
 
-from qadence.backends.pyqtorch.sesolve import sesolve_krylov
 from qadence.backends.utils import (
     finitediff,
 )
@@ -186,6 +186,7 @@ class PyQHamiltonianEvolution(Module):
         self.param_names = config.get_param_name(block)
         self.block = block
         self.hmat: Tensor
+        self.config = config
 
         if isinstance(block.generator, AbstractBlock) and not block.generator.is_parametric:
             hmat = block_to_tensor(
@@ -315,23 +316,22 @@ class PyQHamiltonianEvolution(Module):
                     t_symb = sympy.Symbol("t")
                     free_symbols = expr.free_symbols
                     if t_symb in free_symbols:
-                        # expression has time dependence
-                        if len(free_symbols) == 2:
-                            # expression has a single additional feature parameter
-                            feat_symb = free_symbols.difference(set([t_symb])).pop()
-                            feat_val = sympy.nsolve(
-                                expr.subs(t_symb, 1.0) - float(val), feat_symb, 1.0
-                            )
-                            new_vals[str_expr] = torch.tensor(
-                                float(expr.subs([(t_symb, t), (feat_symb, feat_val)]))
-                            )
-                        elif len(free_symbols) == 1:
-                            # expression contains only time parameters
-                            new_vals[str_expr] = torch.tensor(float(expr.subs(t_symb, t)))
-                        else:
-                            raise ValueError(
-                                "Time-dependent generator supports only a single feature parameter."
-                            )
+                        # create substitution list for time and feature params
+                        subs_list = [(t_symb, t)]
+
+                        if len(free_symbols) > 1:
+                            # get feature param symbols
+                            feat_symbols = free_symbols.difference(set([t_symb]))
+
+                            # get feature param values
+                            feat_vals = values["orig_param_values"]
+
+                            # update substitution list with feature param values
+                            for fs in feat_symbols:
+                                subs_list.append((fs, feat_vals[str(fs)]))
+
+                        # evaluate expression with new time param value
+                        new_vals[str_expr] = torch.tensor(float(expr.subs(subs_list)))
                     else:
                         # expression doesn't contain time parameter - copy it as is
                         new_vals[str_expr] = val
@@ -347,20 +347,10 @@ class PyQHamiltonianEvolution(Module):
 
                 return hmat
 
-            tsave = torch.linspace(0, self.block.duration, self.block.duration + 1) / 1000.0  # type: ignore [attr-defined]
-            result = pyqify(sesolve_krylov(Ht, unpyqify(state).T, tsave)[-1].T)
-
-            # TODO: decide how to select solver type
-            # result = pyqify(
-            #     sesolve_dq(
-            #         CallableTimeTensor(Ht, Ht(0.0)),
-            #         unpyqify(state).T,
-            #         tsave,
-            #         options={"verbose": False},
-            #     )
-            #     .states[-1]
-            #     .T
-            # )
+            tsave = torch.linspace(0, self.block.duration, self.config.n_steps_hevo)  # type: ignore [attr-defined]
+            result = pyqify(
+                sesolve(Ht, unpyqify(state).T[:, 0:1], tsave, self.config.ode_solver).states[-1].T
+            )
         else:
             result = apply_operator(
                 state,

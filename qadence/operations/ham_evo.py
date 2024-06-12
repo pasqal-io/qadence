@@ -67,7 +67,7 @@ class HamEvo(TimeEvolutionBlock):
         generator: Union[TGenerator, AbstractBlock],
         parameter: TParameter,
         qubit_support: tuple[int, ...] = None,
-        duration: int | None = None,
+        duration: float | None = None,
     ):
         gen_exprs = {}
         if qubit_support is None and not isinstance(generator, AbstractBlock):

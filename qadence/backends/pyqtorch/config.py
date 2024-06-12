@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from logging import getLogger
 from typing import Callable
 
+from pasqal_solvers.utils import SolverType
+
 from qadence.analog import add_background_hamiltonian
 from qadence.backend import BackendConfiguration
 from qadence.transpile import (
@@ -40,6 +42,9 @@ def default_passes(config: Configuration) -> list[Callable]:
 class Configuration(BackendConfiguration):
     algo_hevo: AlgoHEvo = AlgoHEvo.EXP
     """Determine which kind of Hamiltonian evolution algorithm to use."""
+
+    ode_solver: SolverType = SolverType.DP5_SE
+    """Determine which ODE solver to use for time-dependent blocks."""
 
     n_steps_hevo: int = 100
     """Default number of steps for the Hamiltonian evolution."""

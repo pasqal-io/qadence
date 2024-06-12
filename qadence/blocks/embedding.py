@@ -140,9 +140,12 @@ def embedding(
             gate_lvl_params: ParamDictType = {}
             for uuid, e in uuid_to_expr.items():
                 gate_lvl_params[uuid] = embedded_params[e]
+            gate_lvl_params.update({"orig_param_values": inputs})
             return gate_lvl_params
         else:
-            return {stringify(k): v for k, v in embedded_params.items()}
+            out = {stringify(k): v for k, v in embedded_params.items()}
+            out.update({"orig_param_values": inputs})
+            return out
 
     params: ParamDictType
     params = {
