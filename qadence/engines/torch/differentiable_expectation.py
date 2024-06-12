@@ -6,12 +6,12 @@ from functools import partial
 from typing import Any, Callable, Sequence
 
 import torch
+from pyqtorch.adjoint import AdjointExpectation
 from torch import Tensor
 from torch.autograd import Function
 
 from qadence.backend import Backend as QuantumBackend
 from qadence.backend import ConvertedCircuit, ConvertedObservable
-from qadence.backends.adjoint import AdjointExpectation
 from qadence.backends.utils import infer_batchsize, is_pyq_shape, param_dict, pyqify, validate_state
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.utils import uuid_to_eigen
