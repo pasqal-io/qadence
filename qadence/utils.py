@@ -9,8 +9,9 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 import sympy
 from numpy.typing import ArrayLike
-from torch import Tensor, stack, vmap
+from torch import Tensor
 from torch import complex as make_complex
+from torch import stack, vmap
 from torch.linalg import eigvals
 
 from qadence.types import Endianness, ResultType, TNumber
@@ -294,7 +295,7 @@ def one_qubit_projector_matrix(state: str) -> Tensor:
     return one_qubit_projector(state, 0).tensor().squeeze()
 
 
-P0 = partial(one_qubit_projector, state="0")
-P1 = partial(one_qubit_projector, state="1")
+P0 = partial(one_qubit_projector, "0")
+P1 = partial(one_qubit_projector, "1")
 P0_MATRIX = one_qubit_projector_matrix("0")
 P1_MATRIX = one_qubit_projector_matrix("1")
