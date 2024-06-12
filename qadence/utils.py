@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 from collections import Counter
+from functools import partial
 from logging import getLogger
 from typing import TYPE_CHECKING, Any
 
@@ -290,4 +291,10 @@ def one_qubit_projector_matrix(state: str) -> Tensor:
     Returns:
         Tensor: The projector operator.
     """
-    return one_qubit_projector(state, 0).tensor()[0]
+    return one_qubit_projector(state, 0).tensor().squeeze()
+
+
+P0 = partial(one_qubit_projector, state="0")
+P1 = partial(one_qubit_projector, state="1")
+P0_MATRIX = one_qubit_projector_matrix("0")
+P1_MATRIX = one_qubit_projector_matrix("1")

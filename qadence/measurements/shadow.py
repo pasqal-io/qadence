@@ -19,7 +19,7 @@ from qadence.engines.differentiable_backend import DifferentiableBackend
 from qadence.noise import Noise
 from qadence.operations import X, Y, Z
 from qadence.types import Endianness
-from qadence.utils import one_qubit_projector_matrix
+from qadence.utils import P0_MATRIX, P1_MATRIX
 
 pauli_gates = [X, Y, Z]
 
@@ -100,7 +100,7 @@ def local_shadow(sample: Counter, unitary_ids: list) -> Tensor:
     bitstring = list(sample.keys())[0]
     local_density_matrices = []
     for bit, unitary_id in zip(bitstring, unitary_ids):
-        proj_mat = one_qubit_projector_matrix(bit)
+        proj_mat = P0_MATRIX if bit == "0" else P1_MATRIX
         unitary_tensor = UNITARY_TENSOR[unitary_id].squeeze(dim=0)
         local_density_matrices.append(
             3 * (unitary_tensor.adjoint() @ proj_mat @ unitary_tensor) - identity(1)

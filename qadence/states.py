@@ -14,7 +14,6 @@ from qadence.blocks import ChainBlock, KronBlock, PrimitiveBlock, chain, kron
 from qadence.circuit import QuantumCircuit
 from qadence.execution import run
 from qadence.operations import CNOT, RX, RY, RZ, H, I, X
-from qadence.overlap import fidelity
 from qadence.types import PI, BackendName, Endianness, StateGeneratorType
 from qadence.utils import basis_to_int
 
@@ -543,6 +542,8 @@ def rand_bitstring(N: int) -> str:
 def equivalent_state(
     s0: torch.Tensor, s1: torch.Tensor, rtol: float = 0.0, atol: float = NORMALIZATION_ATOL
 ) -> bool:
+    from qadence.overlap import fidelity
+
     fid = fidelity(s0, s1)
     expected = torch.ones_like(fid)
     return torch.allclose(fid, expected, rtol=rtol, atol=atol)  # type: ignore[no-any-return]

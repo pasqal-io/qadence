@@ -30,7 +30,7 @@ from qadence.operations import RX, RY, H, I, X, Y, Z
 from qadence.parameters import Parameter
 from qadence.serialization import deserialize
 from qadence.types import BackendName, DiffMode
-from qadence.utils import one_qubit_projector_matrix
+from qadence.utils import P0_MATRIX, P1_MATRIX
 
 
 @pytest.mark.parametrize(
@@ -68,20 +68,8 @@ def test_number_of_samples(
             Counter({"10": 1}),
             [0, 2],
             torch.kron(
-                3
-                * (
-                    UNITARY_TENSOR[0].adjoint()
-                    @ one_qubit_projector_matrix("1")
-                    @ UNITARY_TENSOR[0]
-                )
-                - IMAT,
-                3
-                * (
-                    UNITARY_TENSOR[2].adjoint()
-                    @ one_qubit_projector_matrix("0")
-                    @ UNITARY_TENSOR[2]
-                )
-                - IMAT,
+                3 * (UNITARY_TENSOR[0].adjoint() @ P1_MATRIX @ UNITARY_TENSOR[0]) - IMAT,
+                3 * (UNITARY_TENSOR[2].adjoint() @ P0_MATRIX @ UNITARY_TENSOR[2]) - IMAT,
             ),
         ),
         (
@@ -89,36 +77,12 @@ def test_number_of_samples(
             [2, 0, 2, 2],
             torch.kron(
                 torch.kron(
-                    3
-                    * (
-                        UNITARY_TENSOR[2].adjoint()
-                        @ one_qubit_projector_matrix("0")
-                        @ UNITARY_TENSOR[2]
-                    )
-                    - IMAT,
-                    3
-                    * (
-                        UNITARY_TENSOR[0].adjoint()
-                        @ one_qubit_projector_matrix("1")
-                        @ UNITARY_TENSOR[0]
-                    )
-                    - IMAT,
+                    3 * (UNITARY_TENSOR[2].adjoint() @ P0_MATRIX @ UNITARY_TENSOR[2]) - IMAT,
+                    3 * (UNITARY_TENSOR[0].adjoint() @ P1_MATRIX @ UNITARY_TENSOR[0]) - IMAT,
                 ),
                 torch.kron(
-                    3
-                    * (
-                        UNITARY_TENSOR[2].adjoint()
-                        @ one_qubit_projector_matrix("1")
-                        @ UNITARY_TENSOR[2]
-                    )
-                    - IMAT,
-                    3
-                    * (
-                        UNITARY_TENSOR[2].adjoint()
-                        @ one_qubit_projector_matrix("1")
-                        @ UNITARY_TENSOR[2]
-                    )
-                    - IMAT,
+                    3 * (UNITARY_TENSOR[2].adjoint() @ P1_MATRIX @ UNITARY_TENSOR[2]) - IMAT,
+                    3 * (UNITARY_TENSOR[2].adjoint() @ P1_MATRIX @ UNITARY_TENSOR[2]) - IMAT,
                 ),
             ),
         ),
