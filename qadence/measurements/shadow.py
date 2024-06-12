@@ -17,8 +17,9 @@ from qadence.blocks.utils import get_pauli_blocks, unroll_block_with_scaling
 from qadence.circuit import QuantumCircuit
 from qadence.engines.differentiable_backend import DifferentiableBackend
 from qadence.noise import Noise
-from qadence.operations import Projector, X, Y, Z
+from qadence.operations import X, Y, Z
 from qadence.types import Endianness
+from qadence.utils import one_qubit_projector_matrix
 
 pauli_gates = [X, Y, Z]
 
@@ -28,13 +29,6 @@ UNITARY_TENSOR = [
     SDAGMAT.squeeze(dim=0) @ HMAT,
     IMAT,
 ]
-
-
-# Projector matrices in Big-Endian convention.
-PROJECTOR_MATRICES = {
-    "0": Projector(bra="0", ket="0", qubit_support=0).tensor()[0],
-    "1": Projector(bra="1", ket="1", qubit_support=0).tensor()[0],
-}
 
 
 def identity(n_qubits: int) -> Tensor:
@@ -106,7 +100,7 @@ def local_shadow(sample: Counter, unitary_ids: list) -> Tensor:
     bitstring = list(sample.keys())[0]
     local_density_matrices = []
     for bit, unitary_id in zip(bitstring, unitary_ids):
-        proj_mat = PROJECTOR_MATRICES[bit]
+        proj_mat = one_qubit_projector_matrix(bit)
         unitary_tensor = UNITARY_TENSOR[unitary_id].squeeze(dim=0)
         local_density_matrices.append(
             3 * (unitary_tensor.adjoint() @ proj_mat @ unitary_tensor) - identity(1)
