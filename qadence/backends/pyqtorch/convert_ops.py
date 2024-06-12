@@ -4,7 +4,7 @@ from functools import reduce
 from itertools import chain as flatten
 from math import prod
 from operator import add
-from typing import Any, Sequence, Tuple
+from typing import Any, Iterable, Sequence, Tuple
 
 import pyqtorch as pyq
 import sympy
@@ -203,20 +203,36 @@ class PyQComposedBlock(pyq.QuantumCircuit):
         n_qubits: int,
         config: Configuration = None,
     ):
-        """Compose a chain of single qubit operations on the same qubit into a single.
+        """
+        Merge operations that are adjacent and have identical qubit_support.
 
-        call to _apply_batch_gate.
+        It results in fewer call of apply_operator
         """
         super().__init__(n_qubits, ops)
         self.qubits = qubits
+        self.merged_qubits_support = [
+            grouped_op[-1].qubit_support for grouped_op in self.grouped_operations()
+        ]
 
-    def forward(self, state: Tensor, values: dict[str, Tensor] | None = None) -> Tensor:
-        batch_size = infer_batchsize(values)
-        return apply_operator(
-            state, self.unitary(values, batch_size), self.qubits, self.n_qubits, batch_size
-        )
+    def grouped_operations(self) -> list[list[Module]]:
+        # takes a list of operations and group adjacent operations into sublist
+        # if those operations have the same control qubits
+        def _sublist_grouper(x: Iterable[list[Module]], y: Module) -> list[list[Module]]:
+            # Appends the element y with the last sublist in the list x
+            # if they have the same qubit_support.
+            # Appends the element y as a new sublist to x if it has different qubit_domain
+            x = list(x)
+            if y.qubit_support == x[-1][-1].qubit_support:
+                x[-1].append(y)
+                return x
+            else:
+                x.append([y])
+                return x
 
-    def unitary(self, values: dict[str, Tensor] | None, batch_size: int) -> Tensor:
+        return list(reduce(_sublist_grouper, iter(self.operations[1:]), [[self.operations[0]]]))
+
+    def merged_unitary(self, values: dict[str, Tensor] | None, batch_size: int) -> list[Tensor]:
+        # compute the tensor multiplication of each group of operations
         batch_first_perm = (2, 0, 1)
         undo_perm = tuple(argsort(tensor(batch_first_perm)))
 
@@ -225,7 +241,7 @@ class PyQComposedBlock(pyq.QuantumCircuit):
                 m = m.unsqueeze(2).repeat(
                     1, 1, batch_size
                 )  # Primitive gates are 2D, so we expand them.
-            elif m.shape != (2, 2, batch_size):
+            elif m.shape != (2, 2, batch_size) and m.shape != (4, 4, batch_size):
                 m = m.repeat(1, 1, batch_size)  # In case a tensor is 3D doesnt have batch_size.
             return m
 
@@ -237,13 +253,21 @@ class PyQComposedBlock(pyq.QuantumCircuit):
                 m, undo_perm
             )  # We need to undo the permute since PyQ expects (2, 2, batch_size).
 
-        # We reverse the list of tensors here since matmul is not commutative.
+        def _list_wise_bmm(ops: list[Module]) -> Tensor:
+            # Takes a list of operations and apply torch.bmm to all the unitaries of the list
+            return _batch_last(
+                reduce(bmm, [_batch_first(_expand(op.unitary(values))) for op in reversed(ops)])
+            )  # We reverse the list of tensors here since matmul is not commutative.
 
-        return _batch_last(
-            reduce(
-                bmm,
-                (_batch_first(_expand(op.unitary(values))) for op in reversed(self.operations)),
-            )
+        return list(map(_list_wise_bmm, reversed(self.grouped_operations())))[::-1]
+
+    def forward(self, state: Tensor, values: dict[str, Tensor] | None = None) -> Tensor:
+        # compute evolution of the state by the list of operations
+        batch_size = infer_batchsize(values)
+        return reduce(
+            lambda y, x: apply_operator(state=y, operator=x[0], qubits=x[1]),
+            zip(self.merged_unitary(values, batch_size), self.merged_qubits_support),
+            state,
         )
 
 

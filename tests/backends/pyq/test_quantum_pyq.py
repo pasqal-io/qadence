@@ -1,25 +1,35 @@
 from __future__ import annotations
 
+import itertools
 import random
 from collections import Counter
-from itertools import product
 from typing import Callable
 
 import numpy as np
+import pyqtorch as pyq
 import pytest
 import strategies as st
 import torch
 from hypothesis import given, settings
 from pyqtorch import U as pyqU
 from pyqtorch import zero_state as pyq_zero_state
+from pyqtorch.apply import apply_operator
 from pyqtorch.circuit import QuantumCircuit as PyQQuantumCircuit
+from pyqtorch.utils import product_state
 from sympy import acos
-from torch import Tensor
+from torch import Tensor, equal
+from torch.nn import Module
 
 from qadence.backends import backend_factory
 from qadence.backends.pyqtorch.backend import Backend
 from qadence.backends.pyqtorch.config import Configuration as PyqConfig
-from qadence.blocks import AbstractBlock, PrimitiveBlock, chain, kron
+from qadence.backends.pyqtorch.convert_ops import PyQComposedBlock
+from qadence.blocks import (
+    AbstractBlock,
+    PrimitiveBlock,
+    chain,
+    kron,
+)
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import (
     hea,
@@ -109,7 +119,7 @@ def test_list_observables(observable: AbstractBlock, result: Tensor) -> None:
     assert torch.allclose(expval, result)
 
 
-@pytest.mark.parametrize("n_obs, loop_expectation", product([1, 2, 3], [True, False]))
+@pytest.mark.parametrize("n_obs, loop_expectation", itertools.product([1, 2, 3], [True, False]))
 def test_list_observables_with_batches(n_obs: int, loop_expectation: bool) -> None:
     n_qubits = 4
     x = FeatureParameter("x")
@@ -838,3 +848,38 @@ def test_move_to_dtype(
     assert wf.dtype == dtype
     expval = qm.expectation(inputs, state=state)
     assert expval.dtype == torch.float64 if dtype == torch.cdouble else torch.float32
+
+
+@pytest.mark.parametrize(
+    "ops,state",
+    itertools.product(
+        [
+            [pyq.X(1), pyq.Y(1), pyq.Z(1), pyq.X(2), pyq.Y(2), pyq.Z(0)],
+            [
+                pyq.CNOT(target=0, control=1),
+                pyq.CNOT(target=1, control=0),
+                pyq.X(0),
+                pyq.X(2),
+                pyq.CNOT(target=0, control=2),
+                pyq.CY(target=0, control=2),
+            ],
+        ],
+        [
+            product_state(str(i) + str(j) + str(k))
+            for i in range(2)
+            for j in range(2)
+            for k in range(2)
+        ],
+    ),
+)
+def test_PyQComposedBlock(ops: list[Module], state: Tensor) -> None:
+    values = None
+    qubits_list = tuple(set(itertools.chain(*[op.qubit_support for op in ops])))
+
+    composed_block = PyQComposedBlock(ops=ops, qubits=qubits_list, n_qubits=len(qubits_list))
+    composed_state = composed_block.forward(state=state, values=values)
+    state_wo_merge = state
+    for op in ops:
+        state_wo_merge = apply_operator(state_wo_merge, op.unitary(values=values), op.qubit_support)
+
+    assert equal(composed_state, state_wo_merge)
