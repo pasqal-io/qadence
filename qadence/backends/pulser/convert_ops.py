@@ -43,10 +43,12 @@ class PulserObservable(Module):
         noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> torch.Tensor:
-        # FIXME: cache this, it is very inefficient for non-parametric observables
-        block_mat = block_to_tensor(
-            self.block, values, qubit_support=qubit_support, endianness=endianness  # type: ignore [arg-type]  # noqa
-        ).squeeze(0)
+        if not self.block.is_parametric:
+            block_mat = self.block_mat
+        else:
+            block_mat = block_to_tensor(
+                self.block, values, qubit_support=qubit_support, endianness=endianness  # type: ignore [arg-type]  # noqa
+            ).squeeze(0)
         if noise is None:  # Compute expectations for state vector.
             return torch.sum(torch.matmul(state, block_mat) * state.conj(), dim=1)
         else:  # Compute expectations for density matrices.
