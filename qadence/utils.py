@@ -9,9 +9,8 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 import sympy
 from numpy.typing import ArrayLike
-from torch import Tensor
+from torch import Tensor, stack, vmap
 from torch import complex as make_complex
-from torch import stack, vmap
 from torch.linalg import eigvals
 
 from qadence.types import Endianness, ResultType, TNumber
