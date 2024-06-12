@@ -28,6 +28,7 @@ from qadence.transpile import (
     chain_single_qubit_ops,
     flatten,
     invert_endianness,
+    scale_primitive_blocks_only,
     transpile,
 )
 from qadence.types import BackendName, Endianness, Engine
@@ -73,7 +74,7 @@ class Backend(BackendInterface):
             lambda block: chain_single_qubit_ops(block)
             if self.config.use_single_qubit_composition
             else flatten(block),
-            # scale_primitive_blocks_only,
+            scale_primitive_blocks_only,
         ]
         block = transpile(*transpilations)(observable)  # type: ignore[call-overload]
         operations = convert_block(block, n_qubits, self.config)
