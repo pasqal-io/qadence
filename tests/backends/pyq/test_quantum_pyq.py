@@ -42,7 +42,6 @@ from qadence.operations import (
     H,
     HamEvo,
     I,
-    Projector,
     S,
     T,
     U,
@@ -54,6 +53,7 @@ from qadence.parameters import FeatureParameter, Parameter
 from qadence.states import random_state, uniform_state, zero_state
 from qadence.transpile import set_trainable
 from qadence.types import PI, BackendName, DiffMode
+from qadence.utils import one_qubit_projector
 
 
 def custom_obs() -> AbstractBlock:
@@ -725,8 +725,8 @@ def test_scaled_blocks() -> None:
 
 
 def test_kron_chain_add_circuit() -> None:
-    p0 = Projector(ket="0", bra="0", qubit_support=0)
-    p1 = Projector(ket="1", bra="1", qubit_support=0)
+    p0 = one_qubit_projector("0", 0)
+    p1 = one_qubit_projector("1", 0)
     cnot = kron(p0, I(1)) + kron(p1, X(1))
 
     backend = backend_factory(backend=BackendName.PYQTORCH, diff_mode=None)
