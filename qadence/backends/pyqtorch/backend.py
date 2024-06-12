@@ -76,13 +76,13 @@ class Backend(BackendInterface):
             scale_primitive_blocks_only,
         ]
         block = transpile(*transpilations)(observable)  # type: ignore[call-overload]
-        ops = convert_block(block, n_qubits, self.config)[0]
-        cls = (
+        operations = convert_block(block, n_qubits, self.config)
+        obs_cls = (
             pyq.DiagonalObservable
             if block._is_diag_pauli and not block.is_parametric
             else pyq.Observable
         )
-        native = cls(ops, n_qubits)
+        native = obs_cls(n_qubits=n_qubits, operations=operations)
         return ConvertedObservable(native=native, abstract=block, original=observable)
 
     def run(
@@ -103,7 +103,7 @@ class Backend(BackendInterface):
             validate_state(state, n_qubits)
             # pyqtorch expects input shape [2] * n_qubits + [batch_size]
             state = pyqify(state, n_qubits) if pyqify_state else state
-        state = circuit.native.run(state, param_values)
+        state = circuit.native.run(state=state, values=param_values)
         state = unpyqify(state) if unpyqify_state else state
         state = invert_endianness(state) if endianness != self.native_endianness else state
         return state
@@ -212,9 +212,15 @@ class Backend(BackendInterface):
         noise: Noise | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
+        pyqify_state: bool = True,
     ) -> list[Counter]:
+        if state is None:
+            state = circuit.native.init_state(batch_size=infer_batchsize(param_values))
+        elif state is not None and pyqify_state:
+            n_qubits = circuit.abstract.n_qubits
+            state = pyqify(state, n_qubits) if pyqify_state else state
         samples: list[Counter] = circuit.native.sample(
-            values=param_values, n_shots=n_shots, state=state, pyqify_state=True
+            state=state, values=param_values, n_shots=n_shots
         )
         samples = invert_endianness(samples) if endianness != Endianness.BIG else samples
         if noise is not None:
