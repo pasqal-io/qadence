@@ -214,7 +214,7 @@ class Backend(BackendInterface):
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
         samples: list[Counter] = circuit.native.sample(
-            values=param_values, n_shots=n_shots, state=state
+            values=param_values, n_shots=n_shots, state=state, pyqify_state=True
         )
         samples = invert_endianness(samples) if endianness != Endianness.BIG else samples
         if noise is not None:
