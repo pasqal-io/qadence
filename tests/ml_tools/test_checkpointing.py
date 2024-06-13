@@ -4,6 +4,7 @@ import os
 from itertools import count
 from pathlib import Path
 
+import pytest
 import torch
 from torch.utils.data import DataLoader
 
@@ -18,6 +19,7 @@ from qadence.ml_tools.models import TransformedModule
 from qadence.ml_tools.parameters import get_parameters, set_parameters
 from qadence.ml_tools.utils import rand_featureparameters
 from qadence.models import QNN, QuantumModel
+from qadence.types import ExperimentTrackingTool
 
 
 def dataloader(batch_size: int = 25) -> DataLoader:
@@ -129,7 +131,10 @@ def test_random_basicqQNN_save_load_ckpts(BasicQNN: QNN, tmp_path: Path) -> None
     assert torch.allclose(loaded_model.expectation(inputs), model.expectation(inputs))
 
 
-def test_check_QNN_ckpts_exist(BasicQNN: QNN, tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    "tool", [ExperimentTrackingTool.TENSORBOARD, ExperimentTrackingTool.MLFLOW]
+)
+def test_check_QNN_ckpts_exist(tool: ExperimentTrackingTool, BasicQNN: QNN, tmp_path: Path) -> None:
     data = dataloader()
     model = BasicQNN
     cnt = count()
@@ -144,7 +149,7 @@ def test_check_QNN_ckpts_exist(BasicQNN: QNN, tmp_path: Path) -> None:
         return loss, {}
 
     config = TrainConfig(
-        folder=tmp_path, max_iter=10, checkpoint_every=1, write_every=1, tracking_tool="mlflow"  # type: ignore
+        folder=tmp_path, max_iter=10, checkpoint_every=1, write_every=1, tracking_tool=tool
     )
     train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
     ckpts = [tmp_path / Path(f"model_QNN_ckpt_00{i}_device_cpu.pt") for i in range(1, 9)]
