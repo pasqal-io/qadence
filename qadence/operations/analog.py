@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from logging import getLogger
 from typing import Any, Tuple
 
 import numpy as np
@@ -19,7 +20,6 @@ from qadence.blocks.utils import (
     add,  # noqa
     kron,
 )
-from qadence.logger import get_logger
 from qadence.parameters import (
     Parameter,
     ParamMap,
@@ -29,7 +29,7 @@ from qadence.types import PI, OpName, TNumber, TParameter
 from .ham_evo import HamEvo
 from .primitive import I, X, Z
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class AnalogSWAP(HamEvo):

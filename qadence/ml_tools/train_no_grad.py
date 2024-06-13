@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from logging import getLogger
 from typing import Callable
 
 import nevergrad as ng
@@ -10,7 +11,6 @@ from torch.nn import Module
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
-from qadence.logger import get_logger
 from qadence.ml_tools.config import TrainConfig
 from qadence.ml_tools.data import DictDataLoader
 from qadence.ml_tools.parameters import get_parameters, set_parameters
@@ -18,7 +18,7 @@ from qadence.ml_tools.printing import print_metrics, write_tensorboard
 from qadence.ml_tools.saveload import load_checkpoint, write_checkpoint
 from qadence.ml_tools.tensors import promote_to_tensor
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 def train(

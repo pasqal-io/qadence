@@ -10,13 +10,7 @@ from torch import Tensor
 from qadence.backend import Backend
 from qadence.backends.pyqtorch import Backend as PyQBackend
 from qadence.blocks import AbstractBlock, chain, kron
-from qadence.blocks.block_to_tensor import (
-    HMAT,
-    IMAT,
-    SDAGMAT,
-    ZMAT,
-    block_to_tensor,
-)
+from qadence.blocks.block_to_tensor import HMAT, IMAT, SDAGMAT, ZMAT, block_to_tensor
 from qadence.blocks.composite import CompositeBlock
 from qadence.blocks.primitive import PrimitiveBlock
 from qadence.blocks.utils import get_pauli_blocks, unroll_block_with_scaling
@@ -24,8 +18,8 @@ from qadence.circuit import QuantumCircuit
 from qadence.engines.differentiable_backend import DifferentiableBackend
 from qadence.noise import Noise
 from qadence.operations import X, Y, Z
-from qadence.states import one_state, zero_state
 from qadence.types import Endianness
+from qadence.utils import P0_MATRIX, P1_MATRIX
 
 pauli_gates = [X, Y, Z]
 
@@ -35,13 +29,6 @@ UNITARY_TENSOR = [
     SDAGMAT.squeeze(dim=0) @ HMAT,
     IMAT,
 ]
-
-
-# Projector matrices in Big-Endian convention.
-PROJECTOR_MATRICES = {
-    "0": zero_state(n_qubits=1).t() @ zero_state(n_qubits=1),
-    "1": one_state(n_qubits=1).t() @ one_state(n_qubits=1),
-}
 
 
 def identity(n_qubits: int) -> Tensor:
@@ -113,7 +100,7 @@ def local_shadow(sample: Counter, unitary_ids: list) -> Tensor:
     bitstring = list(sample.keys())[0]
     local_density_matrices = []
     for bit, unitary_id in zip(bitstring, unitary_ids):
-        proj_mat = PROJECTOR_MATRICES[bit]
+        proj_mat = P0_MATRIX if bit == "0" else P1_MATRIX
         unitary_tensor = UNITARY_TENSOR[unitary_id].squeeze(dim=0)
         local_density_matrices.append(
             3 * (unitary_tensor.adjoint() @ proj_mat @ unitary_tensor) - identity(1)

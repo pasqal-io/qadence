@@ -45,6 +45,13 @@ class PSRExpectation(Function):
         expectation_values = expectation_fn(param_values=param_dict(param_keys, param_values))  # type: ignore[call-arg] # noqa: E501
         # Stack batches of expectations if so.
         if isinstance(expectation_values, list):
+            # Check for first element being a list in case of noisy simulations in Pulser.
+            if isinstance(expectation_values[0], list):
+                exp_vals: list = []
+                for expectation_value in expectation_values:
+                    res = list(map(lambda x: x.get_final_state().data.toarray(), expectation_value))
+                    exp_vals.append(torch.tensor(res))
+                expectation_values = exp_vals
             return torch.stack(expectation_values)
         else:
             return expectation_values

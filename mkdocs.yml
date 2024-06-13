@@ -50,6 +50,7 @@ nav:
       - Quantum circuits differentiation: tutorials/advanced_tutorials/differentiability.md
       - Custom quantum models: tutorials/advanced_tutorials/custom-models.md
       - Projector blocks: tutorials/advanced_tutorials/projectors.md
+      - Profiling and debugging on CUDA devices: tutorials/advanced_tutorials/profiling-and-debugging.md
 
     - Realistic simulations:
       - tutorials/realistic_sims/index.md

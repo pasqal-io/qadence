@@ -1,18 +1,19 @@
 from __future__ import annotations
 
+from logging import getLogger
+
 import torch
 
 from qadence.blocks import AbstractBlock, add, chain, kron
 from qadence.blocks.utils import block_is_qubit_hamiltonian
 from qadence.constructors.hamiltonians import hamiltonian_factory
-from qadence.logger import get_logger
 from qadence.operations import HamEvo, I, N, X
 from qadence.types import GenDAQC, Interaction, Strategy
 
 from .gen_parser import _check_compatibility, _parse_generator
 from .utils import _build_matrix_M, _ix_map
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 def daqc_transform(

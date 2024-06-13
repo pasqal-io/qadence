@@ -17,7 +17,6 @@ from qadence.constructors import ising_hamiltonian, total_magnetization
 from qadence.execution import expectation
 from qadence.measurements import Measurements
 from qadence.measurements.shadow import (
-    PROJECTOR_MATRICES,
     UNITARY_TENSOR,
     _max_observable_weight,
     classical_shadow,
@@ -31,6 +30,7 @@ from qadence.operations import RX, RY, H, I, X, Y, Z
 from qadence.parameters import Parameter
 from qadence.serialization import deserialize
 from qadence.types import BackendName, DiffMode
+from qadence.utils import P0_MATRIX, P1_MATRIX
 
 
 @pytest.mark.parametrize(
@@ -68,10 +68,8 @@ def test_number_of_samples(
             Counter({"10": 1}),
             [0, 2],
             torch.kron(
-                3 * (UNITARY_TENSOR[0].adjoint() @ PROJECTOR_MATRICES["1"] @ UNITARY_TENSOR[0])
-                - IMAT,
-                3 * (UNITARY_TENSOR[2].adjoint() @ PROJECTOR_MATRICES["0"] @ UNITARY_TENSOR[2])
-                - IMAT,
+                3 * (UNITARY_TENSOR[0].adjoint() @ P1_MATRIX @ UNITARY_TENSOR[0]) - IMAT,
+                3 * (UNITARY_TENSOR[2].adjoint() @ P0_MATRIX @ UNITARY_TENSOR[2]) - IMAT,
             ),
         ),
         (
@@ -79,16 +77,12 @@ def test_number_of_samples(
             [2, 0, 2, 2],
             torch.kron(
                 torch.kron(
-                    3 * (UNITARY_TENSOR[2].adjoint() @ PROJECTOR_MATRICES["0"] @ UNITARY_TENSOR[2])
-                    - IMAT,
-                    3 * (UNITARY_TENSOR[0].adjoint() @ PROJECTOR_MATRICES["1"] @ UNITARY_TENSOR[0])
-                    - IMAT,
+                    3 * (UNITARY_TENSOR[2].adjoint() @ P0_MATRIX @ UNITARY_TENSOR[2]) - IMAT,
+                    3 * (UNITARY_TENSOR[0].adjoint() @ P1_MATRIX @ UNITARY_TENSOR[0]) - IMAT,
                 ),
                 torch.kron(
-                    3 * (UNITARY_TENSOR[2].adjoint() @ PROJECTOR_MATRICES["1"] @ UNITARY_TENSOR[2])
-                    - IMAT,
-                    3 * (UNITARY_TENSOR[2].adjoint() @ PROJECTOR_MATRICES["1"] @ UNITARY_TENSOR[2])
-                    - IMAT,
+                    3 * (UNITARY_TENSOR[2].adjoint() @ P1_MATRIX @ UNITARY_TENSOR[2]) - IMAT,
+                    3 * (UNITARY_TENSOR[2].adjoint() @ P1_MATRIX @ UNITARY_TENSOR[2]) - IMAT,
                 ),
             ),
         ),

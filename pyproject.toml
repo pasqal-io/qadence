@@ -19,9 +19,9 @@ authors = [
     { name = "Gergana Velikova", email = "gergana.velikova@pasqal.com" },
     { name = "Eduardo Maschio", email = "eduardo.maschio@pasqal.com" },
 ]
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.9"
 license = {text = "Apache 2.0"}
-version = "1.5.2"
+version = "1.6.0"
 classifiers=[
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python",
@@ -29,6 +29,7 @@ classifiers=[
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
@@ -43,7 +44,8 @@ dependencies = [
     "jsonschema",
     "nevergrad",
     "scipy",
-    "pyqtorch==1.1.1",
+    "pyqtorch==1.2.0",
+    "pyyaml",
     "matplotlib",
     "Arpeggio==2.0.2",
 ]
@@ -53,8 +55,8 @@ allow-direct-references = true
 allow-ambiguous-features = true
 
 [project.optional-dependencies]
-pulser = ["pulser>=v0.15.2", "pasqal-cloud>=0.3.5"]
-braket = ["amazon-braket-sdk==1.71.0"]
+pulser = ["pulser-core==0.18.1", "pulser-simulation==0.18.1","pasqal-cloud==0.8.1"]
+braket = ["amazon-braket-sdk<1.71.2"]
 visualization = [
   "graphviz",
   # FIXME: will be needed once we support latex labels
@@ -71,15 +73,13 @@ horqrux = [
     "sympy2jax"]
 protocols = ["qadence-protocols"]
 libs = ["qadence-libs"]
+dlprof = ["nvidia-pyindex", "nvidia-dlprof[pytorch]"]
 all = [
-  "pulser>=0.15.2",
-  "amazon-braket-sdk==1.71.0",
-  "graphviz",
+  "pulser",
+  "braket",
+  "visualization",
   "protocols",
   "libs",
-  # FIXME: will be needed once we support latex labels
-  # "latex2svg @ git+https://github.com/Moonbase59/latex2svg.git#egg=latex2svg",
-  # "scour",
 ]
 
 [tool.hatch.envs.default]
@@ -90,6 +90,7 @@ dependencies = [
   "pytest-cov",
   "pytest-mypy",
   "pytest-xdist",
+  "types-PyYAML",
   "ipykernel",
   "pre-commit",
   "black",
@@ -181,9 +182,10 @@ line-length = 100
 required-imports = ["from __future__ import annotations"]
 
 [tool.ruff.per-file-ignores]
-"__init__.py" = ["F401"]
+"__init__.py" = ["F401", "E402"]
 "qadence/operations/primitive.py" = ["E742"]  # Avoid ambiguous class name warning for identity.
 "qadence/backends/horqrux/convert_ops.py" = ["E741"]  # Avoid ambiguous class name warning for 0.
+"examples/*" = ["E402"] # Allow torch seed to be set before qadence imports
 
 [tool.ruff.mccabe]
 max-complexity = 15

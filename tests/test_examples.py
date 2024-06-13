@@ -9,7 +9,7 @@ from typing import Iterable
 
 import pytest
 
-expected_fail: dict = {}
+expected_fail: dict = {"backends/low_level/profiling_debugging.py": "Requires CUDA device."}
 
 
 def get_py_files(dir: Path) -> Iterable[Path]:

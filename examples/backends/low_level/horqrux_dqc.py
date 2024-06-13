@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import jax
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
@@ -12,9 +14,12 @@ from qadence.backends import backend_factory
 from qadence.blocks.utils import chain
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import feature_map, hea, ising_hamiltonian
+from qadence.logger import get_script_logger
 from qadence.types import BackendName, BasisSet, DiffMode
 
+logger = get_script_logger("Horqrux DQC")
 N_QUBITS, DEPTH, LEARNING_RATE, N_POINTS = 4, 3, 0.01, 20
+logger.info(f"Running example {Path(__file__).name} with n_qubits = {N_QUBITS}")
 # building the DQC model
 ansatz = hea(n_qubits=N_QUBITS, depth=DEPTH)
 # the input data is encoded via a feature map

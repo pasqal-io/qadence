@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from functools import singledispatch
+from logging import getLogger
 from typing import Callable, Iterable, Type
 
 import sympy
@@ -26,11 +27,10 @@ from qadence.blocks.utils import (
     _construct,
     parameters,
 )
-from qadence.logger import get_logger
 from qadence.operations import SWAP, I
 from qadence.parameters import Parameter
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 def repeat(

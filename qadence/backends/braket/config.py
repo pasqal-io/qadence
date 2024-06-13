@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from logging import getLogger
 from typing import Callable
 
 from qadence.backend import BackendConfiguration
-from qadence.logger import get_logger
 from qadence.transpile import digitalize, fill_identities
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 default_passes: list[Callable] = [fill_identities, digitalize]
 

@@ -1,18 +1,18 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from logging import getLogger
 from math import isclose
 from typing import Union
 
 from sympy import Basic, acos
 
 from qadence.blocks import AbstractBlock, KronBlock, chain, kron, tag
-from qadence.logger import get_logger
 from qadence.operations import PHASE, RX, RY, RZ, H
 from qadence.parameters import FeatureParameter, Parameter, VariationalParameter
 from qadence.types import PI, BasisSet, ReuploadScaling, TParameter
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 ROTATIONS = [RX, RY, RZ, PHASE]
 RotationTypes = type[Union[RX, RY, RZ, PHASE]]

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from logging import getLogger
 from typing import Any, Counter, List
 
 import numpy as np
@@ -8,14 +9,13 @@ from torch import Tensor
 from torch.nn import Parameter as TorchParam
 
 from qadence.backend import ConvertedObservable
-from qadence.logger import get_logger
 from qadence.measurements import Measurements
 from qadence.ml_tools import promote_to_tensor
 from qadence.models import QNN, QuantumModel
 from qadence.noise import Noise
 from qadence.utils import Endianness
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 def _set_fixed_operation(
@@ -310,3 +310,11 @@ class TransformedModule(torch.nn.Module):
         except Exception as e:
             logger.warning(f"Unable to move {self} to {args}, {kwargs} due to {e}.")
         return self
+
+    @property
+    def device(self) -> torch.device:
+        return (
+            self.model.device
+            if isinstance(self.model, QuantumModel)
+            else self._input_scaling.device
+        )
