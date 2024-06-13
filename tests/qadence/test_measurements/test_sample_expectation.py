@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 import torch
-from metrics import MIDDLE_ACCEPTANCE, RTOL_MIDDLE_ACCEPTANCE
+from metrics import MEASUREMENT_ATOL
 from torch import Tensor
 
 from qadence import (
@@ -67,5 +67,5 @@ def test_sample_expectations(
     expectation_sampling = Tensor(compute_expectation(observable, model.sample()))
 
     assert torch.allclose(
-        expectation_tomo, expectation_sampling, atol=MIDDLE_ACCEPTANCE, rtol=RTOL_MIDDLE_ACCEPTANCE
+        expectation_tomo, expectation_sampling, atol=MEASUREMENT_ATOL
     )
