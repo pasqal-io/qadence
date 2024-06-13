@@ -3,10 +3,14 @@ from __future__ import annotations
 import datetime
 import os
 from dataclasses import dataclass
+from logging import getLogger
 from pathlib import Path
 from typing import Callable, Optional
+from uuid import uuid4
 
 from qadence.types import ExperimentTrackingTool
+
+logger = getLogger(__name__)
 
 
 @dataclass
@@ -50,6 +54,8 @@ class TrainConfig:
     """Whether or not to print out metrics values during training."""
     tracking_tool: ExperimentTrackingTool = ExperimentTrackingTool.TENSORBOARD
 
+    # mlflow_callbacks: list[Callable] = [write_mlflow_figure(), write_x()]
+
     def __post_init__(self) -> None:
         if self.folder:
             if isinstance(self.folder, str):  # type: ignore [unreachable]
@@ -63,3 +69,31 @@ class TrainConfig:
             self.trainstop_criterion = lambda x: x <= self.max_iter
         if self.validation_criterion is None:
             self.validation_criterion = lambda x: False
+
+
+@dataclass
+class MLFlowConfig:
+    """
+    Example:
+
+        export MLFLOW_TRACKING_URI=tracking_uri
+        export MLFLOW_TRACKING_USERNAME=username
+        export MLFLOW_TRACKING_PASSWORD=password
+    """
+
+    MLFLOW_TRACKING_URI: str = os.getenv("MLFLOW_TRACKING_URI", "")
+    MLFLOW_TRACKING_USERNAME: str = os.getenv("MLFLOW_TRACKING_USERNAME", "")
+    MLFLOW_TRACKING_PASSWORD: str = os.getenv("MLFLOW_TRACKING_PASSWORD", "")
+    EXPERIMENT: str = os.getenv("MLFLOW_EXPERIMENT", str(uuid4()))
+    RUN_NAME: str = os.getenv("MLFLOW_RUN_NAME", "test_0")
+
+    def __post_init__(self) -> None:
+        import mlflow
+
+        if self.MLFLOW_TRACKING_USERNAME != "":
+            logger.info(
+                f"Intialized mlflow remote logging for user {self.MLFLOW_TRACKING_USERNAME}."
+            )
+        mlflow.set_tracking_uri(self.MLFLOW_TRACKING_URI)
+        mlflow.set_experiment(self.EXPERIMENT)
+        mlflow.start_run(run_name=self.RUN_NAME, nested=False)

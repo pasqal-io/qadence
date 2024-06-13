@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-import os
-from dataclasses import dataclass
 from functools import singledispatch
 from typing import Any
-from uuid import uuid4
 
 from torch import Tensor, rand
 
@@ -50,25 +47,3 @@ def _(qnn: QNN, batch_size: int = 1) -> dict[str, Tensor]:
 @rand_featureparameters.register
 def _(tm: TransformedModule, batch_size: int = 1) -> dict[str, Tensor]:
     return rand_featureparameters(tm.model, batch_size)
-
-
-@dataclass
-class MLFlowConfig:
-    """
-    Example:
-
-        export MLFLOW_TRACKING_URI=tracking_uri
-        export MLFLOW_TRACKING_USERNAME=username
-        export MLFLOW_TRACKING_PASSWORD=password
-    """
-
-    MLFLOW_TRACKING_URI: str = os.getenv("MLFLOW_TRACKING_URI", "")
-    MLFLOW_TRACKING_USERNAME: str = os.getenv("MLFLOW_TRACKING_USERNAME", "")
-    MLFLOW_TRACKING_PASSWORD: str = os.getenv("MLFLOW_TRACKING_PASSWORD", "")
-    EXPERIMENT: str = os.getenv("MLFLOW_EXPERIMENT", str(uuid4()))
-
-    def __post_init__(self) -> None:
-        if self.MLFLOW_TRACKING_USERNAME != "":
-            logger.info(
-                f"Intialized mlflow remote logging for user {self.MLFLOW_TRACKING_USERNAME}."
-            )

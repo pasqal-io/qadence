@@ -27,15 +27,15 @@ def log_hyperparams(writer: SummaryWriter, hyperparams: dict, metrics: dict) -> 
     writer.add_hparams(hyperparams, metrics)
 
 
-def write_mflow(writer: Any, loss: float | None, metrics: dict, iteration: int) -> None:
+def write_mlflow(writer: Any, loss: float | None, metrics: dict, iteration: int) -> None:
     # TODO for giorgio
-    writer.log_metrics({"loss": float(loss), "iteration": iteration})  # type: ignore
-    writer.log_metrics(metrics)
+    writer.log_metrics({"loss": float(loss)}, step=iteration)  # type: ignore
+    writer.log_metrics(metrics, step=iteration)
 
 
 TRACKER_MAPPING = {
     ExperimentTrackingTool.TENSORBOARD: write_tensorboard,
-    ExperimentTrackingTool.MLFLOW: write_mflow,
+    ExperimentTrackingTool.MLFLOW: write_mlflow,
 }
 
 
