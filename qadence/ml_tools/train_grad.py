@@ -130,8 +130,9 @@ def train(
         writer = SummaryWriter(config.folder, purge_step=init_iter)
     else:
         mlflowconfig = MLFlowConfig()  # Set up credentials for mlflow tracking
-        writer = importlib.import_module("mflow")
+        writer = importlib.import_module("mlflow")
         writer.set_experiment(mlflowconfig.EXPERIMENT)
+        # writer = writer.start_run()
 
         # writer.mlflow.pytorch.autolog(
         #     log_every_n_step=config.write_every, log_models=False, log_datasets=False
@@ -200,6 +201,7 @@ def train(
     if config.folder:
         write_checkpoint(config.folder, model, optimizer, iteration)
     write_tracker((writer, loss, metrics, iteration), config.tracking_tool)
-    writer.close()
+    if config.tracking_tool == ExperimentTrackingTool.TENSORBOARD:
+        writer.close()
 
     return model, optimizer

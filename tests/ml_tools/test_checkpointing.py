@@ -143,7 +143,9 @@ def test_check_QNN_ckpts_exist(BasicQNN: QNN, tmp_path: Path) -> None:
         loss = criterion(out, torch.rand(1))
         return loss, {}
 
-    config = TrainConfig(folder=tmp_path, max_iter=10, checkpoint_every=1, write_every=1)
+    config = TrainConfig(
+        folder=tmp_path, max_iter=10, checkpoint_every=1, write_every=1, tracking_tool="mlflow"  # type: ignore
+    )
     train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
     ckpts = [tmp_path / Path(f"model_QNN_ckpt_00{i}_device_cpu.pt") for i in range(1, 9)]
     assert all(os.path.isfile(ckpt) for ckpt in ckpts)

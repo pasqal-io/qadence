@@ -4,6 +4,7 @@ import os
 from dataclasses import dataclass
 from functools import singledispatch
 from typing import Any
+from uuid import uuid4
 
 from torch import Tensor, rand
 
@@ -64,7 +65,7 @@ class MLFlowConfig:
     MLFLOW_TRACKING_URI: str = os.getenv("MLFLOW_TRACKING_URI", "")
     MLFLOW_TRACKING_USERNAME: str = os.getenv("MLFLOW_TRACKING_USERNAME", "")
     MLFLOW_TRACKING_PASSWORD: str = os.getenv("MLFLOW_TRACKING_PASSWORD", "")
-    EXPERIMENT: str = os.getenv("MLFLOW_EXPERIMENT", "")
+    EXPERIMENT: str = os.getenv("MLFLOW_EXPERIMENT", str(uuid4()))
 
     def __post_init__(self) -> None:
         if self.MLFLOW_TRACKING_USERNAME != "":

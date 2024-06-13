@@ -29,8 +29,8 @@ def log_hyperparams(writer: SummaryWriter, hyperparams: dict, metrics: dict) -> 
 
 def write_mflow(writer: Any, loss: float | None, metrics: dict, iteration: int) -> None:
     # TODO for giorgio
-    writer.log_params({"loss": loss}, {"iteration": iteration})
-    writer.log_params(metrics)
+    writer.log_metrics({"loss": float(loss), "iteration": iteration})  # type: ignore
+    writer.log_metrics(metrics)
 
 
 TRACKER_MAPPING = {
