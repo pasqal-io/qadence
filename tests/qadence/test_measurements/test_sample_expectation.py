@@ -66,6 +66,4 @@ def test_sample_expectations(
     expectation_tomo = model.expectation(measurement=tomo_measurement)[0]
     expectation_sampling = Tensor(compute_expectation(observable, model.sample()))
 
-    assert torch.allclose(
-        expectation_tomo, expectation_sampling, atol=MEASUREMENT_ATOL
-    )
+    assert torch.allclose(expectation_tomo, expectation_sampling, atol=MEASUREMENT_ATOL)
