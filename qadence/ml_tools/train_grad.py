@@ -186,7 +186,7 @@ def train(
                     print_metrics(loss, metrics, iteration)
 
                 if iteration % config.write_every == 0:
-                    write_tracker(writer, loss, metrics, iteration)
+                    write_tracker((writer, loss, metrics, iteration), config.tracking_tool)
 
                 if config.folder:
                     if iteration % config.checkpoint_every == 0:
@@ -199,7 +199,7 @@ def train(
     # Final writing and checkpointing
     if config.folder:
         write_checkpoint(config.folder, model, optimizer, iteration)
-    write_tracker(writer, loss, metrics, iteration)
+    write_tracker((writer, loss, metrics, iteration), config.tracking_tool)
     writer.close()
 
     return model, optimizer
