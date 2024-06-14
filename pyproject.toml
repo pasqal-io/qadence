@@ -21,7 +21,7 @@ authors = [
 ]
 requires-python = ">=3.9"
 license = {text = "Apache 2.0"}
-version = "1.6.0"
+version = "1.6.1"
 classifiers=[
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python",
