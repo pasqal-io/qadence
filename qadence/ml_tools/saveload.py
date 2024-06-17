@@ -120,10 +120,7 @@ def load_model(
     except Exception as e:
         msg = f"Unable to load state dict due to {e}.\
                No corresponding pre-trained model found. Returning the un-trained model."
-        import warnings
-
-        warnings.warn(msg, UserWarning)
-        logger.warn(msg)
+        logger.warning(msg)
     return model, iteration
 
 
