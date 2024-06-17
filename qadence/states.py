@@ -6,7 +6,7 @@ from functools import singledispatch
 from typing import List
 
 import torch
-from jax.typing import ArrayLike
+from numpy.typing import ArrayLike
 from torch import Tensor, concat
 from torch.distributions import Categorical, Distribution
 
@@ -189,7 +189,7 @@ def product_state(
     bitstring: str,
     batch_size: int = 1,
     endianness: Endianness = Endianness.BIG,
-    backend: str = "pyqtorch",
+    backend: BackendName = BackendName.PYQTORCH,
 ) -> ArrayLike:
     """
     Creates a product state from a bitstring.
@@ -197,7 +197,7 @@ def product_state(
     Arguments:
         bitstring (str): A bitstring.
         batch_size (int) : Batch size.
-        backend (str): The backend to use. Default is "pyqtorch".
+        backend (BackendName): The backend to use. Default is "pyqtorch".
 
     Returns:
         A torch.Tensor.
