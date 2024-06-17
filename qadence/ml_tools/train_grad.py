@@ -241,7 +241,7 @@ def train(
                 logger.info("Terminating training gracefully after the current iteration.")
                 break
         try:
-            xs = next(dl_iter)  # type: ignore[arg-type]
+            xs = next(dl_iter) if dataloader is not None else None  # type: ignore[arg-type]
             xs_to_device = data_to_device(xs, device=device, dtype=data_dtype)
             loss, metrics = loss_fn(model, xs_to_device)
             if "val_loss" in metrics:
