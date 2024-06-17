@@ -212,7 +212,7 @@ def product_state(
     ```
     """
     if batch_size:
-        logger.warn(
+        logger.debug(
             "The input `batch_size` is going to be deprecated. "
             "For now, default batch_size is set to 1."
         )
