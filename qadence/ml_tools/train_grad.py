@@ -154,12 +154,32 @@ def train(
         data_dtype = float64 if dtype == complex128 else float32
 
     best_val_loss = math.inf
+
     with progress:
         dl_iter = iter(dataloader) if dataloader is not None else None
-        if perform_val:
-            dl_iter_val = iter(val_dataloader) if val_dataloader is not None else None
+
+        # Initial validation evaluation
+        try:
+            if perform_val:
+                dl_iter_val = iter(val_dataloader) if val_dataloader is not None else None
+                xs = next(dl_iter_val)
+                xs_to_device = data_to_device(xs, device=device, dtype=data_dtype)
+                best_val_loss, metrics = loss_fn(model, xs_to_device)
+
+                metrics["val_loss"] = best_val_loss
+                write_tensorboard(writer, math.nan, metrics, init_iter)
+
+            if config.folder:
+                if config.checkpoint_best_only:
+                    write_checkpoint(config.folder, model, optimizer, iteration="best")
+                else:
+                    write_checkpoint(config.folder, model, optimizer, init_iter)
+
+        except KeyboardInterrupt:
+            logger.info("Terminating training gracefully after the current iteration.")
 
         # outer epoch loop
+        init_iter += 1
         for iteration in progress.track(range(init_iter, init_iter + config.max_iter)):
             try:
                 # in case there is not data needed by the model
@@ -193,10 +213,13 @@ def train(
                     )
 
                 if iteration % config.print_every == 0 and config.verbose:
-                    print_metrics(loss, metrics, iteration)
+                    # Note that the loss returned by optimize_step
+                    # is the value before doing the training step
+                    # which is printed accordingly by the previous iteration number
+                    print_metrics(loss, metrics, iteration - 1)
 
                 if iteration % config.write_every == 0:
-                    write_tensorboard(writer, loss, metrics, iteration)
+                    write_tensorboard(writer, loss, metrics, iteration - 1)
 
                 if perform_val:
                     if iteration % config.val_every == 0:
@@ -217,8 +240,19 @@ def train(
             except KeyboardInterrupt:
                 logger.info("Terminating training gracefully after the current iteration.")
                 break
+        try:
+            xs = next(dl_iter)  # type: ignore[arg-type]
+            xs_to_device = data_to_device(xs, device=device, dtype=data_dtype)
+            loss, metrics = loss_fn(model, xs_to_device)
+            if "val_loss" in metrics:
+                del metrics["val_loss"]
+            if iteration % config.print_every == 0 and config.verbose:
+                print_metrics(loss, metrics, iteration)
 
-    # Final writing and checkpointing
+        except KeyboardInterrupt:
+            logger.info("Terminating training gracefully after the current iteration.")
+
+    # Final printing, writing and checkpointing
     if config.folder and not config.checkpoint_best_only:
         write_checkpoint(config.folder, model, optimizer, iteration)
     write_tensorboard(writer, loss, metrics, iteration)
