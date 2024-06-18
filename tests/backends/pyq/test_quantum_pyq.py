@@ -32,6 +32,8 @@ from qadence.constructors import (
     total_magnetization,
     zz_hamiltonian,
 )
+from qadence import run
+
 from qadence.models import QuantumModel
 from qadence.operations import (
     CNOT,
@@ -844,3 +846,11 @@ def test_move_to_dtype(
     assert wf.dtype == dtype
     expval = qm.expectation(inputs, state=state)
     assert expval.dtype == torch.float64 if dtype == torch.cdouble else torch.float32
+
+
+@pytest.mark.parametrize("gen", [Z(0) + Z(1), Z(0) + Z(1) + X(0) - X(1), Z(0) + Z(1) + X(0) - X(0)])
+def test_hamiltonian_evolution(gen: AbstractBlock) -> None:
+    state = run(HamEvo(gen, torch.tensor([1.0])))
+    assert type(state) == torch.Tensor
+    assert state.dtype == torch.complex128
+    assert not torch.any(torch.isnan(state))

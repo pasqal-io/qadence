@@ -302,8 +302,11 @@ class PyQHamiltonianEvolution(Module):
         self.param_names = config.get_param_name(block)
         self.block = block
         self.hmat: Tensor
-
-        if isinstance(block.generator, AbstractBlock) and not block.generator.is_parametric:
+        if (
+            isinstance(block.generator, AbstractBlock)
+            and not block.generator.is_parametric
+            and not block.generator._is_diag_pauli
+        ):
             hmat = block_to_tensor(
                 block.generator,
                 qubit_support=self.qubit_support,
@@ -312,7 +315,16 @@ class PyQHamiltonianEvolution(Module):
             hmat = hmat.permute(1, 2, 0)
             self.register_buffer("hmat", hmat)
             self._hamiltonian = lambda self, values: self.hmat
-
+        elif (
+            isinstance(block.generator, AbstractBlock)
+            and not block.is_parametric
+            and block.generator._is_diag_pauli
+        ):
+            hmat = block_to_diagonal(
+                block.generator, qubit_support=self.qubit_support, use_full_support=False
+            )
+            self.register_buffer("hmat", hmat)
+            self._hamiltonian = lambda self, values: self.hmat
         elif isinstance(block.generator, Tensor):
             m = block.generator.to(dtype=cdouble)
             hmat = block_to_tensor(
@@ -350,13 +362,19 @@ class PyQHamiltonianEvolution(Module):
         self._dtype: torch_dtype = self.hmat.dtype if hasattr(self, "hmat") else cdouble
 
     def _unitary(self, hamiltonian: Tensor, time_evolution: Tensor) -> Tensor:
-        self.batch_size = max(hamiltonian.size()[2], len(time_evolution))
-        diag_check = tensor(
-            [is_diag(hamiltonian[..., i]) for i in range(hamiltonian.size()[2])], device=self.device
-        )
+
+        if len(hamiltonian.size()) > 1:
+            self.batch_size = max(hamiltonian.size()[2], len(time_evolution))
+            diag_check = tensor(
+                [is_diag(hamiltonian[..., i]) for i in range(self.batch_size)], device=self.device
+            )
+            hamiltonian = diagonal(hamiltonian) if bool(diag_check) else hamiltonian
+        else:
+            self.batch_size = None
+            diag_check = tensor([True])
 
         def _evolve_diag_operator(hamiltonian: Tensor, time_evolution: Tensor) -> Tensor:
-            evol_operator = diagonal(hamiltonian) * (-1j * time_evolution).view((-1, 1))
+            evol_operator = hamiltonian * (-1j * time_evolution).view((-1, 1))
             evol_operator = diag_embed(exp(evol_operator))
             return transpose(evol_operator, 0, -1)
 
