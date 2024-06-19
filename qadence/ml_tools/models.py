@@ -169,8 +169,9 @@ class QNN(QuantumModel):
 
         Example:
         ```python exec="on" source="material-block" result="json"
+        import torch
         from qadence.ml_tools.config import AnsatzConfig, FeatureMapConfig
-        from qadence.ml_tools.qnn import QNN
+        from qadence.ml_tools import QNN
         from qadence.constructors import ObservableConfig
         from qadence.operations import Z
         from qadence.types import BasisSet, ReuploadScaling, TObservableTransform
@@ -192,14 +193,19 @@ class QNN(QuantumModel):
             ansatz_strategy="digital",
         )
         obs_config = ObservableConfig(
-            detuning=Z
+            detuning=Z,
             scale=5.0,
             shift=0.0,
-            transform=TObservableTransform.SCALE,
-            trainable_transform=False,
+            transformation_type=TObservableTransform.SCALE,
+            trainable_transform=None,
         )
 
         qnn = QNN.from_configs(register, fm_config, ansatz_config, obs_config)
+
+        x = torch.rand(2, 2)
+        y = qnn(x)
+        print(str(y)) # markdown-exec: hide
+        ```
         """
         from .constructors import build_qnn_from_configs
 
