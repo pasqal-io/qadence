@@ -116,7 +116,9 @@ class NoisyPrimitiveBlock(PrimitiveBlock):
 
     name = "NoisyPrimitiveBlock"
 
-    def __init__(self, qubit_support: tuple[int, ...], noise_probability: float | tuple[float, ...]):
+    def __init__(
+        self, qubit_support: tuple[int, ...], noise_probability: float | tuple[float, ...]
+    ):
         super().__init__(qubit_support)
         self._noise_probability = noise_probability
 
@@ -127,8 +129,7 @@ class NoisyPrimitiveBlock(PrimitiveBlock):
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, NoisyPrimitiveBlock):
             return False
-        return (super().__eq__(other) and
-                self.noise_probability == other.noise_probability)
+        return super().__eq__(other) and self.noise_probability == other.noise_probability
 
     def _to_dict(self) -> dict:
         block_dict = super()._to_dict()
@@ -142,9 +143,7 @@ class NoisyPrimitiveBlock(PrimitiveBlock):
     def __hash__(self) -> int:
         return hash((super().__hash__(), self.noise_probability))
 
-    def dagger(self) -> NoisyPrimitiveBlock:
-        #TODO : Verification on this method
-        return NoisyPrimitiveBlock(self.qubit_support, self.noise_probability)
+    # TODO: Look the dagger method.
 
 
 class ParametricBlock(PrimitiveBlock):
