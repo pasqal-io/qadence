@@ -269,39 +269,14 @@ class Backend(ABC):
     ) -> ArrayLike:
         """Run a circuit and return the resulting wave function.
 
+        #TODO : Add the possibility to run noisy circuit
+
         Arguments:
             circuit: A converted circuit as returned by `backend.circuit`.
             param_values: _**Already embedded**_ parameters of the circuit. See
                 [`embedding`][qadence.blocks.embedding.embedding] for more info.
             state: Initial state.
             endianness: Endianness of the resulting wavefunction.
-
-        Returns:
-            A list of Counter objects where each key represents a bitstring
-            and its value the number of times it has been sampled from the given wave function.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def run_dm(
-        self,
-        circuit: ConvertedCircuit,
-        noise: Noise,
-        param_values: dict[str, ArrayLike] = {},
-        state: Tensor | None = None,
-        endianness: Endianness = Endianness.BIG,
-    ) -> Tensor:
-        """Run a circuit and return the resulting the density matrix.
-
-        TODO: Temporary method for the purposes of noise model implementation.
-        To be removed in a later refactoring.
-
-        Arguments:
-            circuit: A converted circuit as returned by `backend.circuit`.
-            param_values: _**Already embedded**_ parameters of the circuit. See
-                [`embedding`][qadence.blocks.embedding.embedding] for more info.
-            state: Initial state.
-            endianness: Endianness of the resulting density matrix.
 
         Returns:
             A list of Counter objects where each key represents a bitstring
