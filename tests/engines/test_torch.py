@@ -6,7 +6,7 @@ import sympy
 import torch
 
 from qadence.backends.api import backend_factory
-from qadence.backends.pyqtorch.convert_ops import finitediff
+from qadence.backends.utils import finitediff as finite_diff
 from qadence.blocks import AbstractBlock, add, chain, kron
 from qadence.circuit import QuantumCircuit
 from qadence.operations import CNOT, RX, RZ, Z
@@ -183,11 +183,11 @@ def test_parametricobs_expval_differentiation(batch_size: int, diff_mode: str) -
     assert torch.autograd.gradgradcheck(func, (inputs_x, inputs_y, param_w))
 
     assert torch.allclose(
-        finitediff(lambda x: func(x, inputs_y, param_w), inputs_x.reshape(-1, 1), (0,)),
+        finite_diff(lambda x: func(x, inputs_y, param_w), inputs_x.reshape(-1, 1), (0,)),
         torch.autograd.grad(expval, inputs_x, torch.ones_like(expval), create_graph=True)[0],
     )
 
     assert torch.allclose(
-        finitediff(lambda w: func(inputs_x, inputs_y, w), param_w.reshape(-1, 1), (0,)),
+        finite_diff(lambda w: func(inputs_x, inputs_y, w), param_w.reshape(-1, 1), (0,)),
         torch.autograd.grad(expval, param_w, torch.ones_like(expval), create_graph=True)[0],
     )

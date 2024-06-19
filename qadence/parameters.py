@@ -16,7 +16,7 @@ from torch import Tensor, heaviside, no_grad, rand, tensor
 from qadence.types import DifferentiableExpression, Engine, TNumber
 
 # Modules to be automatically added to the qadence namespace
-__all__ = ["FeatureParameter", "Parameter", "VariationalParameter"]
+__all__ = ["FeatureParameter", "Parameter", "VariationalParameter", "ParamMap"]
 
 logger = getLogger(__name__)
 

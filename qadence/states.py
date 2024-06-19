@@ -5,14 +5,15 @@ from functools import singledispatch
 from typing import List
 
 import torch
+from numpy.typing import ArrayLike
 from torch import Tensor, concat
 from torch.distributions import Categorical, Distribution
 
 from qadence.blocks import ChainBlock, KronBlock, PrimitiveBlock, chain, kron
 from qadence.circuit import QuantumCircuit
 from qadence.execution import run
+from qadence.logger import get_script_logger
 from qadence.operations import CNOT, RX, RY, RZ, H, I, X
-from qadence.overlap import fidelity
 from qadence.types import PI, BackendName, Endianness, StateGeneratorType
 from qadence.utils import basis_to_int
 
@@ -44,6 +45,7 @@ DTYPE = torch.cdouble
 
 parametric_single_qubit_gates: List = [RX, RY, RZ]
 
+logger = get_script_logger(__name__)
 # PRIVATE
 
 
@@ -185,14 +187,18 @@ def one_state(n_qubits: int, batch_size: int = 1) -> Tensor:
 
 @singledispatch
 def product_state(
-    bitstring: str, batch_size: int = 1, endianness: Endianness = Endianness.BIG
-) -> Tensor:
+    bitstring: str,
+    batch_size: int = 1,
+    endianness: Endianness = Endianness.BIG,
+    backend: BackendName = BackendName.PYQTORCH,
+) -> ArrayLike:
     """
     Creates a product state from a bitstring.
 
     Arguments:
         bitstring (str): A bitstring.
         batch_size (int) : Batch size.
+        backend (BackendName): The backend to use. Default is "pyqtorch".
 
     Returns:
         A torch.Tensor.
@@ -201,10 +207,16 @@ def product_state(
     ```python exec="on" source="material-block" result="json"
     from qadence.states import product_state
 
-    print(product_state("1100"))
+    print(product_state("1100", backend="pyqtorch"))
+    print(product_state("1100", backend="horqrux"))
     ```
     """
-    return _state_from_bitstring(bitstring, batch_size, endianness=endianness)
+    if batch_size:
+        logger.debug(
+            "The input `batch_size` is going to be deprecated. "
+            "For now, default batch_size is set to 1."
+        )
+    return run(product_block(bitstring), backend=backend, endianness=endianness)
 
 
 @product_state.register
@@ -529,6 +541,8 @@ def rand_bitstring(N: int) -> str:
 def equivalent_state(
     s0: torch.Tensor, s1: torch.Tensor, rtol: float = 0.0, atol: float = NORMALIZATION_ATOL
 ) -> bool:
+    from qadence.overlap import fidelity
+
     fid = fidelity(s0, s1)
     expected = torch.ones_like(fid)
     return torch.allclose(fid, expected, rtol=rtol, atol=atol)  # type: ignore[no-any-return]

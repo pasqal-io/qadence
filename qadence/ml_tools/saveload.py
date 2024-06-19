@@ -53,7 +53,7 @@ def load_checkpoint(
 
 
 def write_checkpoint(
-    folder: Path, model: Module, optimizer: Optimizer | NGOptimizer, iteration: int
+    folder: Path, model: Module, optimizer: Optimizer | NGOptimizer, iteration: int | str
 ) -> None:
     from qadence import QuantumModel
 
@@ -65,11 +65,19 @@ def write_checkpoint(
         device = str(model.device).split(":")[0]  # in case of using several CUDA devices
     except Exception:
         pass
+
+    iteration_substring = f"{iteration:03n}" if isinstance(iteration, int) else iteration
     model_checkpoint_name: str = (
-        f"model_{type(model).__name__}_ckpt_" + f"{iteration:03n}" + f"_device_{device}" + ".pt"
+        f"model_{type(model).__name__}_ckpt_"
+        + f"{iteration_substring}"
+        + f"_device_{device}"
+        + ".pt"
     )
     opt_checkpoint_name: str = (
-        f"opt_{type(optimizer).__name__}_ckpt_" + f"{iteration:03n}" + f"_device_{device}" + ".pt"
+        f"opt_{type(optimizer).__name__}_ckpt_"
+        + f"{iteration_substring}"
+        + f"_device_{device}"
+        + ".pt"
     )
     try:
         d = (
@@ -111,11 +119,8 @@ def load_model(
 
     except Exception as e:
         msg = f"Unable to load state dict due to {e}.\
-               No corresponding pre-trained model found. Returning the untrained model."
-        import warnings
-
-        warnings.warn(msg, UserWarning)
-        logger.warn(msg)
+               No corresponding pre-trained model found. Returning the un-trained model."
+        logger.warning(msg)
     return model, iteration
 
 

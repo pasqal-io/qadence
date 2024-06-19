@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import math
 from collections import Counter
+from functools import partial
 from logging import getLogger
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import sympy
@@ -13,6 +14,10 @@ from torch import complex as make_complex
 from torch.linalg import eigvals
 
 from qadence.types import Endianness, ResultType, TNumber
+
+if TYPE_CHECKING:
+    from qadence.operations import Projector
+
 
 # Modules to be automatically added to the qadence namespace
 __all__ = []  # type: ignore
@@ -259,3 +264,37 @@ def validate_values_and_state(
         else:
             if not is_qadence_shape(state, n_qubits) or state.shape[0] > 1:
                 raise ValueError("Jax only supports unbatched states.")
+
+
+def one_qubit_projector(state: str, target: int) -> Projector:
+    """Returns the projector for a single qubit system.
+
+    Args:
+        state (str): The state of the projector.
+        target (int): The target qubit.
+
+    Returns:
+        Projector: The projector operator.
+    """
+    from qadence.operations import Projector
+
+    assert state in ["0", "1"], "State must be either '0' or '1'."
+    return Projector(ket=state, bra=state, qubit_support=target)
+
+
+def one_qubit_projector_matrix(state: str) -> Tensor:
+    """Returns the projector for a single qubit system.
+
+    Args:
+        state (str): The state of the projector.
+
+    Returns:
+        Tensor: The projector operator.
+    """
+    return one_qubit_projector(state, 0).tensor().squeeze()
+
+
+P0 = partial(one_qubit_projector, "0")
+P1 = partial(one_qubit_projector, "1")
+P0_MATRIX = one_qubit_projector_matrix("0")
+P1_MATRIX = one_qubit_projector_matrix("1")

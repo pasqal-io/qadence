@@ -14,21 +14,20 @@ from qadence.circuit import QuantumCircuit
 from qadence.divergences import js_divergence
 from qadence.measurements import Measurements
 from qadence.model import QuantumModel
-from qadence.operations import SWAP, H, I, S, Z
+from qadence.operations import SWAP, H, I, S
 from qadence.transpile import reassign
 from qadence.types import BackendName, DiffMode, OverlapMethod
+from qadence.utils import P0, P1
 
 # Modules to be automatically added to the qadence namespace
 __all__ = ["Overlap", "OverlapMethod"]
 
 
 def _cswap(control: int, target1: int, target2: int) -> AbstractBlock:
-    # define projectors on control qubit
-    p0 = 0.5 * I(control) + 0.5 * Z(control)
-    p1 = 0.5 * I(control) + (-0.5) * Z(control)
-
     # construct controlled-SWAP block
-    cswap_blocks = kron(p0, I(target1), I(target2)) + kron(p1, SWAP(target1, target2))
+    cswap_blocks = kron(P0(control), I(target1), I(target2)) + kron(
+        P1(control), SWAP(target1, target2)
+    )
     cswap = tag(cswap_blocks, f"CSWAP({control}, {target1}, {target2})")
 
     return cswap
@@ -37,16 +36,12 @@ def _cswap(control: int, target1: int, target2: int) -> AbstractBlock:
 def _controlled_unitary(control: int, unitary_block: AbstractBlock) -> AbstractBlock:
     n_qubits = unitary_block.n_qubits
 
-    # define projectors on control qubit
-    p0 = 0.5 * I(control) + 0.5 * Z(control)
-    p1 = 0.5 * I(control) + (-0.5) * Z(control)
-
     # shift qubit support of unitary
     shifted_unitary_block = reassign(unitary_block, {i: control + i + 1 for i in range(n_qubits)})
 
     # construct controlled-U block
-    cu_blocks = kron(p0, *[I(control + i + 1) for i in range(n_qubits)]) + kron(
-        p1, shifted_unitary_block
+    cu_blocks = kron(P0(control), *[I(control + i + 1) for i in range(n_qubits)]) + kron(
+        P1(control), shifted_unitary_block
     )
     cu = tag(cu_blocks, f"c-U({control}, {shifted_unitary_block.qubit_support})")
 

@@ -87,6 +87,15 @@ brew install graphviz
 conda install python-graphviz
 ```
 
+On Windows Linux Subsystem (WSL2) it has been reported that in some cases "wslutilities" must be installed.
+Please follow instructions [here](https://wslutiliti.es/wslu/install.html) for your flavour.
+For example on Ubuntu 22.04 LTS and later you must run:
+```
+sudo add-apt-repository ppa:wslutilities/wslu
+sudo apt update
+sudo apt install wslu
+```
+
 ## Contributing
 
 Before making a contribution, please review our [code of conduct](docs/getting_started/CODE_OF_CONDUCT.md).
@@ -116,6 +125,8 @@ install it from source using `pip`:
 # within the Conda environment
 python -m pip install -e .
 ```
+
+Users also report problems running Hatch on Windows, we suggest using WSL2.
 
 ## Citation
 
