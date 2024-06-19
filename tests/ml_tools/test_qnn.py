@@ -23,7 +23,7 @@ from qadence.ml_tools.constructors import (
 from qadence.operations import RX, RY, Z
 from qadence.parameters import FeatureParameter, Parameter
 from qadence.states import uniform_state
-from qadence.types import PI, BackendName, DiffMode
+from qadence.types import PI, BackendName, DiffMode, TObservableTransform
 
 
 def build_circuit(n_qubits_per_feature: int, n_features: int, depth: int = 2) -> QuantumCircuit:
@@ -291,7 +291,7 @@ def test_constant_and_feature_transformed_module(
     input_values = {fparam: torch.rand(batch_size, requires_grad=True)}
     if trainable is False:
         inputs += ["scale", "shift"]
-        scale, shift = "scale", "shift"
+        scale, shift = "scale", "shift"  # type: ignore[assignment]
         input_values["scale"] = torch.tensor([output_range[0]])
         input_values["shift"] = torch.tensor([output_range[1]])
     model = get_qnn(n_qubits, depth, inputs=[fparam])
@@ -320,7 +320,7 @@ def test_variational_transformed_module(
         n_qubits, depth, inputs=[fparam], scale=1.0, shift=0.0, trainable_transform=None
     )
     tm = get_qnn(
-        n_qubits, depth, inputs=inputs, scale="scale", shift="shift", trainable_transform=trainable
+        n_qubits, depth, inputs=inputs, scale="scale", shift="shift", trainable_transform=trainable  # type: ignore[arg-type]
     )
     tm.reset_vparams([scale, shift] + list(model.vparams.values()))
     pred = model({**input_values})
@@ -379,10 +379,13 @@ def test_config_qnn_output_transform() -> None:
     assert torch.allclose(2.0 * qnn(input_values) + 1, transformed_qnn(input_values) + 0.0)
 
     observable_config = ObservableConfig(
-        detuning=Z, scale=-1.0, shift=1.0, transformation_type="range"
+        detuning=Z, scale=-1.0, shift=1.0, transformation_type="range"  # type: ignore[arg-type]
     )
     transformed_observable_config = ObservableConfig(
-        detuning=Z, scale=-10.0, shift=10.0, transformation_type="range"
+        detuning=Z,
+        scale=-10.0,
+        shift=10.0,
+        transformation_type=TObservableTransform.RANGE,  # type: ignore[arg-type]
     )
 
     qnn = build_qnn_from_configs(

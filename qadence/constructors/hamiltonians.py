@@ -244,7 +244,7 @@ class ObservableConfig:
     """The scale by which to multiply the output of the observable."""
     shift: TParameter = 0.0
     """The shift to add to the output of the observable."""
-    transformation_type: TObservableTransform = TObservableTransform.NONE
+    transformation_type: TObservableTransform = TObservableTransform.NONE  # type: ignore[assignment]
     """The type of transformation."""
     trainable_transform: bool | None = None
     """
@@ -256,7 +256,7 @@ class ObservableConfig:
     """
 
     def __post_init__(self) -> None:
-        if isinstance(self.scale, TNumber) and isinstance(self.shift, TNumber):
+        if isinstance(self.scale, TNumber) and isinstance(self.shift, TNumber):  # type: ignore
             assert (
                 self.trainable_transform is None
             ), f"If scale and shift are numbers, trainable_transform must be None. \

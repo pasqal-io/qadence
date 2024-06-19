@@ -90,7 +90,7 @@ def _encode_features_series_digital(
     )
 
     support_arrays = {
-        key: support for key, support in zip(config.inputs, support_arrays_list)  # type: ignore[union-attr]
+        key: support for key, support in zip(config.inputs, support_arrays_list)  # type: ignore[union-attr, arg-type]
     }
 
     num_uploads = {key: value + 1 for key, value in config.num_repeats.items()}  # type: ignore[union-attr]
@@ -146,7 +146,7 @@ def _encode_features_parallel_digital(
     )
 
     support_arrays = {
-        key: support for key, support in zip(config.inputs, support_arrays_list)  # type: ignore[union-attr]
+        key: support for key, support in zip(config.inputs, support_arrays_list)  # type: ignore[union-attr, arg-type]
     }
 
     num_uploads = {key: value + 1 for key, value in config.num_repeats.items()}  # type: ignore[union-attr]
