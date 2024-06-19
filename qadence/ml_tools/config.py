@@ -180,7 +180,7 @@ class FeatureMapConfig:
     List that indicates the order of variables of the tensors that are passed.
 
     Optional if a single feature is being encoded, required otherwise. Given input tensors
-    `xs = torch.rand(batch_size, input_size:=2)` a QNN with `inputs=("t", "x")` will
+    `xs = torch.rand(batch_size, input_size:=2)` a QNN with `inputs=["t", "x"]` will
     assign `t, x = xs[:,0], xs[:,1]`.
     """
 

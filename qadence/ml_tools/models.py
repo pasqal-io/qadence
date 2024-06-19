@@ -101,9 +101,9 @@ class QNN(QuantumModel):
                 use exact expectation value with a statevector simulator
             noise: A noise model to use.
             configuration: optional configuration for the backend
-            inputs: Tuple that indicates the order of variables of the tensors that are passed
+            inputs: List that indicates the order of variables of the tensors that are passed
                 to the model. Given input tensors `xs = torch.rand(batch_size, input_size:=2)` a QNN
-                with `inputs=("t", "x")` will assign `t, x = xs[:,0], xs[:,1]`.
+                with `inputs=["t", "x"]` will assign `t, x = xs[:,0], xs[:,1]`.
             input_diff_mode: The differentiation mode for the input tensor.
         """
         super().__init__(
