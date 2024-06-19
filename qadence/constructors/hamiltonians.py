@@ -10,7 +10,7 @@ from torch import Tensor, double, ones, rand
 from qadence.blocks import AbstractBlock, add, block_is_qubit_hamiltonian
 from qadence.operations import N, X, Y, Z
 from qadence.register import Register
-from qadence.types import Interaction, TArray, TObservableTransform
+from qadence.types import Interaction, TArray, TNumber, TObservableTransform, TParameter
 
 logger = getLogger(__name__)
 
@@ -239,13 +239,25 @@ class ObservableConfig:
     Single qubit detuning of the observable Hamiltonian.
 
     Accepts single-qubit operator N, X, Y, or Z.
-    Defaults to Z.
     """
-    scale: float
+    scale: TParameter = 1.0
     """The scale by which to multiply the output of the observable."""
-    shift: float
+    shift: TParameter = 0.0
     """The shift to add to the output of the observable."""
-    transformation_type: TObservableTransform
+    transformation_type: TObservableTransform = TObservableTransform.NONE
     """The type of transformation."""
-    trainable_transform: bool | None
-    """Whether to have a trainable transformation on the output of the observable."""
+    trainable_transform: bool | None = None
+    """
+    Whether to have a trainable transformation on the output of the observable.
+
+    If None, the scale and shift are numbers.
+    If True, the scale and shift are VariationalParameter.
+    If False, the scale and shift are FeatureParameter.
+    """
+
+    def __post_init__(self) -> None:
+        if isinstance(self.scale, TNumber) and isinstance(self.shift, TNumber):
+            assert (
+                self.trainable_transform is None
+            ), f"If scale and shift are numbers, trainable_transform must be None. \
+            But got: {self.trainable_transform}"

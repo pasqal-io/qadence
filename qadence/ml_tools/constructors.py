@@ -641,8 +641,8 @@ def load_observable_transformations(config: ObservableConfig) -> tuple[Parameter
     shift = config.shift
     scale = config.scale
     if config.trainable_transform is not None:
-        shift = Parameter(name="shift", value=shift, trainable=config.trainable_transform)
-        scale = Parameter(name="scale", value=scale, trainable=config.trainable_transform)
+        shift = Parameter(name=shift, trainable=config.trainable_transform)
+        scale = Parameter(name=scale, trainable=config.trainable_transform)
     else:
         shift = Parameter(shift)
         scale = Parameter(scale)
@@ -679,7 +679,6 @@ def observable_from_config(
         AbstractBlock: The observable block.
     """
     scale, shift = load_observable_transformations(config)
-    # breakpoint()
     return create_observable(register, config.detuning, scale, shift, config.transformation_type)
 
 

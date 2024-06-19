@@ -200,7 +200,6 @@ class QNN(QuantumModel):
         )
 
         qnn = QNN.from_configs(register, fm_config, ansatz_config, obs_config)
-
         """
         from .constructors import build_qnn_from_configs
 

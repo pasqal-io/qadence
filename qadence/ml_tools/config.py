@@ -252,18 +252,18 @@ class FeatureMapConfig:
             "num_repeats",
         ]
 
-        for field in fields(self):
-            if field.name in property_list:
-                prop = getattr(self, field.name)
+        for target_field in fields(self):
+            if target_field.name in property_list:
+                prop = getattr(self, target_field.name)
                 if isinstance(prop, dict):
                     assert set(prop.keys()) == set(
                         self.inputs
-                    ), f"The keys in {field.name} must be the same as the inputs provided. \
-                    Alternatively, provide a single value of {field.name} to use the same {field.name}\
-                    for all features."
+                    ), f"The keys in {target_field.name} must be the same as the inputs provided. \
+                    Alternatively, provide a single value of {target_field.name} to use the same\
+                    {target_field.name} for all features."
                 else:
                     prop = {key: prop for key in self.inputs}
-                    setattr(self, field.name, prop)
+                    setattr(self, target_field.name, prop)
 
 
 @dataclass
