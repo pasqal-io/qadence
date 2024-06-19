@@ -106,6 +106,47 @@ class PrimitiveBlock(AbstractBlock):
         return self
 
 
+class NoisyPrimitiveBlock(PrimitiveBlock):
+    """
+    NoisyPrimitiveBlock represents elementary unitary operations with noise.
+
+    This class adds a noise probability parameter to the primitive block,
+    representing the likelihood of an error occurring during the operation.
+    """
+
+    name = "NoisyPrimitiveBlock"
+
+    def __init__(self, qubit_support: tuple[int, ...], noise_probability: float | tuple[float, ...]):
+        super().__init__(qubit_support)
+        self._noise_probability = noise_probability
+
+    @property
+    def noise_probability(self) -> float | tuple[float, ...]:
+        return self._noise_probability
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, NoisyPrimitiveBlock):
+            return False
+        return (super().__eq__(other) and
+                self.noise_probability == other.noise_probability)
+
+    def _to_dict(self) -> dict:
+        block_dict = super()._to_dict()
+        block_dict.update({"noise_probability": self.noise_probability})
+        return block_dict
+
+    @classmethod
+    def _from_dict(cls, d: dict) -> NoisyPrimitiveBlock:
+        return cls(d["qubit_support"], d["noise_probability"])
+
+    def __hash__(self) -> int:
+        return hash((super().__hash__(), self.noise_probability))
+
+    def dagger(self) -> NoisyPrimitiveBlock:
+        #TODO : Verification on this method
+        return NoisyPrimitiveBlock(self.qubit_support, self.noise_probability)
+
+
 class ParametricBlock(PrimitiveBlock):
     """Parameterized primitive blocks."""
 
