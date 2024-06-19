@@ -90,6 +90,7 @@ class Backend(BackendInterface):
         pyqify_state: bool = True,
         unpyqify_state: bool = True,
     ) -> Tensor:
+        # TODO: Allow the noisy simulation here.
         n_qubits = circuit.abstract.n_qubits
         if state is None:
             # If no state is passed, we infer the batch_size through the length
@@ -103,16 +104,6 @@ class Backend(BackendInterface):
         state = unpyqify(state) if unpyqify_state else state
         state = invert_endianness(state) if endianness != self.native_endianness else state
         return state
-
-    def run_dm(
-        self,
-        circuit: ConvertedCircuit,
-        noise: Noise,
-        param_values: dict[str, Tensor] = {},
-        state: Tensor | None = None,
-        endianness: Endianness = Endianness.BIG,
-    ) -> Tensor:
-        raise NotImplementedError
 
     def _batched_expectation(
         self,
