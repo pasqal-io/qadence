@@ -53,6 +53,9 @@ class TrainConfig:
     verbose: bool = True
     """Whether or not to print out metrics values during training."""
     tracking_tool: ExperimentTrackingTool = ExperimentTrackingTool.TENSORBOARD
+    """The tracking tool of choice."""
+    hyperparams: Optional[dict] = None
+    """Hyperparameters to track."""
 
     # mlflow_callbacks: list[Callable] = [write_mlflow_figure(), write_x()]
 

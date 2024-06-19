@@ -6,8 +6,8 @@ from itertools import count
 import torch
 from torch.utils.data import DataLoader
 
-from qadence import hea, QuantumCircuit, Z
-from qadence.ml_tools import train_with_grad, TrainConfig
+from qadence import QuantumCircuit, Z, hea
+from qadence.ml_tools import TrainConfig, train_with_grad
 from qadence.ml_tools.data import to_dataloader
 from qadence.ml_tools.utils import rand_featureparameters
 from qadence.models import QNN, QuantumModel
@@ -16,6 +16,13 @@ from qadence.types import ExperimentTrackingTool
 os.environ["MLFLOW_TRACKING_URI"] = "sqlite:///mlflow.db"
 os.environ["MLFLOW_EXPERIMENT"] = "mlflow_demonstration"
 os.environ["MLFLOW_RUN_NAME"] = "test_0"
+
+hyperparams = {
+    "batch_size": 10,
+    "n_qubits": 2,
+    "ansatz_depth": 1,
+    "observable": Z,
+}
 
 
 # in case you want to track remotely
@@ -27,8 +34,13 @@ def dataloader(batch_size: int = 25) -> DataLoader:
     return to_dataloader(x, y, batch_size=batch_size, infinite=True)
 
 
-data = dataloader()
-model = QNN(QuantumCircuit(2, hea(2, 1)), observable=Z(0))
+data = dataloader(hyperparams["batch_size"])
+model = QNN(
+    QuantumCircuit(
+        hyperparams["n_qubits"], hea(hyperparams["n_qubits"], hyperparams["ansatz_depth"])
+    ),
+    observable=hyperparams["observable"](0),
+)
 cnt = count()
 criterion = torch.nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
@@ -48,6 +60,7 @@ config = TrainConfig(
     checkpoint_every=1,
     write_every=1,
     tracking_tool=ExperimentTrackingTool.MLFLOW,
+    hyperparams=hyperparams,
 )
 train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
 

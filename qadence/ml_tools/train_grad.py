@@ -4,7 +4,13 @@ import importlib
 from logging import getLogger
 from typing import Callable, Union
 
-from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, TimeRemainingColumn
+from rich.progress import (
+    BarColumn,
+    Progress,
+    TaskProgressColumn,
+    TextColumn,
+    TimeRemainingColumn,
+)
 from torch import complex128, float32, float64
 from torch import device as torch_device
 from torch import dtype as torch_dtype
@@ -16,7 +22,7 @@ from torch.utils.tensorboard import SummaryWriter
 from qadence.ml_tools.config import MLFlowConfig, TrainConfig
 from qadence.ml_tools.data import DictDataLoader
 from qadence.ml_tools.optimize_step import optimize_step
-from qadence.ml_tools.printing import print_metrics, write_tracker
+from qadence.ml_tools.printing import log_tracker, print_metrics, write_tracker
 from qadence.ml_tools.saveload import load_checkpoint, write_checkpoint
 from qadence.types import ExperimentTrackingTool
 
@@ -31,7 +37,6 @@ def train(
     loss_fn: Callable,
     device: torch_device = None,
     optimize_step: Callable = optimize_step,
-    write_tracker: Callable = write_tracker,
     dtype: torch_dtype = None,
 ) -> tuple[Module, Optimizer]:
     """Runs the training loop with gradient-based optimizer.
@@ -134,6 +139,7 @@ def train(
         # writer.mlflow.pytorch.autolog(
         #     log_every_n_step=config.write_every, log_models=False, log_datasets=False
         # )
+
     ## Training
     progress = Progress(
         TextColumn("[progress.description]{task.description}"),
@@ -194,6 +200,10 @@ def train(
                 logger.info("Terminating training gracefully after the current iteration.")
                 break
 
+    # writing hyperparameters
+    if config.hyperparams:
+        log_tracker((writer, config.hyperparams, metrics), tracking_tool=config.tracking_tool)
+
     # Final writing and checkpointing
     if config.folder:
         write_checkpoint(config.folder, model, optimizer, iteration)
@@ -201,6 +211,7 @@ def train(
     if config.tracking_tool == ExperimentTrackingTool.TENSORBOARD:
         writer.close()
     elif config.tracking_tool == ExperimentTrackingTool.MLFLOW:
+        # track some final stuff e.g. images
         writer.end_run()
 
     return model, optimizer
