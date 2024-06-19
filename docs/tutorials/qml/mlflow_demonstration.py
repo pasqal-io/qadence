@@ -6,11 +6,8 @@ from itertools import count
 import torch
 from torch.utils.data import DataLoader
 
-from qadence import QuantumCircuit, Z, hea
-from qadence.ml_tools import (
-    TrainConfig,
-    train_with_grad,
-)
+from qadence import hea, QuantumCircuit, Z
+from qadence.ml_tools import train_with_grad, TrainConfig
 from qadence.ml_tools.data import to_dataloader
 from qadence.ml_tools.utils import rand_featureparameters
 from qadence.models import QNN, QuantumModel
