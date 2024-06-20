@@ -22,7 +22,7 @@ class MatrixBlock(PrimitiveBlock):
 
     Examples:
     ```python exec="on" source="material-block" result="json"
-        import torch
+    import torch
 
     from qadence.circuit import QuantumCircuit
     from qadence.types import BackendName, DiffMode
