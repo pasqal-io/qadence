@@ -39,7 +39,9 @@ from qadence.blocks import (
     TimeEvolutionBlock,
 )
 from qadence.blocks.block_to_tensor import _block_to_tensor_embedded, block_to_tensor
-from qadence.blocks.primitive import ProjectorBlock
+
+# TODO: add to __init__
+from qadence.blocks.primitive import NoisyPrimitiveBlock, ProjectorBlock
 from qadence.operations import (
     U,
     multi_qubit_gateset,
@@ -134,6 +136,9 @@ def convert_block(
                 op = pyq_cls(qubit_support[0], *config.get_param_name(block))
             else:
                 op = pyq_cls(qubit_support[0], config.get_param_name(block)[0])
+        #! For noise gates
+        elif isinstance(block, NoisyPrimitiveBlock):
+            op = pyq_cls(qubit_support[0], block.noise_probability)
         else:
             op = pyq_cls(qubit_support[0])
         return [op]

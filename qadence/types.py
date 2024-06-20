@@ -375,6 +375,9 @@ class OpName(StrEnum):
     """The Multicontrol PHASE gate."""
     TOFFOLI = "Toffoli"
     """The Toffoli gate."""
+    # Digital noise operations
+    """The BitFlip noise gate."""
+    BITFLIP = "BitFlip"
     # Analog operations
     ANALOGENTANG = "AnalogEntanglement"
     """The analog entanglement operation."""
