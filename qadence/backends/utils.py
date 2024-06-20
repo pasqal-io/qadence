@@ -10,6 +10,7 @@ import torch
 from numpy.typing import ArrayLike
 from pyqtorch.apply import apply_operator
 from pyqtorch.parametric import Parametric as PyQParametric
+from pyqtorch.utils import DensityMatrix
 from torch import (
     Tensor,
     cat,
@@ -120,7 +121,13 @@ def pyqify(state: Tensor, n_qubits: int = None) -> ArrayLike:
 
 
 def unpyqify(state: Tensor) -> Tensor:
-    """Convert a state of shape [2] * n_qubits + [batch_size] to (batch_size, 2**n_qubits)."""
+    """Convert a state of shape [2] * n_qubits + [batch_size] to (batch_size, 2**n_qubits).
+
+    Convert a density matrix of shape (batch_size, 2**n_qubits, 2**n_qubits)
+    to (batch_size, 2**n_qubits, 2**n_qubits)
+    """
+    if isinstance(state, DensityMatrix):
+        return torch.einsum("ijk->kij", state)
     return torch.flatten(state, start_dim=0, end_dim=-2).t()
 
 
