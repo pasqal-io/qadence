@@ -14,6 +14,7 @@ from .primitive import (
     ParametricControlBlock,
     ControlBlock,
     ProjectorBlock,
+    NoisyPrimitiveBlock,
 )
 from .composite import AddBlock, ChainBlock, CompositeBlock, KronBlock, PutBlock
 from .matrix import MatrixBlock

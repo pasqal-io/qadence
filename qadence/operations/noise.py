@@ -2,12 +2,11 @@ from __future__ import annotations
 
 from logging import getLogger
 
-from qadence.blocks.primitive import NoisyPrimitiveBlock
-#TODO: ADD NoisyPrimitiveBlock to __init__ qadence.block
-
+from qadence.blocks import NoisyPrimitiveBlock
 from qadence.types import OpName
 
 logger = getLogger(__name__)
+
 
 class BitFlip(NoisyPrimitiveBlock):
     """The Bitflip noise gate."""
@@ -16,7 +15,7 @@ class BitFlip(NoisyPrimitiveBlock):
 
     def __init__(self, target: int, noise_probability: float | tuple[float, ...]):
         super().__init__((target,), noise_probability)
-    
+
     @property
     def generator(self) -> None:
         raise ValueError("Property `generator` not available for non-unitary operator.")

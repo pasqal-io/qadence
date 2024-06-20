@@ -33,15 +33,14 @@ from qadence.blocks import (
     ChainBlock,
     CompositeBlock,
     MatrixBlock,
+    NoisyPrimitiveBlock,
     ParametricBlock,
     PrimitiveBlock,
     ScaleBlock,
     TimeEvolutionBlock,
 )
 from qadence.blocks.block_to_tensor import _block_to_tensor_embedded, block_to_tensor
-
-# TODO: add to __init__
-from qadence.blocks.primitive import NoisyPrimitiveBlock, ProjectorBlock
+from qadence.blocks.primitive import ProjectorBlock
 from qadence.operations import (
     U,
     multi_qubit_gateset,
