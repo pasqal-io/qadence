@@ -8,6 +8,9 @@ from pathlib import Path
 from typing import Callable, Optional
 from uuid import uuid4
 
+from matplotlib.figure import Figure
+from torch.nn import Module
+
 from qadence.types import ExperimentTrackingTool
 
 logger = getLogger(__name__)
@@ -35,6 +38,11 @@ class TrainConfig:
     """Write tensorboard logs."""
     checkpoint_every: int = 5000
     """Write model/optimizer checkpoint."""
+    plot_every: Optional[int] = None
+    """Write figures.
+
+    NOTE: currently only works with mlflow.
+    """
     folder: Optional[Path] = None
     """Checkpoint/tensorboard logs folder."""
     create_subfolder_per_run: bool = False
@@ -56,6 +64,8 @@ class TrainConfig:
     """The tracking tool of choice."""
     hyperparams: Optional[dict] = None
     """Hyperparameters to track."""
+    plotting_functions: Optional[tuple[Callable[[Module, int], tuple[str, Figure]]]] = None
+    """Functions for in-train plotting."""
 
     # mlflow_callbacks: list[Callable] = [write_mlflow_figure(), write_x()]
 
@@ -72,6 +82,10 @@ class TrainConfig:
             self.trainstop_criterion = lambda x: x <= self.max_iter
         if self.validation_criterion is None:
             self.validation_criterion = lambda x: False
+        if self.plot_every and self.tracking_tool != ExperimentTrackingTool.MLFLOW:
+            raise NotImplementedError("In-training plots are only available with mlflow tracking.")
+        if self.plot_every and self.plotting_functions is None:
+            logger.warning("Plots tracking is required, but no plotting functions are provided.")
 
 
 @dataclass

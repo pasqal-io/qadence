@@ -22,7 +22,12 @@ from torch.utils.tensorboard import SummaryWriter
 from qadence.ml_tools.config import MLFlowConfig, TrainConfig
 from qadence.ml_tools.data import DictDataLoader
 from qadence.ml_tools.optimize_step import optimize_step
-from qadence.ml_tools.printing import log_tracker, print_metrics, write_tracker
+from qadence.ml_tools.printing import (
+    log_tracker,
+    plot_tracker,
+    print_metrics,
+    write_tracker,
+)
 from qadence.ml_tools.saveload import load_checkpoint, write_checkpoint
 from qadence.types import ExperimentTrackingTool
 
@@ -191,6 +196,11 @@ def train(
 
                 if iteration % config.write_every == 0:
                     write_tracker((writer, loss, metrics, iteration), config.tracking_tool)
+
+                if iteration % config.plot_every == 0:
+                    plot_tracker(
+                        (writer, model, iteration, config.plotting_functions), config.tracking_tool
+                    )
 
                 if config.folder:
                     if iteration % config.checkpoint_every == 0:
