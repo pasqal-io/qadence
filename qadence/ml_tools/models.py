@@ -60,7 +60,9 @@ def derivative(ufa: torch.nn.Module, x: Tensor, derivative_indices: tuple[int, .
     ansatz_config = AnsatzConfig()
     obs_config = ObservableConfig(detuning=Z)
 
-    f = QNN.from_configs(register=3, fm_config=fm_config, ansatz_config=ansatz_config, obs_config=obs_config)
+    f = QNN.from_configs(
+        register=3, fm_config=fm_config, ansatz_config=ansatz_config, obs_config=obs_config
+    )
     inputs = torch.rand(5,3,requires_grad=True)
 
     # df_dx
