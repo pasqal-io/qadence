@@ -45,8 +45,8 @@ def load_checkpoint(
     folder: Path,
     model: Module,
     optimizer: Optimizer | NGOptimizer,
-    model_ckpt_name: Path,
-    opt_ckpt_name: Path,
+    model_ckpt_name: Path | str = "",
+    opt_ckpt_name: Path | str = "",
     device: str | torch.device | None = None,
 ) -> tuple[Module, Optimizer | NGOptimizer, int]:
     if device is None:
@@ -116,7 +116,7 @@ def load_model(
     iteration = 0
     if model_ckpt_name == "":
         model_ckpt_name = get_latest_checkpoint_name(folder, "model", device)
-
+    model_ckpt_name = ""
     try:
         iteration, model_dict = torch.load(folder / model_ckpt_name, *args, **kwargs)
         if isinstance(model, (QuantumModel, QNN, TransformedModule)):
