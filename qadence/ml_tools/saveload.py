@@ -33,6 +33,7 @@ def get_latest_checkpoint_name(
             if match or legacy_match:
                 if legacy_match:
                     logger.warn(f"Found checkpoint(s) in legacy format: {f}.")
+                    match = legacy_match
                 index_str = match.group(1).replace("_", "")
                 index = int(index_str)
                 if index > max_index:
