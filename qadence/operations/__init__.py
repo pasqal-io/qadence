@@ -39,7 +39,8 @@ from .primitive import SWAP, H, I, N, Projector, S, SDagger, T, TDagger, X, Y, Z
 pauli_gateset: list = [I, X, Y, Z]
 # FIXME: add Tdagger when implemented
 # TODO: Add single qubit noise gate
-single_qubit_gateset = [X, Y, Z, H, I, RX, RY, RZ, U, S, SDagger, T, PHASE, BitFlip]
+single_qubit_gateset = [X, Y, Z, H, I, RX, RY, RZ, U, S, SDagger, T, PHASE]
+single_qubit_noise_gateset = [BitFlip]
 two_qubit_gateset = [CNOT, SWAP, CZ, CRX, CRY, CRZ, CPHASE]
 three_qubit_gateset = [CSWAP]
 multi_qubit_gateset = [Toffoli, MCRX, MCRY, MCRZ, MCPHASE, MCZ]

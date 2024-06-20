@@ -46,6 +46,7 @@ from qadence.operations import (
     multi_qubit_gateset,
     non_unitary_gateset,
     single_qubit_gateset,
+    single_qubit_noise_gateset,
     three_qubit_gateset,
     two_qubit_gateset,
 )
@@ -141,11 +142,12 @@ def convert_block(
                 op = pyq_cls(qubit_support[0], *config.get_param_name(block))
             else:
                 op = pyq_cls(qubit_support[0], config.get_param_name(block)[0])
-        #! For noise gates
-        elif isinstance(block, NoisyPrimitiveBlock):
-            op = pyq_cls(qubit_support[0], block.noise_probability)
         else:
             op = pyq_cls(qubit_support[0])
+        return [op]
+    elif isinstance(block, tuple(single_qubit_noise_gateset)):
+        pyq_cls = getattr(pyq, block.name)
+        op = pyq_cls(qubit_support[0], block.noise_probability)  # type: ignore[attr-defined]
         return [op]
     elif isinstance(block, tuple(two_qubit_gateset)):
         pyq_cls = getattr(pyq, block.name)
