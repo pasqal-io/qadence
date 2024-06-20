@@ -10,7 +10,7 @@ from torch import Tensor, double, ones, rand
 from qadence.blocks import AbstractBlock, add, block_is_qubit_hamiltonian
 from qadence.operations import N, X, Y, Z
 from qadence.register import Register
-from qadence.types import Interaction, TArray, TNumber, TObservableTransform, TParameter
+from qadence.types import Interaction, TArray, TObservableTransform, TParameter
 
 logger = getLogger(__name__)
 
