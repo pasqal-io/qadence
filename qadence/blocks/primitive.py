@@ -143,7 +143,8 @@ class NoisyPrimitiveBlock(PrimitiveBlock):
     def __hash__(self) -> int:
         return hash((super().__hash__(), self.noise_probability))
 
-    # TODO: Look the dagger method.
+    def dagger(self) -> PrimitiveBlock:
+        raise ValueError("Property `dagger` not available for noise gate.")
 
 
 class ParametricBlock(PrimitiveBlock):

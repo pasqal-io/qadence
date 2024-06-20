@@ -115,10 +115,16 @@ def convert_block(
         ops = list(flatten(*(convert_block(b, n_qubits, config) for b in block.blocks)))
         if isinstance(block, AddBlock):
             return [pyq.Add(ops)]  # add
-        elif is_single_qubit_chain(block) and config.use_single_qubit_composition:
-            return [pyq.Merge(ops)]  # for chains of single qubit ops on the same qubit
+        elif (
+            is_single_qubit_chain(block)
+            and config.use_single_qubit_composition
+            and all([not isinstance(b, NoisyPrimitiveBlock) for b in block])
+        ):
+            return [
+                pyq.Merge(ops)
+            ]  # for chains of single qubit ops on the same qubit without noise
         else:
-            return [pyq.Sequence(ops)]  # for kron and chain
+            return [pyq.Sequence(ops)]  # for kron and chain with multiple qubits/1-qubit with noise
     elif isinstance(block, tuple(non_unitary_gateset)):
         if isinstance(block, ProjectorBlock):
             projector = getattr(pyq, block.name)
