@@ -256,7 +256,13 @@ class ObservableConfig:
     """
 
     def __post_init__(self) -> None:
-        if isinstance(self.scale, TNumber) and isinstance(self.shift, TNumber):  # type: ignore
+        if type(self.scale) in (int, float, complex, np.int64, np.float64) and type(self.shift) in (
+            int,
+            float,
+            complex,
+            np.int64,
+            np.float64,
+        ):
             assert (
                 self.trainable_transform is None
             ), f"If scale and shift are numbers, trainable_transform must be None. \
