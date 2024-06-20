@@ -48,7 +48,13 @@ def single_gap_psr(
     Returns:
         Tensor: tensor containing derivative values
     """
-
+    device = torch.device("cpu")
+    try:
+        device = [v.device for v in param_dict.values()][0]
+    except Exception:
+        pass
+    spectral_gap = spectral_gap.to(device=device)
+    shift = shift.to(device=device)
     # + pi/2 shift
     shifted_params = param_dict.copy()
     shifted_params[param_name] = shifted_params[param_name] + shift
