@@ -4,13 +4,19 @@ The `QNN` class needs a circuit and a list of observables; the number of feature
 
 The circuit has two parts, the feature map and the ansatz. The feature map is responsible for encoding the input data into the quantum state, while the ansatz is responsible for the variational part of the model. In addition, a third part of the QNN is the observables, which is (a list of) operators that are measured at the end of the circuit.
 
+In [QML Constructors](../../content/qml_constructors.md) we have seen how to construct the feature map and the ansatz. In this tutorial, we will see how to do the same using configs.
+
 One convenient way to construct these three parts of the model is to use the config classes, namely, [`FeatureMapConfig`][qadence.ml_tools.config.FeatureMapConfig], [`AnsatzConfig`][qadence.ml_tools.config.AnsatzConfig], and [`ObservableConfig`][qadence.constructors.hamiltonians.ObservableConfig]. These classes allow you to specify the type of circuit and the parameters of the circuit in a structured way.
+
+## Defining the Feature Map
 
 Let us say we want to build a 4-qubit QNN that takes two inputs, namely, the $x$ and the $y$ coordinates of a point in the plane. We can use the `FeatureMapConfig` class to specify the feature map.
 
-```python exec="on" source="material-block" session="config" result="json"
+```python exec="on" source="material-block" session="config" html="1"
 from qadence.ml_tools.config import FeatureMapConfig
 from qadence.types import BasisSet, ReuploadScaling
+from qadence.blocks import chain
+from qadence.ml_tools.constructors import create_fm_blocks
 
 fm_config = FeatureMapConfig(
     num_features=2,
@@ -22,6 +28,11 @@ fm_config = FeatureMapConfig(
         "y": (0.0, 1.0),
     },
 )
+
+fm_blocks = create_fm_blocks(register=4, config=fm_config)
+feature_map = chain(*fm_blocks)
+from qadence.draw import html_string # markdown-exec: hide
+print(html_string(feature_map)) # markdown-exec: hide
 ```
 
 We have specified that the feature map should take two features, and have named the [`FeatureParameter`][qadence.parameters.FeatureParameter] "x" and "y" respectively. Both these parameters are encoded using the Chebyshev basis set, and the reupload scaling is set to `ReuploadScaling.TOWER`. One can optionally the basis and the reupload scaling for each parameter separately.
@@ -30,45 +41,63 @@ The `feature_range` parameter is a dictionary that specifies the range of values
 
 For full details on the `FeatureMapConfig` class, see the [API documentation][qadence.ml_tools.config.FeatureMapConfig].
 
+## Defining the Ansatz
+
 The next part of the QNN is the ansatz. We use `AnsatzConfig` class to specify the type of ansatz.
 
 Let us say, we want to follow this feature map with 2 layers of hardware efficient ansatz.
 
-```python exec="on" source="material-block" session="config" result="json"
+```python exec="on" source="material-block" session="config" html="1"
 from qadence.ml_tools.config import AnsatzConfig
+from qadence.ml_tools.constructors import create_ansatz
 
 ansatz_config = AnsatzConfig(
     depth=2,
     ansatz_type="hea",
     ansatz_strategy="digital",
 )
+
+ansatz = create_ansatz(register=4, config=ansatz_config)
+
+print(html_string(ansatz)) # markdown-exec: hide
 ```
 
 We have specified that the ansatz should have a depth of 2, and the ansatz type is "hea" (Hardware Efficient Ansatz). The ansatz strategy is set to "digital", which means digital gates are being used. One could alternatively use "analog" or "rydberg" as the ansatz strategy.
 
 For full details on the `AnsatzConfig` class, see the [API documentation][qadence.ml_tools.config.AnsatzConfig].
 
+## Defining the Observable
+
 And lastly, the observable. Naturally, we use the `ObservableConfig` class to specify the observable.
 
 We can specify any hamiltonian that we want to measure at the end of the circuit. Let us say we want to measure the $Z$ operator.
 
-```python exec="on" source="material-block" session="config" result="json"
+```python exec="on" source="material-block" session="config" html="1"
 from qadence.constructors.hamiltonians import ObservableConfig
 from qadence.operations import Z
+from qadence.ml_tools.constructors import observable_from_config
 
 observable_config = ObservableConfig(
     detuning=Z,
     scale=3.0,
     shift=-1.0,
 )
+
+observable = observable_from_config(register=4, config=observable_config)
+print(html_string(observable)) # markdown-exec: hide
 ```
 
-We have specified the observable hamiltonian to be one with Z detuning. The result is linearly scaled by 3.0 and shifted by -1.0.
+We have specified the observable hamiltonian to be one with Z detuning. The result is linearly scaled by 3.0 and shifted by -1.0. These parameters can optionally also be [FeatureParameter][qadence.parameters.FeatureParameter] or [VariationalParameter][qadence.parameters.VariationalParameter]
+
+One can also specify the observable as a list of observables, in which case the QNN will output a list of values.
+
+For full details on the `ObservableConfig` class, see the [API documentation][qadence.constructors.hamiltonians.ObservableConfig].
+
+## Defining the QNN from the Configs
 
 To build the QNN, we can now use the `QNN` class.
 
-```python exec="on" source="material-block" session="config" result="json"
-import torch
+```python exec="on" source="material-block" html=1 session="config"
 from qadence.ml_tools.models import QNN
 
 qnn = QNN.from_configs(
@@ -78,7 +107,5 @@ qnn = QNN.from_configs(
     obs_config=observable_config,
 )
 
-x = torch.rand(10, 2)
-y = qnn(x)
-print(str(y)) # markdown-exec: hide
+print(html_string(qnn)) # markdown-exec: hide
 ```
