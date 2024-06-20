@@ -1,18 +1,18 @@
 from __future__ import annotations
 
 import random
-import warnings
 from functools import singledispatch
 from typing import List
 
 import torch
-from jax.typing import ArrayLike
+from numpy.typing import ArrayLike
 from torch import Tensor, concat
 from torch.distributions import Categorical, Distribution
 
 from qadence.blocks import ChainBlock, KronBlock, PrimitiveBlock, chain, kron
 from qadence.circuit import QuantumCircuit
 from qadence.execution import run
+from qadence.logger import get_script_logger
 from qadence.operations import CNOT, RX, RY, RZ, H, I, X
 from qadence.types import PI, BackendName, Endianness, StateGeneratorType
 from qadence.utils import basis_to_int
@@ -45,6 +45,7 @@ DTYPE = torch.cdouble
 
 parametric_single_qubit_gates: List = [RX, RY, RZ]
 
+logger = get_script_logger(__name__)
 # PRIVATE
 
 
@@ -189,7 +190,7 @@ def product_state(
     bitstring: str,
     batch_size: int = 1,
     endianness: Endianness = Endianness.BIG,
-    backend: str = "pyqtorch",
+    backend: BackendName = BackendName.PYQTORCH,
 ) -> ArrayLike:
     """
     Creates a product state from a bitstring.
@@ -197,7 +198,7 @@ def product_state(
     Arguments:
         bitstring (str): A bitstring.
         batch_size (int) : Batch size.
-        backend (str): The backend to use. Default is "pyqtorch".
+        backend (BackendName): The backend to use. Default is "pyqtorch".
 
     Returns:
         A torch.Tensor.
@@ -211,11 +212,9 @@ def product_state(
     ```
     """
     if batch_size:
-        warnings.warn(
+        logger.debug(
             "The input `batch_size` is going to be deprecated. "
-            "For now, default batch_size is set to 1.",
-            DeprecationWarning,
-            stacklevel=2,
+            "For now, default batch_size is set to 1."
         )
     return run(product_block(bitstring), backend=backend, endianness=endianness)
 
