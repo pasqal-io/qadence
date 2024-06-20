@@ -4,7 +4,8 @@ import pytest
 import torch
 
 import qadence as qd
-from qadence.backends.utils import _torch_derivative, finitediff
+from qadence.backends.utils import finitediff
+from qadence.ml_tools.models import _torch_derivative
 
 
 @pytest.mark.parametrize(

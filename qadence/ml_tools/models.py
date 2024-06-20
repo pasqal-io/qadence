@@ -5,11 +5,11 @@ from logging import getLogger
 from typing import Any, Callable
 
 import sympy
+import torch
 from torch import Tensor, nn
 
 from qadence.backend import BackendConfiguration, ConvertedObservable
 from qadence.backends.api import config_factory
-from qadence.backends.utils import _torch_derivative, finitediff
 from qadence.blocks.abstract import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
@@ -20,6 +20,55 @@ from qadence.register import Register
 from qadence.types import BackendName, DiffMode, Endianness, InputDiffMode, ParamDictType
 
 logger = getLogger(__name__)
+
+
+def _torch_derivative(
+    ufa: Callable, x: torch.Tensor, derivative_indices: tuple[int, ...]
+) -> torch.Tensor:
+    y = ufa(x)
+    for idx in derivative_indices:
+        out = torch.autograd.grad(y, x, torch.ones_like(y), create_graph=True)[0]
+        y = out[:, idx]
+    return y.reshape(-1, 1)
+
+
+def derivative(ufa: torch.nn.Module, x: Tensor, derivative_indices: tuple[int, ...]) -> Tensor:
+    """Compute derivatives w.r.t.
+
+    inputs of a UFA with a single output. The
+    `derivative_indices` specify which derivative(s) are computed.  E.g.
+    `derivative_indices=(1,2)` would compute the a second order derivative w.r.t
+    to the indices `1` and `2` of the input tensor.
+
+    Arguments:
+        ufa: The model for which we want to compute the derivative.
+        x (Tensor): (batch_size, input_size) input tensor.
+        derivative_indices (tuple): Define which derivatives to compute.
+
+    Examples:
+    If we create a UFA with three inputs and denote the first, second, and third
+    input with `x`, `y`, and `z` we can compute the following derivatives w.r.t
+    to those inputs:
+    ```py exec="on" source="material-block"
+    import torch
+    from qadence import QNN
+    from qadence.backends.utils import derivative
+
+    f = MLP([3,3,1])
+    inputs = torch.rand(5,3,requires_grad=True)
+
+    # df_dx
+    derivative(f, inputs, (0,))
+
+    # d2f_dydz
+    derivative(f, inputs, (1,2))
+
+    # d3fdy2dx
+    derivative(f, inputs, (1,1,0))
+    ```
+    """
+    assert ufa.out_features == 1, "Can only call `derivative` on models with 1D output."
+    return ufa._derivative(x, derivative_indices)
 
 
 def format_to_dict_fn(
@@ -142,6 +191,8 @@ class QNN(QuantumModel):
         self.format_to_dict = format_to_dict_fn(self.inputs)  # type: ignore[arg-type]
         self.input_diff_mode = InputDiffMode(input_diff_mode)
         if self.input_diff_mode == InputDiffMode.FD:
+            from qadence.backends.utils import finitediff
+
             self.__derivative = finitediff
         elif self.input_diff_mode == InputDiffMode.AD:
             self.__derivative = _torch_derivative  # type: ignore[assignment]
