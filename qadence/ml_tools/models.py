@@ -51,10 +51,16 @@ def derivative(ufa: torch.nn.Module, x: Tensor, derivative_indices: tuple[int, .
     to those inputs:
     ```py exec="on" source="material-block"
     import torch
-    from qadence import QNN
-    from qadence.backends.utils import derivative
+    from qadence.ml_tools.models import derivative, QNN
+    from qadence.ml_tools.config import FeatureMapConfig, AnsatzConfig
+    from qadence.constructors.hamiltonians import ObservableConfig
+    from qadence.operations import Z
 
-    f = MLP([3,3,1])
+    fm_config = FeatureMapConfig(num_features=3, inputs=["x", "y", "z"])
+    ansatz_config = AnsatzConfig()
+    obs_config = ObservableConfig(detuning=Z)
+
+    f = QNN.from_configs(register=3, fm_config=fm_config, ansatz_config=ansatz_config, obs_config=obs_config)
     inputs = torch.rand(5,3,requires_grad=True)
 
     # df_dx
