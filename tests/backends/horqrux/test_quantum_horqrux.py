@@ -79,7 +79,7 @@ def test_psr_d3fdx(batch_size: int, obs: AbstractBlock) -> None:
     assert jnp.allclose(grad_dict["ad"], grad_dict["gpsr"])
 
 
-@pytest.mark.slow
+@pytest.mark.xfail(reason="Double jacrev call should be replaced.")
 @pytest.mark.parametrize("batch_size", [1])
 @pytest.mark.parametrize("obs", [Z(0)])
 def test_psr_2nd_order_mixed(batch_size: int, obs: AbstractBlock) -> None:

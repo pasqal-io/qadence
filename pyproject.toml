@@ -44,7 +44,7 @@ dependencies = [
     "jsonschema",
     "nevergrad",
     "scipy",
-    "pyqtorch==1.1.2",
+    "pyqtorch==1.2.1",
     "pyyaml",
     "matplotlib",
     "Arpeggio==2.0.2",
@@ -134,7 +134,7 @@ dependencies = [
   "mkdocstrings-python",
   "mkdocs-section-index",
   "mkdocs-exclude",
-  "markdown-exec",
+  "markdown-exec<1.9.0",
   "mike",
 ]
 features = ["pulser", "braket", "horqrux", "visualization"]
