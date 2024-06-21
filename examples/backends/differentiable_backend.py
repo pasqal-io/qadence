@@ -1,22 +1,21 @@
+#!/bin/python
 from __future__ import annotations
+
+from pathlib import Path
 
 import numpy as np
 import sympy
 import torch
 
-from qadence import (
-    CNOT,
-    RX,
-    RY,
-    Parameter,
-    QuantumCircuit,
-    chain,
-    total_magnetization,
-)
+DEVICE = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+torch.set_default_device(DEVICE)
+torch.manual_seed(42)
+from qadence import CNOT, RX, RY, Parameter, QuantumCircuit, chain, total_magnetization
 from qadence.backends.pyqtorch.backend import Backend as PyQTorchBackend
 from qadence.engines.torch.differentiable_backend import DifferentiableBackend
+from qadence.logger import get_script_logger
 
-torch.manual_seed(42)
+logger = get_script_logger("diff_backend")
 
 
 def circuit(n_qubits):
@@ -39,6 +38,7 @@ if __name__ == "__main__":
     n_qubits = 2
     batch_size = 5
 
+    logger.info(f"Running example {Path(__file__).name} with n_qubits = {n_qubits}")
     # Making circuit with AD
     circ = circuit(n_qubits)
     observable = total_magnetization(n_qubits=n_qubits)
@@ -85,11 +85,11 @@ if __name__ == "__main__":
         expval, list(params.values())[0], torch.ones_like(expval)
     )[0]
 
-    print(f"Derivative with respect to 'x' with AD:  {dexpval_x}")
-    print(f"Derivative with respect to 'x' with PSR: {dexpval_psr_x}")
-    print(f"Derivative with respect to 'xx' with AD:  {dexpval_xx}")
-    print(f"Derivative with respect to 'xx' with PSR: {dexpval_psr_xx}")
-    print(f"Derivative with respect to 'xx, theta' with AD:  {dexpval_xxtheta}")
-    print(f"Derivative with respect to 'xx, theta' with PSR: {dexpval_psr_xxtheta}")
-    print(f"Derivative with respect to 'theta' with ad:  {dexpval_theta}")
-    print(f"Derivative with respect to 'theta' with PSR: {dexpval_psr_theta}")
+    logger.info(f"Derivative with respect to 'x' with AD:  {dexpval_x}")
+    logger.info(f"Derivative with respect to 'x' with PSR: {dexpval_psr_x}")
+    logger.info(f"Derivative with respect to 'xx' with AD:  {dexpval_xx}")
+    logger.info(f"Derivative with respect to 'xx' with PSR: {dexpval_psr_xx}")
+    logger.info(f"Derivative with respect to 'xx, theta' with AD:  {dexpval_xxtheta}")
+    logger.info(f"Derivative with respect to 'xx, theta' with PSR: {dexpval_psr_xxtheta}")
+    logger.info(f"Derivative with respect to 'theta' with ad:  {dexpval_theta}")
+    logger.info(f"Derivative with respect to 'theta' with PSR: {dexpval_psr_theta}")

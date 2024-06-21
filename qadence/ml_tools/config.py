@@ -38,6 +38,16 @@ class TrainConfig:
     """
     checkpoint_best_only: bool = False
     """Write model/optimizer checkpoint only if a metric has improved."""
+    val_every: int | None = None
+    """Calculate validation metric.
+
+    If None, validation check is not performed.
+    """
+    val_epsilon: float = 1e-5
+    """Safety margin to check if validation loss is smaller than the lowest.
+
+    validation loss across previous iterations.
+    """
     validation_criterion: Optional[Callable] = None
     """A boolean function which evaluates a given validation metric is satisfied."""
     trainstop_criterion: Optional[Callable] = None
@@ -59,4 +69,4 @@ class TrainConfig:
         if self.trainstop_criterion is None:
             self.trainstop_criterion = lambda x: x <= self.max_iter
         if self.validation_criterion is None:
-            self.validation_criterion = lambda x: False
+            self.validation_criterion = lambda *x: False

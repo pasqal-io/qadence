@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from sympy import *
 from sympy import Expr
 from torch import isclose
 
@@ -16,9 +17,17 @@ from qadence.serialization import (
     SerializationFormat,
     deserialize,
     load,
+    parse_expr_fn,
     save,
     serialize,
 )
+
+
+def test_serialization_parser() -> None:
+    assert parse_expr_fn("Float('-0.33261030434342942', precision=53)") is True
+    assert parse_expr_fn("Mul(Float('2.0',precision=53), Parameter('theta_0'))") is True
+    assert parse_expr_fn("2*3") is False
+    assert parse_expr_fn("__import__('os').system('ls -la')") is False
 
 
 def test_non_module_serialization(

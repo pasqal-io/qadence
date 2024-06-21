@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import re
+from logging import getLogger
 from pathlib import Path
 from typing import Any
 
@@ -10,9 +11,7 @@ from nevergrad.optimization.base import Optimizer as NGOptimizer
 from torch.nn import Module
 from torch.optim import Optimizer
 
-from qadence.logger import get_logger
-
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 def get_latest_checkpoint_name(folder: Path, type: str) -> Path:
@@ -54,13 +53,31 @@ def load_checkpoint(
 
 
 def write_checkpoint(
-    folder: Path, model: Module, optimizer: Optimizer | NGOptimizer, iteration: int
+    folder: Path, model: Module, optimizer: Optimizer | NGOptimizer, iteration: int | str
 ) -> None:
     from qadence.ml_tools.models import TransformedModule
     from qadence.models import QNN, QuantumModel
 
-    model_checkpoint_name: str = f"model_{type(model).__name__}_ckpt_" + f"{iteration:03n}" + ".pt"
-    opt_checkpoint_name: str = f"opt_{type(optimizer).__name__}_ckpt_" + f"{iteration:03n}" + ".pt"
+    device = None
+    try:
+        # We extract the device from the pyqtorch native circuit
+        device = str(model.device).split(":")[0]  # in case of using several CUDA devices
+    except Exception:
+        pass
+
+    iteration_substring = f"{iteration:03n}" if isinstance(iteration, int) else iteration
+    model_checkpoint_name: str = (
+        f"model_{type(model).__name__}_ckpt_"
+        + f"{iteration_substring}"
+        + f"_device_{device}"
+        + ".pt"
+    )
+    opt_checkpoint_name: str = (
+        f"opt_{type(optimizer).__name__}_ckpt_"
+        + f"{iteration_substring}"
+        + f"_device_{device}"
+        + ".pt"
+    )
     try:
         d = (
             model._to_dict(save_params=True)
@@ -103,10 +120,7 @@ def load_model(
     except Exception as e:
         msg = f"Unable to load state dict due to {e}.\
                No corresponding pre-trained model found. Returning the un-trained model."
-        import warnings
-
-        warnings.warn(msg, UserWarning)
-        logger.warn(msg)
+        logger.warning(msg)
     return model, iteration
 
 

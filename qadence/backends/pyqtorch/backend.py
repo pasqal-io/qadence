@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass, field
+from logging import getLogger
 from typing import Any
 
 import pyqtorch as pyq
@@ -18,7 +19,6 @@ from qadence.backends.utils import (
 )
 from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
-from qadence.logger import get_logger
 from qadence.measurements import Measurements
 from qadence.mitigations.protocols import Mitigations, apply_mitigation
 from qadence.noise import Noise
@@ -31,12 +31,12 @@ from qadence.transpile import (
     transpile,
 )
 from qadence.types import BackendName, Endianness, Engine
-from qadence.utils import infer_batchsize, int_to_basis
+from qadence.utils import infer_batchsize
 
 from .config import Configuration, default_passes
-from .convert_ops import convert_block, convert_observable
+from .convert_ops import convert_block
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 @dataclass(frozen=True, eq=True)
@@ -53,6 +53,7 @@ class Backend(BackendInterface):
     native_endianness: Endianness = Endianness.BIG
     config: Configuration = field(default_factory=Configuration)
     engine: Engine = Engine.TORCH
+    logger.debug("Initialised")
 
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:
         passes = self.config.transpilation_passes
@@ -76,11 +77,16 @@ class Backend(BackendInterface):
             scale_primitive_blocks_only,
         ]
         block = transpile(*transpilations)(observable)  # type: ignore[call-overload]
-
-        (native,) = convert_observable(block, n_qubits=n_qubits, config=self.config)
+        operations = convert_block(block, n_qubits, self.config)
+        obs_cls = (
+            pyq.DiagonalObservable
+            if block._is_diag_pauli and not block.is_parametric
+            else pyq.Observable
+        )
+        native = obs_cls(n_qubits=n_qubits, operations=operations)
         return ConvertedObservable(native=native, abstract=block, original=observable)
 
-    def _run(
+    def run(
         self,
         circuit: ConvertedCircuit,
         param_values: dict[str, Tensor] = {},
@@ -98,7 +104,7 @@ class Backend(BackendInterface):
             validate_state(state, n_qubits)
             # pyqtorch expects input shape [2] * n_qubits + [batch_size]
             state = pyqify(state, n_qubits) if pyqify_state else state
-        state = circuit.native.run(state, param_values)
+        state = circuit.native.run(state=state, values=param_values)
         state = unpyqify(state) if unpyqify_state else state
         state = invert_endianness(state) if endianness != self.native_endianness else state
         return state
@@ -151,7 +157,9 @@ class Backend(BackendInterface):
         if state is None:
             from qadence.states import zero_state
 
-            state = zero_state(circuit.abstract.n_qubits, batch_size=1)
+            state = zero_state(circuit.abstract.n_qubits, batch_size=1).to(
+                dtype=circuit.native.dtype
+            )
         if state.size(0) != 1:
             raise ValueError(
                 "Looping expectation does not make sense with batched initial state. "
@@ -205,36 +213,17 @@ class Backend(BackendInterface):
         noise: Noise | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
+        pyqify_state: bool = True,
     ) -> list[Counter]:
-        if n_shots < 1:
-            raise ValueError("You can only call sample with n_shots>0.")
-
-        def _sample(_probs: Tensor, n_shots: int, endianness: Endianness, n_qubits: int) -> Counter:
-            return Counter(
-                {
-                    int_to_basis(k=k, n_qubits=n_qubits, endianness=endianness): count.item()
-                    for k, count in enumerate(
-                        torch.bincount(
-                            torch.multinomial(input=_probs, num_samples=n_shots, replacement=True)
-                        )
-                    )
-                    if count > 0
-                }
-            )
-
-        wf = self.run(circuit=circuit, param_values=param_values, state=state)
-        probs = torch.abs(torch.pow(wf, 2))
-        samples = list(
-            map(
-                lambda _probs: _sample(
-                    _probs=_probs,
-                    n_shots=n_shots,
-                    endianness=endianness,
-                    n_qubits=circuit.abstract.n_qubits,
-                ),
-                probs,
-            )
+        if state is None:
+            state = circuit.native.init_state(batch_size=infer_batchsize(param_values))
+        elif state is not None and pyqify_state:
+            n_qubits = circuit.abstract.n_qubits
+            state = pyqify(state, n_qubits) if pyqify_state else state
+        samples: list[Counter] = circuit.native.sample(
+            state=state, values=param_values, n_shots=n_shots
         )
+        samples = invert_endianness(samples) if endianness != Endianness.BIG else samples
         if noise is not None:
             samples = apply_noise(noise=noise, samples=samples)
         if mitigation is not None:

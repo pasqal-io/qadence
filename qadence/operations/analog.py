@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from logging import getLogger
 from typing import Any, Tuple
 
 import numpy as np
@@ -19,7 +20,6 @@ from qadence.blocks.utils import (
     add,  # noqa
     kron,
 )
-from qadence.logger import get_logger
 from qadence.parameters import (
     Parameter,
     ParamMap,
@@ -29,7 +29,7 @@ from qadence.types import PI, OpName, TNumber, TParameter
 from .ham_evo import HamEvo
 from .primitive import I, X, Z
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class AnalogSWAP(HamEvo):
@@ -82,16 +82,6 @@ def AnalogInteraction(
     q = _cast(QubitSupport, qubit_support)
     ps = ParamMap(duration=duration)
     return InteractionBlock(parameters=ps, qubit_support=q, add_pattern=add_pattern)
-
-
-# FIXME: Remove in v1.5.0
-def wait(
-    duration: TNumber | sympy.Basic,
-    qubit_support: str | QubitSupport | tuple = "global",
-    add_pattern: bool = True,
-) -> InteractionBlock:
-    logger.warning("The alias `wait` is deprecated, please use `AnalogInteraction`")
-    return AnalogInteraction(duration, qubit_support, add_pattern)
 
 
 # FIXME: clarify the usage of this gate, rename more formally, and implement in PyQ

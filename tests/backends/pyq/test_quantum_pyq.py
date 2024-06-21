@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import itertools
 import random
 from collections import Counter
-from itertools import product
 from typing import Callable
 
 import numpy as np
@@ -55,8 +55,10 @@ from qadence.operations import (
     Z,
 )
 from qadence.parameters import FeatureParameter, Parameter
+from qadence.states import random_state, uniform_state, zero_state
 from qadence.transpile import set_trainable
 from qadence.types import PI, BackendName, DiffMode
+from qadence.utils import P0, P1
 
 
 def custom_obs() -> AbstractBlock:
@@ -112,7 +114,7 @@ def test_list_observables(observable: AbstractBlock, result: Tensor) -> None:
     assert torch.allclose(expval, result)
 
 
-@pytest.mark.parametrize("n_obs, loop_expectation", product([1, 2, 3], [True, False]))
+@pytest.mark.parametrize("n_obs, loop_expectation", itertools.product([1, 2, 3], [True, False]))
 def test_list_observables_with_batches(n_obs: int, loop_expectation: bool) -> None:
     n_qubits = 4
     x = FeatureParameter("x")
@@ -728,9 +730,7 @@ def test_scaled_blocks() -> None:
 
 
 def test_kron_chain_add_circuit() -> None:
-    p0 = I(0) * 0.5 + Z(0) * 0.5
-    p1 = I(0) * 0.5 + Z(0) * (-0.5)
-    cnot = kron(p0, I(1)) + kron(p1, X(1))
+    cnot = kron(P0(0), I(1)) + kron(P1(0), X(1))
 
     backend = backend_factory(backend=BackendName.PYQTORCH, diff_mode=None)
 
@@ -811,3 +811,35 @@ def test_sparse_obs_expectation_value(
     expval_s = qm_sparse.expectation(inputs)
 
     assert torch.allclose(expval, expval_s)
+
+
+@pytest.mark.parametrize("state_fn", [uniform_state, random_state, zero_state])
+@pytest.mark.parametrize("dtype", [torch.complex64, torch.complex128])
+@pytest.mark.parametrize("obs", [total_magnetization, zz_hamiltonian])
+@given(st.batched_digital_circuits())
+@settings(deadline=None)
+def test_move_to_dtype(
+    state_fn: Callable,
+    dtype: torch.dtype,
+    obs: Callable,
+    circuit_and_inputs: tuple[QuantumCircuit, dict[str, torch.Tensor]],
+) -> None:
+    circuit, inputs = circuit_and_inputs
+    observable = obs(circuit.n_qubits)
+    qm = QuantumModel(
+        circuit=circuit,
+        observable=observable,
+        backend=BackendName.PYQTORCH,
+    )
+    qm = qm.to(dtype=dtype)
+    inputs = {k: v.to(dtype=dtype) for k, v in inputs.items()}
+    assert qm._circuit.native.dtype == dtype
+    assert all([obs.native.dtype == dtype for obs in qm._observable])  # type: ignore[union-attr]
+    state = state_fn(circuit.n_qubits)
+    state = state.to(dtype=dtype)
+    assert state.dtype == dtype
+    # breakpoint()
+    wf = qm.run(inputs, state=state)
+    assert wf.dtype == dtype
+    expval = qm.expectation(inputs, state=state)
+    assert expval.dtype == torch.float64 if dtype == torch.cdouble else torch.float32

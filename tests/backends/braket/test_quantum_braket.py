@@ -12,7 +12,7 @@ from qadence.backends import backend_factory
 from qadence.backends.braket import Backend
 from qadence.blocks import AbstractBlock, PrimitiveBlock, chain
 from qadence.circuit import QuantumCircuit
-from qadence.constructors import ising_hamiltonian, single_z, total_magnetization
+from qadence.constructors import ising_hamiltonian, total_magnetization
 from qadence.execution import run
 from qadence.operations import CNOT, CPHASE, CSWAP, RX, RY, RZ, SWAP, H, I, S, T, U, X, Y, Z
 from qadence.states import equivalent_state
@@ -32,8 +32,8 @@ def test_register_circuit(parametric_circuit: QuantumCircuit) -> None:
     "observable",
     [
         total_magnetization(4),
-        single_z(0),
-        single_z(1) * 3.0,
+        Z(0),
+        Z(1) * 3.0,
         ising_hamiltonian(4, x_terms=np.array([0.1, 0.2, 0.3, 0.4])),
         custom_obs(),
     ],
@@ -51,7 +51,7 @@ def test_expectation_value(parametric_circuit: QuantumCircuit, observable: Abstr
 def test_expectation_value_list_of_obs(parametric_circuit: QuantumCircuit) -> None:
     batch_size = 1
     values = {"x": 0.5}  # rand(batch_size)}
-    observables = [ising_hamiltonian(4), total_magnetization(4), single_z(0)]
+    observables = [ising_hamiltonian(4), total_magnetization(4), Z(0)]
     n_obs = len(observables)
 
     bkd = backend_factory(backend="braket", diff_mode=None)

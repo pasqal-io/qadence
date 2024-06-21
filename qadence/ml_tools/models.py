@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from logging import getLogger
 from typing import Any, Counter, List
 
 import numpy as np
@@ -8,14 +9,13 @@ from torch import Tensor
 from torch.nn import Parameter as TorchParam
 
 from qadence.backend import ConvertedObservable
-from qadence.logger import get_logger
 from qadence.measurements import Measurements
 from qadence.ml_tools import promote_to_tensor
 from qadence.models import QNN, QuantumModel
 from qadence.noise import Noise
 from qadence.utils import Endianness
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 def _set_fixed_operation(
@@ -286,15 +286,35 @@ class TransformedModule(torch.nn.Module):
             output_shifting=torch.tensor(d["_output_shifting"]),
         )
 
-    def to(self, device: torch.device) -> TransformedModule:
+    def to(self, *args: Any, **kwargs: Any) -> TransformedModule:
         try:
-            self.model = self.model.to(device)
-            self._input_scaling = self._input_scaling.to(device)
-            self._input_shifting = self._input_shifting.to(device)
-            self._output_scaling = self._output_scaling.to(device)
-            self._output_shifting = self._output_shifting.to(device)
+            self.model = self.model.to(*args, **kwargs)
+            if isinstance(self.model, QuantumModel):
+                device = self.model._circuit.native.device
+                dtype = (
+                    torch.float64
+                    if self.model._circuit.native.dtype == torch.cdouble
+                    else torch.float32
+                )
 
-            logger.debug(f"Moved {self} to device {device}.")
+                self._input_scaling = self._input_scaling.to(device=device, dtype=dtype)
+                self._input_shifting = self._input_shifting.to(device=device, dtype=dtype)
+                self._output_scaling = self._output_scaling.to(device=device, dtype=dtype)
+                self._output_shifting = self._output_shifting.to(device=device, dtype=dtype)
+            elif isinstance(self.model, torch.nn.Module):
+                self._input_scaling = self._input_scaling.to(*args, **kwargs)
+                self._input_shifting = self._input_shifting.to(*args, **kwargs)
+                self._output_scaling = self._output_scaling.to(*args, **kwargs)
+                self._output_shifting = self._output_shifting.to(*args, **kwargs)
+            logger.debug(f"Moved {self} to {args}, {kwargs}.")
         except Exception as e:
-            logger.warning(f"Unable to move {self} to device {device} due to {e}.")
+            logger.warning(f"Unable to move {self} to {args}, {kwargs} due to {e}.")
         return self
+
+    @property
+    def device(self) -> torch.device:
+        return (
+            self.model.device
+            if isinstance(self.model, QuantumModel)
+            else self._input_scaling.device
+        )

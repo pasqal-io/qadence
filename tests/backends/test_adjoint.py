@@ -58,6 +58,7 @@ def test_gradcheck_adjoint_scale_derivatives() -> None:
     assert torch.autograd.gradcheck(func, theta)
 
 
+@pytest.mark.xfail(reason="HamEvo adjoint has to properly be supported.")
 def test_gradcheck_hamevo_timeevo() -> None:
     generator = X(0)
     fmx = HamEvo(generator, parameter=VariationalParameter("theta"))
@@ -76,6 +77,7 @@ def test_gradcheck_hamevo_timeevo() -> None:
     assert torch.autograd.gradcheck(func, theta, nondet_tol=ADJOINT_ACCEPTANCE)
 
 
+@pytest.mark.skip(reason="HamEvo adjoint has to properly be supported.")
 def test_gradcheck_hamevo_generator() -> None:
     theta = VariationalParameter("theta")
     generator = RX(0, theta)

@@ -359,3 +359,9 @@ def test_sympy_modules() -> None:
     loaded_expr = deserialize(d)
     assert loaded_expr == expr
     assert evaluate(expr) == evaluate(loaded_expr)
+
+
+def test_numeric_paramtypes() -> None:
+    # We test every numeric type allowed in Parameter
+    for _numeric_type in [int, float, complex, np.int64, np.float64]:
+        Parameter(_numeric_type(1.0))

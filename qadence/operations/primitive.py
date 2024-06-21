@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from logging import getLogger
 from typing import Union
 
 import numpy as np
@@ -17,13 +18,12 @@ from qadence.blocks.utils import (
     chain,
     kron,
 )
-from qadence.logger import get_logger
 from qadence.parameters import (
     Parameter,
 )
 from qadence.types import OpName, TNumber
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class X(PrimitiveBlock):

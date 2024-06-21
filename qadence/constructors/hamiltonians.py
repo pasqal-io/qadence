@@ -1,17 +1,17 @@
 from __future__ import annotations
 
+from logging import getLogger
 from typing import Callable, List, Type, Union
 
 import numpy as np
 from torch import Tensor, double, ones, rand
 
 from qadence.blocks import AbstractBlock, add, block_is_qubit_hamiltonian
-from qadence.logger import get_logger
 from qadence.operations import N, X, Y, Z
 from qadence.register import Register
 from qadence.types import Interaction, TArray
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 def interaction_zz(i: int, j: int) -> AbstractBlock:
@@ -205,10 +205,6 @@ def _preprocess_strengths(
 
 def total_magnetization(n_qubits: int, z_terms: np.ndarray | list | None = None) -> AbstractBlock:
     return hamiltonian_factory(n_qubits, detuning=Z, detuning_strength=z_terms)
-
-
-def single_z(qubit: int = 0, z_coefficient: float = 1.0) -> AbstractBlock:
-    return Z(qubit) * z_coefficient
 
 
 def zz_hamiltonian(

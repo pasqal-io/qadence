@@ -10,7 +10,6 @@ from .analog import (
     AnalogSWAP,
     ConstantAnalogRotation,
     entangle,
-    wait,
 )
 from .control_ops import (
     CNOT,
@@ -89,7 +88,6 @@ __all__ = [
     "CSWAP",
     "MCPHASE",
     "Toffoli",
-    "wait",
     "entangle",
     "AnalogEntanglement",
     "AnalogInteraction",

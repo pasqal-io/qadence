@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+from logging import getLogger
 from string import Template
 from typing import TypeVar
 
@@ -14,7 +15,7 @@ backends_namespace = Template("qadence.backends.$name")
 BackendClsType = TypeVar("BackendClsType", bound=Backend)
 EngineClsType = TypeVar("EngineClsType", bound=DifferentiableBackend)
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 def import_config(backend_name: str | BackendName) -> BackendConfiguration:
@@ -30,24 +31,24 @@ def import_config(backend_name: str | BackendName) -> BackendConfiguration:
 
 def import_backend(backend_name: str | BackendName) -> Backend:
     module_path = f"qadence.backends.{backend_name}.backend"
-    bknd: Backend
+    backend: Backend
     try:
         module = importlib.import_module(module_path)
-        bknd = getattr(module, "Backend")
+        backend = getattr(module, "Backend")
     except (ModuleNotFoundError, ImportError) as e:
         raise Exception(f"Failed to import backend {backend_name} due to {e}.")
-    return bknd
+    return backend
 
 
-def import_engine(engine: str | Engine) -> DifferentiableBackend:
-    module_path = f"qadence.engines.{engine}.differentiable_backend"
-    egn: DifferentiableBackend
+def import_engine(engine_name: str | Engine) -> DifferentiableBackend:
+    module_path = f"qadence.engines.{engine_name}.differentiable_backend"
+    engine: DifferentiableBackend
     try:
         module = importlib.import_module(module_path)
-        egn = getattr(module, "DifferentiableBackend")
+        engine = getattr(module, "DifferentiableBackend")
     except (ModuleNotFoundError, ImportError) as e:
-        raise Exception(f"Failed to import backend {engine} due to {e}.")
-    return egn
+        raise Exception(f"Failed to import backend {engine_name} due to {e}.")
+    return engine
 
 
 def _available_engines() -> dict[Engine, DifferentiableBackend]:
@@ -56,9 +57,9 @@ def _available_engines() -> dict[Engine, DifferentiableBackend]:
     for engine in Engine.list():
         try:
             res[engine] = import_engine(engine)
-        except (ImportError, ModuleNotFoundError):
+        except (ModuleNotFoundError, ImportError):
             pass
-    logger.info(f"Found engines: {res.keys()}")
+    logger.debug(f"Found engines: {res.keys()}")
     return res
 
 
@@ -68,9 +69,9 @@ def _available_backends() -> dict[BackendName, Backend]:
     for backend in BackendName.list():
         try:
             res[backend] = import_backend(backend)
-        except (ImportError, ModuleNotFoundError):
+        except (ModuleNotFoundError, ImportError):
             pass
-    logger.info(f"Found backends: {res.keys()}")
+    logger.debug(f"Found backends: {res.keys()}")
     return res
 
 
@@ -108,16 +109,6 @@ def _validate_diff_mode(backend: Backend, diff_mode: DiffMode) -> None:
         raise TypeError(f"Backend {backend.name} does not support diff_mode {DiffMode.ADJOINT}.")
 
 
-def _validate_backend_config(backend: Backend) -> None:
-    if backend.config.use_gradient_checkpointing:
-        # FIXME: Remove in v1.5.0
-        msg = "use_gradient_checkpointing is deprecated."
-        import warnings
-
-        warnings.warn(msg, UserWarning)
-        logger.warn(msg)
-
-
 def _set_backend_config(backend: Backend, diff_mode: DiffMode) -> None:
     """Fallback function for native Qadence backends if extensions is not present.
 
@@ -127,7 +118,6 @@ def _set_backend_config(backend: Backend, diff_mode: DiffMode) -> None:
     """
 
     _validate_diff_mode(backend, diff_mode)
-    _validate_backend_config(backend)
 
     # (1) When using PSR with any backend or (2) we use the backends Pulser or Braket,
     # we have to use gate-level parameters

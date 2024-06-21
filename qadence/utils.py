@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import math
 from collections import Counter
-from typing import Any
+from functools import partial
+from logging import getLogger
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import sympy
@@ -11,14 +13,17 @@ from torch import Tensor, stack, vmap
 from torch import complex as make_complex
 from torch.linalg import eigvals
 
-from qadence.logger import get_logger
 from qadence.types import Endianness, ResultType, TNumber
+
+if TYPE_CHECKING:
+    from qadence.operations import Projector
+
 
 # Modules to be automatically added to the qadence namespace
 __all__ = []  # type: ignore
 
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 def basis_to_int(basis: str, endianness: Endianness = Endianness.BIG) -> int:
@@ -154,11 +159,17 @@ def format_number(x: float | complex, num_digits: int = 3) -> str:
         raise ValueError(f"Unknown number type: {type(x)}")
 
 
-def format_parameter(p: sympy.Basic) -> str:
+def format_parameter(p: sympy.Basic, num_digits: int = 3) -> str:
+    """Format numerical values within a sympy expression."""
+
     def round_expr(expr: sympy.Basic, num_digits: int) -> sympy.Basic:
         return expr.xreplace({n: round(n, num_digits) for n in expr.atoms(sympy.Number)})
 
-    return str(round_expr(p, 3))
+    expr = round_expr(p, num_digits)
+    conv_str = str(expr)
+    if expr.is_real and len(conv_str) > num_digits + 2:
+        conv_str = conv_str[0 : num_digits + 2]
+    return conv_str
 
 
 def print_sympy_expr(expr: sympy.Expr, num_digits: int = 3) -> str:
@@ -253,3 +264,37 @@ def validate_values_and_state(
         else:
             if not is_qadence_shape(state, n_qubits) or state.shape[0] > 1:
                 raise ValueError("Jax only supports unbatched states.")
+
+
+def one_qubit_projector(state: str, target: int) -> Projector:
+    """Returns the projector for a single qubit system.
+
+    Args:
+        state (str): The state of the projector.
+        target (int): The target qubit.
+
+    Returns:
+        Projector: The projector operator.
+    """
+    from qadence.operations import Projector
+
+    assert state in ["0", "1"], "State must be either '0' or '1'."
+    return Projector(ket=state, bra=state, qubit_support=target)
+
+
+def one_qubit_projector_matrix(state: str) -> Tensor:
+    """Returns the projector for a single qubit system.
+
+    Args:
+        state (str): The state of the projector.
+
+    Returns:
+        Tensor: The projector operator.
+    """
+    return one_qubit_projector(state, 0).tensor().squeeze()
+
+
+P0 = partial(one_qubit_projector, "0")
+P1 = partial(one_qubit_projector, "1")
+P0_MATRIX = one_qubit_projector_matrix("0")
+P1_MATRIX = one_qubit_projector_matrix("1")

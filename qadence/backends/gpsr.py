@@ -20,7 +20,7 @@ def general_psr(spectrum: Tensor, n_eqs: int | None = None, shift_prefac: float 
     sorted_unique_spectral_gaps = torch.tensor(list(sorted_unique_spectral_gaps))
 
     if n_eqs == 1:
-        return partial(single_gap_psr, spectral_gap=sorted_unique_spectral_gaps.item())
+        return single_gap_psr
     else:
         return partial(
             multi_gap_psr,
@@ -48,7 +48,13 @@ def single_gap_psr(
     Returns:
         Tensor: tensor containing derivative values
     """
-
+    device = torch.device("cpu")
+    try:
+        device = [v.device for v in param_dict.values()][0]
+    except Exception:
+        pass
+    spectral_gap = spectral_gap.to(device=device)
+    shift = shift.to(device=device)
     # + pi/2 shift
     shifted_params = param_dict.copy()
     shifted_params[param_name] = shifted_params[param_name] + shift
@@ -89,11 +95,17 @@ def multi_gap_psr(
 
     # get shift values
     shifts = shift_prefac * torch.linspace(PI / 2 - PI / 5, PI / 2 + PI / 5, n_eqs)
-
+    device = torch.device("cpu")
+    try:
+        device = [v.device for v in param_dict.values()][0]
+    except Exception:
+        pass
+    spectral_gaps = spectral_gaps.to(device=device)
+    shifts = shifts.to(device=device)
     # calculate F vector and M matrix
     # (see: https://arxiv.org/pdf/2108.01218.pdf on p. 4 for definitions)
     F = []
-    M = torch.empty((n_eqs, n_eqs))
+    M = torch.empty((n_eqs, n_eqs)).to(device=device)
     n_obs = 1
     for i in range(n_eqs):
         # + shift

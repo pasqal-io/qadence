@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from logging import getLogger
 from typing import Any, ItemsView, KeysView, ValuesView, get_args
 from uuid import uuid4
 
@@ -12,13 +13,12 @@ from sympy.physics.quantum.dagger import Dagger
 from sympytorch import SymPyModule as torchSympyModule
 from torch import Tensor, heaviside, no_grad, rand, tensor
 
-from qadence.logger import get_logger
 from qadence.types import DifferentiableExpression, Engine, TNumber
 
 # Modules to be automatically added to the qadence namespace
-__all__ = ["FeatureParameter", "Parameter", "VariationalParameter"]
+__all__ = ["FeatureParameter", "Parameter", "VariationalParameter", "ParamMap"]
 
-logger = get_logger(__file__)
+logger = getLogger(__name__)
 
 dagger_expression = Dagger
 
