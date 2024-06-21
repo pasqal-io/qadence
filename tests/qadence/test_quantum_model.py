@@ -15,7 +15,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.constructors import hea, total_magnetization
 from qadence.divergences import js_divergence
 from qadence.ml_tools.utils import rand_featureparameters
-from qadence.models.quantum_model import QuantumModel
+from qadence.model import QuantumModel
 from qadence.operations import MCRX, RX, HamEvo, I, Toffoli, X, Z
 from qadence.parameters import FeatureParameter, VariationalParameter
 from qadence.states import equivalent_state

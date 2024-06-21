@@ -5,16 +5,15 @@ from typing import Any
 
 from torch import Tensor, rand
 
+from qadence import QNN, QuantumModel
 from qadence.blocks import AbstractBlock, parameters
 from qadence.circuit import QuantumCircuit
-from qadence.ml_tools.models import TransformedModule
-from qadence.models import QNN, QuantumModel
 from qadence.parameters import Parameter, stringify
 
 
 @singledispatch
 def rand_featureparameters(
-    x: QuantumCircuit | AbstractBlock | QuantumModel | QNN | TransformedModule, *args: Any
+    x: QuantumCircuit | AbstractBlock | QuantumModel | QNN, *args: Any
 ) -> dict[str, Tensor]:
     raise NotImplementedError(f"Unable to generate random featureparameters for object {type(x)}.")
 
@@ -39,8 +38,3 @@ def _(qm: QuantumModel, batch_size: int = 1) -> dict[str, Tensor]:
 @rand_featureparameters.register
 def _(qnn: QNN, batch_size: int = 1) -> dict[str, Tensor]:
     return rand_featureparameters(qnn._circuit.abstract, batch_size)
-
-
-@rand_featureparameters.register
-def _(tm: TransformedModule, batch_size: int = 1) -> dict[str, Tensor]:
-    return rand_featureparameters(tm.model, batch_size)

@@ -25,7 +25,7 @@ from qadence.measurements.shadow import (
     local_shadow,
     number_of_samples,
 )
-from qadence.models.quantum_model import QuantumModel
+from qadence.model import QuantumModel
 from qadence.operations import RX, RY, H, I, X, Y, Z
 from qadence.parameters import Parameter
 from qadence.serialization import deserialize
