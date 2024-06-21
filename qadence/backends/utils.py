@@ -159,13 +159,18 @@ def finitediff(
     eps: float = None,
 ) -> Tensor:
     """
-    Arguments:
+    Compute the finite difference of a function at a point.
 
-        f: Function to differentiate
-        x: Input of shape `(batch_size, input_size)`
-        derivative_indices: which *input* to differentiate (i.e. which variable x[:,i])
-        eps: finite difference spacing (uses `torch.finfo(x.dtype).eps ** (1 / (2 + order))` as a
-            default)
+    Args:
+        f: The function to differentiate.
+        x: Input of size `(batch_size, input_size)`.
+        derivative_indices: Which *input* to differentiate (i.e. which variable x[:,i])
+        eps: finite difference spacing (uses `torch.finfo(x.dtype).eps ** (1 / (2 + order))`
+            as default)
+
+    Returns:
+        (Tensor): The finite difference of the function at the point `x`.
+
     """
 
     if eps is None:

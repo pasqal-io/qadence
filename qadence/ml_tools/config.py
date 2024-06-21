@@ -102,8 +102,9 @@ class FeatureMapConfig:
 
     reupload_scaling: ReuploadScaling | dict[str, ReuploadScaling] = ReuploadScaling.CONSTANT
     """
-    Scaling for encoding the same feature on different qubits in the.
+    Scaling for encoding the same feature on different qubits.
 
+    Scaling used to encode the same feature on different qubits in the
     same layer of the feature maps. Takes qadence.ReuploadScaling.
     Give a single ReuploadScaling to use the same for all features.
     Give a dict of (str, ReuploadScaling) where the key is the name of the variable and the
@@ -135,15 +136,15 @@ class FeatureMapConfig:
     """
     The  encoding strategy in case of multi-variate function.
 
-    If "parallel",
-    the features are encoded in one block of rotation gates. with each
-    feature given an equal number of qubits. If "serial", the features are
+    If "parallel", the features are encoded in one block of rotation gates
+    with each feature given an equal number of qubits. If "serial", the features are
     encoded sequentially, with an ansatz block between. "parallel" is allowed
     only for "digital" `feature_map_strategy`.
     """
 
     feature_map_strategy: str = "digital"
-    """Strategy for feature map.
+    """
+    Strategy for feature map.
 
     Accepts 'digital', 'analog' or 'rydberg'. Defaults to "digital".
     If the strategy is incompatible with the `operation` chosen, then `operation`
