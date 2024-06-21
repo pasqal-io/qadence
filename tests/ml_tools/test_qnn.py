@@ -23,7 +23,8 @@ from qadence.ml_tools.constructors import (
 from qadence.operations import RX, RY, Z
 from qadence.parameters import FeatureParameter, Parameter
 from qadence.states import uniform_state
-from qadence.types import PI, BackendName, DiffMode, TObservableTransform
+from qadence.types import PI, BackendName, DiffMode, ObservableTransform
+from tests.conftest import SmallQNN
 
 
 def build_circuit(n_qubits_per_feature: int, n_features: int, depth: int = 2) -> QuantumCircuit:
@@ -257,6 +258,7 @@ def quantum_circuit(n_qubits: int = 2, depth: int = 1) -> QuantumCircuit:
 
 
 def get_qnn(
+    SmallQNN: QuantumCircuit,
     n_qubits: int,
     depth: int,
     inputs: list = None,
@@ -267,7 +269,7 @@ def get_qnn(
     observable = observable_from_config(
         n_qubits, ObservableConfig(Z, scale, shift, "scale", trainable_transform)  # type: ignore[arg-type]
     )
-    circuit = quantum_circuit(n_qubits=n_qubits, depth=depth)
+    circuit = SmallQNN
     model = QNN(
         circuit,
         observable,
@@ -279,11 +281,9 @@ def get_qnn(
 
 
 @pytest.mark.parametrize("output_range", [(1.0, 0.0, False), (2.0, 0.0, None), (3.0, 1.0, False)])
-@pytest.mark.parametrize("batch_size", [1])
-@pytest.mark.parametrize("n_qubits", [2])
-def test_constant_and_feature_transformed_module(
-    output_range: tuple[float, float, bool], batch_size: int, n_qubits: int
-) -> None:
+def test_constant_and_feature_transformed_module(output_range: tuple[float, float, bool]) -> None:
+    batch_size = 1
+    n_qubits = 2
     scale, shift, trainable = output_range
     depth = 1
     fparam = "phi"
@@ -306,11 +306,9 @@ def test_constant_and_feature_transformed_module(
 
 
 @pytest.mark.parametrize("output_range", [(1.0, 0.0, True), (2.0, 0.0, True), (3.0, 1.0, True)])
-@pytest.mark.parametrize("batch_size", [1])
-@pytest.mark.parametrize("n_qubits", [2])
-def test_variational_transformed_module(
-    output_range: tuple[float, float, bool], batch_size: int, n_qubits: int
-) -> None:
+def test_variational_transformed_module(output_range: tuple[float, float, bool]) -> None:
+    batch_size = 1
+    n_qubits = 2
     scale, shift, trainable = output_range
     depth = 1
     fparam = "phi"
@@ -385,7 +383,7 @@ def test_config_qnn_output_transform() -> None:
         detuning=Z,
         scale=-10.0,
         shift=10.0,
-        transformation_type=TObservableTransform.RANGE,  # type: ignore[arg-type]
+        transformation_type=ObservableTransform.RANGE,  # type: ignore[arg-type]
     )
 
     qnn = build_qnn_from_configs(

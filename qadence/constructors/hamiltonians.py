@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from logging import getLogger
 from typing import Callable, List, Type, Union
+from typing_extensions import Any
 
 import numpy as np
 from torch import Tensor, double, ones, rand
@@ -10,7 +11,7 @@ from torch import Tensor, double, ones, rand
 from qadence.blocks import AbstractBlock, add, block_is_qubit_hamiltonian
 from qadence.operations import N, X, Y, Z
 from qadence.register import Register
-from qadence.types import Interaction, TArray, TObservableTransform, TParameter
+from qadence.types import Interaction, TArray, ObservableTransform, TParameter
 
 logger = getLogger(__name__)
 
@@ -232,6 +233,10 @@ def ising_hamiltonian(
     return zz_ham + x_ham
 
 
+def is_numeric(x: Any) -> bool:
+    return type(x) in (int, float, complex, np.int64, np.float64)
+
+
 @dataclass
 class ObservableConfig:
     detuning: TDetuning
@@ -244,7 +249,7 @@ class ObservableConfig:
     """The scale by which to multiply the output of the observable."""
     shift: TParameter = 0.0
     """The shift to add to the output of the observable."""
-    transformation_type: TObservableTransform = TObservableTransform.NONE  # type: ignore[assignment]
+    transformation_type: ObservableTransform = ObservableTransform.NONE  # type: ignore[assignment]
     """The type of transformation."""
     trainable_transform: bool | None = None
     """
@@ -256,13 +261,7 @@ class ObservableConfig:
     """
 
     def __post_init__(self) -> None:
-        if type(self.scale) in (int, float, complex, np.int64, np.float64) and type(self.shift) in (
-            int,
-            float,
-            complex,
-            np.int64,
-            np.float64,
-        ):
+        if is_numeric(self.scale) and is_numeric(self.shift):
             assert (
                 self.trainable_transform is None
             ), f"If scale and shift are numbers, trainable_transform must be None. \

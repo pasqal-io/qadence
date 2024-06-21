@@ -9,7 +9,7 @@ from torch import Tensor, tensor
 
 from qadence import QNN, QuantumModel
 from qadence.blocks.abstract import AbstractBlock
-from qadence.blocks.utils import chain, kron, unroll_block_with_scaling
+from qadence.blocks.utils import chain, kron, tag, unroll_block_with_scaling
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import feature_map, hea, total_magnetization
 from qadence.operations import CNOT, RX, RY, X, Y, Z
@@ -219,3 +219,14 @@ def BasicAdjointQNN(BasicFMQuantumCircuit: QuantumCircuit, BasicObservable: Abst
         backend=BackendName.PYQTORCH,
         diff_mode=DiffMode.ADJOINT,
     )
+
+
+@fixture
+def SmallCircuit() -> QuantumCircuit:
+    phi = Parameter("phi", trainable=False)
+    fm = chain(*[RY(i, phi) for i in range(FM_NQUBITS)])
+    tag(fm, "feature_map")
+
+    ansatz = hea(n_qubits=FM_NQUBITS, depth=1)
+    tag(ansatz, "ansatz")
+    return QuantumCircuit(FM_NQUBITS, fm, ansatz)
