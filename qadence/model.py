@@ -36,7 +36,7 @@ class QuantumModel(nn.Module):
 
     This class should be used as base class for any new quantum model supported in the qadence
     framework for information on the implementation of custom models see
-    [here](/advanced_tutorials/custom-models.md).
+    [here](../tutorials/advanced_tutorials/custom-models.md).
     """
 
     backend: Backend | DifferentiableBackend
@@ -258,10 +258,10 @@ class QuantumModel(nn.Module):
                 "observable": abs_obs,
                 "backend": self._backend_name,
                 "diff_mode": self._diff_mode,
-                "measurement": self._measurement._to_dict()
-                if self._measurement is not None
-                else {},
-                "noise": self._noise._to_dict() if self._noise is not None else {},
+                "measurement": (
+                    self._measurement._to_dict() if self._measurement is not None else dict()
+                ),
+                "noise": self._noise._to_dict() if self._noise is not None else dict(),
                 "backend_configuration": asdict(self.backend.backend.config),  # type: ignore
             }
             param_dict_conv = {}
@@ -354,9 +354,11 @@ class QuantumModel(nn.Module):
                             obs.native = obs.native.to(*args, **kwargs)
                 self._params = self._params.to(
                     device=self._circuit.native.device,
-                    dtype=torch.float64
-                    if self._circuit.native.dtype == torch.cdouble
-                    else torch.float32,
+                    dtype=(
+                        torch.float64
+                        if self._circuit.native.dtype == torch.cdouble
+                        else torch.float32
+                    ),
                 )
                 logger.debug(f"Moved {self} to {args}, {kwargs}.")
             else:
@@ -372,3 +374,7 @@ class QuantumModel(nn.Module):
             if self.backend.backend.name == "pyqtorch"  # type: ignore[union-attr]
             else torch.device("cpu")
         )
+
+
+# Modules to be automatically added to the qadence namespace
+__all__ = ["QuantumModel"]  # type: ignore

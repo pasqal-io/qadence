@@ -49,7 +49,7 @@ from .exceptions import *
 from .execution import *
 from .measurements import *
 from .ml_tools import *
-from .models import *
+from .model import *
 from .noise import *
 from .operations import *
 from .overlap import *
@@ -82,7 +82,7 @@ list_of_submodules = [
     ".execution",
     ".measurements",
     ".ml_tools",
-    ".models",
+    ".model",
     ".operations",
     ".overlap",
     ".parameters",

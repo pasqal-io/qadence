@@ -7,6 +7,7 @@ from pathlib import Path
 import torch
 from torch.utils.data import DataLoader
 
+from qadence import QNN, QuantumModel
 from qadence.ml_tools import (
     TrainConfig,
     load_checkpoint,
@@ -14,10 +15,8 @@ from qadence.ml_tools import (
     write_checkpoint,
 )
 from qadence.ml_tools.data import to_dataloader
-from qadence.ml_tools.models import TransformedModule
 from qadence.ml_tools.parameters import get_parameters, set_parameters
 from qadence.ml_tools.utils import rand_featureparameters
-from qadence.models import QNN, QuantumModel
 
 
 def dataloader(batch_size: int = 25) -> DataLoader:
@@ -149,63 +148,4 @@ def test_check_QNN_ckpts_exist(BasicQNN: QNN, tmp_path: Path) -> None:
     assert all(os.path.isfile(ckpt) for ckpt in ckpts)
     for ckpt in ckpts:
         loaded_model, optimizer, _ = load_checkpoint(tmp_path, BasicQNN, optimizer, ckpt, "")
-        assert torch.allclose(loaded_model.expectation(inputs), model.expectation(inputs))
-
-
-def test_random_basicqtransformedmodule_save_load_ckpts(
-    BasicTransformedModule: TransformedModule, tmp_path: Path
-) -> None:
-    data = dataloader()
-    model = BasicTransformedModule
-    cnt = count()
-    criterion = torch.nn.MSELoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
-    inputs = rand_featureparameters(model, 1)
-
-    def loss_fn(model: QuantumModel, data: torch.Tensor) -> tuple[torch.Tensor, dict]:
-        next(cnt)
-        out = model.expectation(inputs)
-        loss = criterion(out, torch.rand(1))
-        return loss, {}
-
-    config = TrainConfig(folder=tmp_path, max_iter=10, checkpoint_every=1, write_every=1)
-    train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
-    load_checkpoint(tmp_path, model, optimizer)
-    assert not torch.all(torch.isnan(model.expectation(inputs)))
-    loaded_model, optimizer, _ = load_checkpoint(
-        tmp_path,
-        BasicTransformedModule,
-        optimizer,
-        "model_TransformedModule_ckpt_009_device_cpu.pt",
-        "opt_Adam_ckpt_006.pt",
-    )
-    assert torch.allclose(loaded_model.expectation(inputs), model.expectation(inputs))
-
-
-def test_check_transformedmodule_ckpts_exist(
-    BasicTransformedModule: TransformedModule, tmp_path: Path
-) -> None:
-    data = dataloader()
-    model = BasicTransformedModule
-    cnt = count()
-    criterion = torch.nn.MSELoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
-    inputs = rand_featureparameters(model, 1)
-
-    def loss_fn(model: QuantumModel, data: torch.Tensor) -> tuple[torch.Tensor, dict]:
-        next(cnt)
-        out = model.expectation(inputs)
-        loss = criterion(out, torch.rand(1))
-        return loss, {}
-
-    config = TrainConfig(folder=tmp_path, max_iter=10, checkpoint_every=1, write_every=1)
-    train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
-    ckpts = [
-        tmp_path / Path(f"model_TransformedModule_ckpt_00{i}_device_cpu.pt") for i in range(1, 9)
-    ]
-    assert all(os.path.isfile(ckpt) for ckpt in ckpts)
-    for ckpt in ckpts:
-        loaded_model, optimizer, _ = load_checkpoint(
-            tmp_path, BasicTransformedModule, optimizer, ckpt, ""
-        )
         assert torch.allclose(loaded_model.expectation(inputs), model.expectation(inputs))
