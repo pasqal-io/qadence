@@ -27,6 +27,7 @@ PI = pi
 
 # Modules to be automatically added to the qadence namespace
 __all__ = [
+    "AnsatzType",
     "Endianness",
     "Strategy",
     "ResultType",
@@ -34,6 +35,7 @@ __all__ = [
     "BackendName",
     "StateGeneratorType",
     "LTSOrder",
+    "MultivariateStrategy",
     "ReuploadScaling",
     "BasisSet",
     "TensorType",

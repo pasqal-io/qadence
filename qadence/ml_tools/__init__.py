@@ -14,11 +14,16 @@ from .train_no_grad import train as train_gradient_free
 
 # Modules to be automatically added to the qadence namespace
 __all__ = [
-    "TrainConfig",
+    "AnsatzConfig",
+    "create_ansatz",
+    "create_fm_blocks",
     "DictDataLoader",
+    "FeatureMapConfig",
+    "load_checkpoint",
+    "observable_from_config",
+    "QNN",
+    "TrainConfig",
     "train_with_grad",
     "train_gradient_free",
-    "load_checkpoint",
     "write_checkpoint",
-    "QNN",
 ]

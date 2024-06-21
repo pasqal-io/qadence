@@ -233,7 +233,9 @@ class QNN(QuantumModel):
         from qadence.ml_tools import QNN
         from qadence.constructors import ObservableConfig
         from qadence.operations import Z
-        from qadence.types import BasisSet, ReuploadScaling, ObservableTransform
+        from qadence.types import (
+            AnsatzType, BasisSet, ReuploadScaling, ObservableTransform, Strategy
+        )
 
         register = 4
         fm_config = FeatureMapConfig(
@@ -248,8 +250,8 @@ class QNN(QuantumModel):
         )
         ansatz_config = AnsatzConfig(
             depth=2,
-            ansatz_type="hea",
-            ansatz_strategy="digital",
+            ansatz_type=AnsatzType.HEA,
+            ansatz_strategy=Strategy.DIGITAL,
         )
         obs_config = ObservableConfig(
             detuning=Z,
