@@ -10,7 +10,6 @@ from typing import Any
 
 import sympy
 
-from qadence.model import QuantumModel
 from qadence.blocks import (
     AbstractBlock,
     AddBlock,
@@ -24,6 +23,7 @@ from qadence.blocks import (
 )
 from qadence.blocks.analog import ConstantAnalogRotation, InteractionBlock
 from qadence.circuit import QuantumCircuit
+from qadence.model import QuantumModel
 from qadence.operations import RX, RY, RZ, SWAP, HamEvo, I
 from qadence.transpile.block import fill_identities
 from qadence.utils import format_parameter

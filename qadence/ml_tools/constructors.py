@@ -25,9 +25,9 @@ from qadence.types import (
     AnsatzType,
     Interaction,
     MultivariateStrategy,
+    ObservableTransform,
     ReuploadScaling,
     Strategy,
-    ObservableTransform,
     TParameter,
 )
 

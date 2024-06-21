@@ -424,7 +424,7 @@ DifferentiableExpression = Callable[..., ArrayLike]
 
 
 class InputDiffMode(StrEnum):
-    """Derivative modes w.r.t. inputs of UFAs."""
+    """Derivative modes w.r.t inputs of UFAs."""
 
     AD = "ad"
     """Reverse automatic differentiation."""

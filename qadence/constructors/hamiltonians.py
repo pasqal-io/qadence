@@ -3,15 +3,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 from logging import getLogger
 from typing import Callable, List, Type, Union
-from typing_extensions import Any
 
 import numpy as np
 from torch import Tensor, double, ones, rand
+from typing_extensions import Any
 
 from qadence.blocks import AbstractBlock, add, block_is_qubit_hamiltonian
 from qadence.operations import N, X, Y, Z
 from qadence.register import Register
-from qadence.types import Interaction, TArray, ObservableTransform, TParameter
+from qadence.types import Interaction, ObservableTransform, TArray, TParameter
 
 logger = getLogger(__name__)
 

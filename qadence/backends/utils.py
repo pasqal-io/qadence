@@ -170,7 +170,6 @@ def finitediff(
 
     Returns:
         (Tensor): The finite difference of the function at the point `x`.
-
     """
 
     if eps is None:
