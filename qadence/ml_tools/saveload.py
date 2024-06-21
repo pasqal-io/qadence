@@ -117,7 +117,6 @@ def load_model(
     iteration = 0
     if model_ckpt_name == "":
         model_ckpt_name = get_latest_checkpoint_name(folder, "model", device)
-    model_ckpt_name = ""
     try:
         iteration, model_dict = torch.load(folder / model_ckpt_name, *args, **kwargs)
         if isinstance(model, (QuantumModel, QNN, TransformedModule)):
