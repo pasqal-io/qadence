@@ -8,7 +8,6 @@ from typing import TypeVar
 from qadence.backend import Backend, BackendConfiguration
 from qadence.blocks.abstract import TAbstractBlock
 from qadence.engines.differentiable_backend import DifferentiableBackend
-from qadence.logger import get_logger
 from qadence.types import BackendName, DiffMode, Engine
 
 backends_namespace = Template("qadence.backends.$name")
