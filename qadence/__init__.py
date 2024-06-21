@@ -82,6 +82,7 @@ list_of_submodules = [
     ".execution",
     ".measurements",
     ".ml_tools",
+    ".model",
     ".operations",
     ".overlap",
     ".parameters",
@@ -91,7 +92,6 @@ list_of_submodules = [
     ".transpile",
     ".types",
     ".utils",
-    ".model",
 ]
 
 __all__ = []
