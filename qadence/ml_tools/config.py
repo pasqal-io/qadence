@@ -13,7 +13,7 @@ from qadence.blocks.analog import AnalogBlock
 from qadence.blocks.primitive import ParametricBlock
 from qadence.operations import RX, AnalogRX
 from qadence.parameters import Parameter
-from qadence.types import BasisSet, ReuploadScaling
+from qadence.types import AnsatzType, BasisSet, MultivariateStrategy, ReuploadScaling, Strategy
 
 logger = getLogger(__file__)
 
@@ -132,21 +132,22 @@ class FeatureMapConfig:
     value is the target range to use for that feature.
     """
 
-    multivariate_strategy: str = "parallel"
+    multivariate_strategy: MultivariateStrategy = MultivariateStrategy.PARALLEL
     """
     The  encoding strategy in case of multi-variate function.
 
-    If "parallel", the features are encoded in one block of rotation gates
-    with each feature given an equal number of qubits. If "serial", the features are
-    encoded sequentially, with an ansatz block between. "parallel" is allowed
-    only for "digital" `feature_map_strategy`.
+    Takes qadence.MultivariateStrategy.
+    If PARALLEL, the features are encoded in one block of rotation gates
+    with each feature given an equal number of qubits.
+    If SERIES, the features are encoded sequentially, with an ansatz block
+    between. PARALLEL is allowed only for DIGITAL `feature_map_strategy`.
     """
 
-    feature_map_strategy: str = "digital"
+    feature_map_strategy: Strategy = Strategy.DIGITAL
     """
     Strategy for feature map.
 
-    Accepts 'digital', 'analog' or 'rydberg'. Defaults to "digital".
+    Accepts DIGITAL, ANALOG or RYDBERG. Defaults to DIGITAL.
     If the strategy is incompatible with the `operation` chosen, then `operation`
     gets preference and the given strategy is ignored.
     """
@@ -196,20 +197,20 @@ class FeatureMapConfig:
     """
 
     def __post_init__(self) -> None:
-        if self.multivariate_strategy == "parallel" and self.num_features > 1:
+        if self.multivariate_strategy == MultivariateStrategy.PARALLEL and self.num_features > 1:
             assert (
-                self.feature_map_strategy == "digital"
+                self.feature_map_strategy == Strategy.DIGITAL
             ), "For `parallel` encoding of multiple features, the `feature_map_strategy` must be \
                   of `digital` type."
 
         if self.operation is None:
-            if self.feature_map_strategy == "digital":
+            if self.feature_map_strategy == Strategy.DIGITAL:
                 self.operation = RX
-            elif self.feature_map_strategy == "analog":
+            elif self.feature_map_strategy == Strategy.ANALOG:
                 self.operation = AnalogRX  # type: ignore[assignment]
 
         else:
-            if self.feature_map_strategy == "digital":
+            if self.feature_map_strategy == Strategy.DIGITAL:
                 if isinstance(self.operation, AnalogBlock):
                     logger.warning(
                         "The `operation` is of type `AnalogBlock` but the `feature_map_strategy` is\
@@ -217,9 +218,9 @@ class FeatureMapConfig:
                         will be used."
                     )
 
-                    self.feature_map_strategy = "analog"
+                    self.feature_map_strategy = Strategy.ANALOG
 
-            elif self.feature_map_strategy == "analog":
+            elif self.feature_map_strategy == Strategy.ANALOG:
                 if isinstance(self.operation, ParametricBlock):
                     logger.warning(
                         "The `operation` is a digital gate but the `feature_map_strategy` is\
@@ -227,7 +228,7 @@ class FeatureMapConfig:
                         will be used."
                     )
 
-                    self.feature_map_strategy = "digital"
+                    self.feature_map_strategy = Strategy.DIGITAL
 
         if self.inputs is not None:
             assert (
@@ -282,19 +283,19 @@ class AnsatzConfig:
     depth: int = 1
     """Number of layers of the ansatz."""
 
-    ansatz_type: str = "hea"
+    ansatz_type: AnsatzType = AnsatzType.HEA
     """What type of ansatz.
 
-    "hea" for Hardware Efficient Ansatz.
-    "iia" for Identity intialized Ansatz.
+    HEA for Hardware Efficient Ansatz.
+    IIA for Identity intialized Ansatz.
     """
 
-    ansatz_strategy: str = "digital"
+    ansatz_strategy: Strategy = Strategy.DIGITAL
     """Ansatz strategy.
 
-    "digital" for fully digital ansatz. Required if `ansatz_type` is `iia`.
-    "sdaqc" for analog entangling block.
-    "rydberg" for fully rydberg hea ansatz.
+    DIGITAL for fully digital ansatz. Required if `ansatz_type` is `iia`.
+    SDAQC for analog entangling block.
+    RYDBERG for fully rydberg hea ansatz.
     """
 
     strategy_args: dict = field(default_factory=dict)
@@ -303,7 +304,7 @@ class AnsatzConfig:
 
     Details about each below.
 
-    For "digital" strategy, accepts the following:
+    For DIGITAL strategy, accepts the following:
         periodic (bool): if the qubits should be linked periodically.
             periodic=False is not supported in emu-c.
         operations (list): list of operations to cycle through in the
@@ -314,7 +315,7 @@ class AnsatzConfig:
             will have variational parameters on the rotation angles.
             Defaults to CNOT
 
-    For "sdaqc" strategy, accepts the following:
+    For SDAQC strategy, accepts the following:
         operations (list): list of operations to cycle through in the
             digital single-qubit rotations of each layer.
             Defaults to  [RX, RY, RX] for hea and [RX, RY] for iia.
@@ -322,7 +323,7 @@ class AnsatzConfig:
             analog entangling layer. Time parameter is considered variational.
             Defaults to NN interaction.
 
-    For "rydberg" strategy, accepts the following:
+    For RYDBERG strategy, accepts the following:
         addressable_detuning: whether to turn on the trainable semi-local addressing pattern
             on the detuning (n_i terms in the Hamiltonian).
             Defaults to True.
@@ -340,7 +341,7 @@ class AnsatzConfig:
     """The base bame of the variational parameter."""
 
     def __post_init__(self) -> None:
-        if self.ansatz_type == "iia":
+        if self.ansatz_type == AnsatzType.IIA:
             assert (
-                self.ansatz_strategy != "rydberg"
+                self.ansatz_strategy != Strategy.RYDBERG
             ), "Rydberg strategy not allowed for Identity-initialized ansatz."

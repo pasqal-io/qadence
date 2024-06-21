@@ -21,7 +21,15 @@ from qadence.constructors.hamiltonians import ObservableConfig, TDetuning
 from qadence.operations import CNOT, RX, RY, H, I, N, Z
 from qadence.parameters import Parameter
 from qadence.register import Register
-from qadence.types import Interaction, ReuploadScaling, Strategy, TObservableTransform, TParameter
+from qadence.types import (
+    AnsatzType,
+    Interaction,
+    MultivariateStrategy,
+    ReuploadScaling,
+    Strategy,
+    ObservableTransform,
+    TParameter,
+)
 
 from .config import AnsatzConfig, FeatureMapConfig
 from .models import QNN
@@ -199,9 +207,9 @@ def _create_digital_fm(
     Raises:
         ValueError: If the encoding strategy is invalid. Only 'series' or 'parallel' are allowed.
     """
-    if config.multivariate_strategy == "series":
+    if config.multivariate_strategy == MultivariateStrategy.SERIES:
         fm_blocks = _encode_features_series_digital(register, config)
-    elif config.multivariate_strategy == "parallel":
+    elif config.multivariate_strategy == MultivariateStrategy.PARALLEL:
         fm_blocks = _encode_features_parallel_digital(register, config)
     else:
         raise ValueError(
@@ -335,16 +343,16 @@ def create_fm_blocks(
     Raises:
         ValueError: If the feature map strategy is not 'digital', 'analog' or 'rydberg'.
     """
-    if config.feature_map_strategy == "digital":
+    if config.feature_map_strategy == Strategy.DIGITAL:
         return _create_digital_fm(register=register, config=config)
-    elif config.feature_map_strategy == "analog":
+    elif config.feature_map_strategy == Strategy.ANALOG:
         return _create_analog_fm(register=register, config=config)
-    elif config.feature_map_strategy == "rydberg":
+    elif config.feature_map_strategy == Strategy.RYDBERG:
         return _create_rydberg_fm(register=register, config=config)
     else:
-        raise ValueError(
-            f"Wrong feature map type {config.feature_map_strategy} provided. Only 'digital', \
-            'analog' or 'rydberg' allowed."
+        raise NotImplementedError(
+            f"Feature map not implemented for strategy {config.feature_map_strategy}. \
+            Only 'digital', 'analog' or 'rydberg' allowed."
         )
 
 
@@ -450,9 +458,9 @@ def _create_iia(
     Raises:
         ValueError: If the ansatz strategy is not supported. Only 'digital' and 'sdaqc' are allowed.
     """
-    if config.ansatz_strategy == "digital":
+    if config.ansatz_strategy == Strategy.DIGITAL:
         return _create_iia_digital(num_qubits=num_qubits, config=config)
-    elif config.ansatz_strategy == "sdaqc":
+    elif config.ansatz_strategy == Strategy.SDAQC:
         return _create_iia_sdaqc(num_qubits=num_qubits, config=config)
     else:
         raise ValueError(
@@ -560,11 +568,11 @@ def _create_hea_ansatz(
     """
     num_qubits = register if isinstance(register, int) else register.n_qubits
 
-    if config.ansatz_strategy == "digital":
+    if config.ansatz_strategy == Strategy.DIGITAL:
         return _create_hea_digital(num_qubits=num_qubits, config=config)
-    elif config.ansatz_strategy == "sdaqc":
+    elif config.ansatz_strategy == Strategy.SDAQC:
         return _create_hea_sdaqc(num_qubits=num_qubits, config=config)
-    elif config.ansatz_strategy == "rydberg":
+    elif config.ansatz_strategy == Strategy.RYDBERG:
         return _create_hea_rydberg(register=register, config=config)
     else:
         raise ValueError(
@@ -592,9 +600,9 @@ def create_ansatz(
     """
     num_qubits = register if isinstance(register, int) else register.n_qubits
 
-    if config.ansatz_type == "iia":
+    if config.ansatz_type == AnsatzType.IIA:
         return _create_iia(num_qubits=num_qubits, config=config)
-    elif config.ansatz_type == "hea":
+    elif config.ansatz_type == AnsatzType.HEA:
         return _create_hea_ansatz(register=register, config=config)
     else:
         raise NotImplementedError(
@@ -650,10 +658,10 @@ def load_observable_transformations(config: ObservableConfig) -> tuple[Parameter
 
 
 ObservableTransformMap = {
-    TObservableTransform.RANGE: lambda detuning, scale, shift: (shift, shift - scale)
+    ObservableTransform.RANGE: lambda detuning, scale, shift: (shift, shift - scale)
     if detuning is N
     else (0.5 * (shift - scale), 0.5 * (scale + shift)),
-    TObservableTransform.SCALE: lambda _, scale, shift: (scale, shift),
+    ObservableTransform.SCALE: lambda _, scale, shift: (scale, shift),
 }
 
 
@@ -687,7 +695,7 @@ def create_observable(
     detuning: TDetuning = Z,
     scale: TParameter | None = None,
     shift: TParameter | None = None,
-    transformation_type: TObservableTransform = TObservableTransform.NONE,  # type: ignore[assignment]
+    transformation_type: ObservableTransform = ObservableTransform.NONE,  # type: ignore[assignment]
 ) -> AbstractBlock:
     """
     Create an observable block.
@@ -701,7 +709,7 @@ def create_observable(
     Returns:
         AbstractBlock: The observable block.
     """
-    if transformation_type == TObservableTransform.RANGE:
+    if transformation_type == ObservableTransform.RANGE:
         scale, shift = ObservableTransformMap[transformation_type](detuning, scale, shift)  # type: ignore[index]
     shifting_term = shift * _global_identity(register)  # type: ignore[operator]
     detuning_hamiltonian = scale * hamiltonian_factory(  # type: ignore[operator]

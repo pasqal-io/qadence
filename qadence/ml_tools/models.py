@@ -233,7 +233,7 @@ class QNN(QuantumModel):
         from qadence.ml_tools import QNN
         from qadence.constructors import ObservableConfig
         from qadence.operations import Z
-        from qadence.types import BasisSet, ReuploadScaling, TObservableTransform
+        from qadence.types import BasisSet, ReuploadScaling, ObservableTransform
 
         register = 4
         fm_config = FeatureMapConfig(
@@ -255,7 +255,7 @@ class QNN(QuantumModel):
             detuning=Z,
             scale=5.0,
             shift=0.0,
-            transformation_type=TObservableTransform.SCALE,
+            transformation_type=ObservableTransform.SCALE,
             trainable_transform=None,
         )
 

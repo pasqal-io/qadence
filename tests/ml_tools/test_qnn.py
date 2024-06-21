@@ -24,7 +24,6 @@ from qadence.operations import RX, RY, Z
 from qadence.parameters import FeatureParameter, Parameter
 from qadence.states import uniform_state
 from qadence.types import PI, BackendName, DiffMode, ObservableTransform
-from tests.conftest import SmallQNN
 
 
 def build_circuit(n_qubits_per_feature: int, n_features: int, depth: int = 2) -> QuantumCircuit:
@@ -281,7 +280,9 @@ def get_qnn(
 
 
 @pytest.mark.parametrize("output_range", [(1.0, 0.0, False), (2.0, 0.0, None), (3.0, 1.0, False)])
-def test_constant_and_feature_transformed_module(output_range: tuple[float, float, bool]) -> None:
+def test_constant_and_feature_transformed_module(
+    SmallQNN, output_range: tuple[float, float, bool]
+) -> None:
     batch_size = 1
     n_qubits = 2
     scale, shift, trainable = output_range
@@ -294,9 +295,15 @@ def test_constant_and_feature_transformed_module(output_range: tuple[float, floa
         scale, shift = "scale", "shift"  # type: ignore[assignment]
         input_values["scale"] = torch.tensor([output_range[0]])
         input_values["shift"] = torch.tensor([output_range[1]])
-    model = get_qnn(n_qubits, depth, inputs=[fparam])
+    model = get_qnn(SmallQNN, n_qubits, depth, inputs=[fparam])
     tm = get_qnn(
-        n_qubits, depth, inputs=inputs, scale=scale, shift=shift, trainable_transform=trainable
+        SmallQNN,
+        n_qubits,
+        depth,
+        inputs=inputs,
+        scale=scale,
+        shift=shift,
+        trainable_transform=trainable,
     )
     tm.reset_vparams(list(model.vparams.values()))
     pred = model(input_values)
@@ -306,7 +313,7 @@ def test_constant_and_feature_transformed_module(output_range: tuple[float, floa
 
 
 @pytest.mark.parametrize("output_range", [(1.0, 0.0, True), (2.0, 0.0, True), (3.0, 1.0, True)])
-def test_variational_transformed_module(output_range: tuple[float, float, bool]) -> None:
+def test_variational_transformed_module(SmallQNN, output_range: tuple[float, float, bool]) -> None:
     batch_size = 1
     n_qubits = 2
     scale, shift, trainable = output_range
@@ -315,10 +322,16 @@ def test_variational_transformed_module(output_range: tuple[float, float, bool])
     inputs = [fparam]
     input_values = {fparam: torch.rand(batch_size, requires_grad=True)}
     model = get_qnn(
-        n_qubits, depth, inputs=[fparam], scale=1.0, shift=0.0, trainable_transform=None
+        SmallQNN, n_qubits, depth, inputs=[fparam], scale=1.0, shift=0.0, trainable_transform=None
     )
     tm = get_qnn(
-        n_qubits, depth, inputs=inputs, scale="scale", shift="shift", trainable_transform=trainable  # type: ignore[arg-type]
+        SmallQNN,
+        n_qubits,
+        depth,
+        inputs=inputs,
+        scale="scale",  # type: ignore[arg-type]
+        shift="shift",  # type: ignore[arg-type]
+        trainable_transform=trainable,
     )
     tm.reset_vparams([scale, shift] + list(model.vparams.values()))
     pred = model({**input_values})

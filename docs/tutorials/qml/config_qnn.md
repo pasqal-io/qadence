@@ -13,10 +13,7 @@ One convenient way to construct these three parts of the model is to use the con
 Let us say we want to build a 4-qubit QNN that takes two inputs, namely, the $x$ and the $y$ coordinates of a point in the plane. We can use the `FeatureMapConfig` class to specify the feature map.
 
 ```python exec="on" source="material-block" session="config" html="1"
-from qadence import FeatureMapConfig
-from qadence import BasisSet, ReuploadScaling
-from qadence import chain
-from qadence import create_fm_blocks
+from qadence import BasisSet, chain, create_fm_blocks, FeatureMapConfig, ReuploadScaling
 
 fm_config = FeatureMapConfig(
     num_features=2,
@@ -48,13 +45,12 @@ The next part of the QNN is the ansatz. We use `AnsatzConfig` class to specify t
 Let us say, we want to follow this feature map with 2 layers of hardware efficient ansatz.
 
 ```python exec="on" source="material-block" session="config" html="1"
-from qadence import AnsatzConfig
-from qadence import create_ansatz
+from qadence import AnsatzConfig, AnsatzType, create_ansatz, Strategy
 
 ansatz_config = AnsatzConfig(
     depth=2,
-    ansatz_type="hea",
-    ansatz_strategy="digital",
+    ansatz_type=AnsatzType.HEA,
+    ansatz_strategy=Strategy.DIGITAL,
 )
 
 ansatz = create_ansatz(register=4, config=ansatz_config)
@@ -73,9 +69,7 @@ And lastly, the observable. Naturally, we use the `ObservableConfig` class to sp
 We can specify any Hamiltonian that we want to measure at the end of the circuit. Let us say we want to measure the $Z$ operator.
 
 ```python exec="on" source="material-block" session="config" html="1"
-from qadence import ObservableConfig
-from qadence import Z
-from qadence import observable_from_config
+from qadence import observable_from_config, ObservableConfig, Z
 
 observable_config = ObservableConfig(
     detuning=Z,
