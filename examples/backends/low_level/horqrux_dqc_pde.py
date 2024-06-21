@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from functools import reduce
 from itertools import product
-from operator import add
 from pathlib import Path
 
 import jax
@@ -10,7 +8,7 @@ import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import numpy as np
 import optax
-from jax import Array, jit, value_and_grad, vmap
+from jax import Array, jit, vmap
 from numpy.random import uniform
 from numpy.typing import ArrayLike
 
@@ -27,7 +25,10 @@ LEARNING_RATE = 0.01
 N_QUBITS = 4
 DEPTH = 3
 VARIABLES = ("x", "y")
-N_POINTS = 150
+BATCH_SIZE = 150
+NUM_VARIABLES = len(VARIABLES)
+X_POS = 0
+Y_POS = 1
 logger.info(f"Running example {Path(__file__).name} with n_qubits = {N_QUBITS}")
 # define a simple DQC model
 ansatz = hea(n_qubits=N_QUBITS, depth=DEPTH)
@@ -46,36 +47,57 @@ fm = kron(
 obs = ising_hamiltonian(n_qubits=N_QUBITS)
 # building the circuit and the quantum model
 circ = QuantumCircuit(N_QUBITS, chain(fm, ansatz))
-bknd = backend_factory(BackendName.HORQRUX, DiffMode.AD)
+bknd = backend_factory(BackendName.HORQRUX, DiffMode.GPSR)
 conv_circ, conv_obs, embedding_fn, params = bknd.convert(circ, obs)
 
 optimizer = optax.adam(learning_rate=LEARNING_RATE)
 opt_state = optimizer.init(params)
 
 
-def exp_fn(params: dict[str, Array], inputs: dict[str, Array]) -> ArrayLike:
-    return bknd.expectation(conv_circ, conv_obs, embedding_fn(params, inputs))
+def exp_fn(params: dict[str, Array], x, y) -> ArrayLike:
+    return bknd.expectation(conv_circ, conv_obs, embedding_fn(params, {"x": x, "y": y}))
 
 
-def loss_fn(params: dict[str, Array], x: Array, y: Array) -> Array:
-    def pde_loss(x: float, y: float) -> Array:
-        l_b, r_b, t_b, b_b = list(
-            map(
-                lambda d: exp_fn(params, d),
+def loss_fn(params: dict) -> Array:
+    def pde_loss(x: Array, y: Array) -> Array:
+        x = x.reshape(-1, 1)
+        y = y.reshape(-1, 1)
+        left = (jnp.zeros_like(y), y)  # u(0,y)=0
+        right = (jnp.ones_like(y), y)  # u(L,y)=0
+        top = (x, jnp.ones_like(x))  # u(x,H)=0
+        bottom = (x, jnp.zeros_like(x))  # u(x,0)=f(x)
+        terms = jnp.dstack(list(map(jnp.hstack, [left, right, top, bottom])))
+        loss_left, loss_right, loss_top, loss_bottom = vmap(
+            lambda xy: exp_fn(params, xy[:, 0], xy[:, 1]), in_axes=(2,)
+        )(terms)
+        loss_bottom -= jnp.sin(jnp.pi * x)
+        hessian = jax.hessian(lambda xy: exp_fn(params, xy[0], xy[1]))(
+            jnp.concatenate(
                 [
-                    {"x": jnp.zeros(1), "y": y},  # u(0,y)=0
-                    {"x": jnp.ones(1), "y": y},  # u(L,y)=0
-                    {"x": x, "y": jnp.ones(1)},  # u(x,H)=0
-                    {"x": x, "y": jnp.zeros(1)},  # u(x,0)=f(x)
-                ],
+                    x.reshape(
+                        1,
+                    ),
+                    y.reshape(
+                        1,
+                    ),
+                ]
             )
         )
-        b_b -= jnp.sin(jnp.pi * x)
-        hessian = jax.jacfwd(jax.grad(lambda d: exp_fn(params, d)))({"x": x, "y": y})
-        interior = hessian["x"]["x"] + hessian["y"]["y"]  # uxx+uyy=0
-        return reduce(add, list(map(lambda t: jnp.power(t, 2), [l_b, r_b, t_b, b_b, interior])))
+        loss_interior = hessian[X_POS][X_POS] + hessian[Y_POS][Y_POS]  # uxx+uyy=0
+        return jnp.sum(
+            jnp.concatenate(
+                list(
+                    map(
+                        lambda term: jnp.power(term, 2).reshape(-1, 1),
+                        [loss_left, loss_right, loss_top, loss_bottom, loss_interior],
+                    )
+                )
+            )
+        )
 
-    return jnp.mean(vmap(pde_loss, in_axes=(0, 0))(x, y))
+    return jnp.mean(
+        vmap(pde_loss, in_axes=(0, 0))(*np.random.uniform(0, 1.0, (NUM_VARIABLES, BATCH_SIZE)))
+    )
 
 
 def optimize_step(params: dict[str, Array], opt_state: Array, grads: dict[str, Array]) -> tuple:
@@ -92,25 +114,24 @@ def sample_points(n_in: int, n_p: int) -> ArrayLike:
 @jit
 def train_step(i: int, inputs: tuple) -> tuple:
     params, opt_state = inputs
-    x, y = sample_points(2, N_POINTS)
-    loss, grads = value_and_grad(loss_fn)(params, x, y)
+    grads = jax.grad(loss_fn)(params)
     params, opt_state = optimize_step(params, opt_state, grads)
     return params, opt_state
 
 
 params, opt_state = jax.lax.fori_loop(0, 10, train_step, (params, opt_state))
 # compare the solution to known ground truth
-single_domain = jnp.linspace(0, 1, num=N_POINTS)
+single_domain = jnp.linspace(0, 1, num=BATCH_SIZE)
 domain = jnp.array(list(product(single_domain, single_domain)))
 # analytical solution
 analytic_sol = (
-    (np.exp(-np.pi * domain[:, 0]) * np.sin(np.pi * domain[:, 1])).reshape(N_POINTS, N_POINTS).T
+    (np.exp(-np.pi * domain[:, 0]) * np.sin(np.pi * domain[:, 1])).reshape(BATCH_SIZE, BATCH_SIZE).T
 )
 # DQC solution
 
-dqc_sol = vmap(lambda domain: exp_fn(params, {"x": domain[0], "y": domain[1]}), in_axes=(0,))(
-    domain
-).reshape(N_POINTS, N_POINTS)
+dqc_sol = vmap(lambda domain: exp_fn(params, domain[0], domain[1]), in_axes=(0,))(domain).reshape(
+    BATCH_SIZE, BATCH_SIZE
+)
 # # plot results
 fig, ax = plt.subplots(1, 2, figsize=(7, 7))
 ax[0].imshow(analytic_sol, cmap="turbo")
