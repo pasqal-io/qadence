@@ -10,7 +10,7 @@ from typing import Any
 
 import sympy
 
-from qadence import QuantumModel
+from qadence.model import QuantumModel
 from qadence.blocks import (
     AbstractBlock,
     AddBlock,

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from .config import TrainConfig
+from .config import AnsatzConfig, FeatureMapConfig, TrainConfig
+from .constructors import create_ansatz, create_fm_blocks, observable_from_config
 from .data import DictDataLoader, InfiniteTensorDataset, to_dataloader
 from .models import QNN
 from .optimize_step import optimize_step as default_optimize_step

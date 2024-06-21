@@ -259,9 +259,9 @@ class QuantumModel(nn.Module):
                 "backend": self._backend_name,
                 "diff_mode": self._diff_mode,
                 "measurement": (
-                    self._measurement._to_dict() if self._measurement is not None else {}
+                    self._measurement._to_dict() if self._measurement is not None else dict()
                 ),
-                "noise": self._noise._to_dict() if self._noise is not None else {},
+                "noise": self._noise._to_dict() if self._noise is not None else dict(),
                 "backend_configuration": asdict(self.backend.backend.config),  # type: ignore
             }
             param_dict_conv = {}

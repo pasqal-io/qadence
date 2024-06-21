@@ -27,7 +27,7 @@ class MatrixBlock(PrimitiveBlock):
     from qadence.circuit import QuantumCircuit
     from qadence.types import BackendName, DiffMode
     from qadence.blocks.matrix import MatrixBlock
-    from qadence import QuantumModel
+    from qadence.model import QuantumModel
     from qadence.operations import X, Z
     from qadence.states import random_state
 
