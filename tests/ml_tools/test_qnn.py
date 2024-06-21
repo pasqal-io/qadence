@@ -257,7 +257,7 @@ def quantum_circuit(n_qubits: int = 2, depth: int = 1) -> QuantumCircuit:
 
 
 def get_qnn(
-    SmallQNN: QuantumCircuit,
+    SmallCircuit: QuantumCircuit,
     n_qubits: int,
     depth: int,
     inputs: list = None,
@@ -268,7 +268,7 @@ def get_qnn(
     observable = observable_from_config(
         n_qubits, ObservableConfig(Z, scale, shift, "scale", trainable_transform)  # type: ignore[arg-type]
     )
-    circuit = SmallQNN
+    circuit = SmallCircuit
     model = QNN(
         circuit,
         observable,
@@ -281,7 +281,7 @@ def get_qnn(
 
 @pytest.mark.parametrize("output_range", [(1.0, 0.0, False), (2.0, 0.0, None), (3.0, 1.0, False)])
 def test_constant_and_feature_transformed_module(
-    SmallQNN, output_range: tuple[float, float, bool]
+    SmallCircuit: QuantumCircuit, output_range: tuple[float, float, bool]
 ) -> None:
     batch_size = 1
     n_qubits = 2
@@ -295,9 +295,9 @@ def test_constant_and_feature_transformed_module(
         scale, shift = "scale", "shift"  # type: ignore[assignment]
         input_values["scale"] = torch.tensor([output_range[0]])
         input_values["shift"] = torch.tensor([output_range[1]])
-    model = get_qnn(SmallQNN, n_qubits, depth, inputs=[fparam])
+    model = get_qnn(SmallCircuit, n_qubits, depth, inputs=[fparam])
     tm = get_qnn(
-        SmallQNN,
+        SmallCircuit,
         n_qubits,
         depth,
         inputs=inputs,
@@ -313,7 +313,9 @@ def test_constant_and_feature_transformed_module(
 
 
 @pytest.mark.parametrize("output_range", [(1.0, 0.0, True), (2.0, 0.0, True), (3.0, 1.0, True)])
-def test_variational_transformed_module(SmallQNN, output_range: tuple[float, float, bool]) -> None:
+def test_variational_transformed_module(
+    SmallCircuit: QuantumCircuit, output_range: tuple[float, float, bool]
+) -> None:
     batch_size = 1
     n_qubits = 2
     scale, shift, trainable = output_range
@@ -322,10 +324,16 @@ def test_variational_transformed_module(SmallQNN, output_range: tuple[float, flo
     inputs = [fparam]
     input_values = {fparam: torch.rand(batch_size, requires_grad=True)}
     model = get_qnn(
-        SmallQNN, n_qubits, depth, inputs=[fparam], scale=1.0, shift=0.0, trainable_transform=None
+        SmallCircuit,
+        n_qubits,
+        depth,
+        inputs=[fparam],
+        scale=1.0,
+        shift=0.0,
+        trainable_transform=None,
     )
     tm = get_qnn(
-        SmallQNN,
+        SmallCircuit,
         n_qubits,
         depth,
         inputs=inputs,
