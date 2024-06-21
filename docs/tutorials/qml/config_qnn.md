@@ -13,10 +13,10 @@ One convenient way to construct these three parts of the model is to use the con
 Let us say we want to build a 4-qubit QNN that takes two inputs, namely, the $x$ and the $y$ coordinates of a point in the plane. We can use the `FeatureMapConfig` class to specify the feature map.
 
 ```python exec="on" source="material-block" session="config" html="1"
-from qadence.ml_tools.config import FeatureMapConfig
-from qadence.types import BasisSet, ReuploadScaling
-from qadence.blocks import chain
-from qadence.ml_tools.constructors import create_fm_blocks
+from qadence import FeatureMapConfig
+from qadence import BasisSet, ReuploadScaling
+from qadence import chain
+from qadence import create_fm_blocks
 
 fm_config = FeatureMapConfig(
     num_features=2,
@@ -35,7 +35,7 @@ from qadence.draw import html_string # markdown-exec: hide
 print(html_string(feature_map)) # markdown-exec: hide
 ```
 
-We have specified that the feature map should take two features, and have named the [`FeatureParameter`][qadence.parameters.FeatureParameter] "x" and "y" respectively. Both these parameters are encoded using the Chebyshev basis set, and the reupload scaling is set to `ReuploadScaling.TOWER`. One can optionally the basis and the reupload scaling for each parameter separately.
+We have specified that the feature map should take two features, and have named the [`FeatureParameter`][qadence.parameters.FeatureParameter] "x" and "y" respectively. Both these parameters are encoded using the Chebyshev basis set, and the reupload scaling is set to `ReuploadScaling.TOWER`. One can optionally add the basis and the reupload scaling for each parameter separately.
 
 The `feature_range` parameter is a dictionary that specifies the range of values that each feature comes from. This is useful for scaling the input data to the range that the encoding function can handle. In default case, this range is mapped to the target range of the Chebyshev basis set which is $[-1, 1]$. One can also specify the target range for each feature separately.
 
@@ -48,8 +48,8 @@ The next part of the QNN is the ansatz. We use `AnsatzConfig` class to specify t
 Let us say, we want to follow this feature map with 2 layers of hardware efficient ansatz.
 
 ```python exec="on" source="material-block" session="config" html="1"
-from qadence.ml_tools.config import AnsatzConfig
-from qadence.ml_tools.constructors import create_ansatz
+from qadence import AnsatzConfig
+from qadence import create_ansatz
 
 ansatz_config = AnsatzConfig(
     depth=2,
@@ -70,12 +70,12 @@ For full details on the `AnsatzConfig` class, see the [API documentation][qadenc
 
 And lastly, the observable. Naturally, we use the `ObservableConfig` class to specify the observable.
 
-We can specify any hamiltonian that we want to measure at the end of the circuit. Let us say we want to measure the $Z$ operator.
+We can specify any Hamiltonian that we want to measure at the end of the circuit. Let us say we want to measure the $Z$ operator.
 
 ```python exec="on" source="material-block" session="config" html="1"
-from qadence.constructors.hamiltonians import ObservableConfig
-from qadence.operations import Z
-from qadence.ml_tools.constructors import observable_from_config
+from qadence import ObservableConfig
+from qadence import Z
+from qadence import observable_from_config
 
 observable_config = ObservableConfig(
     detuning=Z,
@@ -87,7 +87,7 @@ observable = observable_from_config(register=4, config=observable_config)
 print(html_string(observable)) # markdown-exec: hide
 ```
 
-We have specified the observable hamiltonian to be one with Z detuning. The result is linearly scaled by 3.0 and shifted by -1.0. These parameters can optionally also be [FeatureParameter][qadence.parameters.FeatureParameter] or [VariationalParameter][qadence.parameters.VariationalParameter]
+We have specified the observable Hamiltonian to be one with $Z$-detuning. The result is linearly scaled by 3.0 and shifted by -1.0. These parameters can optionally also be [FeatureParameter][qadence.parameters.FeatureParameter] or [VariationalParameter][qadence.parameters.VariationalParameter]
 
 One can also specify the observable as a list of observables, in which case the QNN will output a list of values.
 
@@ -97,8 +97,8 @@ For full details on the `ObservableConfig` class, see the [API documentation][qa
 
 To build the QNN, we can now use the `QNN` class.
 
-```python exec="on" source="material-block" html=1 session="config"
-from qadence.ml_tools.models import QNN
+```python exec="on" source="material-block" session="config" html="1"
+from qadence import QNN
 
 qnn = QNN.from_configs(
     register=4,
