@@ -111,6 +111,7 @@ def embedding(
             angle: ArrayLike
             values = {}
             for symbol in expr.free_symbols:
+                print(symbol)
                 if not symbol.is_time:
                     if symbol.name in inputs:
                         value = inputs[symbol.name]

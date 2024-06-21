@@ -172,14 +172,6 @@ class Parameter(Symbol):
             return None
 
 
-# class TimeParameter(Parameter):
-#     """Special derived parameter class for denoting time parameter in a block."""
-
-#     def __new__(cls, name: str | TNumber | Tensor | Basic | Parameter) -> TimeParameter:
-#         t = super().__new__(cls, name=name, trainable=False, value=0.0)
-#         return t
-
-
 def FeatureParameter(name: str, **kwargs: Any) -> Parameter:
     """Shorthand for `Parameter(..., trainable=False)`."""
     return Parameter(name, trainable=False, **kwargs)

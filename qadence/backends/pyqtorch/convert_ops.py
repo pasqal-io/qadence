@@ -7,12 +7,9 @@ from typing import Any, Sequence, Tuple
 import pyqtorch as pyq
 import sympy
 import torch
-from pasqal_solvers.sesolve import sesolve
-
-# from pulser_diff.dq.sesolve import sesolve as sesolve_dq  # import dynamiqs solver
-# from pulser_diff.dq.time_tensor import CallableTimeTensor
 from pyqtorch.apply import apply_operator
 from pyqtorch.matrices import _dagger
+from pyqtorch.time_dependent.sesolve import sesolve
 from pyqtorch.utils import is_diag
 from torch import (
     Tensor,
@@ -49,6 +46,7 @@ from qadence.blocks.block_to_tensor import (
     block_to_tensor,
 )
 from qadence.blocks.primitive import ProjectorBlock
+from qadence.blocks.utils import parameters
 from qadence.operations import (
     U,
     multi_qubit_gateset,
@@ -299,6 +297,18 @@ class PyQHamiltonianEvolution(Module):
         """Dagger of the evolved operator given the current parameter values."""
         return _dagger(self.unitary(values))
 
+    def _get_time_parameter(self) -> str:
+        # get unique time parameters
+        unique_time_params = set()
+        for p in parameters(self.block.generator):  # type: ignore [arg-type]
+            if getattr(p, "is_time", False):
+                unique_time_params.add(str(p))
+
+        if len(unique_time_params) > 1:
+            raise Exception("Only a single time parameter is supported.")
+
+        return unique_time_params.pop()
+
     def forward(
         self,
         state: Tensor,
@@ -310,10 +320,10 @@ class PyQHamiltonianEvolution(Module):
                 # values dict has to change with new value of t
                 # initial value of a feature parameter inside generator block
                 # has to be inferred here
-                new_vals = {}
+                new_vals = dict()
                 for str_expr, val in values.items():
                     expr = sympy.sympify(str_expr)
-                    t_symb = sympy.Symbol("t")
+                    t_symb = sympy.Symbol(self._get_time_parameter())
                     free_symbols = expr.free_symbols
                     if t_symb in free_symbols:
                         # create substitution list for time and feature params
