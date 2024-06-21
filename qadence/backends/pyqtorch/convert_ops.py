@@ -28,6 +28,8 @@ from torch.nn import Module
 
 from qadence.backends.utils import (
     finitediff,
+    pyqify,
+    unpyqify,
 )
 from qadence.blocks import (
     AbstractBlock,
@@ -42,7 +44,6 @@ from qadence.blocks import (
 )
 from qadence.blocks.block_to_tensor import (
     _block_to_tensor_embedded,
-    block_to_diagonal,
     block_to_tensor,
 )
 from qadence.blocks.primitive import ProjectorBlock
