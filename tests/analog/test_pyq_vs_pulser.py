@@ -4,14 +4,13 @@ import pytest
 import torch
 from metrics import ATOL_DICT, JS_ACCEPTANCE, LARGE_SPACING, SMALL_SPACING
 
-from qadence import Parameter
+from qadence import Parameter, QuantumModel
 from qadence.analog import RealisticDevice, RydbergDevice
 from qadence.blocks import AbstractBlock, chain, kron
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import ising_hamiltonian, total_magnetization
 from qadence.divergences import js_divergence
 from qadence.execution import run
-from qadence.models import QuantumModel
 from qadence.operations import (
     CNOT,
     RX,

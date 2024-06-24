@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-from functools import reduce
 from itertools import chain as flatten
 from math import prod
-from operator import add
-from typing import Any, Iterable, Sequence, Tuple
+from typing import Any, Sequence, Tuple
 
 import pyqtorch as pyq
 import sympy
@@ -13,15 +11,12 @@ from pyqtorch.matrices import _dagger
 from pyqtorch.utils import is_diag
 from torch import (
     Tensor,
-    argsort,
-    bmm,
     cdouble,
     diag_embed,
     diagonal,
     exp,
+    float64,
     linalg,
-    ones_like,
-    permute,
     tensor,
     transpose,
 )
@@ -31,8 +26,6 @@ from torch.nn import Module
 
 from qadence.backends.utils import (
     finitediff,
-    pyqify,
-    unpyqify,
 )
 from qadence.blocks import (
     AbstractBlock,
@@ -45,11 +38,7 @@ from qadence.blocks import (
     ScaleBlock,
     TimeEvolutionBlock,
 )
-from qadence.blocks.block_to_tensor import (
-    _block_to_tensor_embedded,
-    block_to_diagonal,
-    block_to_tensor,
-)
+from qadence.blocks.block_to_tensor import _block_to_tensor_embedded, block_to_tensor
 from qadence.blocks.primitive import ProjectorBlock
 from qadence.operations import (
     U,
@@ -60,7 +49,6 @@ from qadence.operations import (
     two_qubit_gateset,
 )
 from qadence.types import OpName
-from qadence.utils import infer_batchsize
 
 from .config import Configuration
 
@@ -81,15 +69,13 @@ def is_single_qubit_chain(block: AbstractBlock) -> bool:
     )
 
 
-def convert_observable(
-    block: AbstractBlock, n_qubits: int, config: Configuration = None
-) -> Sequence[Module]:
-    return [PyQObservable(block, n_qubits, config)]
-
-
 def convert_block(
     block: AbstractBlock, n_qubits: int = None, config: Configuration = None
-) -> Sequence[Module]:
+) -> Sequence[Module | Tensor | str | sympy.Expr]:
+    if isinstance(block, (Tensor, str, sympy.Expr)):  # case for hamevo generators
+        if isinstance(block, Tensor):
+            block = block.permute(1, 2, 0)  # put batch size in the back
+        return [block]
     qubit_support = block.qubit_support
     if n_qubits is None:
         n_qubits = max(qubit_support) + 1
@@ -98,37 +84,40 @@ def convert_block(
         config = Configuration()
 
     if isinstance(block, ScaleBlock):
-        return [ScalePyQOperation(n_qubits, block, config)]
-
-    elif isinstance(block, AddBlock):
-        ops = list(flatten(*(convert_block(b, n_qubits, config) for b in block.blocks)))
-        return [AddPyQOperation(n_qubits, ops)]
+        scaled_ops = convert_block(block.block, n_qubits, config)
+        scale = (
+            tensor([block.parameters.parameter], dtype=float64)
+            if not block.is_parametric
+            else config.get_param_name(block)[0]
+        )
+        return [pyq.Scale(pyq.Sequence(scaled_ops), scale)]
 
     elif isinstance(block, TimeEvolutionBlock):
-        return [
-            PyQHamiltonianEvolution(
-                qubit_support=qubit_support,
-                n_qubits=n_qubits,
-                block=block,
-                config=config,
-            )
-        ]
+        # TODO add native pyq hamevo
+        # generator = convert_block(block.generator, n_qubits, config)[0]  # type: ignore[arg-type]
+        # time_param = config.get_param_name(block)[0]
+        # is_parametric = (
+        #     block.generator.is_parametric if isinstance(block.generator, AbstractBlock) else False
+        # )
+        # return [
+        #     pyq.HamiltonianEvolution(
+        #         qubit_support=qubit_support,
+        #         generator=generator,
+        #         time=time_param,
+        #         generator_parametric=is_parametric,  # type: ignore[union-attr]
+        #     )
+        # ]
+        return [PyQHamiltonianEvolution(qubit_support, n_qubits, block, config)]
     elif isinstance(block, MatrixBlock):
-        return [PyQMatrixBlock(block, n_qubits, config)]
+        return [pyq.primitive.Primitive(block.matrix, block.qubit_support)]
     elif isinstance(block, CompositeBlock):
         ops = list(flatten(*(convert_block(b, n_qubits, config) for b in block.blocks)))
-        if is_single_qubit_chain(block) and config.use_single_qubit_composition:
-            return [PyQComposedBlock(ops, qubit_support, n_qubits, config)]
+        if isinstance(block, AddBlock):
+            return [pyq.Add(ops)]  # add
+        elif is_single_qubit_chain(block) and config.use_single_qubit_composition:
+            return [pyq.Merge(ops)]  # for chains of single qubit ops on the same qubit
         else:
-            # NOTE: without wrapping in a pyq.QuantumCircuit here the kron/chain
-            # blocks won't be properly nested which leads to incorrect results from
-            # the `AddBlock`s. For example:
-            # add(chain(Z(0), Z(1))) has to result in the following (pseudo-code)
-            # AddPyQOperation(pyq.QuantumCircuit(Z, Z))
-            # as opposed to
-            # AddPyQOperation(Z, Z)
-            # which would be wrong.
-            return [pyq.QuantumCircuit(n_qubits, ops)]
+            return [pyq.Sequence(ops)]  # for kron and chain
     elif isinstance(block, tuple(non_unitary_gateset)):
         if isinstance(block, ProjectorBlock):
             projector = getattr(pyq, block.name)
@@ -161,7 +150,10 @@ def convert_block(
         if isinstance(block, ParametricBlock):
             op = pyq_cls(qubit_support[:-1], qubit_support[-1], config.get_param_name(block)[0])
         else:
-            op = pyq_cls(qubit_support[:-1], qubit_support[-1])
+            if "CSWAP" in block_name:
+                op = pyq_cls(qubit_support[:-2], qubit_support[-2:])
+            else:
+                op = pyq_cls(qubit_support[:-1], qubit_support[-1])
         return [op]
     else:
         raise NotImplementedError(
@@ -169,147 +161,6 @@ def convert_block(
             "In case you are trying to run an `AnalogBlock`, make sure you "
             "specify the `device_specs` in your `Register` first."
         )
-
-
-class PyQMatrixBlock(Module):
-    def __init__(self, block: MatrixBlock, n_qubits: int, config: Configuration = None):
-        super().__init__()
-        self.n_qubits = n_qubits
-        self.qubits = block.qubit_support
-        self.register_buffer("mat", block.matrix.unsqueeze(2))
-        self.mat: Tensor
-        self._device: torch_device = self.mat.device
-        self._dtype: torch_dtype = self.mat.dtype
-
-    def forward(self, state: Tensor, _: dict[str, Tensor] = None) -> Tensor:
-        return apply_operator(state, self.mat, self.qubits, self.n_qubits)
-
-    @property
-    def device(self) -> torch_device:
-        return self._device
-
-    def to(self, *args: Any, **kwargs: Any) -> PyQMatrixBlock:
-        self.mat = self.mat.to(*args, **kwargs)
-        self._device = self.mat.device
-        self._dtype = self.mat.dtype
-        return self
-
-
-class PyQComposedBlock(pyq.QuantumCircuit):
-    def __init__(
-        self,
-        ops: list[Module],
-        qubits: Tuple[int, ...],
-        n_qubits: int,
-        config: Configuration = None,
-    ):
-        """
-        Merge operations that are adjacent and have identical qubit_support.
-
-        It results in fewer call of apply_operator
-        """
-        super().__init__(n_qubits, ops)
-        self.qubits = qubits
-        self.merged_qubits_support = [
-            grouped_op[-1].qubit_support for grouped_op in self.grouped_operations()
-        ]
-
-    def grouped_operations(self) -> list[list[Module]]:
-        # takes a list of operations and group adjacent operations into sublist
-        # if those operations have the same control qubits
-        def _sublist_grouper(x: Iterable[list[Module]], y: Module) -> list[list[Module]]:
-            # Appends the element y with the last sublist in the list x
-            # if they have the same qubit_support.
-            # Appends the element y as a new sublist to x if it has different qubit_domain
-            x = list(x)
-            if y.qubit_support == x[-1][-1].qubit_support:
-                x[-1].append(y)
-                return x
-            else:
-                x.append([y])
-                return x
-
-        return list(reduce(_sublist_grouper, iter(self.operations[1:]), [[self.operations[0]]]))
-
-    def merged_unitary(self, values: dict[str, Tensor] | None, batch_size: int) -> list[Tensor]:
-        # compute the tensor multiplication of each group of operations
-        batch_first_perm = (2, 0, 1)
-        undo_perm = tuple(argsort(tensor(batch_first_perm)))
-
-        def _expand(m: Tensor) -> Tensor:
-            if len(m.size()) == 2:
-                m = m.unsqueeze(2).repeat(
-                    1, 1, batch_size
-                )  # Primitive gates are 2D, so we expand them.
-            elif m.shape != (2, 2, batch_size) and m.shape != (4, 4, batch_size):
-                m = m.repeat(1, 1, batch_size)  # In case a tensor is 3D doesnt have batch_size.
-            return m
-
-        def _batch_first(m: Tensor) -> Tensor:
-            return permute(m, batch_first_perm)  # This returns shape (batch_size, 2, 2)
-
-        def _batch_last(m: Tensor) -> Tensor:
-            return permute(
-                m, undo_perm
-            )  # We need to undo the permute since PyQ expects (2, 2, batch_size).
-
-        def _list_wise_bmm(ops: list[Module]) -> Tensor:
-            # Takes a list of operations and apply torch.bmm to all the unitaries of the list
-            return _batch_last(
-                reduce(bmm, [_batch_first(_expand(op.unitary(values))) for op in reversed(ops)])
-            )  # We reverse the list of tensors here since matmul is not commutative.
-
-        return list(map(_list_wise_bmm, reversed(self.grouped_operations())))[::-1]
-
-    def forward(self, state: Tensor, values: dict[str, Tensor] | None = None) -> Tensor:
-        # compute evolution of the state by the list of operations
-        batch_size = infer_batchsize(values)
-        return reduce(
-            lambda y, x: apply_operator(state=y, operator=x[0], qubits=x[1]),
-            zip(self.merged_unitary(values, batch_size), self.merged_qubits_support),
-            state,
-        )
-
-
-class PyQObservable(Module):
-    def __init__(self, block: AbstractBlock, n_qubits: int, config: Configuration = None):
-        super().__init__()
-        if config is None:
-            config = Configuration()
-        self.n_qubits = n_qubits
-        if block._is_diag_pauli and not block.is_parametric:
-            self.register_buffer("operation", block_to_diagonal(block, tuple(range(n_qubits))))
-            self._forward = lambda self, state, values: pyqify(
-                self.operation * unpyqify(state), n_qubits=self.n_qubits
-            )
-        else:
-            self.operation = pyq.QuantumCircuit(
-                n_qubits,
-                convert_block(block, n_qubits, config),
-            )
-            self._forward = lambda self, state, values: self.operation(state, values)
-        self._device = self.operation.device
-        self._dtype = self.operation.dtype
-
-    def run(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
-        return self._forward(self, state, values)
-
-    def forward(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
-        return pyq.inner_prod(state, self.run(state, values)).real
-
-    @property
-    def device(self) -> torch_device:
-        return self._device
-
-    @property
-    def dtype(self) -> torch_dtype:
-        return self._dtype
-
-    def to(self, *args: Any, **kwargs: Any) -> PyQObservable:
-        self.operation = self.operation.to(*args, **kwargs)
-        self._device = self.operation.device
-        self._dtype = self.operation.dtype
-        return self
 
 
 class PyQHamiltonianEvolution(Module):
@@ -402,7 +253,8 @@ class PyQHamiltonianEvolution(Module):
         """Approximate jacobian of the evolved operator with respect to time evolution."""
         return finitediff(
             lambda t: self._unitary(time_evolution=t, hamiltonian=self._hamiltonian(self, values)),
-            values[self.param_names[0]],
+            values[self.param_names[0]].reshape(-1, 1),
+            (0,),
         )
 
     def jacobian_generator(self, values: dict[str, Tensor]) -> Tensor:
@@ -429,7 +281,8 @@ class PyQHamiltonianEvolution(Module):
             lambda v: self._unitary(
                 time_evolution=self._time_evolution(values), hamiltonian=_generator(v)
             ),
-            values[self.param_names[1]],
+            values[self.param_names[1]].reshape(-1, 1),
+            (0,),
         )
 
     def dagger(self, values: dict[str, Tensor]) -> Tensor:
@@ -463,39 +316,3 @@ class PyQHamiltonianEvolution(Module):
             self._device = self.hmat.device
             self._dtype = self.hmat.dtype
         return self
-
-
-class AddPyQOperation(pyq.QuantumCircuit):
-    def __init__(self, n_qubits: int, operations: list[Module]):
-        super().__init__(n_qubits=n_qubits, operations=operations)
-
-    def forward(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
-        return reduce(add, (op(state, values) for op in self.operations))
-
-
-class ScalePyQOperation(pyq.QuantumCircuit):
-    def __init__(self, n_qubits: int, block: ScaleBlock, config: Configuration):
-        if not isinstance(block.block, PrimitiveBlock):
-            raise NotImplementedError(
-                "The pyqtorch backend can currently only scale `PrimitiveBlock` types.\
-                Please use the following transpile function on your circuit first:\
-                from qadence.transpile import scale_primitive_blocks_only"
-            )
-        ops = convert_block(block.block, n_qubits, config)
-        assert len(ops) == 1
-        super().__init__(n_qubits, ops)
-        (self.param_name,) = config.get_param_name(block)
-        self.qubit_support = self.operations[0].qubit_support
-
-    def forward(self, state: Tensor, values: dict[str, Tensor]) -> Tensor:
-        return apply_operator(state, self.unitary(values), self.qubit_support, self.n_qubits)
-
-    def unitary(self, values: dict[str, Tensor]) -> Tensor:
-        thetas = values[self.param_name]
-        return thetas * self.operations[0].unitary(values)
-
-    def dagger(self, values: dict[str, Tensor]) -> Tensor:
-        return _dagger(self.unitary(values))
-
-    def jacobian(self, values: dict[str, Tensor]) -> Tensor:
-        return values[self.param_name] * ones_like(self.unitary(values))

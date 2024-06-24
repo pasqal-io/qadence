@@ -1,6 +1,6 @@
 ## ML Tools
 
-This module implements gradient-free and gradient-based training loops for torch Modules and QuantumModel.
+This module implements gradient-free and gradient-based training loops for torch Modules and QuantumModel. It also implements the QNN class.
 
 ### ::: qadence.ml_tools.config
 
@@ -13,3 +13,5 @@ This module implements gradient-free and gradient-based training loops for torch
 ### ::: qadence.ml_tools.train_no_grad
 
 ### ::: qadence.ml_tools.data
+
+### ::: qadence.ml_tools.models

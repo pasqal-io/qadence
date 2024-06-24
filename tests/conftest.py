@@ -5,14 +5,13 @@ import torch.nn as nn
 from openfermion import QubitOperator
 from pytest import fixture  # type: ignore
 from sympy import Expr
-from torch import Tensor, rand, tensor
+from torch import Tensor, tensor
 
+from qadence import QNN, QuantumModel
 from qadence.blocks.abstract import AbstractBlock
-from qadence.blocks.utils import chain, kron, unroll_block_with_scaling
+from qadence.blocks.utils import chain, kron, tag, unroll_block_with_scaling
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import feature_map, hea, total_magnetization
-from qadence.ml_tools.models import TransformedModule
-from qadence.models import QNN, QuantumModel
 from qadence.operations import CNOT, RX, RY, X, Y, Z
 from qadence.parameters import Parameter
 from qadence.register import Register
@@ -223,13 +222,11 @@ def BasicAdjointQNN(BasicFMQuantumCircuit: QuantumCircuit, BasicObservable: Abst
 
 
 @fixture
-def BasicTransformedModule(BasicQNN: QNN) -> TransformedModule:
-    return TransformedModule(
-        BasicQNN,
-        None,
-        None,
-        input_scaling=rand(1),
-        output_scaling=rand(1),
-        input_shifting=rand(1),
-        output_shifting=rand(1),
-    )
+def SmallCircuit() -> QuantumCircuit:
+    phi = Parameter("phi", trainable=False)
+    fm = chain(*[RY(i, phi) for i in range(FM_NQUBITS)])
+    tag(fm, "feature_map")
+
+    ansatz = hea(n_qubits=FM_NQUBITS, depth=1)
+    tag(ansatz, "ansatz")
+    return QuantumCircuit(FM_NQUBITS, fm, ansatz)
