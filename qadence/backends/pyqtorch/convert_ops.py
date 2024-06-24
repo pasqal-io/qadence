@@ -315,6 +315,7 @@ class PyQHamiltonianEvolution(Module):
             hmat = hmat.permute(1, 2, 0)
             self.register_buffer("hmat", hmat)
             self._hamiltonian = lambda self, values: self.hmat
+
         elif (
             isinstance(block.generator, AbstractBlock)
             and not block.is_parametric
@@ -363,20 +364,16 @@ class PyQHamiltonianEvolution(Module):
 
     def _unitary(self, hamiltonian: Tensor, time_evolution: Tensor) -> Tensor:
 
-        if len(hamiltonian.size()) > 1:
-            self.batch_size = max(hamiltonian.size()[2], len(time_evolution))
-            diag_check = tensor(
-                [is_diag(hamiltonian[..., i]) for i in range(self.batch_size)], device=self.device
-            )
-            hamiltonian = diagonal(hamiltonian) if bool(diag_check) else hamiltonian
-        else:
-            self.batch_size = None
-            diag_check = tensor([True])
+        self.batch_size = (
+            max(hamiltonian.size()[2], len(time_evolution))
+            if hamiltonian.dim() > 1
+            else len(time_evolution)
+        )
 
         def _evolve_diag_operator(hamiltonian: Tensor, time_evolution: Tensor) -> Tensor:
-            evol_operator = hamiltonian * (-1j * time_evolution).view((-1, 1))
-            evol_operator = diag_embed(exp(evol_operator))
-            return transpose(evol_operator, 0, -1)
+            evol_operator = hamiltonian * (-1j * time_evolution)
+            evol_operator = exp(evol_operator)
+            return evol_operator
 
         def _evolve_matrixexp_operator(hamiltonian: Tensor, time_evolution: Tensor) -> Tensor:
             evol_operator = transpose(hamiltonian, 0, -1) * (-1j * time_evolution).view((-1, 1, 1))
@@ -384,7 +381,7 @@ class PyQHamiltonianEvolution(Module):
             return transpose(evol_operator, 0, -1)
 
         evolve_operator = (
-            _evolve_diag_operator if bool(prod(diag_check)) else _evolve_matrixexp_operator
+            _evolve_diag_operator if hamiltonian.dim() == 1 else _evolve_matrixexp_operator
         )
         return evolve_operator(hamiltonian, time_evolution)
 
@@ -435,13 +432,18 @@ class PyQHamiltonianEvolution(Module):
         state: Tensor,
         values: dict[str, Tensor],
     ) -> Tensor:
-        return apply_operator(
-            state,
-            self.unitary(values),
-            self.qubit_support,
-            self.n_qubits,
-            self.batch_size,
-        )
+        if self.hmat.dim() == 1:
+            return self.unitary(values) * state
+
+        else:
+
+            return apply_operator(
+                state,
+                self.unitary(values),
+                self.qubit_support,
+                self.n_qubits,
+                self.batch_size,
+            )
 
     @property
     def device(self) -> torch_device:
