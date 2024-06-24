@@ -93,7 +93,10 @@ def convert_block(
         return [pyq.Scale(pyq.Sequence(scaled_ops), scale)]
 
     elif isinstance(block, TimeEvolutionBlock):
-        generator = convert_block(block.generator, n_qubits, config)[0]  # type: ignore[arg-type]
+        if isinstance(block, sympy.Symbol):
+            generator = block.name  # type: ignore[arg-type]
+        else:
+            generator = convert_block(block.generator, n_qubits, config)[0]  # type: ignore[arg-type]
         time_param = config.get_param_name(block)[0]
         is_parametric = (
             block.generator.is_parametric if isinstance(block.generator, AbstractBlock) else False
