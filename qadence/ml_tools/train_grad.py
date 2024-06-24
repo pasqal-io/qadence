@@ -163,7 +163,7 @@ def train(
                 best_val_loss, metrics = loss_fn(model, xs_to_device)
 
                 metrics["val_loss"] = best_val_loss
-                write_tensorboard(writer, math.nan, metrics, init_iter)
+                write_tensorboard(writer, None, metrics, init_iter)
 
             if config.folder:
                 if config.checkpoint_best_only:
@@ -227,7 +227,7 @@ def train(
                             if config.folder and config.checkpoint_best_only:
                                 write_checkpoint(config.folder, model, optimizer, iteration="best")
                             metrics["val_loss"] = val_loss
-                            write_tensorboard(writer, math.nan, metrics, iteration)
+                            write_tensorboard(writer, None, metrics, iteration)
 
                 if config.folder:
                     if iteration % config.checkpoint_every == 0 and not config.checkpoint_best_only:
@@ -236,10 +236,16 @@ def train(
             except KeyboardInterrupt:
                 logger.info("Terminating training gracefully after the current iteration.")
                 break
+
+        # Handling printing the last loss
+        # as optimize_step does not give the loss value at the last iteration
         try:
             xs = next(dl_iter) if dataloader is not None else None  # type: ignore[arg-type]
             xs_to_device = data_to_device(xs, device=device, dtype=data_dtype)
             loss, metrics = loss_fn(model, xs_to_device)
+            # We are not supposed to log again the last validation loss
+            # at the same time as training loss
+            # The below is just used for preventing this to happen
             if "val_loss" in metrics:
                 del metrics["val_loss"]
             if iteration % config.print_every == 0 and config.verbose:

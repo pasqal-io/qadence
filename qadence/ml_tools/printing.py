@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from math import isnan
-
 from torch.utils.tensorboard import SummaryWriter
 
 
@@ -13,8 +11,10 @@ def print_metrics(loss: float | None, metrics: dict, iteration: int) -> None:
     print(msg)
 
 
-def write_tensorboard(writer: SummaryWriter, loss: float, metrics: dict, iteration: int) -> None:
-    if not isnan(loss):
+def write_tensorboard(
+    writer: SummaryWriter, loss: float = None, metrics: dict = {}, iteration: int = 0
+) -> None:
+    if loss is not None:
         writer.add_scalar("loss", loss, iteration)
     for key, arg in metrics.items():
         writer.add_scalar(key, arg, iteration)
