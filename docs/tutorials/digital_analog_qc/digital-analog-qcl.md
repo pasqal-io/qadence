@@ -19,6 +19,7 @@ x_test = torch.linspace(xmin, xmax, steps = n_test)
 y_test = f(x_test)
 
 plt.clf()  # markdown-exec: hide
+plt.figure(figsize=(6, 5))  # markdown-exec: hide
 plt.plot(x_test, y_test)
 plt.xlim((-1.1, 1.1))
 plt.ylim((-1.1, 1.1))
@@ -40,7 +41,7 @@ reg = Register.rectangular_lattice(
 reg.draw()
 ```
 
-Inspired by the Ising interaction mode of Rydberg atoms, we can now define the interaction Hamiltonian as $\mathcal{H}_{ij}=\frac{1}{r_{ij}^6}N_iN_j$ where $N_i=(1/2)(I_i-Z_i)$ is the number operator and and $r_{ij}$ is the distance between qubits $i$ and $j$. We can easily instatiate this interaction Hamiltonian from the register information:
+Inspired by the Ising interaction mode of Rydberg atoms, we can now define an interaction Hamiltonian as $\mathcal{H}_{ij}=\frac{1}{r_{ij}^6}N_iN_j$, where $N_i=(1/2)(I_i-Z_i)$ is the number operator and and $r_{ij}$ is the distance between qubits $i$ and $j$. We can easily instatiate this interaction Hamiltonian from the register information:
 
 ```python exec="on" source="material-block" session="da-qcl"
 from qadence import N, add
@@ -51,7 +52,7 @@ def h_ij(i: int, j: int):
 h_int = add(h_ij(*edge)/r**6 for edge, r in reg.edge_distances.items())
 ```
 
-To build the digital-analog ansatz we can make use of the standard `hea` function by specifying we want to use the `Strategy.SDAQC` and passing the Hamiltonian we created as the entangler. The entangling operation will thus be the evolution of this Hamiltonian `HamEvo(h_int, t)`, where the time parameter `t` is considered to be a variational parameter at each layer.
+To build the digital-analog ansatz we can make use of the standard `hea` function by specifying we want to use the `Strategy.SDAQC` and passing the Hamiltonian we created as the entangler. The entangling operation will be replaced by the evolution of this Hamiltonian `HamEvo(h_int, t)`, where the time parameter `t` is considered to be a variational parameter at each layer.
 
 ```python exec="on" source="material-block" html=1 session="da-qcl"
 from qadence import hea, Strategy, RX, RY
@@ -101,7 +102,7 @@ model = QuantumModel(circuit, observable = observable)
 
 ## Training the model
 
-We can now train the model. As an example we create a set of twenty training points
+We can now train the model. We use a set of 20 equally spaced training points.
 
 ```python exec="on" source="material-block" session="da-qcl"
 # Chebyshev FM does not accept x = -1, 1
@@ -115,6 +116,8 @@ y_train = f(x_train)
 # Initial model prediction
 y_pred_initial = model.expectation({"x": x_test}).detach()
 ```
+
+And we use a simple custom training loop.
 
 ```python exec="on" source="material-block" session="da-qcl"
 criterion = torch.nn.MSELoss()
@@ -134,10 +137,15 @@ for i in range(n_epochs):
     optimizer.step()
 ```
 
+## Results
+
+Finally we can plot the resulting trained model.
+
 ```python exec="on" source="material-block" html="1" session="da-qcl"
 y_pred_final = model.expectation({"x": x_test}).detach()
 
 plt.clf()  # markdown-exec: hide
+plt.figure(figsize=(6, 5))  # markdown-exec: hide
 plt.plot(x_test, y_pred_initial, label = "Initial prediction")
 plt.plot(x_test, y_pred_final, label = "Final prediction")
 plt.scatter(x_train, y_train, label = "Training points")
