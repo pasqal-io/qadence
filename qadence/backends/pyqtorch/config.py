@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from logging import getLogger
 from typing import Callable
 
-from pasqal_solvers.utils import SolverType
+from pyqtorch.utils import SolverType
 
 from qadence.analog import add_background_hamiltonian
 from qadence.backend import BackendConfiguration
