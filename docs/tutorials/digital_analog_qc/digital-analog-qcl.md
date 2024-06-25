@@ -2,6 +2,8 @@ In the [analog QCL tutorial](analog-blocks-qcl.md) we used analog blocks to lear
 
 ## Setting up the problem
 
+The example problem considered is to fit a function of interest in a specified range. Below we define and plot the function $f(x)=x^5$.
+
 ```python exec="on" source="material-block" html="1" session="da-qcl"
 from docs import docsutils # markdown-exec: hide
 import torch
