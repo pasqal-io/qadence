@@ -5,11 +5,7 @@ from typing import Sequence
 
 import pyqtorch as pyq
 import sympy
-from torch import (
-    Tensor,
-    float64,
-    tensor,
-)
+from torch import Tensor, float64, tensor
 from torch.nn import Module
 
 from qadence.blocks import (
@@ -54,12 +50,30 @@ def is_single_qubit_chain(block: AbstractBlock) -> bool:
     )
 
 
+# def get_parameter_value(block: ParametricBlock) -> Union[TNumber, Tensor, sympy.Number, None]:
+#     param = block.parameters.parameter
+#     if isinstance(param, float):
+#         param_val = tensor([param], dtype=float64)
+#     elif isinstance(param, numpy.ndarray):
+#         param_val = from_numpy(param)
+#     elif isinstance(param, Tensor):
+#         param_val = param
+#     elif isinstance(param, sympy.Number):
+#         print(param, param.is_imaginary)
+#         param_val = tensor([extract_original_param_entry(param)])
+#     else:
+#         param_val = None
+#     return param_val
+
+
 def convert_block(
     block: AbstractBlock, n_qubits: int = None, config: Configuration = None
 ) -> Sequence[Module | Tensor | str | sympy.Expr]:
     if isinstance(block, (Tensor, str, sympy.Expr)):  # case for hamevo generators
         if isinstance(block, Tensor):
-            block = block.permute(1, 2, 0)  # put batch size in the back
+            block = (
+                block.permute(1, 2, 0) if block.dim() >= 3 else block.unsqueeze(-1)
+            )  # put batch size in the back
         return [block]
     qubit_support = block.qubit_support
     if n_qubits is None:
@@ -118,14 +132,22 @@ def convert_block(
             if isinstance(block, U):
                 op = pyq_cls(qubit_support[0], *config.get_param_name(block))
             else:
-                op = pyq_cls(qubit_support[0], config.get_param_name(block)[0])
+                op = pyq_cls(
+                    qubit_support[0],
+                    config.get_param_name(block)[0],  # , get_parameter_value(block)
+                )
         else:
             op = pyq_cls(qubit_support[0])
         return [op]
     elif isinstance(block, tuple(two_qubit_gateset)):
         pyq_cls = getattr(pyq, block.name)
         if isinstance(block, ParametricBlock):
-            op = pyq_cls(qubit_support[0], qubit_support[1], config.get_param_name(block)[0])
+            op = pyq_cls(
+                qubit_support[0],
+                qubit_support[1],
+                config.get_param_name(block)[0],
+                # get_parameter_value(block),
+            )
         else:
             op = pyq_cls(qubit_support[0], qubit_support[1])
         return [op]
@@ -133,7 +155,12 @@ def convert_block(
         block_name = block.name[1:] if block.name.startswith("M") else block.name
         pyq_cls = getattr(pyq, block_name)
         if isinstance(block, ParametricBlock):
-            op = pyq_cls(qubit_support[:-1], qubit_support[-1], config.get_param_name(block)[0])
+            op = pyq_cls(
+                qubit_support[:-1],
+                qubit_support[-1],
+                config.get_param_name(block)[0],
+                # get_parameter_value(block),
+            )
         else:
             if "CSWAP" in block_name:
                 op = pyq_cls(qubit_support[:-2], qubit_support[-2:])
