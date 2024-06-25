@@ -39,8 +39,6 @@ reg = Register.rectangular_lattice(
     qubits_row = 3,
     qubits_col = 2,
 )
-
-reg.draw()
 ```
 
 Inspired by the Ising interaction mode of Rydberg atoms, we can now define an interaction Hamiltonian as $\mathcal{H}_{ij}=\frac{1}{r_{ij}^6}N_iN_j$, where $N_i=(1/2)(I_i-Z_i)$ is the number operator and and $r_{ij}$ is the distance between qubits $i$ and $j$. We can easily instatiate this interaction Hamiltonian from the [register information](../../content/register.md):
