@@ -82,6 +82,7 @@ libs = ["qadence-libs"]
 dlprof = ["nvidia-pyindex", "nvidia-dlprof[pytorch]"]
 all = ["pulser", "braket", "visualization", "protocols", "libs"]
 
+
 [tool.hatch.envs.default]
 dependencies = [
     "flaky",
