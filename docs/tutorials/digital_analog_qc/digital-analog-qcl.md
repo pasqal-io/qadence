@@ -151,6 +151,7 @@ plt.plot(x_test, y_pred_final, label = "Final prediction")
 plt.scatter(x_train, y_train, label = "Training points")
 plt.xlabel("x")
 plt.ylabel("f(x)")
+plt.legend()
 plt.xlim((-1.1, 1.1))
 plt.ylim((-1.1, 1.1))
 print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
