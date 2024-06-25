@@ -41,7 +41,7 @@ reg = Register.rectangular_lattice(
 reg.draw()
 ```
 
-Inspired by the Ising interaction mode of Rydberg atoms, we can now define an interaction Hamiltonian as $\mathcal{H}_{ij}=\frac{1}{r_{ij}^6}N_iN_j$, where $N_i=(1/2)(I_i-Z_i)$ is the number operator and and $r_{ij}$ is the distance between qubits $i$ and $j$. We can easily instatiate this interaction Hamiltonian from the register information:
+Inspired by the Ising interaction mode of Rydberg atoms, we can now define an interaction Hamiltonian as $\mathcal{H}_{ij}=\frac{1}{r_{ij}^6}N_iN_j$, where $N_i=(1/2)(I_i-Z_i)$ is the number operator and and $r_{ij}$ is the distance between qubits $i$ and $j$. We can easily instatiate this interaction Hamiltonian from the [register information](../../content/register.md):
 
 ```python exec="on" source="material-block" session="da-qcl"
 from qadence import N, add
@@ -52,7 +52,7 @@ def h_ij(i: int, j: int):
 h_int = add(h_ij(*edge)/r**6 for edge, r in reg.edge_distances.items())
 ```
 
-To build the digital-analog ansatz we can make use of the standard `hea` function by specifying we want to use the `Strategy.SDAQC` and passing the Hamiltonian we created as the entangler. The entangling operation will be replaced by the evolution of this Hamiltonian `HamEvo(h_int, t)`, where the time parameter `t` is considered to be a variational parameter at each layer.
+To build the digital-analog ansatz we can make use of the standard `hea` function by specifying we want to use the `Strategy.SDAQC` and passing the Hamiltonian we created as the entangler, as see in the [QML constructors tutorial](../../content/qml_constructors.md). The entangling operation will be replaced by the evolution of this Hamiltonian `HamEvo(h_int, t)`, where the time parameter `t` is considered to be a variational parameter at each layer.
 
 ```python exec="on" source="material-block" html=1 session="da-qcl"
 from qadence import hea, Strategy, RX, RY
