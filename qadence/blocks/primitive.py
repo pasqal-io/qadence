@@ -154,6 +154,7 @@ class PrimitiveBlock(AbstractBlock):
 class ParametricBlock(PrimitiveBlock):
     """Parameterized primitive blocks."""
 
+    # TODO: add noise param here
     name = "ParametricBlock"
 
     # a tuple of Parameter's specifies which parameters go into this block
