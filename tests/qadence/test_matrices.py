@@ -723,9 +723,10 @@ def test_toffoli_gates(n_qubits: int) -> None:
 
 
 @pytest.mark.parametrize("n_qubits", [2, 4, 6])
+@pytest.mark.parametrize("dim", [1, 2, 3, 4, 5, 6])
 @pytest.mark.parametrize("generator_type", ["tensor", "block"])
-def test_hamevo_gate(n_qubits: int, generator_type: str) -> None:
-    dim = np.random.randint(1, n_qubits + 1)
+def test_hamevo_gate(n_qubits: int, dim: int, generator_type: str) -> None:
+    dim = min(dim, n_qubits)
     if generator_type == "tensor":
         h = torch.rand(2**dim, 2**dim)
         generator = h + torch.conj(torch.transpose(h, 0, 1))

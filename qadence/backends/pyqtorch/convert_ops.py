@@ -93,21 +93,19 @@ def convert_block(
         return [pyq.Scale(pyq.Sequence(scaled_ops), scale)]
 
     elif isinstance(block, TimeEvolutionBlock):
-        # TODO add native pyq hamevo
-        # generator = convert_block(block.generator, n_qubits, config)[0]  # type: ignore[arg-type]
-        # time_param = config.get_param_name(block)[0]
-        # is_parametric = (
-        #     block.generator.is_parametric if isinstance(block.generator, AbstractBlock) else False
-        # )
-        # return [
-        #     pyq.HamiltonianEvolution(
-        #         qubit_support=qubit_support,
-        #         generator=generator,
-        #         time=time_param,
-        #         generator_parametric=is_parametric,  # type: ignore[union-attr]
-        #     )
-        # ]
-        return [PyQHamiltonianEvolution(qubit_support, n_qubits, block, config)]
+        generator = convert_block(block.generator, n_qubits, config)[0]  # type: ignore[arg-type]
+        time_param = config.get_param_name(block)[0]
+        is_parametric = (
+            block.generator.is_parametric if isinstance(block.generator, AbstractBlock) else False
+        )
+        return [
+            pyq.HamiltonianEvolution(
+                qubit_support=qubit_support,
+                generator=generator,
+                time=time_param,
+                generator_parametric=is_parametric,  # type: ignore[union-attr]
+            )
+        ]
     elif isinstance(block, MatrixBlock):
         return [pyq.primitive.Primitive(block.matrix, block.qubit_support)]
     elif isinstance(block, CompositeBlock):
