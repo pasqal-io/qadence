@@ -11,6 +11,7 @@ from rich.panel import Panel
 from rich.tree import Tree
 
 from qadence.blocks.abstract import AbstractBlock
+from qadence.noise import Noise
 from qadence.parameters import (
     Parameter,
     ParamMap,
@@ -26,6 +27,8 @@ class PrimitiveBlock(AbstractBlock):
     """
     Primitive blocks represent elementary unitary operations.
 
+    #TODO: Add a description of the noise attribut
+
     Examples are single/multi-qubit gates or Hamiltonian evolution.
     See [`qadence.operations`](/qadence/operations.md) for a full list of
     primitive blocks.
@@ -33,12 +36,19 @@ class PrimitiveBlock(AbstractBlock):
 
     name = "PrimitiveBlock"
 
-    def __init__(self, qubit_support: tuple[int, ...]):
+    def __init__(
+        self, qubit_support: tuple[int, ...], noise: Noise | dict[str, Noise] | None = None
+    ):
         self._qubit_support = qubit_support
+        self._noise = noise
 
     @property
     def qubit_support(self) -> Tuple[int, ...]:
         return self._qubit_support
+
+    @property
+    def noise(self) -> Noise | dict[str, Noise] | None:
+        return self._noise
 
     def digital_decomposition(self) -> AbstractBlock:
         """Decomposition into purely digital gates.
@@ -48,6 +58,10 @@ class PrimitiveBlock(AbstractBlock):
         'gates', by manual/custom knowledge of how this can be done efficiently.
         :return:
         """
+        if self.noise is None:
+            raise ValueError(
+                "Decomposition into purely digital gates is only avalaible for unitary gate"
+            )
         return self
 
     def __len__(self) -> int:
@@ -77,7 +91,7 @@ class PrimitiveBlock(AbstractBlock):
         if not isinstance(other, AbstractBlock):
             raise TypeError(f"Cant compare {type(self)} to {type(other)}")
         if isinstance(other, type(self)):
-            return self.qubit_support == other.qubit_support
+            return self.qubit_support == other.qubit_support and self.noise == self.noise
         return False
 
     def _to_dict(self) -> dict:
@@ -85,14 +99,44 @@ class PrimitiveBlock(AbstractBlock):
             "type": type(self).__name__,
             "qubit_support": self.qubit_support,
             "tag": self.tag,
+            "noise": self.noise._to_dict()
+            if isinstance(self.noise, Noise)
+            else {k: v._to_dict() for k, v in self.noise.items()}
+            if self.noise
+            else None,
         }
 
     @classmethod
     def _from_dict(cls, d: dict) -> PrimitiveBlock:
-        return cls(*d["qubit_support"])
+        noise = d.get("noise")
+        if isinstance(noise, dict):
+            noise = {k: Noise._from_dict(v) for k, v in noise.items()}
+        elif noise is not None:
+            noise = Noise._from_dict(noise)
+        return cls(tuple(d["qubit_support"]), noise)
+
+    @property
+    def _block_title(self) -> str:
+        bits = ",".join(str(i) for i in self.qubit_support)
+        s = f"{type(self).__name__}({bits})"
+        if self.noise:
+            noise_details = []
+            if isinstance(self.noise, Noise):
+                noise_details.append(
+                    f"{self.noise.protocol}({self.noise.options['error_probability']})"
+                )
+            elif isinstance(self.noise, dict):
+                for noise_instance in self.noise.values():
+                    noise_details.append(
+                        f"{noise_instance.protocol}({noise_instance.options['error_probability']})"
+                    )
+            s += ", Noise: " + ", ".join(noise_details)
+        if self.tag is not None:
+            s += rf" \[tag: {self.tag}]"
+        return s
 
     def __hash__(self) -> int:
-        return hash(self._to_json())
+        return hash(self._to_json())  # TODO: To modify
 
     @property
     def n_qubits(self) -> int:
@@ -103,48 +147,8 @@ class PrimitiveBlock(AbstractBlock):
         return len(self.qubit_support)
 
     def dagger(self) -> PrimitiveBlock:
+        # Do not do the dagger of the noise gate. Only of the primitive one.
         return self
-
-
-class NoisyPrimitiveBlock(PrimitiveBlock):
-    """
-    NoisyPrimitiveBlock represents elementary unitary operations with noise.
-
-    This class adds a noise probability parameter to the primitive block,
-    representing the likelihood of an error occurring during the operation.
-    """
-
-    name = "NoisyPrimitiveBlock"
-
-    def __init__(
-        self, qubit_support: tuple[int, ...], noise_probability: float | tuple[float, ...]
-    ):
-        super().__init__(qubit_support)
-        self._noise_probability = noise_probability
-
-    @property
-    def noise_probability(self) -> float | tuple[float, ...]:
-        return self._noise_probability
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, NoisyPrimitiveBlock):
-            return False
-        return super().__eq__(other) and self.noise_probability == other.noise_probability
-
-    def _to_dict(self) -> dict:
-        block_dict = super()._to_dict()
-        block_dict.update({"noise_probability": self.noise_probability})
-        return block_dict
-
-    @classmethod
-    def _from_dict(cls, d: dict) -> NoisyPrimitiveBlock:
-        return cls(d["qubit_support"], d["noise_probability"])
-
-    def __hash__(self) -> int:
-        return hash((super().__hash__(), self.noise_probability))
-
-    def dagger(self) -> PrimitiveBlock:
-        raise ValueError("Property `dagger` not available for noise gate.")
 
 
 class ParametricBlock(PrimitiveBlock):

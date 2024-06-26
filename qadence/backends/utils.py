@@ -123,7 +123,7 @@ def pyqify(state: Tensor, n_qubits: int = None) -> ArrayLike:
 def unpyqify(state: Tensor) -> Tensor:
     """Convert a state of shape [2] * n_qubits + [batch_size] to (batch_size, 2**n_qubits).
 
-    Convert a density matrix of shape (batch_size, 2**n_qubits, 2**n_qubits)
+    Convert a density matrix of shape (2**n_qubits, 2**n_qubits, batch_size)
     to (batch_size, 2**n_qubits, 2**n_qubits)
     """
     if isinstance(state, DensityMatrix):

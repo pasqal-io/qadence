@@ -95,7 +95,6 @@ class Backend(BackendInterface):
         pyqify_state: bool = True,
         unpyqify_state: bool = True,
     ) -> Tensor:
-        # TODO: Allow the noisy simulation here.
         n_qubits = circuit.abstract.n_qubits
         if state is None:
             # If no state is passed, we infer the batch_size through the length
