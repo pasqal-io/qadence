@@ -48,6 +48,7 @@ from qadence.operations import (
     three_qubit_gateset,
     two_qubit_gateset,
 )
+from qadence.parameters import Parameter
 from qadence.types import OpName
 
 from .config import Configuration
@@ -98,6 +99,8 @@ def convert_block(
         is_parametric = (
             block.generator.is_parametric if isinstance(block.generator, AbstractBlock) else False
         )
+        if isinstance(generator, Parameter) and isinstance(generator.name, str):
+            generator = generator.name
         return [
             pyq.HamiltonianEvolution(
                 qubit_support=qubit_support,
