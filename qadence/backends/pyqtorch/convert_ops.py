@@ -315,7 +315,7 @@ class PyQHamiltonianEvolution(Module):
         state: Tensor,
         values: dict[str, Tensor],
     ) -> Tensor:
-        if self.block.generator.is_time_dependent:  # type: ignore [union-attr]
+        if getattr(self.block.generator, "is_time_dependent", False):  # type: ignore [union-attr]
 
             def Ht(t: Tensor | float) -> Tensor:
                 # values dict has to change with new value of t
@@ -363,6 +363,7 @@ class PyQHamiltonianEvolution(Module):
                 sesolve(Ht, unpyqify(state).T[:, 0:1], tsave, self.config.ode_solver).states[-1].T
             )
         else:
+            values.pop("orig_param_values", {})
             result = apply_operator(
                 state,
                 self.unitary(values),
