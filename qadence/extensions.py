@@ -24,7 +24,7 @@ def import_config(backend_name: str | BackendName) -> BackendConfiguration:
         module = importlib.import_module(module_path)
         cfg = getattr(module, "Configuration")
     except (ModuleNotFoundError, ImportError) as e:
-        raise Exception(f"Failed to import backend config of {backend_name} due to {e}.")
+        raise type(e)(f"Failed to import backend config of {backend_name} due to {e}.") from e
     return cfg
 
 
