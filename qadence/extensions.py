@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import importlib
 from logging import getLogger
-from string import Template
 from typing import TypeVar
 
 from qadence.backend import Backend, BackendConfiguration
@@ -10,7 +9,6 @@ from qadence.blocks.abstract import TAbstractBlock
 from qadence.engines.differentiable_backend import DifferentiableBackend
 from qadence.types import BackendName, DiffMode, Engine
 
-backends_namespace = Template("qadence.backends.$name")
 BackendClsType = TypeVar("BackendClsType", bound=Backend)
 EngineClsType = TypeVar("EngineClsType", bound=DifferentiableBackend)
 
