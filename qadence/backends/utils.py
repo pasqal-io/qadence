@@ -143,9 +143,22 @@ def validate_state(state: Tensor, n_qubits: int) -> None:
         )
 
 
-def infer_batchsize(param_values: ParamDictType = None) -> int:
+def infer_batchsize(param_values: dict[str, Tensor] = None) -> int:
     """Infer the batch_size through the length of the parameter tensors."""
-    return max([len(tensor) for tensor in param_values.values()]) if param_values else 1
+    try:
+        return (
+            max(
+                [
+                    len(tensor_or_dict)
+                    for tensor_or_dict in param_values.values()
+                    if isinstance(tensor_or_dict, Tensor)
+                ]
+            )
+            if param_values
+            else 1
+        )
+    except Exception:
+        return 1
 
 
 # The following functions can be used to compute potentially higher order gradients using pyqtorch's

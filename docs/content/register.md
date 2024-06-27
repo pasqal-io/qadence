@@ -58,14 +58,16 @@ from docs import docsutils # markdown-exec: hide
 import matplotlib.pyplot as plt # markdown-exec: hide
 from qadence import Register
 
-reg = Register.all_to_all(n_qubits = 2)
-reg_line = Register.line(n_qubits = 2)
-reg_circle = Register.circle(n_qubits = 2)
+reg = Register.all_to_all(n_qubits = 4)
+reg_line = Register.line(n_qubits = 4)
+reg_circle = Register.circle(n_qubits = 4)
 reg_squre = Register.square(qubits_side = 2)
 reg_rect = Register.rectangular_lattice(qubits_row = 2, qubits_col = 2)
 reg_triang = Register.triangular_lattice(n_cells_row = 2, n_cells_col = 2)
 reg_honey = Register.honeycomb_lattice(n_cells_row = 2, n_cells_col = 2)
 ```
+
+The `Register` class builds on top of the NetworkX `Graph`, and the graphs can be visualized with the `reg.draw()` method
 
 Qubit coordinates are saved as node properties in the underlying NetworkX graph, but can
 be accessed directly with the `coords` property.
@@ -80,8 +82,8 @@ argument can be used to set the minimum spacing. The `rescale_coords` method can
 a new register by rescaling the coordinates of an already created register.
 
 ```python exec="on" source="material-block" result="json" session="register"
-scaled_reg_1 = Register.square(2, spacing = 2.0)
-scaled_reg_2 = reg.rescale_coords(scaling = 2.0)
+scaled_reg_1 = Register.square(2, spacing = 4.0)
+scaled_reg_2 = reg.rescale_coords(scaling = 4.0)
 print(scaled_reg_1.coords)
 print(scaled_reg_2.coords)
 ```
@@ -155,7 +157,7 @@ When running on real devices that enable the [digital-analog](../tutorials/digit
 qubit interactions must be specified either by specifying distances between qubits,
 or by defining edges in the register connectivity graph.
 
-It is possible to access the abstract graph nodes and edges to work with if needed.
+The abstract graph nodes and edges are accessible for direct usage.
 
 ```python exec="on" source="material-block" result="json" session="reg-usage"
 from qadence import Register
@@ -165,7 +167,7 @@ print(f"{reg.nodes = }") # markdown-exec: hide
 print(f"{reg.edges = }") # markdown-exec: hide
 ```
 
-There is also an `all_node_pairs` property for convencience:
+There is also an `all_node_pairs` property for convenience:
 
 ```python exec="on" source="material-block" result="json" session="reg-usage"
 print(reg.all_node_pairs)
