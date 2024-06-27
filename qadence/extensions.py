@@ -58,31 +58,19 @@ def import_engine(engine_name: str | Engine) -> DifferentiableBackend:
         module = importlib.import_module(module_path)
         engine = getattr(module, "DifferentiableBackend")
     except (ModuleNotFoundError, ImportError) as e:
-        raise Exception(f"Failed to import backend {engine_name} due to {e}.")
+        raise type(e)
     return engine
 
 
 def _available_engines() -> dict[Engine, DifferentiableBackend]:
-    """Returns a dictionary of currently installed, native qadence engines."""
-    res: dict[Engine, DifferentiableBackend] = {}
+    """Return a dictionary of currently installed, native qadence engines."""
+    res: dict[Engine, DifferentiableBackend] = dict()
     for engine in Engine.list():
         try:
             res[engine] = import_engine(engine)
-        except (ModuleNotFoundError, ImportError):
-            pass
+        except (ModuleNotFoundError, ImportError) as e:
+            raise type(e)(f"Failed to import engine {engine_name} due to {e}.") from e
     logger.debug(f"Found engines: {res.keys()}")
-    return res
-
-
-def _available_backends() -> dict[BackendName, Backend]:
-    """Returns a dictionary of currently installed, native qadence backends."""
-    res: dict[BackendName, Backend] = {}
-    for backend in BackendName.list():
-        try:
-            res[backend] = import_backend(backend)
-        except (ModuleNotFoundError, ImportError):
-            pass
-    logger.debug(f"Found backends: {res.keys()}")
     return res
 
 
