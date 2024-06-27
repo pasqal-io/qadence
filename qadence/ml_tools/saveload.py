@@ -63,7 +63,6 @@ def write_checkpoint(
     model: Module,
     optimizer: Optimizer | NGOptimizer,
     iteration: int | str,
-    device: str | torch.device = "cpu",
 ) -> None:
     from qadence.ml_tools.models import TransformedModule
     from qadence.models import QNN, QuantumModel
@@ -72,8 +71,10 @@ def write_checkpoint(
     try:
         # We extract the device from the pyqtorch native circuit
         device = str(model.device).split(":")[0]  # in case of using several CUDA devices
-    except Exception:
-        pass
+    except Exception as e:
+        msg = f"Unable to identify in which device the QuantumModel is stored due to {e}.\
+               Setting device to None"
+        logger.warning(msg)
 
     iteration_substring = f"{iteration:03n}" if isinstance(iteration, int) else iteration
     model_checkpoint_name: str = (
