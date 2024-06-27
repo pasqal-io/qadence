@@ -44,7 +44,7 @@ def _available_backends() -> dict[BackendName, Backend]:
         try:
             res[backend] = import_backend(backend)
         except (ModuleNotFoundError, ImportError) as e:
-            raise type(e)(f"Failed to import backend {backend_name} due to {e}.") from e
+            raise type(e)(f"Failed to import backend {backend} due to {e}.") from e
     logger.debug(f"Found backends: {res.keys()}")
     return res
 
@@ -67,7 +67,7 @@ def _available_engines() -> dict[Engine, DifferentiableBackend]:
         try:
             res[engine] = import_engine(engine)
         except (ModuleNotFoundError, ImportError) as e:
-            raise type(e)(f"Failed to import engine {engine_name} due to {e}.") from e
+            raise type(e)(f"Failed to import engine {engine} due to {e}.") from e
     logger.debug(f"Found engines: {res.keys()}")
     return res
 
