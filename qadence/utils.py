@@ -234,18 +234,12 @@ def is_qadence_shape(state: ArrayLike, n_qubits: int) -> bool:
     return state.shape[1] == 2**n_qubits  # type: ignore[no-any-return]
 
 
-def infer_batchsize(param_values: dict[str, Tensor] = None) -> int:
-    """Infer the batch_size through the length of the parameter tensors."""
-    try:
-        return max([len(tensor) for tensor in param_values.values()]) if param_values else 1
-    except Exception:
-        return 1
-
-
 def validate_values_and_state(
     state: ArrayLike | None, n_qubits: int, param_values: dict[str, Tensor] = None
 ) -> None:
     if state is not None:
+        from qadence.backends.utils import infer_batchsize
+
         if isinstance(state, Tensor):
             if state is not None:
                 batch_size_state = (
