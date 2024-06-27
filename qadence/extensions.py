@@ -76,6 +76,7 @@ def _supported_gates(backend_name: str) -> list[TAbstractBlock]:
     """Return a list of supported gates for the queried backend 'name'."""
     from qadence import operations
 
+    backend_name = BackendName(backend_name)  # Validate backend name.
     module_path = f"qadence.backends.{backend_name}"
 
     try:
