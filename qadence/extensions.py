@@ -72,21 +72,17 @@ def _available_engines() -> dict[Engine, DifferentiableBackend]:
     return res
 
 
-def _supported_gates(name: BackendName | str) -> list[TAbstractBlock]:
-    """Returns a list of supported gates for the queried backend 'name'."""
+def _supported_gates(backend_name: str) -> list[TAbstractBlock]:
+    """Return a list of supported gates for the queried backend 'name'."""
     from qadence import operations
 
-    name = str(BackendName(name).name.lower())
+    module_path = f"qadence.backends.{backend_name}"
 
     try:
-        backend_namespace = backends_namespace.substitute(name=name)
-        module = importlib.import_module(backend_namespace)
-    except KeyError:
-        pass
-    _supported_gates = getattr(module, "supported_gates", None)
-    assert (
-        _supported_gates is not None
-    ), f"{name} backend should define a 'supported_gates' variable"
+        module = importlib.import_module(module_path)
+    except (ModuleNotFoundError, ImportError) as e:
+        raise type(e)(f"Failed to import backend module for {backend_name} due to {e}.") from e
+    _supported_gates = getattr(module, "supported_gates")
     return [getattr(operations, gate) for gate in _supported_gates]
 
 
