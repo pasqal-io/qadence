@@ -35,8 +35,20 @@ def import_backend(backend_name: str | BackendName) -> Backend:
         module = importlib.import_module(module_path)
         backend = getattr(module, "Backend")
     except (ModuleNotFoundError, ImportError) as e:
-        raise Exception(f"Failed to import backend {backend_name} due to {e}.")
+        raise type(e)
     return backend
+
+
+def _available_backends() -> dict[BackendName, Backend]:
+    """Return a dictionary of currently installed, native qadence backends."""
+    res: dict[BackendName, Backend] = dict()
+    for backend in BackendName.list():
+        try:
+            res[backend] = import_backend(backend)
+        except (ModuleNotFoundError, ImportError) as e:
+            raise type(e)(f"Failed to import backend {backend_name} due to {e}.") from e
+    logger.debug(f"Found backends: {res.keys()}")
+    return res
 
 
 def import_engine(engine_name: str | Engine) -> DifferentiableBackend:
