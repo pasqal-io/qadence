@@ -64,8 +64,9 @@ def write_checkpoint(
     optimizer: Optimizer | NGOptimizer,
     iteration: int | str,
 ) -> None:
-    from qadence.ml_tools.models import TransformedModule
-    from qadence.models import QNN, QuantumModel
+    from qadence import QuantumModel
+
+    from .models import QNN
 
     device = None
     try:
@@ -92,7 +93,7 @@ def write_checkpoint(
     try:
         d = (
             model._to_dict(save_params=True)
-            if isinstance(model, (QNN, QuantumModel)) or isinstance(model, TransformedModule)
+            if isinstance(model, (QNN, QuantumModel))
             else model.state_dict()
         )
         torch.save((iteration, d), folder / model_checkpoint_name)
@@ -119,8 +120,7 @@ def load_model(
     *args: Any,
     **kwargs: Any,
 ) -> tuple[Module, int]:
-    from qadence.ml_tools.models import TransformedModule
-    from qadence.models import QNN, QuantumModel
+    from qadence import QNN, QuantumModel
 
     iteration = 0
     if model_ckpt_name == "":
@@ -128,7 +128,7 @@ def load_model(
 
     try:
         iteration, model_dict = torch.load(folder / model_ckpt_name, *args, **kwargs)
-        if isinstance(model, (QuantumModel, QNN, TransformedModule)):
+        if isinstance(model, (QuantumModel, QNN)):
             model._from_dict(model_dict, as_torch=True)
         elif isinstance(model, Module):
             model.load_state_dict(model_dict, strict=True)

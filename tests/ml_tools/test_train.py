@@ -10,9 +10,7 @@ import pytest
 import torch
 from torch.utils.data import DataLoader
 
-from qadence.ml_tools import DictDataLoader, TrainConfig, to_dataloader, train_with_grad
-from qadence.ml_tools.models import TransformedModule
-from qadence.models import QNN
+from qadence.ml_tools import QNN, DictDataLoader, TrainConfig, to_dataloader, train_with_grad
 
 torch.manual_seed(42)
 np.random.seed(42)
@@ -147,34 +145,10 @@ def test_train_dictdataloader(tmp_path: Path, Basic: torch.nn.Module) -> None:
     assert torch.allclose(torch.sin(x), model(x), rtol=1e-1, atol=1e-1)
 
 
-@pytest.mark.slow
-@pytest.mark.flaky(max_runs=10)
-def test_modules_save_load(BasicQNN: QNN, BasicTransformedModule: TransformedModule) -> None:
-    data = FMdictdataloader()
-    for _m in [BasicQNN, BasicTransformedModule]:
-        model: torch.nn.Module = _m
-        criterion = torch.nn.MSELoss()
-        optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
-
-        def loss_fn(model: torch.nn.Module, data: torch.Tensor) -> tuple[torch.Tensor, dict]:
-            x = torch.rand(1)
-            y = torch.sin(x)
-            l1 = criterion(model(x), y)
-            return l1, {}
-
-        n_epochs = 200
-        config = TrainConfig(
-            max_iter=n_epochs, print_every=10, checkpoint_every=500, write_every=500
-        )
-        model, optimizer = train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
-        x = torch.rand(1)
-        assert torch.allclose(torch.sin(x), model(x), rtol=1e-1, atol=1e-1)
-
-
 @pytest.mark.flaky(max_runs=10)
 def test_train_tensor_tuple(Basic: torch.nn.Module, BasicQNN: QNN) -> None:
     for cls, dtype in [(Basic, torch.float32), (BasicQNN, torch.complex64)]:
-        model = TransformedModule(cls, 1, 1, *[torch.nn.Parameter(t) for t in torch.rand(4)])
+        model = cls
         batch_size = 25
         x = torch.linspace(0, 1, batch_size).reshape(-1, 1)
         y = torch.sin(x)

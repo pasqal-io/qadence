@@ -38,28 +38,31 @@ class Register:
         device_specs: RydbergDevice = DEFAULT_DEVICE,
     ):
         """
-        A 2D register of qubits which includes their coordinates.
+        A register of qubits including 2D coordinates.
 
-        It is needed for e.g. analog computing.
-        The coordinates are ignored in backends that don't need them. The easiest
-        way to construct a register is via its classmethods like `Register.triangular_lattice`.
+        Instantiating the Register class directly is only recommended for building custom registers.
+        For most uses where a predefined lattice is desired it is recommended to use the various
+        class methods available, e.g. `Register.triangular_lattice`.
 
         Arguments:
-            support: A graph or number of qubits. Nodes can include a `"pos"` attribute
+            support: A NetworkX graph or number of qubits. Nodes can include a `"pos"` attribute
                 such that e.g.: `graph.nodes = {0: {"pos": (2,3)}, 1: {"pos": (0,0)}, ...}` which
-                will be used in backends that need qubit coordinates.
-                See the classmethods for simple construction of some predefined lattices if you
-                don't want to build a graph manually.
-                If you pass an integer the resulting register is the same as
-                `Register.all_to_all(n_qubits)`.
-            spacing: Value set as the distance between the two closest qubits.
+                will be used in backends that need qubit coordinates. Passing a number of qubits
+                calls `Register.all_to_all(n_qubits)`.
+            spacing: Value set as the distance between the two closest qubits. The spacing
+                argument is also available for all the class method constructors.
 
         Examples:
-        ```python exec="on" source="material-block" result="json"
+        ```python exec="on" source="material-block"
         from qadence import Register
 
-        reg = Register.honeycomb_lattice(2,3)
-        reg.draw()
+        reg_all = Register.all_to_all(n_qubits = 4)
+        reg_line = Register.line(n_qubits = 4)
+        reg_circle = Register.circle(n_qubits = 4)
+        reg_squre = Register.square(qubits_side = 2)
+        reg_rect = Register.rectangular_lattice(qubits_row = 2, qubits_col = 2)
+        reg_triang = Register.triangular_lattice(n_cells_row = 2, n_cells_col = 2)
+        reg_honey = Register.honeycomb_lattice(n_cells_row = 2, n_cells_col = 2)
         ```
         """
         if device_specs is not None and not isinstance(device_specs, RydbergDevice):
@@ -74,6 +77,7 @@ class Register:
 
     @property
     def n_qubits(self) -> int:
+        """Total number of qubits in the register."""
         return len(self.graph)
 
     @classmethod
@@ -84,6 +88,15 @@ class Register:
         spacing: float | None = None,
         device_specs: RydbergDevice = DEFAULT_DEVICE,
     ) -> Register:
+        """
+        Build a register from a list of qubit coordinates.
+
+        Each node is added to the underlying
+        graph with the respective coordinates, but the edges are left empty.
+
+        Arguments:
+            coords: List of qubit coordinate tuples.
+        """
         graph = nx.Graph()
         for i, pos in enumerate(coords):
             graph.add_node(i, pos=pos)
@@ -96,6 +109,12 @@ class Register:
         spacing: float = 1.0,
         device_specs: RydbergDevice = DEFAULT_DEVICE,
     ) -> Register:
+        """
+        Build a line register.
+
+        Arguments:
+            n_qubits: Total number of qubits.
+        """
         return cls(line_graph(n_qubits), spacing, device_specs)
 
     @classmethod
@@ -105,6 +124,12 @@ class Register:
         spacing: float = 1.0,
         device_specs: RydbergDevice = DEFAULT_DEVICE,
     ) -> Register:
+        """
+        Build a circle register.
+
+        Arguments:
+            n_qubits: Total number of qubits.
+        """
         graph = nx.grid_2d_graph(n_qubits, 1, periodic=True)
         graph = nx.relabel_nodes(graph, {(i, 0): i for i in range(n_qubits)})
         coords = nx.circular_layout(graph)
@@ -119,6 +144,12 @@ class Register:
         spacing: float = 1.0,
         device_specs: RydbergDevice = DEFAULT_DEVICE,
     ) -> Register:
+        """
+        Build a square register.
+
+        Arguments:
+            qubits_side: Number of qubits on one side of the square.
+        """
         n_points = 4 * (qubits_side - 1)
 
         def gen_points() -> np.ndarray:
@@ -152,6 +183,15 @@ class Register:
         spacing: float = 1.0,
         device_specs: RydbergDevice = DEFAULT_DEVICE,
     ) -> Register:
+        """
+        Build a register with an all-to-all connectivity graph.
+
+        The graph is projected
+        onto a 2D space and the qubit coordinates are set using a spring layout algorithm.
+
+        Arguments:
+            n_qubits: Total number of qubits.
+        """
         return cls(alltoall_graph(n_qubits), spacing, device_specs)
 
     @classmethod
@@ -166,6 +206,13 @@ class Register:
         values = {i: {"pos": node} for (i, node) in enumerate(graph.nodes)}
         graph = nx.relabel_nodes(graph, {(i, j): k for k, (i, j) in enumerate(graph.nodes)})
         nx.set_node_attributes(graph, values)
+        """
+        Build a rectangular lattice register.
+
+        Arguments:
+            qubits_row: Number of qubits in each row.
+            qubits_col: Number of qubits in each column.
+        """
         return cls(graph, spacing, device_specs)
 
     @classmethod
@@ -176,6 +223,15 @@ class Register:
         spacing: float = 1.0,
         device_specs: RydbergDevice = DEFAULT_DEVICE,
     ) -> Register:
+        """
+        Build a triangular lattice register.
+
+        Each cell is a triangle made up of three qubits.
+
+        Arguments:
+            n_cells_row: Number of cells in each row.
+            n_cells_col: Number of cells in each column.
+        """
         return cls(triangular_lattice_graph(n_cells_row, n_cells_col), spacing, device_specs)
 
     @classmethod
@@ -186,6 +242,15 @@ class Register:
         spacing: float = 1.0,
         device_specs: RydbergDevice = DEFAULT_DEVICE,
     ) -> Register:
+        """
+        Build a honeycomb lattice register.
+
+        Each cell is an hexagon made up of six qubits.
+
+        Arguments:
+            n_cells_row: Number of cells in each row.
+            n_cells_col: Number of cells in each column.
+        """
         graph = nx.hexagonal_lattice_graph(n_cells_row, n_cells_col)
         graph = nx.relabel_nodes(graph, {(i, j): k for k, (i, j) in enumerate(graph.nodes)})
         return cls(graph, spacing, device_specs)
@@ -195,6 +260,7 @@ class Register:
         return getattr(cls, topology)(*args, **kwargs)  # type: ignore[no-any-return]
 
     def draw(self, show: bool = True) -> None:
+        """Draw the underlying NetworkX graph representing the register."""
         coords = {i: n["pos"] for i, n in self.graph.nodes.items()}
         nx.draw(self.graph, with_labels=True, pos=coords)
         if show:
@@ -205,41 +271,59 @@ class Register:
 
     @property
     def nodes(self) -> NodeView:
+        """Return the NodeView of the underlying NetworkX graph."""
         return self.graph.nodes
 
     @property
     def edges(self) -> EdgeView:
+        """Return the EdgeView of the underlying NetworkX graph."""
         return self.graph.edges
 
     @property
     def support(self) -> set:
+        """Return the set of qubits in the register."""
         return set(self.nodes)
 
     @property
     def coords(self) -> dict:
+        """Return the dictionary of qubit coordinates."""
         return {i: tuple(node.get("pos", ())) for i, node in self.nodes.items()}
 
     @property
     def all_node_pairs(self) -> EdgeView:
+        """Return a list of all possible qubit pairs in the register."""
         return list(filter(lambda x: x[0] < x[1], product(self.support, self.support)))
 
     @property
     def distances(self) -> dict:
+        """Return a dictionary of distances for all qubit pairs in the register."""
         coords = self.coords
         return {edge: dist(coords[edge[0]], coords[edge[1]]) for edge in self.all_node_pairs}
 
     @property
     def edge_distances(self) -> dict:
+        """
+        Return a dictionary of distances for the qubit pairs that are.
+
+        connected by an edge in the underlying NetworkX graph.
+        """
         coords = self.coords
         return {edge: dist(coords[edge[0]], coords[edge[1]]) for edge in self.edges}
 
     @property
     def min_distance(self) -> float:
+        """Return the minimum distance between two qubts in the register."""
         distances = self.distances
         value: float = min(self.distances.values()) if len(distances) > 0 else 0.0
         return value
 
     def rescale_coords(self, scaling: float) -> Register:
+        """
+        Rescale the coordinates of all qubits in the register.
+
+        Arguments:
+            scaling: Scaling value.
+        """
         g = deepcopy(self.graph)
         _scale_node_positions(g, min_distance=1.0, spacing=scaling)
         return Register(g, spacing=None, device_specs=self.device_specs)
@@ -272,14 +356,6 @@ class Register:
 
 
 def line_graph(n_qubits: int) -> nx.Graph:
-    """Create graph representing linear lattice.
-
-    Args:
-        n_qubits (int): number of nodes in the graph
-
-    Returns:
-        graph instance
-    """
     graph = nx.Graph()
     for i in range(n_qubits):
         graph.add_node(i, pos=(i, 0.0))
