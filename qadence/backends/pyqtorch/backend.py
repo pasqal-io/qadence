@@ -96,7 +96,6 @@ class Backend(BackendInterface):
         unpyqify_state: bool = True,
     ) -> Tensor:
         n_qubits = circuit.abstract.n_qubits
-        orig_param_values = param_values.pop("orig_param_values", {})
         if state is None:
             # If no state is passed, we infer the batch_size through the length
             # of the individual parameter value tensors.
@@ -105,8 +104,6 @@ class Backend(BackendInterface):
             validate_state(state, n_qubits)
             # pyqtorch expects input shape [2] * n_qubits + [batch_size]
             state = pyqify(state, n_qubits) if pyqify_state else state
-        if len(orig_param_values) != 0:
-            param_values.update({"orig_param_values": orig_param_values})
         state = circuit.native.run(state=state, values=param_values)
         state = unpyqify(state) if unpyqify_state else state
         state = invert_endianness(state) if endianness != self.native_endianness else state
@@ -168,12 +165,9 @@ class Backend(BackendInterface):
                 "Looping expectation does not make sense with batched initial state. "
                 "Define your initial state with `batch_size=1`"
             )
-        orig_param_values = param_values.pop("orig_param_values", {})
         list_expvals = []
         observables = observable if isinstance(observable, list) else [observable]
         for vals in to_list_of_dicts(param_values):
-            if len(orig_param_values) != 0:
-                vals.update({"orig_param_values": orig_param_values})
             wf = self.run(circuit, vals, state, endianness, pyqify_state=True, unpyqify_state=False)
             exs = torch.cat([obs.native(wf, vals) for obs in observables], 0)
             list_expvals.append(exs)
@@ -220,14 +214,11 @@ class Backend(BackendInterface):
         endianness: Endianness = Endianness.BIG,
         pyqify_state: bool = True,
     ) -> list[Counter]:
-        orig_param_values = param_values.pop("orig_param_values", {})
         if state is None:
             state = circuit.native.init_state(batch_size=infer_batchsize(param_values))
         elif state is not None and pyqify_state:
             n_qubits = circuit.abstract.n_qubits
             state = pyqify(state, n_qubits) if pyqify_state else state
-        if len(orig_param_values) != 0:
-            param_values.update({"orig_param_values": orig_param_values})
         samples: list[Counter] = circuit.native.sample(
             state=state, values=param_values, n_shots=n_shots
         )

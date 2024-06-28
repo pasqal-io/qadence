@@ -363,7 +363,6 @@ class PyQHamiltonianEvolution(Module):
                 sesolve(Ht, unpyqify(state).T[:, 0:1], tsave, self.config.ode_solver).states[-1].T
             )
         else:
-            values.pop("orig_param_values", {})
             result = apply_operator(
                 state,
                 self.unitary(values),

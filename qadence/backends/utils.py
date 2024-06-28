@@ -98,10 +98,11 @@ def to_list_of_dicts(param_values: ParamDictType) -> list[ParamDictType]:
     if not param_values:
         return [param_values]
 
-    max_batch_size = max(p.size()[0] for p in param_values.values())
+    max_batch_size = max(p.size()[0] for p in param_values.values() if isinstance(p, Tensor))
     batched_values = {
         k: (v if v.size()[0] == max_batch_size else v.repeat(max_batch_size, 1))
         for k, v in param_values.items()
+        if isinstance(v, Tensor)
     }
 
     return [{k: v[i] for k, v in batched_values.items()} for i in range(max_batch_size)]
