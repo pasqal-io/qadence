@@ -43,7 +43,7 @@ class HamEvo(TimeEvolutionBlock):
         generator: Either a AbstractBlock, torch.Tensor or numpy.ndarray.
         parameter: A scalar or vector of numeric or torch.Tensor type.
         qubit_support: The qubits on which the evolution will be performed on.
-        duration: duration of evolution in ns in case of time-dependent generator
+        duration: duration of evolution in case of time-dependent generator
 
     Examples:
 

@@ -7,6 +7,7 @@ from typing import Callable, Iterable, Tuple, Union
 import numpy as np
 import sympy
 from numpy.typing import ArrayLike
+from pyqtorch.utils import SolverType
 from torch import Tensor, pi
 
 TNumber = Union[int, float, complex, np.int64, np.float64]
@@ -47,6 +48,7 @@ __all__ = [
     "AlgoHEvo",
     "SerializationFormat",
     "PI",
+    "SolverType",
 ]  # type: ignore
 
 
