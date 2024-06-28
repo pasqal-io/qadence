@@ -18,6 +18,7 @@ from qadence.blocks.utils import (
     chain,
     kron,
 )
+from qadence.noise import Noise
 from qadence.parameters import (
     Parameter,
 )
@@ -31,8 +32,8 @@ class X(PrimitiveBlock):
 
     name = OpName.X
 
-    def __init__(self, target: int):
-        super().__init__((target,))
+    def __init__(self, target: int, noise: Noise | dict[str, Noise] | None = None):
+        super().__init__((target,), noise)
 
     @property
     def generator(self) -> AbstractBlock:

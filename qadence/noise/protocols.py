@@ -11,8 +11,14 @@ PROTOCOL_TO_MODULE = {
 
 @dataclass
 class Noise:
+    BITFLIP = "BitFlip"
+    PHASEFLIP = "PhaseFlip"
+    PAULI_CHANNEL = "PauliChannel"
+    AMPLITUDE_DAMPING = "AmplitudeDamping"
+    PHASE_DAMPING = "PhaseDamping"
+    GENERALIZED_AMPLITUDE_DAMPING = "GeneralizedAmplitudeDamping"
     DEPHASING = "dephasing"
-    DEPOLARIZING = "depolarizing"
+    DEPOLARIZING = "depolarizing"  # check if no cap is ok for pyq
     READOUT = "readout"
 
     def __init__(self, protocol: str, options: dict = dict()) -> None:
@@ -29,6 +35,9 @@ class Noise:
 
     def _to_dict(self) -> dict:
         return {"protocol": self.protocol, "options": self.options}
+
+    def __repr__(self) -> str:
+        return f"protocol: {self.protocol}, options: {self.options}"
 
     @classmethod
     def _from_dict(cls, d: dict) -> Noise | None:
