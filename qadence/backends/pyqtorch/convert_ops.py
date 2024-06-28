@@ -26,6 +26,7 @@ from torch import device as torch_device
 from torch import dtype as torch_dtype
 from torch.nn import Module
 
+from qadence import stringify
 from qadence.backends.utils import (
     finitediff,
     pyqify,
@@ -47,7 +48,7 @@ from qadence.blocks.block_to_tensor import (
     block_to_tensor,
 )
 from qadence.blocks.primitive import ProjectorBlock
-from qadence.blocks.utils import parameters
+from qadence.blocks.utils import parameters, uuid_to_expression
 from qadence.operations import (
     U,
     multi_qubit_gateset,
@@ -315,6 +316,13 @@ class PyQHamiltonianEvolution(Module):
         state: Tensor,
         values: dict[str, Tensor],
     ) -> Tensor:
+        # convert values dict keys from uuids to expression strings if needed
+        uuid_dict = uuid_to_expression(self.block.generator)  # type: ignore [arg-type]
+        if list(uuid_dict.keys())[0] in values:
+            orig_param_values = values["orig_param_values"]
+            values = {stringify(v): values[k] for k, v in uuid_dict.items()}
+            values["orig_param_values"] = orig_param_values
+
         if getattr(self.block.generator, "is_time_dependent", False):  # type: ignore [union-attr]
 
             def Ht(t: Tensor | float) -> Tensor:
