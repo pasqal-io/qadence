@@ -87,7 +87,7 @@ def test_random_basicqQM_save_load_ckpts(BasicQuantumModel: QuantumModel, tmp_pa
 
     def loss_fn(model: QuantumModel, data: torch.Tensor) -> tuple[torch.Tensor, dict]:
         next(cnt)
-        out = model.expectation({})
+        out = model.expectation({}).squeeze(dim=0)
         loss = criterion(out, torch.rand(1))
         return loss, {}
 
@@ -114,7 +114,7 @@ def test_check_ckpts_exist(BasicQuantumModel: QuantumModel, tmp_path: Path) -> N
 
     def loss_fn(model: QuantumModel, data: torch.Tensor) -> tuple[torch.Tensor, dict]:
         next(cnt)
-        out = model.expectation({})
+        out = model.expectation({}).squeeze(dim=0)
         loss = criterion(out, torch.rand(1))
         return loss, {}
 
@@ -139,7 +139,7 @@ def test_random_basicqQNN_save_load_ckpts(BasicQNN: QNN, tmp_path: Path) -> None
 
     def loss_fn(model: QuantumModel, data: torch.Tensor) -> tuple[torch.Tensor, dict]:
         next(cnt)
-        out = model.expectation(inputs)
+        out = model.expectation(inputs).squeeze(dim=0)
         loss = criterion(out, torch.rand(1))
         return loss, {}
 
@@ -167,7 +167,7 @@ def test_check_QNN_ckpts_exist(BasicQNN: QNN, tmp_path: Path) -> None:
 
     def loss_fn(model: QuantumModel, data: torch.Tensor) -> tuple[torch.Tensor, dict]:
         next(cnt)
-        out = model.expectation(inputs)
+        out = model.expectation(inputs).squeeze(dim=0)
         loss = criterion(out, torch.rand(1))
         return loss, {}
 
