@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Callable, Iterable, List
+from dataclasses import dataclass
+from typing import Callable, Iterable, Iterator, List
 
 import sympy
 from numpy import array as nparray
@@ -37,6 +38,29 @@ def _concretize_parameter(engine: Engine) -> Callable:
 
 def unique(x: Iterable) -> List:
     return list(set(x))
+
+
+@dataclass
+class ParamContainer:
+    circ_vparams: ParamDictType
+    circ_fixedparams: ParamDictType
+    obs_vparams: ParamDictType
+    obs_fixedparams: ParamDictType
+
+    def __iter__(self) -> Iterator:
+        combined = {
+            **self.circ_vparams,
+            **self.circ_fixedparams,
+            **self.obs_vparams,
+            **self.obs_fixedparams,
+        }
+        return iter(combined.items())
+
+    def __getitem__(self, key: str) -> ArrayLike:
+        for d in [self.circ_vparams, self.circ_fixedparams, self.obs_vparams, self.obs_fixedparams]:
+            if key in d:
+                return d[key]
+        raise KeyError(key)
 
 
 def embedding(
