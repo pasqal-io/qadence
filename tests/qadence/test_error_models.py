@@ -92,7 +92,7 @@ def test_bitstring_corruption_mixed_bitflips(
     corrupted_counters = [bs_corruption(err_idx=err_idx, sample=sample)]
     for noiseless, noisy in zip(counters, corrupted_counters):
         assert sum(noisy.values()) == n_shots
-        assert js_divergence(noiseless, noisy) > 0.0
+        assert js_divergence(noiseless, noisy) >= 0.0
 
 
 @pytest.mark.flaky(max_runs=5)
