@@ -3,6 +3,7 @@ For use cases when the Hamiltonian of the system is time-dependent, Qadence prov
 ```python exec="on" source="material-block" session="getting_started" result="json"
 from qadence import X, Y, HamEvo, TimeParameter, Parameter, run
 from pyqtorch.utils import SolverType
+import torch
 
 # simulation parameters
 duration = 1.0  # duration of time-dependent block simulation
