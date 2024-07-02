@@ -43,6 +43,7 @@ class HamEvo(TimeEvolutionBlock):
         generator: Either a AbstractBlock, torch.Tensor or numpy.ndarray.
         parameter: A scalar or vector of numeric or torch.Tensor type.
         qubit_support: The qubits on which the evolution will be performed on.
+        duration: duration of evolution in case of time-dependent generator
 
     Examples:
 
@@ -66,6 +67,7 @@ class HamEvo(TimeEvolutionBlock):
         generator: Union[TGenerator, AbstractBlock],
         parameter: TParameter,
         qubit_support: tuple[int, ...] = None,
+        duration: float | None = None,
     ):
         gen_exprs = {}
         if qubit_support is None and not isinstance(generator, AbstractBlock):
@@ -75,6 +77,10 @@ class HamEvo(TimeEvolutionBlock):
             qubit_support = generator.qubit_support
             if generator.is_parametric:
                 gen_exprs = {str(e): e for e in expressions(generator)}
+
+                if generator.is_time_dependent and duration is None:
+                    raise ValueError("For time-dependent generators, a duration must be specified.")
+
         elif isinstance(generator, torch.Tensor):
             msg = "Please provide a square generator."
             if len(generator.shape) == 2:
@@ -99,6 +105,7 @@ class HamEvo(TimeEvolutionBlock):
         ps = {"parameter": Parameter(parameter), **gen_exprs}
         self.parameters = ParamMap(**ps)
         self.generator = generator
+        self.duration = duration
 
     @classmethod
     def num_parameters(cls) -> int:
@@ -197,3 +204,6 @@ class HamEvo(TimeEvolutionBlock):
             raise NotImplementedError(
                 "The current digital decomposition can be applied only to Pauli Hamiltonians."
             )
+
+    def __matmul__(self, other: AbstractBlock) -> AbstractBlock:
+        return super().__matmul__(other)
