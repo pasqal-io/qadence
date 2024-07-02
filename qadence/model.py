@@ -40,6 +40,7 @@ class QuantumModel(nn.Module):
 
     Example:
     ```python exec="on" source="material-block" result="json"
+    import torch
     from qadence import QuantumModel, QuantumCircuit, RX, RY, Z, PI, chain, kron
     from qadence import FeatureParameter, VariationalParameter
 
