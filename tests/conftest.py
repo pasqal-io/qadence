@@ -1,6 +1,11 @@
 from __future__ import annotations
 
+from typing import Any, Callable
+
 import networkx as nx
+import numpy as np
+import qutip
+import sympy
 import torch.nn as nn
 from openfermion import QubitOperator
 from pytest import fixture  # type: ignore
@@ -13,7 +18,7 @@ from qadence.blocks.utils import chain, kron, tag, unroll_block_with_scaling
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import feature_map, hea, total_magnetization
 from qadence.operations import CNOT, RX, RY, X, Y, Z
-from qadence.parameters import Parameter
+from qadence.parameters import Parameter, TimeParameter
 from qadence.register import Register
 from qadence.types import PI, BackendName, DiffMode
 
@@ -230,3 +235,38 @@ def SmallCircuit() -> QuantumCircuit:
     ansatz = hea(n_qubits=FM_NQUBITS, depth=1)
     tag(ansatz, "ansatz")
     return QuantumCircuit(FM_NQUBITS, fm, ansatz)
+
+
+@fixture
+def omega() -> float:
+    return 20.0
+
+
+@fixture
+def feature_param_x() -> float:
+    return 2.0
+
+
+@fixture
+def feature_param_y() -> float:
+    return 3.5
+
+
+@fixture
+def qadence_generator(omega: float) -> AbstractBlock:
+    t = TimeParameter("t")
+    x = Parameter("x", trainable=False)
+    y = Parameter("y", trainable=False)
+    generator_t = omega * (y * sympy.sin(t) * X(0) + x * (t**2) * Y(1))
+    return generator_t  # type: ignore [no-any-return]
+
+
+@fixture
+def qutip_generator(omega: float, feature_param_x: float, feature_param_y: float) -> Callable:
+    def generator_t(t: float, args: Any) -> qutip.Qobj:
+        return omega * (
+            feature_param_y * np.sin(t) * qutip.tensor(qutip.sigmax(), qutip.qeye(2))
+            + feature_param_x * t**2 * qutip.tensor(qutip.qeye(2), qutip.sigmay())
+        )
+
+    return generator_t
