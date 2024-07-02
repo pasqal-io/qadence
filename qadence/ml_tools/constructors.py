@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+from sympy import Basic
 
 from qadence.backend import BackendConfiguration
 from qadence.blocks import chain, kron
@@ -758,50 +759,44 @@ def build_qnn_from_configs(
         QNN: A QNN model.
     """
 
+    if observable_config is None:
+        raise ValueError(
+            "You need to provide at least one observable config in the QNN constructor."
+        )
+
     if ansatz_config is None:
         ansatz_config = AnsatzConfig(depth=0)
 
-    if fm_config is None:
-        full_fm = chain()
-        inputs: list = []
-    else:
+    inputs: list[Basic | str] | None = None
+    full_fm = chain()
+    if fm_config:
         fm_blocks = create_fm_blocks(register=register, config=fm_config)
         full_fm = _interleave_ansatz_in_fm(
             register=register,
             fm_blocks=fm_blocks,
             ansatz_config=ansatz_config,
         )
-        inputs = fm_config.inputs  # type: ignore[assignment]
+        inputs = fm_config.inputs
 
     ansatz = create_ansatz(register=register, config=ansatz_config)
 
-    # Add a block before the Featuer Map to move from 0 state to an
-    # equal superposition of all states. This needs to be here only for rydberg
-    # feature map and only as long as the feature map is not updated to include
-    # a driving term in the Hamiltonian.
-
     if ansatz_config.ansatz_strategy == "rydberg":
+        # Add a block before the Featuer Map to move from 0 state to an
+        # equal superposition of all states. This needs to be here only for rydberg
+        # feature map and only as long as the feature map is not updated to include
+        # a driving term in the Hamiltonian.
+
         num_qubits = register if isinstance(register, int) else register.n_qubits
         mixing_block = kron(*[H(i) for i in range(num_qubits)])
         full_fm = chain(mixing_block, full_fm)
 
-    circ = QuantumCircuit(
-        register,
-        full_fm,
-        ansatz,
+    circ = QuantumCircuit(register, full_fm, ansatz)
+
+    observable: AbstractBlock | list[AbstractBlock] = (
+        [observable_from_config(register=register, config=cfg) for cfg in observable_config]
+        if isinstance(observable_config, list)
+        else observable_from_config(register=register, config=observable_config)
     )
-
-    if observable_config is None:
-        raise ValueError(
-            "You need to provide at least one observable config in the QNN constructor"
-        )
-
-    if isinstance(observable_config, list):
-        observable = [
-            observable_from_config(register=register, config=cfg) for cfg in observable_config
-        ]
-    else:
-        observable = observable_from_config(register=register, config=observable_config)  # type: ignore[assignment]
 
     ufa = QNN(
         circ,
