@@ -19,6 +19,7 @@ authors = [
     { name = "Gergana Velikova", email = "gergana.velikova@pasqal.com" },
     { name = "Eduardo Maschio", email = "eduardo.maschio@pasqal.com" },
     { name = "Smit Chaudhary", email = "smit.chaudhary@pasqal.com" },
+    { name = "Ignacio Fernández Graña", email = "ignacio.fernandez-grana@pasqal.com" },
 ]
 requires-python = ">=3.9"
 license = { text = "Apache 2.0" }

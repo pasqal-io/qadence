@@ -110,8 +110,11 @@ def train(
     """
     # load available checkpoint
     init_iter = 0
+    log_device = "cpu" if device is None else device
     if config.folder:
-        model, optimizer, init_iter = load_checkpoint(config.folder, model, optimizer)
+        model, optimizer, init_iter = load_checkpoint(
+            config.folder, model, optimizer, device=log_device
+        )
         logger.debug(f"Loaded model and optimizer from {config.folder}")
 
     # Move model to device before optimizer is loaded
