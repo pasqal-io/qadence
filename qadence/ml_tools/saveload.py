@@ -22,6 +22,7 @@ def get_latest_checkpoint_name(folder: Path, type: str, device: str | torch.devi
     if len(files) == 1:
         file = Path(files[0])
     else:
+        device = str(device).split(":")[0]
         pattern = re.compile(f".*_(\d+)_device_{device}.pt$")
         legacy_pattern = re.compile(".*_(\d+).pt$")
         max_index = -1
