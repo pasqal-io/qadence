@@ -79,7 +79,7 @@ class HamEvo(TimeEvolutionBlock):
                 gen_exprs = {str(e): e for e in expressions(generator)}
 
                 if generator.is_time_dependent and duration is None:
-                    raise ValueError("For time-dependent generators a duration must be specified.")
+                    raise ValueError("For time-dependent generators, a duration must be specified.")
 
         elif isinstance(generator, torch.Tensor):
             msg = "Please provide a square generator."
