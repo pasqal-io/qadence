@@ -34,12 +34,8 @@ def write_legacy_checkpoint(
     iteration: int | str,
 ) -> None:
     iteration_substring = f"{iteration:03n}" if isinstance(iteration, int) else iteration
-    model_checkpoint_name: str = (
-        f"model_{type(model).__name__}_ckpt_" + f"{iteration_substring}" + ".pt"
-    )
-    opt_checkpoint_name: str = (
-        f"opt_{type(optimizer).__name__}_ckpt_" + f"{iteration_substring}" + ".pt"
-    )
+    model_checkpoint_name: str = f"model_{type(model).__name__}_ckpt_{iteration_substring}.pt"
+    opt_checkpoint_name: str = f"opt_{type(optimizer).__name__}_ckpt_{iteration_substring}.pt"
     d = (
         model._to_dict(save_params=True)
         if isinstance(model, (QNN, QuantumModel))
