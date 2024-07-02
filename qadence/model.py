@@ -120,6 +120,7 @@ class QuantumModel(nn.Module):
 
     @property
     def vparams(self) -> OrderedDict:
+        """Variational parameters."""
         return OrderedDict({k: v.data for k, v in self._params.items() if v.requires_grad})
 
     @property
@@ -145,9 +146,26 @@ class QuantumModel(nn.Module):
         return len(self.vals_vparams)
 
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:
+        """Get backend-converted circuit.
+
+        Args:
+            circuit: QuantumCircuit instance.
+
+        Returns:
+            Backend circuit.
+        """
         return self.backend.circuit(circuit)
 
     def observable(self, observable: AbstractBlock, n_qubits: int) -> Any:
+        """Get backend observable.
+
+        Args:
+            observable: Observable block.
+            n_qubits: Number of qubits
+
+        Returns:
+            Backend observable.
+        """
         return self.backend.observable(observable, n_qubits)
 
     def reset_vparams(self, values: Sequence) -> None:
@@ -161,6 +179,11 @@ class QuantumModel(nn.Module):
             current_vparams[k].data = torch.tensor([values[i]])
 
     def forward(self, *args: Any, **kwargs: Any) -> Tensor:
+        """Calls run method with arguments.
+
+        Returns:
+            Tensor: A torch.Tensor representing output.
+        """
         return self.run(*args, **kwargs)
 
     def run(
@@ -169,6 +192,16 @@ class QuantumModel(nn.Module):
         state: Tensor | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
+        """Run model.
+
+        Arguments:
+            values: Values dict which contains values for the parameters.
+            state: Optional input state to apply model on.
+            endianness: Storage convention for binary information.
+
+        Returns:
+            A torch.Tensor representing output.
+        """
         if values is None:
             values = {}
         params = self.embedding_fn(self._params, values)
@@ -183,6 +216,19 @@ class QuantumModel(nn.Module):
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
+        """Obtain samples from model.
+
+        Arguments:
+            values: Values dict which contains values for the parameters.
+            n_shots: Observable part of the expectation.
+            state: Optional input state to apply model on.
+            noise: A noise model to use.
+            mitigation: A mitigation protocol to use.
+            endianness: Storage convention for binary information.
+
+        Returns:
+            A list of Counter instances with the sample results.
+        """
         params = self.embedding_fn(self._params, values)
         if noise is None:
             noise = self._noise
@@ -209,6 +255,19 @@ class QuantumModel(nn.Module):
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         """Compute expectation using the given backend.
+
+        Arguments:
+            values: Values dict which contains values for the parameters.
+            observable: Observable part of the expectation.
+            state: Optional input state.
+            measurement: Optional measurement protocol. If None, use
+                exact expectation value with a statevector simulator.
+            noise: A noise model to use.
+            mitigation: A mitigation protocol to use.
+            endianness: Storage convention for binary information.
+
+        Raises:
+            ValueError: when no observable is set.
 
         Returns:
             A torch.Tensor of shape n_batches x n_obs
@@ -243,9 +302,22 @@ class QuantumModel(nn.Module):
         )
 
     def overlap(self) -> Tensor:
+        """Overlap of model.
+
+        Raises:
+            NotImplementedError: The overlap method is not implemented for this model.
+        """
         raise NotImplementedError("The overlap method is not implemented for this model.")
 
     def _to_dict(self, save_params: bool = False) -> dict[str, Any]:
+        """Convert QuantumModel to a dictionary for serialization.
+
+        Arguments:
+            save_params: Optionally save parameters. Defaults to False.
+
+        Returns:
+            The dictionary
+        """
         d = dict()
         try:
             if isinstance(self._observable, list):
@@ -275,6 +347,15 @@ class QuantumModel(nn.Module):
 
     @classmethod
     def _from_dict(cls, d: dict, as_torch: bool = False) -> QuantumModel:
+        """Initialize instance of QuantumModel from dictionary.
+
+        Args:
+            d: Dictionary.
+            as_torch: Load parameters as torch tensors. Defaults to False.
+
+        Returns:
+            QuantumModel instance
+        """
         from qadence.serialization import deserialize
 
         qm: QuantumModel
@@ -310,6 +391,16 @@ class QuantumModel(nn.Module):
     def save(
         self, folder: str | Path, file_name: str = "quantum_model.pt", save_params: bool = True
     ) -> None:
+        """Save model.
+
+        Arguments:
+            folder: Folder where model is saved.
+            file_name: File name for saving model. Defaults to "quantum_model.pt".
+            save_params: Save parameters if True. Defaults to True.
+
+        Raises:
+            FileNotFoundError: If folder is not a directory.
+        """
         if not os.path.isdir(folder):
             raise FileNotFoundError
         try:
@@ -321,6 +412,16 @@ class QuantumModel(nn.Module):
     def load(
         cls, file_path: str | Path, as_torch: bool = False, map_location: str | torch.device = "cpu"
     ) -> QuantumModel:
+        """Load QuantumModel.
+
+        Arguments:
+            file_path: File path to load model from.
+            as_torch: Load parameters as torch tensor. Defaults to False.
+            map_location (str | torch.device, optional): Location for loading. Defaults to "cpu".
+
+        Returns:
+            QuantumModel from file_path.
+        """
         qm_pt = {}
         if isinstance(file_path, str):
             file_path = Path(file_path)
@@ -336,11 +437,23 @@ class QuantumModel(nn.Module):
         return cls._from_dict(qm_pt, as_torch)
 
     def assign_parameters(self, values: dict[str, Tensor]) -> Any:
-        """Return the final, assigned circuit that is used in e.g. `backend.run`."""
+        """Return the final, assigned circuit that is used in e.g. `backend.run`.
+
+        Arguments:
+            values: Values dict which contains values for the parameters.
+
+        Returns:
+            Final, assigned circuit that is used in e.g. `backend.run`
+        """
         params = self.embedding_fn(self._params, values)
         return self.backend.assign_parameters(self._circuit, params)
 
     def to(self, *args: Any, **kwargs: Any) -> QuantumModel:
+        """Conversion method for device or types.
+
+        Returns:
+            QuantumModel with conversions.
+        """
         from pyqtorch import QuantumCircuit as PyQCircuit
 
         try:
@@ -369,6 +482,11 @@ class QuantumModel(nn.Module):
 
     @property
     def device(self) -> torch.device:
+        """Get device.
+
+        Returns:
+            torch.device
+        """
         return (
             self._circuit.native.device
             if self.backend.backend.name == "pyqtorch"  # type: ignore[union-attr]
