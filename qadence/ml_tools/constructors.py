@@ -762,8 +762,8 @@ def build_qnn_from_configs(
         ansatz_config = AnsatzConfig(depth=0)
 
     if fm_config is None:
-        full_fm = []
-        inputs = []
+        full_fm = chain()
+        inputs: list = []
     else:
         fm_blocks = create_fm_blocks(register=register, config=fm_config)
         full_fm = _interleave_ansatz_in_fm(
@@ -771,7 +771,7 @@ def build_qnn_from_configs(
             fm_blocks=fm_blocks,
             ansatz_config=ansatz_config,
         )
-        inputs = fm_config.inputs
+        inputs = fm_config.inputs  # type: ignore[assignment]
 
     ansatz = create_ansatz(register=register, config=ansatz_config)
 
