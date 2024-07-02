@@ -254,7 +254,7 @@ class QNN(QuantumModel):
         from qadence.constructors import ObservableConfig
         from qadence.operations import Z
         from qadence.types import (
-            AnsatzType, BasisSet, ReuploadScaling, ObservableTransform, Strategy
+            AnsatzType, BackendName, BasisSet, ObservableTransform, ReuploadScaling, Strategy
         )
 
         register = 4
@@ -281,7 +281,9 @@ class QNN(QuantumModel):
             trainable_transform=None,
         )
 
-        qnn = QNN.from_configs(register, fm_config, ansatz_config, obs_config)
+        qnn = QNN.from_configs(
+            register, fm_config, ansatz_config, obs_config, backend=BackendName.PYQTORCH
+        )
 
         x = torch.rand(2, 2)
         y = qnn(x)

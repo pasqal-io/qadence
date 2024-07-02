@@ -89,16 +89,18 @@ For full details on the `ObservableConfig` class, see the [API documentation][qa
 
 ## Defining the QNN from the Configs
 
-To build the QNN, we can now use the `QNN` class.
+To build the QNN, we can now use the `QNN` class. In addition to the three parts of the QNN, we can also specify the `backend`, `diff_mode`, etc. For full details on the `QNN` class, see the [API documentation][qadence.ml_tools.models.QNN] or the documentation on the config constructor [here][qadence.ml_tools.models.QNN.from_configs].
 
 ```python exec="on" source="material-block" session="config" html="1"
-from qadence import QNN
+from qadence import BackendName, DiffMode, QNN
 
 qnn = QNN.from_configs(
     register=4,
     fm_config=fm_config,
     ansatz_config=ansatz_config,
     obs_config=observable_config,
+    backend=BackendName.PYQTORCH,
+    diff_mode=DiffMode.AD,
 )
 
 print(html_string(qnn)) # markdown-exec: hide
