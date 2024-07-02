@@ -16,6 +16,7 @@ nav:
   - Contents:
     - Block system: content/block_system.md
     - Parametric programs: content/parameters.md
+    - Time-dependent generators: content/time_dependent.md
     - Quantum models: content/quantummodels.md
     - Quantum registers: content/register.md
     - State initialization: content/state_init.md
