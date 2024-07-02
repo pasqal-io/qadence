@@ -235,7 +235,9 @@ class FeatureMapConfig:
                 len(self.inputs) == self.num_features
             ), "Inputs list must be of same size as the number of features"
         else:
-            if self.num_features == 1:
+            if self.num_features == 0:
+                self.inputs = []
+            elif self.num_features == 1:
                 self.inputs = ["x"]
             else:
                 raise ValueError(

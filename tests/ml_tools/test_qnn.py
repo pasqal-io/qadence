@@ -347,6 +347,27 @@ def test_variational_transformed_module(
     assert torch.allclose(tm_pred, (output_range[0] * pred) + output_range[1])
 
 
+@pytest.mark.parametrize("diff_mode", [DiffMode.GPSR, DiffMode.AD])
+@pytest.mark.parametrize("backend", [BackendName.PYQTORCH])
+def test_config_qnn(diff_mode: DiffMode, backend: BackendName) -> None:
+    fm_config = FeatureMapConfig()
+    ansatz_config = AnsatzConfig()
+    observable_config = ObservableConfig(detuning=Z)
+
+    qnn = build_qnn_from_configs(
+        register=2,
+        fm_config=fm_config,
+        ansatz_config=ansatz_config,
+        observable_config=observable_config,
+        diff_mode=diff_mode,
+        backend=backend,
+    )
+
+    assert isinstance(qnn, QNN)
+    assert qnn._diff_mode == diff_mode
+    assert qnn._backend_name == backend
+
+
 def test_config_qnn_input_transform() -> None:
     fm_config = FeatureMapConfig()
     transformed_fm_config = FeatureMapConfig(feature_range=(0.0, 1.0))
