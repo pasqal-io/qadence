@@ -37,6 +37,32 @@ class QuantumModel(nn.Module):
     This class should be used as base class for any new quantum model supported in the qadence
     framework for information on the implementation of custom models see
     [here](../tutorials/advanced_tutorials/custom-models.md).
+
+    Example:
+    ```python exec="on" source="material-block" result="json"
+    from qadence import QuantumModel, QuantumCircuit, RX, RY, Z, PI, chain, kron
+    from qadence import FeatureParameter, VariationalParameter
+
+    theta = VariationalParameter("theta")
+    phi = FeatureParameter("phi")
+
+    block = chain(
+        kron(RX(0, theta), RY(1, theta)),
+        kron(RX(0, phi), RY(1, phi)),
+    )
+
+    circuit = QuantumCircuit(2, block)
+
+    observable = Z(0) + Z(1)
+
+    model = QuantumModel(circuit, observable)
+    values = {"phi": torch.tensor([PI, PI/2]), "theta": torch.tensor([PI, PI/2])}
+
+    wf = model.run(values)
+    xs = model.sample(values, n_shots=100)
+    ex = model.expectation(values)
+    ```
+    ```
     """
 
     backend: Backend | DifferentiableBackend
@@ -192,7 +218,12 @@ class QuantumModel(nn.Module):
         state: Tensor | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
-        """Run model.
+        r"""Run model.
+
+        Given an input state :math:`\\ket_0\\rangle`,
+        a set of variational parameters :math:`\vec{\theta}`
+        and the unitary representation of the model :math:`U(\vec{\theta})`
+        we return :math:`U(\vec{\theta})\\ket_0\\rangle`.
 
         Arguments:
             values: Values dict which contains values for the parameters.
@@ -254,7 +285,12 @@ class QuantumModel(nn.Module):
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
-        """Compute expectation using the given backend.
+        r"""Compute expectation using the given backend.
+
+        Given an input state :math:`\\ket_0\\rangle`,
+        a set of variational parameters :math:`\vec{\theta}`
+        and the unitary representation of the model :math:`U(\vec{\theta})`
+        we return :math:`\\langle\\bra|U(\vec{\theta})|\\ket_0\\rangle`.
 
         Arguments:
             values: Values dict which contains values for the parameters.
