@@ -1,7 +1,7 @@
 For use cases when the Hamiltonian of the system is time-dependent, Qadence provides a special parameter `TimePrameter("t")` that denotes the explicit time dependence. Using this time parameter one can define a parameterized block acting as the generator passed to `HamEvo` that encapsulates the required time dependence function.
 
 ```python exec="on" source="material-block" session="getting_started" result="json"
-from qadence import X, Y, HamEvo, TimeParameter, Parameter
+from qadence import X, Y, HamEvo, TimeParameter, Parameter, run
 from pyqtorch.utils import SolverType
 
 # simulation parameters
