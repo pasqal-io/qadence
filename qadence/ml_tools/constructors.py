@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import numpy as np
+from sympy import Basic
 
+from qadence.backend import BackendConfiguration
 from qadence.blocks import chain, kron
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.composite import ChainBlock, KronBlock
@@ -18,11 +20,16 @@ from qadence.constructors import (
 )
 from qadence.constructors.ansatze import hea_digital, hea_sDAQC
 from qadence.constructors.hamiltonians import ObservableConfig, TDetuning
+from qadence.measurements import Measurements
+from qadence.noise import Noise
 from qadence.operations import CNOT, RX, RY, H, I, N, Z
 from qadence.parameters import Parameter
 from qadence.register import Register
 from qadence.types import (
     AnsatzType,
+    BackendName,
+    DiffMode,
+    InputDiffMode,
     Interaction,
     MultivariateStrategy,
     ObservableTransform,
@@ -721,9 +728,15 @@ def create_observable(
 
 def build_qnn_from_configs(
     register: int | Register,
-    fm_config: FeatureMapConfig,
-    ansatz_config: AnsatzConfig,
-    observable_config: ObservableConfig | list[ObservableConfig],
+    fm_config: FeatureMapConfig | None = None,
+    ansatz_config: AnsatzConfig | None = None,
+    observable_config: ObservableConfig | list[ObservableConfig] | None = None,
+    backend: BackendName = BackendName.PYQTORCH,
+    diff_mode: DiffMode = DiffMode.AD,
+    measurement: Measurements | None = None,
+    noise: Noise | None = None,
+    configuration: BackendConfiguration | dict | None = None,
+    input_diff_mode: InputDiffMode | str = InputDiffMode.AD,
 ) -> QNN:
     """
     Build a QNN model.
@@ -733,42 +746,68 @@ def build_qnn_from_configs(
         fm_config (FeatureMapConfig): Feature map configuration.
         ansatz_config (AnsatzConfig): Ansatz configuration.
         observable_config (ObservableConfig): Observable configuration.
+        backend (BackendName): The chosen quantum backend.
+        diff_mode (DiffMode): The differentiation engine to use. Choices are
+            'gpsr' or 'ad'.
+        measurement (Measurements): Optional measurement protocol. If None,
+            use exact expectation value with a statevector simulator.
+        noise (Noise): A noise model to use.
+        configuration (BackendConfiguration | dict): Optional backend configuration.
+        input_diff_mode (InputDiffMode): The differentiation mode for the input tensor.
 
     Returns:
         QNN: A QNN model.
     """
-    fm_blocks = create_fm_blocks(register=register, config=fm_config)
-    full_fm = _interleave_ansatz_in_fm(
-        register=register,
-        fm_blocks=fm_blocks,
-        ansatz_config=ansatz_config,
-    )
+
+    if observable_config is None:
+        raise ValueError(
+            "You need to provide at least one observable config in the QNN constructor."
+        )
+
+    if ansatz_config is None:
+        ansatz_config = AnsatzConfig(depth=0)
+
+    inputs: list[Basic | str] | None = None
+    full_fm = chain()
+    if fm_config:
+        fm_blocks = create_fm_blocks(register=register, config=fm_config)
+        full_fm = _interleave_ansatz_in_fm(
+            register=register,
+            fm_blocks=fm_blocks,
+            ansatz_config=ansatz_config,
+        )
+        inputs = fm_config.inputs
 
     ansatz = create_ansatz(register=register, config=ansatz_config)
 
-    # Add a block before the Featuer Map to move from 0 state to an
-    # equal superposition of all states. This needs to be here only for rydberg
-    # feature map and only as long as the feature map is not updated to include
-    # a driving term in the Hamiltonian.
-
     if ansatz_config.ansatz_strategy == "rydberg":
+        # Add a block before the Featuer Map to move from 0 state to an
+        # equal superposition of all states. This needs to be here only for rydberg
+        # feature map and only as long as the feature map is not updated to include
+        # a driving term in the Hamiltonian.
+
         num_qubits = register if isinstance(register, int) else register.n_qubits
         mixing_block = kron(*[H(i) for i in range(num_qubits)])
         full_fm = chain(mixing_block, full_fm)
 
-    circ = QuantumCircuit(
-        register,
-        full_fm,
-        ansatz,
+    circ = QuantumCircuit(register, full_fm, ansatz)
+
+    observable: AbstractBlock | list[AbstractBlock] = (
+        [observable_from_config(register=register, config=cfg) for cfg in observable_config]
+        if isinstance(observable_config, list)
+        else observable_from_config(register=register, config=observable_config)
     )
 
-    if isinstance(observable_config, list):
-        observable = [
-            observable_from_config(register=register, config=cfg) for cfg in observable_config
-        ]
-    else:
-        observable = observable_from_config(register=register, config=observable_config)  # type: ignore[assignment]
-
-    ufa = QNN(circ, observable, inputs=fm_config.inputs)
+    ufa = QNN(
+        circ,
+        observable,
+        inputs=inputs,
+        backend=backend,
+        diff_mode=diff_mode,
+        measurement=measurement,
+        noise=noise,
+        configuration=configuration,
+        input_diff_mode=input_diff_mode,
+    )
 
     return ufa

@@ -211,20 +211,40 @@ class QNN(QuantumModel):
     def from_configs(
         cls,
         register: int | Register,
-        fm_config: Any,
-        ansatz_config: Any,
-        obs_config: Any,
+        fm_config: Any = None,
+        ansatz_config: Any = None,
+        obs_config: Any = None,
+        backend: BackendName = BackendName.PYQTORCH,
+        diff_mode: DiffMode = DiffMode.AD,
+        measurement: Measurements | None = None,
+        noise: Noise | None = None,
+        configuration: BackendConfiguration | dict | None = None,
+        input_diff_mode: InputDiffMode | str = InputDiffMode.AD,
     ) -> QNN:
         """Create a QNN from a set of configurations.
 
         Args:
-            register: The number of qubits or a register object.
-            fm_config: The configuration for the feature map.
-            ansatz_config: The configuration for the ansatz.
-            obs_config: The configuration for the observable.
+            register (int | Register): The number of qubits or a register object.
+            fm_config (FeatureMapConfig | None): The configuration for the feature map.
+                If None provided, then no feature encoding block is used.
+            ansatz_config (AnsatzConfig | None): The configuration for the ansatz.
+                If None provided, then no ansatz block is used.
+            obs_config (list[ObservableConfig] | ObservableConfig): The configuration(s)
+                for the observable(s). If None provided, then throws an error.
+            backend (BackendName): The chosen quantum backend.
+            diff_mode (DiffMode): The differentiation engine to use. Choices are
+                'gpsr' or 'ad'.
+            measurement (Measurements): Optional measurement protocol. If None,
+                use exact expectation value with a statevector simulator.
+            noise (Noise): A noise model to use.
+            configuration (BackendConfiguration | dict): Optional backend configuration.
+            input_diff_mode (InputDiffMode): The differentiation mode for the input tensor.
 
         Returns:
             A QNN object.
+
+        Raises:
+            ValueError: If the observable configuration is not provided.
 
         Example:
         ```python exec="on" source="material-block" result="json"
@@ -234,7 +254,7 @@ class QNN(QuantumModel):
         from qadence.constructors import ObservableConfig
         from qadence.operations import Z
         from qadence.types import (
-            AnsatzType, BasisSet, ReuploadScaling, ObservableTransform, Strategy
+            AnsatzType, BackendName, BasisSet, ObservableTransform, ReuploadScaling, Strategy
         )
 
         register = 4
@@ -261,7 +281,9 @@ class QNN(QuantumModel):
             trainable_transform=None,
         )
 
-        qnn = QNN.from_configs(register, fm_config, ansatz_config, obs_config)
+        qnn = QNN.from_configs(
+            register, fm_config, ansatz_config, obs_config, backend=BackendName.PYQTORCH
+        )
 
         x = torch.rand(2, 2)
         y = qnn(x)
@@ -270,7 +292,18 @@ class QNN(QuantumModel):
         """
         from .constructors import build_qnn_from_configs
 
-        return build_qnn_from_configs(register, fm_config, ansatz_config, obs_config)
+        return build_qnn_from_configs(
+            register=register,
+            fm_config=fm_config,
+            ansatz_config=ansatz_config,
+            observable_config=obs_config,
+            backend=backend,
+            diff_mode=diff_mode,
+            measurement=measurement,
+            noise=noise,
+            configuration=configuration,
+            input_diff_mode=input_diff_mode,
+        )
 
     def forward(
         self,
