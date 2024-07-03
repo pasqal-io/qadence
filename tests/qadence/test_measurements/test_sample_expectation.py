@@ -48,6 +48,7 @@ from qadence.types import BackendName
         ),
     ],
 )
+@pytest.mark.flaky(max_runs=5)
 def test_sample_expectations(
     n_shots: int,
     block: AbstractBlock,

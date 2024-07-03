@@ -126,6 +126,7 @@ def multi_gap_psr(
 
     # get number of observables from expectation value tensor
     if f_plus.numel() > 1:
+        batch_size = F[0].shape[0]
         n_obs = F[0].shape[1]
 
     # reshape F vector
