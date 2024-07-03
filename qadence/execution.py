@@ -71,7 +71,10 @@ def _(
     endianness: Endianness = Endianness.BIG,
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> Tensor:
-    bknd = backend_factory(backend, configuration=configuration)
+    diff_mode = None
+    if backend == BackendName.PYQTORCH:
+        diff_mode = DiffMode.AD
+    bknd = backend_factory(backend, diff_mode=diff_mode, configuration=configuration)
     conv = bknd.convert(circuit)
     with no_grad():
         return bknd.run(
@@ -147,7 +150,10 @@ def _(
     endianness: Endianness = Endianness.BIG,
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> list[Counter]:
-    bknd = backend_factory(backend, configuration=configuration)
+    diff_mode = None
+    if backend == BackendName.PYQTORCH:
+        diff_mode = DiffMode.AD
+    bknd = backend_factory(backend, diff_mode=diff_mode, configuration=configuration)
     conv = bknd.convert(circuit)
     return bknd.sample(
         circuit=conv.circuit,
@@ -242,7 +248,9 @@ def _(
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> Tensor:
     observable = observable if isinstance(observable, list) else [observable]
-    bknd = backend_factory(backend, configuration=configuration, diff_mode=diff_mode)
+    if backend == BackendName.PYQTORCH:
+        diff_mode = DiffMode.AD
+    bknd = backend_factory(backend, diff_mode=diff_mode, configuration=configuration)
     conv = bknd.convert(circuit, observable)
 
     def _expectation() -> Tensor:
