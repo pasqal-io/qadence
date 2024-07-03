@@ -133,6 +133,9 @@ def load_model(
             model._from_dict(model_dict, as_torch=True)
         elif isinstance(model, Module):
             model.load_state_dict(model_dict, strict=True)
+        # Load to a specific gpu device if specified
+        if ":" in str(device):
+            model.to(device)
 
     except Exception as e:
         msg = f"Unable to load state dict due to {e}.\
