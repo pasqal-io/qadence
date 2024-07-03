@@ -224,10 +224,10 @@ class QuantumModel(nn.Module):
     ) -> Tensor:
         r"""Run model.
 
-        Given an input state :math:`\\ket_0\\rangle`,
-        a set of variational parameters :math:`\vec{\theta}`
-        and the unitary representation of the model :math:`U(\vec{\theta})`
-        we return :math:`U(\vec{\theta})\\ket_0\\rangle`.
+        Given an input state $| \psi_0 \rangle$,
+        a set of variational parameters $\vec{\theta}$
+        and the unitary representation of the model $U(\vec{\theta})$
+        we return $U(\vec{\theta}) | \psi_0 \rangle$.
 
         Arguments:
             values: Values dict which contains values for the parameters.
@@ -291,10 +291,12 @@ class QuantumModel(nn.Module):
     ) -> Tensor:
         r"""Compute expectation using the given backend.
 
-        Given an input state :math:`\\ket_0\\rangle`,
-        a set of variational parameters :math:`\vec{\theta}`
-        and the unitary representation of the model :math:`U(\vec{\theta})`
-        we return :math:`\\langle\\bra|U(\vec{\theta})|\\ket_0\\rangle`.
+
+
+        Given an input state $|\psi_0 \rangle$,
+        a set of variational parameters $\vec{\theta}$
+        and the unitary representation of the model $U(\vec{\theta})$
+        we return $\langle \psi_0 | U(\vec{\theta}) | \psi_0 \rangle$.
 
         Arguments:
             values: Values dict which contains values for the parameters.
