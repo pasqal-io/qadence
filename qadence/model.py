@@ -62,6 +62,9 @@ class QuantumModel(nn.Module):
     wf = model.run(values)
     xs = model.sample(values, n_shots=100)
     ex = model.expectation(values)
+    print(wf)
+    print(xs)
+    print(ex)
     ```
     ```
     """
