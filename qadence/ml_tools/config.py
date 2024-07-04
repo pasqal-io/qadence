@@ -38,12 +38,12 @@ class TrainConfig:
     """Write tensorboard logs."""
     checkpoint_every: int = 5000
     """Write model/optimizer checkpoint."""
-    plot_every: Optional[int] = None
+    plot_every: int | None = None
     """Write figures.
 
     NOTE: currently only works with mlflow.
     """
-    folder: Optional[Path] = None
+    folder: Path | None = None
     """Checkpoint/tensorboard logs folder."""
     create_subfolder_per_run: bool = False
     """Checkpoint/tensorboard logs stored in subfolder with name `<timestamp>_<PID>`.
@@ -52,7 +52,7 @@ class TrainConfig:
     """
     checkpoint_best_only: bool = False
     """Write model/optimizer checkpoint only if a metric has improved."""
-    validation_criterion: Optional[Callable] = None
+    validation_criterion: Callable | None = None
     """A boolean function which evaluates a given validation metric is satisfied."""
     trainstop_criterion: Optional[Callable] = None
     """A boolean function which evaluates a given training stopping metric is satisfied."""
@@ -62,9 +62,9 @@ class TrainConfig:
     """Whether or not to print out metrics values during training."""
     tracking_tool: ExperimentTrackingTool = ExperimentTrackingTool.TENSORBOARD
     """The tracking tool of choice."""
-    hyperparams: Optional[dict] = None
+    hyperparams: dict | None = None
     """Hyperparameters to track."""
-    plotting_functions: Optional[tuple[Callable[[Module, int], tuple[str, Figure]]]] = None
+    plotting_functions: tuple[Callable[[Module, int], tuple[str, Figure]]] | None = None
     """Functions for in-train plotting."""
 
     # mlflow_callbacks: list[Callable] = [write_mlflow_figure(), write_x()]
@@ -84,13 +84,15 @@ class TrainConfig:
             self.validation_criterion = lambda x: False
         if self.plot_every and self.tracking_tool != ExperimentTrackingTool.MLFLOW:
             raise NotImplementedError("In-training plots are only available with mlflow tracking.")
-        if self.plot_every and self.plotting_functions is None:
+        if self.plot_every is not None and self.plotting_functions is None:
             logger.warning("Plots tracking is required, but no plotting functions are provided.")
 
 
 @dataclass
 class MLFlowConfig:
     """
+    Configuration for mlflow tracking.
+
     Example:
 
         export MLFLOW_TRACKING_URI=tracking_uri
@@ -99,10 +101,26 @@ class MLFlowConfig:
     """
 
     MLFLOW_TRACKING_URI: str = os.getenv("MLFLOW_TRACKING_URI", "")
+    """The URI of the mlflow tracking server.
+
+    An empty string, or a local file path, prefixed with file:/.
+    Data is stored locally at the provided file (or ./mlruns if empty).
+    """
+
     MLFLOW_TRACKING_USERNAME: str = os.getenv("MLFLOW_TRACKING_USERNAME", "")
+    """The username for the mlflow tracking server."""
+
     MLFLOW_TRACKING_PASSWORD: str = os.getenv("MLFLOW_TRACKING_PASSWORD", "")
+    """The password for the mlflow tracking server."""
+
     EXPERIMENT: str = os.getenv("MLFLOW_EXPERIMENT", str(uuid4()))
+    """The name of the experiment.
+
+    If None or empty, a new experiment is created with a random UUID.
+    """
+
     RUN_NAME: str = os.getenv("MLFLOW_RUN_NAME", "test_0")
+    """The name of the run."""
 
     def __post_init__(self) -> None:
         import mlflow
