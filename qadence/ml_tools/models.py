@@ -211,9 +211,9 @@ class QNN(QuantumModel):
     def from_configs(
         cls,
         register: int | Register,
-        fm_config: Any = None,
-        ansatz_config: Any = None,
-        obs_config: Any = None,
+        fm_config: Any,
+        ansatz_config: Any,
+        obs_config: Any,
         backend: BackendName = BackendName.PYQTORCH,
         diff_mode: DiffMode = DiffMode.AD,
         measurement: Measurements | None = None,
