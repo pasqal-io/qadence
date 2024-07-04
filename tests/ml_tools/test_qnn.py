@@ -348,11 +348,13 @@ def test_variational_transformed_module(
 
 
 def test_config_empty_fm() -> None:
+    fm_config = FeatureMapConfig()
     ansatz_config = AnsatzConfig()
     observable_config = ObservableConfig(detuning=Z)
 
     qnn = build_qnn_from_configs(
         register=2,
+        fm_config=fm_config,
         ansatz_config=ansatz_config,
         observable_config=observable_config,
     )
@@ -364,7 +366,7 @@ def test_config_empty_fm() -> None:
 @pytest.mark.parametrize("diff_mode", [DiffMode.GPSR, DiffMode.AD])
 @pytest.mark.parametrize("backend", [BackendName.PYQTORCH])
 def test_config_qnn(diff_mode: DiffMode, backend: BackendName) -> None:
-    fm_config = FeatureMapConfig()
+    fm_config = FeatureMapConfig(num_features=1)
     ansatz_config = AnsatzConfig()
     observable_config = ObservableConfig(detuning=Z)
 
@@ -383,8 +385,8 @@ def test_config_qnn(diff_mode: DiffMode, backend: BackendName) -> None:
 
 
 def test_config_qnn_input_transform() -> None:
-    fm_config = FeatureMapConfig()
-    transformed_fm_config = FeatureMapConfig(feature_range=(0.0, 1.0))
+    fm_config = FeatureMapConfig(num_features=1)
+    transformed_fm_config = FeatureMapConfig(num_features=1, feature_range=(0.0, 1.0))
     ansatz_config = AnsatzConfig()
     observable_config = ObservableConfig(detuning=Z)
 
@@ -403,13 +405,13 @@ def test_config_qnn_input_transform() -> None:
 
     transformed_qnn.reset_vparams(list(qnn.vparams.values()))
 
-    input_values = torch.rand(10, requires_grad=True)
+    input_values = torch.rand(10, 1, requires_grad=True)
     transformed_input_values = 2 * PI * input_values
     assert torch.allclose(qnn(transformed_input_values), transformed_qnn(input_values))
 
 
 def test_config_qnn_output_transform() -> None:
-    fm_config = FeatureMapConfig()
+    fm_config = FeatureMapConfig(num_features=1)
     ansatz_config = AnsatzConfig()
     observable_config = ObservableConfig(detuning=Z)
     transformed_observable_config = ObservableConfig(detuning=Z, scale=2.0, shift=1.0)

@@ -22,7 +22,7 @@ from qadence.constructors.ansatze import hea_digital, hea_sDAQC
 from qadence.constructors.hamiltonians import ObservableConfig, TDetuning
 from qadence.measurements import Measurements
 from qadence.noise import Noise
-from qadence.operations import CNOT, RX, RY, H, I, N, Z
+from qadence.operations import CNOT, RX, RY, I, N, Z
 from qadence.parameters import Parameter
 from qadence.register import Register
 from qadence.types import (
@@ -728,9 +728,9 @@ def create_observable(
 
 def build_qnn_from_configs(
     register: int | Register,
-    fm_config: FeatureMapConfig | None = None,
-    ansatz_config: AnsatzConfig | None = None,
-    observable_config: ObservableConfig | list[ObservableConfig] | None = None,
+    fm_config: FeatureMapConfig,
+    ansatz_config: AnsatzConfig,
+    observable_config: ObservableConfig | list[ObservableConfig],
     backend: BackendName = BackendName.PYQTORCH,
     diff_mode: DiffMode = DiffMode.AD,
     measurement: Measurements | None = None,
@@ -758,18 +758,10 @@ def build_qnn_from_configs(
     Returns:
         QNN: A QNN model.
     """
-
-    if observable_config is None:
-        raise ValueError(
-            "You need to provide at least one observable config in the QNN constructor."
-        )
-
-    if ansatz_config is None:
-        ansatz_config = AnsatzConfig(depth=0)
-
+    blocks: list[AbstractBlock] = []
     inputs: list[Basic | str] | None = None
-    full_fm = chain()
-    if fm_config:
+
+    if fm_config.num_features > 0:
         fm_blocks = create_fm_blocks(register=register, config=fm_config)
         full_fm = _interleave_ansatz_in_fm(
             register=register,
@@ -777,20 +769,11 @@ def build_qnn_from_configs(
             ansatz_config=ansatz_config,
         )
         inputs = fm_config.inputs
+        blocks.append(full_fm)
 
-    ansatz = create_ansatz(register=register, config=ansatz_config)
+    blocks.append(create_ansatz(register=register, config=ansatz_config))
 
-    if ansatz_config.ansatz_strategy == "rydberg":
-        # Add a block before the Featuer Map to move from 0 state to an
-        # equal superposition of all states. This needs to be here only for rydberg
-        # feature map and only as long as the feature map is not updated to include
-        # a driving term in the Hamiltonian.
-
-        num_qubits = register if isinstance(register, int) else register.n_qubits
-        mixing_block = kron(*[H(i) for i in range(num_qubits)])
-        full_fm = chain(mixing_block, full_fm)
-
-    circ = QuantumCircuit(register, full_fm, ansatz)
+    circ = QuantumCircuit(register, *blocks)
 
     observable: AbstractBlock | list[AbstractBlock] = (
         [observable_from_config(register=register, config=cfg) for cfg in observable_config]

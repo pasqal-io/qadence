@@ -89,7 +89,7 @@ For full details on the `ObservableConfig` class, see the [API documentation][qa
 
 ## Defining the QNN from the Configs
 
-To build the QNN, we can now use the `QNN` class. In addition to the three parts of the QNN, we can also specify the `backend`, `diff_mode`, etc. For full details on the `QNN` class, see the [API documentation][qadence.ml_tools.models.QNN] or the documentation on the config constructor [here][qadence.ml_tools.models.QNN.from_configs].
+To build the QNN, we can now use the `QNN` class as a `QuantumModel` subtype. In addition to the feature map, ansatz and the observable configs, we can also specify options such as the `backend`, `diff_mode`, etc. For full details on the `QNN` class, see the [API documentation][qadence.ml_tools.models.QNN] or the documentation on the config constructor [here][qadence.ml_tools.models.QNN.from_configs].
 
 ```python exec="on" source="material-block" session="config" html="1"
 from qadence import BackendName, DiffMode, QNN

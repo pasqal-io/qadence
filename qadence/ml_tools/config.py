@@ -85,8 +85,12 @@ class TrainConfig:
 
 @dataclass
 class FeatureMapConfig:
-    num_features: int = 1
-    """Number of feature parameters to be encoded."""
+    num_features: int = 0
+    """
+    Number of feature parameters to be encoded.
+
+    Defaults to 0. Thus, no feature parameters are encoded.
+    """
 
     basis_set: BasisSet | dict[str, BasisSet] = BasisSet.FOURIER
     """
