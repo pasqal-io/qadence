@@ -76,7 +76,7 @@ def write_checkpoint(
     except Exception as e:
         msg = (
             f"Unable to identify in which device the QuantumModel is stored due to {e}."
-            + "Setting device to None"
+            "Setting device to None"
         )
         logger.warning(msg)
 
