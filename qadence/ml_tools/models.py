@@ -226,12 +226,12 @@ class QNN(QuantumModel):
 
         Args:
             register (int | Register): The number of qubits or a register object.
-            fm_config (FeatureMapConfig | None): The configuration for the feature map.
-                If None provided, then no feature encoding block is used.
-            ansatz_config (AnsatzConfig | None): The configuration for the ansatz.
-                If None provided, then no ansatz block is used.
             obs_config (list[ObservableConfig] | ObservableConfig): The configuration(s)
-                for the observable(s). If None provided, then throws an error.
+                for the observable(s).
+            fm_config (FeatureMapConfig): The configuration for the feature map.
+                Defaults to no feature encoding block.
+            ansatz_config (AnsatzConfig): The configuration for the ansatz.
+                Defaults to a single layer of hardware efficient ansatz.
             backend (BackendName): The chosen quantum backend.
             diff_mode (DiffMode): The differentiation engine to use. Choices are
                 'gpsr' or 'ad'.
