@@ -17,7 +17,6 @@ from qadence.constructors import hea, ising_hamiltonian, total_magnetization
 from qadence.ml_tools.config import AnsatzConfig, FeatureMapConfig
 from qadence.ml_tools.constructors import (
     ObservableConfig,
-    build_qnn_from_configs,
     observable_from_config,
 )
 from qadence.operations import RX, RY, Z
@@ -354,11 +353,11 @@ def test_config_qnn(diff_mode: DiffMode, backend: BackendName) -> None:
     ansatz_config = AnsatzConfig()
     observable_config = ObservableConfig(detuning=Z)
 
-    qnn = build_qnn_from_configs(
+    qnn = QNN.from_configs(
         register=2,
+        obs_config=observable_config,
         fm_config=fm_config,
         ansatz_config=ansatz_config,
-        observable_config=observable_config,
         diff_mode=diff_mode,
         backend=backend,
     )
@@ -374,17 +373,17 @@ def test_config_qnn_input_transform() -> None:
     ansatz_config = AnsatzConfig()
     observable_config = ObservableConfig(detuning=Z)
 
-    qnn = build_qnn_from_configs(
+    qnn = QNN.from_configs(
         register=2,
+        obs_config=observable_config,
         fm_config=fm_config,
         ansatz_config=ansatz_config,
-        observable_config=observable_config,
     )
-    transformed_qnn = build_qnn_from_configs(
+    transformed_qnn = QNN.from_configs(
         register=2,
+        obs_config=observable_config,
         fm_config=transformed_fm_config,
         ansatz_config=ansatz_config,
-        observable_config=observable_config,
     )
 
     transformed_qnn.reset_vparams(list(qnn.vparams.values()))
@@ -400,17 +399,17 @@ def test_config_qnn_output_transform() -> None:
     observable_config = ObservableConfig(detuning=Z)
     transformed_observable_config = ObservableConfig(detuning=Z, scale=2.0, shift=1.0)
 
-    qnn = build_qnn_from_configs(
+    qnn = QNN.from_configs(
         register=2,
+        obs_config=observable_config,
         fm_config=fm_config,
         ansatz_config=ansatz_config,
-        observable_config=observable_config,
     )
-    transformed_qnn = build_qnn_from_configs(
+    transformed_qnn = QNN.from_configs(
         register=2,
+        obs_config=transformed_observable_config,
         fm_config=fm_config,
         ansatz_config=ansatz_config,
-        observable_config=transformed_observable_config,
     )
 
     transformed_qnn.reset_vparams(list(qnn.vparams.values()))
@@ -428,17 +427,17 @@ def test_config_qnn_output_transform() -> None:
         transformation_type=ObservableTransform.RANGE,  # type: ignore[arg-type]
     )
 
-    qnn = build_qnn_from_configs(
+    qnn = QNN.from_configs(
         register=2,
+        obs_config=observable_config,
         fm_config=fm_config,
         ansatz_config=ansatz_config,
-        observable_config=observable_config,
     )
-    transformed_qnn = build_qnn_from_configs(
+    transformed_qnn = QNN.from_configs(
         register=2,
+        obs_config=transformed_observable_config,
         fm_config=fm_config,
         ansatz_config=ansatz_config,
-        observable_config=transformed_observable_config,
     )
 
     transformed_qnn.reset_vparams(list(qnn.vparams.values()))

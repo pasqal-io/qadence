@@ -728,9 +728,9 @@ def create_observable(
 
 def build_qnn_from_configs(
     register: int | Register,
-    fm_config: FeatureMapConfig,
-    ansatz_config: AnsatzConfig,
     observable_config: ObservableConfig | list[ObservableConfig],
+    fm_config: FeatureMapConfig = FeatureMapConfig(),
+    ansatz_config: AnsatzConfig = AnsatzConfig(),
     backend: BackendName = BackendName.PYQTORCH,
     diff_mode: DiffMode = DiffMode.AD,
     measurement: Measurements | None = None,
@@ -743,9 +743,9 @@ def build_qnn_from_configs(
 
     Args:
         register (int | Register): Number of qubits or a register object.
+        observable_config (ObservableConfig | list[ObservableConfig]): Observable configuration(s).
         fm_config (FeatureMapConfig): Feature map configuration.
         ansatz_config (AnsatzConfig): Ansatz configuration.
-        observable_config (ObservableConfig): Observable configuration.
         backend (BackendName): The chosen quantum backend.
         diff_mode (DiffMode): The differentiation engine to use. Choices are
             'gpsr' or 'ad'.

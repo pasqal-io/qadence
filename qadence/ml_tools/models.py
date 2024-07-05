@@ -14,6 +14,7 @@ from qadence.blocks.abstract import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
+from qadence.ml_tools.config import AnsatzConfig, FeatureMapConfig
 from qadence.model import QuantumModel
 from qadence.noise import Noise
 from qadence.register import Register
@@ -61,7 +62,7 @@ def derivative(ufa: torch.nn.Module, x: Tensor, derivative_indices: tuple[int, .
     obs_config = ObservableConfig(detuning=Z)
 
     f = QNN.from_configs(
-        register=3, fm_config=fm_config, ansatz_config=ansatz_config, obs_config=obs_config
+        register=3, obs_config=obs_config, fm_config=fm_config, ansatz_config=ansatz_config,
     )
     inputs = torch.rand(5,3,requires_grad=True)
 
@@ -211,9 +212,9 @@ class QNN(QuantumModel):
     def from_configs(
         cls,
         register: int | Register,
-        fm_config: Any,
-        ansatz_config: Any,
         obs_config: Any,
+        fm_config: Any = FeatureMapConfig(),
+        ansatz_config: Any = AnsatzConfig(),
         backend: BackendName = BackendName.PYQTORCH,
         diff_mode: DiffMode = DiffMode.AD,
         measurement: Measurements | None = None,
@@ -258,6 +259,13 @@ class QNN(QuantumModel):
         )
 
         register = 4
+        obs_config = ObservableConfig(
+            detuning=Z,
+            scale=5.0,
+            shift=0.0,
+            transformation_type=ObservableTransform.SCALE,
+            trainable_transform=None,
+        )
         fm_config = FeatureMapConfig(
             num_features=2,
             inputs=["x", "y"],
@@ -273,16 +281,9 @@ class QNN(QuantumModel):
             ansatz_type=AnsatzType.HEA,
             ansatz_strategy=Strategy.DIGITAL,
         )
-        obs_config = ObservableConfig(
-            detuning=Z,
-            scale=5.0,
-            shift=0.0,
-            transformation_type=ObservableTransform.SCALE,
-            trainable_transform=None,
-        )
 
         qnn = QNN.from_configs(
-            register, fm_config, ansatz_config, obs_config, backend=BackendName.PYQTORCH
+            register, obs_config, fm_config, ansatz_config, backend=BackendName.PYQTORCH
         )
 
         x = torch.rand(2, 2)
@@ -294,9 +295,9 @@ class QNN(QuantumModel):
 
         return build_qnn_from_configs(
             register=register,
+            observable_config=obs_config,
             fm_config=fm_config,
             ansatz_config=ansatz_config,
-            observable_config=obs_config,
             backend=backend,
             diff_mode=diff_mode,
             measurement=measurement,
