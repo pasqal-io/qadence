@@ -74,7 +74,7 @@ def test_basic_save_load_ckpts(Basic: torch.nn.Module, tmp_path: Path) -> None:
     assert torch.allclose(ps, torch.ones(len(ps)))
 
 
-def test_random_basicqQM_save_load_ckpts(BasicQuantumModel: QuantumModel, tmp_path: Path) -> None:
+def test_random_basic_qm_save_load_ckpts(BasicQuantumModel: QuantumModel, tmp_path: Path) -> None:
     data = dataloader()
     model = BasicQuantumModel
     cnt = count()
@@ -125,7 +125,7 @@ def test_check_ckpts_exist(BasicQuantumModel: QuantumModel, tmp_path: Path) -> N
         assert torch.allclose(loaded_model.expectation({}), model.expectation({}))
 
 
-def test_random_basicqQNN_save_load_ckpts(BasicQNN: QNN, tmp_path: Path) -> None:
+def test_random_basic_qnn_save_load_ckpts(BasicQNN: QNN, tmp_path: Path) -> None:
     data = dataloader()
     model = BasicQNN
     cnt = count()
@@ -153,7 +153,7 @@ def test_random_basicqQNN_save_load_ckpts(BasicQNN: QNN, tmp_path: Path) -> None
     assert torch.allclose(loaded_model.expectation(inputs), model.expectation(inputs))
 
 
-def test_check_QNN_ckpts_exist(BasicQNN: QNN, tmp_path: Path) -> None:
+def test_check_qnn_ckpts_exist(BasicQNN: QNN, tmp_path: Path) -> None:
     data = dataloader()
     model = BasicQNN
     cnt = count()
@@ -176,7 +176,7 @@ def test_check_QNN_ckpts_exist(BasicQNN: QNN, tmp_path: Path) -> None:
         assert torch.allclose(loaded_model.expectation(inputs), model.expectation(inputs))
 
 
-def test_basicqQM_save_load_legacy_ckpts(BasicQuantumModel: QuantumModel, tmp_path: Path) -> None:
+def test_basic_qm_save_load_legacy_ckpts(BasicQuantumModel: QuantumModel, tmp_path: Path) -> None:
     model = BasicQuantumModel
     optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
     ps0 = get_parameters(model)
@@ -187,7 +187,7 @@ def test_basicqQM_save_load_legacy_ckpts(BasicQuantumModel: QuantumModel, tmp_pa
     assert torch.allclose(ps0, ps1)
 
 
-def test_basicqQNN_save_load_legacy_ckpts(BasicQNN: QNN, tmp_path: Path) -> None:
+def test_basic_qnn_save_load_legacy_ckpts(BasicQNN: QNN, tmp_path: Path) -> None:
     model = BasicQNN
     optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
     inputs = rand_featureparameters(model, 1)

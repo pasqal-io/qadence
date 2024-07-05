@@ -74,8 +74,10 @@ def write_checkpoint(
         # We extract the device from the pyqtorch native circuit
         device = str(model.device).split(":")[0]  # in case of using several CUDA devices
     except Exception as e:
-        msg = f"Unable to identify in which device the QuantumModel is stored due to {e}.\
-               Setting device to None"
+        msg = (
+            f"Unable to identify in which device the QuantumModel is stored due to {e}."
+            + "Setting device to None"
+        )
         logger.warning(msg)
 
     iteration_substring = f"{iteration:03n}" if isinstance(iteration, int) else iteration
@@ -133,8 +135,9 @@ def load_model(
             model._from_dict(model_dict, as_torch=True)
         elif isinstance(model, Module):
             model.load_state_dict(model_dict, strict=True)
-        # Load to a specific gpu device if specified
-        if ":" in str(device):
+        # Load model to a specific gpu device if specified
+        pattern = re.compile("cuda:\d+$")
+        if pattern.search(str(device)):
             model.to(device)
 
     except Exception as e:
