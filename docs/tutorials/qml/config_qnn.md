@@ -25,6 +25,7 @@ observable_config = ObservableConfig(
 )
 
 observable = observable_from_config(register=4, config=observable_config)
+from qadence.draw import html_string # markdown-exec: hide
 print(html_string(observable)) # markdown-exec: hide
 ```
 
@@ -54,7 +55,6 @@ fm_config = FeatureMapConfig(
 
 fm_blocks = create_fm_blocks(register=4, config=fm_config)
 feature_map = chain(*fm_blocks)
-from qadence.draw import html_string # markdown-exec: hide
 print(html_string(feature_map)) # markdown-exec: hide
 ```
 
