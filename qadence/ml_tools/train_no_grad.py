@@ -1,22 +1,34 @@
 from __future__ import annotations
 
+import importlib
 from logging import getLogger
 from typing import Callable
 
 import nevergrad as ng
 from nevergrad.optimization.base import Optimizer as NGOptimizer
-from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, TimeRemainingColumn
+from rich.progress import (
+    BarColumn,
+    Progress,
+    TaskProgressColumn,
+    TextColumn,
+    TimeRemainingColumn,
+)
 from torch import Tensor
 from torch.nn import Module
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
-from qadence.ml_tools.config import TrainConfig
+from qadence.ml_tools.config import MLFlowConfig, TrainConfig
 from qadence.ml_tools.data import DictDataLoader
 from qadence.ml_tools.parameters import get_parameters, set_parameters
-from qadence.ml_tools.printing import print_metrics, write_tensorboard
+from qadence.ml_tools.printing import (
+    plot_tracker,
+    print_metrics,
+    write_tracker,
+)
 from qadence.ml_tools.saveload import load_checkpoint, write_checkpoint
 from qadence.ml_tools.tensors import promote_to_tensor
+from qadence.types import ExperimentTrackingTool
 
 logger = getLogger(__name__)
 
@@ -63,8 +75,16 @@ def train(
     # TODO: support also Scipy optimizers
     assert isinstance(optimizer, NGOptimizer), "Use only optimizers from the Nevergrad library"
 
-    # initialize tensorboard
-    writer = SummaryWriter(config.folder, purge_step=init_iter)
+    # initialize tracking tool
+    if config.tracking_tool == ExperimentTrackingTool.TENSORBOARD:
+        writer = SummaryWriter(config.folder, purge_step=init_iter)
+    else:
+        MLFlowConfig()  # Set up credentials for mlflow tracking
+        writer = importlib.import_module("mlflow")
+
+        # writer.mlflow.pytorch.autolog(
+        #     log_every_n_step=config.write_every, log_models=False, log_datasets=False
+        # )
 
     # set optimizer configuration and initial parameters
     optimizer.budget = config.max_iter
@@ -100,7 +120,12 @@ def train(
                 print_metrics(loss, metrics, iteration)
 
             if iteration % config.write_every == 0:
-                write_tensorboard(writer, loss, metrics, iteration)
+                write_tracker((writer, loss, metrics, iteration), config.tracking_tool)
+
+            if iteration % config.plot_every == 0:
+                plot_tracker(
+                    (writer, model, iteration, config.plotting_functions), config.tracking_tool
+                )
 
             if config.folder:
                 if iteration % config.checkpoint_every == 0:
@@ -112,7 +137,10 @@ def train(
     ## Final writing and stuff
     if config.folder:
         write_checkpoint(config.folder, model, optimizer, iteration)
-    write_tensorboard(writer, loss, metrics, iteration)
-    writer.close()
+    write_tracker((writer, loss, metrics, iteration), config.tracking_tool)
+    if config.tracking_tool == ExperimentTrackingTool.TENSORBOARD:
+        writer.close()
+    elif config.tracking_tool == ExperimentTrackingTool.MLFLOW:
+        writer.end_run()
 
     return model, optimizer
