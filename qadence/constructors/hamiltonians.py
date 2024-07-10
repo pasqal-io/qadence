@@ -1,15 +1,17 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from logging import getLogger
 from typing import Callable, List, Type, Union
 
 import numpy as np
 from torch import Tensor, double, ones, rand
+from typing_extensions import Any
 
 from qadence.blocks import AbstractBlock, add, block_is_qubit_hamiltonian
 from qadence.operations import N, X, Y, Z
 from qadence.register import Register
-from qadence.types import Interaction, TArray
+from qadence.types import Interaction, ObservableTransform, TArray, TParameter
 
 logger = getLogger(__name__)
 
@@ -229,3 +231,38 @@ def ising_hamiltonian(
     zz_ham = zz_hamiltonian(n_qubits, z_terms=z_terms, zz_terms=zz_terms)
     x_ham = hamiltonian_factory(n_qubits, detuning=X, detuning_strength=x_terms)
     return zz_ham + x_ham
+
+
+def is_numeric(x: Any) -> bool:
+    return type(x) in (int, float, complex, np.int64, np.float64)
+
+
+@dataclass
+class ObservableConfig:
+    detuning: TDetuning
+    """
+    Single qubit detuning of the observable Hamiltonian.
+
+    Accepts single-qubit operator N, X, Y, or Z.
+    """
+    scale: TParameter = 1.0
+    """The scale by which to multiply the output of the observable."""
+    shift: TParameter = 0.0
+    """The shift to add to the output of the observable."""
+    transformation_type: ObservableTransform = ObservableTransform.NONE  # type: ignore[assignment]
+    """The type of transformation."""
+    trainable_transform: bool | None = None
+    """
+    Whether to have a trainable transformation on the output of the observable.
+
+    If None, the scale and shift are numbers.
+    If True, the scale and shift are VariationalParameter.
+    If False, the scale and shift are FeatureParameter.
+    """
+
+    def __post_init__(self) -> None:
+        if is_numeric(self.scale) and is_numeric(self.shift):
+            assert (
+                self.trainable_transform is None
+            ), f"If scale and shift are numbers, trainable_transform must be None. \
+            But got: {self.trainable_transform}"

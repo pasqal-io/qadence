@@ -96,6 +96,9 @@ def test_embeddings() -> None:
 
     inputs = {"x": torch.ones(batch_size), "y": torch.rand(batch_size)}
     low_level_params = embed(params, inputs)
+    low_level_params.pop(
+        "orig_param_values", {}
+    )  # TODO: remove this when embedding system is updated
 
     assert len(list(low_level_params.keys())) == 9
 
@@ -183,11 +186,11 @@ def test_parametricobs_expval_differentiation(batch_size: int, diff_mode: str) -
     assert torch.autograd.gradgradcheck(func, (inputs_x, inputs_y, param_w))
 
     assert torch.allclose(
-        finite_diff(lambda x: func(x, inputs_y, param_w), inputs_x),
+        finite_diff(lambda x: func(x, inputs_y, param_w), inputs_x.reshape(-1, 1), (0,)),
         torch.autograd.grad(expval, inputs_x, torch.ones_like(expval), create_graph=True)[0],
     )
 
     assert torch.allclose(
-        finite_diff(lambda w: func(inputs_x, inputs_y, w), param_w),
+        finite_diff(lambda w: func(inputs_x, inputs_y, w), param_w.reshape(-1, 1), (0,)),
         torch.autograd.grad(expval, param_w, torch.ones_like(expval), create_graph=True)[0],
     )

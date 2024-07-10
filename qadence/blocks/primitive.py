@@ -30,7 +30,7 @@ class PrimitiveBlock(AbstractBlock):
     #TODO: Add a description of the noise attribut
 
     Examples are single/multi-qubit gates or Hamiltonian evolution.
-    See [`qadence.operations`](/qadence/operations.md) for a full list of
+    See [`qadence.operations`](operations.md) for a full list of
     primitive blocks.
     """
 

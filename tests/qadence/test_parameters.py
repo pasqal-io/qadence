@@ -6,12 +6,12 @@ import sympy
 import torch
 from torch import allclose
 
+from qadence import QuantumModel
 from qadence.backends.pyqtorch import Backend as PyQBackend
 from qadence.blocks import ParametricBlock, chain
 from qadence.blocks.utils import expressions
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import hea, total_magnetization
-from qadence.models import QuantumModel
 from qadence.operations import CNOT, RX, RY, RZ
 from qadence.parameters import (
     FeatureParameter,

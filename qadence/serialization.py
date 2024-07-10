@@ -17,11 +17,10 @@ from arpeggio.cleanpeg import ParserPEG
 from sympy import *
 from sympy import core, srepr
 
-from qadence import QuantumCircuit, operations, parameters
+from qadence import QNN, QuantumCircuit, QuantumModel, operations, parameters
 from qadence import blocks as qadenceblocks
 from qadence.blocks import AbstractBlock
 from qadence.blocks.utils import tag
-from qadence.models import QuantumModel
 from qadence.parameters import Parameter
 from qadence.register import Register
 from qadence.types import SerializationFormat
@@ -48,6 +47,7 @@ SUPPORTED_OBJECTS = [
     AbstractBlock,
     QuantumCircuit,
     QuantumModel,
+    QNN,
     Register,
     core.Basic,
     torch.nn.Module,
@@ -374,12 +374,12 @@ def save(
     Same as serialize/deserialize but for storing/loading files.
 
     Supported types:
-    AbstractBlock | QuantumCircuit | QuantumModel | TransformedModule | Register | torch.nn.Module
+    AbstractBlock | QuantumCircuit | QuantumModel | Register | torch.nn.Module
     Saves a qadence object to a json/.pt.
 
     Arguments:
         obj (AbstractBlock | QuantumCircuit | QuantumModel | Register):
-                Either AbstractBlock, QuantumCircuit, QuantumModel, TransformedModule, Register.
+                Either AbstractBlock, QuantumCircuit, QuantumModel, Register.
         file_name (str): The name of the file.
         format (str): The type of file to save.
     Returns:
@@ -431,14 +431,14 @@ def load(file_path: str | Path, map_location: str = "cpu") -> SUPPORTED_TYPES:
     """
     Same as serialize/deserialize but for storing/loading files.
 
-    Supported types: AbstractBlock | QuantumCircuit | QuantumModel | TransformedModule | Register
+    Supported types: AbstractBlock | QuantumCircuit | QuantumModel | Register
     Loads a .json or .pt file to one of the supported types.
 
     Arguments:
         file_path (str): The name of the file.
         map_location (str): In case of a .pt file, on which device to load the object (cpu,cuda).
     Returns:
-        A object of type AbstractBlock, QuantumCircuit, QuantumModel, TransformedModule, Register.
+        A object of type AbstractBlock, QuantumCircuit, QuantumModel, Register.
 
     Examples:
     ```python exec="on" source="material-block" result="json"

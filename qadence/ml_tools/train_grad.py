@@ -52,16 +52,12 @@ def train(
         device: String defining device to train on, pass 'cuda' for GPU.
         optimize_step: Customizable optimization callback which is called at every iteration.=
             The function must have the signature `optimize_step(model,
-            optimizer, loss_fn, xs, device="cpu")` (see the example below).
-            Apart from the default we already supply three other optimization
-            functions `optimize_step_evo`, `optimize_step_grad_norm`, and
-            `optimize_step_inv_dirichlet`. Learn more about how to use this in
-            the [Advancded features](../../tutorials/advanced) tutorial of the
-            documentation.
+            optimizer, loss_fn, xs, device="cpu")`.
         write_tensorboard: Customizable tensorboard logging callback which is
             called every `config.write_every` iterations. The function must have
             the signature `write_tensorboard(writer, loss, metrics, iteration)`
             (see the example below).
+        dtype: The dtype to use for the data.
 
     Example:
     ```python exec="on" source="material-block"
@@ -70,7 +66,7 @@ def train(
     from itertools import count
     from qadence import Parameter, QuantumCircuit, Z
     from qadence import hamiltonian_factory, hea, feature_map, chain
-    from qadence.models import QNN
+    from qadence import QNN
     from qadence.ml_tools import TrainConfig, train_with_grad, to_dataloader
 
     n_qubits = 2
@@ -114,8 +110,11 @@ def train(
     """
     # load available checkpoint
     init_iter = 0
+    log_device = "cpu" if device is None else device
     if config.folder:
-        model, optimizer, init_iter = load_checkpoint(config.folder, model, optimizer)
+        model, optimizer, init_iter = load_checkpoint(
+            config.folder, model, optimizer, device=log_device
+        )
         logger.debug(f"Loaded model and optimizer from {config.folder}")
 
     # Move model to device before optimizer is loaded
@@ -154,12 +153,32 @@ def train(
         data_dtype = float64 if dtype == complex128 else float32
 
     best_val_loss = math.inf
+
     with progress:
         dl_iter = iter(dataloader) if dataloader is not None else None
-        if perform_val:
-            dl_iter_val = iter(val_dataloader) if val_dataloader is not None else None
+
+        # Initial validation evaluation
+        try:
+            if perform_val:
+                dl_iter_val = iter(val_dataloader) if val_dataloader is not None else None
+                xs = next(dl_iter_val)
+                xs_to_device = data_to_device(xs, device=device, dtype=data_dtype)
+                best_val_loss, metrics = loss_fn(model, xs_to_device)
+
+                metrics["val_loss"] = best_val_loss
+                write_tensorboard(writer, None, metrics, init_iter)
+
+            if config.folder:
+                if config.checkpoint_best_only:
+                    write_checkpoint(config.folder, model, optimizer, iteration="best")
+                else:
+                    write_checkpoint(config.folder, model, optimizer, init_iter)
+
+        except KeyboardInterrupt:
+            logger.info("Terminating training gracefully after the current iteration.")
 
         # outer epoch loop
+        init_iter += 1
         for iteration in progress.track(range(init_iter, init_iter + config.max_iter)):
             try:
                 # in case there is not data needed by the model
@@ -193,10 +212,13 @@ def train(
                     )
 
                 if iteration % config.print_every == 0 and config.verbose:
-                    print_metrics(loss, metrics, iteration)
+                    # Note that the loss returned by optimize_step
+                    # is the value before doing the training step
+                    # which is printed accordingly by the previous iteration number
+                    print_metrics(loss, metrics, iteration - 1)
 
                 if iteration % config.write_every == 0:
-                    write_tensorboard(writer, loss, metrics, iteration)
+                    write_tensorboard(writer, loss, metrics, iteration - 1)
 
                 if perform_val:
                     if iteration % config.val_every == 0:
@@ -208,7 +230,7 @@ def train(
                             if config.folder and config.checkpoint_best_only:
                                 write_checkpoint(config.folder, model, optimizer, iteration="best")
                             metrics["val_loss"] = val_loss
-                            write_tensorboard(writer, math.nan, metrics, iteration)
+                            write_tensorboard(writer, None, metrics, iteration)
 
                 if config.folder:
                     if iteration % config.checkpoint_every == 0 and not config.checkpoint_best_only:
@@ -218,7 +240,19 @@ def train(
                 logger.info("Terminating training gracefully after the current iteration.")
                 break
 
-    # Final writing and checkpointing
+        # Handling printing the last training loss
+        # as optimize_step does not give the loss value at the last iteration
+        try:
+            xs = next(dl_iter) if dataloader is not None else None  # type: ignore[arg-type]
+            xs_to_device = data_to_device(xs, device=device, dtype=data_dtype)
+            loss, metrics = loss_fn(model, xs_to_device)
+            if iteration % config.print_every == 0 and config.verbose:
+                print_metrics(loss, metrics, iteration)
+
+        except KeyboardInterrupt:
+            logger.info("Terminating training gracefully after the current iteration.")
+
+    # Final printing, writing and checkpointing
     if config.folder and not config.checkpoint_best_only:
         write_checkpoint(config.folder, model, optimizer, iteration)
     write_tensorboard(writer, loss, metrics, iteration)

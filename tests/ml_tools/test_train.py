@@ -10,9 +10,7 @@ import pytest
 import torch
 from torch.utils.data import DataLoader
 
-from qadence.ml_tools import DictDataLoader, TrainConfig, to_dataloader, train_with_grad
-from qadence.ml_tools.models import TransformedModule
-from qadence.models import QNN
+from qadence.ml_tools import QNN, DictDataLoader, TrainConfig, to_dataloader, train_with_grad
 
 torch.manual_seed(42)
 np.random.seed(42)
@@ -83,7 +81,7 @@ def test_train_dataloader_default(tmp_path: Path, Basic: torch.nn.Module) -> Non
     n_epochs = 100
     config = TrainConfig(folder=tmp_path, max_iter=n_epochs, checkpoint_every=100, write_every=100)
     train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
-    assert next(cnt) == n_epochs
+    assert next(cnt) == (n_epochs + 1)
 
     x = torch.rand(5, 1)
     assert torch.allclose(torch.sin(x), model(x), rtol=1e-1, atol=1e-1)
@@ -112,7 +110,7 @@ def test_train_dataloader_no_data(tmp_path: Path, BasicNoInput: torch.nn.Module)
         write_every=100,
     )
     train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
-    assert next(cnt) == n_epochs
+    assert next(cnt) == (n_epochs + 1)
 
     out = model()
     assert torch.allclose(out, torch.zeros(1), atol=1e-2, rtol=1e-2)
@@ -141,40 +139,16 @@ def test_train_dictdataloader(tmp_path: Path, Basic: torch.nn.Module) -> None:
         folder=tmp_path, max_iter=n_epochs, print_every=10, checkpoint_every=100, write_every=100
     )
     train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
-    assert next(cnt) == n_epochs
+    assert next(cnt) == (n_epochs + 1)
 
     x = torch.rand(5, 1)
     assert torch.allclose(torch.sin(x), model(x), rtol=1e-1, atol=1e-1)
 
 
-@pytest.mark.slow
-@pytest.mark.flaky(max_runs=10)
-def test_modules_save_load(BasicQNN: QNN, BasicTransformedModule: TransformedModule) -> None:
-    data = FMdictdataloader()
-    for _m in [BasicQNN, BasicTransformedModule]:
-        model: torch.nn.Module = _m
-        criterion = torch.nn.MSELoss()
-        optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
-
-        def loss_fn(model: torch.nn.Module, data: torch.Tensor) -> tuple[torch.Tensor, dict]:
-            x = torch.rand(1)
-            y = torch.sin(x)
-            l1 = criterion(model(x), y)
-            return l1, {}
-
-        n_epochs = 200
-        config = TrainConfig(
-            max_iter=n_epochs, print_every=10, checkpoint_every=500, write_every=500
-        )
-        model, optimizer = train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
-        x = torch.rand(1)
-        assert torch.allclose(torch.sin(x), model(x), rtol=1e-1, atol=1e-1)
-
-
 @pytest.mark.flaky(max_runs=10)
 def test_train_tensor_tuple(Basic: torch.nn.Module, BasicQNN: QNN) -> None:
     for cls, dtype in [(Basic, torch.float32), (BasicQNN, torch.complex64)]:
-        model = TransformedModule(cls, 1, 1, *[torch.nn.Parameter(t) for t in torch.rand(4)])
+        model = cls
         batch_size = 25
         x = torch.linspace(0, 1, batch_size).reshape(-1, 1)
         y = torch.sin(x)
@@ -199,7 +173,7 @@ def test_train_tensor_tuple(Basic: torch.nn.Module, BasicQNN: QNN) -> None:
         )
         data = to_dataloader(x, y, batch_size=batch_size, infinite=True)
         model, _ = train_with_grad(model, data, optimizer, config, loss_fn=loss_fn, dtype=dtype)
-        assert next(cnt) == n_epochs
+        assert next(cnt) == (n_epochs + 1)
 
         x = torch.rand(5, 1, dtype=torch.float32)
         assert torch.allclose(torch.sin(x), model(x), rtol=1e-1, atol=1e-1)
@@ -305,7 +279,7 @@ def test_train_dictdataloader_checkpoint_best_only(tmp_path: Path, Basic: torch.
 
     config = get_train_config_validation(tmp_path, n_epochs, checkpoint_every, val_every)
     train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
-    assert next(cnt) == n_epochs + n_epochs // val_every
+    assert next(cnt) == 2 + n_epochs + n_epochs // val_every
 
     files = [f for f in os.listdir(tmp_path) if f.endswith(".pt") and "model" in f]
     # Ideally it can be ensured if the (only) saved checkpoint is indeed the best,

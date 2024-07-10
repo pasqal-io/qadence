@@ -6,8 +6,10 @@ from typing import Any, Sequence, Tuple
 
 import pyqtorch as pyq
 import sympy
+import torch
 from pyqtorch.apply import apply_operator
 from pyqtorch.matrices import _dagger
+from pyqtorch.time_dependent.sesolve import sesolve
 from pyqtorch.utils import is_diag
 from torch import (
     Tensor,
@@ -26,6 +28,8 @@ from torch.nn import Module
 
 from qadence.backends.utils import (
     finitediff,
+    pyqify,
+    unpyqify,
 )
 from qadence.blocks import (
     AbstractBlock,
@@ -38,8 +42,12 @@ from qadence.blocks import (
     ScaleBlock,
     TimeEvolutionBlock,
 )
-from qadence.blocks.block_to_tensor import _block_to_tensor_embedded, block_to_tensor
+from qadence.blocks.block_to_tensor import (
+    _block_to_tensor_embedded,
+    block_to_tensor,
+)
 from qadence.blocks.primitive import ProjectorBlock
+from qadence.blocks.utils import parameters
 from qadence.operations import (
     U,
     multi_qubit_gateset,
@@ -183,6 +191,7 @@ class PyQHamiltonianEvolution(Module):
         self.param_names = config.get_param_name(block)
         self.block = block
         self.hmat: Tensor
+        self.config = config
 
         if isinstance(block.generator, AbstractBlock) and not block.generator.is_parametric:
             hmat = block_to_tensor(
@@ -259,7 +268,8 @@ class PyQHamiltonianEvolution(Module):
         """Approximate jacobian of the evolved operator with respect to time evolution."""
         return finitediff(
             lambda t: self._unitary(time_evolution=t, hamiltonian=self._hamiltonian(self, values)),
-            values[self.param_names[0]],
+            values[self.param_names[0]].reshape(-1, 1),
+            (0,),
         )
 
     def jacobian_generator(self, values: dict[str, Tensor]) -> Tensor:
@@ -286,25 +296,88 @@ class PyQHamiltonianEvolution(Module):
             lambda v: self._unitary(
                 time_evolution=self._time_evolution(values), hamiltonian=_generator(v)
             ),
-            values[self.param_names[1]],
+            values[self.param_names[1]].reshape(-1, 1),
+            (0,),
         )
 
     def dagger(self, values: dict[str, Tensor]) -> Tensor:
         """Dagger of the evolved operator given the current parameter values."""
         return _dagger(self.unitary(values))
 
+    def _get_time_parameter(self) -> str:
+        # get unique time parameters
+        unique_time_params = set()
+        for p in parameters(self.block.generator):  # type: ignore [arg-type]
+            if getattr(p, "is_time", False):
+                unique_time_params.add(str(p))
+
+        if len(unique_time_params) > 1:
+            raise Exception("Only a single time parameter is supported.")
+
+        return unique_time_params.pop()
+
     def forward(
         self,
         state: Tensor,
         values: dict[str, Tensor],
     ) -> Tensor:
-        return apply_operator(
-            state,
-            self.unitary(values),
-            self.qubit_support,
-            self.n_qubits,
-            self.batch_size,
-        )
+        if getattr(self.block.generator, "is_time_dependent", False):  # type: ignore [union-attr]
+
+            def Ht(t: Tensor | float) -> Tensor:
+                # values dict has to change with new value of t
+                # initial value of a feature parameter inside generator block
+                # has to be inferred here
+                new_vals = dict()
+                for str_expr, val in values.items():
+                    expr = sympy.sympify(str_expr)
+                    t_symb = sympy.Symbol(self._get_time_parameter())
+                    free_symbols = expr.free_symbols
+                    if t_symb in free_symbols:
+                        # create substitution list for time and feature params
+                        subs_list = [(t_symb, t)]
+
+                        if len(free_symbols) > 1:
+                            # get feature param symbols
+                            feat_symbols = free_symbols.difference(set([t_symb]))
+
+                            # get feature param values
+                            feat_vals = values["orig_param_values"]
+
+                            # update substitution list with feature param values
+                            for fs in feat_symbols:
+                                subs_list.append((fs, feat_vals[str(fs)]))
+
+                        # evaluate expression with new time param value
+                        new_vals[str_expr] = torch.tensor(float(expr.subs(subs_list)))
+                    else:
+                        # expression doesn't contain time parameter - copy it as is
+                        new_vals[str_expr] = val
+
+                # get matrix form of generator
+                hmat = _block_to_tensor_embedded(
+                    self.block.generator,  # type: ignore[arg-type]
+                    values=new_vals,
+                    qubit_support=self.qubit_support,
+                    use_full_support=False,
+                    device=self.device,
+                ).squeeze(0)
+
+                return hmat
+
+            tsave = torch.linspace(0, self.block.duration, self.config.n_steps_hevo)  # type: ignore [attr-defined]
+            result = pyqify(
+                sesolve(Ht, unpyqify(state).T[:, 0:1], tsave, self.config.ode_solver).states[-1].T
+            )
+        else:
+            result = apply_operator(
+                state,
+                self.unitary(values),
+                self.qubit_support,
+                self.n_qubits,
+                self.batch_size,
+            )
+
+        return result
 
     @property
     def device(self) -> torch_device:

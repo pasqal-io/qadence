@@ -12,6 +12,7 @@ from torch import Tensor
 from qadence.backend import Backend as BackendInterface
 from qadence.backend import ConvertedCircuit, ConvertedObservable
 from qadence.backends.utils import (
+    infer_batchsize,
     pyqify,
     to_list_of_dicts,
     unpyqify,
@@ -31,7 +32,6 @@ from qadence.transpile import (
     transpile,
 )
 from qadence.types import BackendName, Endianness, Engine
-from qadence.utils import infer_batchsize
 
 from .config import Configuration, default_passes
 from .convert_ops import convert_block
@@ -155,7 +155,6 @@ class Backend(BackendInterface):
                 "Looping expectation does not make sense with batched initial state. "
                 "Define your initial state with `batch_size=1`"
             )
-
         list_expvals = []
         observables = observable if isinstance(observable, list) else [observable]
         for vals in to_list_of_dicts(param_values):

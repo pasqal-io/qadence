@@ -9,6 +9,7 @@ from hypothesis import given, settings
 from metrics import HIGH_ACCEPTANCE, LOW_ACCEPTANCE, MIDDLE_ACCEPTANCE  # type: ignore
 from torch import allclose, autograd, flatten, manual_seed, ones_like, rand, tensor
 
+from qadence import QNN, QuantumModel
 from qadence.backends import backend_factory
 from qadence.blocks import (
     AbstractBlock,
@@ -36,7 +37,6 @@ from qadence.measurements.utils import (
     rotate,
 )
 from qadence.ml_tools.utils import rand_featureparameters
-from qadence.models import QNN, QuantumModel
 from qadence.operations import RX, RY, H, SDagger, X, Y, Z
 from qadence.parameters import Parameter
 from qadence.types import BackendName, BasisSet, DiffMode

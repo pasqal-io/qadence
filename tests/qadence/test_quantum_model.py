@@ -15,7 +15,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.constructors import hea, total_magnetization
 from qadence.divergences import js_divergence
 from qadence.ml_tools.utils import rand_featureparameters
-from qadence.models.quantum_model import QuantumModel
+from qadence.model import QuantumModel
 from qadence.operations import MCRX, RX, HamEvo, I, Toffoli, X, Z
 from qadence.parameters import FeatureParameter, VariationalParameter
 from qadence.states import equivalent_state
@@ -44,7 +44,14 @@ def test_quantum_model_parameters(parametric_circuit: QuantumCircuit) -> None:
     assert len([i for i in model_psr.parameters()]) == 4
     assert len([i for i in model_ad.parameters()]) == 4
     embedded_params_psr = model_psr.embedding_fn(model_psr._params, {"x": torch.rand(1)})
+    # popping because orig_param_values key does not contain embedded params
+    embedded_params_psr.pop(
+        "orig_param_values", {}
+    )  # TODO: remove this when embedding system is updated
     embedded_params_ad = model_ad.embedding_fn(model_ad._params, {"x": torch.rand(1)})
+    embedded_params_ad.pop(
+        "orig_param_values", {}
+    )  # TODO: remove this when embedding system is updated
     assert len(embedded_params_ad) == 5
     assert len(embedded_params_psr) == 6
 
@@ -57,7 +64,13 @@ def test_quantum_model_duplicate_expr(duplicate_expression_circuit: QuantumCircu
     assert len([i for i in model_psr.parameters()]) == 3
     assert len([i for i in model_ad.parameters()]) == 3
     embedded_params_psr = model_psr.embedding_fn(model_psr._params, {"x": torch.rand(1)})
+    embedded_params_psr.pop(
+        "orig_param_values", {}
+    )  # TODO: remove this when embedding system is updated
     embedded_params_ad = model_ad.embedding_fn(model_ad._params, {"x": torch.rand(1)})
+    embedded_params_ad.pop(
+        "orig_param_values", {}
+    )  # TODO: remove this when embedding system is updated
     assert len(embedded_params_ad) == 2
     assert len(embedded_params_psr) == 8
 
