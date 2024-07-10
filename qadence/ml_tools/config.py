@@ -147,5 +147,10 @@ class MLFlowConfig:
                 f"Intialized mlflow remote logging for user {self.MLFLOW_TRACKING_USERNAME}."
             )
         mlflow.set_tracking_uri(self.MLFLOW_TRACKING_URI)
+        # activate existing or create experiment
+        exp_filter_string = f"name = '{self.EXPERIMENT}'"
+        if not mlflow.search_experiments(filter_string=exp_filter_string):
+            mlflow.create_experiment(name=self.EXPERIMENT)
+
         mlflow.set_experiment(self.EXPERIMENT)
         mlflow.start_run(run_name=self.RUN_NAME, nested=False)
