@@ -18,10 +18,6 @@ from qadence.ml_tools.utils import rand_featureparameters
 from qadence.models import QNN, QuantumModel
 from qadence.types import ExperimentTrackingTool
 
-os.environ["MLFLOW_TRACKING_URI"] = "sqlite:///mlflow.db"
-os.environ["MLFLOW_EXPERIMENT"] = "mlflow_demonstration"
-os.environ["MLFLOW_RUN_NAME"] = "test_0"
-
 hyperparams = {
     "seed": 42,
     "batch_size": 10,
@@ -87,7 +83,7 @@ config = TrainConfig(
     hyperparams=hyperparams,
     plotting_functions=(plot_fn,),
 )
+
 train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
 
 os.system("mlflow ui --port 5000")
-os.system("mlflow ui --backend-store-uri sqlite:///mlflow.db")
