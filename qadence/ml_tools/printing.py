@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
-from matplotlib.figure import Figure
 from torch.nn import Module
 from torch.utils.tensorboard import SummaryWriter
 
@@ -30,9 +29,13 @@ def log_hyperparams_tensorboard(writer: SummaryWriter, hyperparams: dict, metric
 
 
 def plot_tensorboard(
-    writer: SummaryWriter, iteration: int, plotting_functions: tuple[Callable]
+    writer: SummaryWriter,
+    model: Module,
+    iteration: int,
+    plotting_functions: tuple[Callable],
 ) -> None:
-    raise NotImplementedError("Plot logging with tensorboard is not implemented")
+    # TODO: implement me
+    pass
 
 
 def write_mlflow(writer: Any, loss: float | None, metrics: dict, iteration: int) -> None:
@@ -45,10 +48,10 @@ def log_hyperparams_mlflow(writer: Any, hyperparams: dict, metrics: dict) -> Non
 
 
 def plot_mlflow(
-    writer: SummaryWriter,
+    writer: Any,
     model: Module,
     iteration: int,
-    plotting_functions: tuple[Callable[[Module, int], tuple[str, Figure]]],
+    plotting_functions: tuple[Callable],
 ) -> None:
     for pf in plotting_functions:
         descr, fig = pf(model, iteration)

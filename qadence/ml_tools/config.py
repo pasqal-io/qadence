@@ -2,14 +2,11 @@ from __future__ import annotations
 
 import datetime
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from logging import getLogger
 from pathlib import Path
 from typing import Callable, Optional
 from uuid import uuid4
-
-from matplotlib.figure import Figure
-from torch.nn import Module
 
 from qadence.types import ExperimentTrackingTool
 
@@ -38,7 +35,7 @@ class TrainConfig:
     """Write tensorboard logs."""
     checkpoint_every: int = 5000
     """Write model/optimizer checkpoint."""
-    plot_every: int | None = None
+    plot_every: int = 5000
     """Write figures.
 
     NOTE: currently only works with mlflow.
@@ -64,7 +61,7 @@ class TrainConfig:
     """The tracking tool of choice."""
     hyperparams: dict | None = None
     """Hyperparameters to track."""
-    plotting_functions: tuple[Callable[[Module, int], tuple[str, Figure]]] | None = None
+    plotting_functions: tuple[Callable] = field(default_factory=tuple)  # type: ignore
     """Functions for in-train plotting."""
 
     # mlflow_callbacks: list[Callable] = [write_mlflow_figure(), write_x()]
@@ -82,10 +79,10 @@ class TrainConfig:
             self.trainstop_criterion = lambda x: x <= self.max_iter
         if self.validation_criterion is None:
             self.validation_criterion = lambda x: False
-        if self.plot_every and self.tracking_tool != ExperimentTrackingTool.MLFLOW:
-            raise NotImplementedError("In-training plots are only available with mlflow tracking.")
-        if self.plot_every is not None and self.plotting_functions is None:
-            logger.warning("Plots tracking is required, but no plotting functions are provided.")
+        if self.plotting_functions and self.tracking_tool != ExperimentTrackingTool.MLFLOW:
+            logger.warning("In-training plots are only available with mlflow tracking.")
+        if not self.plotting_functions and self.tracking_tool == ExperimentTrackingTool.MLFLOW:
+            logger.warning("Tracking with mlflow, but no plotting functions provided.")
 
 
 @dataclass
