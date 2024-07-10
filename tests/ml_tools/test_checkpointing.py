@@ -79,7 +79,12 @@ def test_random_basicqQM_save_load_ckpts(BasicQuantumModel: QuantumModel, tmp_pa
     assert torch.allclose(loaded_model.expectation({}), model.expectation({}))
 
 
-def test_check_ckpts_exist(BasicQuantumModel: QuantumModel, tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    "tool", [ExperimentTrackingTool.TENSORBOARD, ExperimentTrackingTool.MLFLOW]
+)
+def test_check_ckpts_exist(
+    tool: ExperimentTrackingTool, BasicQuantumModel: QuantumModel, tmp_path: Path
+) -> None:
     data = dataloader()
     model = BasicQuantumModel
     cnt = count()
@@ -92,7 +97,9 @@ def test_check_ckpts_exist(BasicQuantumModel: QuantumModel, tmp_path: Path) -> N
         loss = criterion(out, torch.rand(1))
         return loss, {}
 
-    config = TrainConfig(folder=tmp_path, max_iter=10, checkpoint_every=1, write_every=1)
+    config = TrainConfig(
+        folder=tmp_path, max_iter=10, checkpoint_every=1, write_every=1, tracking_tool=tool
+    )
     train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
     ckpts = [tmp_path / Path(f"model_QuantumModel_ckpt_00{i}_device_cpu.pt") for i in range(1, 9)]
     assert all(os.path.isfile(ckpt) for ckpt in ckpts)
@@ -189,8 +196,11 @@ def test_random_basicqtransformedmodule_save_load_ckpts(
     assert torch.allclose(loaded_model.expectation(inputs), model.expectation(inputs))
 
 
+@pytest.mark.parametrize(
+    "tool", [ExperimentTrackingTool.TENSORBOARD, ExperimentTrackingTool.MLFLOW]
+)
 def test_check_transformedmodule_ckpts_exist(
-    BasicTransformedModule: TransformedModule, tmp_path: Path
+    tool: ExperimentTrackingTool, BasicTransformedModule: TransformedModule, tmp_path: Path
 ) -> None:
     data = dataloader()
     model = BasicTransformedModule
@@ -205,7 +215,9 @@ def test_check_transformedmodule_ckpts_exist(
         loss = criterion(out, torch.rand(1))
         return loss, {}
 
-    config = TrainConfig(folder=tmp_path, max_iter=10, checkpoint_every=1, write_every=1)
+    config = TrainConfig(
+        folder=tmp_path, max_iter=10, checkpoint_every=1, write_every=1, tracking_tool=tool
+    )
     train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
     ckpts = [
         tmp_path / Path(f"model_TransformedModule_ckpt_00{i}_device_cpu.pt") for i in range(1, 9)
