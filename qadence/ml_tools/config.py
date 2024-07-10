@@ -85,8 +85,12 @@ class TrainConfig:
 
 @dataclass
 class FeatureMapConfig:
-    num_features: int = 1
-    """Number of feature parameters to be encoded."""
+    num_features: int = 0
+    """
+    Number of feature parameters to be encoded.
+
+    Defaults to 0. Thus, no feature parameters are encoded.
+    """
 
     basis_set: BasisSet | dict[str, BasisSet] = BasisSet.FOURIER
     """
@@ -235,7 +239,9 @@ class FeatureMapConfig:
                 len(self.inputs) == self.num_features
             ), "Inputs list must be of same size as the number of features"
         else:
-            if self.num_features == 1:
+            if self.num_features == 0:
+                self.inputs = []
+            elif self.num_features == 1:
                 self.inputs = ["x"]
             else:
                 raise ValueError(

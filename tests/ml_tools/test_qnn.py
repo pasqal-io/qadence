@@ -17,7 +17,6 @@ from qadence.constructors import hea, ising_hamiltonian, total_magnetization
 from qadence.ml_tools.config import AnsatzConfig, FeatureMapConfig
 from qadence.ml_tools.constructors import (
     ObservableConfig,
-    build_qnn_from_configs,
     observable_from_config,
 )
 from qadence.operations import RX, RY, Z
@@ -347,49 +346,70 @@ def test_variational_transformed_module(
     assert torch.allclose(tm_pred, (output_range[0] * pred) + output_range[1])
 
 
-def test_config_qnn_input_transform() -> None:
-    fm_config = FeatureMapConfig()
-    transformed_fm_config = FeatureMapConfig(feature_range=(0.0, 1.0))
+@pytest.mark.parametrize("diff_mode", [DiffMode.GPSR, DiffMode.AD])
+@pytest.mark.parametrize("backend", [BackendName.PYQTORCH])
+def test_config_qnn(diff_mode: DiffMode, backend: BackendName) -> None:
+    fm_config = FeatureMapConfig(num_features=1)
     ansatz_config = AnsatzConfig()
     observable_config = ObservableConfig(detuning=Z)
 
-    qnn = build_qnn_from_configs(
+    qnn = QNN.from_configs(
         register=2,
+        obs_config=observable_config,
         fm_config=fm_config,
         ansatz_config=ansatz_config,
-        observable_config=observable_config,
+        diff_mode=diff_mode,
+        backend=backend,
     )
-    transformed_qnn = build_qnn_from_configs(
+
+    assert isinstance(qnn, QNN)
+    assert qnn._diff_mode == diff_mode
+    assert qnn._backend_name == backend
+
+
+def test_config_qnn_input_transform() -> None:
+    fm_config = FeatureMapConfig(num_features=1)
+    transformed_fm_config = FeatureMapConfig(num_features=1, feature_range=(0.0, 1.0))
+    ansatz_config = AnsatzConfig()
+    observable_config = ObservableConfig(detuning=Z)
+
+    qnn = QNN.from_configs(
         register=2,
+        obs_config=observable_config,
+        fm_config=fm_config,
+        ansatz_config=ansatz_config,
+    )
+    transformed_qnn = QNN.from_configs(
+        register=2,
+        obs_config=observable_config,
         fm_config=transformed_fm_config,
         ansatz_config=ansatz_config,
-        observable_config=observable_config,
     )
 
     transformed_qnn.reset_vparams(list(qnn.vparams.values()))
 
-    input_values = torch.rand(10, requires_grad=True)
+    input_values = torch.rand(10, 1, requires_grad=True)
     transformed_input_values = 2 * PI * input_values
     assert torch.allclose(qnn(transformed_input_values), transformed_qnn(input_values))
 
 
 def test_config_qnn_output_transform() -> None:
-    fm_config = FeatureMapConfig()
+    fm_config = FeatureMapConfig(num_features=1)
     ansatz_config = AnsatzConfig()
     observable_config = ObservableConfig(detuning=Z)
     transformed_observable_config = ObservableConfig(detuning=Z, scale=2.0, shift=1.0)
 
-    qnn = build_qnn_from_configs(
+    qnn = QNN.from_configs(
         register=2,
+        obs_config=observable_config,
         fm_config=fm_config,
         ansatz_config=ansatz_config,
-        observable_config=observable_config,
     )
-    transformed_qnn = build_qnn_from_configs(
+    transformed_qnn = QNN.from_configs(
         register=2,
+        obs_config=transformed_observable_config,
         fm_config=fm_config,
         ansatz_config=ansatz_config,
-        observable_config=transformed_observable_config,
     )
 
     transformed_qnn.reset_vparams(list(qnn.vparams.values()))
@@ -407,17 +427,17 @@ def test_config_qnn_output_transform() -> None:
         transformation_type=ObservableTransform.RANGE,  # type: ignore[arg-type]
     )
 
-    qnn = build_qnn_from_configs(
+    qnn = QNN.from_configs(
         register=2,
+        obs_config=observable_config,
         fm_config=fm_config,
         ansatz_config=ansatz_config,
-        observable_config=observable_config,
     )
-    transformed_qnn = build_qnn_from_configs(
+    transformed_qnn = QNN.from_configs(
         register=2,
+        obs_config=transformed_observable_config,
         fm_config=fm_config,
         ansatz_config=ansatz_config,
-        observable_config=transformed_observable_config,
     )
 
     transformed_qnn.reset_vparams(list(qnn.vparams.values()))
