@@ -8,6 +8,8 @@ from pathlib import Path
 from typing import Callable, Optional
 from uuid import uuid4
 
+from torch import Tensor
+
 from qadence.types import ExperimentTrackingTool
 
 logger = getLogger(__name__)
@@ -59,12 +61,28 @@ class TrainConfig:
     """Whether or not to print out metrics values during training."""
     tracking_tool: ExperimentTrackingTool = ExperimentTrackingTool.TENSORBOARD
     """The tracking tool of choice."""
-    hyperparams: dict | None = None
+    hyperparams: dict = field(default_factory=dict)
     """Hyperparameters to track."""
     plotting_functions: tuple[Callable] = field(default_factory=tuple)  # type: ignore
     """Functions for in-train plotting."""
 
-    # mlflow_callbacks: list[Callable] = [write_mlflow_figure(), write_x()]
+    # tensorboard only allows for certain types as hyperparameters
+    _tb_allowed_hyperparams_types: tuple = field(
+        default=(int, float, str, bool, Tensor), init=False, repr=False
+    )
+
+    def _filter_tb_hyperparams(self) -> None:
+        keys_to_remove = [
+            key
+            for key, value in self.hyperparams.items()
+            if not isinstance(value, TrainConfig._tb_allowed_hyperparams_types)
+        ]
+        if keys_to_remove:
+            logger.warning(
+                f"Tensorboard cannot log the following hyperparameters: {keys_to_remove}."
+            )
+            for key in keys_to_remove:
+                self.hyperparams.pop(key)
 
     def __post_init__(self) -> None:
         if self.folder:
@@ -79,6 +97,8 @@ class TrainConfig:
             self.trainstop_criterion = lambda x: x <= self.max_iter
         if self.validation_criterion is None:
             self.validation_criterion = lambda x: False
+        if self.hyperparams and self.tracking_tool == ExperimentTrackingTool.TENSORBOARD:
+            self._filter_tb_hyperparams()
         if self.plotting_functions and self.tracking_tool != ExperimentTrackingTool.MLFLOW:
             logger.warning("In-training plots are only available with mlflow tracking.")
         if not self.plotting_functions and self.tracking_tool == ExperimentTrackingTool.MLFLOW:
