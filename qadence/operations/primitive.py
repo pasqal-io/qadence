@@ -129,7 +129,6 @@ class I(PrimitiveBlock):
         return Padding("──────", (1, 1, 1, 1))
 
 
-# ? Add noise here ? --> Add first to ProjectorBlock
 class Projector(ProjectorBlock):
     """The projector operator."""
 
@@ -140,8 +139,9 @@ class Projector(ProjectorBlock):
         ket: str,
         bra: str,
         qubit_support: int | tuple[int, ...],
+        noise: Noise | dict[str, Noise] | None = None,
     ):
-        super().__init__(ket=ket, bra=bra, qubit_support=qubit_support)
+        super().__init__(ket=ket, bra=bra, qubit_support=qubit_support, noise=noise)
 
     @property
     def generator(self) -> None:
@@ -152,14 +152,15 @@ class Projector(ProjectorBlock):
         raise ValueError("Property `eigenvalues_generator` not available for non-unitary operator.")
 
 
-# ? Add noise here ? --> Add first to ProjectorBlock
 class N(Projector):
     """The N = (1/2)(I-Z) operator."""
 
     name = OpName.N
 
-    def __init__(self, target: int, state: str = "1"):
-        super().__init__(ket=state, bra=state, qubit_support=(target,))
+    def __init__(
+        self, target: int, state: str = "1", noise: Noise | dict[str, Noise] | None = None
+    ):
+        super().__init__(ket=state, bra=state, qubit_support=(target,), noise=noise)
 
     @property
     def generator(self) -> None:
@@ -236,7 +237,7 @@ class H(PrimitiveBlock):
         return torch.tensor([-1, 1], dtype=cdouble)
 
 
-# ? Add noise here ?
+#! Not sure that add noise here is usefull...
 class Zero(PrimitiveBlock):
     name = OpName.ZERO
 

@@ -567,6 +567,7 @@ class ProjectorBlock(PrimitiveBlock):
         ket: str,
         bra: str,
         qubit_support: int | tuple[int, ...],
+        noise: Noise | dict[str, Noise] | None = None,
     ) -> None:
         """
         Arguments:
@@ -574,6 +575,7 @@ class ProjectorBlock(PrimitiveBlock):
             ket (str): The ket given as a bitstring.
             bra (str): The bra given as a bitstring.
             qubit_support (int | tuple[int]): The qubit_support of the block.
+            noise (Noise | dict[str, Noise] | None): Optional noise protocols to apply.
         """
         if isinstance(qubit_support, int):
             qubit_support = (qubit_support,)
@@ -592,4 +594,4 @@ class ProjectorBlock(PrimitiveBlock):
 
         self.ket = ket
         self.bra = bra
-        super().__init__(qubit_support)
+        super().__init__(qubit_support, noise)

@@ -27,6 +27,7 @@ from torch import dtype as torch_dtype
 from torch.nn import Module
 
 from qadence.backends.utils import (
+    block_noisy_protocols,
     finitediff,
     pyqify,
     unpyqify,
@@ -48,7 +49,6 @@ from qadence.blocks.block_to_tensor import (
 )
 from qadence.blocks.primitive import ProjectorBlock
 from qadence.blocks.utils import parameters
-from qadence.noise import Noise
 from qadence.operations import (
     U,
     multi_qubit_gateset,
@@ -134,30 +134,30 @@ def convert_block(
         else:
             return [pyq.Sequence(ops)]  # for kron and chain with multiple qubits/1-qubit with noise
     elif isinstance(block, tuple(non_unitary_gateset)):  #!Look to add noise
+        pyq_noise = block_noisy_protocols(block)
         if isinstance(block, ProjectorBlock):
             projector = getattr(pyq, block.name)
             if block.name == OpName.N:
-                return [projector(target=qubit_support)]
+                return [projector(target=qubit_support, noise=pyq_noise)]
             else:
-                return [projector(qubit_support=qubit_support, ket=block.ket, bra=block.bra)]
+                return [
+                    projector(
+                        qubit_support=qubit_support,
+                        ket=block.ket,
+                        bra=block.bra,
+                        #!noise=pyq_noise Need to add noise here but got error
+                    )
+                ]
         else:
             return [getattr(pyq, block.name)(qubit_support[0])]
     elif isinstance(block, tuple(single_qubit_gateset)):
         pyq_cls = getattr(pyq, block.name)
-        pyq_noise = block.noise  # type: ignore[attr-defined]
-        if pyq_noise:
-            if isinstance(pyq_noise, dict):
-                pyq_noise = {
-                    noise: noise_instance.to_pyq() for noise, noise_instance in pyq_noise.items()
-                }
-            elif isinstance(pyq_noise, Noise):
-                pyq_noise = pyq_noise.to_pyq()
-        if isinstance(block, ParametricBlock):  #!Look to add noise
+        pyq_noise = block_noisy_protocols(block)
+        if isinstance(block, ParametricBlock):
             if isinstance(block, U):
                 op = pyq_cls(qubit_support[0], *config.get_param_name(block), pyq_noise)
             else:
                 op = pyq_cls(qubit_support[0], config.get_param_name(block)[0], pyq_noise)
-                print("ici", op)
         else:
             op = pyq_cls(qubit_support[0], pyq_noise)  # type: ignore[attr-defined]
         return [op]
