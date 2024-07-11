@@ -20,7 +20,7 @@ class Noise:
     PHASE_DAMPING = "PhaseDamping"
     GENERALIZED_AMPLITUDE_DAMPING = "GeneralizedAmplitudeDamping"
     DEPHASING = "dephasing"
-    DEPOLARIZING = "depolarizing"  # check if no cap is ok for pyq
+    DEPOLARIZING_PYQ = "Depolarizing"  # no cap is a problem for pyq
     READOUT = "readout"
 
     def __init__(self, protocol: str, options: dict = dict()) -> None:

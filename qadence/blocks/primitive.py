@@ -248,7 +248,9 @@ class ParametricBlock(PrimitiveBlock):
         elif isinstance(self.noise, Noise):
             noise_info = self.noise._to_dict()
         elif isinstance(self.noise, dict):
-            noise_info = {k: v._to_dict() for k, v in self.noise.items()}
+            noise_info = {
+                noise: noise_instance._to_dict() for noise, noise_instance in self.noise.items()
+            }
         else:
             noise_info = dict()
 

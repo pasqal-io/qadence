@@ -154,9 +154,10 @@ def convert_block(
                 pyq_noise = pyq_noise.to_pyq()
         if isinstance(block, ParametricBlock):  #!Look to add noise
             if isinstance(block, U):
-                op = pyq_cls(qubit_support[0], *config.get_param_name(block))
+                op = pyq_cls(qubit_support[0], *config.get_param_name(block), pyq_noise)
             else:
-                op = pyq_cls(qubit_support[0], config.get_param_name(block)[0])
+                op = pyq_cls(qubit_support[0], config.get_param_name(block)[0], pyq_noise)
+                print("ici", op)
         else:
             op = pyq_cls(qubit_support[0], pyq_noise)  # type: ignore[attr-defined]
         return [op]
