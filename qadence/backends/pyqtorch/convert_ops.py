@@ -92,7 +92,7 @@ def convert_block(
     if config is None:
         config = Configuration()
 
-    if isinstance(block, ScaleBlock):
+    if isinstance(block, ScaleBlock):  #!Look to add noise
         scaled_ops = convert_block(block.block, n_qubits, config)
         scale = (
             tensor([block.parameters.parameter], dtype=float64)
@@ -118,7 +118,7 @@ def convert_block(
         # ]
         return [PyQHamiltonianEvolution(qubit_support, n_qubits, block, config)]
     elif isinstance(block, MatrixBlock):
-        return [pyq.primitive.Primitive(block.matrix, block.qubit_support)]
+        return [pyq.primitive.Primitive(block.matrix, block.qubit_support, block.noise)]
     elif isinstance(block, CompositeBlock):
         ops = list(flatten(*(convert_block(b, n_qubits, config) for b in block.blocks)))
         if isinstance(block, AddBlock):
@@ -133,7 +133,7 @@ def convert_block(
             ]  # for chains of single qubit ops on the same qubit without noise
         else:
             return [pyq.Sequence(ops)]  # for kron and chain with multiple qubits/1-qubit with noise
-    elif isinstance(block, tuple(non_unitary_gateset)):
+    elif isinstance(block, tuple(non_unitary_gateset)):  #!Look to add noise
         if isinstance(block, ProjectorBlock):
             projector = getattr(pyq, block.name)
             if block.name == OpName.N:
@@ -147,10 +147,12 @@ def convert_block(
         pyq_noise = block.noise  # type: ignore[attr-defined]
         if pyq_noise:
             if isinstance(pyq_noise, dict):
-                pyq_noise = {k: v.to_pyq() for k, v in pyq_noise.items()}
+                pyq_noise = {
+                    noise: noise_instance.to_pyq() for noise, noise_instance in pyq_noise.items()
+                }
             elif isinstance(pyq_noise, Noise):
                 pyq_noise = pyq_noise.to_pyq()
-        if isinstance(block, ParametricBlock):
+        if isinstance(block, ParametricBlock):  #!Look to add noise
             if isinstance(block, U):
                 op = pyq_cls(qubit_support[0], *config.get_param_name(block))
             else:
@@ -158,14 +160,16 @@ def convert_block(
         else:
             op = pyq_cls(qubit_support[0], pyq_noise)  # type: ignore[attr-defined]
         return [op]
-    elif isinstance(block, tuple(two_qubit_gateset)):
+    elif isinstance(block, tuple(two_qubit_gateset)):  #!Look to add noise
         pyq_cls = getattr(pyq, block.name)
         if isinstance(block, ParametricBlock):
             op = pyq_cls(qubit_support[0], qubit_support[1], config.get_param_name(block)[0])
         else:
             op = pyq_cls(qubit_support[0], qubit_support[1])
         return [op]
-    elif isinstance(block, tuple(three_qubit_gateset) + tuple(multi_qubit_gateset)):
+    elif isinstance(
+        block, tuple(three_qubit_gateset) + tuple(multi_qubit_gateset)
+    ):  #!Look to add noise
         block_name = block.name[1:] if block.name.startswith("M") else block.name
         pyq_cls = getattr(pyq, block_name)
         if isinstance(block, ParametricBlock):
