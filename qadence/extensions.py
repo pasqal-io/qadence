@@ -31,9 +31,14 @@ def import_backend(backend_name: str | BackendName) -> Backend:
     backend: Backend
     try:
         module = importlib.import_module(module_path)
-        backend = getattr(module, "Backend")
     except (ModuleNotFoundError, ImportError) as e:
-        raise type(e)
+        # If backend is not in Qadence, search in extensions.
+        module_path = f"qadence_extensions.backends.{backend_name}.backend"
+        try:
+            module = importlib.import_module(module_path)
+        except (ModuleNotFoundError, ImportError) as e:
+            raise type(e)
+    backend = getattr(module, "Backend")
     return backend
 
 
