@@ -27,8 +27,6 @@ class PrimitiveBlock(AbstractBlock):
     """
     Primitive blocks represent elementary unitary operations.
 
-    #TODO: Add a description of the noise attribut
-
     Examples are single/multi-qubit gates or Hamiltonian evolution.
     See [`qadence.operations`](operations.md) for a full list of
     primitive blocks.
@@ -91,19 +89,23 @@ class PrimitiveBlock(AbstractBlock):
         if not isinstance(other, AbstractBlock):
             raise TypeError(f"Cant compare {type(self)} to {type(other)}")
         if isinstance(other, type(self)):
-            return self.qubit_support == other.qubit_support and self.noise == self.noise
+            return self.qubit_support == other.qubit_support and self.noise == other.noise
         return False
 
     def _to_dict(self) -> dict:
+        if self.noise is None:
+            noise_info = None
+        elif isinstance(self.noise, Noise):
+            noise_info = self.noise._to_dict()
+        elif isinstance(self.noise, dict):
+            noise_info = {k: v._to_dict() for k, v in self.noise.items()}
+        else:
+            noise_info = dict()
         return {
             "type": type(self).__name__,
             "qubit_support": self.qubit_support,
             "tag": self.tag,
-            "noise": self.noise._to_dict()
-            if isinstance(self.noise, Noise)
-            else {k: v._to_dict() for k, v in self.noise.items()}
-            if self.noise
-            else None,
+            "noise": noise_info,
         }
 
     @classmethod
@@ -154,7 +156,6 @@ class PrimitiveBlock(AbstractBlock):
 class ParametricBlock(PrimitiveBlock):
     """Parameterized primitive blocks."""
 
-    # TODO: add noise param here
     name = "ParametricBlock"
 
     # a tuple of Parameter's specifies which parameters go into this block
@@ -177,7 +178,11 @@ class ParametricBlock(PrimitiveBlock):
                 params_str.append(val)
             else:
                 params_str.append(stringify(p))
-
+        if self.noise:
+            noise_index = s.find(", Noise")
+            primitive_part = s[:noise_index].strip()
+            noise_part = s[noise_index:].strip()
+            return f"{primitive_part} [params: {params_str}]{noise_part}"
         return s + rf" \[params: {params_str}]"
 
     @property
@@ -225,6 +230,7 @@ class ParametricBlock(PrimitiveBlock):
             return (
                 self.qubit_support == other.qubit_support
                 and self.parameters.parameter == other.parameters.parameter
+                and self.noise == other.noise
             )
         return False
 
@@ -237,20 +243,36 @@ class ParametricBlock(PrimitiveBlock):
         return False
 
     def _to_dict(self) -> dict:
+        if self.noise is None:
+            noise_info = None
+        elif isinstance(self.noise, Noise):
+            noise_info = self.noise._to_dict()
+        elif isinstance(self.noise, dict):
+            noise_info = {k: v._to_dict() for k, v in self.noise.items()}
+        else:
+            noise_info = dict()
+
         return {
             "type": type(self).__name__,
             "qubit_support": self.qubit_support,
             "tag": self.tag,
             "parameters": self.parameters._to_dict(),
+            "noise": noise_info,
         }
 
     @classmethod
     def _from_dict(cls, d: dict) -> ParametricBlock:
         params = ParamMap._from_dict(d["parameters"])
+        noise = d.get("noise")
+        if isinstance(noise, dict):
+            noise = {k: Noise._from_dict(v) for k, v in noise.items()}
+        elif noise is not None:
+            noise = Noise._from_dict(noise)
         target = d["qubit_support"][0]
-        return cls(target, params)  # type: ignore[call-arg]
+        return cls((target,), noise, params)  # type: ignore[call-arg]
 
     def dagger(self) -> ParametricBlock:
+        # Do not do the dagger of the noise gate. Only of the parametric one.
         exprs = self.parameters.expressions()
         params = tuple(-extract_original_param_entry(param) for param in exprs)
         return type(self)(*self.qubit_support, *params)  # type: ignore[arg-type]

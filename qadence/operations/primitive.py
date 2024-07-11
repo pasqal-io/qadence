@@ -53,8 +53,8 @@ class Y(PrimitiveBlock):
 
     name = OpName.Y
 
-    def __init__(self, target: int):
-        super().__init__((target,))
+    def __init__(self, target: int, noise: Noise | dict[str, Noise] | None = None):
+        super().__init__((target,), noise)
 
     @property
     def generator(self) -> AbstractBlock:
@@ -74,8 +74,8 @@ class Z(PrimitiveBlock):
 
     name = OpName.Z
 
-    def __init__(self, target: int):
-        super().__init__((target,))
+    def __init__(self, target: int, noise: Noise | dict[str, Noise] | None = None):
+        super().__init__((target,), noise)
 
     @property
     def generator(self) -> AbstractBlock:
@@ -95,8 +95,8 @@ class I(PrimitiveBlock):
 
     name = OpName.I
 
-    def __init__(self, target: int):
-        super().__init__((target,))
+    def __init__(self, target: int, noise: Noise | dict[str, Noise] | None = None):
+        super().__init__((target,), noise)
 
     def __ixor__(self, other: AbstractBlock | int) -> AbstractBlock:
         if not isinstance(other, AbstractBlock):
@@ -114,7 +114,8 @@ class I(PrimitiveBlock):
 
     @property
     def generator(self) -> AbstractBlock:
-        return I(*self.qubit_support)
+        return self
+        # return I(*self.qubit_support) #! not sure of the modif on all the generator method
 
     @property
     def eigenvalues_generator(self) -> Tensor:
@@ -128,6 +129,7 @@ class I(PrimitiveBlock):
         return Padding("──────", (1, 1, 1, 1))
 
 
+# ? Add noise here ? --> Add first to ProjectorBlock
 class Projector(ProjectorBlock):
     """The projector operator."""
 
@@ -150,6 +152,7 @@ class Projector(ProjectorBlock):
         raise ValueError("Property `eigenvalues_generator` not available for non-unitary operator.")
 
 
+# ? Add noise here ? --> Add first to ProjectorBlock
 class N(Projector):
     """The N = (1/2)(I-Z) operator."""
 
@@ -176,9 +179,10 @@ class S(PrimitiveBlock):
 
     name = OpName.S
 
-    def __init__(self, target: int):
+    def __init__(self, target: int, noise: Noise | dict[str, Noise] | None = None):
+        self.target = target
         self.generator = I(target) - Z(target)
-        super().__init__((target,))
+        super().__init__((target,), noise)
 
     @property
     def eigenvalues_generator(self) -> Tensor:
@@ -189,7 +193,7 @@ class S(PrimitiveBlock):
         return tensor([1, 1j], dtype=cdouble)
 
     def dagger(self) -> SDagger:
-        return SDagger(*self.qubit_support)
+        return SDagger(self.target, self.noise)
 
 
 class SDagger(PrimitiveBlock):
@@ -197,9 +201,10 @@ class SDagger(PrimitiveBlock):
 
     name = OpName.SDAGGER
 
-    def __init__(self, target: int):
-        self.generator = I(target) - Z(target)
-        super().__init__((target,))
+    def __init__(self, target: int, noise: Noise | dict[str, Noise] | None = None):
+        self.target = target
+        self.generator = I(target) - Z(target)  # ? Do I need to add the noise param here ?
+        super().__init__((target,), noise)
 
     @property
     def eigenvalues_generator(self) -> Tensor:
@@ -210,7 +215,7 @@ class SDagger(PrimitiveBlock):
         return tensor([1, -1j], dtype=cdouble)
 
     def dagger(self) -> S:
-        return S(*self.qubit_support)
+        return S(self.target, self.noise)
 
 
 class H(PrimitiveBlock):
@@ -218,9 +223,9 @@ class H(PrimitiveBlock):
 
     name = OpName.H
 
-    def __init__(self, target: int):
+    def __init__(self, target: int, noise: Noise | dict[str, Noise] | None = None):
         self.generator = (1 / np.sqrt(2)) * (X(target) + Z(target) - np.sqrt(2) * I(target))
-        super().__init__((target,))
+        super().__init__((target,), noise)
 
     @property
     def eigenvalues_generator(self) -> Tensor:
@@ -231,6 +236,7 @@ class H(PrimitiveBlock):
         return torch.tensor([-1, 1], dtype=cdouble)
 
 
+# ? Add noise here ?
 class Zero(PrimitiveBlock):
     name = OpName.ZERO
 
@@ -276,9 +282,10 @@ class T(PrimitiveBlock):
 
     name = OpName.T
 
-    def __init__(self, target: int):
+    def __init__(self, target: int, noise: Noise | dict[str, Noise] | None = None):
+        self.target = target
         self.generator = I(target) - Z(target)
-        super().__init__((target,))
+        super().__init__((target,), noise)
 
     @property
     def eigenvalues_generator(self) -> Tensor:
@@ -293,7 +300,7 @@ class T(PrimitiveBlock):
         return 1
 
     def dagger(self) -> TDagger:
-        return TDagger(*self.qubit_support)
+        return TDagger(self.target, self.noise)
 
 
 class TDagger(PrimitiveBlock):
@@ -302,9 +309,10 @@ class TDagger(PrimitiveBlock):
     # FIXME: this gate is not support by any backend
     name = "T_dagger"
 
-    def __init__(self, target: int):
+    def __init__(self, target: int, noise: Noise | dict[str, Noise] | None = None):
+        self.target = target
         self.generator = I(target) - Z(target)
-        super().__init__((target,))
+        super().__init__((target,), noise)
 
     @property
     def eigenvalues_generator(self) -> Tensor:
@@ -319,12 +327,13 @@ class TDagger(PrimitiveBlock):
         return 1
 
     def dagger(self) -> T:
-        return T(*self.qubit_support)
+        return T(self.target, self.noise)
 
 
 class SWAP(PrimitiveBlock):
     """The SWAP gate."""
 
+    # FIXME: Not supporting the pyq noise
     name = OpName.SWAP
 
     def __init__(self, control: int, target: int) -> None:

@@ -48,6 +48,7 @@ from qadence.blocks.block_to_tensor import (
 )
 from qadence.blocks.primitive import ProjectorBlock
 from qadence.blocks.utils import parameters
+from qadence.noise import Noise
 from qadence.operations import (
     U,
     multi_qubit_gateset,
@@ -125,7 +126,7 @@ def convert_block(
         elif (
             is_single_qubit_chain(block)
             and config.use_single_qubit_composition
-            and all([b.noise is None for b in block])
+            and all([b.noise is None for b in block])  # type: ignore[attr-defined]
         ):
             return [
                 pyq.Merge(ops)
@@ -143,13 +144,19 @@ def convert_block(
             return [getattr(pyq, block.name)(qubit_support[0])]
     elif isinstance(block, tuple(single_qubit_gateset)):
         pyq_cls = getattr(pyq, block.name)
+        pyq_noise = block.noise  # type: ignore[attr-defined]
+        if pyq_noise:
+            if isinstance(pyq_noise, dict):
+                pyq_noise = {k: v.to_pyq() for k, v in pyq_noise.items()}
+            elif isinstance(pyq_noise, Noise):
+                pyq_noise = pyq_noise.to_pyq()
         if isinstance(block, ParametricBlock):
             if isinstance(block, U):
                 op = pyq_cls(qubit_support[0], *config.get_param_name(block))
             else:
                 op = pyq_cls(qubit_support[0], config.get_param_name(block)[0])
         else:
-            op = pyq_cls(qubit_support[0])
+            op = pyq_cls(qubit_support[0], pyq_noise)  # type: ignore[attr-defined]
         return [op]
     elif isinstance(block, tuple(two_qubit_gateset)):
         pyq_cls = getattr(pyq, block.name)
