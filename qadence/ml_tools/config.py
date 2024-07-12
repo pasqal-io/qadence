@@ -116,7 +116,6 @@ class TrainConfig:
             )
 
 
-@dataclass
 class MLFlowConfig:
     """
     Configuration for mlflow tracking.
@@ -128,30 +127,30 @@ class MLFlowConfig:
         export MLFLOW_TRACKING_PASSWORD=password
     """
 
-    MLFLOW_TRACKING_URI: str = os.getenv("MLFLOW_TRACKING_URI", "")
-    """The URI of the mlflow tracking server.
-
-    An empty string, or a local file path, prefixed with file:/.
-    Data is stored locally at the provided file (or ./mlruns if empty).
-    """
-
-    MLFLOW_TRACKING_USERNAME: str = os.getenv("MLFLOW_TRACKING_USERNAME", "")
-    """The username for the mlflow tracking server."""
-
-    MLFLOW_TRACKING_PASSWORD: str = os.getenv("MLFLOW_TRACKING_PASSWORD", "")
-    """The password for the mlflow tracking server."""
-
-    EXPERIMENT_NAME: str = os.getenv("MLFLOW_EXPERIMENT", str(uuid4()))
-    """The name of the experiment.
-
-    If None or empty, a new experiment is created with a random UUID.
-    """
-
-    RUN_NAME: str = os.getenv("MLFLOW_RUN_NAME", "test_0")
-    """The name of the run."""
-
-    def __post_init__(self) -> None:
+    def __init__(self) -> None:
         import mlflow
+
+        self.MLFLOW_TRACKING_URI: str = os.getenv("MLFLOW_TRACKING_URI", "")
+        """The URI of the mlflow tracking server.
+
+        An empty string, or a local file path, prefixed with file:/.
+        Data is stored locally at the provided file (or ./mlruns if empty).
+        """
+
+        self.MLFLOW_TRACKING_USERNAME: str = os.getenv("MLFLOW_TRACKING_USERNAME", "")
+        """The username for the mlflow tracking server."""
+
+        self.MLFLOW_TRACKING_PASSWORD: str = os.getenv("MLFLOW_TRACKING_PASSWORD", "")
+        """The password for the mlflow tracking server."""
+
+        self.EXPERIMENT_NAME: str = os.getenv("MLFLOW_EXPERIMENT", str(uuid4()))
+        """The name of the experiment.
+
+        If None or empty, a new experiment is created with a random UUID.
+        """
+
+        self.RUN_NAME: str = os.getenv("MLFLOW_RUN_NAME", "test_0")
+        """The name of the run."""
 
         if self.MLFLOW_TRACKING_USERNAME != "":
             logger.info(
