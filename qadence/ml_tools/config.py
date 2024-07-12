@@ -130,37 +130,36 @@ class MLFlowConfig:
     def __init__(self) -> None:
         import mlflow
 
-        self.MLFLOW_TRACKING_URI: str = os.getenv("MLFLOW_TRACKING_URI", "")
+        self.tracking_uri: str = os.getenv("MLFLOW_TRACKING_URI", "")
         """The URI of the mlflow tracking server.
 
         An empty string, or a local file path, prefixed with file:/.
         Data is stored locally at the provided file (or ./mlruns if empty).
         """
 
-        self.MLFLOW_TRACKING_USERNAME: str = os.getenv("MLFLOW_TRACKING_USERNAME", "")
+        self.tracking_username: str = os.getenv("MLFLOW_TRACKING_USERNAME", "")
         """The username for the mlflow tracking server."""
 
-        self.MLFLOW_TRACKING_PASSWORD: str = os.getenv("MLFLOW_TRACKING_PASSWORD", "")
+        self.tracking_pwd: str = os.getenv("MLFLOW_TRACKING_PASSWORD", "")
         """The password for the mlflow tracking server."""
 
-        self.EXPERIMENT_NAME: str = os.getenv("MLFLOW_EXPERIMENT", str(uuid4()))
+        self.experiment_name: str = os.getenv("MLFLOW_EXPERIMENT", str(uuid4()))
         """The name of the experiment.
 
         If None or empty, a new experiment is created with a random UUID.
         """
 
-        self.RUN_NAME: str = os.getenv("MLFLOW_RUN_NAME", "test_0")
+        self.run_name: str = os.getenv("MLFLOW_RUN_NAME", "test_0")
         """The name of the run."""
 
-        if self.MLFLOW_TRACKING_USERNAME != "":
-            logger.info(
-                f"Intialized mlflow remote logging for user {self.MLFLOW_TRACKING_USERNAME}."
-            )
-        mlflow.set_tracking_uri(self.MLFLOW_TRACKING_URI)
-        # activate existing or create experiment
-        exp_filter_string = f"name = '{self.EXPERIMENT_NAME}'"
-        if not mlflow.search_experiments(filter_string=exp_filter_string):
-            mlflow.create_experiment(name=self.EXPERIMENT_NAME)
+        if self.tracking_username != "":
+            logger.info(f"Intialized mlflow remote logging for user {self.tracking_username}.")
 
-        self.experiment = mlflow.set_experiment(self.EXPERIMENT_NAME)
-        self.run = mlflow.start_run(run_name=self.RUN_NAME, nested=False)
+        mlflow.set_tracking_uri(self.tracking_uri)
+        # activate existing or create experiment
+        exp_filter_string = f"name = '{self.experiment_name}'"
+        if not mlflow.search_experiments(filter_string=exp_filter_string):
+            mlflow.create_experiment(name=self.experiment_name)
+
+        self.experiment = mlflow.set_experiment(self.experiment_name)
+        self.run = mlflow.start_run(run_name=self.run_name, nested=False)
