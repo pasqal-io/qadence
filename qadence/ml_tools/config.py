@@ -99,10 +99,21 @@ class TrainConfig:
             self.validation_criterion = lambda x: False
         if self.hyperparams and self.tracking_tool == ExperimentTrackingTool.TENSORBOARD:
             self._filter_tb_hyperparams()
+        if self.tracking_tool == ExperimentTrackingTool.MLFLOW:
+            self._mlflow_config = MLFlowConfig()
         if self.plotting_functions and self.tracking_tool != ExperimentTrackingTool.MLFLOW:
             logger.warning("In-training plots are only available with mlflow tracking.")
         if not self.plotting_functions and self.tracking_tool == ExperimentTrackingTool.MLFLOW:
             logger.warning("Tracking with mlflow, but no plotting functions provided.")
+
+    @property
+    def mlflow_config(self) -> MLFlowConfig:
+        if self.tracking_tool == ExperimentTrackingTool.MLFLOW:
+            return self._mlflow_config
+        else:
+            raise AttributeError(
+                "mlflow_config is available only for with the mlflow tracking tool."
+            )
 
 
 @dataclass
@@ -130,7 +141,7 @@ class MLFlowConfig:
     MLFLOW_TRACKING_PASSWORD: str = os.getenv("MLFLOW_TRACKING_PASSWORD", "")
     """The password for the mlflow tracking server."""
 
-    EXPERIMENT: str = os.getenv("MLFLOW_EXPERIMENT", str(uuid4()))
+    EXPERIMENT_NAME: str = os.getenv("MLFLOW_EXPERIMENT", str(uuid4()))
     """The name of the experiment.
 
     If None or empty, a new experiment is created with a random UUID.
@@ -148,9 +159,9 @@ class MLFlowConfig:
             )
         mlflow.set_tracking_uri(self.MLFLOW_TRACKING_URI)
         # activate existing or create experiment
-        exp_filter_string = f"name = '{self.EXPERIMENT}'"
+        exp_filter_string = f"name = '{self.EXPERIMENT_NAME}'"
         if not mlflow.search_experiments(filter_string=exp_filter_string):
-            mlflow.create_experiment(name=self.EXPERIMENT)
+            mlflow.create_experiment(name=self.EXPERIMENT_NAME)
 
-        mlflow.set_experiment(self.EXPERIMENT)
-        mlflow.start_run(run_name=self.RUN_NAME, nested=False)
+        self.experiment = mlflow.set_experiment(self.EXPERIMENT_NAME)
+        self.run = mlflow.start_run(run_name=self.RUN_NAME, nested=False)

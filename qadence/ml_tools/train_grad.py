@@ -19,7 +19,7 @@ from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
-from qadence.ml_tools.config import MLFlowConfig, TrainConfig
+from qadence.ml_tools.config import TrainConfig
 from qadence.ml_tools.data import DictDataLoader
 from qadence.ml_tools.optimize_step import optimize_step
 from qadence.ml_tools.printing import (
@@ -138,7 +138,6 @@ def train(
     if config.tracking_tool == ExperimentTrackingTool.TENSORBOARD:
         writer = SummaryWriter(config.folder, purge_step=init_iter)
     else:
-        MLFlowConfig()  # Set up credentials for mlflow tracking
         writer = importlib.import_module("mlflow")
 
         # writer.mlflow.pytorch.autolog(

@@ -18,14 +18,10 @@ from torch.nn import Module
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
-from qadence.ml_tools.config import MLFlowConfig, TrainConfig
+from qadence.ml_tools.config import TrainConfig
 from qadence.ml_tools.data import DictDataLoader
 from qadence.ml_tools.parameters import get_parameters, set_parameters
-from qadence.ml_tools.printing import (
-    plot_tracker,
-    print_metrics,
-    write_tracker,
-)
+from qadence.ml_tools.printing import plot_tracker, print_metrics, write_tracker
 from qadence.ml_tools.saveload import load_checkpoint, write_checkpoint
 from qadence.ml_tools.tensors import promote_to_tensor
 from qadence.types import ExperimentTrackingTool
@@ -79,7 +75,6 @@ def train(
     if config.tracking_tool == ExperimentTrackingTool.TENSORBOARD:
         writer = SummaryWriter(config.folder, purge_step=init_iter)
     else:
-        MLFlowConfig()  # Set up credentials for mlflow tracking
         writer = importlib.import_module("mlflow")
 
         # writer.mlflow.pytorch.autolog(
