@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-from typing import Any, Callable
+from typing import Any, Callable, Sequence, Union
 
+from mlflow.models import infer_signature
 from torch.nn import Module
+from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
+from qadence.ml_tools.data import DictDataLoader
 from qadence.types import ExperimentTrackingTool
 
 
@@ -38,6 +41,15 @@ def plot_tensorboard(
     pass
 
 
+def log_model_tensorboard(
+    writer: SummaryWriter,
+    model: Module,
+    dataloader: Union[None, DataLoader, DictDataLoader],
+) -> None:
+    # TODO: implement me
+    pass
+
+
 def write_mlflow(writer: Any, loss: float | None, metrics: dict, iteration: int) -> None:
     writer.log_metrics({"loss": float(loss)}, step=iteration)  # type: ignore
     writer.log_metrics(metrics, step=iteration)  # logs the single metrics
@@ -58,6 +70,32 @@ def plot_mlflow(
         writer.log_figure(fig, descr)
 
 
+def log_model_mlflow(
+    writer: Any,
+    model: Module,
+    dataloader: Union[None, DataLoader, DictDataLoader],
+) -> None:
+    if dataloader is not None:
+        xs = next(iter(dataloader))
+        if isinstance(xs, Sequence):
+            # ignore labels in supervised learning
+            xs = xs[0]
+        if isinstance(dataloader, DataLoader):
+            preds = model(xs)
+            xs = xs.numpy()
+            preds = preds.detach().numpy()
+        elif isinstance(dataloader, DictDataLoader):
+            preds = model(xs)
+            for key, val in xs.items():
+                xs[key] = val.numpy()
+            for key, val in preds.items():
+                preds[key] = val.detach.numpy()
+        signature = infer_signature(xs, preds)
+    else:
+        signature = None
+    writer.pytorch.log_model(model, artifact_path=writer.get_artifact_uri(), signature=signature)
+
+
 TRACKER_MAPPING = {
     ExperimentTrackingTool.TENSORBOARD: write_tensorboard,
     ExperimentTrackingTool.MLFLOW: write_mlflow,
@@ -71,6 +109,11 @@ LOGGER_MAPPING = {
 PLOTTER_MAPPING = {
     ExperimentTrackingTool.TENSORBOARD: plot_tensorboard,
     ExperimentTrackingTool.MLFLOW: plot_mlflow,
+}
+
+MODEL_LOGGER_MAPPING = {
+    ExperimentTrackingTool.TENSORBOARD: log_model_tensorboard,
+    ExperimentTrackingTool.MLFLOW: log_model_mlflow,
 }
 
 
@@ -90,3 +133,9 @@ def plot_tracker(
     args: Any, tracking_tool: ExperimentTrackingTool = ExperimentTrackingTool.TENSORBOARD
 ) -> None:
     return PLOTTER_MAPPING[tracking_tool](*args)  # type: ignore
+
+
+def log_model_tracker(
+    args: Any, tracking_tool: ExperimentTrackingTool = ExperimentTrackingTool.TENSORBOARD
+) -> None:
+    return MODEL_LOGGER_MAPPING[tracking_tool](*args)  # type: ignore

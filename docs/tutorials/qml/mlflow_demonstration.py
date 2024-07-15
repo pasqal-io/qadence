@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-import os
 import random
 from itertools import count
 
 import numpy as np
 import torch
+
+# from dotenv import load_dotenv
 from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
 from torch.utils.data import DataLoader
@@ -29,6 +30,8 @@ hyperparams = {
 np.random.seed(hyperparams["seed"])
 torch.manual_seed(hyperparams["seed"])
 random.seed(hyperparams["seed"])
+
+# load_dotenv()
 
 
 # in case you want to track remotely
@@ -79,11 +82,10 @@ config = TrainConfig(
     checkpoint_every=1,
     plot_every=2,
     write_every=1,
+    log_model=True,
     tracking_tool=ExperimentTrackingTool.MLFLOW,
     hyperparams=hyperparams,
     plotting_functions=(plot_fn,),
 )
 
 train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
-
-os.system("mlflow ui --port 5000")

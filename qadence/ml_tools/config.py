@@ -42,6 +42,8 @@ class TrainConfig:
 
     NOTE: currently only works with mlflow.
     """
+    log_model: bool = True
+    """Logs a serialised version of the model."""
     folder: Path | None = None
     """Checkpoint/tensorboard logs folder."""
     create_subfolder_per_run: bool = False

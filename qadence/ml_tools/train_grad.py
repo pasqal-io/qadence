@@ -23,6 +23,7 @@ from qadence.ml_tools.config import TrainConfig
 from qadence.ml_tools.data import DictDataLoader
 from qadence.ml_tools.optimize_step import optimize_step
 from qadence.ml_tools.printing import (
+    log_model_tracker,
     log_tracker,
     plot_tracker,
     print_metrics,
@@ -213,6 +214,9 @@ def train(
     if config.hyperparams:
         log_tracker((writer, config.hyperparams, metrics), tracking_tool=config.tracking_tool)
 
+    if config.log_model:
+        log_model_tracker((writer, model, dataloader), tracking_tool=config.tracking_tool)
+
     # Final writing and checkpointing
     if config.folder:
         write_checkpoint(config.folder, model, optimizer, iteration)
@@ -220,7 +224,6 @@ def train(
     if config.tracking_tool == ExperimentTrackingTool.TENSORBOARD:
         writer.close()
     elif config.tracking_tool == ExperimentTrackingTool.MLFLOW:
-        # track some final stuff e.g. images
         writer.end_run()
 
     return model, optimizer

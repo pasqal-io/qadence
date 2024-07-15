@@ -21,7 +21,13 @@ from torch.utils.tensorboard import SummaryWriter
 from qadence.ml_tools.config import TrainConfig
 from qadence.ml_tools.data import DictDataLoader
 from qadence.ml_tools.parameters import get_parameters, set_parameters
-from qadence.ml_tools.printing import plot_tracker, print_metrics, write_tracker
+from qadence.ml_tools.printing import (
+    log_model_tracker,
+    log_tracker,
+    plot_tracker,
+    print_metrics,
+    write_tracker,
+)
 from qadence.ml_tools.saveload import load_checkpoint, write_checkpoint
 from qadence.ml_tools.tensors import promote_to_tensor
 from qadence.types import ExperimentTrackingTool
@@ -129,10 +135,19 @@ def train(
             if iteration >= init_iter + config.max_iter:
                 break
 
-    ## Final writing and stuff
+    # writing hyperparameters
+    if config.hyperparams:
+        log_tracker((writer, config.hyperparams, metrics), tracking_tool=config.tracking_tool)
+
+    if config.log_model:
+        log_model_tracker((writer, model, dataloader), tracking_tool=config.tracking_tool)
+
+    # Final writing and checkpointing
     if config.folder:
         write_checkpoint(config.folder, model, optimizer, iteration)
     write_tracker((writer, loss, metrics, iteration), config.tracking_tool)
+
+    # close tracker
     if config.tracking_tool == ExperimentTrackingTool.TENSORBOARD:
         writer.close()
     elif config.tracking_tool == ExperimentTrackingTool.MLFLOW:
