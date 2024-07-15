@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 from itertools import count
 from pathlib import Path
 
@@ -48,11 +49,29 @@ def test_hyperparams_logging_mlflow(BasicQuantumModel: QuantumModel, tmp_path: P
     experiment_id = mlflow_config.run.info.experiment_id
     run_id = mlflow_config.run.info.run_id
 
-    hyperparams_files = [
-        Path(f"mlruns/{experiment_id}/{run_id}/params/{key}") for key in hyperparams.keys()
-    ]
+    experiment_dir = Path(f"mlruns/{experiment_id}")
+    hyperparams_files = [experiment_dir / run_id / "params" / key for key in hyperparams.keys()]
+
     assert all([os.path.isfile(hf) for hf in hyperparams_files])
 
+    shutil.rmtree(experiment_dir)
 
-def test_plotting() -> None:
+
+def test_hyperparams_logging_tensorboard() -> None:
+    pass
+
+
+def test_model_logging_mlflow() -> None:
+    pass
+
+
+def test_model_logging_tensorboard() -> None:
+    pass
+
+
+def test_plotting_mlflow() -> None:
+    pass
+
+
+def test_plotting_tensorboard() -> None:
     pass

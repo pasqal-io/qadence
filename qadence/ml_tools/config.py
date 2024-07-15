@@ -42,7 +42,7 @@ class TrainConfig:
 
     NOTE: currently only works with mlflow.
     """
-    log_model: bool = True
+    log_model: bool = False
     """Logs a serialised version of the model."""
     folder: Path | None = None
     """Checkpoint/tensorboard logs folder."""
