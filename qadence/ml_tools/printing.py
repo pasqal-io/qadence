@@ -3,6 +3,7 @@ from __future__ import annotations
 from logging import getLogger
 from typing import Any, Callable, Sequence, Union
 
+from matplotlib.figure import Figure
 from mlflow.models import infer_signature
 from torch.nn import Module
 from torch.utils.data import DataLoader
@@ -12,6 +13,8 @@ from qadence.ml_tools.data import DictDataLoader
 from qadence.types import ExperimentTrackingTool
 
 logger = getLogger(__name__)
+
+PlottingFunction = Callable[[Module, int], tuple[str, Figure]]
 
 
 def print_metrics(loss: float | None, metrics: dict, iteration: int) -> None:
@@ -38,10 +41,11 @@ def plot_tensorboard(
     writer: SummaryWriter,
     model: Module,
     iteration: int,
-    plotting_functions: tuple[Callable],
+    plotting_functions: tuple[PlottingFunction],
 ) -> None:
-    # TODO: implement me
-    pass
+    for pf in plotting_functions:
+        descr, fig = pf(model, iteration)
+        writer.add_figure(descr, fig, global_step=iteration)
 
 
 def log_model_tensorboard(
@@ -65,7 +69,7 @@ def plot_mlflow(
     writer: Any,
     model: Module,
     iteration: int,
-    plotting_functions: tuple[Callable],
+    plotting_functions: tuple[PlottingFunction],
 ) -> None:
     for pf in plotting_functions:
         descr, fig = pf(model, iteration)
