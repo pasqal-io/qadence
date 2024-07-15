@@ -151,7 +151,7 @@ class MLFlowConfig:
         If None or empty, a new experiment is created with a random UUID.
         """
 
-        self.run_name: str = os.getenv("MLFLOW_RUN_NAME", "test_0")
+        self.run_name: str = os.getenv("MLFLOW_RUN_NAME", str(uuid4()))
         """The name of the run."""
 
         if self.tracking_username != "":
