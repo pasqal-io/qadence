@@ -221,6 +221,8 @@ def train(
     if config.folder:
         write_checkpoint(config.folder, model, optimizer, iteration)
     write_tracker((writer, loss, metrics, iteration), config.tracking_tool)
+
+    # close tracker
     if config.tracking_tool == ExperimentTrackingTool.TENSORBOARD:
         writer.close()
     elif config.tracking_tool == ExperimentTrackingTool.MLFLOW:

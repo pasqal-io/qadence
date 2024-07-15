@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from logging import getLogger
 from typing import Any, Callable, Sequence, Union
 
 from mlflow.models import infer_signature
@@ -9,6 +10,8 @@ from torch.utils.tensorboard import SummaryWriter
 
 from qadence.ml_tools.data import DictDataLoader
 from qadence.types import ExperimentTrackingTool
+
+logger = getLogger(__name__)
 
 
 def print_metrics(loss: float | None, metrics: dict, iteration: int) -> None:
@@ -46,8 +49,7 @@ def log_model_tensorboard(
     model: Module,
     dataloader: Union[None, DataLoader, DictDataLoader],
 ) -> None:
-    # TODO: implement me
-    pass
+    logger.warning("Model logging is not supported by tensorboard. No model will be logged.")
 
 
 def write_mlflow(writer: Any, loss: float | None, metrics: dict, iteration: int) -> None:
