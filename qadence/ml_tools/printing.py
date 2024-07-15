@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from logging import getLogger
-from typing import Any, Callable, Sequence, Union
+from typing import Any, Callable, Union
 
 from matplotlib.figure import Figure
 from mlflow.models import infer_signature
+from torch import Tensor
 from torch.nn import Module
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
@@ -15,6 +16,7 @@ from qadence.types import ExperimentTrackingTool
 logger = getLogger(__name__)
 
 PlottingFunction = Callable[[Module, int], tuple[str, Figure]]
+InputData = Union[Tensor, dict[str, Tensor]]
 
 
 def print_metrics(loss: float | None, metrics: dict, iteration: int) -> None:
@@ -82,15 +84,13 @@ def log_model_mlflow(
     dataloader: Union[None, DataLoader, DictDataLoader],
 ) -> None:
     if dataloader is not None:
-        xs = next(iter(dataloader))
-        if isinstance(xs, Sequence):
-            # ignore labels in supervised learning
-            xs = xs[0]
+        xs: InputData
+        xs, *_ = next(iter(dataloader))
         preds = model(xs)
-        if isinstance(dataloader, DataLoader):
+        if isinstance(xs, Tensor):
             xs = xs.numpy()
             preds = preds.detach().numpy()
-        elif isinstance(dataloader, DictDataLoader):
+        elif isinstance(xs, dict):
             for key, val in xs.items():
                 xs[key] = val.numpy()
             for key, val in preds.items():
