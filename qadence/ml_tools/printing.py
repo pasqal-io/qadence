@@ -86,12 +86,11 @@ def log_model_mlflow(
         if isinstance(xs, Sequence):
             # ignore labels in supervised learning
             xs = xs[0]
+        preds = model(xs)
         if isinstance(dataloader, DataLoader):
-            preds = model(xs)
             xs = xs.numpy()
             preds = preds.detach().numpy()
         elif isinstance(dataloader, DictDataLoader):
-            preds = model(xs)
             for key, val in xs.items():
                 xs[key] = val.numpy()
             for key, val in preds.items():
@@ -99,7 +98,7 @@ def log_model_mlflow(
         signature = infer_signature(xs, preds)
     else:
         signature = None
-    writer.pytorch.log_model(model, artifact_path=writer.get_artifact_uri(), signature=signature)
+    writer.pytorch.log_model(model, artifact_path="model", signature=signature)
 
 
 TRACKER_MAPPING = {
