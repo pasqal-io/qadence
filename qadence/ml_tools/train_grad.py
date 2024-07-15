@@ -48,7 +48,7 @@ def train(
             the model
         optimizer: The optimizer to use.
         config: `TrainConfig` with additional training options.
-        loss_fn: Loss function returning (loss: float, metrics: dict[str, float])
+        loss_fn: Loss function returning (loss: float, metrics: dict[str, float], ...)
         device: String defining device to train on, pass 'cuda' for GPU.
         optimize_step: Customizable optimization callback which is called at every iteration.=
             The function must have the signature `optimize_step(model,
