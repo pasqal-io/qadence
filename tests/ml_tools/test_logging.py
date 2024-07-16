@@ -52,6 +52,12 @@ def load_mlflow_model(train_config: TrainConfig) -> None:
     mlflow.pytorch.load_model(model_uri=f"runs:/{run_id}/model")
 
 
+def find_mlflow_artifacts_path(run: Run) -> Path:
+    artifact_uri = run.info.artifact_uri
+    parsed_uri = urlparse(artifact_uri)
+    return Path(os.path.abspath(os.path.join(parsed_uri.netloc, parsed_uri.path)))
+
+
 def clean_mlflow_experiment(train_config: TrainConfig) -> None:
     experiment_id = train_config.mlflow_config.run.info.experiment_id
     client = MlflowClient()
@@ -59,9 +65,7 @@ def clean_mlflow_experiment(train_config: TrainConfig) -> None:
     runs = client.search_runs(experiment_id)
 
     def clean_artifacts(run: Run) -> None:
-        artifact_uri = run.info.artifact_uri
-        parsed_uri = urlparse(artifact_uri)
-        local_path = os.path.abspath(os.path.join(parsed_uri.netloc, parsed_uri.path))
+        local_path = find_mlflow_artifacts_path(run)
         shutil.rmtree(local_path)
 
     for run in runs:
@@ -234,16 +238,26 @@ def test_plotting_mlflow(BasicQNN: QNN, tmp_path: Path) -> None:
         ax.plot(x.detach().numpy(), error.detach().numpy())
         return descr, fig
 
+    max_iter = 10
+    plot_every = 2
     config = TrainConfig(
         folder=tmp_path,
-        max_iter=10,
+        max_iter=max_iter,
         checkpoint_every=1,
         write_every=1,
+        plot_every=plot_every,
         tracking_tool=ExperimentTrackingTool.MLFLOW,
         plotting_functions=(plot_model, plot_error),
     )
 
     train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
+
+    all_plot_names = [f"model_prediction_epoch_{i}.png" for i in range(0, max_iter, plot_every)]
+    all_plot_names.extend([f"error_epoch_{i}.png" for i in range(0, max_iter, plot_every)])
+
+    artifact_path = find_mlflow_artifacts_path(config.mlflow_config.run)
+
+    assert all([os.path.isfile(artifact_path / pn) for pn in all_plot_names])
 
     clean_mlflow_experiment(config)
 
