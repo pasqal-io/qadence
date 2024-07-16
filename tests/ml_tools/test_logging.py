@@ -4,10 +4,13 @@ import os
 import shutil
 from itertools import count
 from pathlib import Path
+from typing import Callable
 
 import mlflow
 import pytest
 import torch
+from torch.nn import Module
+from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 
 from qadence.ml_tools import TrainConfig, train_with_grad
@@ -21,6 +24,21 @@ def dataloader(batch_size: int = 25) -> DataLoader:
     x = torch.linspace(0, 1, batch_size).reshape(-1, 1)
     y = torch.cos(x)
     return to_dataloader(x, y, batch_size=batch_size, infinite=True)
+
+
+def setup(model: Module) -> tuple[Callable, Optimizer]:
+    cnt = count()
+    criterion = torch.nn.MSELoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
+    inputs = rand_featureparameters(model, 1)
+
+    def loss_fn(model: QuantumModel, data: torch.Tensor) -> tuple[torch.Tensor, dict]:
+        next(cnt)
+        out = model.expectation(inputs)
+        loss = criterion(out, torch.rand(1))
+        return loss, {}
+
+    return loss_fn, optimizer
 
 
 def load_mlflow_model(train_config: TrainConfig) -> None:
@@ -37,16 +55,10 @@ def clean_mlflow_experiment_dir(train_config: TrainConfig) -> None:
 
 def test_hyperparams_logging_mlflow(BasicQuantumModel: QuantumModel, tmp_path: Path) -> None:
     model = BasicQuantumModel
-    cnt = count()
-    criterion = torch.nn.MSELoss()
-    hyperparams = {"max_iter": int(10), "lr": 0.1}
-    optimizer = torch.optim.Adam(model.parameters(), lr=hyperparams["lr"])
 
-    def loss_fn(model: QuantumModel, data: torch.Tensor) -> tuple[torch.Tensor, dict]:
-        next(cnt)
-        out = model.expectation({})
-        loss = criterion(out, torch.rand(1))
-        return loss, {}
+    loss_fn, optimizer = setup(model)
+
+    hyperparams = {"max_iter": int(10), "lr": 0.1}
 
     config = TrainConfig(
         folder=tmp_path,
@@ -73,16 +85,10 @@ def test_hyperparams_logging_mlflow(BasicQuantumModel: QuantumModel, tmp_path: P
 
 def test_hyperparams_logging_tensorboard(BasicQuantumModel: QuantumModel, tmp_path: Path) -> None:
     model = BasicQuantumModel
-    cnt = count()
-    criterion = torch.nn.MSELoss()
-    hyperparams = {"max_iter": int(10), "lr": 0.1}
-    optimizer = torch.optim.Adam(model.parameters(), lr=hyperparams["lr"])
 
-    def loss_fn(model: QuantumModel, data: torch.Tensor) -> tuple[torch.Tensor, dict]:
-        next(cnt)
-        out = model.expectation({})
-        loss = criterion(out, torch.rand(1))
-        return loss, {}
+    loss_fn, optimizer = setup(model)
+
+    hyperparams = {"max_iter": int(10), "lr": 0.1}
 
     config = TrainConfig(
         folder=tmp_path,
@@ -98,15 +104,8 @@ def test_hyperparams_logging_tensorboard(BasicQuantumModel: QuantumModel, tmp_pa
 
 def test_model_logging_mlflow_basicQM(BasicQuantumModel: QuantumModel, tmp_path: Path) -> None:
     model = BasicQuantumModel
-    cnt = count()
-    criterion = torch.nn.MSELoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
 
-    def loss_fn(model: QuantumModel, data: torch.Tensor) -> tuple[torch.Tensor, dict]:
-        next(cnt)
-        out = model.expectation({})
-        loss = criterion(out, torch.rand(1))
-        return loss, {}
+    loss_fn, optimizer = setup(model)
 
     config = TrainConfig(
         folder=tmp_path,
@@ -127,16 +126,30 @@ def test_model_logging_mlflow_basicQM(BasicQuantumModel: QuantumModel, tmp_path:
 def test_model_logging_mlflow_basicQNN(BasicQNN: QNN, tmp_path: Path) -> None:
     data = dataloader()
     model = BasicQNN
-    cnt = count()
-    criterion = torch.nn.MSELoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
-    inputs = rand_featureparameters(model, 1)
 
-    def loss_fn(model: QuantumModel, data: torch.Tensor) -> tuple[torch.Tensor, dict]:
-        next(cnt)
-        out = model.expectation(inputs)
-        loss = criterion(out, torch.rand(1))
-        return loss, {}
+    loss_fn, optimizer = setup(model)
+
+    config = TrainConfig(
+        folder=tmp_path,
+        max_iter=10,  # type: ignore
+        checkpoint_every=1,
+        write_every=1,
+        log_model=True,
+        tracking_tool=ExperimentTrackingTool.MLFLOW,
+    )
+
+    train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
+
+    load_mlflow_model(config)
+
+    clean_mlflow_experiment_dir(config)
+
+
+def test_model_logging_mlflow_basicAdjQNN(BasicAdjointQNN: QNN, tmp_path: Path) -> None:
+    data = dataloader()
+    model = BasicAdjointQNN
+
+    loss_fn, optimizer = setup(model)
 
     config = TrainConfig(
         folder=tmp_path,
@@ -158,15 +171,8 @@ def test_model_logging_tensorboard(
     BasicQuantumModel: QuantumModel, tmp_path: Path, caplog: pytest.LogCaptureFixture
 ) -> None:
     model = BasicQuantumModel
-    cnt = count()
-    criterion = torch.nn.MSELoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
 
-    def loss_fn(model: QuantumModel, data: torch.Tensor) -> tuple[torch.Tensor, dict]:
-        next(cnt)
-        out = model.expectation({})
-        loss = criterion(out, torch.rand(1))
-        return loss, {}
+    loss_fn, optimizer = setup(model)
 
     config = TrainConfig(
         folder=tmp_path,
@@ -182,7 +188,7 @@ def test_model_logging_tensorboard(
     assert "Model logging is not supported by tensorboard. No model will be logged." in caplog.text
 
 
-def test_plotting_mlflow() -> None:
+def test_plotting_mlflow(BasicQNN: QNN, tmp_path: Path) -> None:
     pass
 
 
