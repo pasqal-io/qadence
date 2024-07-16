@@ -6,8 +6,10 @@ from typing import Callable, Iterable, Tuple, Union
 
 import numpy as np
 import sympy
+from matplotlib.figure import Figure
 from numpy.typing import ArrayLike
 from torch import Tensor, pi
+from torch.nn import Module
 
 TNumber = Union[int, float, complex, np.int64, np.float64]
 """Union of python and numpy numeric types."""
@@ -408,3 +410,6 @@ class ExperimentTrackingTool(StrEnum):
     """Use the tensorboard experiment tracker."""
     MLFLOW = "mlflow"
     """Use the ml-flow experiment tracker."""
+
+
+LoggablePlotFunction = Callable[[Module, int], tuple[str, Figure]]

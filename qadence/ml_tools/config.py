@@ -10,7 +10,7 @@ from uuid import uuid4
 
 from torch import Tensor
 
-from qadence.types import ExperimentTrackingTool
+from qadence.types import ExperimentTrackingTool, LoggablePlotFunction
 
 logger = getLogger(__name__)
 
@@ -65,7 +65,7 @@ class TrainConfig:
     """The tracking tool of choice."""
     hyperparams: dict = field(default_factory=dict)
     """Hyperparameters to track."""
-    plotting_functions: tuple[Callable] = field(default_factory=tuple)  # type: ignore
+    plotting_functions: tuple[LoggablePlotFunction, ...] = field(default_factory=tuple)  # type: ignore
     """Functions for in-train plotting."""
 
     # tensorboard only allows for certain types as hyperparameters
