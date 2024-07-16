@@ -59,7 +59,7 @@ use `train_with_grad` as example but the code can be used directly with the grad
 As every other training routine commonly used in Machine Learning, it requires
 `model`, `data` and an `optimizer` as input arguments.
 However, in addition, it requires a `loss_fn` and a `TrainConfig`.
-A `loss_fn` is required to be a function which expects both a model and data and returns a tuple of (loss, metrics: `<dict>`), where `metrics` is a dict of scalars which can be customized too.
+A `loss_fn` is required to be a function which expects both a model and data and returns a tuple of (loss, metrics: `<dict>`, ...), where `metrics` is a dict of scalars which can be customized too. It can optionally also return additional values which are utilised by the corresponding user-provided `optimize_step` function inside `train_with_grad`.
 
 ```python exec="on" source="material-block"
 import torch

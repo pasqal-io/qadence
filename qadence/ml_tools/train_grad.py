@@ -48,7 +48,7 @@ def train(
             the model
         optimizer: The optimizer to use.
         config: `TrainConfig` with additional training options.
-        loss_fn: Loss function returning (loss: float, metrics: dict[str, float])
+        loss_fn: Loss function returning (loss: float, metrics: dict[str, float], ...)
         device: String defining device to train on, pass 'cuda' for GPU.
         optimize_step: Customizable optimization callback which is called at every iteration.=
             The function must have the signature `optimize_step(model,
@@ -224,7 +224,7 @@ def train(
                     if iteration % config.val_every == 0:
                         xs = next(dl_iter_val)
                         xs_to_device = data_to_device(xs, device=device, dtype=data_dtype)
-                        val_loss, _ = loss_fn(model, xs_to_device)
+                        val_loss, *_ = loss_fn(model, xs_to_device)
                         if config.validation_criterion(val_loss, best_val_loss, config.val_epsilon):  # type: ignore[misc]
                             best_val_loss = val_loss
                             if config.folder and config.checkpoint_best_only:
@@ -245,7 +245,7 @@ def train(
         try:
             xs = next(dl_iter) if dataloader is not None else None  # type: ignore[arg-type]
             xs_to_device = data_to_device(xs, device=device, dtype=data_dtype)
-            loss, metrics = loss_fn(model, xs_to_device)
+            loss, metrics, *_ = loss_fn(model, xs_to_device)
             if iteration % config.print_every == 0 and config.verbose:
                 print_metrics(loss, metrics, iteration)
 
