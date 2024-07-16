@@ -23,6 +23,18 @@ def dataloader(batch_size: int = 25) -> DataLoader:
     return to_dataloader(x, y, batch_size=batch_size, infinite=True)
 
 
+def load_mlflow_model(train_config: TrainConfig) -> None:
+    run_id = train_config.mlflow_config.run.info.run_id
+
+    mlflow.pytorch.load_model(model_uri=f"runs:/{run_id}/model")
+
+
+def clean_mlflow_experiment_dir(train_config: TrainConfig) -> None:
+    experiment_id = train_config.mlflow_config.run.info.experiment_id
+    experiment_dir = Path(f"mlruns/{experiment_id}")
+    shutil.rmtree(experiment_dir)
+
+
 def test_hyperparams_logging_mlflow(BasicQuantumModel: QuantumModel, tmp_path: Path) -> None:
     model = BasicQuantumModel
     cnt = count()
@@ -56,7 +68,7 @@ def test_hyperparams_logging_mlflow(BasicQuantumModel: QuantumModel, tmp_path: P
 
     assert all([os.path.isfile(hf) for hf in hyperparams_files])
 
-    shutil.rmtree(experiment_dir)
+    clean_mlflow_experiment_dir(config)
 
 
 def test_hyperparams_logging_tensorboard(BasicQuantumModel: QuantumModel, tmp_path: Path) -> None:
@@ -107,13 +119,9 @@ def test_model_logging_mlflow_basicQM(BasicQuantumModel: QuantumModel, tmp_path:
 
     train_with_grad(model, None, optimizer, config, loss_fn=loss_fn)
 
-    experiment_id = config.mlflow_config.run.info.experiment_id
-    run_id = config.mlflow_config.run.info.run_id
+    load_mlflow_model(config)
 
-    loaded_model = mlflow.pytorch.load_model(model_uri=f"runs:/{run_id}/model")
-
-    experiment_dir = Path(f"mlruns/{experiment_id}")
-    shutil.rmtree(experiment_dir)
+    clean_mlflow_experiment_dir(config)
 
 
 def test_model_logging_mlflow_basicQNN(BasicQNN: QNN, tmp_path: Path) -> None:
@@ -141,13 +149,9 @@ def test_model_logging_mlflow_basicQNN(BasicQNN: QNN, tmp_path: Path) -> None:
 
     train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
 
-    experiment_id = config.mlflow_config.run.info.experiment_id
-    run_id = config.mlflow_config.run.info.run_id
+    load_mlflow_model(config)
 
-    loaded_model = mlflow.pytorch.load_model(model_uri=f"runs:/{run_id}/model")
-
-    experiment_dir = Path(f"mlruns/{experiment_id}")
-    shutil.rmtree(experiment_dir)
+    clean_mlflow_experiment_dir(config)
 
 
 def test_model_logging_tensorboard(
