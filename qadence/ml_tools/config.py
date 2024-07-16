@@ -125,8 +125,8 @@ class MLFlowConfig:
     Example:
 
         export MLFLOW_TRACKING_URI=tracking_uri
-        export MLFLOW_TRACKING_USERNAME=username
-        export MLFLOW_TRACKING_PASSWORD=password
+        export MLFLOW_EXPERIMENT=experiment_name
+        export MLFLOW_RUN_NAME=run_name
     """
 
     def __init__(self) -> None:
@@ -139,12 +139,6 @@ class MLFlowConfig:
         Data is stored locally at the provided file (or ./mlruns if empty).
         """
 
-        self.tracking_username: str = os.getenv("MLFLOW_TRACKING_USERNAME", "")
-        """The username for the mlflow tracking server."""
-
-        self.tracking_pwd: str = os.getenv("MLFLOW_TRACKING_PASSWORD", "")
-        """The password for the mlflow tracking server."""
-
         self.experiment_name: str = os.getenv("MLFLOW_EXPERIMENT", str(uuid4()))
         """The name of the experiment.
 
@@ -154,10 +148,8 @@ class MLFlowConfig:
         self.run_name: str = os.getenv("MLFLOW_RUN_NAME", str(uuid4()))
         """The name of the run."""
 
-        if self.tracking_username != "":
-            logger.info(f"Intialized mlflow remote logging for user {self.tracking_username}.")
-
         mlflow.set_tracking_uri(self.tracking_uri)
+
         # activate existing or create experiment
         exp_filter_string = f"name = '{self.experiment_name}'"
         if not mlflow.search_experiments(filter_string=exp_filter_string):
