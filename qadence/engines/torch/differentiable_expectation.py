@@ -151,8 +151,9 @@ class DifferentiableExpectation:
         return (
             AdjointExpectation.apply(
                 self.circuit.native,
-                self.observable[0].native,  # Currently, adjoint only supports a single observable.
                 self.state,
+                self.observable[0].native,  # Currently, adjoint only supports a single observable.
+                None,
                 self.param_values.keys(),
                 *self.param_values.values(),
             )

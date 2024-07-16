@@ -8,6 +8,7 @@ import pyqtorch as pyq
 import sympy
 import torch
 from pyqtorch.apply import apply_operator
+from pyqtorch.embed import Embedding
 from pyqtorch.matrices import _dagger
 from pyqtorch.time_dependent.sesolve import sesolve
 from pyqtorch.utils import is_diag
@@ -24,7 +25,7 @@ from torch import (
 )
 from torch import device as torch_device
 from torch import dtype as torch_dtype
-from torch.nn import Module
+from torch.nn import Module, ParameterDict
 
 from qadence.backends.utils import (
     finitediff,
@@ -313,7 +314,8 @@ class PyQHamiltonianEvolution(Module):
     def forward(
         self,
         state: Tensor,
-        values: dict[str, Tensor],
+        values: dict[str, Tensor] | ParameterDict = dict(),
+        embedding: Embedding | None = None,
     ) -> Tensor:
         if getattr(self.block.generator, "is_time_dependent", False):  # type: ignore [union-attr]
 
