@@ -150,11 +150,11 @@ class DifferentiableExpectation:
         batch_size = max(values_batch_size, self.state.size(-1))
         return (
             AdjointExpectation.apply(
-                self.circuit.native,
-                self.observable[0].native,  # Currently, adjoint only supports a single observable.
-                self.state,
-                self.param_values.keys(),
-                *self.param_values.values(),
+                circuit=self.circuit.native,
+                state=self.state,
+                observable=self.observable[0].native,  # Currently, adjoint only supports a single observable.
+                param_names=self.param_values.keys(),
+                param_values=*self.param_values.values(),
             )
             .unsqueeze(1)
             .reshape(batch_size, 1)
