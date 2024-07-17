@@ -12,6 +12,7 @@ from torch import Tensor
 from qadence.backend import Backend as BackendInterface
 from qadence.backend import ConvertedCircuit, ConvertedObservable
 from qadence.backends.utils import (
+    infer_batchsize,
     pyqify,
     to_list_of_dicts,
     unpyqify,
@@ -31,10 +32,9 @@ from qadence.transpile import (
     transpile,
 )
 from qadence.types import BackendName, Endianness, Engine
-from qadence.utils import infer_batchsize, int_to_basis
 
 from .config import Configuration, default_passes
-from .convert_ops import convert_block, convert_observable
+from .convert_ops import convert_block
 
 logger = getLogger(__name__)
 
@@ -77,8 +77,13 @@ class Backend(BackendInterface):
             scale_primitive_blocks_only,
         ]
         block = transpile(*transpilations)(observable)  # type: ignore[call-overload]
-
-        (native,) = convert_observable(block, n_qubits=n_qubits, config=self.config)
+        operations = convert_block(block, n_qubits, self.config)
+        obs_cls = (
+            pyq.DiagonalObservable
+            if block._is_diag_pauli and not block.is_parametric
+            else pyq.Observable
+        )
+        native = obs_cls(n_qubits=n_qubits, operations=operations)
         return ConvertedObservable(native=native, abstract=block, original=observable)
 
     def run(
@@ -99,7 +104,7 @@ class Backend(BackendInterface):
             validate_state(state, n_qubits)
             # pyqtorch expects input shape [2] * n_qubits + [batch_size]
             state = pyqify(state, n_qubits) if pyqify_state else state
-        state = circuit.native.run(state, param_values)
+        state = circuit.native.run(state=state, values=param_values)
         state = unpyqify(state) if unpyqify_state else state
         state = invert_endianness(state) if endianness != self.native_endianness else state
         return state
@@ -160,7 +165,6 @@ class Backend(BackendInterface):
                 "Looping expectation does not make sense with batched initial state. "
                 "Define your initial state with `batch_size=1`"
             )
-
         list_expvals = []
         observables = observable if isinstance(observable, list) else [observable]
         for vals in to_list_of_dicts(param_values):
@@ -208,46 +212,26 @@ class Backend(BackendInterface):
         noise: Noise | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
+        pyqify_state: bool = True,
     ) -> list[Counter]:
-        if n_shots < 1:
-            raise ValueError("You can only call sample with n_shots>0.")
-
-        def _sample(_probs: Tensor, n_shots: int, endianness: Endianness, n_qubits: int) -> Counter:
-            return Counter(
-                {
-                    int_to_basis(k=k, n_qubits=n_qubits, endianness=endianness): count.item()
-                    for k, count in enumerate(
-                        torch.bincount(
-                            torch.multinomial(input=_probs, num_samples=n_shots, replacement=True)
-                        )
-                    )
-                    if count > 0
-                }
+        if state is None:
+            state = circuit.native.init_state(batch_size=infer_batchsize(param_values))
+        elif state is not None and pyqify_state:
+            n_qubits = circuit.abstract.n_qubits
+            state = pyqify(state, n_qubits) if pyqify_state else state
+        samples: list[Counter] = circuit.native.sample(
+            state=state, values=param_values, n_shots=n_shots
+        )
+        samples = invert_endianness(samples) if endianness != Endianness.BIG else samples
+        if noise is not None:
+            samples = apply_noise(noise=noise, samples=samples)
+        if mitigation is not None:
+            logger.warning(
+                "Mitigation protocol is deprecated. Use qadence-protocols instead.",
             )
-
-        with torch.no_grad():
-            wf = self.run(circuit=circuit, param_values=param_values, state=state)
-            probs = torch.abs(torch.pow(wf, 2))
-            samples = list(
-                map(
-                    lambda _probs: _sample(
-                        _probs=_probs,
-                        n_shots=n_shots,
-                        endianness=endianness,
-                        n_qubits=circuit.abstract.n_qubits,
-                    ),
-                    probs,
-                )
-            )
-            if noise is not None:
-                samples = apply_noise(noise=noise, samples=samples)
-            if mitigation is not None:
-                logger.warning(
-                    "Mitigation protocol is deprecated. Use qadence-protocols instead.",
-                )
-                assert noise
-                samples = apply_mitigation(noise=noise, mitigation=mitigation, samples=samples)
-            return samples
+            assert noise
+            samples = apply_mitigation(noise=noise, mitigation=mitigation, samples=samples)
+        return samples
 
     def assign_parameters(self, circuit: ConvertedCircuit, param_values: dict[str, Tensor]) -> Any:
         raise NotImplementedError

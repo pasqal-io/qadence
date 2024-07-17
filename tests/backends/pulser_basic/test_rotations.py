@@ -5,10 +5,10 @@ from collections import Counter
 import pytest
 from metrics import JS_ACCEPTANCE
 
+from qadence import QuantumModel
 from qadence.blocks import AbstractBlock, chain
 from qadence.circuit import QuantumCircuit
 from qadence.divergences import js_divergence
-from qadence.models import QuantumModel
 from qadence.operations import RX, RY, AnalogRX, AnalogRY
 from qadence.register import Register
 from qadence.types import PI, BackendName, DiffMode

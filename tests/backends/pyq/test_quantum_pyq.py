@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import itertools
 import random
 from collections import Counter
-from itertools import product
 from typing import Callable
 
 import numpy as np
@@ -16,6 +16,7 @@ from pyqtorch.circuit import QuantumCircuit as PyQQuantumCircuit
 from sympy import acos
 from torch import Tensor
 
+from qadence import QuantumModel
 from qadence.backends import backend_factory
 from qadence.backends.pyqtorch.backend import Backend
 from qadence.backends.pyqtorch.config import Configuration as PyqConfig
@@ -32,7 +33,6 @@ from qadence.constructors import (
     total_magnetization,
     zz_hamiltonian,
 )
-from qadence.models import QuantumModel
 from qadence.operations import (
     CNOT,
     CPHASE,
@@ -58,6 +58,7 @@ from qadence.parameters import FeatureParameter, Parameter
 from qadence.states import random_state, uniform_state, zero_state
 from qadence.transpile import set_trainable
 from qadence.types import PI, BackendName, DiffMode
+from qadence.utils import P0, P1
 
 
 def custom_obs() -> AbstractBlock:
@@ -113,7 +114,7 @@ def test_list_observables(observable: AbstractBlock, result: Tensor) -> None:
     assert torch.allclose(expval, result)
 
 
-@pytest.mark.parametrize("n_obs, loop_expectation", product([1, 2, 3], [True, False]))
+@pytest.mark.parametrize("n_obs, loop_expectation", itertools.product([1, 2, 3], [True, False]))
 def test_list_observables_with_batches(n_obs: int, loop_expectation: bool) -> None:
     n_qubits = 4
     x = FeatureParameter("x")
@@ -729,9 +730,7 @@ def test_scaled_blocks() -> None:
 
 
 def test_kron_chain_add_circuit() -> None:
-    p0 = I(0) * 0.5 + Z(0) * 0.5
-    p1 = I(0) * 0.5 + Z(0) * (-0.5)
-    cnot = kron(p0, I(1)) + kron(p1, X(1))
+    cnot = kron(P0(0), I(1)) + kron(P1(0), X(1))
 
     backend = backend_factory(backend=BackendName.PYQTORCH, diff_mode=None)
 
@@ -839,7 +838,6 @@ def test_move_to_dtype(
     state = state_fn(circuit.n_qubits)
     state = state.to(dtype=dtype)
     assert state.dtype == dtype
-    # breakpoint()
     wf = qm.run(inputs, state=state)
     assert wf.dtype == dtype
     expval = qm.expectation(inputs, state=state)

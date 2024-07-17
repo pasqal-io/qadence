@@ -8,6 +8,7 @@ import numpy as np
 import sympy
 from matplotlib.figure import Figure
 from numpy.typing import ArrayLike
+from pyqtorch.utils import SolverType
 from torch import Tensor, pi
 from torch.nn import Module
 
@@ -29,6 +30,7 @@ PI = pi
 
 # Modules to be automatically added to the qadence namespace
 __all__ = [
+    "AnsatzType",
     "Endianness",
     "Strategy",
     "ResultType",
@@ -36,6 +38,7 @@ __all__ = [
     "BackendName",
     "StateGeneratorType",
     "LTSOrder",
+    "MultivariateStrategy",
     "ReuploadScaling",
     "BasisSet",
     "TensorType",
@@ -47,6 +50,7 @@ __all__ = [
     "AlgoHEvo",
     "SerializationFormat",
     "PI",
+    "SolverType",
 ]  # type: ignore
 
 
@@ -72,6 +76,8 @@ class Strategy(StrEnum):
     """Use the step-wise digital-analog QC paradigm."""
     BDAQC = "bDAQC"
     """Use the banged digital-analog QC paradigm."""
+    RYDBERG = "Rydberg"
+    """Use the Rydberg QC paradigm."""
 
 
 class Endianness(StrEnum):
@@ -145,6 +151,24 @@ class ReuploadScaling(StrEnum):
     """Linearly increasing scaling."""
     EXP = "Exponential"
     """Exponentially increasing scaling."""
+
+
+class MultivariateStrategy(StrEnum):
+    """Multivariate strategy for feature maps."""
+
+    PARALLEL = "parallel"
+    """Parallel strategy."""
+    SERIES = "SERIES"
+    """Serial strategy."""
+
+
+class AnsatzType(StrEnum):
+    """Ansatz types for variational circuits."""
+
+    HEA = "hea"
+    """Hardware-efficient ansatz."""
+    IIA = "iia"
+    """Identity-Initialised Ansatz."""
 
 
 class _DiffMode(StrEnum):
@@ -403,6 +427,26 @@ class ReadOutOptimization(StrEnum):
 
 ParamDictType = dict[str, ArrayLike]
 DifferentiableExpression = Callable[..., ArrayLike]
+
+
+class InputDiffMode(StrEnum):
+    """Derivative modes w.r.t inputs of UFAs."""
+
+    AD = "ad"
+    """Reverse automatic differentiation."""
+    FD = "fd"
+    """Central finite differencing."""
+
+
+class ObservableTransform:
+    """Observable transformation type."""
+
+    SCALE = "scale"
+    """Use the given values as scale and shift."""
+    RANGE = "range"
+    """Use the given values as min and max."""
+    NONE = "none"
+    """No transformation."""
 
 
 class ExperimentTrackingTool(StrEnum):

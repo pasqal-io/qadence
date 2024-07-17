@@ -14,7 +14,7 @@ from torch.optim import Optimizer
 logger = getLogger(__name__)
 
 
-def get_latest_checkpoint_name(folder: Path, type: str) -> Path:
+def get_latest_checkpoint_name(folder: Path, type: str, device: str | torch.device = "cpu") -> Path:
     file = Path("")
     files = [f for f in os.listdir(folder) if f.endswith(".pt") and type in f]
     if len(files) == 0:
@@ -22,12 +22,18 @@ def get_latest_checkpoint_name(folder: Path, type: str) -> Path:
     if len(files) == 1:
         file = Path(files[0])
     else:
-        pattern = re.compile(".*_(\d+).pt$")
+        device = str(device).split(":")[0]
+        pattern = re.compile(f".*_(\d+)_device_{device}.pt$")
+        legacy_pattern = re.compile(".*_(\d+).pt$")
         max_index = -1
         for f in files:
+            legacy_match = legacy_pattern.search(f)
             match = pattern.search(f)
-            if match:
-                index_str = match.group(1).replace("_", "")
+            if match or legacy_match:
+                if legacy_match:
+                    logger.warn(f"Found checkpoint(s) in legacy format: {f}.")
+                    match = legacy_match
+                index_str = match.group(1).replace("_", "")  # type: ignore [union-attr]
                 index = int(index_str)
                 if index > max_index:
                     max_index = index
@@ -41,39 +47,56 @@ def load_checkpoint(
     optimizer: Optimizer | NGOptimizer,
     model_ckpt_name: str | Path = "",
     opt_ckpt_name: str | Path = "",
+    device: str | torch.device = "cpu",
 ) -> tuple[Module, Optimizer | NGOptimizer, int]:
     if isinstance(folder, str):
         folder = Path(folder)
     if not folder.exists():
         folder.mkdir(parents=True)
         return model, optimizer, 0
-    model, iter = load_model(folder, model, model_ckpt_name)
-    optimizer = load_optimizer(folder, optimizer, opt_ckpt_name)
+    model, iter = load_model(folder, model, model_ckpt_name, device)
+    optimizer = load_optimizer(folder, optimizer, opt_ckpt_name, device)
     return model, optimizer, iter
 
 
 def write_checkpoint(
-    folder: Path, model: Module, optimizer: Optimizer | NGOptimizer, iteration: int
+    folder: Path,
+    model: Module,
+    optimizer: Optimizer | NGOptimizer,
+    iteration: int | str,
 ) -> None:
-    from qadence.ml_tools.models import TransformedModule
-    from qadence.models import QNN, QuantumModel
+    from qadence import QuantumModel
+
+    from .models import QNN
 
     device = None
     try:
         # We extract the device from the pyqtorch native circuit
         device = str(model.device).split(":")[0]  # in case of using several CUDA devices
-    except Exception:
-        pass
+    except Exception as e:
+        msg = (
+            f"Unable to identify in which device the QuantumModel is stored due to {e}."
+            "Setting device to None"
+        )
+        logger.warning(msg)
+
+    iteration_substring = f"{iteration:03n}" if isinstance(iteration, int) else iteration
     model_checkpoint_name: str = (
-        f"model_{type(model).__name__}_ckpt_" + f"{iteration:03n}" + f"_device_{device}" + ".pt"
+        f"model_{type(model).__name__}_ckpt_"
+        + f"{iteration_substring}"
+        + f"_device_{device}"
+        + ".pt"
     )
     opt_checkpoint_name: str = (
-        f"opt_{type(optimizer).__name__}_ckpt_" + f"{iteration:03n}" + f"_device_{device}" + ".pt"
+        f"opt_{type(optimizer).__name__}_ckpt_"
+        + f"{iteration_substring}"
+        + f"_device_{device}"
+        + ".pt"
     )
     try:
         d = (
             model._to_dict(save_params=True)
-            if isinstance(model, (QNN, QuantumModel)) or isinstance(model, TransformedModule)
+            if isinstance(model, (QNN, QuantumModel))
             else model.state_dict()
         )
         torch.save((iteration, d), folder / model_checkpoint_name)
@@ -93,29 +116,34 @@ def write_checkpoint(
 
 
 def load_model(
-    folder: Path, model: Module, model_ckpt_name: str | Path = "", *args: Any, **kwargs: Any
+    folder: Path,
+    model: Module,
+    model_ckpt_name: str | Path = "",
+    device: str | torch.device = "cpu",
+    *args: Any,
+    **kwargs: Any,
 ) -> tuple[Module, int]:
-    from qadence.ml_tools.models import TransformedModule
-    from qadence.models import QNN, QuantumModel
+    from qadence import QNN, QuantumModel
 
     iteration = 0
     if model_ckpt_name == "":
-        model_ckpt_name = get_latest_checkpoint_name(folder, "model")
+        model_ckpt_name = get_latest_checkpoint_name(folder, "model", device)
 
     try:
         iteration, model_dict = torch.load(folder / model_ckpt_name, *args, **kwargs)
-        if isinstance(model, (QuantumModel, QNN, TransformedModule)):
+        if isinstance(model, (QuantumModel, QNN)):
             model._from_dict(model_dict, as_torch=True)
         elif isinstance(model, Module):
             model.load_state_dict(model_dict, strict=True)
+        # Load model to a specific gpu device if specified
+        pattern = re.compile("cuda:\d+$")
+        if pattern.search(str(device)):
+            model.to(device)
 
     except Exception as e:
         msg = f"Unable to load state dict due to {e}.\
                No corresponding pre-trained model found. Returning the un-trained model."
-        import warnings
-
-        warnings.warn(msg, UserWarning)
-        logger.warn(msg)
+        logger.warning(msg)
     return model, iteration
 
 
@@ -123,9 +151,10 @@ def load_optimizer(
     folder: Path,
     optimizer: Optimizer | NGOptimizer,
     opt_ckpt_name: str | Path = "",
+    device: str | torch.device = "cpu",
 ) -> Optimizer | NGOptimizer:
     if opt_ckpt_name == "":
-        opt_ckpt_name = get_latest_checkpoint_name(folder, "opt")
+        opt_ckpt_name = get_latest_checkpoint_name(folder, "opt", device)
     if os.path.isfile(folder / opt_ckpt_name):
         if isinstance(optimizer, Optimizer):
             (_, OptType, optimizer_state) = torch.load(folder / opt_ckpt_name)

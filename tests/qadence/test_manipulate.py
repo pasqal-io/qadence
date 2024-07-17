@@ -4,11 +4,11 @@ import pytest
 import torch
 from openfermion import QubitOperator
 
+from qadence import QuantumModel
 from qadence.blocks import AbstractBlock, PutBlock, add, chain, kron
 from qadence.blocks.manipulate import from_openfermion, to_openfermion
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import total_magnetization
-from qadence.models import QuantumModel
 from qadence.operations import CNOT, CRX, RX, I, X, Y, Z
 from qadence.parameters import FeatureParameter
 from qadence.transpile import invert_endianness, scale_primitive_blocks_only, validate

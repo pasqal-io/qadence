@@ -20,7 +20,6 @@ from qadence.parameters import (
     stringify,
 )
 from qadence.types import TParameter
-from qadence.utils import format_parameter
 
 
 class PrimitiveBlock(AbstractBlock):
@@ -28,7 +27,7 @@ class PrimitiveBlock(AbstractBlock):
     Primitive blocks represent elementary unitary operations.
 
     Examples are single/multi-qubit gates or Hamiltonian evolution.
-    See [`qadence.operations`](/qadence/operations.md) for a full list of
+    See [`qadence.operations`](operations.md) for a full list of
     primitive blocks.
     """
 
@@ -258,6 +257,8 @@ class ScaleBlock(ParametricBlock):
 
     @property
     def _block_title(self) -> str:
+        from qadence.utils import format_parameter
+
         (scale,) = self.parameters.expressions()
         s = rf"\[mul: {format_parameter(scale)}] "
         return s

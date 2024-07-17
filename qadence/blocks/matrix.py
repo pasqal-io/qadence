@@ -22,12 +22,12 @@ class MatrixBlock(PrimitiveBlock):
 
     Examples:
     ```python exec="on" source="material-block" result="json"
-        import torch
+    import torch
 
     from qadence.circuit import QuantumCircuit
     from qadence.types import BackendName, DiffMode
     from qadence.blocks.matrix import MatrixBlock
-    from qadence.models import QuantumModel
+    from qadence.model import QuantumModel
     from qadence.operations import X, Z
     from qadence.states import random_state
 

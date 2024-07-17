@@ -28,9 +28,10 @@ def print_metrics(loss: float | None, metrics: dict, iteration: int) -> None:
 
 
 def write_tensorboard(
-    writer: SummaryWriter, loss: float | None, metrics: dict, iteration: int
+    writer: SummaryWriter, loss: float = None, metrics: dict = {}, iteration: int = 0
 ) -> None:
-    writer.add_scalar("loss", loss, iteration)
+    if loss is not None:
+        writer.add_scalar("loss", loss, iteration)
     for key, arg in metrics.items():
         writer.add_scalar(key, arg, iteration)
 
@@ -125,7 +126,7 @@ MODEL_LOGGER_MAPPING = {
 def write_tracker(
     args: Any, tracking_tool: ExperimentTrackingTool = ExperimentTrackingTool.TENSORBOARD
 ) -> None:
-    return TRACKER_MAPPING[tracking_tool](*args)
+    return TRACKER_MAPPING[tracking_tool](*args)  # type: ignore
 
 
 def log_tracker(

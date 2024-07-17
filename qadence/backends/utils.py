@@ -20,8 +20,8 @@ from torch import (
     rand,
 )
 
-from qadence.types import ParamDictType
-from qadence.utils import Endianness, int_to_basis, is_qadence_shape
+from qadence.types import Endianness, ParamDictType
+from qadence.utils import int_to_basis, is_qadence_shape
 
 FINITE_DIFF_EPS = 1e-06
 # Dict of NumPy dtype -> torch dtype (when the correspondence exists)
@@ -98,10 +98,11 @@ def to_list_of_dicts(param_values: ParamDictType) -> list[ParamDictType]:
     if not param_values:
         return [param_values]
 
-    max_batch_size = max(p.size()[0] for p in param_values.values())
+    max_batch_size = max(p.size()[0] for p in param_values.values() if isinstance(p, Tensor))
     batched_values = {
         k: (v if v.size()[0] == max_batch_size else v.repeat(max_batch_size, 1))
         for k, v in param_values.items()
+        if isinstance(v, Tensor)
     }
 
     return [{k: v[i] for k, v in batched_values.items()} for i in range(max_batch_size)]
@@ -143,17 +144,71 @@ def validate_state(state: Tensor, n_qubits: int) -> None:
         )
 
 
-def infer_batchsize(param_values: ParamDictType = None) -> int:
+def infer_batchsize(param_values: dict[str, Tensor] = None) -> int:
     """Infer the batch_size through the length of the parameter tensors."""
-    return max([len(tensor) for tensor in param_values.values()]) if param_values else 1
+    try:
+        return (
+            max(
+                [
+                    len(tensor_or_dict)
+                    for tensor_or_dict in param_values.values()
+                    if isinstance(tensor_or_dict, Tensor)
+                ]
+            )
+            if param_values
+            else 1
+        )
+    except Exception:
+        return 1
 
 
 # The following functions can be used to compute potentially higher order gradients using pyqtorch's
 # native 'jacobian' methods.
 
 
-def finitediff(f: Callable, x: Tensor, eps: float = FINITE_DIFF_EPS) -> Tensor:
-    return (f(x + eps) - f(x - eps)) / (2 * eps)  # type: ignore
+def finitediff(
+    f: Callable,
+    x: Tensor,
+    derivative_indices: tuple[int, ...],
+    eps: float = None,
+) -> Tensor:
+    """
+    Compute the finite difference of a function at a point.
+
+    Args:
+        f: The function to differentiate.
+        x: Input of size `(batch_size, input_size)`.
+        derivative_indices: Which *input* to differentiate (i.e. which variable x[:,i])
+        eps: finite difference spacing (uses `torch.finfo(x.dtype).eps ** (1 / (2 + order))`
+            as default)
+
+    Returns:
+        (Tensor): The finite difference of the function at the point `x`.
+    """
+
+    if eps is None:
+        order = len(derivative_indices)
+        eps = torch.finfo(x.dtype).eps ** (1 / (2 + order))
+
+    # compute derivative direction vector(s)
+    eps = torch.as_tensor(eps, dtype=x.dtype)
+    _eps = 1 / eps  # type: ignore[operator]
+    ev = torch.zeros_like(x)
+    i = derivative_indices[0]
+    ev[:, i] += eps
+
+    # recursive finite differencing for higher order than 3 / mixed derivatives
+    if len(derivative_indices) > 3 or len(set(derivative_indices)) > 1:
+        di = derivative_indices[1:]
+        return (finitediff(f, x + ev, di) - finitediff(f, x - ev, di)) * _eps / 2
+    elif len(derivative_indices) == 3:
+        return (f(x + 2 * ev) - 2 * f(x + ev) + 2 * f(x - ev) - f(x - 2 * ev)) * _eps**3 / 2
+    elif len(derivative_indices) == 2:
+        return (f(x + ev) + f(x - ev) - 2 * f(x)) * _eps**2
+    elif len(derivative_indices) == 1:
+        return (f(x + ev) - f(x - ev)) * _eps / 2
+    else:
+        raise ValueError("If you see this error there is a bug in the `finitediff` function.")
 
 
 def finitediff_sampling(

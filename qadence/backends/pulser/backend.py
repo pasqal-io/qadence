@@ -264,7 +264,10 @@ class Backend(BackendInterface):
         if isinstance(noise_probs, Iterable):
             noisy_batched_dms = []
             for noise_prob in noise_probs:
-                noisy_batched_dms.append(run_noisy_sim(noise_prob))
+                noisy_sim = run_noisy_sim(noise_prob)
+                if not param_values:
+                    noisy_sim = noisy_sim[0]
+                noisy_batched_dms.append(noisy_sim)
             noisy_batched_dms = torch.stack(noisy_batched_dms)
         else:
             noisy_batched_dms = run_noisy_sim(noise_probs)
@@ -350,10 +353,18 @@ class Backend(BackendInterface):
                 # TODO: There should be a better check for batched density matrices.
                 if dms.size()[0] > 1:
                     res_list = [
-                        [obs.native(dm, param_values, qubit_support=support) for dm in dms]
+                        [
+                            obs.native(
+                                dm.squeeze(), param_values, qubit_support=support, noise=noise
+                            )
+                            for dm in dms
+                        ]
                         for obs in observable
                     ]
-                    res = torch.stack([torch.transpose(torch.stack(res), 0, 1) for res in res_list])
+                    res = torch.stack(
+                        [torch.transpose(torch.stack(res), 0, -1) for res in res_list]
+                    )
+
                 else:
                     res_list = [
                         obs.native(dms, param_values, qubit_support=support) for obs in observable

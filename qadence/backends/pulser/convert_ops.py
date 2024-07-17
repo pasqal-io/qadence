@@ -5,6 +5,7 @@ from typing import Sequence
 import torch
 from torch.nn import Module
 
+from qadence import Noise
 from qadence.blocks import (
     AbstractBlock,
 )
@@ -39,13 +40,16 @@ class PulserObservable(Module):
         state: torch.Tensor,
         values: dict[str, torch.Tensor] = dict(),
         qubit_support: tuple | None = None,
+        noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> torch.Tensor:
-        if self.block.is_parametric:
-            block_mat = block_to_tensor(
-                self.block, values, qubit_support=qubit_support, endianness=endianness
-            ).squeeze(0)
-        else:
+        if not self.block.is_parametric:
             block_mat = self.block_mat
-
-        return torch.sum(torch.matmul(state, block_mat) * state.conj(), dim=1)
+        else:
+            block_mat = block_to_tensor(
+                self.block, values, qubit_support=qubit_support, endianness=endianness  # type: ignore [arg-type]  # noqa
+            ).squeeze(0)
+        if noise is None:  # Compute expectations for state vector.
+            return torch.sum(torch.matmul(state, block_mat) * state.conj(), dim=1)
+        else:  # Compute expectations for density matrices.
+            return torch.trace(torch.matmul(block_mat, state))

@@ -13,7 +13,7 @@ from jax import Array
 from metrics import ATOL_DICT, JAX_CONVERSION_ATOL, JS_ACCEPTANCE  # type: ignore
 from torch import Tensor
 
-from qadence import Interaction, Register, hamiltonian_factory, hea
+from qadence import Interaction, QuantumModel, Register, hamiltonian_factory, hea
 from qadence.backend import BackendConfiguration
 from qadence.backends.api import backend_factory, config_factory
 from qadence.backends.jax_utils import jarr_to_tensor, tensor_to_jnp
@@ -23,7 +23,6 @@ from qadence.constructors import total_magnetization
 from qadence.divergences import js_divergence
 from qadence.execution import run
 from qadence.ml_tools.utils import rand_featureparameters
-from qadence.models import QuantumModel
 from qadence.operations import CPHASE, RX, RY, H, HamEvo, I, X, Y, Z
 from qadence.parameters import FeatureParameter, Parameter
 from qadence.states import (

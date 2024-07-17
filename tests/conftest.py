@@ -1,20 +1,24 @@
 from __future__ import annotations
 
+from typing import Any, Callable
+
 import networkx as nx
+import numpy as np
+import qutip
+import sympy
 import torch.nn as nn
 from openfermion import QubitOperator
 from pytest import fixture  # type: ignore
 from sympy import Expr
-from torch import Tensor, rand, tensor
+from torch import Tensor, tensor
 
+from qadence import QNN, QuantumModel
 from qadence.blocks.abstract import AbstractBlock
-from qadence.blocks.utils import chain, kron, unroll_block_with_scaling
+from qadence.blocks.utils import chain, kron, tag, unroll_block_with_scaling
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import feature_map, hea, total_magnetization
-from qadence.ml_tools.models import TransformedModule
-from qadence.models import QNN, QuantumModel
 from qadence.operations import CNOT, RX, RY, X, Y, Z
-from qadence.parameters import Parameter
+from qadence.parameters import Parameter, TimeParameter
 from qadence.register import Register
 from qadence.types import PI, BackendName, DiffMode
 
@@ -24,18 +28,7 @@ FM_NQUBITS = 2
 
 @fixture
 def batched_noisy_pulser_sim() -> Tensor:
-    return tensor(
-        [
-            [
-                [
-                    [3.3899e-01, 0.0000e00, 0.0000e00, -3.4090e-16],
-                    [2.9550e-01, 0.0000e00, 0.0000e00, -1.2603e-15],
-                    [2.6286e-01, 0.0000e00, 0.0000e00, -7.7857e-16],
-                    [2.3889e-01, 0.0000e00, 0.0000e00, -1.6384e-16],
-                ]
-            ]
-        ]
-    )
+    return tensor([[0.4160, 0.4356, 0.4548, 0.4737]])
 
 
 @fixture
@@ -234,13 +227,46 @@ def BasicAdjointQNN(BasicFMQuantumCircuit: QuantumCircuit, BasicObservable: Abst
 
 
 @fixture
-def BasicTransformedModule(BasicQNN: QNN) -> TransformedModule:
-    return TransformedModule(
-        BasicQNN,
-        None,
-        None,
-        input_scaling=rand(1),
-        output_scaling=rand(1),
-        input_shifting=rand(1),
-        output_shifting=rand(1),
-    )
+def SmallCircuit() -> QuantumCircuit:
+    phi = Parameter("phi", trainable=False)
+    fm = chain(*[RY(i, phi) for i in range(FM_NQUBITS)])
+    tag(fm, "feature_map")
+
+    ansatz = hea(n_qubits=FM_NQUBITS, depth=1)
+    tag(ansatz, "ansatz")
+    return QuantumCircuit(FM_NQUBITS, fm, ansatz)
+
+
+@fixture
+def omega() -> float:
+    return 20.0
+
+
+@fixture
+def feature_param_x() -> float:
+    return 2.0
+
+
+@fixture
+def feature_param_y() -> float:
+    return 3.5
+
+
+@fixture
+def qadence_generator(omega: float) -> AbstractBlock:
+    t = TimeParameter("t")
+    x = Parameter("x", trainable=False)
+    y = Parameter("y", trainable=False)
+    generator_t = omega * (y * sympy.sin(t) * X(0) + x * (t**2) * Y(1))
+    return generator_t  # type: ignore [no-any-return]
+
+
+@fixture
+def qutip_generator(omega: float, feature_param_x: float, feature_param_y: float) -> Callable:
+    def generator_t(t: float, args: Any) -> qutip.Qobj:
+        return omega * (
+            feature_param_y * np.sin(t) * qutip.tensor(qutip.sigmax(), qutip.qeye(2))
+            + feature_param_x * t**2 * qutip.tensor(qutip.qeye(2), qutip.sigmay())
+        )
+
+    return generator_t

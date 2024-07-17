@@ -16,7 +16,7 @@ from torch import Tensor, heaviside, no_grad, rand, tensor
 from qadence.types import DifferentiableExpression, Engine, TNumber
 
 # Modules to be automatically added to the qadence namespace
-__all__ = ["FeatureParameter", "Parameter", "VariationalParameter"]
+__all__ = ["FeatureParameter", "Parameter", "VariationalParameter", "ParamMap", "TimeParameter"]
 
 logger = getLogger(__name__)
 
@@ -60,6 +60,8 @@ class Parameter(Symbol):
     """
     value: TNumber
     """(Initial) value of the parameter."""
+
+    is_time: bool
 
     def __new__(
         cls, name: str | TNumber | Tensor | Basic | Parameter, **assumptions: Any
@@ -111,6 +113,7 @@ class Parameter(Symbol):
             p.name = name.name
             p.trainable = name.trainable
             p.value = name.value
+            p.is_time = name.is_time
             return p
         elif isinstance(name, (Basic, Expr)):
             if name.is_number:
@@ -120,6 +123,7 @@ class Parameter(Symbol):
             p = super().__new__(cls, name, **assumptions)
             p.trainable = assumptions.get("trainable", True)
             p.value = assumptions.get("value", None)
+            p.is_time = assumptions.get("is_time", False)
             if p.value is None:
                 p.value = rand(1).item()
             return p
@@ -176,6 +180,11 @@ def FeatureParameter(name: str, **kwargs: Any) -> Parameter:
 def VariationalParameter(name: str, **kwargs: Any) -> Parameter:
     """Shorthand for `Parameter(..., trainable=True)`."""
     return Parameter(name, trainable=True, **kwargs)
+
+
+def TimeParameter(name: str) -> Parameter:
+    """Shorthand for `Parameter(..., trainable=False, is_time=True)`."""
+    return Parameter(name, trainable=False, is_time=True)
 
 
 def extract_original_param_entry(

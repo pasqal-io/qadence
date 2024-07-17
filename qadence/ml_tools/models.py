@@ -1,320 +1,442 @@
 from __future__ import annotations
 
+from collections import Counter
 from logging import getLogger
-from typing import Any, Counter, List
+from typing import Any, Callable
 
-import numpy as np
+import sympy
 import torch
-from torch import Tensor
-from torch.nn import Parameter as TorchParam
+from torch import Tensor, nn
 
-from qadence.backend import ConvertedObservable
+from qadence.backend import BackendConfiguration, ConvertedObservable
+from qadence.backends.api import config_factory
+from qadence.blocks.abstract import AbstractBlock
+from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
-from qadence.ml_tools import promote_to_tensor
-from qadence.models import QNN, QuantumModel
+from qadence.mitigations import Mitigations
+from qadence.ml_tools.config import AnsatzConfig, FeatureMapConfig
+from qadence.model import QuantumModel
 from qadence.noise import Noise
-from qadence.utils import Endianness
+from qadence.register import Register
+from qadence.types import BackendName, DiffMode, Endianness, InputDiffMode, ParamDictType
 
 logger = getLogger(__name__)
 
 
-def _set_fixed_operation(
-    dim: int,
-    x: float | np.ndarray | Tensor | None = None,
-    operation_name: str = "scale",
-) -> Tensor:
-    dim = dim if dim > 0 else 1
-    if x is None:
-        if operation_name == "shift":
-            x = torch.zeros(dim)
-        elif operation_name == "scale":
-            x = torch.ones(dim)
-        else:
-            NotImplementedError
-    res = promote_to_tensor(x, requires_grad=False).squeeze(0)
-    assert (
-        res.numel() == dim
-    ), f"Number of {operation_name} values is {res.numel()}\
-    and does not match number of dimensions = {dim}."
-    return res
+def _torch_derivative(
+    ufa: Callable, x: torch.Tensor, derivative_indices: tuple[int, ...]
+) -> torch.Tensor:
+    y = ufa(x)
+    for idx in derivative_indices:
+        out = torch.autograd.grad(y, x, torch.ones_like(y), create_graph=True)[0]
+        y = out[:, idx]
+    return y.reshape(-1, 1)
 
 
-class TransformedModule(torch.nn.Module):
-    """
-    This class accepts a torch.nn.Module or a QuantumModel/QNN.
+def derivative(ufa: torch.nn.Module, x: Tensor, derivative_indices: tuple[int, ...]) -> Tensor:
+    """Compute derivatives w.r.t.
 
-    Wraps it with either non-trainble or trainable scaling and shifting parameters
-    for both input and output. When given a torch.nn.Module,
-    in_features and out_features need to be passed.
+    inputs of a UFA with a single output. The
+    `derivative_indices` specify which derivative(s) are computed.  E.g.
+    `derivative_indices=(1,2)` would compute the a second order derivative w.r.t
+    to the indices `1` and `2` of the input tensor.
 
-    Args:
-        model: The original model to transform.
-        in_features: The number of input dimensions of the model.
-        out_features: The number of output dimensions of the model.
-        input_scaling: The rescaling factor for the model input. Defaults to None.
-        input_shifting: The translation factor for the model input. Defaults to None.
-        output_scaling: The rescaling factor for the model output. Defaults to None.
-        output_shifting: The translation factor for the model output. Defaults to None.
+    Arguments:
+        ufa: The model for which we want to compute the derivative.
+        x (Tensor): (batch_size, input_size) input tensor.
+        derivative_indices (tuple): Define which derivatives to compute.
 
-    Example:
-    ```
+    Examples:
+    If we create a UFA with three inputs and denote the first, second, and third
+    input with `x`, `y`, and `z` we can compute the following derivatives w.r.t
+    to those inputs:
+    ```py exec="on" source="material-block"
     import torch
-    from torch.nn import Parameter as TorchParam
-    from qadence.models import QNN, TransformedModule
-    from qadence.circuit import QuantumCircuit
-    from qadence.blocks import chain
-    from qadence.constructors import hamiltonian_factory, hea
-    from qadence import Parameter, QuantumCircuit, Z
+    from qadence.ml_tools.models import derivative, QNN
+    from qadence.ml_tools.config import FeatureMapConfig, AnsatzConfig
+    from qadence.constructors.hamiltonians import ObservableConfig
+    from qadence.operations import Z
 
-    n_qubits = 2
-    phi = Parameter("phi", trainable=False)
-    fm = chain(*[RY(i, phi) for i in range(n_qubits)])
-    ansatz = hea(n_qubits=n_qubits, depth=3)
-    observable = hamiltonian_factory(n_qubits, detuning = Z)
-    circuit = QuantumCircuit(n_qubits, fm, ansatz)
+    fm_config = FeatureMapConfig(num_features=3, inputs=["x", "y", "z"])
+    ansatz_config = AnsatzConfig()
+    obs_config = ObservableConfig(detuning=Z)
 
-    model = QNN(circuit, observable, backend="pyqtorch", diff_mode="ad")
-    batch_size = 1
-    input_values = {"phi": torch.rand(batch_size, requires_grad=True)}
-    pred = model(input_values)
-    assert not torch.isnan(pred)
-
-    transformed_model = TransformedModule(
-        model=model,
-        in_features=None,
-        out_features=None,
-        input_scaling=TorchParam(torch.tensor(1.0)),
-        input_shifting=0.0,
-        output_scaling=1.0,
-        output_shifting=TorchParam(torch.tensor(0.0))
+    f = QNN.from_configs(
+        register=3, obs_config=obs_config, fm_config=fm_config, ansatz_config=ansatz_config,
     )
-    pred_transformed = transformed_model(input_values)
+    inputs = torch.rand(5,3,requires_grad=True)
+
+    # df_dx
+    derivative(f, inputs, (0,))
+
+    # d2f_dydz
+    derivative(f, inputs, (1,2))
+
+    # d3fdy2dx
+    derivative(f, inputs, (1,1,0))
+    ```
+    """
+    assert ufa.out_features == 1, "Can only call `derivative` on models with 1D output."
+    return ufa._derivative(x, derivative_indices)
+
+
+def format_to_dict_fn(
+    inputs: list[sympy.Symbol | str] = [],
+) -> Callable[[Tensor | ParamDictType], ParamDictType]:
+    """Format an input tensor into the format required by the forward pass.
+
+    The tensor is assumed to have dimensions: n_batches x in_features where in_features
+    corresponds to the number of input features of the QNN
+    """
+    in_features = len(inputs)
+
+    def tensor_to_dict(values: Tensor | ParamDictType) -> ParamDictType:
+        if isinstance(values, Tensor):
+            values = values.reshape(-1, 1) if len(values.size()) == 1 else values
+            if not values.shape[1] == in_features:
+                raise ValueError(
+                    f"Model expects in_features={in_features} but got {values.shape[1]}."
+                )
+            values = {fparam.name: values[:, inputs.index(fparam)] for fparam in inputs}  # type: ignore[union-attr]
+        return values
+
+    return tensor_to_dict
+
+
+class QNN(QuantumModel):
+    """Quantum neural network model for n-dimensional inputs.
+
+    Examples:
+    ```python exec="on" source="material-block" result="json"
+    import torch
+    from qadence import QuantumCircuit, QNN, Z
+    from qadence import hea, feature_map, hamiltonian_factory, kron
+
+    # create the circuit
+    n_qubits, depth = 2, 4
+    fm = kron(
+        feature_map(1, support=(0,), param="x"),
+        feature_map(1, support=(1,), param="y")
+    )
+    ansatz = hea(n_qubits=n_qubits, depth=depth)
+    circuit = QuantumCircuit(n_qubits, fm, ansatz)
+    obs_base = hamiltonian_factory(n_qubits, detuning=Z)
+
+    # the QNN will yield two outputs
+    obs = [2.0 * obs_base, 4.0 * obs_base]
+
+    # initialize and use the model
+    qnn = QNN(circuit, obs, inputs=["x", "y"])
+    y = qnn(torch.rand(3, 2))
+    print(str(y)) # markdown-exec: hide
     ```
     """
 
     def __init__(
         self,
-        model: torch.nn.Module | QuantumModel | QNN,
-        in_features: int | None = None,
-        out_features: int | None = None,
-        input_scaling: TorchParam | float | int | torch.Tensor | None = None,
-        input_shifting: TorchParam | float | int | torch.Tensor | None = None,
-        output_scaling: TorchParam | float | int | torch.Tensor | None = None,
-        output_shifting: TorchParam | float | int | torch.Tensor | None = None,
-    ) -> None:
-        super().__init__()
-        self.model = model
-        if in_features is None and out_features is None:
-            assert isinstance(model, (QuantumModel, QNN))
-            self.in_features = model.in_features
-            self.out_features = model.out_features if model.out_features else 1
-        else:
-            self.in_features = in_features  # type: ignore[assignment]
-            self.out_features = out_features  # type: ignore[assignment]
-        if not isinstance(input_scaling, torch.Tensor):
-            self.register_buffer(
-                "_input_scaling",
-                _set_fixed_operation(self.in_features, input_scaling, "scale"),
-            )
-        else:
-            self._input_scaling = input_scaling
-        if not isinstance(input_shifting, torch.Tensor):
-            self.register_buffer(
-                "_input_shifting",
-                _set_fixed_operation(self.in_features, input_shifting, "shift"),
-            )
-        else:
-            self._input_shifting = input_shifting
-        if not isinstance(output_scaling, torch.Tensor):
-            self.register_buffer(
-                "_output_scaling",
-                _set_fixed_operation(self.out_features, output_scaling, "scale"),
-            )
-        else:
-            self._output_scaling = output_scaling
-        if not isinstance(output_shifting, torch.Tensor):
-            self.register_buffer(
-                "_output_shifting",
-                _set_fixed_operation(self.out_features, output_shifting, "shift"),
-            )
-        else:
-            self._output_shifting = output_shifting
-
-    def _format_to_dict(self, values: Tensor) -> dict[str, Tensor]:
-        """Format an input tensor into the format required by the forward pass.
-
-        The tensor is assumed to have dimensions: n_batches x in_features where in_features
-        corresponds to the number of input features of the QNN
-        """
-
-        if len(values.size()) == 1:
-            values = values.reshape(-1, 1)
-        if len(values.size()) != 2 or values.shape[1] != len(self.model.inputs):
-            raise ValueError(
-                f"Model expects in_features={self.model.in_features} but got {values.size()[1]}."
-            )
-        names = [p.name for p in self.model.inputs]
-        res = {}
-        for i, name in enumerate(names):
-            res[name] = values[:, i]
-        return res
-
-    def _transform_x(self, x: dict[str, torch.Tensor] | Tensor) -> dict[str, Tensor] | Tensor:
-        """
-        X can either be a torch Tensor in when using torch.nn.Module, or a standard values dict.
-
-        Scales and shifts the tensors in the values dict, containing Featureparameters.
-        Transformation of inputs can be used to speed up training and avoid potential issues
-        with numerical stability that can arise due to differing feature scales.
-        If none are provided, it uses 0. for shifting and 1. for scaling (hence, identity).
-
-        Arguments:
-            values: A torch Tensor or a dict containing values for Featureparameters.
-
-        Returns:
-            A Tensor or dict containing transformed (scaled and/or shifted) Featureparameters.
-        """
-
-        if isinstance(self.model, (QuantumModel, QNN)):
-            if not isinstance(x, dict):
-                x = self._format_to_dict(x)
-            if self.in_features == 1:
-                return {
-                    key: self._input_scaling * (val + self._input_shifting)
-                    for key, val in x.items()
-                }
-            else:
-                return {
-                    key: self._input_scaling[idx] * (val + self._input_shifting[idx])
-                    for idx, (key, val) in enumerate(x.items())
-                }
-
-        else:
-            assert isinstance(self.model, torch.nn.Module) and isinstance(x, Tensor)
-            return self._input_scaling * (x + self._input_shifting)
-
-    def forward(self, x: dict[str, Tensor] | Tensor, *args: Any, **kwargs: Any) -> Tensor:
-        y = self.model(self._transform_x(x), *args, **kwargs)
-        return self._output_scaling * y + self._output_shifting
-
-    def run(
-        self,
-        values: dict[str, torch.Tensor],
-        state: torch.Tensor | None = None,
-        endianness: Endianness = Endianness.BIG,
-    ) -> Tensor:
-        return self.model.run(values=self._transform_x(values), state=state, endianness=endianness)
-
-    def sample(
-        self,
-        values: dict[str, torch.Tensor],
-        n_shots: int = 1000,
-        state: torch.Tensor | None = None,
+        circuit: QuantumCircuit,
+        observable: list[AbstractBlock] | AbstractBlock,
+        backend: BackendName = BackendName.PYQTORCH,
+        diff_mode: DiffMode = DiffMode.AD,
+        measurement: Measurements | None = None,
         noise: Noise | None = None,
-        endianness: Endianness = Endianness.BIG,
-    ) -> list[Counter]:
-        return self.model.sample(  # type: ignore[no-any-return]
-            values=self._transform_x(values),
-            n_shots=n_shots,
-            state=state,
-            endianness=endianness,
+        configuration: BackendConfiguration | dict | None = None,
+        inputs: list[sympy.Basic | str] | None = None,
+        input_diff_mode: InputDiffMode | str = InputDiffMode.AD,
+    ):
+        """Initialize the QNN.
+
+        The number of inputs is determined by the feature parameters in the input
+        quantum circuit while the number of outputs is determined by how many
+        observables are provided as input
+
+        Args:
+            circuit: The quantum circuit to use for the QNN.
+            observable: The observable.
+            backend: The chosen quantum backend.
+            diff_mode: The differentiation engine to use. Choices 'gpsr' or 'ad'.
+            measurement: optional measurement protocol. If None,
+                use exact expectation value with a statevector simulator
+            noise: A noise model to use.
+            configuration: optional configuration for the backend
+            inputs: List that indicates the order of variables of the tensors that are passed
+                to the model. Given input tensors `xs = torch.rand(batch_size, input_size:=2)` a QNN
+                with `inputs=["t", "x"]` will assign `t, x = xs[:,0], xs[:,1]`.
+            input_diff_mode: The differentiation mode for the input tensor.
+        """
+        super().__init__(
+            circuit,
+            observable=observable,
+            backend=backend,
+            diff_mode=diff_mode,
+            measurement=measurement,
+            configuration=configuration,
             noise=noise,
         )
+        if self._observable is None:
+            raise ValueError("You need to provide at least one observable in the QNN constructor")
+        if (inputs is not None) and (len(self.inputs) == len(inputs)):
+            self.inputs = [sympy.symbols(x) if isinstance(x, str) else x for x in inputs]  # type: ignore[union-attr]
+        elif (inputs is None) and len(self.inputs) <= 1:
+            self.inputs = [sympy.symbols(x) if isinstance(x, str) else x for x in self.inputs]  # type: ignore[union-attr]
+        else:
+            raise ValueError(
+                """
+                Your QNN has more than one input. Please provide a list of inputs in the order of
+                your tensor domain. For example, if you want to pass
+                `xs = torch.rand(batch_size, input_size:=3)` to you QNN, where
+                ```
+                t = x[:,0]
+                x = x[:,1]
+                y = x[:,2]
+                ```
+                you have to specify
+                ```
+                QNN(circuit, observable, inputs=["t", "x", "y"])
+                ```
+                You can also pass a list of sympy symbols.
+            """
+            )
+        self.format_to_dict = format_to_dict_fn(self.inputs)  # type: ignore[arg-type]
+        self.input_diff_mode = InputDiffMode(input_diff_mode)
+        if self.input_diff_mode == InputDiffMode.FD:
+            from qadence.backends.utils import finitediff
 
-    def expectation(
+            self.__derivative = finitediff
+        elif self.input_diff_mode == InputDiffMode.AD:
+            self.__derivative = _torch_derivative  # type: ignore[assignment]
+        else:
+            raise ValueError(f"Unkown forward diff mode: {self.input_diff_mode}")
+
+    @classmethod
+    def from_configs(
+        cls,
+        register: int | Register,
+        obs_config: Any,
+        fm_config: Any = FeatureMapConfig(),
+        ansatz_config: Any = AnsatzConfig(),
+        backend: BackendName = BackendName.PYQTORCH,
+        diff_mode: DiffMode = DiffMode.AD,
+        measurement: Measurements | None = None,
+        noise: Noise | None = None,
+        configuration: BackendConfiguration | dict | None = None,
+        input_diff_mode: InputDiffMode | str = InputDiffMode.AD,
+    ) -> QNN:
+        """Create a QNN from a set of configurations.
+
+        Args:
+            register (int | Register): The number of qubits or a register object.
+            obs_config (list[ObservableConfig] | ObservableConfig): The configuration(s)
+                for the observable(s).
+            fm_config (FeatureMapConfig): The configuration for the feature map.
+                Defaults to no feature encoding block.
+            ansatz_config (AnsatzConfig): The configuration for the ansatz.
+                Defaults to a single layer of hardware efficient ansatz.
+            backend (BackendName): The chosen quantum backend.
+            diff_mode (DiffMode): The differentiation engine to use. Choices are
+                'gpsr' or 'ad'.
+            measurement (Measurements): Optional measurement protocol. If None,
+                use exact expectation value with a statevector simulator.
+            noise (Noise): A noise model to use.
+            configuration (BackendConfiguration | dict): Optional backend configuration.
+            input_diff_mode (InputDiffMode): The differentiation mode for the input tensor.
+
+        Returns:
+            A QNN object.
+
+        Raises:
+            ValueError: If the observable configuration is not provided.
+
+        Example:
+        ```python exec="on" source="material-block" result="json"
+        import torch
+        from qadence.ml_tools.config import AnsatzConfig, FeatureMapConfig
+        from qadence.ml_tools import QNN
+        from qadence.constructors import ObservableConfig
+        from qadence.operations import Z
+        from qadence.types import (
+            AnsatzType, BackendName, BasisSet, ObservableTransform, ReuploadScaling, Strategy
+        )
+
+        register = 4
+        obs_config = ObservableConfig(
+            detuning=Z,
+            scale=5.0,
+            shift=0.0,
+            transformation_type=ObservableTransform.SCALE,
+            trainable_transform=None,
+        )
+        fm_config = FeatureMapConfig(
+            num_features=2,
+            inputs=["x", "y"],
+            basis_set=BasisSet.FOURIER,
+            reupload_scaling=ReuploadScaling.CONSTANT,
+            feature_range={
+                "x": (-1.0, 1.0),
+                "y": (0.0, 1.0),
+            },
+        )
+        ansatz_config = AnsatzConfig(
+            depth=2,
+            ansatz_type=AnsatzType.HEA,
+            ansatz_strategy=Strategy.DIGITAL,
+        )
+
+        qnn = QNN.from_configs(
+            register, obs_config, fm_config, ansatz_config, backend=BackendName.PYQTORCH
+        )
+
+        x = torch.rand(2, 2)
+        y = qnn(x)
+        print(str(y)) # markdown-exec: hide
+        ```
+        """
+        from .constructors import build_qnn_from_configs
+
+        return build_qnn_from_configs(
+            register=register,
+            observable_config=obs_config,
+            fm_config=fm_config,
+            ansatz_config=ansatz_config,
+            backend=backend,
+            diff_mode=diff_mode,
+            measurement=measurement,
+            noise=noise,
+            configuration=configuration,
+            input_diff_mode=input_diff_mode,
+        )
+
+    def forward(
         self,
-        values: dict[str, torch.Tensor],
-        observable: List[ConvertedObservable] | ConvertedObservable | None = None,
-        state: torch.Tensor | None = None,
+        values: dict[str, Tensor] | Tensor = None,
+        state: Tensor | None = None,
         measurement: Measurements | None = None,
         noise: Noise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
-        """
-        Computes standard expectation.
+        """Forward pass of the model.
 
-        However, scales and shifts the output tensor of the underlying model.
-        If none are provided, it uses 0. for shifting and 1. for scaling.
-        Transformation of ouputs can be used if the magnitude
-        of the targets exceeds the domain (-1,1).
+        This returns the (differentiable) expectation value of the given observable
+        operator defined in the constructor. Differently from the base QuantumModel
+        class, the QNN accepts also a tensor as input for the forward pass. The
+        tensor is expected to have shape: `n_batches x in_features` where `n_batches`
+        is the number of data points and `in_features` is the dimensionality of the problem
+
+        The output of the forward pass is the expectation value of the input
+        observable(s). If a single observable is given, the output shape is
+        `n_batches` while if multiple observables are given the output shape
+        is instead `n_batches x n_observables`
+
+        Args:
+            values: the values of the feature parameters
+            state: Initial state.
+            measurement: optional measurement protocol. If None,
+                use exact expectation value with a statevector simulator
+            noise: A noise model to use.
+            endianness: Endianness of the resulting bit strings.
+
+        Returns:
+            Tensor: a tensor with the expectation value of the observables passed
+                in the constructor of the model
         """
-        exp = self.model.expectation(
-            values=self._transform_x(values),
-            observable=observable if observable is not None else self.model._observable,
+        return self.expectation(
+            values, state=state, measurement=measurement, noise=noise, endianness=endianness
+        )
+
+    def run(
+        self,
+        values: Tensor | dict[str, Tensor] = None,
+        state: Tensor | None = None,
+        endianness: Endianness = Endianness.BIG,
+    ) -> Tensor:
+        return super().run(
+            values=self.format_to_dict(values),
             state=state,
-            measurement=measurement,
-            noise=noise,
             endianness=endianness,
         )
-        return self._output_scaling * exp + self._output_shifting
 
-    def _to_dict(self, save_params: bool = True) -> dict:
-        from qadence.serialization import serialize
+    def sample(
+        self,
+        values: Tensor | dict[str, Tensor] = {},
+        n_shots: int = 1000,
+        state: Tensor | None = None,
+        noise: Noise | None = None,
+        mitigation: Mitigations | None = None,
+        endianness: Endianness = Endianness.BIG,
+    ) -> list[Counter]:
+        return super().sample(
+            values=self.format_to_dict(values),
+            n_shots=n_shots,
+            state=state,
+            noise=noise,
+            mitigation=mitigation,
+            endianness=endianness,
+        )
 
-        def store_fn(x: torch.Tensor) -> list[float]:
-            res: list[float]
-            if x.requires_grad:
-                res = x.detach().numpy().tolist()
-            else:
-                res = x.numpy().tolist()
-            return res  # type: ignore[no-any-return]
+    def expectation(
+        self,
+        values: Tensor | dict[str, Tensor] = {},
+        observable: list[ConvertedObservable] | ConvertedObservable | None = None,
+        state: Tensor | None = None,
+        measurement: Measurements | None = None,
+        noise: Noise | None = None,
+        mitigation: Mitigations | None = None,
+        endianness: Endianness = Endianness.BIG,
+    ) -> Tensor:
+        if values is None:
+            values = {}
+        if measurement is None:
+            measurement = self._measurement
+        if noise is None:
+            noise = self._noise
+        return super().expectation(
+            values=self.format_to_dict(values),
+            state=state,
+            measurement=measurement,
+            endianness=endianness,
+            noise=noise,
+        )
 
-        _d = serialize(self.model, save_params=save_params)
+    def _derivative(self, x: Tensor, derivative_indices: tuple[int, ...]) -> Tensor:
+        return self.__derivative(self, x, derivative_indices)
 
-        return {
-            self.__class__.__name__: _d,
-            "in_features": self.in_features,
-            "out_features": self.out_features,
-            "_input_scaling": store_fn(self._input_scaling),
-            "_output_scaling": store_fn(self._output_scaling),
-            "_input_shifting": store_fn(self._input_shifting),
-            "_output_shifting": store_fn(self._output_shifting),
-        }
+    def _to_dict(self, save_params: bool = False) -> dict:
+        d = dict()
+        try:
+            d = super()._to_dict(save_params)
+            d[self.__class__.__name__]["inputs"] = [str(i) for i in self.inputs]
+            logger.debug(f"{self.__class__.__name__} serialized to {d}.")
+        except Exception as e:
+            logger.warning(f"Unable to serialize {self.__class__.__name__} due to {e}.")
+        return d
 
     @classmethod
-    def _from_dict(cls, d: dict, as_torch: bool = False) -> TransformedModule:
+    def _from_dict(cls, d: dict, as_torch: bool = False) -> QNN:
         from qadence.serialization import deserialize
 
-        _m: QuantumModel | QNN = deserialize(d[cls.__name__], as_torch)  # type: ignore[assignment]
-        return cls(
-            _m,
-            in_features=d["in_features"],
-            out_features=d["out_features"],
-            input_scaling=torch.tensor(d["_input_scaling"]),
-            output_scaling=torch.tensor(d["_output_scaling"]),
-            input_shifting=torch.tensor(d["_input_shifting"]),
-            output_shifting=torch.tensor(d["_output_shifting"]),
-        )
-
-    def to(self, *args: Any, **kwargs: Any) -> TransformedModule:
+        qnn: QNN
         try:
-            self.model = self.model.to(*args, **kwargs)
-            if isinstance(self.model, QuantumModel):
-                device = self.model._circuit.native.device
-                dtype = (
-                    torch.float64
-                    if self.model._circuit.native.dtype == torch.cdouble
-                    else torch.float32
-                )
+            qm_dict = d[cls.__name__]
+            qnn = cls(
+                circuit=QuantumCircuit._from_dict(qm_dict["circuit"]),
+                observable=[deserialize(q_obs) for q_obs in qm_dict["observable"]],  # type: ignore[misc]
+                backend=qm_dict["backend"],
+                diff_mode=qm_dict["diff_mode"],
+                measurement=Measurements._from_dict(qm_dict["measurement"]),
+                noise=Noise._from_dict(qm_dict["noise"]),
+                configuration=config_factory(qm_dict["backend"], qm_dict["backend_configuration"]),
+                inputs=qm_dict["inputs"],
+            )
 
-                self._input_scaling = self._input_scaling.to(device=device, dtype=dtype)
-                self._input_shifting = self._input_shifting.to(device=device, dtype=dtype)
-                self._output_scaling = self._output_scaling.to(device=device, dtype=dtype)
-                self._output_shifting = self._output_shifting.to(device=device, dtype=dtype)
-            elif isinstance(self.model, torch.nn.Module):
-                self._input_scaling = self._input_scaling.to(*args, **kwargs)
-                self._input_shifting = self._input_shifting.to(*args, **kwargs)
-                self._output_scaling = self._output_scaling.to(*args, **kwargs)
-                self._output_shifting = self._output_shifting.to(*args, **kwargs)
-            logger.debug(f"Moved {self} to {args}, {kwargs}.")
+            if as_torch:
+                conv_pd = nn.ParameterDict()
+                param_dict = d["param_dict"]
+                for n, param in param_dict.items():
+                    conv_pd[n] = nn.Parameter(param)
+                qnn._params = conv_pd
+            logger.debug(f"Initialized {cls.__name__} from {d}.")
+
         except Exception as e:
-            logger.warning(f"Unable to move {self} to {args}, {kwargs} due to {e}.")
-        return self
+            logger.warning(f"Unable to deserialize object {d} to {cls.__name__} due to {e}.")
 
-    @property
-    def device(self) -> torch.device:
-        return (
-            self.model.device
-            if isinstance(self.model, QuantumModel)
-            else self._input_scaling.device
-        )
+        return qnn
