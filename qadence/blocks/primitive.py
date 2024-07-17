@@ -11,6 +11,7 @@ from rich.panel import Panel
 from rich.tree import Tree
 
 from qadence.blocks.abstract import AbstractBlock
+from qadence.noise import Noise
 from qadence.parameters import (
     Parameter,
     ParamMap,
@@ -33,12 +34,19 @@ class PrimitiveBlock(AbstractBlock):
 
     name = "PrimitiveBlock"
 
-    def __init__(self, qubit_support: tuple[int, ...]):
+    def __init__(
+        self, qubit_support: tuple[int, ...], noise: Noise | dict[str, Noise] | None = None
+    ):
         self._qubit_support = qubit_support
+        self._noise = noise
 
     @property
     def qubit_support(self) -> Tuple[int, ...]:
         return self._qubit_support
+
+    @property
+    def noise(self) -> Noise | dict[str, Noise] | None:
+        return self._noise
 
     def digital_decomposition(self) -> AbstractBlock:
         """Decomposition into purely digital gates.
@@ -48,6 +56,10 @@ class PrimitiveBlock(AbstractBlock):
         'gates', by manual/custom knowledge of how this can be done efficiently.
         :return:
         """
+        if self.noise is None:
+            raise ValueError(
+                "Decomposition into purely digital gates is only avalaible for unitary gate"
+            )
         return self
 
     def __len__(self) -> int:
@@ -77,22 +89,56 @@ class PrimitiveBlock(AbstractBlock):
         if not isinstance(other, AbstractBlock):
             raise TypeError(f"Cant compare {type(self)} to {type(other)}")
         if isinstance(other, type(self)):
-            return self.qubit_support == other.qubit_support
+            return self.qubit_support == other.qubit_support and self.noise == other.noise
         return False
 
     def _to_dict(self) -> dict:
+        if self.noise is None:
+            noise_info = None
+        elif isinstance(self.noise, Noise):
+            noise_info = self.noise._to_dict()
+        elif isinstance(self.noise, dict):
+            noise_info = {k: v._to_dict() for k, v in self.noise.items()}
+        else:
+            noise_info = dict()
         return {
             "type": type(self).__name__,
             "qubit_support": self.qubit_support,
             "tag": self.tag,
+            "noise": noise_info,
         }
 
     @classmethod
     def _from_dict(cls, d: dict) -> PrimitiveBlock:
-        return cls(*d["qubit_support"])
+        noise = d.get("noise")
+        if isinstance(noise, dict):
+            noise = {k: Noise._from_dict(v) for k, v in noise.items()}
+        elif noise is not None:
+            noise = Noise._from_dict(noise)
+        return cls(tuple(d["qubit_support"]), noise)
+
+    @property
+    def _block_title(self) -> str:
+        bits = ",".join(str(i) for i in self.qubit_support)
+        s = f"{type(self).__name__}({bits})"
+        if self.noise:
+            noise_details = []
+            if isinstance(self.noise, Noise):
+                noise_details.append(
+                    f"{self.noise.protocol}({self.noise.options['error_probability']})"
+                )
+            elif isinstance(self.noise, dict):
+                for noise_instance in self.noise.values():
+                    noise_details.append(
+                        f"{noise_instance.protocol}({noise_instance.options['error_probability']})"
+                    )
+            s += ", Noise: " + ", ".join(noise_details)
+        if self.tag is not None:
+            s += rf" \[tag: {self.tag}]"
+        return s
 
     def __hash__(self) -> int:
-        return hash(self._to_json())
+        return hash(self._to_json())  # TODO: To modify
 
     @property
     def n_qubits(self) -> int:
@@ -103,6 +149,7 @@ class PrimitiveBlock(AbstractBlock):
         return len(self.qubit_support)
 
     def dagger(self) -> PrimitiveBlock:
+        # Do not do the dagger of the noise gate. Only of the primitive one.
         return self
 
 
@@ -131,7 +178,11 @@ class ParametricBlock(PrimitiveBlock):
                 params_str.append(val)
             else:
                 params_str.append(stringify(p))
-
+        if self.noise:
+            noise_index = s.find(", Noise")
+            primitive_part = s[:noise_index].strip()
+            noise_part = s[noise_index:].strip()
+            return f"{primitive_part} [params: {params_str}]{noise_part}"
         return s + rf" \[params: {params_str}]"
 
     @property
@@ -179,6 +230,7 @@ class ParametricBlock(PrimitiveBlock):
             return (
                 self.qubit_support == other.qubit_support
                 and self.parameters.parameter == other.parameters.parameter
+                and self.noise == other.noise
             )
         return False
 
@@ -191,20 +243,38 @@ class ParametricBlock(PrimitiveBlock):
         return False
 
     def _to_dict(self) -> dict:
+        if self.noise is None:
+            noise_info = None
+        elif isinstance(self.noise, Noise):
+            noise_info = self.noise._to_dict()
+        elif isinstance(self.noise, dict):
+            noise_info = {
+                noise: noise_instance._to_dict() for noise, noise_instance in self.noise.items()
+            }
+        else:
+            noise_info = dict()
+
         return {
             "type": type(self).__name__,
             "qubit_support": self.qubit_support,
             "tag": self.tag,
             "parameters": self.parameters._to_dict(),
+            "noise": noise_info,
         }
 
     @classmethod
     def _from_dict(cls, d: dict) -> ParametricBlock:
         params = ParamMap._from_dict(d["parameters"])
+        noise = d.get("noise")
+        if isinstance(noise, dict):
+            noise = {k: Noise._from_dict(v) for k, v in noise.items()}
+        elif noise is not None:
+            noise = Noise._from_dict(noise)
         target = d["qubit_support"][0]
-        return cls(target, params)  # type: ignore[call-arg]
+        return cls((target,), noise, params)  # type: ignore[call-arg]
 
     def dagger(self) -> ParametricBlock:
+        # Do not do the dagger of the noise gate. Only of the parametric one.
         exprs = self.parameters.expressions()
         params = tuple(-extract_original_param_entry(param) for param in exprs)
         return type(self)(*self.qubit_support, *params)  # type: ignore[arg-type]
@@ -497,6 +567,7 @@ class ProjectorBlock(PrimitiveBlock):
         ket: str,
         bra: str,
         qubit_support: int | tuple[int, ...],
+        noise: Noise | dict[str, Noise] | None = None,
     ) -> None:
         """
         Arguments:
@@ -504,6 +575,7 @@ class ProjectorBlock(PrimitiveBlock):
             ket (str): The ket given as a bitstring.
             bra (str): The bra given as a bitstring.
             qubit_support (int | tuple[int]): The qubit_support of the block.
+            noise (Noise | dict[str, Noise] | None): Optional noise protocols to apply.
         """
         if isinstance(qubit_support, int):
             qubit_support = (qubit_support,)
@@ -522,4 +594,4 @@ class ProjectorBlock(PrimitiveBlock):
 
         self.ket = ket
         self.bra = bra
-        super().__init__(qubit_support)
+        super().__init__(qubit_support, noise)

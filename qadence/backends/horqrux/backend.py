@@ -107,16 +107,6 @@ class Backend(BackendInterface):
             state = unhorqify(state)
         return state
 
-    def run_dm(
-        self,
-        circuit: ConvertedCircuit,
-        noise: Noise,
-        param_values: ParamDictType = {},
-        state: ArrayLike | None = None,
-        endianness: Endianness = Endianness.BIG,
-    ) -> ArrayLike:
-        raise NotImplementedError
-
     def expectation(
         self,
         circuit: ConvertedCircuit,

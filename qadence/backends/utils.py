@@ -9,7 +9,9 @@ import pyqtorch as pyq
 import torch
 from numpy.typing import ArrayLike
 from pyqtorch.apply import apply_operator
+from pyqtorch.noise import Noisy_protocols
 from pyqtorch.parametric import Parametric as PyQParametric
+from pyqtorch.utils import DensityMatrix
 from torch import (
     Tensor,
     cat,
@@ -20,6 +22,8 @@ from torch import (
     rand,
 )
 
+from qadence.blocks import AbstractBlock
+from qadence.noise import Noise
 from qadence.types import Endianness, ParamDictType
 from qadence.utils import int_to_basis, is_qadence_shape
 
@@ -121,7 +125,13 @@ def pyqify(state: Tensor, n_qubits: int = None) -> ArrayLike:
 
 
 def unpyqify(state: Tensor) -> Tensor:
-    """Convert a state of shape [2] * n_qubits + [batch_size] to (batch_size, 2**n_qubits)."""
+    """Convert a state of shape [2] * n_qubits + [batch_size] to (batch_size, 2**n_qubits).
+
+    Convert a density matrix of shape (2**n_qubits, 2**n_qubits, batch_size)
+    to (batch_size, 2**n_qubits, 2**n_qubits)
+    """
+    if isinstance(state, DensityMatrix):
+        return torch.einsum("ijk->kij", state)
     return torch.flatten(state, start_dim=0, end_dim=-2).t()
 
 
@@ -249,3 +259,17 @@ def dydxx(
         ),
         values[op.param_name],
     )
+
+
+def block_noisy_protocols(
+    block: AbstractBlock,
+) -> Noisy_protocols | dict[str, Noisy_protocols] | None:
+    pyq_noise = block.noise  # type: ignore[attr-defined]
+    if pyq_noise:
+        if isinstance(pyq_noise, dict):
+            pyq_noise = {
+                noise: noise_instance.to_pyq() for noise, noise_instance in pyq_noise.items()
+            }
+        elif isinstance(pyq_noise, Noise):
+            pyq_noise = pyq_noise.to_pyq()
+    return pyq_noise

@@ -131,16 +131,6 @@ class Backend(BackendInterface):
             states = invert_endianness(states)
         return states
 
-    def run_dm(
-        self,
-        circuit: ConvertedCircuit,
-        noise: Noise,
-        param_values: dict[str, Tensor] = {},
-        state: Tensor | None = None,
-        endianness: Endianness = Endianness.BIG,
-    ) -> Tensor:
-        raise NotImplementedError
-
     def sample(
         self,
         circuit: ConvertedCircuit,

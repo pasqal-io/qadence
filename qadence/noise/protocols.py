@@ -4,6 +4,8 @@ import importlib
 from dataclasses import dataclass
 from typing import Callable, Counter, cast
 
+from pyqtorch.noise import Noisy_protocols
+
 PROTOCOL_TO_MODULE = {
     "readout": "qadence.noise.readout",
 }
@@ -11,8 +13,14 @@ PROTOCOL_TO_MODULE = {
 
 @dataclass
 class Noise:
+    BITFLIP = "BitFlip"
+    PHASEFLIP = "PhaseFlip"
+    PAULI_CHANNEL = "PauliChannel"
+    AMPLITUDE_DAMPING = "AmplitudeDamping"
+    PHASE_DAMPING = "PhaseDamping"
+    GENERALIZED_AMPLITUDE_DAMPING = "GeneralizedAmplitudeDamping"
     DEPHASING = "dephasing"
-    DEPOLARIZING = "depolarizing"
+    DEPOLARIZING_PYQ = "Depolarizing"  # no cap is a problem for pyq
     READOUT = "readout"
 
     def __init__(self, protocol: str, options: dict = dict()) -> None:
@@ -29,6 +37,12 @@ class Noise:
 
     def _to_dict(self) -> dict:
         return {"protocol": self.protocol, "options": self.options}
+
+    def __repr__(self) -> str:
+        return f"protocol: {self.protocol}, options: {self.options}"
+
+    def to_pyq(self) -> Noisy_protocols:
+        return Noisy_protocols(self.protocol, self.options)
 
     @classmethod
     def _from_dict(cls, d: dict) -> Noise | None:

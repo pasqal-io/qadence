@@ -28,6 +28,7 @@ from torch import dtype as torch_dtype
 from torch.nn import Module, ParameterDict
 
 from qadence.backends.utils import (
+    block_noisy_protocols,
     finitediff,
     pyqify,
     unpyqify,
@@ -92,7 +93,7 @@ def convert_block(
     if config is None:
         config = Configuration()
 
-    if isinstance(block, ScaleBlock):
+    if isinstance(block, ScaleBlock):  #!Look to add noise
         scaled_ops = convert_block(block.block, n_qubits, config)
         scale = (
             tensor([block.parameters.parameter], dtype=float64)
@@ -118,42 +119,59 @@ def convert_block(
         # ]
         return [PyQHamiltonianEvolution(qubit_support, n_qubits, block, config)]
     elif isinstance(block, MatrixBlock):
-        return [pyq.primitive.Primitive(block.matrix, block.qubit_support)]
+        return [pyq.primitive.Primitive(block.matrix, block.qubit_support, block.noise)]
     elif isinstance(block, CompositeBlock):
         ops = list(flatten(*(convert_block(b, n_qubits, config) for b in block.blocks)))
         if isinstance(block, AddBlock):
             return [pyq.Add(ops)]  # add
-        elif is_single_qubit_chain(block) and config.use_single_qubit_composition:
-            return [pyq.Merge(ops)]  # for chains of single qubit ops on the same qubit
+        elif (
+            is_single_qubit_chain(block)
+            and config.use_single_qubit_composition
+            and all([b.noise is None for b in block])  # type: ignore[attr-defined]
+        ):
+            return [
+                pyq.Merge(ops)
+            ]  # for chains of single qubit ops on the same qubit without noise
         else:
-            return [pyq.Sequence(ops)]  # for kron and chain
-    elif isinstance(block, tuple(non_unitary_gateset)):
+            return [pyq.Sequence(ops)]  # for kron and chain with multiple qubits/1-qubit with noise
+    elif isinstance(block, tuple(non_unitary_gateset)):  #!Look to add noise
+        pyq_noise = block_noisy_protocols(block)
         if isinstance(block, ProjectorBlock):
             projector = getattr(pyq, block.name)
             if block.name == OpName.N:
-                return [projector(target=qubit_support)]
+                return [projector(target=qubit_support, noise=pyq_noise)]
             else:
-                return [projector(qubit_support=qubit_support, ket=block.ket, bra=block.bra)]
+                return [
+                    projector(
+                        qubit_support=qubit_support,
+                        ket=block.ket,
+                        bra=block.bra,
+                        #!noise=pyq_noise Need to add noise here but got error
+                    )
+                ]
         else:
             return [getattr(pyq, block.name)(qubit_support[0])]
     elif isinstance(block, tuple(single_qubit_gateset)):
         pyq_cls = getattr(pyq, block.name)
+        pyq_noise = block_noisy_protocols(block)
         if isinstance(block, ParametricBlock):
             if isinstance(block, U):
-                op = pyq_cls(qubit_support[0], *config.get_param_name(block))
+                op = pyq_cls(qubit_support[0], *config.get_param_name(block), pyq_noise)
             else:
-                op = pyq_cls(qubit_support[0], config.get_param_name(block)[0])
+                op = pyq_cls(qubit_support[0], config.get_param_name(block)[0], pyq_noise)
         else:
-            op = pyq_cls(qubit_support[0])
+            op = pyq_cls(qubit_support[0], pyq_noise)  # type: ignore[attr-defined]
         return [op]
-    elif isinstance(block, tuple(two_qubit_gateset)):
+    elif isinstance(block, tuple(two_qubit_gateset)):  #!Look to add noise
         pyq_cls = getattr(pyq, block.name)
         if isinstance(block, ParametricBlock):
             op = pyq_cls(qubit_support[0], qubit_support[1], config.get_param_name(block)[0])
         else:
             op = pyq_cls(qubit_support[0], qubit_support[1])
         return [op]
-    elif isinstance(block, tuple(three_qubit_gateset) + tuple(multi_qubit_gateset)):
+    elif isinstance(
+        block, tuple(three_qubit_gateset) + tuple(multi_qubit_gateset)
+    ):  #!Look to add noise
         block_name = block.name[1:] if block.name.startswith("M") else block.name
         pyq_cls = getattr(pyq, block_name)
         if isinstance(block, ParametricBlock):
