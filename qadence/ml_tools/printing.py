@@ -80,9 +80,7 @@ def plot_mlflow(
 
 
 def log_model_mlflow(
-    writer: Any,
-    model: Module,
-    dataloader: DataLoader | DictDataLoader | None
+    writer: Any, model: Module, dataloader: DataLoader | DictDataLoader | None
 ) -> None:
     if dataloader is not None:
         xs: InputData
