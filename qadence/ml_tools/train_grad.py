@@ -196,6 +196,10 @@ def train(
                 else:
                     write_checkpoint(config.folder, model, optimizer, init_iter)
 
+            plot_tracker(
+                (writer, model, init_iter, config.plotting_functions), config.tracking_tool
+            )
+
         except KeyboardInterrupt:
             logger.info("Terminating training gracefully after the current iteration.")
 

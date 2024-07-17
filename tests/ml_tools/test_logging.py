@@ -20,8 +20,9 @@ from torch.utils.data import DataLoader
 
 from qadence.ml_tools import TrainConfig, train_with_grad
 from qadence.ml_tools.data import to_dataloader
+from qadence.ml_tools.models import QNN
 from qadence.ml_tools.utils import rand_featureparameters
-from qadence.models import QNN, QuantumModel
+from qadence.model import QuantumModel
 from qadence.types import ExperimentTrackingTool
 
 
