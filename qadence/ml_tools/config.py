@@ -47,7 +47,7 @@ class TrainConfig:
     print_every: int = 1000
     """Print loss/metrics."""
     write_every: int = 50
-    """Write tensorboard logs."""
+    """Write loss and metrics with the tracking tool."""
     checkpoint_every: int = 5000
     """Write model/optimizer checkpoint."""
     plot_every: int = 5000
