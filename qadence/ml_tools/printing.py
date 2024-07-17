@@ -16,7 +16,7 @@ from qadence.types import ExperimentTrackingTool
 logger = getLogger(__name__)
 
 PlottingFunction = Callable[[Module, int], tuple[str, Figure]]
-InputData = Tensor | dict[str, Tensor]
+InputData = Union[Tensor, dict[str, Tensor]]
 
 
 def print_metrics(loss: float | None, metrics: dict, iteration: int) -> None:
@@ -102,22 +102,22 @@ def log_model_mlflow(
     writer.pytorch.log_model(model, artifact_path="model", signature=signature)
 
 
-TRACKER_MAPPING = {
+TRACKER_MAPPING: dict[ExperimentTrackingTool, Callable[..., None]] = {
     ExperimentTrackingTool.TENSORBOARD: write_tensorboard,
     ExperimentTrackingTool.MLFLOW: write_mlflow,
 }
 
-LOGGER_MAPPING = {
+LOGGER_MAPPING: dict[ExperimentTrackingTool, Callable[..., None]] = {
     ExperimentTrackingTool.TENSORBOARD: log_hyperparams_tensorboard,
     ExperimentTrackingTool.MLFLOW: log_hyperparams_mlflow,
 }
 
-PLOTTER_MAPPING = {
+PLOTTER_MAPPING: dict[ExperimentTrackingTool, Callable[..., None]] = {
     ExperimentTrackingTool.TENSORBOARD: plot_tensorboard,
     ExperimentTrackingTool.MLFLOW: plot_mlflow,
 }
 
-MODEL_LOGGER_MAPPING = {
+MODEL_LOGGER_MAPPING: dict[ExperimentTrackingTool, Callable[..., None]] = {
     ExperimentTrackingTool.TENSORBOARD: log_model_tensorboard,
     ExperimentTrackingTool.MLFLOW: log_model_mlflow,
 }
@@ -126,7 +126,7 @@ MODEL_LOGGER_MAPPING = {
 def write_tracker(
     args: Any, tracking_tool: ExperimentTrackingTool = ExperimentTrackingTool.TENSORBOARD
 ) -> None:
-    return TRACKER_MAPPING[tracking_tool](*args)  # type: ignore
+    return TRACKER_MAPPING[tracking_tool](*args)
 
 
 def log_tracker(
@@ -138,10 +138,10 @@ def log_tracker(
 def plot_tracker(
     args: Any, tracking_tool: ExperimentTrackingTool = ExperimentTrackingTool.TENSORBOARD
 ) -> None:
-    return PLOTTER_MAPPING[tracking_tool](*args)  # type: ignore
+    return PLOTTER_MAPPING[tracking_tool](*args)
 
 
 def log_model_tracker(
     args: Any, tracking_tool: ExperimentTrackingTool = ExperimentTrackingTool.TENSORBOARD
 ) -> None:
-    return MODEL_LOGGER_MAPPING[tracking_tool](*args)  # type: ignore
+    return MODEL_LOGGER_MAPPING[tracking_tool](*args)
