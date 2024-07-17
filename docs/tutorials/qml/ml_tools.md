@@ -323,7 +323,7 @@ export MLFLOW_EXPERIMENT=test_experiment
 export MLFLOW_RUN_NAME=run_0
 ```
 
-If no tracking URI is provided, mlflow stores runs and artifacts in the local `./mlflow` directory and if no names are defined, the experiment and run will be named with random UUIDs.
+If no tracking URI is provided, mlflow stores run information and artifacts in the local `./mlflow` directory and if no names are defined, the experiment and run will be named with random UUIDs.
 
 ### Setup
 Let's do the necessary imports and declare a `DataLoader`. We can already define some hyperparameters here, including the seed for random number generators. mlflow can log hyperparameters with arbitrary types, for example the observable that we want to monitor (`Z` in this case, which has a `qadence.Operation` type).
