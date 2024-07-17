@@ -84,8 +84,7 @@ protocols = ["qadence-protocols"]
 libs = ["qadence-libs"]
 dlprof = ["nvidia-pyindex", "nvidia-dlprof[pytorch]"]
 mlflow = ["mlflow"]
-all = ["pulser", "braket", "visualization", "protocols", "libs"]
-
+all = ["pulser", "braket", "visualization", "protocols", "libs", "mlflow"]
 
 [tool.hatch.envs.default]
 dependencies = [
@@ -103,7 +102,7 @@ dependencies = [
     "ruff",
     "pydocstringformatter",
 ]
-features = ["pulser", "braket", "visualization", "horqrux"]
+features = ["pulser", "braket", "visualization", "horqrux", "mlflow"]
 
 [tool.hatch.envs.default.scripts]
 test = "pytest -n auto --cov-report lcov --cov-config=pyproject.toml --cov=qadence --cov=tests --ignore=./tests/test_examples.py {args}"
