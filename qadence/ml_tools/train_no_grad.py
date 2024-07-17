@@ -56,6 +56,7 @@ def train(
         dataloader: Dataloader constructed via `dictdataloader`
         optimizer: The optimizer to use taken from the Nevergrad library. If this is not
             the case the function will raise an AssertionError
+        config: `TrainConfig` with additional training options.
         loss_fn: Loss function returning (loss: float, metrics: dict[str, float])
     """
     init_iter = 0
@@ -121,11 +122,15 @@ def train(
                 print_metrics(loss, metrics, iteration)
 
             if iteration % config.write_every == 0:
-                write_tracker((writer, loss, metrics, iteration), config.tracking_tool)
+                write_tracker(writer, loss, metrics, iteration, tracking_tool=config.tracking_tool)
 
             if iteration % config.plot_every == 0:
                 plot_tracker(
-                    (writer, model, iteration, config.plotting_functions), config.tracking_tool
+                    writer,
+                    model,
+                    iteration,
+                    config.plotting_functions,
+                    tracking_tool=config.tracking_tool,
                 )
 
             if config.folder:
@@ -137,15 +142,15 @@ def train(
 
     # writing hyperparameters
     if config.hyperparams:
-        log_tracker((writer, config.hyperparams, metrics), tracking_tool=config.tracking_tool)
+        log_tracker(writer, config.hyperparams, metrics, tracking_tool=config.tracking_tool)
 
     if config.log_model:
-        log_model_tracker((writer, model, dataloader), tracking_tool=config.tracking_tool)
+        log_model_tracker(writer, model, dataloader, tracking_tool=config.tracking_tool)
 
     # Final writing and checkpointing
     if config.folder:
         write_checkpoint(config.folder, model, optimizer, iteration)
-    write_tracker((writer, loss, metrics, iteration), config.tracking_tool)
+    write_tracker(writer, loss, metrics, iteration, tracking_tool=config.tracking_tool)
 
     # close tracker
     if config.tracking_tool == ExperimentTrackingTool.TENSORBOARD:

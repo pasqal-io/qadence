@@ -122,24 +122,24 @@ MODEL_LOGGER_MAPPING: dict[ExperimentTrackingTool, Callable[..., None]] = {
 
 
 def write_tracker(
-    args: Any, tracking_tool: ExperimentTrackingTool = ExperimentTrackingTool.TENSORBOARD
+    *args: Any, tracking_tool: ExperimentTrackingTool = ExperimentTrackingTool.TENSORBOARD
 ) -> None:
     return TRACKER_MAPPING[tracking_tool](*args)
 
 
 def log_tracker(
-    args: Any, tracking_tool: ExperimentTrackingTool = ExperimentTrackingTool.TENSORBOARD
+    *args: Any, tracking_tool: ExperimentTrackingTool = ExperimentTrackingTool.TENSORBOARD
 ) -> None:
     return LOGGER_MAPPING[tracking_tool](*args)
 
 
 def plot_tracker(
-    args: Any, tracking_tool: ExperimentTrackingTool = ExperimentTrackingTool.TENSORBOARD
+    *args: Any, tracking_tool: ExperimentTrackingTool = ExperimentTrackingTool.TENSORBOARD
 ) -> None:
     return PLOTTER_MAPPING[tracking_tool](*args)
 
 
 def log_model_tracker(
-    args: Any, tracking_tool: ExperimentTrackingTool = ExperimentTrackingTool.TENSORBOARD
+    *args: Any, tracking_tool: ExperimentTrackingTool = ExperimentTrackingTool.TENSORBOARD
 ) -> None:
     return MODEL_LOGGER_MAPPING[tracking_tool](*args)

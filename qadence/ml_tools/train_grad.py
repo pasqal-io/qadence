@@ -182,9 +182,7 @@ def train(
                 best_val_loss, metrics = loss_fn(model, xs_to_device)
 
                 metrics["val_loss"] = best_val_loss
-                write_tracker(
-                    (writer, None, metrics, init_iter), tracking_tool=config.tracking_tool
-                )
+                write_tracker(writer, None, metrics, init_iter, tracking_tool=config.tracking_tool)
 
             if config.folder:
                 if config.checkpoint_best_only:
@@ -193,7 +191,11 @@ def train(
                     write_checkpoint(config.folder, model, optimizer, init_iter)
 
             plot_tracker(
-                (writer, model, init_iter, config.plotting_functions), config.tracking_tool
+                writer,
+                model,
+                init_iter,
+                config.plotting_functions,
+                tracking_tool=config.tracking_tool,
             )
 
         except KeyboardInterrupt:
@@ -240,11 +242,17 @@ def train(
                     print_metrics(loss, metrics, iteration - 1)
 
                 if iteration % config.write_every == 0:
-                    write_tracker((writer, loss, metrics, iteration), config.tracking_tool)
+                    write_tracker(
+                        writer, loss, metrics, iteration, tracking_tool=config.tracking_tool
+                    )
 
                 if iteration % config.plot_every == 0:
                     plot_tracker(
-                        (writer, model, iteration, config.plotting_functions), config.tracking_tool
+                        writer,
+                        model,
+                        iteration,
+                        config.plotting_functions,
+                        tracking_tool=config.tracking_tool,
                     )
                 if perform_val:
                     if iteration % config.val_every == 0:
@@ -256,7 +264,9 @@ def train(
                             if config.folder and config.checkpoint_best_only:
                                 write_checkpoint(config.folder, model, optimizer, iteration="best")
                             metrics["val_loss"] = val_loss
-                            write_tracker((writer, loss, metrics, iteration), config.tracking_tool)
+                            write_tracker(
+                                writer, loss, metrics, iteration, tracking_tool=config.tracking_tool
+                            )
 
                 if config.folder:
                     if iteration % config.checkpoint_every == 0 and not config.checkpoint_best_only:
@@ -281,15 +291,15 @@ def train(
     # Final checkpointing and writing
     if config.folder and not config.checkpoint_best_only:
         write_checkpoint(config.folder, model, optimizer, iteration)
-    write_tracker((writer, loss, metrics, iteration), config.tracking_tool)
+    write_tracker(writer, loss, metrics, iteration, tracking_tool=config.tracking_tool)
 
     # writing hyperparameters
     if config.hyperparams:
-        log_tracker((writer, config.hyperparams, metrics), tracking_tool=config.tracking_tool)
+        log_tracker(writer, config.hyperparams, metrics, tracking_tool=config.tracking_tool)
 
     # logging the model
     if config.log_model:
-        log_model_tracker((writer, model, dataloader), tracking_tool=config.tracking_tool)
+        log_model_tracker(writer, model, dataloader, tracking_tool=config.tracking_tool)
 
     # close tracker
     if config.tracking_tool == ExperimentTrackingTool.TENSORBOARD:
