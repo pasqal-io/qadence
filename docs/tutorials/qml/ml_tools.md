@@ -366,7 +366,7 @@ def dataloader(batch_size: int = 25) -> DataLoader:
     return to_dataloader(x, y, batch_size=batch_size, infinite=True)
 ```
 
-We continue with the usual QNN definition, as well as loss function and optimizer.
+We continue with the regular QNN definition, together with the loss function and optimizer.
 
 ```python
 obs = hamiltonian_factory(register=hyperparams["n_qubits"], detuning=hyperparams["observable"])
