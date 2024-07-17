@@ -5,7 +5,7 @@ import os
 from dataclasses import dataclass, field, fields
 from logging import getLogger
 from pathlib import Path
-from typing import Callable, Optional, Type
+from typing import Callable, Type
 from uuid import uuid4
 
 from sympy import Basic
@@ -73,9 +73,9 @@ class TrainConfig:
 
     validation loss across previous iterations.
     """
-    validation_criterion: Optional[Callable] = None
+    validation_criterion: Callable | None = None
     """A boolean function which evaluates a given validation metric is satisfied."""
-    trainstop_criterion: Optional[Callable] = None
+    trainstop_criterion: Callable | None = None
     """A boolean function which evaluates a given training stopping metric is satisfied."""
     batch_size: int = 1
     """The batch_size to use when passing a list/tuple of torch.Tensors."""
