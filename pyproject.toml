@@ -21,6 +21,7 @@ authors = [
     { name = "Smit Chaudhary", email = "smit.chaudhary@pasqal.com" },
     { name = "Ignacio Fernández Graña", email = "ignacio.fernandez-grana@pasqal.com" },
     { name = "Charles Moussa", email = "charles.moussa@pasqal.com" },
+    { name = "Giorgio Tosti Balducci", email = "giorgio.tosti-balducci@pasqal.com" },
 ]
 requires-python = ">=3.9"
 license = { text = "Apache 2.0" }
