@@ -16,7 +16,7 @@ from qadence.types import ExperimentTrackingTool
 logger = getLogger(__name__)
 
 PlottingFunction = Callable[[Module, int], tuple[str, Figure]]
-InputData = Union[Tensor, dict[str, Tensor]]
+InputData = Tensor | dict[str, Tensor]
 
 
 def print_metrics(loss: float | None, metrics: dict, iteration: int) -> None:
