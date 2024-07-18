@@ -201,7 +201,12 @@ class PyQHamiltonianEvolution(Module):
         elif isinstance(block.generator, Tensor):
             m = block.generator.to(dtype=cdouble)
             hmat = block_to_tensor(
-                MatrixBlock(m, qubit_support=block.qubit_support),
+                MatrixBlock(
+                    m,
+                    qubit_support=block.qubit_support,
+                    check_unitary=False,
+                    check_hermitian=True,
+                ),
                 qubit_support=self.qubit_support,
                 use_full_support=False,
             )
