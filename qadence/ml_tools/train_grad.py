@@ -246,6 +246,8 @@ def train(
             xs = next(dl_iter) if dataloader is not None else None  # type: ignore[arg-type]
             xs_to_device = data_to_device(xs, device=device, dtype=data_dtype)
             loss, metrics, *_ = loss_fn(model, xs_to_device)
+            if dataloader is None:
+                loss = loss.item()
             if iteration % config.print_every == 0 and config.verbose:
                 print_metrics(loss, metrics, iteration)
 
