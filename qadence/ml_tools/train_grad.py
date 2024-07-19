@@ -1,10 +1,17 @@
 from __future__ import annotations
 
+import importlib
 import math
 from logging import getLogger
 from typing import Callable, Union
 
-from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, TimeRemainingColumn
+from rich.progress import (
+    BarColumn,
+    Progress,
+    TaskProgressColumn,
+    TextColumn,
+    TimeRemainingColumn,
+)
 from torch import complex128, float32, float64
 from torch import device as torch_device
 from torch import dtype as torch_dtype
@@ -16,8 +23,15 @@ from torch.utils.tensorboard import SummaryWriter
 from qadence.ml_tools.config import TrainConfig
 from qadence.ml_tools.data import DictDataLoader, data_to_device
 from qadence.ml_tools.optimize_step import optimize_step
-from qadence.ml_tools.printing import print_metrics, write_tensorboard
+from qadence.ml_tools.printing import (
+    log_model_tracker,
+    log_tracker,
+    plot_tracker,
+    print_metrics,
+    write_tracker,
+)
 from qadence.ml_tools.saveload import load_checkpoint, write_checkpoint
+from qadence.types import ExperimentTrackingTool
 
 logger = getLogger(__name__)
 
@@ -30,7 +44,6 @@ def train(
     loss_fn: Callable,
     device: torch_device = None,
     optimize_step: Callable = optimize_step,
-    write_tensorboard: Callable = write_tensorboard,
     dtype: torch_dtype = None,
 ) -> tuple[Module, Optimizer]:
     """Runs the training loop with gradient-based optimizer.
@@ -53,10 +66,6 @@ def train(
         optimize_step: Customizable optimization callback which is called at every iteration.=
             The function must have the signature `optimize_step(model,
             optimizer, loss_fn, xs, device="cpu")`.
-        write_tensorboard: Customizable tensorboard logging callback which is
-            called every `config.write_every` iterations. The function must have
-            the signature `write_tensorboard(writer, loss, metrics, iteration)`
-            (see the example below).
         dtype: The dtype to use for the data.
 
     Example:
@@ -122,8 +131,11 @@ def train(
         model = model.module.to(device=device, dtype=dtype)
     else:
         model = model.to(device=device, dtype=dtype)
-    # initialize tensorboard
-    writer = SummaryWriter(config.folder, purge_step=init_iter)
+    # initialize tracking tool
+    if config.tracking_tool == ExperimentTrackingTool.TENSORBOARD:
+        writer = SummaryWriter(config.folder, purge_step=init_iter)
+    else:
+        writer = importlib.import_module("mlflow")
 
     perform_val = isinstance(config.val_every, int)
     if perform_val:
@@ -166,13 +178,21 @@ def train(
                 best_val_loss, metrics = loss_fn(model, xs_to_device)
 
                 metrics["val_loss"] = best_val_loss
-                write_tensorboard(writer, None, metrics, init_iter)
+                write_tracker(writer, None, metrics, init_iter, tracking_tool=config.tracking_tool)
 
             if config.folder:
                 if config.checkpoint_best_only:
                     write_checkpoint(config.folder, model, optimizer, iteration="best")
                 else:
                     write_checkpoint(config.folder, model, optimizer, init_iter)
+
+            plot_tracker(
+                writer,
+                model,
+                init_iter,
+                config.plotting_functions,
+                tracking_tool=config.tracking_tool,
+            )
 
         except KeyboardInterrupt:
             logger.info("Terminating training gracefully after the current iteration.")
@@ -218,8 +238,18 @@ def train(
                     print_metrics(loss, metrics, iteration - 1)
 
                 if iteration % config.write_every == 0:
-                    write_tensorboard(writer, loss, metrics, iteration - 1)
+                    write_tracker(
+                        writer, loss, metrics, iteration, tracking_tool=config.tracking_tool
+                    )
 
+                if iteration % config.plot_every == 0:
+                    plot_tracker(
+                        writer,
+                        model,
+                        iteration,
+                        config.plotting_functions,
+                        tracking_tool=config.tracking_tool,
+                    )
                 if perform_val:
                     if iteration % config.val_every == 0:
                         xs = next(dl_iter_val)
@@ -230,7 +260,9 @@ def train(
                             if config.folder and config.checkpoint_best_only:
                                 write_checkpoint(config.folder, model, optimizer, iteration="best")
                             metrics["val_loss"] = val_loss
-                            write_tensorboard(writer, None, metrics, iteration)
+                            write_tracker(
+                                writer, loss, metrics, iteration, tracking_tool=config.tracking_tool
+                            )
 
                 if config.folder:
                     if iteration % config.checkpoint_every == 0 and not config.checkpoint_best_only:
@@ -254,10 +286,23 @@ def train(
         except KeyboardInterrupt:
             logger.info("Terminating training gracefully after the current iteration.")
 
-    # Final printing, writing and checkpointing
+    # Final checkpointing and writing
     if config.folder and not config.checkpoint_best_only:
         write_checkpoint(config.folder, model, optimizer, iteration)
-    write_tensorboard(writer, loss, metrics, iteration)
-    writer.close()
+    write_tracker(writer, loss, metrics, iteration, tracking_tool=config.tracking_tool)
+
+    # writing hyperparameters
+    if config.hyperparams:
+        log_tracker(writer, config.hyperparams, metrics, tracking_tool=config.tracking_tool)
+
+    # logging the model
+    if config.log_model:
+        log_model_tracker(writer, model, dataloader, tracking_tool=config.tracking_tool)
+
+    # close tracker
+    if config.tracking_tool == ExperimentTrackingTool.TENSORBOARD:
+        writer.close()
+    elif config.tracking_tool == ExperimentTrackingTool.MLFLOW:
+        writer.end_run()
 
     return model, optimizer

@@ -1,11 +1,18 @@
 from __future__ import annotations
 
+import importlib
 from logging import getLogger
 from typing import Callable
 
 import nevergrad as ng
 from nevergrad.optimization.base import Optimizer as NGOptimizer
-from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, TimeRemainingColumn
+from rich.progress import (
+    BarColumn,
+    Progress,
+    TaskProgressColumn,
+    TextColumn,
+    TimeRemainingColumn,
+)
 from torch import Tensor
 from torch.nn import Module
 from torch.utils.data import DataLoader
@@ -14,9 +21,16 @@ from torch.utils.tensorboard import SummaryWriter
 from qadence.ml_tools.config import TrainConfig
 from qadence.ml_tools.data import DictDataLoader
 from qadence.ml_tools.parameters import get_parameters, set_parameters
-from qadence.ml_tools.printing import print_metrics, write_tensorboard
+from qadence.ml_tools.printing import (
+    log_model_tracker,
+    log_tracker,
+    plot_tracker,
+    print_metrics,
+    write_tracker,
+)
 from qadence.ml_tools.saveload import load_checkpoint, write_checkpoint
 from qadence.ml_tools.tensors import promote_to_tensor
+from qadence.types import ExperimentTrackingTool
 
 logger = getLogger(__name__)
 
@@ -42,6 +56,7 @@ def train(
         dataloader: Dataloader constructed via `dictdataloader`
         optimizer: The optimizer to use taken from the Nevergrad library. If this is not
             the case the function will raise an AssertionError
+        config: `TrainConfig` with additional training options.
         loss_fn: Loss function returning (loss: float, metrics: dict[str, float])
     """
     init_iter = 0
@@ -63,8 +78,11 @@ def train(
     # TODO: support also Scipy optimizers
     assert isinstance(optimizer, NGOptimizer), "Use only optimizers from the Nevergrad library"
 
-    # initialize tensorboard
-    writer = SummaryWriter(config.folder, purge_step=init_iter)
+    # initialize tracking tool
+    if config.tracking_tool == ExperimentTrackingTool.TENSORBOARD:
+        writer = SummaryWriter(config.folder, purge_step=init_iter)
+    else:
+        writer = importlib.import_module("mlflow")
 
     # set optimizer configuration and initial parameters
     optimizer.budget = config.max_iter
@@ -100,7 +118,16 @@ def train(
                 print_metrics(loss, metrics, iteration)
 
             if iteration % config.write_every == 0:
-                write_tensorboard(writer, loss, metrics, iteration)
+                write_tracker(writer, loss, metrics, iteration, tracking_tool=config.tracking_tool)
+
+            if iteration % config.plot_every == 0:
+                plot_tracker(
+                    writer,
+                    model,
+                    iteration,
+                    config.plotting_functions,
+                    tracking_tool=config.tracking_tool,
+                )
 
             if config.folder:
                 if iteration % config.checkpoint_every == 0:
@@ -109,10 +136,22 @@ def train(
             if iteration >= init_iter + config.max_iter:
                 break
 
-    ## Final writing and stuff
+    # writing hyperparameters
+    if config.hyperparams:
+        log_tracker(writer, config.hyperparams, metrics, tracking_tool=config.tracking_tool)
+
+    if config.log_model:
+        log_model_tracker(writer, model, dataloader, tracking_tool=config.tracking_tool)
+
+    # Final writing and checkpointing
     if config.folder:
         write_checkpoint(config.folder, model, optimizer, iteration)
-    write_tensorboard(writer, loss, metrics, iteration)
-    writer.close()
+    write_tracker(writer, loss, metrics, iteration, tracking_tool=config.tracking_tool)
+
+    # close tracker
+    if config.tracking_tool == ExperimentTrackingTool.TENSORBOARD:
+        writer.close()
+    elif config.tracking_tool == ExperimentTrackingTool.MLFLOW:
+        writer.end_run()
 
     return model, optimizer

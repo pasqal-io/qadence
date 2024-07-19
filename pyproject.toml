@@ -21,10 +21,11 @@ authors = [
     { name = "Smit Chaudhary", email = "smit.chaudhary@pasqal.com" },
     { name = "Ignacio Fernández Graña", email = "ignacio.fernandez-grana@pasqal.com" },
     { name = "Charles Moussa", email = "charles.moussa@pasqal.com" },
+    { name = "Giorgio Tosti Balducci", email = "giorgio.tosti-balducci@pasqal.com" },
 ]
 requires-python = ">=3.9"
 license = { text = "Apache 2.0" }
-version = "1.7.2"
+version = "1.7.3"
 classifiers = [
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python",
@@ -83,8 +84,8 @@ horqrux = [
 protocols = ["qadence-protocols"]
 libs = ["qadence-libs"]
 dlprof = ["nvidia-pyindex", "nvidia-dlprof[pytorch]"]
-all = ["pulser", "braket", "visualization", "protocols", "libs"]
-
+mlflow = ["mlflow"]
+all = ["pulser", "braket", "visualization", "protocols", "libs", "mlflow"]
 
 [tool.hatch.envs.default]
 dependencies = [
@@ -102,7 +103,7 @@ dependencies = [
     "ruff",
     "pydocstringformatter",
 ]
-features = ["pulser", "braket", "visualization", "horqrux"]
+features = ["pulser", "braket", "visualization", "horqrux", "mlflow"]
 
 [tool.hatch.envs.default.scripts]
 test = "pytest -n auto --cov-report lcov --cov-config=pyproject.toml --cov=qadence --cov=tests --ignore=./tests/test_examples.py {args}"
@@ -139,7 +140,7 @@ dependencies = [
     "markdown-exec",
     "mike",
 ]
-features = ["pulser", "braket", "horqrux", "visualization"]
+features = ["pulser", "braket", "horqrux", "visualization", "mlflow"]
 
 [tool.hatch.envs.docs.scripts]
 build = "mkdocs build --clean --strict"
