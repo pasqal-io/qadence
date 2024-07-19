@@ -84,10 +84,6 @@ def train(
     else:
         writer = importlib.import_module("mlflow")
 
-        # writer.mlflow.pytorch.autolog(
-        #     log_every_n_step=config.write_every, log_models=False, log_datasets=False
-        # )
-
     # set optimizer configuration and initial parameters
     optimizer.budget = config.max_iter
     optimizer.enable_pickling()

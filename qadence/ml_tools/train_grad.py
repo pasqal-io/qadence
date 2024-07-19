@@ -137,10 +137,6 @@ def train(
     else:
         writer = importlib.import_module("mlflow")
 
-        # writer.mlflow.pytorch.autolog(
-        #     log_every_n_step=config.write_every, log_models=False, log_datasets=False
-        # )
-
     perform_val = isinstance(config.val_every, int)
     if perform_val:
         if not isinstance(dataloader, DictDataLoader):
