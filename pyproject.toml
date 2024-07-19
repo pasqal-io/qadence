@@ -155,7 +155,6 @@ features = ["all"]
 [tool.hatch.build.targets.sdist]
 exclude = [
     "/.gitignore",
-    "/.gitlab-ci-yml",
     "/.pre-commit-config.yml",
     "/tests",
     "/docs",
