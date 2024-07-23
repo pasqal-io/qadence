@@ -131,7 +131,6 @@ def test_hyperparams_logging_tensorboard(BasicQuantumModel: QuantumModel, tmp_pa
 
 def test_model_logging_mlflow_basicQM(BasicQuantumModel: QuantumModel, tmp_path: Path) -> None:
     model = BasicQuantumModel
-    breakpoint()
     loss_fn, optimizer = setup_model(model)
 
     config = TrainConfig(
