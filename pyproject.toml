@@ -53,6 +53,7 @@ dependencies = [
     "pyyaml",
     "matplotlib",
     "Arpeggio==2.0.2",
+	"mlflow",
 ]
 
 [tool.hatch.metadata]
@@ -84,8 +85,7 @@ horqrux = [
 protocols = ["qadence-protocols"]
 libs = ["qadence-libs"]
 dlprof = ["nvidia-pyindex", "nvidia-dlprof[pytorch]"]
-mlflow = ["mlflow"]
-all = ["pulser", "braket", "visualization", "protocols", "libs", "mlflow"]
+all = ["pulser", "braket", "visualization", "protocols", "libs"]
 
 [tool.hatch.envs.default]
 dependencies = [
@@ -103,7 +103,7 @@ dependencies = [
     "ruff",
     "pydocstringformatter",
 ]
-features = ["pulser", "braket", "visualization", "horqrux", "mlflow"]
+features = ["pulser", "braket", "visualization", "horqrux"]
 
 [tool.hatch.envs.default.scripts]
 test = "pytest -n auto --cov-report lcov --cov-config=pyproject.toml --cov=qadence --cov=tests --ignore=./tests/test_examples.py {args}"
