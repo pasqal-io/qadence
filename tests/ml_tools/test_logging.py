@@ -32,7 +32,7 @@ def dataloader(batch_size: int = 25) -> DataLoader:
     return to_dataloader(x, y, batch_size=batch_size, infinite=True)
 
 
-def setup(model: Module) -> tuple[Callable, Optimizer]:
+def setup_model(model: Module) -> tuple[Callable, Optimizer]:
     cnt = count()
     criterion = torch.nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
@@ -83,7 +83,7 @@ def clean_mlflow_experiment(train_config: TrainConfig) -> None:
 def test_hyperparams_logging_mlflow(BasicQuantumModel: QuantumModel, tmp_path: Path) -> None:
     model = BasicQuantumModel
 
-    loss_fn, optimizer = setup(model)
+    loss_fn, optimizer = setup_model(model)
 
     hyperparams = {"max_iter": int(10), "lr": 0.1}
 
@@ -113,7 +113,7 @@ def test_hyperparams_logging_mlflow(BasicQuantumModel: QuantumModel, tmp_path: P
 def test_hyperparams_logging_tensorboard(BasicQuantumModel: QuantumModel, tmp_path: Path) -> None:
     model = BasicQuantumModel
 
-    loss_fn, optimizer = setup(model)
+    loss_fn, optimizer = setup_model(model)
 
     hyperparams = {"max_iter": int(10), "lr": 0.1}
 
@@ -131,8 +131,8 @@ def test_hyperparams_logging_tensorboard(BasicQuantumModel: QuantumModel, tmp_pa
 
 def test_model_logging_mlflow_basicQM(BasicQuantumModel: QuantumModel, tmp_path: Path) -> None:
     model = BasicQuantumModel
-
-    loss_fn, optimizer = setup(model)
+    breakpoint()
+    loss_fn, optimizer = setup_model(model)
 
     config = TrainConfig(
         folder=tmp_path,
@@ -154,7 +154,7 @@ def test_model_logging_mlflow_basicQNN(BasicQNN: QNN, tmp_path: Path) -> None:
     data = dataloader()
     model = BasicQNN
 
-    loss_fn, optimizer = setup(model)
+    loss_fn, optimizer = setup_model(model)
 
     config = TrainConfig(
         folder=tmp_path,
@@ -176,7 +176,7 @@ def test_model_logging_mlflow_basicAdjQNN(BasicAdjointQNN: QNN, tmp_path: Path) 
     data = dataloader()
     model = BasicAdjointQNN
 
-    loss_fn, optimizer = setup(model)
+    loss_fn, optimizer = setup_model(model)
 
     config = TrainConfig(
         folder=tmp_path,
@@ -199,7 +199,7 @@ def test_model_logging_tensorboard(
 ) -> None:
     model = BasicQuantumModel
 
-    loss_fn, optimizer = setup(model)
+    loss_fn, optimizer = setup_model(model)
 
     config = TrainConfig(
         folder=tmp_path,
@@ -219,7 +219,7 @@ def test_plotting_mlflow(BasicQNN: QNN, tmp_path: Path) -> None:
     data = dataloader()
     model = BasicQNN
 
-    loss_fn, optimizer = setup(model)
+    loss_fn, optimizer = setup_model(model)
 
     def plot_model(model: QuantumModel, iteration: int) -> tuple[str, Figure]:
         descr = f"model_prediction_epoch_{iteration}.png"
@@ -267,7 +267,7 @@ def test_plotting_tensorboard(BasicQNN: QNN, tmp_path: Path) -> None:
     data = dataloader()
     model = BasicQNN
 
-    loss_fn, optimizer = setup(model)
+    loss_fn, optimizer = setup_model(model)
 
     def plot_model(model: QuantumModel, iteration: int) -> tuple[str, Figure]:
         descr = f"model_prediction_epoch_{iteration}.png"

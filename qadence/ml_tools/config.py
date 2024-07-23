@@ -267,14 +267,14 @@ class FeatureMapConfig:
 
     num_repeats: int | dict[str, int] = 0
     """
-    Number of feature map layers repeated in the data reuploadig step.
+    Number of feature map layers repeated in the data reuploading step.
 
     If all are to be repeated the same number of times, then can give a single
-    `int`. For different number of repeatitions for each feature, provide a dict
+    `int`. For different number of repetitions for each feature, provide a dict
     of (str, int) where the key is the name of the variable and the value is the
-    number of repeatitions for that feature.
+    number of repetitions for that feature.
     This amounts to the number of additional reuploads. So if `num_repeats` is N,
-    the data gets uploaded N+1 times. Defaults to no repeatition.
+    the data gets uploaded N+1 times. Defaults to no repetition.
     """
 
     operation: Callable[[Parameter | Basic], AnalogBlock] | Type[RX] | None = None

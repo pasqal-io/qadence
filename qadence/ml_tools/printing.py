@@ -4,7 +4,6 @@ from logging import getLogger
 from typing import Any, Callable, Union
 
 from matplotlib.figure import Figure
-from mlflow.models import infer_signature
 from torch import Tensor
 from torch.nn import Module
 from torch.utils.data import DataLoader
@@ -82,6 +81,7 @@ def plot_mlflow(
 def log_model_mlflow(
     writer: Any, model: Module, dataloader: DataLoader | DictDataLoader | None
 ) -> None:
+    signature = None
     if dataloader is not None:
         xs: InputData
         xs, *_ = next(iter(dataloader))
@@ -94,9 +94,17 @@ def log_model_mlflow(
                 xs[key] = val.numpy()
             for key, val in preds.items():
                 preds[key] = val.detach.numpy()
-        signature = infer_signature(xs, preds)
-    else:
-        signature = None
+
+        try:
+            from mlflow.models import infer_signature
+
+            signature = infer_signature(xs, preds)
+        except ImportError:
+            logger.warning(
+                "An MLFlow specific function has been called but MLFlow failed to import."
+                "Please install MLFlow or adjust your code."
+            )
+
     writer.pytorch.log_model(model, artifact_path="model", signature=signature)
 
 
