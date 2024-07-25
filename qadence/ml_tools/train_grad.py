@@ -5,16 +5,12 @@ import math
 from logging import getLogger
 from typing import Callable, Union
 
-from rich.progress import (
-    BarColumn,
-    Progress,
-    TaskProgressColumn,
-    TextColumn,
-    TimeRemainingColumn,
-)
-from torch import complex128, float32, float64
+from rich.progress import (BarColumn, Progress, TaskProgressColumn, TextColumn,
+                           TimeRemainingColumn)
+from torch import complex128
 from torch import device as torch_device
 from torch import dtype as torch_dtype
+from torch import float32, float64
 from torch.nn import DataParallel, Module
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
@@ -23,13 +19,9 @@ from torch.utils.tensorboard import SummaryWriter
 from qadence.ml_tools.config import TrainConfig
 from qadence.ml_tools.data import DictDataLoader, data_to_device
 from qadence.ml_tools.optimize_step import optimize_step
-from qadence.ml_tools.printing import (
-    log_model_tracker,
-    log_tracker,
-    plot_tracker,
-    print_metrics,
-    write_tracker,
-)
+from qadence.ml_tools.printing import (log_model_tracker, log_tracker,
+                                       plot_tracker, print_metrics,
+                                       write_tracker)
 from qadence.ml_tools.saveload import load_checkpoint, write_checkpoint
 from qadence.types import ExperimentTrackingTool
 
@@ -231,18 +223,22 @@ def train(
                         "You can use e.g. `qadence.ml_tools.to_dataloader` to build a dataloader."
                     )
 
-                if iteration % config.print_every == 0 and config.verbose:
+                if (
+                    config.print_every != 0
+                    and iteration % config.print_every == 0
+                    and config.verbose
+                ):
                     # Note that the loss returned by optimize_step
                     # is the value before doing the training step
                     # which is printed accordingly by the previous iteration number
                     print_metrics(loss, metrics, iteration - 1)
 
-                if iteration % config.write_every == 0:
+                if config.write_every != 0 and iteration % config.write_every == 0:
                     write_tracker(
                         writer, loss, metrics, iteration, tracking_tool=config.tracking_tool
                     )
 
-                if iteration % config.plot_every == 0:
+                if config.plot_every != 0 and iteration % config.plot_every == 0:
                     plot_tracker(
                         writer,
                         model,
@@ -265,7 +261,11 @@ def train(
                             )
 
                 if config.folder:
-                    if iteration % config.checkpoint_every == 0 and not config.checkpoint_best_only:
+                    if (
+                        config.checkpoint_every != 0
+                        and iteration % config.checkpoint_every == 0
+                        and not config.checkpoint_best_only
+                    ):
                         write_checkpoint(config.folder, model, optimizer, iteration)
 
             except KeyboardInterrupt:
