@@ -1,0 +1,3686 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://pasqal-io.github.io/qadence/v1.7.4/content/block_system/">
+      
+      
+        <link rel="prev" href="../../getting_started/LICENSE/">
+      
+      
+        <link rel="next" href="../parameters/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.30">
+    
+    
+      
+        <title>Block system - Qadence</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.3cba04c6.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_markdown_exec_pyodide.css">
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../extras/css/mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../extras/css/colors.css">
+    
+      <link rel="stylesheet" href="../../extras/css/home.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#primitive-blocks" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Qadence" class="md-header__button md-logo" aria-label="Qadence" data-md-component="logo">
+      
+  <img src="../../extras/assets/logo/qadence_logo_small_white.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Qadence
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Block system
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5c-.84 0-1.65.15-2.39.42L12 2M3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29L3.34 7m.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14L3.36 17M20.65 7l-1.77 3.79a7.023 7.023 0 0 0-2.38-4.15l4.15.36m-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29L20.64 17M12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44L12 22Z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3 3.19.09m3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95 2.06.05m-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31Z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/pasqal-io/qadence/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    qadence
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../getting_started/installation/" class="md-tabs__link">
+          
+  
+    
+  
+  Getting started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
+          
+  
+    
+  
+  Contents
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../tutorials/" class="md-tabs__link">
+        
+  
+    
+  
+  Tutorials
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../api/blocks/" class="md-tabs__link">
+          
+  
+    
+  
+  API
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Qadence" class="md-nav__button md-logo" aria-label="Qadence" data-md-component="logo">
+      
+  <img src="../../extras/assets/logo/qadence_logo_small_white.svg" alt="logo">
+
+    </a>
+    Qadence
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/pasqal-io/qadence/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    qadence
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Getting started
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Getting started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting_started/installation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_2" id="__nav_2_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Development & Info
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            Development & Info
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting_started/CONTRIBUTING/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Contributing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting_started/CODE_OF_CONDUCT/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Code of conduct
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting_started/LICENSE/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    License
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Contents
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Contents
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Block system
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Block system
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#primitive-blocks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Primitive blocks
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#composite-blocks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Composite Blocks
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#digital-analog-composition" class="md-nav__link">
+    <span class="md-ellipsis">
+      Digital-analog composition
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#block-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      Block execution
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#execution-via-quantumcircuit-and-quantummodel" class="md-nav__link">
+    <span class="md-ellipsis">
+      Execution via QuantumCircuit and QuantumModel
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../parameters/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Parametric programs
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../time_dependent/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Time-dependent generators
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quantummodels/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quantum models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../register/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quantum registers
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../state_init/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    State initialization
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hamiltonians/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Arbitrary Hamiltonians
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../qml_constructors/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    QML Constructors
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../overlap/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Wavefunction overlaps
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../backends/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Backends
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Useful info
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_11">
+            <span class="md-nav__icon md-icon"></span>
+            Useful info
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../state_conventions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    State conventions
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../serializ_and_prep/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Serialization
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+      
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../tutorials/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Tutorials
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Tutorials
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_1" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../tutorials/digital_analog_qc/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Digital-analog quantum computing
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_1" id="__nav_4_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_1">
+            <span class="md-nav__icon md-icon"></span>
+            Digital-analog quantum computing
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/digital_analog_qc/analog-basics/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Basic operations on neutral-atoms
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/digital_analog_qc/analog-blocks-qcl/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Fitting a function with analog blocks
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/digital_analog_qc/semi-local-addressing/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Restricted local addressability
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/digital_analog_qc/pulser-basic/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Pulse-level programming with Pulser
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/digital_analog_qc/digital-analog-qcl/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Fitting a function with a Hamiltonian ansatz
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/digital_analog_qc/analog-qubo/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Solve a QUBO problem
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/digital_analog_qc/daqc-cnot/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    CNOT with interacting qubits
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../tutorials/qml/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Variational quantum algorithms
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            Variational quantum algorithms
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/qml/ml_tools/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Training tools
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/qml/config_qnn/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Configuring a QNN
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/qml/qcl/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quantum circuit learning
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/qml/qaoa/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Solving MaxCut with QAOA
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/qml/dqc_1d/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Solving a 1D ODE
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_3" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../tutorials/advanced_tutorials/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Advanced Tutorials
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_3" id="__nav_4_3_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_3">
+            <span class="md-nav__icon md-icon"></span>
+            Advanced Tutorials
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/advanced_tutorials/differentiability/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quantum circuits differentiation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/advanced_tutorials/custom-models/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Custom quantum models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/advanced_tutorials/projectors/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Projector blocks
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/advanced_tutorials/profiling-and-debugging/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Profiling and debugging on CUDA devices
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_4" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../tutorials/realistic_sims/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Realistic simulations
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_4" id="__nav_4_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_4">
+            <span class="md-nav__icon md-icon"></span>
+            Realistic simulations
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/realistic_sims/measurements/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Measurement protocols
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/realistic_sims/noise/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Simulated errors
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/realistic_sims/mitigation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Error mitigation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_5" id="__nav_4_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Development
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_5">
+            <span class="md-nav__icon md-icon"></span>
+            Development
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/development/architecture/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Architecture and sharp bits
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/development/draw/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Drawing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    API
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            API
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/blocks/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Block system
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/operations/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Operations
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/register/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Register
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/quantumcircuit/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    QuantumCircuit
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/parameters/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Parameters
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/states/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    State preparation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/constructors/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Constructors
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/transpile/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Transpilation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/execution/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Execution
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/models/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quantum models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/ml_tools/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    QML tools
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/serialization/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Serialization
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/types/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Types
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/draw/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Drawing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_15" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_15" id="__nav_5_15_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Backends
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_15_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_15">
+            <span class="md-nav__icon md-icon"></span>
+            Backends
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/backends/backend/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Abstract backend
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/backends/pyqtorch/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    PyQTorch
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/backends/pulser/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Pulser
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/backends/differentiable/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DifferentiableBackend
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#primitive-blocks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Primitive blocks
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#composite-blocks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Composite Blocks
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#digital-analog-composition" class="md-nav__link">
+    <span class="md-ellipsis">
+      Digital-analog composition
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#block-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      Block execution
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#execution-via-quantumcircuit-and-quantummodel" class="md-nav__link">
+    <span class="md-ellipsis">
+      Execution via QuantumCircuit and QuantumModel
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+  <h1>Block system</h1>
+
+<p>Quantum programs in Qadence are constructed using a block-system, with an emphasis on composability of primitive blocks to obtain larger, composite blocks. This functional approach is different from other frameworks which follow a more object-oriented way to construct circuits and express programs.</p>
+<h2 id="primitive-blocks">Primitive blocks</h2>
+<p>A <a class="autorefs autorefs-internal" href="../../api/blocks/#qadence.blocks.primitive.PrimitiveBlock"><code>PrimitiveBlock</code></a> represents a digital or an analog time-evolution quantum operation applied to a qubit support. Programs can always be decomposed down into a sequence of <code>PrimitiveBlock</code> elements.</p>
+<p>Two canonical examples of digital primitive blocks are the parametrized <code>RX</code> and the <code>CNOT</code> gates:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">qadence</span> <span class="kn">import</span> <span class="n">chain</span><span class="p">,</span> <span class="n">RX</span><span class="p">,</span> <span class="n">CNOT</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">rx</span> <span class="o">=</span> <span class="n">RX</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">cnot</span> <span class="o">=</span> <span class="n">CNOT</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">block</span> <span class="o">=</span> <span class="n">chain</span><span class="p">(</span><span class="n">rx</span><span class="p">,</span> <span class="n">cnot</span><span class="p">)</span>
+</code></pre></div>
+<div class="result" markdown="1" >
+
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.43.0 (0)
+ -->
+<!-- Title: %3 Pages: 1 -->
+<svg width="411pt" height="113pt"
+ viewBox="0.00 0.00 411.00 113.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 109)">
+<title>%3</title>
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-109 407,-109 407,4 -4,4"/>
+<!-- b603b32c7c754b6f9806b220e147ecf2 -->
+<g id="node1" class="node">
+<title>b603b32c7c754b6f9806b220e147ecf2</title>
+<text text-anchor="middle" x="27" y="-72.5" font-family="JetBrains Mono" font-size="15.00">0</text>
+</g>
+<!-- 36fa77f6fdcc4b22b6b8856944107fcc -->
+<g id="node2" class="node">
+<title>36fa77f6fdcc4b22b6b8856944107fcc</title>
+<path fill="#fed4b0" stroke="#e6550d" stroke-width="2.7" d="M207,-105C207,-105 102,-105 102,-105 96,-105 90,-99 90,-93 90,-93 90,-59 90,-59 90,-53 96,-47 102,-47 102,-47 207,-47 207,-47 213,-47 219,-53 219,-59 219,-59 219,-93 219,-93 219,-99 213,-105 207,-105"/>
+<text text-anchor="middle" x="154.5" y="-71" font-family="JetBrains Mono" font-size="20.00">RX(0.5)</text>
+</g>
+<!-- b603b32c7c754b6f9806b220e147ecf2&#45;&#45;36fa77f6fdcc4b22b6b8856944107fcc -->
+<g id="edge1" class="edge">
+<title>b603b32c7c754b6f9806b220e147ecf2&#45;&#45;36fa77f6fdcc4b22b6b8856944107fcc</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54,-76C64.56,-76 77.25,-76 89.99,-76"/>
+</g>
+<!-- 5dde75b6e5cf421fa935a8565e666864 -->
+<g id="node5" class="node">
+<title>5dde75b6e5cf421fa935a8565e666864</title>
+<text text-anchor="middle" x="27" y="-25.5" font-family="JetBrains Mono" font-size="15.00">1</text>
+</g>
+<!-- b603b32c7c754b6f9806b220e147ecf2&#45;&#45;5dde75b6e5cf421fa935a8565e666864 -->
+<!-- 313bd5dfcd084599ab88cbb5aedc9653 -->
+<g id="node3" class="node">
+<title>313bd5dfcd084599ab88cbb5aedc9653</title>
+<ellipse fill="black" stroke="black" cx="284" cy="-76" rx="7.2" ry="7.2"/>
+</g>
+<!-- 36fa77f6fdcc4b22b6b8856944107fcc&#45;&#45;313bd5dfcd084599ab88cbb5aedc9653 -->
+<g id="edge2" class="edge">
+<title>36fa77f6fdcc4b22b6b8856944107fcc&#45;&#45;313bd5dfcd084599ab88cbb5aedc9653</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M219.25,-76C242.41,-76 265.57,-76 276.5,-76"/>
+</g>
+<!-- dbb1f2b6dd254ecaba22202c3b7315ee -->
+<g id="node4" class="node">
+<title>dbb1f2b6dd254ecaba22202c3b7315ee</title>
+</g>
+<!-- 313bd5dfcd084599ab88cbb5aedc9653&#45;&#45;dbb1f2b6dd254ecaba22202c3b7315ee -->
+<g id="edge3" class="edge">
+<title>313bd5dfcd084599ab88cbb5aedc9653&#45;&#45;dbb1f2b6dd254ecaba22202c3b7315ee</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M291.47,-76C303.32,-76 329.1,-76 348.91,-76"/>
+</g>
+<!-- 03c91736d954460b814b3a65d82570d6 -->
+<g id="node8" class="node">
+<title>03c91736d954460b814b3a65d82570d6</title>
+</g>
+<!-- dbb1f2b6dd254ecaba22202c3b7315ee&#45;&#45;03c91736d954460b814b3a65d82570d6 -->
+<!-- c40fa19dddac4437b2f0a9d2475a824b -->
+<g id="node6" class="node">
+<title>c40fa19dddac4437b2f0a9d2475a824b</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="155,-29.5 154,-29.5 154,-28.5 155,-28.5 155,-29.5"/>
+</g>
+<!-- 5dde75b6e5cf421fa935a8565e666864&#45;&#45;c40fa19dddac4437b2f0a9d2475a824b -->
+<g id="edge4" class="edge">
+<title>5dde75b6e5cf421fa935a8565e666864&#45;&#45;c40fa19dddac4437b2f0a9d2475a824b</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54,-29C90.19,-29 151.55,-29 153.45,-29"/>
+</g>
+<!-- 4dcb0f4efebf4992b8df9fc70779814e -->
+<g id="node7" class="node">
+<title>4dcb0f4efebf4992b8df9fc70779814e</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M301,-58C301,-58 267,-58 267,-58 261,-58 255,-52 255,-46 255,-46 255,-12 255,-12 255,-6 261,0 267,0 267,0 301,0 301,0 307,0 313,-6 313,-12 313,-12 313,-46 313,-46 313,-52 307,-58 301,-58"/>
+<text text-anchor="middle" x="284" y="-24" font-family="JetBrains Mono" font-size="20.00">X</text>
+</g>
+<!-- c40fa19dddac4437b2f0a9d2475a824b&#45;&#45;4dcb0f4efebf4992b8df9fc70779814e -->
+<g id="edge5" class="edge">
+<title>c40fa19dddac4437b2f0a9d2475a824b&#45;&#45;4dcb0f4efebf4992b8df9fc70779814e</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M155.59,-29C158.26,-29 218.15,-29 254.85,-29"/>
+</g>
+<!-- 4dcb0f4efebf4992b8df9fc70779814e&#45;&#45;313bd5dfcd084599ab88cbb5aedc9653 -->
+<g id="edge7" class="edge">
+<title>4dcb0f4efebf4992b8df9fc70779814e&#45;&#45;313bd5dfcd084599ab88cbb5aedc9653</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M284,-58.01C284,-61.57 284,-65.13 284,-68.69"/>
+</g>
+<!-- 4dcb0f4efebf4992b8df9fc70779814e&#45;&#45;03c91736d954460b814b3a65d82570d6 -->
+<g id="edge6" class="edge">
+<title>4dcb0f4efebf4992b8df9fc70779814e&#45;&#45;03c91736d954460b814b3a65d82570d6</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M313.48,-29C324.81,-29 337.76,-29 348.85,-29"/>
+</g>
+</g>
+</svg>
+
+
+
+</div>
+<p>A list of all available primitive operations can be found <a href="../../api/operations/">here</a>.</p>
+<details class="note">
+<summary>How to visualize blocks</summary>
+<p>There are two ways to display blocks in a Python interpreter: either as a tree in ASCII format using <code>print</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">qadence</span> <span class="kn">import</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">kron</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">kron_block</span> <span class="o">=</span> <span class="n">kron</span><span class="p">(</span><span class="n">X</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">Y</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="nb">print</span><span class="p">(</span><span class="n">kron_block</span><span class="p">)</span>
+</code></pre></div>
+<div class="result" markdown="1" >
+
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="err">Kro</span><span class="kc">n</span><span class="err">Block(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="err">)</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="err">├──</span><span class="w"> </span><span class="err">X(</span><span class="mi">0</span><span class="err">)</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="err">└──</span><span class="w"> </span><span class="err">Y(</span><span class="mi">1</span><span class="err">)</span>
+</code></pre></div>
+
+</div>
+<p>Or using the visualization package:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">qadence</span> <span class="kn">import</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">kron</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span> <span class="nn">qadence.draw</span> <span class="kn">import</span> <span class="n">display</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">kron_block</span> <span class="o">=</span> <span class="n">kron</span><span class="p">(</span><span class="n">X</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">Y</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># display(kron_block)</span>
+</code></pre></div>
+<div class="result" markdown="1" >
+
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.43.0 (0)
+ -->
+<!-- Title: %3 Pages: 1 -->
+<svg width="246pt" height="135pt"
+ viewBox="0.00 0.00 246.00 135.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 131)">
+<title>%3</title>
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-131 242,-131 242,4 -4,4"/>
+<!-- 51516a5984d4442fbba130a39437a5ea -->
+<g id="node1" class="node">
+<title>51516a5984d4442fbba130a39437a5ea</title>
+<text text-anchor="middle" x="27" y="-94.5" font-family="JetBrains Mono" font-size="15.00">0</text>
+</g>
+<!-- f0bf17089b2c480d9ca20c93b434ab4e -->
+<g id="node2" class="node">
+<title>f0bf17089b2c480d9ca20c93b434ab4e</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M136,-127C136,-127 102,-127 102,-127 96,-127 90,-121 90,-115 90,-115 90,-81 90,-81 90,-75 96,-69 102,-69 102,-69 136,-69 136,-69 142,-69 148,-75 148,-81 148,-81 148,-115 148,-115 148,-121 142,-127 136,-127"/>
+<text text-anchor="middle" x="119" y="-93" font-family="JetBrains Mono" font-size="20.00">X</text>
+</g>
+<!-- 51516a5984d4442fbba130a39437a5ea&#45;&#45;f0bf17089b2c480d9ca20c93b434ab4e -->
+<g id="edge1" class="edge">
+<title>51516a5984d4442fbba130a39437a5ea&#45;&#45;f0bf17089b2c480d9ca20c93b434ab4e</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54.03,-98C65.25,-98 78.38,-98 89.82,-98"/>
+</g>
+<!-- 584d9912e5c243ba8c82a9954b6f36ec -->
+<g id="node4" class="node">
+<title>584d9912e5c243ba8c82a9954b6f36ec</title>
+<text text-anchor="middle" x="27" y="-25.5" font-family="JetBrains Mono" font-size="15.00">1</text>
+</g>
+<!-- 51516a5984d4442fbba130a39437a5ea&#45;&#45;584d9912e5c243ba8c82a9954b6f36ec -->
+<!-- 75e627f61b09424e8932396c17a1a881 -->
+<g id="node3" class="node">
+<title>75e627f61b09424e8932396c17a1a881</title>
+</g>
+<!-- f0bf17089b2c480d9ca20c93b434ab4e&#45;&#45;75e627f61b09424e8932396c17a1a881 -->
+<g id="edge2" class="edge">
+<title>f0bf17089b2c480d9ca20c93b434ab4e&#45;&#45;75e627f61b09424e8932396c17a1a881</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M148.48,-98C159.81,-98 172.76,-98 183.85,-98"/>
+</g>
+<!-- 579fbc790ffa49858947434a236aa8f5 -->
+<g id="node6" class="node">
+<title>579fbc790ffa49858947434a236aa8f5</title>
+</g>
+<!-- 75e627f61b09424e8932396c17a1a881&#45;&#45;579fbc790ffa49858947434a236aa8f5 -->
+<!-- 9a59a128827541c88ff834e4505ee758 -->
+<g id="node5" class="node">
+<title>9a59a128827541c88ff834e4505ee758</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M136,-58C136,-58 102,-58 102,-58 96,-58 90,-52 90,-46 90,-46 90,-12 90,-12 90,-6 96,0 102,0 102,0 136,0 136,0 142,0 148,-6 148,-12 148,-12 148,-46 148,-46 148,-52 142,-58 136,-58"/>
+<text text-anchor="middle" x="119" y="-24" font-family="JetBrains Mono" font-size="20.00">Y</text>
+</g>
+<!-- 584d9912e5c243ba8c82a9954b6f36ec&#45;&#45;9a59a128827541c88ff834e4505ee758 -->
+<g id="edge3" class="edge">
+<title>584d9912e5c243ba8c82a9954b6f36ec&#45;&#45;9a59a128827541c88ff834e4505ee758</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54.03,-29C65.25,-29 78.38,-29 89.82,-29"/>
+</g>
+<!-- 9a59a128827541c88ff834e4505ee758&#45;&#45;579fbc790ffa49858947434a236aa8f5 -->
+<g id="edge4" class="edge">
+<title>9a59a128827541c88ff834e4505ee758&#45;&#45;579fbc790ffa49858947434a236aa8f5</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M148.48,-29C159.81,-29 172.76,-29 183.85,-29"/>
+</g>
+</g>
+</svg>
+
+
+
+</div>
+</details>
+<h2 id="composite-blocks">Composite Blocks</h2>
+<p>Programs can be expressed by composing blocks to result in a larger <a class="autorefs autorefs-internal" href="../../api/blocks/#qadence.blocks.composite.CompositeBlock"><code>CompositeBlock</code></a> using three fundamental operations:
+<em>chain</em>, <em>kron</em>, and <em>add</em>.</p>
+<ul>
+<li><a class="autorefs autorefs-internal" href="../../api/blocks/#qadence.blocks.utils.chain"><strong>chain</strong></a> applies a set of blocks in sequence, which can have overlapping qubit supports, and results in a <code>ChainBlock</code> type. It is akin to applying a matrix product of the sub-blocks, and can also be used with the <code>*</code> operator.</li>
+<li><a class="autorefs autorefs-internal" href="../../api/blocks/#qadence.blocks.utils.kron"><strong>kron</strong></a> applies a set of blocks in parallel, requiring disjoint qubit support, and results in a <code>KronBlock</code> type. This is akin to applying a tensor product of the sub-blocks, and can also be used with the <code>@</code> operator.</li>
+<li><a class="autorefs autorefs-internal" href="../../api/blocks/#qadence.blocks.utils.add"><strong>add</strong></a> performs a direct sum of the operators, and results in an <code>AddBlock</code> type. Blocks constructed this way are typically non-unitary, as is the case for Hamiltonians which can be constructed through sums of Pauli strings. Addition can also be performed directly with the <code>+</code> operator.</li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">qadence</span> <span class="kn">import</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">chain</span><span class="p">,</span> <span class="n">kron</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">chain_0</span> <span class="o">=</span> <span class="n">chain</span><span class="p">(</span><span class="n">X</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">Y</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">chain_1</span> <span class="o">=</span> <span class="n">chain</span><span class="p">(</span><span class="n">X</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">Y</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">kron_block</span> <span class="o">=</span> <span class="n">kron</span><span class="p">(</span><span class="n">chain_0</span><span class="p">,</span> <span class="n">chain_1</span><span class="p">)</span>
+</code></pre></div>
+<div class="result" markdown="1" >
+
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.43.0 (0)
+ -->
+<!-- Title: %3 Pages: 1 -->
+<svg width="340pt" height="135pt"
+ viewBox="0.00 0.00 340.00 135.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 131)">
+<title>%3</title>
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-131 336,-131 336,4 -4,4"/>
+<!-- 6167ee45861f496f95e57f6415f6eb8b -->
+<g id="node1" class="node">
+<title>6167ee45861f496f95e57f6415f6eb8b</title>
+<text text-anchor="middle" x="27" y="-94.5" font-family="JetBrains Mono" font-size="15.00">0</text>
+</g>
+<!-- 2f38dfe7ed13485a8f987b43d5fd69ab -->
+<g id="node2" class="node">
+<title>2f38dfe7ed13485a8f987b43d5fd69ab</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M136,-127C136,-127 102,-127 102,-127 96,-127 90,-121 90,-115 90,-115 90,-81 90,-81 90,-75 96,-69 102,-69 102,-69 136,-69 136,-69 142,-69 148,-75 148,-81 148,-81 148,-115 148,-115 148,-121 142,-127 136,-127"/>
+<text text-anchor="middle" x="119" y="-93" font-family="JetBrains Mono" font-size="20.00">X</text>
+</g>
+<!-- 6167ee45861f496f95e57f6415f6eb8b&#45;&#45;2f38dfe7ed13485a8f987b43d5fd69ab -->
+<g id="edge1" class="edge">
+<title>6167ee45861f496f95e57f6415f6eb8b&#45;&#45;2f38dfe7ed13485a8f987b43d5fd69ab</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54.03,-98C65.25,-98 78.38,-98 89.82,-98"/>
+</g>
+<!-- d04a2b805d564202bf69eacaba15e991 -->
+<g id="node5" class="node">
+<title>d04a2b805d564202bf69eacaba15e991</title>
+<text text-anchor="middle" x="27" y="-25.5" font-family="JetBrains Mono" font-size="15.00">1</text>
+</g>
+<!-- 6167ee45861f496f95e57f6415f6eb8b&#45;&#45;d04a2b805d564202bf69eacaba15e991 -->
+<!-- f900e3583c50433da8e1d980dc946908 -->
+<g id="node3" class="node">
+<title>f900e3583c50433da8e1d980dc946908</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M230,-127C230,-127 196,-127 196,-127 190,-127 184,-121 184,-115 184,-115 184,-81 184,-81 184,-75 190,-69 196,-69 196,-69 230,-69 230,-69 236,-69 242,-75 242,-81 242,-81 242,-115 242,-115 242,-121 236,-127 230,-127"/>
+<text text-anchor="middle" x="213" y="-93" font-family="JetBrains Mono" font-size="20.00">Y</text>
+</g>
+<!-- 2f38dfe7ed13485a8f987b43d5fd69ab&#45;&#45;f900e3583c50433da8e1d980dc946908 -->
+<g id="edge2" class="edge">
+<title>2f38dfe7ed13485a8f987b43d5fd69ab&#45;&#45;f900e3583c50433da8e1d980dc946908</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M148.1,-98C159.41,-98 172.43,-98 183.75,-98"/>
+</g>
+<!-- c2f25853973c4876a46d495914ec68a0 -->
+<g id="node4" class="node">
+<title>c2f25853973c4876a46d495914ec68a0</title>
+</g>
+<!-- f900e3583c50433da8e1d980dc946908&#45;&#45;c2f25853973c4876a46d495914ec68a0 -->
+<g id="edge3" class="edge">
+<title>f900e3583c50433da8e1d980dc946908&#45;&#45;c2f25853973c4876a46d495914ec68a0</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M242.48,-98C253.81,-98 266.76,-98 277.85,-98"/>
+</g>
+<!-- 374d7ec8a0fa4f8b8e5f4a4a99039cfa -->
+<g id="node8" class="node">
+<title>374d7ec8a0fa4f8b8e5f4a4a99039cfa</title>
+</g>
+<!-- c2f25853973c4876a46d495914ec68a0&#45;&#45;374d7ec8a0fa4f8b8e5f4a4a99039cfa -->
+<!-- 8625f10d63924d9c84e7ad3261b5dd5b -->
+<g id="node6" class="node">
+<title>8625f10d63924d9c84e7ad3261b5dd5b</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M136,-58C136,-58 102,-58 102,-58 96,-58 90,-52 90,-46 90,-46 90,-12 90,-12 90,-6 96,0 102,0 102,0 136,0 136,0 142,0 148,-6 148,-12 148,-12 148,-46 148,-46 148,-52 142,-58 136,-58"/>
+<text text-anchor="middle" x="119" y="-24" font-family="JetBrains Mono" font-size="20.00">X</text>
+</g>
+<!-- d04a2b805d564202bf69eacaba15e991&#45;&#45;8625f10d63924d9c84e7ad3261b5dd5b -->
+<g id="edge4" class="edge">
+<title>d04a2b805d564202bf69eacaba15e991&#45;&#45;8625f10d63924d9c84e7ad3261b5dd5b</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54.03,-29C65.25,-29 78.38,-29 89.82,-29"/>
+</g>
+<!-- 7cb0583972c94b5080e52c79c37f46e8 -->
+<g id="node7" class="node">
+<title>7cb0583972c94b5080e52c79c37f46e8</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M230,-58C230,-58 196,-58 196,-58 190,-58 184,-52 184,-46 184,-46 184,-12 184,-12 184,-6 190,0 196,0 196,0 230,0 230,0 236,0 242,-6 242,-12 242,-12 242,-46 242,-46 242,-52 236,-58 230,-58"/>
+<text text-anchor="middle" x="213" y="-24" font-family="JetBrains Mono" font-size="20.00">Y</text>
+</g>
+<!-- 8625f10d63924d9c84e7ad3261b5dd5b&#45;&#45;7cb0583972c94b5080e52c79c37f46e8 -->
+<g id="edge5" class="edge">
+<title>8625f10d63924d9c84e7ad3261b5dd5b&#45;&#45;7cb0583972c94b5080e52c79c37f46e8</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M148.1,-29C159.41,-29 172.43,-29 183.75,-29"/>
+</g>
+<!-- 7cb0583972c94b5080e52c79c37f46e8&#45;&#45;374d7ec8a0fa4f8b8e5f4a4a99039cfa -->
+<g id="edge6" class="edge">
+<title>7cb0583972c94b5080e52c79c37f46e8&#45;&#45;374d7ec8a0fa4f8b8e5f4a4a99039cfa</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M242.48,-29C253.81,-29 266.76,-29 277.85,-29"/>
+</g>
+</g>
+</svg>
+
+
+
+</div>
+<p>All composition functions support list comprehension syntax. Below we exemplify the creation of an XY Hamiltonian for qubits laid out on a line.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">qadence</span> <span class="kn">import</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">add</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="k">def</span> <span class="nf">xy_int</span><span class="p">(</span><span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">j</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="k">return</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">X</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="nd">@X</span><span class="p">(</span><span class="n">j</span><span class="p">)</span> <span class="o">+</span> <span class="n">Y</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="nd">@Y</span><span class="p">(</span><span class="n">j</span><span class="p">))</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">n_qubits</span> <span class="o">=</span> <span class="mi">3</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">xy_ham</span> <span class="o">=</span> <span class="n">add</span><span class="p">(</span><span class="n">xy_int</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_qubits</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+</code></pre></div>
+<div class="result" markdown="1" >
+
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="err">AddBlock(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="err">)</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="err">├──</span><span class="w"> </span><span class="p">[</span><span class="err">mul</span><span class="p">:</span><span class="w"> </span><span class="mf">0.500</span><span class="p">]</span><span class="w"> </span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="err">AddBlock(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="err">)</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="err">│</span><span class="w">       </span><span class="err">├──</span><span class="w"> </span><span class="err">Kro</span><span class="kc">n</span><span class="err">Block(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="err">)</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="err">│</span><span class="w">       </span><span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="err">X(</span><span class="mi">0</span><span class="err">)</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="err">│</span><span class="w">       </span><span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="err">X(</span><span class="mi">1</span><span class="err">)</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="err">│</span><span class="w">       </span><span class="err">└──</span><span class="w"> </span><span class="err">Kro</span><span class="kc">n</span><span class="err">Block(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="err">)</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="err">│</span><span class="w">           </span><span class="err">├──</span><span class="w"> </span><span class="err">Y(</span><span class="mi">0</span><span class="err">)</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="err">│</span><span class="w">           </span><span class="err">└──</span><span class="w"> </span><span class="err">Y(</span><span class="mi">1</span><span class="err">)</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="err">└──</span><span class="w"> </span><span class="p">[</span><span class="err">mul</span><span class="p">:</span><span class="w"> </span><span class="mf">0.500</span><span class="p">]</span><span class="w"> </span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">    </span><span class="err">└──</span><span class="w"> </span><span class="err">AddBlock(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="err">)</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">        </span><span class="err">├──</span><span class="w"> </span><span class="err">Kro</span><span class="kc">n</span><span class="err">Block(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="err">)</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">        </span><span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="err">X(</span><span class="mi">1</span><span class="err">)</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">        </span><span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="err">X(</span><span class="mi">2</span><span class="err">)</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">        </span><span class="err">└──</span><span class="w"> </span><span class="err">Kro</span><span class="kc">n</span><span class="err">Block(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="err">)</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">            </span><span class="err">├──</span><span class="w"> </span><span class="err">Y(</span><span class="mi">1</span><span class="err">)</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">            </span><span class="err">└──</span><span class="w"> </span><span class="err">Y(</span><span class="mi">2</span><span class="err">)</span>
+</code></pre></div>
+
+</div>
+<p>Qadence blocks can be directly translated to matrix form by calling <code>block.tensor()</code>. Note that first dimension is the batch dimension, following PyTorch conventions. This becomes relevant if the block are parameterized and batched input values are passed, as we will see later.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">qadence</span> <span class="kn">import</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">xy</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">X</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="nd">@X</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">Y</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="nd">@Y</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="nb">print</span><span class="p">(</span><span class="n">xy</span><span class="o">.</span><span class="n">tensor</span><span class="p">()</span><span class="o">.</span><span class="n">real</span><span class="p">)</span>
+</code></pre></div>
+<div class="result" markdown="1" >
+
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kc">tens</span><span class="err">or(</span><span class="p">[[[</span><span class="mf">0.</span><span class="p">,</span><span class="w"> </span><span class="mf">0.</span><span class="p">,</span><span class="w"> </span><span class="mf">0.</span><span class="p">,</span><span class="w"> </span><span class="mf">0.</span><span class="p">],</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">         </span><span class="p">[</span><span class="mf">0.</span><span class="p">,</span><span class="w"> </span><span class="mf">0.</span><span class="p">,</span><span class="w"> </span><span class="mf">1.</span><span class="p">,</span><span class="w"> </span><span class="mf">0.</span><span class="p">],</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">         </span><span class="p">[</span><span class="mf">0.</span><span class="p">,</span><span class="w"> </span><span class="mf">1.</span><span class="p">,</span><span class="w"> </span><span class="mf">0.</span><span class="p">,</span><span class="w"> </span><span class="mf">0.</span><span class="p">],</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">         </span><span class="p">[</span><span class="mf">0.</span><span class="p">,</span><span class="w"> </span><span class="mf">0.</span><span class="p">,</span><span class="w"> </span><span class="mf">0.</span><span class="p">,</span><span class="w"> </span><span class="mf">0.</span><span class="p">]]]</span><span class="err">)</span>
+</code></pre></div>
+
+</div>
+<p>For a final example of the flexibility of functional block composition, below is an implementation of the Quantum Fourier Transform on an arbitrary qubit support.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">qadence</span> <span class="kn">import</span> <span class="n">H</span><span class="p">,</span> <span class="n">CPHASE</span><span class="p">,</span> <span class="n">PI</span><span class="p">,</span> <span class="n">chain</span><span class="p">,</span> <span class="n">kron</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="k">def</span> <span class="nf">qft_layer</span><span class="p">(</span><span class="n">qs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">l</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">cphases</span> <span class="o">=</span> <span class="n">chain</span><span class="p">(</span><span class="n">CPHASE</span><span class="p">(</span><span class="n">qs</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">qs</span><span class="p">[</span><span class="n">l</span><span class="p">],</span> <span class="n">PI</span><span class="o">/</span><span class="mi">2</span><span class="o">**</span><span class="p">(</span><span class="n">j</span><span class="o">-</span><span class="n">l</span><span class="p">))</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">l</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">qs</span><span class="p">)))</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="k">return</span> <span class="n">H</span><span class="p">(</span><span class="n">qs</span><span class="p">[</span><span class="n">l</span><span class="p">])</span> <span class="o">*</span> <span class="n">cphases</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="k">def</span> <span class="nf">qft</span><span class="p">(</span><span class="n">qs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">):</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="k">return</span> <span class="n">chain</span><span class="p">(</span><span class="n">qft_layer</span><span class="p">(</span><span class="n">qs</span><span class="p">,</span> <span class="n">l</span><span class="p">)</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">qs</span><span class="p">)))</span>
+</code></pre></div>
+<div class="result" markdown="1" >
+
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.43.0 (0)
+ -->
+<!-- Title: %3 Pages: 1 -->
+<svg width="1109pt" height="160pt"
+ viewBox="0.00 0.00 1109.00 160.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 156)">
+<title>%3</title>
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-156 1105,-156 1105,4 -4,4"/>
+<!-- c62189e07fbb408fab9ddd1f8a854095 -->
+<g id="node1" class="node">
+<title>c62189e07fbb408fab9ddd1f8a854095</title>
+<text text-anchor="middle" x="27" y="-119.5" font-family="JetBrains Mono" font-size="15.00">0</text>
+</g>
+<!-- d481cb659a9f49689a83cd81197da85a -->
+<g id="node2" class="node">
+<title>d481cb659a9f49689a83cd81197da85a</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M136,-152C136,-152 102,-152 102,-152 96,-152 90,-146 90,-140 90,-140 90,-106 90,-106 90,-100 96,-94 102,-94 102,-94 136,-94 136,-94 142,-94 148,-100 148,-106 148,-106 148,-140 148,-140 148,-146 142,-152 136,-152"/>
+<text text-anchor="middle" x="119" y="-118" font-family="JetBrains Mono" font-size="20.00">H</text>
+</g>
+<!-- c62189e07fbb408fab9ddd1f8a854095&#45;&#45;d481cb659a9f49689a83cd81197da85a -->
+<g id="edge1" class="edge">
+<title>c62189e07fbb408fab9ddd1f8a854095&#45;&#45;d481cb659a9f49689a83cd81197da85a</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54.03,-123C65.25,-123 78.38,-123 89.82,-123"/>
+</g>
+<!-- 571b0ab3daad412e8f0b5aa76f0743e4 -->
+<g id="node9" class="node">
+<title>571b0ab3daad412e8f0b5aa76f0743e4</title>
+<text text-anchor="middle" x="27" y="-72.5" font-family="JetBrains Mono" font-size="15.00">1</text>
+</g>
+<!-- c62189e07fbb408fab9ddd1f8a854095&#45;&#45;571b0ab3daad412e8f0b5aa76f0743e4 -->
+<!-- 95b981febc9242e386a948b8e6a2a5d3 -->
+<g id="node3" class="node">
+<title>95b981febc9242e386a948b8e6a2a5d3</title>
+<path fill="#fed4b0" stroke="#e6550d" stroke-width="2.7" d="M361,-152C361,-152 196,-152 196,-152 190,-152 184,-146 184,-140 184,-140 184,-106 184,-106 184,-100 190,-94 196,-94 196,-94 361,-94 361,-94 367,-94 373,-100 373,-106 373,-106 373,-140 373,-140 373,-146 367,-152 361,-152"/>
+<text text-anchor="middle" x="278.5" y="-118" font-family="JetBrains Mono" font-size="20.00">PHASE(1.571)</text>
+</g>
+<!-- d481cb659a9f49689a83cd81197da85a&#45;&#45;95b981febc9242e386a948b8e6a2a5d3 -->
+<g id="edge2" class="edge">
+<title>d481cb659a9f49689a83cd81197da85a&#45;&#45;95b981febc9242e386a948b8e6a2a5d3</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M148.16,-123C158.51,-123 170.89,-123 183.82,-123"/>
+</g>
+<!-- a2dec3d9059840d49c472d00d174b218 -->
+<g id="node4" class="node">
+<title>a2dec3d9059840d49c472d00d174b218</title>
+<path fill="#fed4b0" stroke="#e6550d" stroke-width="2.7" d="M586,-152C586,-152 421,-152 421,-152 415,-152 409,-146 409,-140 409,-140 409,-106 409,-106 409,-100 415,-94 421,-94 421,-94 586,-94 586,-94 592,-94 598,-100 598,-106 598,-106 598,-140 598,-140 598,-146 592,-152 586,-152"/>
+<text text-anchor="middle" x="503.5" y="-118" font-family="JetBrains Mono" font-size="20.00">PHASE(0.785)</text>
+</g>
+<!-- 95b981febc9242e386a948b8e6a2a5d3&#45;&#45;a2dec3d9059840d49c472d00d174b218 -->
+<g id="edge3" class="edge">
+<title>95b981febc9242e386a948b8e6a2a5d3&#45;&#45;a2dec3d9059840d49c472d00d174b218</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M373.1,-123C384.9,-123 396.98,-123 408.78,-123"/>
+</g>
+<!-- fbae7843b23e4447be8c16d79a0f4dc1 -->
+<g id="node11" class="node">
+<title>fbae7843b23e4447be8c16d79a0f4dc1</title>
+<ellipse fill="black" stroke="black" cx="278.5" cy="-76" rx="7.2" ry="7.2"/>
+</g>
+<!-- 95b981febc9242e386a948b8e6a2a5d3&#45;&#45;fbae7843b23e4447be8c16d79a0f4dc1 -->
+<g id="edge22" class="edge">
+<title>95b981febc9242e386a948b8e6a2a5d3&#45;&#45;fbae7843b23e4447be8c16d79a0f4dc1</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M278.5,-93.88C278.5,-90.37 278.5,-86.85 278.5,-83.34"/>
+</g>
+<!-- a646568f4c204b15bd9087b67b7a9088 -->
+<g id="node5" class="node">
+<title>a646568f4c204b15bd9087b67b7a9088</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="663.5,-123.5 662.5,-123.5 662.5,-122.5 663.5,-122.5 663.5,-123.5"/>
+</g>
+<!-- a2dec3d9059840d49c472d00d174b218&#45;&#45;a646568f4c204b15bd9087b67b7a9088 -->
+<g id="edge4" class="edge">
+<title>a2dec3d9059840d49c472d00d174b218&#45;&#45;a646568f4c204b15bd9087b67b7a9088</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M598.39,-123C631.07,-123 660.13,-123 661.91,-123"/>
+</g>
+<!-- 470c2a15cc6746fbba2e8663e6ad4780 -->
+<g id="node20" class="node">
+<title>470c2a15cc6746fbba2e8663e6ad4780</title>
+<ellipse fill="black" stroke="black" cx="503.5" cy="-29" rx="7.2" ry="7.2"/>
+</g>
+<!-- a2dec3d9059840d49c472d00d174b218&#45;&#45;470c2a15cc6746fbba2e8663e6ad4780 -->
+<g id="edge23" class="edge">
+<title>a2dec3d9059840d49c472d00d174b218&#45;&#45;470c2a15cc6746fbba2e8663e6ad4780</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M503.5,-93.89C503.5,-74.71 503.5,-55.53 503.5,-36.34"/>
+</g>
+<!-- 85cdf3b8a952469c9b9104afcf65f662 -->
+<g id="node6" class="node">
+<title>85cdf3b8a952469c9b9104afcf65f662</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="823,-123.5 822,-123.5 822,-122.5 823,-122.5 823,-123.5"/>
+</g>
+<!-- a646568f4c204b15bd9087b67b7a9088&#45;&#45;85cdf3b8a952469c9b9104afcf65f662 -->
+<g id="edge5" class="edge">
+<title>a646568f4c204b15bd9087b67b7a9088&#45;&#45;85cdf3b8a952469c9b9104afcf65f662</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M664.11,-123C668.81,-123 816.77,-123 821.39,-123"/>
+</g>
+<!-- 716e9559f2d84f9fbaf6d2ca9507e35a -->
+<g id="node7" class="node">
+<title>716e9559f2d84f9fbaf6d2ca9507e35a</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="982.5,-123.5 981.5,-123.5 981.5,-122.5 982.5,-122.5 982.5,-123.5"/>
+</g>
+<!-- 85cdf3b8a952469c9b9104afcf65f662&#45;&#45;716e9559f2d84f9fbaf6d2ca9507e35a -->
+<g id="edge6" class="edge">
+<title>85cdf3b8a952469c9b9104afcf65f662&#45;&#45;716e9559f2d84f9fbaf6d2ca9507e35a</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M823.61,-123C828.31,-123 976.27,-123 980.89,-123"/>
+</g>
+<!-- 28fab68e4d994aebaad59c8d40320270 -->
+<g id="node8" class="node">
+<title>28fab68e4d994aebaad59c8d40320270</title>
+</g>
+<!-- 716e9559f2d84f9fbaf6d2ca9507e35a&#45;&#45;28fab68e4d994aebaad59c8d40320270 -->
+<g id="edge7" class="edge">
+<title>716e9559f2d84f9fbaf6d2ca9507e35a&#45;&#45;28fab68e4d994aebaad59c8d40320270</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M983.07,-123C984.8,-123 1020.79,-123 1046.7,-123"/>
+</g>
+<!-- ac2e4d31ad2c44beb4d1e89768777641 -->
+<g id="node16" class="node">
+<title>ac2e4d31ad2c44beb4d1e89768777641</title>
+</g>
+<!-- 28fab68e4d994aebaad59c8d40320270&#45;&#45;ac2e4d31ad2c44beb4d1e89768777641 -->
+<!-- b30305a8db024be0bd6b076a287d0deb -->
+<g id="node10" class="node">
+<title>b30305a8db024be0bd6b076a287d0deb</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="119.5,-76.5 118.5,-76.5 118.5,-75.5 119.5,-75.5 119.5,-76.5"/>
+</g>
+<!-- 571b0ab3daad412e8f0b5aa76f0743e4&#45;&#45;b30305a8db024be0bd6b076a287d0deb -->
+<g id="edge8" class="edge">
+<title>571b0ab3daad412e8f0b5aa76f0743e4&#45;&#45;b30305a8db024be0bd6b076a287d0deb</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54.03,-76C79.78,-76 115.67,-76 117.89,-76"/>
+</g>
+<!-- 7c45674fe37b4765b59dec008a854292 -->
+<g id="node17" class="node">
+<title>7c45674fe37b4765b59dec008a854292</title>
+<text text-anchor="middle" x="27" y="-25.5" font-family="JetBrains Mono" font-size="15.00">2</text>
+</g>
+<!-- 571b0ab3daad412e8f0b5aa76f0743e4&#45;&#45;7c45674fe37b4765b59dec008a854292 -->
+<!-- b30305a8db024be0bd6b076a287d0deb&#45;&#45;fbae7843b23e4447be8c16d79a0f4dc1 -->
+<g id="edge9" class="edge">
+<title>b30305a8db024be0bd6b076a287d0deb&#45;&#45;fbae7843b23e4447be8c16d79a0f4dc1</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M120.11,-76C124.29,-76 241.66,-76 270.93,-76"/>
+</g>
+<!-- 5f42010c90914143979ef314cac94058 -->
+<g id="node12" class="node">
+<title>5f42010c90914143979ef314cac94058</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="504,-76.5 503,-76.5 503,-75.5 504,-75.5 504,-76.5"/>
+</g>
+<!-- fbae7843b23e4447be8c16d79a0f4dc1&#45;&#45;5f42010c90914143979ef314cac94058 -->
+<g id="edge10" class="edge">
+<title>fbae7843b23e4447be8c16d79a0f4dc1&#45;&#45;5f42010c90914143979ef314cac94058</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M285.93,-76C321.93,-76 496.91,-76 502.37,-76"/>
+</g>
+<!-- 6ab07e883bb746f48e6a242bf01796ed -->
+<g id="node13" class="node">
+<title>6ab07e883bb746f48e6a242bf01796ed</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M680,-105C680,-105 646,-105 646,-105 640,-105 634,-99 634,-93 634,-93 634,-59 634,-59 634,-53 640,-47 646,-47 646,-47 680,-47 680,-47 686,-47 692,-53 692,-59 692,-59 692,-93 692,-93 692,-99 686,-105 680,-105"/>
+<text text-anchor="middle" x="663" y="-71" font-family="JetBrains Mono" font-size="20.00">H</text>
+</g>
+<!-- 5f42010c90914143979ef314cac94058&#45;&#45;6ab07e883bb746f48e6a242bf01796ed -->
+<g id="edge11" class="edge">
+<title>5f42010c90914143979ef314cac94058&#45;&#45;6ab07e883bb746f48e6a242bf01796ed</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M504.61,-76C508.08,-76 589.59,-76 633.91,-76"/>
+</g>
+<!-- fa0953259c814dbf9d64a296a51abb4f -->
+<g id="node14" class="node">
+<title>fa0953259c814dbf9d64a296a51abb4f</title>
+<path fill="#fed4b0" stroke="#e6550d" stroke-width="2.7" d="M905,-105C905,-105 740,-105 740,-105 734,-105 728,-99 728,-93 728,-93 728,-59 728,-59 728,-53 734,-47 740,-47 740,-47 905,-47 905,-47 911,-47 917,-53 917,-59 917,-59 917,-93 917,-93 917,-99 911,-105 905,-105"/>
+<text text-anchor="middle" x="822.5" y="-71" font-family="JetBrains Mono" font-size="20.00">PHASE(1.571)</text>
+</g>
+<!-- 6ab07e883bb746f48e6a242bf01796ed&#45;&#45;fa0953259c814dbf9d64a296a51abb4f -->
+<g id="edge12" class="edge">
+<title>6ab07e883bb746f48e6a242bf01796ed&#45;&#45;fa0953259c814dbf9d64a296a51abb4f</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M692.16,-76C702.51,-76 714.89,-76 727.82,-76"/>
+</g>
+<!-- ebd51856c6e74f03af4929fe2dd306f1 -->
+<g id="node15" class="node">
+<title>ebd51856c6e74f03af4929fe2dd306f1</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="982.5,-76.5 981.5,-76.5 981.5,-75.5 982.5,-75.5 982.5,-76.5"/>
+</g>
+<!-- fa0953259c814dbf9d64a296a51abb4f&#45;&#45;ebd51856c6e74f03af4929fe2dd306f1 -->
+<g id="edge13" class="edge">
+<title>fa0953259c814dbf9d64a296a51abb4f&#45;&#45;ebd51856c6e74f03af4929fe2dd306f1</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M917.39,-76C950.07,-76 979.13,-76 980.91,-76"/>
+</g>
+<!-- a2291316c7b14ff593cca46f8d26609e -->
+<g id="node22" class="node">
+<title>a2291316c7b14ff593cca46f8d26609e</title>
+<ellipse fill="black" stroke="black" cx="822.5" cy="-29" rx="7.2" ry="7.2"/>
+</g>
+<!-- fa0953259c814dbf9d64a296a51abb4f&#45;&#45;a2291316c7b14ff593cca46f8d26609e -->
+<g id="edge24" class="edge">
+<title>fa0953259c814dbf9d64a296a51abb4f&#45;&#45;a2291316c7b14ff593cca46f8d26609e</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M822.5,-46.88C822.5,-43.37 822.5,-39.85 822.5,-36.34"/>
+</g>
+<!-- ebd51856c6e74f03af4929fe2dd306f1&#45;&#45;ac2e4d31ad2c44beb4d1e89768777641 -->
+<g id="edge14" class="edge">
+<title>ebd51856c6e74f03af4929fe2dd306f1&#45;&#45;ac2e4d31ad2c44beb4d1e89768777641</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M983.07,-76C984.8,-76 1020.79,-76 1046.7,-76"/>
+</g>
+<!-- 83df7cf417a64aa1af567232ff2c643e -->
+<g id="node24" class="node">
+<title>83df7cf417a64aa1af567232ff2c643e</title>
+</g>
+<!-- ac2e4d31ad2c44beb4d1e89768777641&#45;&#45;83df7cf417a64aa1af567232ff2c643e -->
+<!-- b2345705129b4b77bbeae3218b90d46b -->
+<g id="node18" class="node">
+<title>b2345705129b4b77bbeae3218b90d46b</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="119.5,-29.5 118.5,-29.5 118.5,-28.5 119.5,-28.5 119.5,-29.5"/>
+</g>
+<!-- 7c45674fe37b4765b59dec008a854292&#45;&#45;b2345705129b4b77bbeae3218b90d46b -->
+<g id="edge15" class="edge">
+<title>7c45674fe37b4765b59dec008a854292&#45;&#45;b2345705129b4b77bbeae3218b90d46b</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54.03,-29C79.78,-29 115.67,-29 117.89,-29"/>
+</g>
+<!-- 808dcd81798d4712b60551c7f249d0e9 -->
+<g id="node19" class="node">
+<title>808dcd81798d4712b60551c7f249d0e9</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="279,-29.5 278,-29.5 278,-28.5 279,-28.5 279,-29.5"/>
+</g>
+<!-- b2345705129b4b77bbeae3218b90d46b&#45;&#45;808dcd81798d4712b60551c7f249d0e9 -->
+<g id="edge16" class="edge">
+<title>b2345705129b4b77bbeae3218b90d46b&#45;&#45;808dcd81798d4712b60551c7f249d0e9</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M120.11,-29C124.81,-29 272.77,-29 277.39,-29"/>
+</g>
+<!-- 808dcd81798d4712b60551c7f249d0e9&#45;&#45;470c2a15cc6746fbba2e8663e6ad4780 -->
+<g id="edge17" class="edge">
+<title>808dcd81798d4712b60551c7f249d0e9&#45;&#45;470c2a15cc6746fbba2e8663e6ad4780</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M279.66,-29C285.73,-29 460.77,-29 496.26,-29"/>
+</g>
+<!-- 7a2362bd792f4942a569485c20298a22 -->
+<g id="node21" class="node">
+<title>7a2362bd792f4942a569485c20298a22</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="663.5,-29.5 662.5,-29.5 662.5,-28.5 663.5,-28.5 663.5,-29.5"/>
+</g>
+<!-- 470c2a15cc6746fbba2e8663e6ad4780&#45;&#45;7a2362bd792f4942a569485c20298a22 -->
+<g id="edge18" class="edge">
+<title>470c2a15cc6746fbba2e8663e6ad4780&#45;&#45;7a2362bd792f4942a569485c20298a22</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M510.87,-29C539.87,-29 658.22,-29 661.91,-29"/>
+</g>
+<!-- 7a2362bd792f4942a569485c20298a22&#45;&#45;a2291316c7b14ff593cca46f8d26609e -->
+<g id="edge19" class="edge">
+<title>7a2362bd792f4942a569485c20298a22&#45;&#45;a2291316c7b14ff593cca46f8d26609e</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M664.11,-29C668.29,-29 785.66,-29 814.93,-29"/>
+</g>
+<!-- 2f02c78f5bb549f7b56aa47e0ebcfd3d -->
+<g id="node23" class="node">
+<title>2f02c78f5bb549f7b56aa47e0ebcfd3d</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M999,-58C999,-58 965,-58 965,-58 959,-58 953,-52 953,-46 953,-46 953,-12 953,-12 953,-6 959,0 965,0 965,0 999,0 999,0 1005,0 1011,-6 1011,-12 1011,-12 1011,-46 1011,-46 1011,-52 1005,-58 999,-58"/>
+<text text-anchor="middle" x="982" y="-24" font-family="JetBrains Mono" font-size="20.00">H</text>
+</g>
+<!-- a2291316c7b14ff593cca46f8d26609e&#45;&#45;2f02c78f5bb549f7b56aa47e0ebcfd3d -->
+<g id="edge20" class="edge">
+<title>a2291316c7b14ff593cca46f8d26609e&#45;&#45;2f02c78f5bb549f7b56aa47e0ebcfd3d</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M829.87,-29C850.3,-29 915.05,-29 952.85,-29"/>
+</g>
+<!-- 2f02c78f5bb549f7b56aa47e0ebcfd3d&#45;&#45;83df7cf417a64aa1af567232ff2c643e -->
+<g id="edge21" class="edge">
+<title>2f02c78f5bb549f7b56aa47e0ebcfd3d&#45;&#45;83df7cf417a64aa1af567232ff2c643e</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1011.48,-29C1022.81,-29 1035.76,-29 1046.85,-29"/>
+</g>
+</g>
+</svg>
+
+
+
+</div>
+<p>Other functionalities are directly built in the block system. For example, the inverse operation can be created with the <code>dagger()</code> method.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">qft_inv</span> <span class="o">=</span> <span class="n">qft</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">dagger</span><span class="p">()</span>
+</code></pre></div>
+<div class="result" markdown="1" >
+
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.43.0 (0)
+ -->
+<!-- Title: %3 Pages: 1 -->
+<svg width="1145pt" height="160pt"
+ viewBox="0.00 0.00 1145.00 160.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 156)">
+<title>%3</title>
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-156 1141,-156 1141,4 -4,4"/>
+<!-- 74051ff03b00416c8f28ae8110de0b7a -->
+<g id="node1" class="node">
+<title>74051ff03b00416c8f28ae8110de0b7a</title>
+<text text-anchor="middle" x="27" y="-119.5" font-family="JetBrains Mono" font-size="15.00">0</text>
+</g>
+<!-- cf365bea8feb40eeac943e98fc71a88d -->
+<g id="node2" class="node">
+<title>cf365bea8feb40eeac943e98fc71a88d</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="119.5,-123.5 118.5,-123.5 118.5,-122.5 119.5,-122.5 119.5,-123.5"/>
+</g>
+<!-- 74051ff03b00416c8f28ae8110de0b7a&#45;&#45;cf365bea8feb40eeac943e98fc71a88d -->
+<g id="edge1" class="edge">
+<title>74051ff03b00416c8f28ae8110de0b7a&#45;&#45;cf365bea8feb40eeac943e98fc71a88d</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54.03,-123C79.78,-123 115.67,-123 117.89,-123"/>
+</g>
+<!-- f29bc049636d46f2a3b00c87d884c98f -->
+<g id="node9" class="node">
+<title>f29bc049636d46f2a3b00c87d884c98f</title>
+<text text-anchor="middle" x="27" y="-72.5" font-family="JetBrains Mono" font-size="15.00">1</text>
+</g>
+<!-- 74051ff03b00416c8f28ae8110de0b7a&#45;&#45;f29bc049636d46f2a3b00c87d884c98f -->
+<!-- 4a7e5e55ffd643debbf9a38cd9a31b87 -->
+<g id="node3" class="node">
+<title>4a7e5e55ffd643debbf9a38cd9a31b87</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="285,-123.5 284,-123.5 284,-122.5 285,-122.5 285,-123.5"/>
+</g>
+<!-- cf365bea8feb40eeac943e98fc71a88d&#45;&#45;4a7e5e55ffd643debbf9a38cd9a31b87 -->
+<g id="edge2" class="edge">
+<title>cf365bea8feb40eeac943e98fc71a88d&#45;&#45;4a7e5e55ffd643debbf9a38cd9a31b87</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M120.12,-123C124.99,-123 278.59,-123 283.39,-123"/>
+</g>
+<!-- d03846b643d944d491e8fec12b313d01 -->
+<g id="node4" class="node">
+<title>d03846b643d944d491e8fec12b313d01</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="450.5,-123.5 449.5,-123.5 449.5,-122.5 450.5,-122.5 450.5,-123.5"/>
+</g>
+<!-- 4a7e5e55ffd643debbf9a38cd9a31b87&#45;&#45;d03846b643d944d491e8fec12b313d01 -->
+<g id="edge3" class="edge">
+<title>4a7e5e55ffd643debbf9a38cd9a31b87&#45;&#45;d03846b643d944d491e8fec12b313d01</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M285.62,-123C290.49,-123 444.09,-123 448.89,-123"/>
+</g>
+<!-- f4e6c8f0a9a34b7083d3749149136960 -->
+<g id="node5" class="node">
+<title>f4e6c8f0a9a34b7083d3749149136960</title>
+<path fill="#fed4b0" stroke="#e6550d" stroke-width="2.7" d="M704,-152C704,-152 527,-152 527,-152 521,-152 515,-146 515,-140 515,-140 515,-106 515,-106 515,-100 521,-94 527,-94 527,-94 704,-94 704,-94 710,-94 716,-100 716,-106 716,-106 716,-140 716,-140 716,-146 710,-152 704,-152"/>
+<text text-anchor="middle" x="615.5" y="-118" font-family="JetBrains Mono" font-size="20.00">PHASE(&#45;0.785)</text>
+</g>
+<!-- d03846b643d944d491e8fec12b313d01&#45;&#45;f4e6c8f0a9a34b7083d3749149136960 -->
+<g id="edge4" class="edge">
+<title>d03846b643d944d491e8fec12b313d01&#45;&#45;f4e6c8f0a9a34b7083d3749149136960</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M451.12,-123C453.19,-123 482.07,-123 514.99,-123"/>
+</g>
+<!-- a20dca8fbcac45aa83adc9e4e9dcabb3 -->
+<g id="node6" class="node">
+<title>a20dca8fbcac45aa83adc9e4e9dcabb3</title>
+<path fill="#fed4b0" stroke="#e6550d" stroke-width="2.7" d="M941,-152C941,-152 764,-152 764,-152 758,-152 752,-146 752,-140 752,-140 752,-106 752,-106 752,-100 758,-94 764,-94 764,-94 941,-94 941,-94 947,-94 953,-100 953,-106 953,-106 953,-140 953,-140 953,-146 947,-152 941,-152"/>
+<text text-anchor="middle" x="852.5" y="-118" font-family="JetBrains Mono" font-size="20.00">PHASE(&#45;1.571)</text>
+</g>
+<!-- f4e6c8f0a9a34b7083d3749149136960&#45;&#45;a20dca8fbcac45aa83adc9e4e9dcabb3 -->
+<g id="edge5" class="edge">
+<title>f4e6c8f0a9a34b7083d3749149136960&#45;&#45;a20dca8fbcac45aa83adc9e4e9dcabb3</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M716.16,-123C727.92,-123 739.92,-123 751.68,-123"/>
+</g>
+<!-- 6a7b2c3e5e714c77acbf81a772de2267 -->
+<g id="node21" class="node">
+<title>6a7b2c3e5e714c77acbf81a772de2267</title>
+<ellipse fill="black" stroke="black" cx="615.5" cy="-29" rx="7.2" ry="7.2"/>
+</g>
+<!-- f4e6c8f0a9a34b7083d3749149136960&#45;&#45;6a7b2c3e5e714c77acbf81a772de2267 -->
+<g id="edge24" class="edge">
+<title>f4e6c8f0a9a34b7083d3749149136960&#45;&#45;6a7b2c3e5e714c77acbf81a772de2267</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M615.5,-93.89C615.5,-74.71 615.5,-55.53 615.5,-36.34"/>
+</g>
+<!-- dc1c337803bf41bdaed47953552ae3e2 -->
+<g id="node7" class="node">
+<title>dc1c337803bf41bdaed47953552ae3e2</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M1035,-152C1035,-152 1001,-152 1001,-152 995,-152 989,-146 989,-140 989,-140 989,-106 989,-106 989,-100 995,-94 1001,-94 1001,-94 1035,-94 1035,-94 1041,-94 1047,-100 1047,-106 1047,-106 1047,-140 1047,-140 1047,-146 1041,-152 1035,-152"/>
+<text text-anchor="middle" x="1018" y="-118" font-family="JetBrains Mono" font-size="20.00">H</text>
+</g>
+<!-- a20dca8fbcac45aa83adc9e4e9dcabb3&#45;&#45;dc1c337803bf41bdaed47953552ae3e2 -->
+<g id="edge6" class="edge">
+<title>a20dca8fbcac45aa83adc9e4e9dcabb3&#45;&#45;dc1c337803bf41bdaed47953552ae3e2</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M953.32,-123C966.22,-123 978.48,-123 988.74,-123"/>
+</g>
+<!-- 0e8448f6c7ee4adfabd32ceb8b514db5 -->
+<g id="node14" class="node">
+<title>0e8448f6c7ee4adfabd32ceb8b514db5</title>
+<ellipse fill="black" stroke="black" cx="852.5" cy="-76" rx="7.2" ry="7.2"/>
+</g>
+<!-- a20dca8fbcac45aa83adc9e4e9dcabb3&#45;&#45;0e8448f6c7ee4adfabd32ceb8b514db5 -->
+<g id="edge22" class="edge">
+<title>a20dca8fbcac45aa83adc9e4e9dcabb3&#45;&#45;0e8448f6c7ee4adfabd32ceb8b514db5</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M852.5,-93.88C852.5,-90.37 852.5,-86.85 852.5,-83.34"/>
+</g>
+<!-- 5666e8135823413e92e132ae7905846b -->
+<g id="node8" class="node">
+<title>5666e8135823413e92e132ae7905846b</title>
+</g>
+<!-- dc1c337803bf41bdaed47953552ae3e2&#45;&#45;5666e8135823413e92e132ae7905846b -->
+<g id="edge7" class="edge">
+<title>dc1c337803bf41bdaed47953552ae3e2&#45;&#45;5666e8135823413e92e132ae7905846b</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1047.48,-123C1058.81,-123 1071.76,-123 1082.85,-123"/>
+</g>
+<!-- 78cf48b3f8fd4273946020e79348a812 -->
+<g id="node16" class="node">
+<title>78cf48b3f8fd4273946020e79348a812</title>
+</g>
+<!-- 5666e8135823413e92e132ae7905846b&#45;&#45;78cf48b3f8fd4273946020e79348a812 -->
+<!-- f7320f57f1ab430b992e1712e6ebc8ce -->
+<g id="node10" class="node">
+<title>f7320f57f1ab430b992e1712e6ebc8ce</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="119.5,-76.5 118.5,-76.5 118.5,-75.5 119.5,-75.5 119.5,-76.5"/>
+</g>
+<!-- f29bc049636d46f2a3b00c87d884c98f&#45;&#45;f7320f57f1ab430b992e1712e6ebc8ce -->
+<g id="edge8" class="edge">
+<title>f29bc049636d46f2a3b00c87d884c98f&#45;&#45;f7320f57f1ab430b992e1712e6ebc8ce</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54.03,-76C79.78,-76 115.67,-76 117.89,-76"/>
+</g>
+<!-- bfbb1357bc3a41448fd06b182bd28972 -->
+<g id="node17" class="node">
+<title>bfbb1357bc3a41448fd06b182bd28972</title>
+<text text-anchor="middle" x="27" y="-25.5" font-family="JetBrains Mono" font-size="15.00">2</text>
+</g>
+<!-- f29bc049636d46f2a3b00c87d884c98f&#45;&#45;bfbb1357bc3a41448fd06b182bd28972 -->
+<!-- b94625009e0846e7adb9f05968fef7de -->
+<g id="node11" class="node">
+<title>b94625009e0846e7adb9f05968fef7de</title>
+<path fill="#fed4b0" stroke="#e6550d" stroke-width="2.7" d="M373,-105C373,-105 196,-105 196,-105 190,-105 184,-99 184,-93 184,-93 184,-59 184,-59 184,-53 190,-47 196,-47 196,-47 373,-47 373,-47 379,-47 385,-53 385,-59 385,-59 385,-93 385,-93 385,-99 379,-105 373,-105"/>
+<text text-anchor="middle" x="284.5" y="-71" font-family="JetBrains Mono" font-size="20.00">PHASE(&#45;1.571)</text>
+</g>
+<!-- f7320f57f1ab430b992e1712e6ebc8ce&#45;&#45;b94625009e0846e7adb9f05968fef7de -->
+<g id="edge9" class="edge">
+<title>f7320f57f1ab430b992e1712e6ebc8ce&#45;&#45;b94625009e0846e7adb9f05968fef7de</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M120.12,-76C122.19,-76 151.07,-76 183.99,-76"/>
+</g>
+<!-- 25a96c9931c64d48b9c6ac672ab7e643 -->
+<g id="node12" class="node">
+<title>25a96c9931c64d48b9c6ac672ab7e643</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M467,-105C467,-105 433,-105 433,-105 427,-105 421,-99 421,-93 421,-93 421,-59 421,-59 421,-53 427,-47 433,-47 433,-47 467,-47 467,-47 473,-47 479,-53 479,-59 479,-59 479,-93 479,-93 479,-99 473,-105 467,-105"/>
+<text text-anchor="middle" x="450" y="-71" font-family="JetBrains Mono" font-size="20.00">H</text>
+</g>
+<!-- b94625009e0846e7adb9f05968fef7de&#45;&#45;25a96c9931c64d48b9c6ac672ab7e643 -->
+<g id="edge10" class="edge">
+<title>b94625009e0846e7adb9f05968fef7de&#45;&#45;25a96c9931c64d48b9c6ac672ab7e643</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M385.32,-76C398.22,-76 410.48,-76 420.74,-76"/>
+</g>
+<!-- 6280dead877247c0bdd16a09c14378bd -->
+<g id="node19" class="node">
+<title>6280dead877247c0bdd16a09c14378bd</title>
+<ellipse fill="black" stroke="black" cx="284.5" cy="-29" rx="7.2" ry="7.2"/>
+</g>
+<!-- b94625009e0846e7adb9f05968fef7de&#45;&#45;6280dead877247c0bdd16a09c14378bd -->
+<g id="edge23" class="edge">
+<title>b94625009e0846e7adb9f05968fef7de&#45;&#45;6280dead877247c0bdd16a09c14378bd</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M284.5,-46.88C284.5,-43.37 284.5,-39.85 284.5,-36.34"/>
+</g>
+<!-- b1fac99b28ff4e39bf5b9126763690ff -->
+<g id="node13" class="node">
+<title>b1fac99b28ff4e39bf5b9126763690ff</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="616,-76.5 615,-76.5 615,-75.5 616,-75.5 616,-76.5"/>
+</g>
+<!-- 25a96c9931c64d48b9c6ac672ab7e643&#45;&#45;b1fac99b28ff4e39bf5b9126763690ff -->
+<g id="edge11" class="edge">
+<title>25a96c9931c64d48b9c6ac672ab7e643&#45;&#45;b1fac99b28ff4e39bf5b9126763690ff</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M479.11,-76C525.12,-76 611.74,-76 614.44,-76"/>
+</g>
+<!-- b1fac99b28ff4e39bf5b9126763690ff&#45;&#45;0e8448f6c7ee4adfabd32ceb8b514db5 -->
+<g id="edge12" class="edge">
+<title>b1fac99b28ff4e39bf5b9126763690ff&#45;&#45;0e8448f6c7ee4adfabd32ceb8b514db5</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M616.54,-76C619.79,-76 806.86,-76 844.82,-76"/>
+</g>
+<!-- 1e7058d73d014c6390be7f90dc0f8a15 -->
+<g id="node15" class="node">
+<title>1e7058d73d014c6390be7f90dc0f8a15</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="1018.5,-76.5 1017.5,-76.5 1017.5,-75.5 1018.5,-75.5 1018.5,-76.5"/>
+</g>
+<!-- 0e8448f6c7ee4adfabd32ceb8b514db5&#45;&#45;1e7058d73d014c6390be7f90dc0f8a15 -->
+<g id="edge13" class="edge">
+<title>0e8448f6c7ee4adfabd32ceb8b514db5&#45;&#45;1e7058d73d014c6390be7f90dc0f8a15</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M859.71,-76C889.11,-76 1013.04,-76 1016.91,-76"/>
+</g>
+<!-- 1e7058d73d014c6390be7f90dc0f8a15&#45;&#45;78cf48b3f8fd4273946020e79348a812 -->
+<g id="edge14" class="edge">
+<title>1e7058d73d014c6390be7f90dc0f8a15&#45;&#45;78cf48b3f8fd4273946020e79348a812</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1019.07,-76C1020.8,-76 1056.79,-76 1082.7,-76"/>
+</g>
+<!-- 4b2f93ea82d8417386a188ea2480aa20 -->
+<g id="node24" class="node">
+<title>4b2f93ea82d8417386a188ea2480aa20</title>
+</g>
+<!-- 78cf48b3f8fd4273946020e79348a812&#45;&#45;4b2f93ea82d8417386a188ea2480aa20 -->
+<!-- afa6a5ac064d48d2be0ff995f296edb6 -->
+<g id="node18" class="node">
+<title>afa6a5ac064d48d2be0ff995f296edb6</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M136,-58C136,-58 102,-58 102,-58 96,-58 90,-52 90,-46 90,-46 90,-12 90,-12 90,-6 96,0 102,0 102,0 136,0 136,0 142,0 148,-6 148,-12 148,-12 148,-46 148,-46 148,-52 142,-58 136,-58"/>
+<text text-anchor="middle" x="119" y="-24" font-family="JetBrains Mono" font-size="20.00">H</text>
+</g>
+<!-- bfbb1357bc3a41448fd06b182bd28972&#45;&#45;afa6a5ac064d48d2be0ff995f296edb6 -->
+<g id="edge15" class="edge">
+<title>bfbb1357bc3a41448fd06b182bd28972&#45;&#45;afa6a5ac064d48d2be0ff995f296edb6</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54.03,-29C65.25,-29 78.38,-29 89.82,-29"/>
+</g>
+<!-- afa6a5ac064d48d2be0ff995f296edb6&#45;&#45;6280dead877247c0bdd16a09c14378bd -->
+<g id="edge16" class="edge">
+<title>afa6a5ac064d48d2be0ff995f296edb6&#45;&#45;6280dead877247c0bdd16a09c14378bd</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M148.11,-29C187.37,-29 256.18,-29 277.21,-29"/>
+</g>
+<!-- b6621397dd114b44bf4a12084c5edee6 -->
+<g id="node20" class="node">
+<title>b6621397dd114b44bf4a12084c5edee6</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="450.5,-29.5 449.5,-29.5 449.5,-28.5 450.5,-28.5 450.5,-29.5"/>
+</g>
+<!-- 6280dead877247c0bdd16a09c14378bd&#45;&#45;b6621397dd114b44bf4a12084c5edee6 -->
+<g id="edge17" class="edge">
+<title>6280dead877247c0bdd16a09c14378bd&#45;&#45;b6621397dd114b44bf4a12084c5edee6</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M291.71,-29C321.11,-29 445.04,-29 448.91,-29"/>
+</g>
+<!-- b6621397dd114b44bf4a12084c5edee6&#45;&#45;6a7b2c3e5e714c77acbf81a772de2267 -->
+<g id="edge18" class="edge">
+<title>b6621397dd114b44bf4a12084c5edee6&#45;&#45;6a7b2c3e5e714c77acbf81a772de2267</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M451.12,-29C455.47,-29 578.38,-29 608.08,-29"/>
+</g>
+<!-- 4848af2146c14dd6a33b067574130b16 -->
+<g id="node22" class="node">
+<title>4848af2146c14dd6a33b067574130b16</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="853,-29.5 852,-29.5 852,-28.5 853,-28.5 853,-29.5"/>
+</g>
+<!-- 6a7b2c3e5e714c77acbf81a772de2267&#45;&#45;4848af2146c14dd6a33b067574130b16 -->
+<g id="edge19" class="edge">
+<title>6a7b2c3e5e714c77acbf81a772de2267&#45;&#45;4848af2146c14dd6a33b067574130b16</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M622.79,-29C659.57,-29 845.56,-29 851.36,-29"/>
+</g>
+<!-- caf4c7b513944120aef6ebe1f5831e77 -->
+<g id="node23" class="node">
+<title>caf4c7b513944120aef6ebe1f5831e77</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="1018.5,-29.5 1017.5,-29.5 1017.5,-28.5 1018.5,-28.5 1018.5,-29.5"/>
+</g>
+<!-- 4848af2146c14dd6a33b067574130b16&#45;&#45;caf4c7b513944120aef6ebe1f5831e77 -->
+<g id="edge20" class="edge">
+<title>4848af2146c14dd6a33b067574130b16&#45;&#45;caf4c7b513944120aef6ebe1f5831e77</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M853.62,-29C858.49,-29 1012.09,-29 1016.89,-29"/>
+</g>
+<!-- caf4c7b513944120aef6ebe1f5831e77&#45;&#45;4b2f93ea82d8417386a188ea2480aa20 -->
+<g id="edge21" class="edge">
+<title>caf4c7b513944120aef6ebe1f5831e77&#45;&#45;4b2f93ea82d8417386a188ea2480aa20</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1019.07,-29C1020.8,-29 1056.79,-29 1082.7,-29"/>
+</g>
+</g>
+</svg>
+
+
+
+</div>
+<h2 id="digital-analog-composition">Digital-analog composition</h2>
+<p>In Qadence, analog operations are first-class citizens. An analog operation is one whose unitary is best described by the evolution of some hermitian generator, or Hamiltonian, acting on an arbitrary number of qubits. Qadence provides the <code>HamEvo</code> class to initialize analog operations. For a time-independent generator <span class="arithmatex">\(\mathcal{H}\)</span> and some time variable <span class="arithmatex">\(t\)</span>, <code>HamEvo(H, t)</code> represents the evolution operator <span class="arithmatex">\(\exp(-i\mathcal{H}t)\)</span>.</p>
+<p>Analog operations constitute a generalization of digital operations, and all digital operations can also be represented as the evolution of some hermitian generator. For example, the <code>RX</code> gate is the evolution of <code>X</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">qadence</span> <span class="kn">import</span> <span class="n">X</span><span class="p">,</span> <span class="n">RX</span><span class="p">,</span> <span class="n">HamEvo</span><span class="p">,</span> <span class="n">PI</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">allclose</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">angle</span> <span class="o">=</span> <span class="n">PI</span><span class="o">/</span><span class="mi">2</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">block_digital</span> <span class="o">=</span> <span class="n">RX</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">angle</span><span class="p">)</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">block_analog</span> <span class="o">=</span> <span class="n">HamEvo</span><span class="p">(</span><span class="mf">0.5</span><span class="o">*</span><span class="n">X</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">angle</span><span class="p">)</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="nb">print</span><span class="p">(</span><span class="n">allclose</span><span class="p">(</span><span class="n">block_digital</span><span class="o">.</span><span class="n">tensor</span><span class="p">(),</span> <span class="n">block_analog</span><span class="o">.</span><span class="n">tensor</span><span class="p">()))</span>
+</code></pre></div>
+<div class="result" markdown="1" >
+
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="err">True</span>
+</code></pre></div>
+
+</div>
+<p>As seen in the previous section, arbitrary Hamiltonians can be constructed using Pauli operators. Their evolution can be combined with other arbitrary digital operations and incorporated into any quantum program.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">qadence</span> <span class="kn">import</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">RX</span><span class="p">,</span> <span class="n">HamEvo</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span> <span class="nn">qadence</span> <span class="kn">import</span> <span class="n">add</span><span class="p">,</span> <span class="n">kron</span><span class="p">,</span> <span class="n">PI</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="k">def</span> <span class="nf">xy_int</span><span class="p">(</span><span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">j</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="k">return</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">X</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="nd">@X</span><span class="p">(</span><span class="n">j</span><span class="p">)</span> <span class="o">+</span> <span class="n">Y</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="nd">@Y</span><span class="p">(</span><span class="n">j</span><span class="p">))</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">n_qubits</span> <span class="o">=</span> <span class="mi">3</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="n">xy_ham</span> <span class="o">=</span> <span class="n">add</span><span class="p">(</span><span class="n">xy_int</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_qubits</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="n">analog_evo</span> <span class="o">=</span> <span class="n">HamEvo</span><span class="p">(</span><span class="n">xy_ham</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="n">digital_block</span> <span class="o">=</span> <span class="n">kron</span><span class="p">(</span><span class="n">RX</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="o">*</span><span class="n">PI</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_qubits</span><span class="p">))</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="n">program</span> <span class="o">=</span> <span class="n">digital_block</span> <span class="o">*</span> <span class="n">analog_evo</span> <span class="o">*</span> <span class="n">digital_block</span>
+</code></pre></div>
+<div class="result" markdown="1" >
+
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.43.0 (0)
+ -->
+<!-- Title: %3 Pages: 1 -->
+<svg width="719pt" height="236pt"
+ viewBox="0.00 0.00 719.00 236.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 232)">
+<title>%3</title>
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-232 715,-232 715,4 -4,4"/>
+<g id="clust1" class="cluster">
+<title>cluster_bef6c4f4308042c6818b46d30f07fdde</title>
+<path fill="lightgrey" stroke="black" stroke-width="2" d="M283,-8C283,-8 428,-8 428,-8 434,-8 440,-14 440,-20 440,-20 440,-208 440,-208 440,-214 434,-220 428,-220 428,-220 283,-220 283,-220 277,-220 271,-214 271,-208 271,-208 271,-20 271,-20 271,-14 277,-8 283,-8"/>
+</g>
+<!-- 95268b842e3d4aeaa8b1fc5b5728f873 -->
+<g id="node1" class="node">
+<title>95268b842e3d4aeaa8b1fc5b5728f873</title>
+<text text-anchor="middle" x="27" y="-179.5" font-family="JetBrains Mono" font-size="15.00">0</text>
+</g>
+<!-- de822b8770c4410fa831431b6b9ff01a -->
+<g id="node2" class="node">
+<title>de822b8770c4410fa831431b6b9ff01a</title>
+<path fill="#fed4b0" stroke="#e6550d" stroke-width="2.7" d="M219,-212C219,-212 114,-212 114,-212 108,-212 102,-206 102,-200 102,-200 102,-166 102,-166 102,-160 108,-154 114,-154 114,-154 219,-154 219,-154 225,-154 231,-160 231,-166 231,-166 231,-200 231,-200 231,-206 225,-212 219,-212"/>
+<text text-anchor="middle" x="166.5" y="-178" font-family="JetBrains Mono" font-size="20.00">RX(0.0)</text>
+</g>
+<!-- 95268b842e3d4aeaa8b1fc5b5728f873&#45;&#45;de822b8770c4410fa831431b6b9ff01a -->
+<g id="edge1" class="edge">
+<title>95268b842e3d4aeaa8b1fc5b5728f873&#45;&#45;de822b8770c4410fa831431b6b9ff01a</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54.19,-183C67.74,-183 84.94,-183 101.74,-183"/>
+</g>
+<!-- c110491a8cce4e72b57b77508ec78b3f -->
+<g id="node6" class="node">
+<title>c110491a8cce4e72b57b77508ec78b3f</title>
+<text text-anchor="middle" x="27" y="-110.5" font-family="JetBrains Mono" font-size="15.00">1</text>
+</g>
+<!-- 95268b842e3d4aeaa8b1fc5b5728f873&#45;&#45;c110491a8cce4e72b57b77508ec78b3f -->
+<!-- 5198249a3b9c47148d7ac25096002659 -->
+<g id="node3" class="node">
+<title>5198249a3b9c47148d7ac25096002659</title>
+<text text-anchor="middle" x="355.5" y="-178" font-family="JetBrains Mono" font-size="20.00">HamEvo</text>
+</g>
+<!-- de822b8770c4410fa831431b6b9ff01a&#45;&#45;5198249a3b9c47148d7ac25096002659 -->
+<g id="edge2" class="edge">
+<title>de822b8770c4410fa831431b6b9ff01a&#45;&#45;5198249a3b9c47148d7ac25096002659</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M231.07,-183C243.91,-183 257.6,-183 271,-183"/>
+</g>
+<!-- 26a91c67857a453dbb47d79c567657a5 -->
+<g id="node4" class="node">
+<title>26a91c67857a453dbb47d79c567657a5</title>
+<path fill="#fed4b0" stroke="#e6550d" stroke-width="2.7" d="M597,-212C597,-212 492,-212 492,-212 486,-212 480,-206 480,-200 480,-200 480,-166 480,-166 480,-160 486,-154 492,-154 492,-154 597,-154 597,-154 603,-154 609,-160 609,-166 609,-166 609,-200 609,-200 609,-206 603,-212 597,-212"/>
+<text text-anchor="middle" x="544.5" y="-178" font-family="JetBrains Mono" font-size="20.00">RX(0.0)</text>
+</g>
+<!-- 5198249a3b9c47148d7ac25096002659&#45;&#45;26a91c67857a453dbb47d79c567657a5 -->
+<g id="edge3" class="edge">
+<title>5198249a3b9c47148d7ac25096002659&#45;&#45;26a91c67857a453dbb47d79c567657a5</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M440,-183C453.38,-183 467.05,-183 479.87,-183"/>
+</g>
+<!-- 62678175bc5546d58c5dea3ba96859ff -->
+<g id="node5" class="node">
+<title>62678175bc5546d58c5dea3ba96859ff</title>
+</g>
+<!-- 26a91c67857a453dbb47d79c567657a5&#45;&#45;62678175bc5546d58c5dea3ba96859ff -->
+<g id="edge4" class="edge">
+<title>26a91c67857a453dbb47d79c567657a5&#45;&#45;62678175bc5546d58c5dea3ba96859ff</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M609.02,-183C625.91,-183 643.22,-183 656.84,-183"/>
+</g>
+<!-- 72af601c36c841228f868540bd953fa7 -->
+<g id="node10" class="node">
+<title>72af601c36c841228f868540bd953fa7</title>
+</g>
+<!-- 62678175bc5546d58c5dea3ba96859ff&#45;&#45;72af601c36c841228f868540bd953fa7 -->
+<!-- 48c9b9f7eb5b4ad893cd2e54f2715fe4 -->
+<g id="node7" class="node">
+<title>48c9b9f7eb5b4ad893cd2e54f2715fe4</title>
+<path fill="#fed4b0" stroke="#e6550d" stroke-width="2.7" d="M231,-143C231,-143 102,-143 102,-143 96,-143 90,-137 90,-131 90,-131 90,-97 90,-97 90,-91 96,-85 102,-85 102,-85 231,-85 231,-85 237,-85 243,-91 243,-97 243,-97 243,-131 243,-131 243,-137 237,-143 231,-143"/>
+<text text-anchor="middle" x="166.5" y="-109" font-family="JetBrains Mono" font-size="20.00">RX(1.571)</text>
+</g>
+<!-- c110491a8cce4e72b57b77508ec78b3f&#45;&#45;48c9b9f7eb5b4ad893cd2e54f2715fe4 -->
+<g id="edge5" class="edge">
+<title>c110491a8cce4e72b57b77508ec78b3f&#45;&#45;48c9b9f7eb5b4ad893cd2e54f2715fe4</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54.19,-114C64.55,-114 77.04,-114 89.85,-114"/>
+</g>
+<!-- 2894d433f32f4b62a1d0612d03e693df -->
+<g id="node11" class="node">
+<title>2894d433f32f4b62a1d0612d03e693df</title>
+<text text-anchor="middle" x="27" y="-41.5" font-family="JetBrains Mono" font-size="15.00">2</text>
+</g>
+<!-- c110491a8cce4e72b57b77508ec78b3f&#45;&#45;2894d433f32f4b62a1d0612d03e693df -->
+<!-- df6dcc6972544ec7ba830fcd03294d80 -->
+<g id="node8" class="node">
+<title>df6dcc6972544ec7ba830fcd03294d80</title>
+<text text-anchor="middle" x="355.5" y="-109" font-family="JetBrains Mono" font-size="20.00">t = 1.000</text>
+</g>
+<!-- 48c9b9f7eb5b4ad893cd2e54f2715fe4&#45;&#45;df6dcc6972544ec7ba830fcd03294d80 -->
+<g id="edge6" class="edge">
+<title>48c9b9f7eb5b4ad893cd2e54f2715fe4&#45;&#45;df6dcc6972544ec7ba830fcd03294d80</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M243.02,-114C252.23,-114 261.68,-114 271,-114"/>
+</g>
+<!-- 3b49c040f155470b9f27c947a68671ca -->
+<g id="node9" class="node">
+<title>3b49c040f155470b9f27c947a68671ca</title>
+<path fill="#fed4b0" stroke="#e6550d" stroke-width="2.7" d="M609,-143C609,-143 480,-143 480,-143 474,-143 468,-137 468,-131 468,-131 468,-97 468,-97 468,-91 474,-85 480,-85 480,-85 609,-85 609,-85 615,-85 621,-91 621,-97 621,-97 621,-131 621,-131 621,-137 615,-143 609,-143"/>
+<text text-anchor="middle" x="544.5" y="-109" font-family="JetBrains Mono" font-size="20.00">RX(1.571)</text>
+</g>
+<!-- df6dcc6972544ec7ba830fcd03294d80&#45;&#45;3b49c040f155470b9f27c947a68671ca -->
+<g id="edge7" class="edge">
+<title>df6dcc6972544ec7ba830fcd03294d80&#45;&#45;3b49c040f155470b9f27c947a68671ca</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M440,-114C449.22,-114 458.57,-114 467.7,-114"/>
+</g>
+<!-- 3b49c040f155470b9f27c947a68671ca&#45;&#45;72af601c36c841228f868540bd953fa7 -->
+<g id="edge8" class="edge">
+<title>3b49c040f155470b9f27c947a68671ca&#45;&#45;72af601c36c841228f868540bd953fa7</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M621.09,-114C633.94,-114 646.48,-114 656.87,-114"/>
+</g>
+<!-- 46a45b46208349ce933e4638a2eb9ddb -->
+<g id="node15" class="node">
+<title>46a45b46208349ce933e4638a2eb9ddb</title>
+</g>
+<!-- 72af601c36c841228f868540bd953fa7&#45;&#45;46a45b46208349ce933e4638a2eb9ddb -->
+<!-- ce88a62df6d243bcb2f63c31b928492e -->
+<g id="node12" class="node">
+<title>ce88a62df6d243bcb2f63c31b928492e</title>
+<path fill="#fed4b0" stroke="#e6550d" stroke-width="2.7" d="M231,-74C231,-74 102,-74 102,-74 96,-74 90,-68 90,-62 90,-62 90,-28 90,-28 90,-22 96,-16 102,-16 102,-16 231,-16 231,-16 237,-16 243,-22 243,-28 243,-28 243,-62 243,-62 243,-68 237,-74 231,-74"/>
+<text text-anchor="middle" x="166.5" y="-40" font-family="JetBrains Mono" font-size="20.00">RX(3.142)</text>
+</g>
+<!-- 2894d433f32f4b62a1d0612d03e693df&#45;&#45;ce88a62df6d243bcb2f63c31b928492e -->
+<g id="edge9" class="edge">
+<title>2894d433f32f4b62a1d0612d03e693df&#45;&#45;ce88a62df6d243bcb2f63c31b928492e</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54.19,-45C64.55,-45 77.04,-45 89.85,-45"/>
+</g>
+<!-- 202dbf5e61784a9a9c3798b6a388c1fe -->
+<g id="node13" class="node">
+<title>202dbf5e61784a9a9c3798b6a388c1fe</title>
+</g>
+<!-- ce88a62df6d243bcb2f63c31b928492e&#45;&#45;202dbf5e61784a9a9c3798b6a388c1fe -->
+<g id="edge10" class="edge">
+<title>ce88a62df6d243bcb2f63c31b928492e&#45;&#45;202dbf5e61784a9a9c3798b6a388c1fe</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M243.02,-45C252.23,-45 261.68,-45 271,-45"/>
+</g>
+<!-- 68ce4666f6584b438f3f21a3d0dfbaef -->
+<g id="node14" class="node">
+<title>68ce4666f6584b438f3f21a3d0dfbaef</title>
+<path fill="#fed4b0" stroke="#e6550d" stroke-width="2.7" d="M609,-74C609,-74 480,-74 480,-74 474,-74 468,-68 468,-62 468,-62 468,-28 468,-28 468,-22 474,-16 480,-16 480,-16 609,-16 609,-16 615,-16 621,-22 621,-28 621,-28 621,-62 621,-62 621,-68 615,-74 609,-74"/>
+<text text-anchor="middle" x="544.5" y="-40" font-family="JetBrains Mono" font-size="20.00">RX(3.142)</text>
+</g>
+<!-- 202dbf5e61784a9a9c3798b6a388c1fe&#45;&#45;68ce4666f6584b438f3f21a3d0dfbaef -->
+<g id="edge11" class="edge">
+<title>202dbf5e61784a9a9c3798b6a388c1fe&#45;&#45;68ce4666f6584b438f3f21a3d0dfbaef</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M440,-45C449.29,-45 458.71,-45 467.89,-45"/>
+</g>
+<!-- 68ce4666f6584b438f3f21a3d0dfbaef&#45;&#45;46a45b46208349ce933e4638a2eb9ddb -->
+<g id="edge12" class="edge">
+<title>68ce4666f6584b438f3f21a3d0dfbaef&#45;&#45;46a45b46208349ce933e4638a2eb9ddb</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M621.09,-45C633.94,-45 646.48,-45 656.87,-45"/>
+</g>
+</g>
+</svg>
+
+
+
+</div>
+<h2 id="block-execution">Block execution</h2>
+<p>To quickly run block operations and access wavefunctions, samples or expectation values of observables, one can use the convenience functions <code>run</code>, <code>sample</code> and <code>expectation</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">qadence</span> <span class="kn">import</span> <span class="n">kron</span><span class="p">,</span> <span class="n">add</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">run</span><span class="p">,</span> <span class="n">sample</span><span class="p">,</span> <span class="n">expectation</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">n_qubits</span> <span class="o">=</span> <span class="mi">2</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># Prepares a uniform state</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">h_block</span> <span class="o">=</span> <span class="n">kron</span><span class="p">(</span><span class="n">H</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_qubits</span><span class="p">))</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">wf</span> <span class="o">=</span> <span class="n">run</span><span class="p">(</span><span class="n">h_block</span><span class="p">)</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">xs</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="n">h_block</span><span class="p">,</span> <span class="n">n_shots</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="n">obs</span> <span class="o">=</span> <span class="n">add</span><span class="p">(</span><span class="n">Z</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_qubits</span><span class="p">))</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="n">ex</span> <span class="o">=</span> <span class="n">expectation</span><span class="p">(</span><span class="n">h_block</span><span class="p">,</span> <span class="n">obs</span><span class="p">)</span>
+</code></pre></div>
+<div class="result" markdown="1" >
+
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="err">w</span><span class="kc">f</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="kc">tens</span><span class="err">or(</span><span class="p">[[</span><span class="mf">0.5000+0.</span><span class="err">j</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5000+0.</span><span class="err">j</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5000+0.</span><span class="err">j</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5000+0.</span><span class="err">j</span><span class="p">]]</span><span class="err">)</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="err">xs</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="p">[</span><span class="err">Cou</span><span class="kc">nter</span><span class="err">(</span><span class="p">{</span><span class="err">&#39;</span><span class="mi">01</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">257</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">00</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">255</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">10</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">248</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">11</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">240</span><span class="p">}</span><span class="err">)</span><span class="p">]</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="err">ex</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="kc">tens</span><span class="err">or(</span><span class="p">[[</span><span class="mf">0.</span><span class="p">]],</span><span class="w"> </span><span class="err">requires_grad=True)</span>
+</code></pre></div>
+
+</div>
+<h2 id="execution-via-quantumcircuit-and-quantummodel">Execution via <code>QuantumCircuit</code> and <code>QuantumModel</code></h2>
+<p>More fine-grained control and better performance is provided via the high-level <code>QuantumModel</code> abstraction. Quantum programs in Qadence are constructed in two steps:</p>
+<ol>
+<li>Build a <a class="autorefs autorefs-internal" href="../../api/quantumcircuit/#qadence.circuit.QuantumCircuit"><code>QuantumCircuit</code></a> which ties together a composite block and a register.</li>
+<li>Define a <a href="../quantummodels/"><code>QuantumModel</code></a> which differentiates, compiles and executes the circuit.</li>
+</ol>
+<p>Execution of more complex Qadence programs will be explored in the next tutorials.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.annotate", "navigation.tabs", "navigation.indexes", "navigation.sections", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.fe8b6f2b.min.js"></script>
+      
+        <script src="../../assets/_markdown_exec_pyodide.js"></script>
+      
+        <script src="../../extras/javascripts/mathjax.js"></script>
+      
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
