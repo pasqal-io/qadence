@@ -353,11 +353,11 @@ class QuantumModel(nn.Module):
         """
         raise NotImplementedError("The overlap method is not implemented for this model.")
 
-    def _to_dict(self, save_params: bool = False) -> dict[str, Any]:
+    def _to_dict(self, save_params: bool = True) -> dict[str, Any]:
         """Convert QuantumModel to a dictionary for serialization.
 
         Arguments:
-            save_params: Optionally save parameters. Defaults to False.
+            save_params: Save parameters. Defaults to True.
 
         Returns:
             The dictionary
@@ -382,7 +382,7 @@ class QuantumModel(nn.Module):
             }
             param_dict_conv = {}
             if save_params:
-                param_dict_conv = {name: param.data for name, param in self._params.items()}
+                param_dict_conv = {name: param for name, param in self._params.items()}
             d = {self.__class__.__name__: d, "param_dict": param_dict_conv}
             logger.debug(f"{self.__class__.__name__} serialized to {d}.")
         except Exception as e:
@@ -431,6 +431,30 @@ class QuantumModel(nn.Module):
             logger.warning(f"Unable to deserialize object {d} to {cls.__name__} due to {e}.")
 
         return qm
+
+    def load_params_from_dict(self, d: dict) -> None:
+        """Copy parameters from dictionary into this QuantumModel.
+
+        Unlike :meth:`~qadence.QuantumModel.from_dict`, this method does not create a new
+        QuantumModel instance, but rather loads the parameters into the same QuantumModel.
+        The behaviour of this method is similar to :meth:`~torch.nn.Module.load_state_dict`.
+
+        The dictionary is assumed to have the format as saved via
+        :meth:`~qadence.QuantumModel.to_dict`
+
+        Args:
+            d (dict): Dictionary
+        """
+        param_dict = d["param_dict"]
+        for n, param in param_dict.items():
+            if n in param_dict:
+                try:
+                    with torch.no_grad():
+                        self._params[n].copy_(
+                            torch.nn.Parameter(param, requires_grad=param.requires_grad)
+                        )
+                except Exception as e:
+                    logger.warning(f"Unable to load parameter {n} from dictionary due to {e}.")
 
     def save(
         self, folder: str | Path, file_name: str = "quantum_model.pt", save_params: bool = True
