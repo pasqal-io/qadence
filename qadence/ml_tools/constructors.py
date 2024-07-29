@@ -487,7 +487,7 @@ def _create_hea_digital(num_qubits: int, config: AnsatzConfig) -> AbstractBlock:
     Returns:
         AbstractBlock: The Digital Hardware Efficient Ansatz.
     """
-    operations = config.strategy_args.get("rotations", [RX, RY, RX])
+    operations = config.strategy_args.get("operations", [RX, RY, RX])
     entangler = config.strategy_args.get("entangler", CNOT)
     periodic = config.strategy_args.get("periodic", False)
 
@@ -512,7 +512,7 @@ def _create_hea_sdaqc(num_qubits: int, config: AnsatzConfig) -> AbstractBlock:
     Returns:
         AbstractBlock: The SDAQC Hardware Efficient Ansatz.
     """
-    operations = config.strategy_args.get("rotations", [RX, RY, RX])
+    operations = config.strategy_args.get("operations", [RX, RY, RX])
     entangler = config.strategy_args.get(
         "entangler", hamiltonian_factory(num_qubits, interaction=Interaction.NN)
     )
