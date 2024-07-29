@@ -556,7 +556,7 @@ def _create_hea_rydberg(
     )
 
 
-def _create_hea_ansatz(
+def _create_hea(
     register: int | Register,
     config: AnsatzConfig,
 ) -> AbstractBlock:
@@ -610,7 +610,7 @@ def create_ansatz(
     if config.ansatz_type == AnsatzType.IIA:
         return _create_iia(num_qubits=num_qubits, config=config)
     elif config.ansatz_type == AnsatzType.HEA:
-        return _create_hea_ansatz(register=register, config=config)
+        return _create_hea(register=register, config=config)
     else:
         raise NotImplementedError(
             f"Ansatz of type {config.ansatz_type} not implemented yet. Only 'hea' and\
