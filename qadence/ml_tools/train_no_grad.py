@@ -6,8 +6,7 @@ from typing import Callable
 
 import nevergrad as ng
 from nevergrad.optimization.base import Optimizer as NGOptimizer
-from rich.progress import (BarColumn, Progress, TaskProgressColumn, TextColumn,
-                           TimeRemainingColumn)
+from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, TimeRemainingColumn
 from torch import Tensor
 from torch.nn import Module
 from torch.utils.data import DataLoader
@@ -16,9 +15,13 @@ from torch.utils.tensorboard import SummaryWriter
 from qadence.ml_tools.config import TrainConfig
 from qadence.ml_tools.data import DictDataLoader
 from qadence.ml_tools.parameters import get_parameters, set_parameters
-from qadence.ml_tools.printing import (log_model_tracker, log_tracker,
-                                       plot_tracker, print_metrics,
-                                       write_tracker)
+from qadence.ml_tools.printing import (
+    log_model_tracker,
+    log_tracker,
+    plot_tracker,
+    print_metrics,
+    write_tracker,
+)
 from qadence.ml_tools.saveload import load_checkpoint, write_checkpoint
 from qadence.ml_tools.tensors import promote_to_tensor
 from qadence.types import ExperimentTrackingTool
@@ -111,7 +114,7 @@ def train(
             if config.write_every != 0 and iteration % config.write_every == 0:
                 write_tracker(writer, loss, metrics, iteration, tracking_tool=config.tracking_tool)
 
-            if config.plot_every !=0 and iteration % config.plot_every == 0:
+            if config.plot_every != 0 and iteration % config.plot_every == 0:
                 plot_tracker(
                     writer,
                     model,

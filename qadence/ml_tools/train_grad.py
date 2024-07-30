@@ -5,12 +5,10 @@ import math
 from logging import getLogger
 from typing import Callable, Union
 
-from rich.progress import (BarColumn, Progress, TaskProgressColumn, TextColumn,
-                           TimeRemainingColumn)
-from torch import complex128
+from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, TimeRemainingColumn
+from torch import complex128, float32, float64
 from torch import device as torch_device
 from torch import dtype as torch_dtype
-from torch import float32, float64
 from torch.nn import DataParallel, Module
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
@@ -19,9 +17,13 @@ from torch.utils.tensorboard import SummaryWriter
 from qadence.ml_tools.config import TrainConfig
 from qadence.ml_tools.data import DictDataLoader, data_to_device
 from qadence.ml_tools.optimize_step import optimize_step
-from qadence.ml_tools.printing import (log_model_tracker, log_tracker,
-                                       plot_tracker, print_metrics,
-                                       write_tracker)
+from qadence.ml_tools.printing import (
+    log_model_tracker,
+    log_tracker,
+    plot_tracker,
+    print_metrics,
+    write_tracker,
+)
 from qadence.ml_tools.saveload import load_checkpoint, write_checkpoint
 from qadence.types import ExperimentTrackingTool
 
