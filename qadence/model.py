@@ -447,14 +447,13 @@ class QuantumModel(nn.Module):
         """
         param_dict = d["param_dict"]
         for n, param in param_dict.items():
-            if n in param_dict:
-                try:
-                    with torch.no_grad():
-                        self._params[n].copy_(
-                            torch.nn.Parameter(param, requires_grad=param.requires_grad)
-                        )
-                except Exception as e:
-                    logger.warning(f"Unable to load parameter {n} from dictionary due to {e}.")
+            try:
+                with torch.no_grad():
+                    self._params[n].copy_(
+                        torch.nn.Parameter(param, requires_grad=param.requires_grad)
+                    )
+            except Exception as e:
+                logger.warning(f"Unable to load parameter {n} from dictionary due to {e}.")
 
     def save(
         self, folder: str | Path, file_name: str = "quantum_model.pt", save_params: bool = True
