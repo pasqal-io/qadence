@@ -432,7 +432,7 @@ class QuantumModel(nn.Module):
 
         return qm
 
-    def load_params_from_dict(self, d: dict) -> None:
+    def load_params_from_dict(self, d: dict, strict: bool = True) -> None:
         """Copy parameters from dictionary into this QuantumModel.
 
         Unlike :meth:`~qadence.QuantumModel.from_dict`, this method does not create a new
@@ -443,17 +443,44 @@ class QuantumModel(nn.Module):
         :meth:`~qadence.QuantumModel.to_dict`
 
         Args:
-            d (dict): Dictionary
+            d (dict): The dictionary
+            strict (bool, optional):
+                Whether to strictly enforce that the parameter keys in the dictionary and
+                in the model match exactly. Default: ``True``.
         """
         param_dict = d["param_dict"]
+        missing_keys = []
+        unexpected_keys = []
         for n, param in param_dict.items():
-            try:
-                with torch.no_grad():
-                    self._params[n].copy_(
-                        torch.nn.Parameter(param, requires_grad=param.requires_grad)
-                    )
-            except Exception as e:
-                logger.warning(f"Unable to load parameter {n} from dictionary due to {e}.")
+            if n in self._params.keys():
+                try:
+                    with torch.no_grad():
+                        self._params[n].copy_(
+                            torch.nn.Parameter(param, requires_grad=param.requires_grad)
+                        )
+                except Exception as e:
+                    logger.warning(f"Unable to load parameter {n} from dictionary due to {e}.")
+            else:
+                unexpected_keys.append(n)
+
+        for n in self._params.keys():
+            if n not in param_dict.keys():
+                missing_keys.append(n)
+
+        if strict:
+            error_msgs = []
+            if len(unexpected_keys) > 0:
+                error_msgs.append(f"Unexpected key(s) in dictionary: {unexpected_keys}")
+            if len(missing_keys) > 0:
+                error_msgs.append(f"Missing key(s) in dictionary: {missing_keys}")
+            if len(error_msgs) > 0:
+                errors_string = "\n\t".join(error_msgs)
+                raise RuntimeError(
+                    f"Error(s) loading the parameter dictionary due to: \n\t{errors_string}\n"
+                    "This error was thrown because the `strict` argument is set `True`."
+                    "If you don't need the parameter keys of the dictionary to exactly match "
+                    "the model parameters, set `strict=False`."
+                )
 
     def save(
         self, folder: str | Path, file_name: str = "quantum_model.pt", save_params: bool = True
