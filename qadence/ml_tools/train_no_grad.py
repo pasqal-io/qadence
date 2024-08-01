@@ -124,7 +124,7 @@ def train(
                 )
 
             if config.folder:
-                if iteration % config.checkpoint_every == 0:
+                if config.checkpoint_every > 0 and iteration % config.checkpoint_every == 0:
                     write_checkpoint(config.folder, model, optimizer, iteration)
 
             if iteration >= init_iter + config.max_iter:
