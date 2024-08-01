@@ -234,13 +234,13 @@ class FeatureMapConfig:
 
     multivariate_strategy: MultivariateStrategy = MultivariateStrategy.PARALLEL
     """
-    The  encoding strategy in case of multi-variate function.
+    The encoding strategy in case of multi-variate function.
 
     Takes qadence.MultivariateStrategy.
     If PARALLEL, the features are encoded in one block of rotation gates
-    with each feature given an equal number of qubits.
-    If SERIES, the features are encoded sequentially, with an ansatz block
-    between. PARALLEL is allowed only for DIGITAL `feature_map_strategy`.
+    with the regitster being split in sub-registers for each feature.
+    If SERIES, the features are encoded sequentially using the full register for each feature, with
+    an ansatz block between them. PARALLEL is allowed only for DIGITAL `feature_map_strategy`.
     """
 
     feature_map_strategy: Strategy = Strategy.DIGITAL
@@ -261,7 +261,7 @@ class FeatureMapConfig:
     account the domain of the feature-encoding function.
     Defaults to `None` and thus, the feature map is not trainable.
     Note that this is separate from the name of the parameter.
-    The user can provide a single prefix for all features, and they will be appended
+    The user can provide a single prefix for all features, and it will be appended
     by appropriate feature name automatically.
     """
 
@@ -269,7 +269,7 @@ class FeatureMapConfig:
     """
     Number of feature map layers repeated in the data reuploading step.
 
-    If all are to be repeated the same number of times, then can give a single
+    If all features are to be repeated the same number of times, then can give a single
     `int`. For different number of repetitions for each feature, provide a dict
     of (str, int) where the key is the name of the variable and the value is the
     number of repetitions for that feature.
@@ -300,8 +300,8 @@ class FeatureMapConfig:
         if self.multivariate_strategy == MultivariateStrategy.PARALLEL and self.num_features > 1:
             assert (
                 self.feature_map_strategy == Strategy.DIGITAL
-            ), "For `parallel` encoding of multiple features, the `feature_map_strategy` must be \
-                  of `digital` type."
+            ), "For parallel encoding of multiple features, the `feature_map_strategy` must be \
+                  of `Strategy.DIGITAL`."
 
         if self.operation is None:
             if self.feature_map_strategy == Strategy.DIGITAL:
@@ -314,8 +314,8 @@ class FeatureMapConfig:
                 if isinstance(self.operation, AnalogBlock):
                     logger.warning(
                         "The `operation` is of type `AnalogBlock` but the `feature_map_strategy` is\
-                        `digital`. The `feature_map_strategy` will be modified and given operation\
-                        will be used."
+                        `Strategy.DIGITAL`. The `feature_map_strategy` will be modified and given \
+                        operation will be used."
                     )
 
                     self.feature_map_strategy = Strategy.ANALOG
@@ -324,11 +324,24 @@ class FeatureMapConfig:
                 if isinstance(self.operation, ParametricBlock):
                     logger.warning(
                         "The `operation` is a digital gate but the `feature_map_strategy` is\
-                        `analog`. The `feature_map_strategy` will be modified and given operation\
-                        will be used."
+                        `Strategy.ANALOG`. The `feature_map_strategy` will be modified and given\
+                        operation will be used."
                     )
 
                     self.feature_map_strategy = Strategy.DIGITAL
+
+            elif self.feature_map_strategy == Strategy.RYDBERG:
+                if self.operation is not None:
+                    logger.warning(
+                        f"feature_map_strategy is `Strategy.RYDBERG` which does not take any\
+                        operation. But an operation {self.operation} is provided. The \
+                        `feature_map_strategy` will be modified and given operation will be used."
+                    )
+
+                    if isinstance(self.operation, AnalogBlock):
+                        self.feature_map_strategy = Strategy.ANALOG
+                    else:
+                        self.feature_map_strategy = Strategy.DIGITAL
 
         if self.inputs is not None:
             assert (
@@ -388,16 +401,16 @@ class AnsatzConfig:
     ansatz_type: AnsatzType = AnsatzType.HEA
     """What type of ansatz.
 
-    HEA for Hardware Efficient Ansatz.
-    IIA for Identity intialized Ansatz.
+    `AnsatzType.HEA` for Hardware Efficient Ansatz.
+    `AnsatzType.IIA` for Identity intialized Ansatz.
     """
 
     ansatz_strategy: Strategy = Strategy.DIGITAL
     """Ansatz strategy.
 
-    DIGITAL for fully digital ansatz. Required if `ansatz_type` is `iia`.
-    SDAQC for analog entangling block.
-    RYDBERG for fully rydberg hea ansatz.
+    `Strategy.DIGITAL` for fully digital ansatz. Required if `ansatz_type` is `AnsatzType.IIA`.
+    `Strategy.SDAQC` for analog entangling block.
+    `Strategy.RYDBERG` for fully rydberg hea ansatz.
     """
 
     strategy_args: dict = field(default_factory=dict)
@@ -406,7 +419,7 @@ class AnsatzConfig:
 
     Details about each below.
 
-    For DIGITAL strategy, accepts the following:
+    For `Strategy.DIGITAL` strategy, accepts the following:
         periodic (bool): if the qubits should be linked periodically.
             periodic=False is not supported in emu-c.
         operations (list): list of operations to cycle through in the
@@ -417,7 +430,7 @@ class AnsatzConfig:
             will have variational parameters on the rotation angles.
             Defaults to CNOT
 
-    For SDAQC strategy, accepts the following:
+    For `Strategy.SDAQC` strategy, accepts the following:
         operations (list): list of operations to cycle through in the
             digital single-qubit rotations of each layer.
             Defaults to  [RX, RY, RX] for hea and [RX, RY] for iia.
@@ -425,7 +438,7 @@ class AnsatzConfig:
             analog entangling layer. Time parameter is considered variational.
             Defaults to NN interaction.
 
-    For RYDBERG strategy, accepts the following:
+    For `Strategy.RYDBERG` strategy, accepts the following:
         addressable_detuning: whether to turn on the trainable semi-local addressing pattern
             on the detuning (n_i terms in the Hamiltonian).
             Defaults to True.
