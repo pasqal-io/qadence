@@ -135,7 +135,7 @@ class Backend(BackendInterface):
         )
         observable = observable if isinstance(observable, list) else [observable]
         _expectation = torch.hstack(
-            [obs.native(state, param_values).reshape(-1, 1) for obs in observable]
+            [obs.native.expectation(state, param_values).reshape(-1, 1) for obs in observable]
         )
         return _expectation
 
@@ -164,7 +164,7 @@ class Backend(BackendInterface):
         observables = observable if isinstance(observable, list) else [observable]
         for vals in to_list_of_dicts(param_values):
             wf = self.run(circuit, vals, state, endianness, pyqify_state=True, unpyqify_state=False)
-            exs = torch.cat([obs.native(wf, vals) for obs in observables], 0)
+            exs = torch.cat([obs.native.expectation(wf, vals) for obs in observables], 0)
             list_expvals.append(exs)
 
         batch_expvals = torch.vstack(list_expvals)
