@@ -264,7 +264,7 @@ def train(
 
                 if config.folder:
                     if (
-                        config.checkpoint_every >= 0
+                        config.checkpoint_every > 0
                         and iteration % config.checkpoint_every == 0
                         and not config.checkpoint_best_only
                     ):
