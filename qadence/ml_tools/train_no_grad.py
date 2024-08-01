@@ -108,13 +108,13 @@ def train(
             else:
                 raise NotImplementedError("Unsupported dataloader type!")
 
-            if config.print_every != 0 and iteration % config.print_every == 0 and config.verbose:
+            if config.print_every > 0 and iteration % config.print_every == 0 and config.verbose:
                 print_metrics(loss, metrics, iteration)
 
-            if config.write_every != 0 and iteration % config.write_every == 0:
+            if config.write_every > 0 and iteration % config.write_every == 0:
                 write_tracker(writer, loss, metrics, iteration, tracking_tool=config.tracking_tool)
 
-            if config.plot_every != 0 and iteration % config.plot_every == 0:
+            if config.plot_every > 0 and iteration % config.plot_every == 0:
                 plot_tracker(
                     writer,
                     model,
