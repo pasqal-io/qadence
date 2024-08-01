@@ -14,7 +14,6 @@ from qadence.blocks import AbstractBlock, chain, kron
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import hea, total_magnetization
 from qadence.divergences import js_divergence
-from qadence.ml_tools import set_parameters, get_parameters
 from qadence.ml_tools.utils import rand_featureparameters
 from qadence.model import QuantumModel
 from qadence.operations import MCRX, RX, HamEvo, I, Toffoli, X, Z
