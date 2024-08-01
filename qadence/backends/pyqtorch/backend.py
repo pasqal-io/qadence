@@ -78,12 +78,7 @@ class Backend(BackendInterface):
         ]
         block = transpile(*transpilations)(observable)  # type: ignore[call-overload]
         operations = convert_block(block, n_qubits, self.config)
-        obs_cls = (
-            pyq.DiagonalObservable
-            if block._is_diag_pauli and not block.is_parametric
-            else pyq.Observable
-        )
-        native = obs_cls(n_qubits=n_qubits, operations=operations)
+        native = pyq.Observable(operations=operations)
         return ConvertedObservable(native=native, abstract=block, original=observable)
 
     def run(
