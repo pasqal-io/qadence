@@ -226,7 +226,7 @@ def train(
                     )
 
                 if (
-                    config.print_every != 0
+                    config.print_every > 0
                     and iteration % config.print_every == 0
                     and config.verbose
                 ):
@@ -235,12 +235,12 @@ def train(
                     # which is printed accordingly by the previous iteration number
                     print_metrics(loss, metrics, iteration - 1)
 
-                if config.write_every != 0 and iteration % config.write_every == 0:
+                if config.write_every > 0 and iteration % config.write_every == 0:
                     write_tracker(
                         writer, loss, metrics, iteration, tracking_tool=config.tracking_tool
                     )
 
-                if config.plot_every != 0 and iteration % config.plot_every == 0:
+                if config.plot_every > 0 and iteration % config.plot_every == 0:
                     plot_tracker(
                         writer,
                         model,
@@ -264,7 +264,7 @@ def train(
 
                 if config.folder:
                     if (
-                        config.checkpoint_every != 0
+                        config.checkpoint_every >= 0
                         and iteration % config.checkpoint_every == 0
                         and not config.checkpoint_best_only
                     ):
