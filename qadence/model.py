@@ -449,23 +449,8 @@ class QuantumModel(nn.Module):
                 in the model match exactly. Default: ``True``.
         """
         param_dict = d["param_dict"]
-        missing_keys = []
-        unexpected_keys = []
-        for n, param in param_dict.items():
-            if n in self._params.keys():
-                try:
-                    with torch.no_grad():
-                        self._params[n].copy_(
-                            torch.nn.Parameter(param, requires_grad=param.requires_grad)
-                        )
-                except Exception as e:
-                    logger.warning(f"Unable to load parameter {n} from dictionary due to {e}.")
-            else:
-                unexpected_keys.append(n)
-
-        for n in self._params.keys():
-            if n not in param_dict.keys():
-                missing_keys.append(n)
+        missing_keys = set(self._params.keys()) - set(param_dict.keys())
+        unexpected_keys = set(param_dict.keys()) - set(self._params.keys())
 
         if strict:
             error_msgs = []
@@ -481,6 +466,15 @@ class QuantumModel(nn.Module):
                     "If you don't need the parameter keys of the dictionary to exactly match "
                     "the model parameters, set `strict=False`."
                 )
+
+        for n, param in param_dict.items():
+            try:
+                with torch.no_grad():
+                    self._params[n].copy_(
+                        torch.nn.Parameter(param, requires_grad=param.requires_grad)
+                    )
+            except Exception as e:
+                logger.warning(f"Unable to load parameter {n} from dictionary due to {e}.")
 
     def save(
         self, folder: str | Path, file_name: str = "quantum_model.pt", save_params: bool = True
