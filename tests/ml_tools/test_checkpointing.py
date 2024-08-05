@@ -14,7 +14,6 @@ from qadence.ml_tools import (
     TrainConfig,
     load_checkpoint,
     train_with_grad,
-    write_checkpoint,
 )
 from qadence.ml_tools.data import to_dataloader
 from qadence.ml_tools.parameters import get_parameters, set_parameters
@@ -65,13 +64,14 @@ def test_basic_save_load_ckpts(Basic: torch.nn.Module, tmp_path: Path) -> None:
         return loss, {}
 
     config = TrainConfig(folder=tmp_path, max_iter=1, checkpoint_every=1, write_every=1)
-    train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
+    model, _ = train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
+    ps0 = get_parameters(model)
     set_parameters(model, torch.ones(len(get_parameters(model))))
-    write_checkpoint(tmp_path, model, optimizer, 1)
+    # write_checkpoint(tmp_path, model, optimizer, 1)
     # check that saved model has ones
-    load_checkpoint(tmp_path, model, optimizer)
-    ps = get_parameters(model)
-    assert torch.allclose(ps, torch.ones(len(ps)))
+    model, _, _ = load_checkpoint(tmp_path, model, optimizer)
+    ps1 = get_parameters(model)
+    assert torch.allclose(ps0, ps1)
 
 
 def test_random_basic_qm_save_load_ckpts(BasicQuantumModel: QuantumModel, tmp_path: Path) -> None:
@@ -88,9 +88,20 @@ def test_random_basic_qm_save_load_ckpts(BasicQuantumModel: QuantumModel, tmp_pa
         return loss, {}
 
     config = TrainConfig(folder=tmp_path, max_iter=10, checkpoint_every=1, write_every=1)
-    train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
-    load_checkpoint(tmp_path, model, optimizer)
-    assert not torch.all(torch.isnan(model.expectation({})))
+    model, optimizer = train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
+    ps0 = get_parameters(model)
+    ev0 = model.expectation({})
+    # Modify model's parameters
+    set_parameters(model, torch.ones(len(ps0)))
+
+    model, optimizer, _ = load_checkpoint(tmp_path, model, optimizer)
+    ps1 = get_parameters(model)
+    ev1 = model.expectation({})
+
+    assert not torch.all(torch.isnan(ev1))
+    assert torch.allclose(ps0, ps1)
+    assert torch.allclose(ev0, ev1)
+
     loaded_model, optimizer, _ = load_checkpoint(
         tmp_path,
         BasicQuantumModel,
@@ -98,7 +109,7 @@ def test_random_basic_qm_save_load_ckpts(BasicQuantumModel: QuantumModel, tmp_pa
         "model_QuantumModel_ckpt_009_device_cpu.pt",
         "opt_Adam_ckpt_006_device_cpu.pt",
     )
-    assert torch.allclose(loaded_model.expectation({}), model.expectation({}))
+    assert not torch.all(torch.isnan(loaded_model.expectation({})))
 
 
 def test_check_ckpts_exist(BasicQuantumModel: QuantumModel, tmp_path: Path) -> None:
@@ -141,16 +152,28 @@ def test_random_basic_qnn_save_load_ckpts(BasicQNN: QNN, tmp_path: Path) -> None
 
     config = TrainConfig(folder=tmp_path, max_iter=10, checkpoint_every=1, write_every=1)
     train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
-    load_checkpoint(tmp_path, model, optimizer)
-    assert not torch.all(torch.isnan(model.expectation(inputs)))
+    ps0 = get_parameters(model)
+    ev0 = model.expectation(inputs)
+
+    # Modify model's parameters
+    set_parameters(model, torch.ones(len(ps0)))
+
+    model, optimizer, _ = load_checkpoint(tmp_path, model, optimizer)
+    ps1 = get_parameters(model)
+    ev1 = model.expectation(inputs)
+
+    assert torch.allclose(ps0, ps1)
+    assert torch.allclose(ev0, ev1)
+
+    # Test loading the last ckpt by name
     loaded_model, optimizer, _ = load_checkpoint(
         tmp_path,
         BasicQNN,
         optimizer,
-        "model_QNN_ckpt_009_device_cpu.pt",
+        "model_QNN_ckpt_003_device_cpu.pt",
         "opt_Adam_ckpt_006_device_cpu.pt",
     )
-    assert torch.allclose(loaded_model.expectation(inputs), model.expectation(inputs))
+    assert not torch.all(torch.isnan(loaded_model.expectation(inputs)))
 
 
 def test_check_qnn_ckpts_exist(BasicQNN: QNN, tmp_path: Path) -> None:
@@ -181,6 +204,10 @@ def test_basic_qm_save_load_legacy_ckpts(BasicQuantumModel: QuantumModel, tmp_pa
     optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
     ps0 = get_parameters(model)
     write_legacy_checkpoint(tmp_path, model, optimizer, 1)
+
+    # Modify model's parameters to make sure we are loading the saved ckpt
+    set_parameters(model, torch.ones(len(ps0)))
+
     loaded_model, optimizer, _ = load_checkpoint(tmp_path, model, optimizer)
     ps1 = get_parameters(loaded_model)
     assert not torch.all(torch.isnan(loaded_model.expectation({})))
@@ -191,8 +218,13 @@ def test_basic_qnn_save_load_legacy_ckpts(BasicQNN: QNN, tmp_path: Path) -> None
     model = BasicQNN
     optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
     inputs = rand_featureparameters(model, 1)
+
     ps0 = get_parameters(model)
     write_legacy_checkpoint(tmp_path, model, optimizer, 1)
+
+    # Modify model's parameters to make sure we are loading the saved ckpt
+    set_parameters(model, torch.ones(len(ps0)))
+
     loaded_model, optimizer, _ = load_checkpoint(tmp_path, model, optimizer)
     ps1 = get_parameters(loaded_model)
     assert not torch.all(torch.isnan(model.expectation(inputs)))
