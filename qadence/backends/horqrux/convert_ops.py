@@ -7,11 +7,11 @@ from operator import add
 from typing import Any, Callable, Dict
 
 import jax.numpy as jnp
-from horqrux.primitive import Primitive as Gate
 from horqrux.analog import _HamiltonianEvolution as NativeHorqHEvo
 from horqrux.apply import apply_gate
 from horqrux.parametric import RX, RY, RZ
 from horqrux.primitive import NOT, SWAP, H, I, X, Y, Z
+from horqrux.primitive import Primitive as Gate
 from horqrux.utils import inner
 from jax import Array
 from jax.scipy.linalg import expm
