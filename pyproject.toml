@@ -73,7 +73,7 @@ visualization = [
     # "scour",
 ]
 horqrux = [
-    "horqrux==0.6.0",
+    "horqrux==0.6.2",
     "jax",
     "flax",
     "optax",
