@@ -129,9 +129,11 @@ class CompositeBlock(AbstractBlock):
         from qadence.blocks.utils import _construct, tag
 
         blocks = [
-            getattr(operations, b["type"])._from_dict(b)
-            if hasattr(operations, b["type"])
-            else getattr(qadenceblocks, b["type"])._from_dict(b)
+            (
+                getattr(operations, b["type"])._from_dict(b)
+                if hasattr(operations, b["type"])
+                else getattr(qadenceblocks, b["type"])._from_dict(b)
+            )
             for b in d["blocks"]
         ]
         block = _construct(cls, blocks)  # type: ignore[arg-type]

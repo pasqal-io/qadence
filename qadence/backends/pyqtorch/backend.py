@@ -71,9 +71,11 @@ class Backend(BackendInterface):
     def observable(self, observable: AbstractBlock, n_qubits: int) -> ConvertedObservable:
         # make sure only leaves, i.e. primitive blocks are scaled
         transpilations = [
-            lambda block: chain_single_qubit_ops(block)
-            if self.config.use_single_qubit_composition
-            else flatten(block),
+            lambda block: (
+                chain_single_qubit_ops(block)
+                if self.config.use_single_qubit_composition
+                else flatten(block)
+            ),
             scale_primitive_blocks_only,
         ]
         block = transpile(*transpilations)(observable)  # type: ignore[call-overload]

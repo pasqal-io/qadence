@@ -1,4 +1,5 @@
 """Test examples scripts."""
+
 from __future__ import annotations
 
 import os
