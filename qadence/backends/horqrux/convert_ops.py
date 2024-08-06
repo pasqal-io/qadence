@@ -7,7 +7,7 @@ from operator import add
 from typing import Any, Callable, Dict
 
 import jax.numpy as jnp
-from horqrux.abstract import Primitive as Gate
+from horqrux.primitive import Primitive as Gate
 from horqrux.analog import _HamiltonianEvolution as NativeHorqHEvo
 from horqrux.apply import apply_gate
 from horqrux.parametric import RX, RY, RZ
