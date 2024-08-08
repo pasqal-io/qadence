@@ -15,6 +15,22 @@ EngineClsType = TypeVar("EngineClsType", bound=DifferentiableBackend)
 logger = getLogger(__name__)
 
 
+class ConfigNotFoundError(ModuleNotFoundError):
+    ...
+
+
+class BackendNotFoundError(ModuleNotFoundError):
+    ...
+
+
+class EngineNotFoundError(ModuleNotFoundError):
+    ...
+
+
+class SupportedGatesNotFoundError(ModuleNotFoundError):
+    ...
+
+
 def import_config(backend_name: str | BackendName) -> BackendConfiguration:
     module_path = f"qadence.backends.{backend_name}.config"
     cfg: BackendConfiguration
