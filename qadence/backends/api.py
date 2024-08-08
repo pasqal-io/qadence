@@ -3,6 +3,9 @@ from __future__ import annotations
 from qadence.backend import Backend, BackendConfiguration
 from qadence.engines.differentiable_backend import DifferentiableBackend
 from qadence.extensions import (
+    BackendNotFoundError,
+    ConfigNotFoundError,
+    EngineNotFoundError,
     import_backend,
     import_config,
     import_engine,
@@ -49,12 +52,9 @@ def backend_factory(
             diff_backend_cls = import_engine(backend_inst.engine)
             backend_inst = diff_backend_cls(backend=backend_inst, diff_mode=DiffMode(diff_mode))  # type: ignore[operator]
         return backend_inst
-    except Exception as e:
-        msg = f"The requested backend '{backend}' is either not installed\
-            or could not be imported due to {e}."
-        logger.error(msg)
-        raise Exception(msg)
-    # Set backend configurations which depend on the differentiation mode
+    except (BackendNotFoundError, EngineNotFoundError, ConfigNotFoundError) as e:
+        logger.error(e.msg)
+        raise e
 
 
 def config_factory(backend_name: BackendName | str, config: dict) -> BackendConfiguration:
@@ -62,6 +62,7 @@ def config_factory(backend_name: BackendName | str, config: dict) -> BackendConf
     try:
         BackendConfigCls = import_config(backend_name)
         cfg = BackendConfigCls(**config)  # type: ignore[operator]
-    except Exception as e:
-        logger.debug(f"Unable to import config for backend {backend_name} due to {e}.")
+    except ConfigNotFoundError as e:
+        logger.error(e.msg)
+        raise e
     return cfg
