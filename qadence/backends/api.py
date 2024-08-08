@@ -3,9 +3,9 @@ from __future__ import annotations
 from qadence.backend import Backend, BackendConfiguration
 from qadence.engines.differentiable_backend import DifferentiableBackend
 from qadence.extensions import (
+    BackendNotFoundError,
     ConfigNotFoundError,
     EngineNotFoundError,
-    BackendNotFoundError,
     import_backend,
     import_config,
     import_engine,
