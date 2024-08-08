@@ -671,9 +671,9 @@ def load_observable_transformations(config: ObservableConfig) -> tuple[Parameter
 
 
 ObservableTransformMap = {
-    ObservableTransform.RANGE: lambda detuning, scale, shift: (shift, shift - scale)
-    if detuning is N
-    else (0.5 * (shift - scale), 0.5 * (scale + shift)),
+    ObservableTransform.RANGE: lambda detuning, scale, shift: (
+        (shift, shift - scale) if detuning is N else (0.5 * (shift - scale), 0.5 * (scale + shift))
+    ),
     ObservableTransform.SCALE: lambda _, scale, shift: (scale, shift),
 }
 
