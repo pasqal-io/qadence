@@ -6,7 +6,7 @@ from functools import partial
 from typing import Any, Callable, Sequence
 
 import torch
-from pyqtorch.adjoint import AdjointExpectation
+from pyqtorch.differentiation import AdjointExpectation
 from torch import Tensor
 from torch.autograd import Function
 
