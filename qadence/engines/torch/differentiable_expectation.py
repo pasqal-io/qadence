@@ -215,7 +215,7 @@ class DifferentiableExpectation:
     ) -> dict[str, Callable]:
         """Create a mapping between parameters and PSR functions."""
 
-        uuid_to_eigs = uuid_to_eigen(circuit.block)
+        uuid_to_eigs = uuid_to_eigen(circuit.block, rescale_eigenvals_timeevo=True)
         # We currently rely on implicit ordering to match the PSR to the parameter,
         # because we want to cache PSRs.
 
