@@ -266,11 +266,12 @@ def expression_to_uuids(block: AbstractBlock) -> dict[Expr, list[str]]:
 def uuid_to_eigen(
     block: AbstractBlock, rescale_eigenvals_timeevo: bool = False
 ) -> dict[str, Tensor]:
-    """Creates a mapping between a parametric block's param_id and its' eigenvalues,.
-
-        plus a PSR shift factor.
+    """Creates a mapping between a parametric block's param_id and its' eigenvalues.
 
     This method is needed for constructing the PSR rules for a given block.
+
+    A PSR shift factor is also added in the mapping for dealing
+    with the time evolution case as it requires rescaling.
 
     Args:
         block (AbstractBlock): Block input
