@@ -45,13 +45,25 @@ class TrainConfig:
     max_iter: int = 10000
     """Number of training iterations."""
     print_every: int = 1000
-    """Print loss/metrics."""
+    """Print loss/metrics.
+
+    Set to 0 to disable
+    """
     write_every: int = 50
-    """Write loss and metrics with the tracking tool."""
+    """Write loss and metrics with the tracking tool.
+
+    Set to 0 to disable
+    """
     checkpoint_every: int = 5000
-    """Write model/optimizer checkpoint."""
+    """Write model/optimizer checkpoint.
+
+    Set to 0 to disable
+    """
     plot_every: int = 5000
-    """Write figures."""
+    """Write figures.
+
+    Set to 0 to disable
+    """
     log_model: bool = False
     """Logs a serialised version of the model."""
     folder: Path | None = None

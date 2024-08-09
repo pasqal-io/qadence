@@ -6,13 +6,7 @@ from typing import Callable
 
 import nevergrad as ng
 from nevergrad.optimization.base import Optimizer as NGOptimizer
-from rich.progress import (
-    BarColumn,
-    Progress,
-    TaskProgressColumn,
-    TextColumn,
-    TimeRemainingColumn,
-)
+from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, TimeRemainingColumn
 from torch import Tensor
 from torch.nn import Module
 from torch.utils.data import DataLoader
@@ -114,13 +108,13 @@ def train(
             else:
                 raise NotImplementedError("Unsupported dataloader type!")
 
-            if iteration % config.print_every == 0 and config.verbose:
+            if config.print_every > 0 and iteration % config.print_every == 0 and config.verbose:
                 print_metrics(loss, metrics, iteration)
 
-            if iteration % config.write_every == 0:
+            if config.write_every > 0 and iteration % config.write_every == 0:
                 write_tracker(writer, loss, metrics, iteration, tracking_tool=config.tracking_tool)
 
-            if iteration % config.plot_every == 0:
+            if config.plot_every > 0 and iteration % config.plot_every == 0:
                 plot_tracker(
                     writer,
                     model,
@@ -130,7 +124,7 @@ def train(
                 )
 
             if config.folder:
-                if iteration % config.checkpoint_every == 0:
+                if config.checkpoint_every > 0 and iteration % config.checkpoint_every == 0:
                     write_checkpoint(config.folder, model, optimizer, iteration)
 
             if iteration >= init_iter + config.max_iter:
