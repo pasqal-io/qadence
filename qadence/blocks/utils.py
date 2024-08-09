@@ -278,7 +278,7 @@ def uuid_to_eigen(block: AbstractBlock, scale_hamevo_eigen: bool = False) -> dic
             if b.eigenvalues_generator.numel() > 0:
                 result[uuid] = b.eigenvalues_generator
 
-                # GPSR asssumes a factor 0.5 for differientation
+                # GPSR assumes a factor 0.5 for differentiation
                 # so need rescaling
                 if isinstance(b, TimeEvolutionBlock) and scale_hamevo_eigen:
                     result[uuid] *= 2.0
