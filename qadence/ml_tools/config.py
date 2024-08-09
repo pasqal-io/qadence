@@ -238,7 +238,7 @@ class FeatureMapConfig:
 
     Takes qadence.MultivariateStrategy.
     If PARALLEL, the features are encoded in one block of rotation gates
-    with the regitster being split in sub-registers for each feature.
+    with the register being split in sub-registers for each feature.
     If SERIES, the features are encoded sequentially using the full register for each feature, with
     an ansatz block between them. PARALLEL is allowed only for DIGITAL `feature_map_strategy`.
     """
