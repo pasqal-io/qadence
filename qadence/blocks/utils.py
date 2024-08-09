@@ -263,7 +263,7 @@ def expression_to_uuids(block: AbstractBlock) -> dict[Expr, list[str]]:
     return expr_to_uuid
 
 
-def uuid_to_eigen(block: AbstractBlock, scale_hamevo_eigen: bool = False) -> dict[str, Tensor]:
+def uuid_to_eigen(block: AbstractBlock, rescale_eigenvals: bool = False) -> dict[str, Tensor]:
     """Creates a mapping between a parametric block's param_id and its' eigenvalues.
 
     This method is needed for constructing the PSR rules for a given block.
