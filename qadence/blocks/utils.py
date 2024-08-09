@@ -263,7 +263,7 @@ def expression_to_uuids(block: AbstractBlock) -> dict[Expr, list[str]]:
     return expr_to_uuid
 
 
-def uuid_to_eigen(block: AbstractBlock) -> dict[str, Tensor]:
+def uuid_to_eigen(block: AbstractBlock, scale_hamevo_eigen: bool = False) -> dict[str, Tensor]:
     """Creates a mapping between a parametric block's param_id and its' eigenvalues.
 
     This method is needed for constructing the PSR rules for a given block.
@@ -277,6 +277,11 @@ def uuid_to_eigen(block: AbstractBlock) -> dict[str, Tensor]:
         if b.eigenvalues_generator is not None:
             if b.eigenvalues_generator.numel() > 0:
                 result[uuid] = b.eigenvalues_generator
+
+                # GPSR asssumes a factor 0.5 for differientation
+                # so need rescaling
+                if isinstance(b, TimeEvolutionBlock) and scale_hamevo_eigen:
+                    result[uuid] *= 2.0
 
                 # leave only angle parameter uuid with eigenvals for ConstantAnalogRotation block
                 if isinstance(block, ConstantAnalogRotation):
