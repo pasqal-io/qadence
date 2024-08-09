@@ -45,7 +45,7 @@ from .models import QNN
 def _create_support_arrays(
     num_qubits: int,
     num_features: int,
-    multivariate_strategy: str,
+    multivariate_strategy: MultivariateStrategy,
 ) -> list[tuple[int, ...]]:
     """
     Create the support arrays for the digital feature map.
@@ -53,8 +53,8 @@ def _create_support_arrays(
     Args:
         num_qubits (int): The number of qubits.
         num_features (int): The number of features.
-        multivariate_strategy (str): The multivariate encoding strategy.
-            Either 'series' or 'parallel'.
+        multivariate_strategy (MultivariateStrategy): The multivariate encoding strategy.
+            Either 'MultivariateStrategy.SERIES' or 'MultivariateStrategy.PARALLEL'.
 
     Returns:
         list[tuple[int, ...]]: The list of support arrays. ith element of the list is the support
@@ -62,23 +62,25 @@ def _create_support_arrays(
 
     Raises:
         ValueError: If the number of features is greater than the number of qubits
-            with parallel encoding. Not possible to encode these features in parallel.
-        ValueError: If the multivariate strategy is not 'series' or 'parallel'.
+            and the strategy is `MultivariateStrategy.PARALLEL` not possible to assign a support
+            array to each feature.
+        ValueError: If the multivariate strategy is not `MultivariateStrategy.SERIES` or
+            `MultivariateStrategy.PARALLEL`.
     """
-    if multivariate_strategy == "series":
+    if multivariate_strategy == MultivariateStrategy.SERIES:
         return [tuple(range(num_qubits)) for i in range(num_features)]
-    elif multivariate_strategy == "parallel":
+    elif multivariate_strategy == MultivariateStrategy.PARALLEL:
         if num_features <= num_qubits:
             return [tuple(x.tolist()) for x in np.array_split(np.arange(num_qubits), num_features)]
         else:
             raise ValueError(
                 f"Number of features {num_features} must be less than or equal to the number of \
-                qubits {num_qubits}. if the features are to be encoded is parallely."
+                qubits {num_qubits} if the features are to be encoded parallely."
             )
     else:
         raise ValueError(
-            f"Invalid encoding strategy {multivariate_strategy} provided. Only 'series' or \
-                'parallel' are allowed."
+            f"Invalid encoding strategy {multivariate_strategy} provided. Only \
+                `MultivariateStrategy.SERIES` or `MultivariateStrategy.PARALLEL` are allowed."
         )
 
 
@@ -212,7 +214,8 @@ def _create_digital_fm(
         list[AbstractBlock]: The list of digital feature map blocks.
 
     Raises:
-        ValueError: If the encoding strategy is invalid. Only 'series' or 'parallel' are allowed.
+        ValueError: If the encoding strategy is invalid. Only `MultivariateStrategy.SERIES` or
+            `MultivariateStrategy.PARALLEL` are allowed.
     """
     if config.multivariate_strategy == MultivariateStrategy.SERIES:
         fm_blocks = _encode_features_series_digital(register, config)
@@ -220,8 +223,8 @@ def _create_digital_fm(
         fm_blocks = _encode_features_parallel_digital(register, config)
     else:
         raise ValueError(
-            f"Invalid encoding strategy {config.multivariate_strategy} provided. Only 'series' or \
-                'parallel' are allowed."
+            f"Invalid encoding strategy {config.multivariate_strategy} provided. Only\
+            `MultivariateStrategy.SERIES` or `MultivariateStrategy.PARALLEL` are allowed."
         )
 
     return fm_blocks
@@ -348,7 +351,8 @@ def create_fm_blocks(
         list[AbstractBlock]: A list of feature map blocks.
 
     Raises:
-        ValueError: If the feature map strategy is not 'digital', 'analog' or 'rydberg'.
+        ValueError: If the feature map strategy is not `Strategy.DIGITAL`, `Strategy.ANALOG` or
+            `Strategy.RYDBERG`.
     """
     if config.feature_map_strategy == Strategy.DIGITAL:
         return _create_digital_fm(register=register, config=config)
@@ -359,7 +363,7 @@ def create_fm_blocks(
     else:
         raise NotImplementedError(
             f"Feature map not implemented for strategy {config.feature_map_strategy}. \
-            Only 'digital', 'analog' or 'rydberg' allowed."
+            Only `Strategy.DIGITAL`, `Strategy.ANALOG` or `Strategy.RYDBERG` allowed."
         )
 
 
@@ -463,7 +467,8 @@ def _create_iia(
         AbstractBlock: The Identity Initialized Ansatz.
 
     Raises:
-        ValueError: If the ansatz strategy is not supported. Only 'digital' and 'sdaqc' are allowed.
+        ValueError: If the ansatz strategy is not supported. Only `Strategy.DIGITAL` and
+            `Strategy.SDAQC` are allowed.
     """
     if config.ansatz_strategy == Strategy.DIGITAL:
         return _create_iia_digital(num_qubits=num_qubits, config=config)
@@ -471,8 +476,8 @@ def _create_iia(
         return _create_iia_sdaqc(num_qubits=num_qubits, config=config)
     else:
         raise ValueError(
-            f"Invalid ansatz strategy {config.ansatz_strategy} provided. Only 'digital', 'sdaqc', \
-            allowed for IIA."
+            f"Invalid ansatz strategy {config.ansatz_strategy} provided. Only `Strategy.DIGITAL` \
+                and `Strategy.SDAQC` allowed for IIA."
         )
 
 
@@ -571,7 +576,8 @@ def _create_hea(
         AbstractBlock: The hardware efficient ansatz block.
 
     Raises:
-        ValueError: If the ansatz strategy is not 'digital', 'sdaqc', or 'rydberg'.
+        ValueError: If the ansatz strategy is not `Strategy.DIGITAL`, `Strategy.SDAQC`, or
+            `Strategy.RYDBERG`.
     """
     num_qubits = register if isinstance(register, int) else register.n_qubits
 
@@ -583,8 +589,8 @@ def _create_hea(
         return _create_hea_rydberg(register=register, config=config)
     else:
         raise ValueError(
-            f"Invalid ansatz strategy {config.ansatz_strategy} provided. Only 'digital', 'sdaqc', \
-                and 'rydberg' allowed"
+            f"Invalid ansatz strategy {config.ansatz_strategy} provided. Only `Strategy.DIGITAL`, \
+                `Strategy.SDAQC`, and `Strategy.RYDBERG` allowed"
         )
 
 
@@ -613,8 +619,8 @@ def create_ansatz(
         return _create_hea(register=register, config=config)
     else:
         raise NotImplementedError(
-            f"Ansatz of type {config.ansatz_type} not implemented yet. Only 'hea' and\
-                'iia' available."
+            f"Ansatz of type {config.ansatz_type} not implemented yet. Only `AnsatzType.HEA` and\
+                `AnsatzType.IIA` available."
         )
 
 
@@ -651,7 +657,7 @@ def load_observable_transformations(config: ObservableConfig) -> tuple[Parameter
         config (ObservableConfig): Observable configuration.
 
     Returns:
-        tuple[float, float]: The observable shifting and scaling factors.
+        tuple[Parameter, Parameter]: The observable shifting and scaling factors.
     """
     shift = config.shift
     scale = config.scale
@@ -718,8 +724,8 @@ def create_observable(
     """
     if transformation_type == ObservableTransform.RANGE:
         scale, shift = ObservableTransformMap[transformation_type](detuning, scale, shift)  # type: ignore[index]
-    shifting_term = shift * _global_identity(register)  # type: ignore[operator]
-    detuning_hamiltonian = scale * hamiltonian_factory(  # type: ignore[operator]
+    shifting_term: AbstractBlock = shift * _global_identity(register)  # type: ignore[operator]
+    detuning_hamiltonian: AbstractBlock = scale * hamiltonian_factory(  # type: ignore[operator]
         register=register,
         detuning=detuning,
     )
