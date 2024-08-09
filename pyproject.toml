@@ -25,7 +25,7 @@ authors = [
 ]
 requires-python = ">=3.9"
 license = { text = "Apache 2.0" }
-version = "1.7.3"
+version = "1.7.4"
 classifiers = [
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python",
@@ -49,7 +49,7 @@ dependencies = [
     "jsonschema",
     "nevergrad",
     "scipy",
-    "pyqtorch==1.3.2",
+    "pyqtorch==1.4.1",
     "pyyaml",
     "matplotlib",
     "Arpeggio==2.0.2",
@@ -63,7 +63,7 @@ allow-ambiguous-features = true
 pulser = [
     "pulser-core==0.19.0",
     "pulser-simulation==0.19.0",
-    "pasqal-cloud==0.11.1",
+    "pasqal-cloud==0.11.3",
 ]
 braket = ["amazon-braket-sdk<1.71.2"]
 visualization = [
@@ -73,7 +73,7 @@ visualization = [
     # "scour",
 ]
 horqrux = [
-    "horqrux==0.6.0",
+    "horqrux==0.6.2",
     "jax",
     "flax",
     "optax",

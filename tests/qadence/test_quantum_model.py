@@ -175,6 +175,25 @@ def test_save_load_qm_pyq(BasicQuantumModel: QuantumModel, tmp_path: Path) -> No
         assert torch.allclose(pyq_expectation_orig, pyq_expectation_loaded)
 
 
+def test_load_params_from_dict(BasicQuantumModel: QuantumModel) -> None:
+    model = BasicQuantumModel
+    ev0 = model.expectation({})[0]
+    d = model._to_dict(save_params=True)
+    model.load_params_from_dict(d, strict=True)
+    ev1 = model.expectation({})[0]
+    assert torch.allclose(ev0, ev1)
+
+    # Check that an error is thrown if the dict does not match
+    # the model parameters when strict=True
+    d["param_dict"]["new_dummy_parameter"] = VariationalParameter("new_dummy_parameter")
+    with pytest.raises(RuntimeError):
+        model.load_params_from_dict(d, strict=True)
+
+    # If strict=False, it should not throw an exception
+    model.load_params_from_dict(d, strict=False)
+    assert not torch.all(torch.isnan(model.expectation({})))
+
+
 def test_hamevo_qm() -> None:
     obs = [Z(0) for _ in range(np.random.randint(1, 4))]
     block = HamEvo(VariationalParameter("theta") * X(1), 1, (0, 1))

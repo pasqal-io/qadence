@@ -59,9 +59,13 @@ class AddressingPattern:
     ) -> dict:
         # augment weight dict if needed
         weights = {
-            i: Parameter(0.0)
-            if i not in weights
-            else (Parameter(weights[i]) if not isinstance(weights[i], Parameter) else weights[i])
+            i: (
+                Parameter(0.0)
+                if i not in weights
+                else (
+                    Parameter(weights[i]) if not isinstance(weights[i], Parameter) else weights[i]
+                )
+            )
             for i in range(self.n_qubits)
         }
 
