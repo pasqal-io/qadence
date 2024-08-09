@@ -268,12 +268,17 @@ def uuid_to_eigen(
 ) -> dict[str, Tensor]:
     """Creates a mapping between a parametric block's param_id and its' eigenvalues.
 
+        plus a PSR shift factor.
+
     This method is needed for constructing the PSR rules for a given block.
+
+    The PSR shift
 
     Args:
         block (AbstractBlock): Block input
         rescale_eigenvals_timeevo (bool, optional): If True, rescale
-        eigenvalues by 2 for the TimeEvolutionBlock case to allow
+        eigenvalues and shift factor
+        by 2 for the TimeEvolutionBlock case to allow
         differientiating with Hamevo.
         Defaults to False.
 
@@ -288,12 +293,15 @@ def uuid_to_eigen(
     for uuid, b in uuid_to_block(block).items():
         if b.eigenvalues_generator is not None:
             if b.eigenvalues_generator.numel() > 0:
-                result[uuid] = b.eigenvalues_generator
-
                 # GPSR assumes a factor 0.5 for differentiation
                 # so need rescaling
                 if isinstance(b, TimeEvolutionBlock) and rescale_eigenvals_timeevo:
-                    result[uuid] *= 2.0
+                    result[uuid] = (
+                        b.eigenvalues_generator * 2.0,
+                        0.5 if b.eigenvalues_generator.numel() > 1 else 1.0,
+                    )
+                else:
+                    result[uuid] = (b.eigenvalues_generator, 1.0)
 
                 # leave only angle parameter uuid with eigenvals for ConstantAnalogRotation block
                 if isinstance(block, ConstantAnalogRotation):
