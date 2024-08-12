@@ -44,7 +44,7 @@ def build_idx_fms(
     Args:
         basis (BasisSet): Type of basis chosen for the feature map.
         fm_pauli (PrimitiveBlock type): The chosen Pauli rotation type.
-        multivariate_strategy (MultivariateStrategy): The strtegy used for encoding
+        multivariate_strategy (MultivariateStrategy): The strategy used for encoding
             the multivariate feature map.
         n_features (int): The number of features.
         n_qubits (int): The number of qubits.
@@ -74,8 +74,8 @@ def get_fm_qubits(
     """Returns the list of target qubits for the given feature map strategy and feature index.
 
     Args:
-        fm_strategy (str): The feature map strategy to be used. Possible values
-            are 'parallel' or 'serial'.
+        multivariate_strategy (MultivariateStrategy): The strategy used for encoding
+            the multivariate feature map.
         i (int): The feature index.
         n_qubits (int): The number of qubits.
         n_features (int): The number of features.
