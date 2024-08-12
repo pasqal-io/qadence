@@ -277,7 +277,8 @@ def uuid_to_eigen(
         block (AbstractBlock): Block input
         rescale_eigenvals_timeevo (bool, optional): If True, rescale
         eigenvalues and shift factor
-        by 2 for the TimeEvolutionBlock case to allow
+        by 2 times spectral gap
+        for the TimeEvolutionBlock case to allow
         differientiating with Hamevo.
         Defaults to False.
 
@@ -296,10 +297,18 @@ def uuid_to_eigen(
                 # GPSR assumes a factor 0.5 for differentiation
                 # so need rescaling
                 if isinstance(b, TimeEvolutionBlock) and rescale_eigenvals_timeevo:
-                    result[uuid] = (
-                        b.eigenvalues_generator * 2.0,
-                        0.5 if b.eigenvalues_generator.numel() > 1 else 1.0,
-                    )
+                    if b.eigenvalues_generator.numel() > 1:
+                        result[uuid] = (
+                            b.eigenvalues_generator * 2.0,
+                            0.5,
+                        )
+                    else:
+                        result[uuid] = (
+                            b.eigenvalues_generator * 2.0,
+                            1.0 / (b.eigenvalues_generator.item() * 2.0)
+                            if len(b.eigenvalues_generator) == 1
+                            else 1.0,
+                        )
                 else:
                     result[uuid] = (b.eigenvalues_generator, 1.0)
 
