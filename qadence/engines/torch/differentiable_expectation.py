@@ -211,7 +211,7 @@ class DifferentiableExpectation:
         circuit: QuantumCircuit,
         observable: list[AbstractBlock],
         psr_fn: Callable,
-        **psr_args: int | float | None,
+        **psr_args: float | None,
     ) -> dict[str, Callable]:
         """Create a mapping between parameters and PSR functions."""
 
@@ -220,15 +220,19 @@ class DifferentiableExpectation:
         # because we want to cache PSRs.
 
         param_to_psr = OrderedDict()
-        for param_id, eigenvalues in uuid_to_eigs.items():
+        for param_id, eigenvalues_shift_factor in uuid_to_eigs.items():
+            eigenvalues, shift_factor = eigenvalues_shift_factor
             if eigenvalues is None:
                 raise ValueError(
                     f"Eigenvalues are not defined for param_id {param_id}\n"
                     # f"of type {type(block)}.\n"
                     "PSR cannot be defined in that case."
                 )
-
-            param_to_psr[param_id] = psr_fn(eigenvalues, **psr_args)
+            if shift_factor == 1:
+                param_to_psr[param_id] = psr_fn(eigenvalues, **psr_args)
+            else:
+                psr_args_factor = {k: v * shift_factor for k, v in psr_args.items()}
+                param_to_psr[param_id] = psr_fn(eigenvalues, **psr_args)
         for obs in observable:
             for param_id, _ in uuid_to_eigen(obs).items():
                 # We need the embedded fixed params of the observable in the param_values dict

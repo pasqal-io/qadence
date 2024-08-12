@@ -270,15 +270,21 @@ def uuid_to_eigen(
 
     This method is needed for constructing the PSR rules for a given block.
 
+    A PSR shift factor is also added in the mapping for dealing
+    with the time evolution case as it requires rescaling.
+
     Args:
         block (AbstractBlock): Block input
         rescale_eigenvals_timeevo (bool, optional): If True, rescale
-        eigenvalues by 2 for the TimeEvolutionBlock case to allow
+        eigenvalues and shift factor
+        by 2 times spectral gap
+        for the TimeEvolutionBlock case to allow
         differientiating with Hamevo.
         Defaults to False.
 
     Returns:
-        dict[str, Tensor]: Mapping between block's param_id and eigenvalues.
+        dict[str, Tensor]: Mapping between block's param_id, eigenvalues and
+        PSR shift.
 
     !!! warn
         Will ignore eigenvalues of AnalogBlocks that are not yet computed.
@@ -288,12 +294,23 @@ def uuid_to_eigen(
     for uuid, b in uuid_to_block(block).items():
         if b.eigenvalues_generator is not None:
             if b.eigenvalues_generator.numel() > 0:
-                result[uuid] = b.eigenvalues_generator
-
                 # GPSR assumes a factor 0.5 for differentiation
                 # so need rescaling
                 if isinstance(b, TimeEvolutionBlock) and rescale_eigenvals_timeevo:
-                    result[uuid] *= 2.0
+                    if b.eigenvalues_generator.numel() > 1:
+                        result[uuid] = (
+                            b.eigenvalues_generator * 2.0,
+                            0.5,
+                        )
+                    else:
+                        result[uuid] = (
+                            b.eigenvalues_generator * 2.0,
+                            1.0 / (b.eigenvalues_generator.item() * 2.0)
+                            if len(b.eigenvalues_generator) == 1
+                            else 1.0,
+                        )
+                else:
+                    result[uuid] = (b.eigenvalues_generator, 1.0)
 
                 # leave only angle parameter uuid with eigenvals for ConstantAnalogRotation block
                 if isinstance(block, ConstantAnalogRotation):

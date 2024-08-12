@@ -52,7 +52,7 @@ class DifferentiableExpectation:
             return expectation_fn(state, values, psr_params)
 
         uuid_to_eigs = {
-            k: tensor_to_jnp(v) for k, v in uuid_to_eigen(self.circuit.abstract.block).items()
+            k: tensor_to_jnp(v[0]) for k, v in uuid_to_eigen(self.circuit.abstract.block).items()
         }
         self.psr_params = {
             k: self.param_values[k] for k in uuid_to_eigs.keys()
