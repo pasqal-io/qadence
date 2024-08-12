@@ -156,9 +156,9 @@ class ReuploadScaling(StrEnum):
 class MultivariateStrategy(StrEnum):
     """Multivariate strategy for feature maps."""
 
-    PARALLEL = "parallel"
+    PARALLEL = "Parallel"
     """Parallel strategy."""
-    SERIES = "SERIES"
+    SERIES = "Series"
     """Serial strategy."""
 
 
