@@ -44,6 +44,8 @@ class Callback:
             If callback_condition is None, we set
             callback_condition to returns True when iteration % every == 0
         call_before_opt (bool): If true, callback is done before training.
+        call_end_epoch (bool): If true, callback is done during training,
+        after an epoch is performed.
         call_after_opt (bool): If true, callback is done after training.
     """
 
@@ -53,10 +55,12 @@ class Callback:
         callback_condition: Callable[..., bool] | None = None,
         every: int = 1,
         call_before_opt: bool = False,
+        call_end_epoch: bool = True,
         call_after_opt: bool = True,
     ) -> None:
         self.callback = callback
         self.call_before_opt = call_before_opt
+        self.call_end_epoch = call_end_epoch
         self.call_after_opt = call_after_opt
         self.every = every
 

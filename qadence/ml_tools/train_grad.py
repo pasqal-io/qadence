@@ -250,6 +250,7 @@ def train(
 
         # outer epoch loop
         init_iter += 1
+        callbacks_end_epoch = [callback for callback in callbacks if callback.call_end_epoch]
         for iteration in progress.track(range(init_iter, init_iter + config.max_iter)):
             try:
                 # in case there is not data needed by the model
@@ -277,7 +278,7 @@ def train(
                     # which is printed accordingly by the previous iteration number
                     print_metrics(loss, metrics, iteration - 1)
 
-                run_callbacks(callbacks, opt_result)
+                run_callbacks(callbacks_end_epoch, opt_result)
 
                 if perform_val:
                     if iteration % config.val_every == 0:
