@@ -169,7 +169,7 @@ def train(
                 dl_iter_val = iter(val_dataloader) if val_dataloader is not None else None
                 xs = next(dl_iter_val)
                 xs_to_device = data_to_device(xs, device=device, dtype=data_dtype)
-                best_val_loss, metrics = loss_fn(model, xs_to_device)
+                best_val_loss, metrics, *_ = loss_fn(model, xs_to_device)
 
                 metrics["val_loss"] = best_val_loss
                 write_tracker(writer, None, metrics, init_iter, tracking_tool=config.tracking_tool)

@@ -5,11 +5,12 @@ import os
 from dataclasses import dataclass, field, fields
 from logging import getLogger
 from pathlib import Path
-from typing import Callable, Type
+from typing import Any, Callable, Type
 from uuid import uuid4
 
 from sympy import Basic
 from torch import Tensor
+from torch.nn import Module
 
 from qadence.blocks.analog import AnalogBlock
 from qadence.blocks.primitive import ParametricBlock
@@ -26,6 +27,43 @@ from qadence.types import (
 )
 
 logger = getLogger(__file__)
+
+
+@dataclass
+class OptimizeResult:
+    """OptimizeResult stores many optimization.
+
+    intermediate values at a current iteration,
+    such as model, loss values and data.
+    """
+
+    iteration: int
+    model: Module
+    data: Tensor | None
+    loss: Tensor | None
+
+    val_data: Tensor | None
+    val_loss: Tensor | None
+
+
+class Callback:
+    """Callback functions are calling during training.
+
+    Each callback function should take at least as first input
+    an OptimizeResult instance.
+    """
+
+    callback: Callable[..., None]
+    callback_condition: Callable[..., bool]
+    every: int
+    call_before_opt: bool = False
+    call_after_opt: bool = True
+
+    def __call__(self, opt_result: OptimizeResult, *args: Any, **kwargs: Any) -> Any:
+        if self.call_before_opt and opt_result.iteration == 0:
+            return self.callback(opt_result, *args, **kwargs)
+        if self.call_after_opt and opt_result.iteration % self.every == 0:
+            return self.callback(opt_result, *args, **kwargs)
 
 
 @dataclass
@@ -64,6 +102,8 @@ class TrainConfig:
 
     Set to 0 to disable
     """
+    callbacks: list[Callback] = field(default_factory=lambda: list())
+    """List of callbacks."""
     log_model: bool = False
     """Logs a serialised version of the model."""
     folder: Path | None = None
