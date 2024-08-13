@@ -15,7 +15,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 from qadence.ml_tools.config import TrainConfig
-from qadence.ml_tools.data import DictDataLoader, data_to_device
+from qadence.ml_tools.data import DictDataLoader, OptimizeResult, data_to_device
 from qadence.ml_tools.optimize_step import optimize_step
 from qadence.ml_tools.printing import (
     log_model_tracker,
@@ -171,6 +171,8 @@ def train(
         xs_to_device = data_to_device(xs, device=device, dtype=data_dtype)
         return loss_fn(model, xs_to_device)
 
+    callbacks_before_opt = [callback for callback in config.callbacks if callback.call_before_opt]
+
     with progress:
         dl_iter = iter(dataloader) if dataloader is not None else None
 
@@ -180,6 +182,9 @@ def train(
                 dl_iter_val = iter(val_dataloader) if val_dataloader is not None else None
                 best_val_loss, metrics = next_loss_iter(dl_iter_val)
                 metrics["val_loss"] = best_val_loss
+                opt_result = OptimizeResult(init_iter, model, optimizer, best_val_loss, metrics)
+                [callback(opt_result) for callback in callbacks_before_opt]
+
                 write_tracker(writer, None, metrics, init_iter, tracking_tool=config.tracking_tool)
 
             if config.folder:
@@ -216,6 +221,7 @@ def train(
                 )
                 if isinstance(loss, Tensor):
                     loss = loss.item()
+                opt_result = OptimizeResult(iteration, model, optimizer, loss, metrics)
 
                 if (
                     config.print_every > 0

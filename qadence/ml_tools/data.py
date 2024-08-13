@@ -5,9 +5,28 @@ from functools import singledispatch
 from itertools import cycle
 from typing import Any, Iterator
 
+from nevergrad.optimization.base import Optimizer as NGOptimizer
 from torch import Tensor
 from torch import device as torch_device
+from torch.nn import Module
+from torch.optim import Optimizer
 from torch.utils.data import DataLoader, IterableDataset, TensorDataset
+
+
+@dataclass
+class OptimizeResult:
+    """OptimizeResult stores many optimization intermediate values.
+
+    We store at a  current iteration,
+    the model, loss values and data.
+    """
+
+    iteration: int
+    model: Module
+    optimizer: Optimizer | NGOptimizer
+    loss: Tensor | float
+
+    metrics: dict
 
 
 @dataclass
