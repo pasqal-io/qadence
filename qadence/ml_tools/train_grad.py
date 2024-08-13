@@ -188,6 +188,21 @@ def train(
         )
     ]
 
+    callbacks += [
+        Callback(
+            lambda opt_res: write_tracker(
+                writer,
+                opt_res.loss,
+                opt_res.metrics,
+                opt_res.iteration,
+                tracking_tool=config.tracking_tool,
+            ),
+            every=config.write_every,
+            call_before_opt=False,
+            call_after_opt=True,
+        )
+    ]
+
     callbacks_before_opt = [callback for callback in callbacks if callback.call_before_opt]
 
     def run_callbacks(callback_iterable: list[Callback], opt_res: OptimizeResult) -> None:
@@ -247,11 +262,6 @@ def train(
                     # which is printed accordingly by the previous iteration number
                     print_metrics(loss, metrics, iteration - 1)
 
-                if config.write_every > 0 and iteration % config.write_every == 0:
-                    write_tracker(
-                        writer, loss, metrics, iteration, tracking_tool=config.tracking_tool
-                    )
-
                 run_callbacks(callbacks, opt_result)
 
                 if perform_val:
@@ -289,9 +299,11 @@ def train(
             logger.info("Terminating training gracefully after the current iteration.")
 
     # Final checkpointing and writing
+    callbacks_after_opt = [callback for callback in callbacks if callback.call_after_opt]
+    run_callbacks(callbacks_after_opt, opt_result)
+
     if config.folder and not config.checkpoint_best_only:
         write_checkpoint(config.folder, model, optimizer, iteration)
-    write_tracker(writer, loss, metrics, iteration, tracking_tool=config.tracking_tool)
 
     # writing hyperparameters
     if config.hyperparams:
