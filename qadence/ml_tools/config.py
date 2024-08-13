@@ -42,8 +42,7 @@ class OptimizeResult:
     data: Tensor | None
     loss: Tensor | None
 
-    val_data: Tensor | None
-    val_loss: Tensor | None
+    metrics: dict
 
 
 class Callback:
@@ -51,18 +50,37 @@ class Callback:
 
     Each callback function should take at least as first input
     an OptimizeResult instance.
+
+    Attributes:
+        callback (Callable[..., None]): Callback function accepting an
+            OptimizeResult as ifrst argument.
+        callback_condition (Callable[..., None] | None): Function that condition the
+            call to callback.
+        every (int): Callback to be called each `every` epoch.
+            If callback_condition is None, we set
+            callback_condition to returns True when iteration % every == 0
     """
 
-    callback: Callable[..., None]
-    callback_condition: Callable[..., bool]
-    every: int
-    call_before_opt: bool = False
-    call_after_opt: bool = True
+    def __init__(
+        self,
+        callback: Callable[..., None],
+        callback_condition: Callable[..., bool] | None = None,
+        every: int = 1,
+    ) -> None:
+        self.callback = callback
+
+        self.every = every
+
+        if callback_condition is None:
+            if self.every > 1:
+                self.callback_condition = lambda opt_result: opt_result.iteration % self.every == 0
+            else:
+                self.callback_condition = lambda opt_result: True
+        else:
+            self.callback_condition = callback_condition
 
     def __call__(self, opt_result: OptimizeResult, *args: Any, **kwargs: Any) -> Any:
-        if self.call_before_opt and opt_result.iteration == 0:
-            return self.callback(opt_result, *args, **kwargs)
-        if self.call_after_opt and opt_result.iteration % self.every == 0:
+        if self.callback_condition(opt_result):
             return self.callback(opt_result, *args, **kwargs)
 
 
