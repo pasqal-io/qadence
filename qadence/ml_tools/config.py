@@ -10,10 +10,10 @@ from uuid import uuid4
 
 from sympy import Basic
 from torch import Tensor
-from torch.nn import Module
 
 from qadence.blocks.analog import AnalogBlock
 from qadence.blocks.primitive import ParametricBlock
+from qadence.ml_tools.utils import OptimizeResult
 from qadence.operations import RX, AnalogRX
 from qadence.parameters import Parameter
 from qadence.types import (
@@ -27,22 +27,6 @@ from qadence.types import (
 )
 
 logger = getLogger(__file__)
-
-
-@dataclass
-class OptimizeResult:
-    """OptimizeResult stores many optimization.
-
-    intermediate values at a current iteration,
-    such as model, loss values and data.
-    """
-
-    iteration: int
-    model: Module
-    data: dict | list | Tensor | None
-    loss: Tensor | float
-
-    metrics: dict
 
 
 class Callback:

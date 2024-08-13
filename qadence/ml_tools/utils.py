@@ -1,14 +1,32 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from functools import singledispatch
 from typing import Any
 
 from torch import Tensor, rand
+from torch.nn import Module
 
 from qadence import QNN, QuantumModel
 from qadence.blocks import AbstractBlock, parameters
 from qadence.circuit import QuantumCircuit
 from qadence.parameters import Parameter, stringify
+
+
+@dataclass
+class OptimizeResult:
+    """OptimizeResult stores many optimization intermediate values.
+
+    We store at a  current iteration,
+    the model, loss values and data.
+    """
+
+    iteration: int
+    model: Module
+    data: dict | list | Tensor | None
+    loss: Tensor | float
+
+    metrics: dict
 
 
 @singledispatch
