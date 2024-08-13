@@ -39,8 +39,8 @@ class OptimizeResult:
 
     iteration: int
     model: Module
-    data: Tensor | None
-    loss: Tensor | None
+    data: dict | list | Tensor | None
+    loss: Tensor | float
 
     metrics: dict
 
@@ -59,6 +59,7 @@ class Callback:
         every (int): Callback to be called each `every` epoch.
             If callback_condition is None, we set
             callback_condition to returns True when iteration % every == 0
+        call_before_opt (bool): If true, callback is done before training.
     """
 
     def __init__(
@@ -66,9 +67,10 @@ class Callback:
         callback: Callable[..., None],
         callback_condition: Callable[..., bool] | None = None,
         every: int = 1,
+        call_before_opt: bool = False,
     ) -> None:
         self.callback = callback
-
+        self.call_before_opt = call_before_opt
         self.every = every
 
         if callback_condition is None:
