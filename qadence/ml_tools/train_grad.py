@@ -6,7 +6,7 @@ from logging import getLogger
 from typing import Callable, Union
 
 from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, TimeRemainingColumn
-from torch import complex128, float32, float64
+from torch import Tensor, complex128, float32, float64
 from torch import device as torch_device
 from torch import dtype as torch_dtype
 from torch.nn import DataParallel, Module
@@ -204,26 +204,16 @@ def train(
                 # in case there is not data needed by the model
                 # this is the case, for example, of quantum models
                 # which do not have classical input data (e.g. chemistry)
-                if dataloader is None:
-                    loss, metrics = optimize_step(
-                        model=model,
-                        optimizer=optimizer,
-                        loss_fn=loss_fn,
-                        xs=None,
-                        device=device,
-                        dtype=data_dtype,
-                    )
+                loss, metrics = optimize_step(
+                    model=model,
+                    optimizer=optimizer,
+                    loss_fn=loss_fn,
+                    xs=None if dataloader is None else next(dl_iter),  # type: ignore[arg-type]
+                    device=device,
+                    dtype=data_dtype,
+                )
+                if isinstance(loss, Tensor):
                     loss = loss.item()
-
-                else:
-                    loss, metrics = optimize_step(
-                        model=model,
-                        optimizer=optimizer,
-                        loss_fn=loss_fn,
-                        xs=next(dl_iter),  # type: ignore[arg-type]
-                        device=device,
-                        dtype=data_dtype,
-                    )
 
                 if (
                     config.print_every > 0
@@ -280,8 +270,6 @@ def train(
             xs = next(dl_iter) if dataloader is not None else None  # type: ignore[arg-type]
             xs_to_device = data_to_device(xs, device=device, dtype=data_dtype)
             loss, metrics, *_ = loss_fn(model, xs_to_device)
-            if dataloader is None:
-                loss = loss.item()
             if iteration % config.print_every == 0 and config.verbose:
                 print_metrics(loss, metrics, iteration)
 
