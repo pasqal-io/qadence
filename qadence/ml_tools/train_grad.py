@@ -203,6 +203,21 @@ def train(
         )
     ]
 
+    if config.folder and config.checkpoint_every > 0 and not config.checkpoint_best_only:
+        callbacks += [
+            Callback(
+                lambda opt_res: write_checkpoint(
+                    config.folder,  # type: ignore[arg-type]
+                    opt_res.model,
+                    opt_res.optimizer,
+                    opt_res.iteration,
+                ),
+                every=config.checkpoint_every,
+                call_before_opt=False,
+                call_after_opt=True,
+            )
+        ]
+
     callbacks_before_opt = [callback for callback in callbacks if callback.call_before_opt]
 
     def run_callbacks(callback_iterable: list[Callback], opt_res: OptimizeResult) -> None:
@@ -276,14 +291,6 @@ def train(
                                 writer, loss, metrics, iteration, tracking_tool=config.tracking_tool
                             )
 
-                if config.folder:
-                    if (
-                        config.checkpoint_every > 0
-                        and iteration % config.checkpoint_every == 0
-                        and not config.checkpoint_best_only
-                    ):
-                        write_checkpoint(config.folder, model, optimizer, iteration)
-
             except KeyboardInterrupt:
                 logger.info("Terminating training gracefully after the current iteration.")
                 break
@@ -301,9 +308,6 @@ def train(
     # Final checkpointing and writing
     callbacks_after_opt = [callback for callback in callbacks if callback.call_after_opt]
     run_callbacks(callbacks_after_opt, opt_result)
-
-    if config.folder and not config.checkpoint_best_only:
-        write_checkpoint(config.folder, model, optimizer, iteration)
 
     # writing hyperparameters
     if config.hyperparams:
