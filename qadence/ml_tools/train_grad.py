@@ -3,7 +3,7 @@ from __future__ import annotations
 import importlib
 import math
 from logging import getLogger
-from typing import Callable, Union
+from typing import Any, Callable, Union
 
 from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, TimeRemainingColumn
 from torch import Tensor, complex128, float32, float64
@@ -166,6 +166,11 @@ def train(
             "You can use e.g. `qadence.ml_tools.to_dataloader` to build a dataloader."
         )
 
+    def next_loss_iter(dl_iter: Union[None, DataLoader, DictDataLoader]) -> Any:
+        xs = next(dl_iter) if dl_iter is not None else None
+        xs_to_device = data_to_device(xs, device=device, dtype=data_dtype)
+        return loss_fn(model, xs_to_device)
+
     with progress:
         dl_iter = iter(dataloader) if dataloader is not None else None
 
@@ -173,10 +178,7 @@ def train(
         try:
             if perform_val:
                 dl_iter_val = iter(val_dataloader) if val_dataloader is not None else None
-                xs = next(dl_iter_val)
-                xs_to_device = data_to_device(xs, device=device, dtype=data_dtype)
-                best_val_loss, metrics = loss_fn(model, xs_to_device)
-
+                best_val_loss, metrics = next_loss_iter(dl_iter_val)
                 metrics["val_loss"] = best_val_loss
                 write_tracker(writer, None, metrics, init_iter, tracking_tool=config.tracking_tool)
 
@@ -240,9 +242,7 @@ def train(
                     )
                 if perform_val:
                     if iteration % config.val_every == 0:
-                        xs = next(dl_iter_val)
-                        xs_to_device = data_to_device(xs, device=device, dtype=data_dtype)
-                        val_loss, *_ = loss_fn(model, xs_to_device)
+                        val_loss, *_ = next_loss_iter(dl_iter_val)
                         if config.validation_criterion(val_loss, best_val_loss, config.val_epsilon):  # type: ignore[misc]
                             best_val_loss = val_loss
                             if config.folder and config.checkpoint_best_only:
@@ -267,9 +267,7 @@ def train(
         # Handling printing the last training loss
         # as optimize_step does not give the loss value at the last iteration
         try:
-            xs = next(dl_iter) if dataloader is not None else None  # type: ignore[arg-type]
-            xs_to_device = data_to_device(xs, device=device, dtype=data_dtype)
-            loss, metrics, *_ = loss_fn(model, xs_to_device)
+            loss, metrics, *_ = next_loss_iter(dl_iter)
             if iteration % config.print_every == 0 and config.verbose:
                 print_metrics(loss, metrics, iteration)
 
