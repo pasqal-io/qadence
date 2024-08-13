@@ -3,7 +3,7 @@ from __future__ import annotations
 import importlib
 import math
 from logging import getLogger
-from typing import Any, Callable, Union
+from typing import Callable, Union
 
 from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, TimeRemainingColumn
 from torch import complex128, float32, float64
@@ -160,17 +160,11 @@ def train(
 
     best_val_loss = math.inf
 
-    # check supported dataloader
-    if dataloader and not isinstance(dataloader, (DictDataLoader, DataLoader)):
+    if not ((dataloader is None) or isinstance(dataloader, (DictDataLoader, DataLoader))):
         raise NotImplementedError(
             f"Unsupported dataloader type: {type(dataloader)}. "
             "You can use e.g. `qadence.ml_tools.to_dataloader` to build a dataloader."
         )
-
-    def next_iter_loss(dl_iter: Union[None, DataLoader, DictDataLoader]) -> Any:
-        xs = next(dl_iter) if dl_iter is not None else None
-        xs_to_device = data_to_device(xs, device=device, dtype=data_dtype)
-        return loss_fn(model, xs_to_device)
 
     with progress:
         dl_iter = iter(dataloader) if dataloader is not None else None
@@ -179,7 +173,10 @@ def train(
         try:
             if perform_val:
                 dl_iter_val = iter(val_dataloader) if val_dataloader is not None else None
-                best_val_loss, metrics, *_ = next_iter_loss(dl_iter_val)
+                xs = next(dl_iter_val)
+                xs_to_device = data_to_device(xs, device=device, dtype=data_dtype)
+                best_val_loss, metrics = loss_fn(model, xs_to_device)
+
                 metrics["val_loss"] = best_val_loss
                 write_tracker(writer, None, metrics, init_iter, tracking_tool=config.tracking_tool)
 
@@ -203,19 +200,30 @@ def train(
         # outer epoch loop
         init_iter += 1
         for iteration in progress.track(range(init_iter, init_iter + config.max_iter)):
-            xs = None
             try:
                 # in case there is not data needed by the model
                 # this is the case, for example, of quantum models
                 # which do not have classical input data (e.g. chemistry)
-                loss, metrics = optimize_step(
-                    model=model,
-                    optimizer=optimizer,
-                    loss_fn=loss_fn,
-                    xs=next(dl_iter) if dataloader else None,  # type: ignore[arg-type]
-                    device=device,
-                    dtype=data_dtype,
-                )
+                if dataloader is None:
+                    loss, metrics = optimize_step(
+                        model=model,
+                        optimizer=optimizer,
+                        loss_fn=loss_fn,
+                        xs=None,
+                        device=device,
+                        dtype=data_dtype,
+                    )
+                    loss = loss.item()
+
+                else:
+                    loss, metrics = optimize_step(
+                        model=model,
+                        optimizer=optimizer,
+                        loss_fn=loss_fn,
+                        xs=next(dl_iter),  # type: ignore[arg-type]
+                        device=device,
+                        dtype=data_dtype,
+                    )
 
                 if (
                     config.print_every > 0
@@ -242,8 +250,9 @@ def train(
                     )
                 if perform_val:
                     if iteration % config.val_every == 0:
-                        val_loss, *_ = next_iter_loss(dl_iter_val)
-
+                        xs = next(dl_iter_val)
+                        xs_to_device = data_to_device(xs, device=device, dtype=data_dtype)
+                        val_loss, *_ = loss_fn(model, xs_to_device)
                         if config.validation_criterion(val_loss, best_val_loss, config.val_epsilon):  # type: ignore[misc]
                             best_val_loss = val_loss
                             if config.folder and config.checkpoint_best_only:
