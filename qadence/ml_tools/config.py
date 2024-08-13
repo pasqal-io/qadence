@@ -44,8 +44,6 @@ class Callback:
             If callback_condition is None, we set
             callback_condition to returns True when iteration % every == 0
         call_before_opt (bool): If true, callback is done before training.
-            Note, this means this applies only on the validation data as
-            we only perform validation before training.
     """
 
     def __init__(

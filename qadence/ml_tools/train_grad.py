@@ -14,7 +14,7 @@ from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
-from qadence.ml_tools.config import TrainConfig
+from qadence.ml_tools.config import Callback, TrainConfig
 from qadence.ml_tools.data import DictDataLoader, OptimizeResult, data_to_device
 from qadence.ml_tools.optimize_step import optimize_step
 from qadence.ml_tools.printing import (
@@ -171,19 +171,39 @@ def train(
         xs_to_device = data_to_device(xs, device=device, dtype=data_dtype)
         return loss_fn(model, xs_to_device)
 
-    callbacks_before_opt = [callback for callback in config.callbacks if callback.call_before_opt]
+    # populate callbacks with functions handling
+    # checkpointing and plotting
+    callbacks = config.callbacks
+    callbacks += [
+        Callback(
+            lambda opt_res: plot_tracker(
+                writer,
+                opt_res.model,
+                opt_res.iteration,
+                config.plotting_functions,
+                tracking_tool=config.tracking_tool,
+            ),
+            every=config.plot_every,
+            call_before_opt=True,
+        )
+    ]
+
+    callbacks_before_opt = [callback for callback in callbacks if callback.call_before_opt]
+
+    def run_callbacks(callback_iterable: list[Callback], opt_res: OptimizeResult) -> None:
+        [callback(opt_res) for callback in callback_iterable]
 
     with progress:
         dl_iter = iter(dataloader) if dataloader is not None else None
 
         # Initial validation evaluation
         try:
+            opt_result = OptimizeResult(init_iter, model, optimizer, None, dict())
             if perform_val:
                 dl_iter_val = iter(val_dataloader) if val_dataloader is not None else None
                 best_val_loss, metrics = next_loss_iter(dl_iter_val)
                 metrics["val_loss"] = best_val_loss
                 opt_result = OptimizeResult(init_iter, model, optimizer, best_val_loss, metrics)
-                [callback(opt_result) for callback in callbacks_before_opt]
 
                 write_tracker(writer, None, metrics, init_iter, tracking_tool=config.tracking_tool)
 
@@ -193,13 +213,7 @@ def train(
                 else:
                     write_checkpoint(config.folder, model, optimizer, init_iter)
 
-            plot_tracker(
-                writer,
-                model,
-                init_iter,
-                config.plotting_functions,
-                tracking_tool=config.tracking_tool,
-            )
+            run_callbacks(callbacks_before_opt, opt_result)
 
         except KeyboardInterrupt:
             logger.info("Terminating training gracefully after the current iteration.")
@@ -238,14 +252,8 @@ def train(
                         writer, loss, metrics, iteration, tracking_tool=config.tracking_tool
                     )
 
-                if config.plot_every > 0 and iteration % config.plot_every == 0:
-                    plot_tracker(
-                        writer,
-                        model,
-                        iteration,
-                        config.plotting_functions,
-                        tracking_tool=config.tracking_tool,
-                    )
+                run_callbacks(callbacks, opt_result)
+
                 if perform_val:
                     if iteration % config.val_every == 0:
                         val_loss, *_ = next_loss_iter(dl_iter_val)

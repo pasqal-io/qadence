@@ -24,8 +24,7 @@ class OptimizeResult:
     iteration: int
     model: Module
     optimizer: Optimizer | NGOptimizer
-    loss: Tensor | float
-
+    loss: Tensor | float | None
     metrics: dict
 
 
