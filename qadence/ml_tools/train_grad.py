@@ -272,7 +272,7 @@ def train(
             opt_result = OptimizeResult(init_iter, model, optimizer, None, dict())
             if perform_val:
                 dl_iter_val = iter(val_dataloader) if val_dataloader is not None else None
-                best_val_loss, metrics = next_loss_iter(dl_iter_val)
+                best_val_loss, metrics, *_ = next_loss_iter(dl_iter_val)
                 metrics["val_loss"] = best_val_loss
                 opt_result.metrics = metrics
                 run_callbacks(callbacks_before_opt_eval, opt_result)
