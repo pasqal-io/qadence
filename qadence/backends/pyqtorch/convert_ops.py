@@ -118,7 +118,7 @@ def convert_block(
         # ]
         return [PyQHamiltonianEvolution(qubit_support, n_qubits, block, config)]
     elif isinstance(block, MatrixBlock):
-        return [pyq.primitive.Primitive(block.matrix, block.qubit_support)]
+        return [pyq.primitives.Primitive(block.matrix, block.qubit_support)]
     elif isinstance(block, CompositeBlock):
         ops = list(flatten(*(convert_block(b, n_qubits, config) for b in block.blocks)))
         if isinstance(block, AddBlock):
