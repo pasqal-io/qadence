@@ -30,7 +30,7 @@ logger = getLogger(__file__)
 
 
 class Callback:
-    """Callback functions are calling during training.
+    """Callback functions are calling in train functions.
 
     Each callback function should take at least as first input
     an OptimizeResult instance.
@@ -43,10 +43,11 @@ class Callback:
         every (int): Callback to be called each `every` epoch.
             If callback_condition is None, we set
             callback_condition to returns True when iteration % every == 0
-        call_before_opt (bool): If true, callback is done before training.
-        call_end_epoch (bool): If true, callback is done during training,
+        call_before_opt (bool): If true, callback is applied before training.
+        call_end_epoch (bool): If true, callback is applied during training,
         after an epoch is performed.
-        call_after_opt (bool): If true, callback is done after training.
+        call_after_opt (bool): If true, callback is applied after training.
+        call_during_eval (bool): If true, callback is applied during evaluation.
     """
 
     def __init__(
@@ -56,12 +57,15 @@ class Callback:
         every: int = 1,
         call_before_opt: bool = False,
         call_end_epoch: bool = True,
-        call_after_opt: bool = True,
+        call_after_opt: bool = False,
+        call_during_eval: bool = False,
     ) -> None:
         self.callback = callback
         self.call_before_opt = call_before_opt
         self.call_end_epoch = call_end_epoch
         self.call_after_opt = call_after_opt
+        self.call_during_eval = call_during_eval
+
         self.every = every
 
         if callback_condition is None:

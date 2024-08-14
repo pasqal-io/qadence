@@ -171,9 +171,24 @@ def train(
         xs_to_device = data_to_device(xs, device=device, dtype=data_dtype)
         return loss_fn(model, xs_to_device)
 
-    # populate callbacks with functions handling
-    # checkpointing and plotting
+    # populate callbacks with already available internal functions
+    # printing, writing and plotting
     callbacks = config.callbacks
+
+    # printing
+    if config.verbose and config.print_every > 0:
+        # Note that the loss returned by optimize_step
+        # is the value before doing the training step
+        # which is printed accordingly by the previous iteration number
+        callbacks += [
+            Callback(
+                lambda opt_res: print_metrics(opt_res.loss, opt_res.metrics, opt_res.iteration - 1),
+                every=config.print_every,
+                call_after_opt=True,
+            )
+        ]
+
+    # plotting
     callbacks += [
         Callback(
             lambda opt_res: plot_tracker(
@@ -188,6 +203,7 @@ def train(
         )
     ]
 
+    # writing metrics
     callbacks += [
         Callback(
             lambda opt_res: write_tracker(
@@ -200,9 +216,11 @@ def train(
             every=config.write_every,
             call_before_opt=False,
             call_after_opt=True,
+            call_during_eval=True,
         )
     ]
 
+    # checkpointing
     if config.folder and config.checkpoint_every > 0 and not config.checkpoint_best_only:
         callbacks += [
             Callback(
@@ -218,10 +236,33 @@ def train(
             )
         ]
 
-    callbacks_before_opt = [callback for callback in callbacks if callback.call_before_opt]
+    if config.folder and config.checkpoint_best_only:
+        callbacks += [
+            Callback(
+                lambda opt_res: write_checkpoint(
+                    config.folder,  # type: ignore[arg-type]
+                    opt_res.model,
+                    opt_res.optimizer,
+                    "best",
+                ),
+                every=config.checkpoint_every,
+                call_before_opt=True,
+                call_after_opt=True,
+                call_during_eval=True,
+            )
+        ]
 
     def run_callbacks(callback_iterable: list[Callback], opt_res: OptimizeResult) -> None:
         [callback(opt_res) for callback in callback_iterable]
+
+    callbacks_before_opt = [
+        callback
+        for callback in callbacks
+        if callback.call_before_opt and not callback.call_during_eval
+    ]
+    callbacks_before_opt_eval = [
+        callback for callback in callbacks if callback.call_before_opt and callback.call_during_eval
+    ]
 
     with progress:
         dl_iter = iter(dataloader) if dataloader is not None else None
@@ -233,15 +274,8 @@ def train(
                 dl_iter_val = iter(val_dataloader) if val_dataloader is not None else None
                 best_val_loss, metrics = next_loss_iter(dl_iter_val)
                 metrics["val_loss"] = best_val_loss
-                opt_result = OptimizeResult(init_iter, model, optimizer, best_val_loss, metrics)
-
-                write_tracker(writer, None, metrics, init_iter, tracking_tool=config.tracking_tool)
-
-            if config.folder:
-                if config.checkpoint_best_only:
-                    write_checkpoint(config.folder, model, optimizer, iteration="best")
-                else:
-                    write_checkpoint(config.folder, model, optimizer, init_iter)
+                opt_result.metrics = metrics
+                run_callbacks(callbacks_before_opt_eval, opt_result)
 
             run_callbacks(callbacks_before_opt, opt_result)
 
@@ -250,7 +284,16 @@ def train(
 
         # outer epoch loop
         init_iter += 1
-        callbacks_end_epoch = [callback for callback in callbacks if callback.call_end_epoch]
+        callbacks_end_epoch = [
+            callback
+            for callback in callbacks
+            if callback.call_end_epoch and not callback.call_during_eval
+        ]
+        callbacks_end_epoch_eval = [
+            callback
+            for callback in callbacks
+            if callback.call_end_epoch and callback.call_during_eval
+        ]
         for iteration in progress.track(range(init_iter, init_iter + config.max_iter)):
             try:
                 # in case there is not data needed by the model
@@ -267,17 +310,6 @@ def train(
                 if isinstance(loss, Tensor):
                     loss = loss.item()
                 opt_result = OptimizeResult(iteration, model, optimizer, loss, metrics)
-
-                if (
-                    config.print_every > 0
-                    and iteration % config.print_every == 0
-                    and config.verbose
-                ):
-                    # Note that the loss returned by optimize_step
-                    # is the value before doing the training step
-                    # which is printed accordingly by the previous iteration number
-                    print_metrics(loss, metrics, iteration - 1)
-
                 run_callbacks(callbacks_end_epoch, opt_result)
 
                 if perform_val:
@@ -285,12 +317,10 @@ def train(
                         val_loss, *_ = next_loss_iter(dl_iter_val)
                         if config.validation_criterion(val_loss, best_val_loss, config.val_epsilon):  # type: ignore[misc]
                             best_val_loss = val_loss
-                            if config.folder and config.checkpoint_best_only:
-                                write_checkpoint(config.folder, model, optimizer, iteration="best")
                             metrics["val_loss"] = val_loss
-                            write_tracker(
-                                writer, loss, metrics, iteration, tracking_tool=config.tracking_tool
-                            )
+                            opt_result.metrics = metrics
+
+                            run_callbacks(callbacks_end_epoch_eval, opt_result)
 
             except KeyboardInterrupt:
                 logger.info("Terminating training gracefully after the current iteration.")
@@ -306,7 +336,7 @@ def train(
         except KeyboardInterrupt:
             logger.info("Terminating training gracefully after the current iteration.")
 
-    # Final checkpointing and writing
+    # Final callbacks, by default checkpointing and writing
     callbacks_after_opt = [callback for callback in callbacks if callback.call_after_opt]
     run_callbacks(callbacks_after_opt, opt_result)
 
