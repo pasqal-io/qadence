@@ -374,8 +374,6 @@ class PyQHamiltonianEvolution(Module):
                 state,
                 self.unitary(values),
                 self.qubit_support,
-                self.n_qubits,
-                self.batch_size,
             )
 
         return result
