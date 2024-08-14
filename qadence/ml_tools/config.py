@@ -38,16 +38,19 @@ class Callback:
     Attributes:
         callback (Callable[..., None]): Callback function accepting an
             OptimizeResult as ifrst argument.
-        callback_condition (Callable[..., None] | None): Function that condition the
-            call to callback.
-        every (int): Callback to be called each `every` epoch.
+        callback_condition (Callable[..., bool] | None, optional): Function that conditions the
+            call to callback. Defaults to None.
+        every (int, optional): Callback to be called each `every` epoch. Defaults to 1.
             If callback_condition is None, we set
-            callback_condition to returns True when iteration % every == 0
-        call_before_opt (bool): If true, callback is applied before training.
-        call_end_epoch (bool): If true, callback is applied during training,
-        after an epoch is performed.
-        call_after_opt (bool): If true, callback is applied after training.
-        call_during_eval (bool): If true, callback is applied during evaluation.
+            callback_condition to returns True when iteration % every == 0.
+        call_before_opt (bool, optional): If true, callback is applied before training.
+            Defaults to False.
+        call_end_epoch (bool, optional): If true, callback is applied during training,
+            after an epoch is performed. Defaults to True.
+        call_after_opt (bool, optional): If true, callback is applied after training.
+            Defaults to False.
+        call_during_eval (bool, optional): If true, callback is applied during evaluation.
+            Defaults to False.
     """
 
     def __init__(
@@ -60,6 +63,25 @@ class Callback:
         call_after_opt: bool = False,
         call_during_eval: bool = False,
     ) -> None:
+        """Initialized Callback.
+
+        Args:
+            callback (Callable[..., None]): Callback function accepting an
+                OptimizeResult as ifrst argument.
+            callback_condition (Callable[..., bool] | None, optional): Function that conditions the
+                call to callback. Defaults to None.
+            every (int, optional): Callback to be called each `every` epoch. Defaults to 1.
+                If callback_condition is None, we set
+                callback_condition to returns True when iteration % every == 0.
+            call_before_opt (bool, optional): If true, callback is applied before training.
+                Defaults to False.
+            call_end_epoch (bool, optional): If true, callback is applied during training,
+                after an epoch is performed. Defaults to True.
+            call_after_opt (bool, optional): If true, callback is applied after training.
+                Defaults to False.
+            call_during_eval (bool, optional): If true, callback is applied during evaluation.
+                Defaults to False.
+        """
         self.callback = callback
         self.call_before_opt = call_before_opt
         self.call_end_epoch = call_end_epoch
