@@ -123,7 +123,7 @@ def convert_block(
             ]
 
     elif isinstance(block, MatrixBlock):
-        return [pyq.primitive.Primitive(block.matrix, block.qubit_support)]
+        return [pyq.primitives.Primitive(block.matrix, block.qubit_support)]
     elif isinstance(block, CompositeBlock):
         ops = list(flatten(*(convert_block(b, n_qubits, config) for b in block.blocks)))
         if isinstance(block, AddBlock):
@@ -335,10 +335,16 @@ class PyQTimeDependentEvolution(Module):
 
             return hmat
 
-        tsave = torch.linspace(0, self.block.duration, self.config.n_steps_hevo)  # type: ignore [attr-defined]
-        result = pyqify(
-            sesolve(Ht, unpyqify(state).T[:, 0:1], tsave, self.config.ode_solver).states[-1].T
-        )
+            tsave = torch.linspace(0, self.block.duration, self.config.n_steps_hevo)  # type: ignore [attr-defined]
+            result = pyqify(
+                sesolve(Ht, unpyqify(state).T[:, 0:1], tsave, self.config.ode_solver).states[-1].T
+            )
+        else:
+            result = apply_operator(
+                state,
+                self.unitary(values),
+                self.qubit_support,
+            )
 
         return result
 
