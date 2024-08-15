@@ -44,6 +44,7 @@ from qadence.blocks import (
 )
 from qadence.blocks.block_to_tensor import (
     _block_to_tensor_embedded,
+    block_to_tensor,
 )
 from qadence.blocks.primitive import ProjectorBlock
 from qadence.blocks.utils import parameters
@@ -76,6 +77,14 @@ def is_single_qubit_chain(block: AbstractBlock) -> bool:
     )
 
 
+def extract_parameter(block: ScaleBlock | ParametricBlock, config: Configuration) -> str | Tensor:
+    return (
+        tensor([block.parameters.parameter], dtype=float64)
+        if not block.is_parametric
+        else config.get_param_name(block)[0]
+    )
+
+
 def convert_block(
     block: AbstractBlock, n_qubits: int = None, config: Configuration = None
 ) -> Sequence[Module | Tensor | str | sympy.Expr]:
@@ -92,11 +101,7 @@ def convert_block(
 
     if isinstance(block, ScaleBlock):
         scaled_ops = convert_block(block.block, n_qubits, config)
-        scale = (
-            tensor([block.parameters.parameter], dtype=float64)
-            if not block.is_parametric
-            else config.get_param_name(block)[0]
-        )
+        scale = extract_parameter(block, config)
         return [pyq.Scale(pyq.Sequence(scaled_ops), scale)]
 
     elif isinstance(block, TimeEvolutionBlock):
@@ -105,6 +110,17 @@ def convert_block(
         else:
             if isinstance(block.generator, sympy.Basic):
                 generator = config.get_param_name(block)[1]
+            elif isinstance(block.generator, Tensor):
+                generator = block_to_tensor(
+                    MatrixBlock(
+                        block.generator,
+                        qubit_support=qubit_support,
+                        check_unitary=False,
+                        check_hermitian=True,
+                    ),
+                    qubit_support=qubit_support,
+                    use_full_support=False,
+                ).permute(1, 2, 0)
             else:
                 generator = convert_block(block.generator, n_qubits, config)[0]  # type: ignore[arg-type]
             time_param = config.get_param_name(block)[0]
@@ -147,14 +163,14 @@ def convert_block(
             if isinstance(block, U):
                 op = pyq_cls(qubit_support[0], *config.get_param_name(block))
             else:
-                op = pyq_cls(qubit_support[0], config.get_param_name(block)[0])
+                op = pyq_cls(qubit_support[0], extract_parameter(block, config))
         else:
             op = pyq_cls(qubit_support[0])
         return [op]
     elif isinstance(block, tuple(two_qubit_gateset)):
         pyq_cls = getattr(pyq, block.name)
         if isinstance(block, ParametricBlock):
-            op = pyq_cls(qubit_support[0], qubit_support[1], config.get_param_name(block)[0])
+            op = pyq_cls(qubit_support[0], qubit_support[1], extract_parameter(block, config))
         else:
             op = pyq_cls(qubit_support[0], qubit_support[1])
         return [op]
@@ -162,7 +178,7 @@ def convert_block(
         block_name = block.name[1:] if block.name.startswith("M") else block.name
         pyq_cls = getattr(pyq, block_name)
         if isinstance(block, ParametricBlock):
-            op = pyq_cls(qubit_support[:-1], qubit_support[-1], config.get_param_name(block)[0])
+            op = pyq_cls(qubit_support[:-1], qubit_support[-1], extract_parameter(block, config))
         else:
             if "CSWAP" in block_name:
                 op = pyq_cls(qubit_support[:-2], qubit_support[-2:])
