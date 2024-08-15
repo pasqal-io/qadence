@@ -335,16 +335,10 @@ class PyQTimeDependentEvolution(Module):
 
             return hmat
 
-            tsave = torch.linspace(0, self.block.duration, self.config.n_steps_hevo)  # type: ignore [attr-defined]
-            result = pyqify(
-                sesolve(Ht, unpyqify(state).T[:, 0:1], tsave, self.config.ode_solver).states[-1].T
-            )
-        else:
-            result = apply_operator(
-                state,
-                self.unitary(values),
-                self.qubit_support,
-            )
+        tsave = torch.linspace(0, self.block.duration, self.config.n_steps_hevo)  # type: ignore [attr-defined]
+        result = pyqify(
+            sesolve(Ht, unpyqify(state).T[:, 0:1], tsave, self.config.ode_solver).states[-1].T
+        )
 
         return result
 
