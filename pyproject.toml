@@ -49,7 +49,7 @@ dependencies = [
     "jsonschema",
     "nevergrad",
     "scipy",
-    "pyqtorch==1.4.1",
+    "pyqtorch==1.4.3",
     "pyyaml",
     "matplotlib",
     "Arpeggio==2.0.2",
@@ -86,6 +86,7 @@ libs = ["qadence-libs"]
 dlprof = ["nvidia-pyindex", "nvidia-dlprof[pytorch]"]
 mlflow = ["mlflow"]
 all = ["pulser", "braket", "visualization", "protocols", "libs", "mlflow"]
+
 
 [tool.hatch.envs.default]
 dependencies = [

@@ -9,7 +9,7 @@ import pyqtorch as pyq
 import torch
 from numpy.typing import ArrayLike
 from pyqtorch.apply import apply_operator
-from pyqtorch.parametric import Parametric as PyQParametric
+from pyqtorch.primitives import Parametric as PyQParametric
 from torch import (
     Tensor,
     cat,
