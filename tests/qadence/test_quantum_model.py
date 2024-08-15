@@ -44,7 +44,14 @@ def test_quantum_model_parameters(parametric_circuit: QuantumCircuit) -> None:
     assert len([i for i in model_psr.parameters()]) == 4
     assert len([i for i in model_ad.parameters()]) == 4
     embedded_params_psr = model_psr.embedding_fn(model_psr._params, {"x": torch.rand(1)})
+    # popping because orig_param_values key does not contain embedded params
+    embedded_params_psr.pop(
+        "orig_param_values", {}
+    )  # TODO: remove this when embedding system is updated
     embedded_params_ad = model_ad.embedding_fn(model_ad._params, {"x": torch.rand(1)})
+    embedded_params_ad.pop(
+        "orig_param_values", {}
+    )  # TODO: remove this when embedding system is updated
     assert len(embedded_params_ad) == 5
     assert len(embedded_params_psr) == 6
 
@@ -57,7 +64,13 @@ def test_quantum_model_duplicate_expr(duplicate_expression_circuit: QuantumCircu
     assert len([i for i in model_psr.parameters()]) == 3
     assert len([i for i in model_ad.parameters()]) == 3
     embedded_params_psr = model_psr.embedding_fn(model_psr._params, {"x": torch.rand(1)})
+    embedded_params_psr.pop(
+        "orig_param_values", {}
+    )  # TODO: remove this when embedding system is updated
     embedded_params_ad = model_ad.embedding_fn(model_ad._params, {"x": torch.rand(1)})
+    embedded_params_ad.pop(
+        "orig_param_values", {}
+    )  # TODO: remove this when embedding system is updated
     assert len(embedded_params_ad) == 2
     assert len(embedded_params_psr) == 8
 
@@ -160,6 +173,25 @@ def test_save_load_qm_pyq(BasicQuantumModel: QuantumModel, tmp_path: Path) -> No
         ser_exp = ser_qm.expectation({})
         assert torch.allclose(ser_exp, pyq_expectation_orig)
         assert torch.allclose(pyq_expectation_orig, pyq_expectation_loaded)
+
+
+def test_load_params_from_dict(BasicQuantumModel: QuantumModel) -> None:
+    model = BasicQuantumModel
+    ev0 = model.expectation({})[0]
+    d = model._to_dict(save_params=True)
+    model.load_params_from_dict(d, strict=True)
+    ev1 = model.expectation({})[0]
+    assert torch.allclose(ev0, ev1)
+
+    # Check that an error is thrown if the dict does not match
+    # the model parameters when strict=True
+    d["param_dict"]["new_dummy_parameter"] = VariationalParameter("new_dummy_parameter")
+    with pytest.raises(RuntimeError):
+        model.load_params_from_dict(d, strict=True)
+
+    # If strict=False, it should not throw an exception
+    model.load_params_from_dict(d, strict=False)
+    assert not torch.all(torch.isnan(model.expectation({})))
 
 
 def test_hamevo_qm() -> None:

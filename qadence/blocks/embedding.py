@@ -111,18 +111,21 @@ def embedding(
             angle: ArrayLike
             values = {}
             for symbol in expr.free_symbols:
-                if symbol.name in inputs:
-                    value = inputs[symbol.name]
-                elif symbol.name in params:
-                    value = params[symbol.name]
+                if not symbol.is_time:
+                    if symbol.name in inputs:
+                        value = inputs[symbol.name]
+                    elif symbol.name in params:
+                        value = params[symbol.name]
+                    else:
+                        msg_trainable = "Trainable" if symbol.trainable else "Non-trainable"
+                        raise KeyError(
+                            f"{msg_trainable} parameter '{symbol.name}' not found in the "
+                            f"inputs list: {list(inputs.keys())} nor the "
+                            f"params list: {list(params.keys())}."
+                        )
+                    values[symbol.name] = value
                 else:
-                    msg_trainable = "Trainable" if symbol.trainable else "Non-trainable"
-                    raise KeyError(
-                        f"{msg_trainable} parameter '{symbol.name}' not found in the "
-                        f"inputs list: {list(inputs.keys())} nor the "
-                        f"params list: {list(params.keys())}."
-                    )
-                values[symbol.name] = value
+                    values[symbol.name] = tensor(1.0)
             angle = fn(**values)
             # do not reshape parameters which are multi-dimensional
             # tensors, such as for example generator matrices
@@ -139,7 +142,9 @@ def embedding(
                 gate_lvl_params[uuid] = embedded_params[e]
             return gate_lvl_params
         else:
-            return {stringify(k): v for k, v in embedded_params.items()}
+            out = {stringify(k): v for k, v in embedded_params.items()}
+            out.update({"orig_param_values": inputs})
+            return out
 
     params: ParamDictType
     params = {

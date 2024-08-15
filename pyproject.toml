@@ -19,10 +19,13 @@ authors = [
     { name = "Gergana Velikova", email = "gergana.velikova@pasqal.com" },
     { name = "Eduardo Maschio", email = "eduardo.maschio@pasqal.com" },
     { name = "Smit Chaudhary", email = "smit.chaudhary@pasqal.com" },
+    { name = "Ignacio Fernández Graña", email = "ignacio.fernandez-grana@pasqal.com" },
+    { name = "Charles Moussa", email = "charles.moussa@pasqal.com" },
+    { name = "Giorgio Tosti Balducci", email = "giorgio.tosti-balducci@pasqal.com" },
 ]
 requires-python = ">=3.9"
 license = { text = "Apache 2.0" }
-version = "1.7.0"
+version = "1.7.4"
 classifiers = [
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python",
@@ -38,6 +41,7 @@ dependencies = [
     "numpy",
     "torch",
     "openfermion",
+    "sympy<1.13",
     "sympytorch>=0.1.2",
     "rich",
     "tensorboard>=2.12.0",
@@ -45,7 +49,11 @@ dependencies = [
     "jsonschema",
     "nevergrad",
     "scipy",
+<<<<<<< HEAD
     "pyqtorch==1.2.3",
+=======
+    "pyqtorch==1.4.2",
+>>>>>>> 46edfd3901db65917c27b8ff11a866c4fe16f5d5
     "pyyaml",
     "matplotlib",
     "Arpeggio==2.0.2",
@@ -57,9 +65,9 @@ allow-ambiguous-features = true
 
 [project.optional-dependencies]
 pulser = [
-    "pulser-core==0.18.1",
-    "pulser-simulation==0.18.1",
-    "pasqal-cloud==0.10.1",
+    "pulser-core==0.19.0",
+    "pulser-simulation==0.19.0",
+    "pasqal-cloud==0.11.3",
 ]
 braket = ["amazon-braket-sdk<1.71.2"]
 visualization = [
@@ -69,7 +77,7 @@ visualization = [
     # "scour",
 ]
 horqrux = [
-    "horqrux==0.6.0",
+    "horqrux==0.6.2",
     "jax",
     "flax",
     "optax",
@@ -80,7 +88,8 @@ horqrux = [
 protocols = ["qadence-protocols"]
 libs = ["qadence-libs"]
 dlprof = ["nvidia-pyindex", "nvidia-dlprof[pytorch]"]
-all = ["pulser", "braket", "visualization", "protocols", "libs"]
+mlflow = ["mlflow"]
+all = ["pulser", "braket", "visualization", "protocols", "libs", "mlflow"]
 
 
 [tool.hatch.envs.default]
@@ -99,7 +108,7 @@ dependencies = [
     "ruff",
     "pydocstringformatter",
 ]
-features = ["pulser", "braket", "visualization", "horqrux"]
+features = ["pulser", "braket", "visualization", "horqrux", "mlflow"]
 
 [tool.hatch.envs.default.scripts]
 test = "pytest -n auto --cov-report lcov --cov-config=pyproject.toml --cov=qadence --cov=tests --ignore=./tests/test_examples.py {args}"
@@ -136,7 +145,7 @@ dependencies = [
     "markdown-exec",
     "mike",
 ]
-features = ["pulser", "braket", "horqrux", "visualization"]
+features = ["pulser", "braket", "horqrux", "visualization", "mlflow"]
 
 [tool.hatch.envs.docs.scripts]
 build = "mkdocs build --clean --strict"
@@ -151,7 +160,6 @@ features = ["all"]
 [tool.hatch.build.targets.sdist]
 exclude = [
     "/.gitignore",
-    "/.gitlab-ci-yml",
     "/.pre-commit-config.yml",
     "/tests",
     "/docs",

@@ -1,5 +1,5 @@
 Analog blocks can be parametrized in the usual Qadence manner. Like any other parameters,
-they can be optimized. The next snippet examplifies the creation of an analog and parameterized ansatz
+they can be optimized. The next snippet exemplifies the creation of an analog and parameterized ansatz
 to fit a simple function. First, define a register and feature map block. We again use a default spacing of
 $8~\mu\text{m}$ as done in the [basic tutorial](analog-basics.md).
 

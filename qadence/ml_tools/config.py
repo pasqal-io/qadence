@@ -5,15 +5,25 @@ import os
 from dataclasses import dataclass, field, fields
 from logging import getLogger
 from pathlib import Path
-from typing import Callable, Optional, Type
+from typing import Callable, Type
+from uuid import uuid4
 
 from sympy import Basic
+from torch import Tensor
 
 from qadence.blocks.analog import AnalogBlock
 from qadence.blocks.primitive import ParametricBlock
 from qadence.operations import RX, AnalogRX
 from qadence.parameters import Parameter
-from qadence.types import AnsatzType, BasisSet, MultivariateStrategy, ReuploadScaling, Strategy
+from qadence.types import (
+    AnsatzType,
+    BasisSet,
+    ExperimentTrackingTool,
+    LoggablePlotFunction,
+    MultivariateStrategy,
+    ReuploadScaling,
+    Strategy,
+)
 
 logger = getLogger(__file__)
 
@@ -35,12 +45,28 @@ class TrainConfig:
     max_iter: int = 10000
     """Number of training iterations."""
     print_every: int = 1000
-    """Print loss/metrics."""
+    """Print loss/metrics.
+
+    Set to 0 to disable
+    """
     write_every: int = 50
-    """Write tensorboard logs."""
+    """Write loss and metrics with the tracking tool.
+
+    Set to 0 to disable
+    """
     checkpoint_every: int = 5000
-    """Write model/optimizer checkpoint."""
-    folder: Optional[Path] = None
+    """Write model/optimizer checkpoint.
+
+    Set to 0 to disable
+    """
+    plot_every: int = 5000
+    """Write figures.
+
+    Set to 0 to disable
+    """
+    log_model: bool = False
+    """Logs a serialised version of the model."""
+    folder: Path | None = None
     """Checkpoint/tensorboard logs folder."""
     create_subfolder_per_run: bool = False
     """Checkpoint/tensorboard logs stored in subfolder with name `<timestamp>_<PID>`.
@@ -59,14 +85,38 @@ class TrainConfig:
 
     validation loss across previous iterations.
     """
-    validation_criterion: Optional[Callable] = None
+    validation_criterion: Callable | None = None
     """A boolean function which evaluates a given validation metric is satisfied."""
-    trainstop_criterion: Optional[Callable] = None
+    trainstop_criterion: Callable | None = None
     """A boolean function which evaluates a given training stopping metric is satisfied."""
     batch_size: int = 1
     """The batch_size to use when passing a list/tuple of torch.Tensors."""
     verbose: bool = True
     """Whether or not to print out metrics values during training."""
+    tracking_tool: ExperimentTrackingTool = ExperimentTrackingTool.TENSORBOARD
+    """The tracking tool of choice."""
+    hyperparams: dict = field(default_factory=dict)
+    """Hyperparameters to track."""
+    plotting_functions: tuple[LoggablePlotFunction, ...] = field(default_factory=tuple)  # type: ignore
+    """Functions for in-train plotting."""
+
+    # tensorboard only allows for certain types as hyperparameters
+    _tb_allowed_hyperparams_types: tuple = field(
+        default=(int, float, str, bool, Tensor), init=False, repr=False
+    )
+
+    def _filter_tb_hyperparams(self) -> None:
+        keys_to_remove = [
+            key
+            for key, value in self.hyperparams.items()
+            if not isinstance(value, TrainConfig._tb_allowed_hyperparams_types)
+        ]
+        if keys_to_remove:
+            logger.warning(
+                f"Tensorboard cannot log the following hyperparameters: {keys_to_remove}."
+            )
+            for key in keys_to_remove:
+                self.hyperparams.pop(key)
 
     def __post_init__(self) -> None:
         if self.folder:
@@ -81,12 +131,74 @@ class TrainConfig:
             self.trainstop_criterion = lambda x: x <= self.max_iter
         if self.validation_criterion is None:
             self.validation_criterion = lambda *x: False
+        if self.hyperparams and self.tracking_tool == ExperimentTrackingTool.TENSORBOARD:
+            self._filter_tb_hyperparams()
+        if self.tracking_tool == ExperimentTrackingTool.MLFLOW:
+            self._mlflow_config = MLFlowConfig()
+        if self.plotting_functions and self.tracking_tool != ExperimentTrackingTool.MLFLOW:
+            logger.warning("In-training plots are only available with mlflow tracking.")
+        if not self.plotting_functions and self.tracking_tool == ExperimentTrackingTool.MLFLOW:
+            logger.warning("Tracking with mlflow, but no plotting functions provided.")
+
+    @property
+    def mlflow_config(self) -> MLFlowConfig:
+        if self.tracking_tool == ExperimentTrackingTool.MLFLOW:
+            return self._mlflow_config
+        else:
+            raise AttributeError(
+                "mlflow_config is available only for with the mlflow tracking tool."
+            )
+
+
+class MLFlowConfig:
+    """
+    Configuration for mlflow tracking.
+
+    Example:
+
+        export MLFLOW_TRACKING_URI=tracking_uri
+        export MLFLOW_EXPERIMENT=experiment_name
+        export MLFLOW_RUN_NAME=run_name
+    """
+
+    def __init__(self) -> None:
+        import mlflow
+
+        self.tracking_uri: str = os.getenv("MLFLOW_TRACKING_URI", "")
+        """The URI of the mlflow tracking server.
+
+        An empty string, or a local file path, prefixed with file:/.
+        Data is stored locally at the provided file (or ./mlruns if empty).
+        """
+
+        self.experiment_name: str = os.getenv("MLFLOW_EXPERIMENT", str(uuid4()))
+        """The name of the experiment.
+
+        If None or empty, a new experiment is created with a random UUID.
+        """
+
+        self.run_name: str = os.getenv("MLFLOW_RUN_NAME", str(uuid4()))
+        """The name of the run."""
+
+        mlflow.set_tracking_uri(self.tracking_uri)
+
+        # activate existing or create experiment
+        exp_filter_string = f"name = '{self.experiment_name}'"
+        if not mlflow.search_experiments(filter_string=exp_filter_string):
+            mlflow.create_experiment(name=self.experiment_name)
+
+        self.experiment = mlflow.set_experiment(self.experiment_name)
+        self.run = mlflow.start_run(run_name=self.run_name, nested=False)
 
 
 @dataclass
 class FeatureMapConfig:
-    num_features: int = 1
-    """Number of feature parameters to be encoded."""
+    num_features: int = 0
+    """
+    Number of feature parameters to be encoded.
+
+    Defaults to 0. Thus, no feature parameters are encoded.
+    """
 
     basis_set: BasisSet | dict[str, BasisSet] = BasisSet.FOURIER
     """
@@ -134,13 +246,13 @@ class FeatureMapConfig:
 
     multivariate_strategy: MultivariateStrategy = MultivariateStrategy.PARALLEL
     """
-    The  encoding strategy in case of multi-variate function.
+    The encoding strategy in case of multi-variate function.
 
     Takes qadence.MultivariateStrategy.
     If PARALLEL, the features are encoded in one block of rotation gates
-    with each feature given an equal number of qubits.
-    If SERIES, the features are encoded sequentially, with an ansatz block
-    between. PARALLEL is allowed only for DIGITAL `feature_map_strategy`.
+    with the register being split in sub-registers for each feature.
+    If SERIES, the features are encoded sequentially using the full register for each feature, with
+    an ansatz block between them. PARALLEL is allowed only for DIGITAL `feature_map_strategy`.
     """
 
     feature_map_strategy: Strategy = Strategy.DIGITAL
@@ -161,20 +273,20 @@ class FeatureMapConfig:
     account the domain of the feature-encoding function.
     Defaults to `None` and thus, the feature map is not trainable.
     Note that this is separate from the name of the parameter.
-    The user can provide a single prefix for all features, and they will be appended
+    The user can provide a single prefix for all features, and it will be appended
     by appropriate feature name automatically.
     """
 
     num_repeats: int | dict[str, int] = 0
     """
-    Number of feature map layers repeated in the data reuploadig step.
+    Number of feature map layers repeated in the data reuploading step.
 
-    If all are to be repeated the same number of times, then can give a single
-    `int`. For different number of repeatitions for each feature, provide a dict
+    If all features are to be repeated the same number of times, then can give a single
+    `int`. For different number of repetitions for each feature, provide a dict
     of (str, int) where the key is the name of the variable and the value is the
-    number of repeatitions for that feature.
+    number of repetitions for that feature.
     This amounts to the number of additional reuploads. So if `num_repeats` is N,
-    the data gets uploaded N+1 times. Defaults to no repeatition.
+    the data gets uploaded N+1 times. Defaults to no repetition.
     """
 
     operation: Callable[[Parameter | Basic], AnalogBlock] | Type[RX] | None = None
@@ -200,8 +312,8 @@ class FeatureMapConfig:
         if self.multivariate_strategy == MultivariateStrategy.PARALLEL and self.num_features > 1:
             assert (
                 self.feature_map_strategy == Strategy.DIGITAL
-            ), "For `parallel` encoding of multiple features, the `feature_map_strategy` must be \
-                  of `digital` type."
+            ), "For parallel encoding of multiple features, the `feature_map_strategy` must be \
+                  of `Strategy.DIGITAL`."
 
         if self.operation is None:
             if self.feature_map_strategy == Strategy.DIGITAL:
@@ -214,8 +326,8 @@ class FeatureMapConfig:
                 if isinstance(self.operation, AnalogBlock):
                     logger.warning(
                         "The `operation` is of type `AnalogBlock` but the `feature_map_strategy` is\
-                        `digital`. The `feature_map_strategy` will be modified and given operation\
-                        will be used."
+                        `Strategy.DIGITAL`. The `feature_map_strategy` will be modified and given \
+                        operation will be used."
                     )
 
                     self.feature_map_strategy = Strategy.ANALOG
@@ -224,18 +336,33 @@ class FeatureMapConfig:
                 if isinstance(self.operation, ParametricBlock):
                     logger.warning(
                         "The `operation` is a digital gate but the `feature_map_strategy` is\
-                        `analog`. The `feature_map_strategy` will be modified and given operation\
-                        will be used."
+                        `Strategy.ANALOG`. The `feature_map_strategy` will be modified and given\
+                        operation will be used."
                     )
 
                     self.feature_map_strategy = Strategy.DIGITAL
+
+            elif self.feature_map_strategy == Strategy.RYDBERG:
+                if self.operation is not None:
+                    logger.warning(
+                        f"feature_map_strategy is `Strategy.RYDBERG` which does not take any\
+                        operation. But an operation {self.operation} is provided. The \
+                        `feature_map_strategy` will be modified and given operation will be used."
+                    )
+
+                    if isinstance(self.operation, AnalogBlock):
+                        self.feature_map_strategy = Strategy.ANALOG
+                    else:
+                        self.feature_map_strategy = Strategy.DIGITAL
 
         if self.inputs is not None:
             assert (
                 len(self.inputs) == self.num_features
             ), "Inputs list must be of same size as the number of features"
         else:
-            if self.num_features == 1:
+            if self.num_features == 0:
+                self.inputs = []
+            elif self.num_features == 1:
                 self.inputs = ["x"]
             else:
                 raise ValueError(
@@ -286,16 +413,16 @@ class AnsatzConfig:
     ansatz_type: AnsatzType = AnsatzType.HEA
     """What type of ansatz.
 
-    HEA for Hardware Efficient Ansatz.
-    IIA for Identity intialized Ansatz.
+    `AnsatzType.HEA` for Hardware Efficient Ansatz.
+    `AnsatzType.IIA` for Identity intialized Ansatz.
     """
 
     ansatz_strategy: Strategy = Strategy.DIGITAL
     """Ansatz strategy.
 
-    DIGITAL for fully digital ansatz. Required if `ansatz_type` is `iia`.
-    SDAQC for analog entangling block.
-    RYDBERG for fully rydberg hea ansatz.
+    `Strategy.DIGITAL` for fully digital ansatz. Required if `ansatz_type` is `AnsatzType.IIA`.
+    `Strategy.SDAQC` for analog entangling block.
+    `Strategy.RYDBERG` for fully rydberg hea ansatz.
     """
 
     strategy_args: dict = field(default_factory=dict)
@@ -304,7 +431,7 @@ class AnsatzConfig:
 
     Details about each below.
 
-    For DIGITAL strategy, accepts the following:
+    For `Strategy.DIGITAL` strategy, accepts the following:
         periodic (bool): if the qubits should be linked periodically.
             periodic=False is not supported in emu-c.
         operations (list): list of operations to cycle through in the
@@ -315,7 +442,7 @@ class AnsatzConfig:
             will have variational parameters on the rotation angles.
             Defaults to CNOT
 
-    For SDAQC strategy, accepts the following:
+    For `Strategy.SDAQC` strategy, accepts the following:
         operations (list): list of operations to cycle through in the
             digital single-qubit rotations of each layer.
             Defaults to  [RX, RY, RX] for hea and [RX, RY] for iia.
@@ -323,7 +450,7 @@ class AnsatzConfig:
             analog entangling layer. Time parameter is considered variational.
             Defaults to NN interaction.
 
-    For RYDBERG strategy, accepts the following:
+    For `Strategy.RYDBERG` strategy, accepts the following:
         addressable_detuning: whether to turn on the trainable semi-local addressing pattern
             on the detuning (n_i terms in the Hamiltonian).
             Defaults to True.

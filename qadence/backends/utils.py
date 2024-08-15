@@ -9,7 +9,7 @@ import pyqtorch as pyq
 import torch
 from numpy.typing import ArrayLike
 from pyqtorch.apply import apply_operator
-from pyqtorch.parametric import Parametric as PyQParametric
+from pyqtorch.primitives import Parametric as PyQParametric
 from torch import (
     Tensor,
     cat,
@@ -98,10 +98,11 @@ def to_list_of_dicts(param_values: ParamDictType) -> list[ParamDictType]:
     if not param_values:
         return [param_values]
 
-    max_batch_size = max(p.size()[0] for p in param_values.values())
+    max_batch_size = max(p.size()[0] for p in param_values.values() if isinstance(p, Tensor))
     batched_values = {
         k: (v if v.size()[0] == max_batch_size else v.repeat(max_batch_size, 1))
         for k, v in param_values.items()
+        if isinstance(v, Tensor)
     }
 
     return [{k: v[i] for k, v in batched_values.items()} for i in range(max_batch_size)]
@@ -143,9 +144,22 @@ def validate_state(state: Tensor, n_qubits: int) -> None:
         )
 
 
-def infer_batchsize(param_values: ParamDictType = None) -> int:
+def infer_batchsize(param_values: dict[str, Tensor] = None) -> int:
     """Infer the batch_size through the length of the parameter tensors."""
-    return max([len(tensor) for tensor in param_values.values()]) if param_values else 1
+    try:
+        return (
+            max(
+                [
+                    len(tensor_or_dict)
+                    for tensor_or_dict in param_values.values()
+                    if isinstance(tensor_or_dict, Tensor)
+                ]
+            )
+            if param_values
+            else 1
+        )
+    except Exception:
+        return 1
 
 
 # The following functions can be used to compute potentially higher order gradients using pyqtorch's

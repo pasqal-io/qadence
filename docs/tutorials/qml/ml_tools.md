@@ -59,7 +59,7 @@ use `train_with_grad` as example but the code can be used directly with the grad
 As every other training routine commonly used in Machine Learning, it requires
 `model`, `data` and an `optimizer` as input arguments.
 However, in addition, it requires a `loss_fn` and a `TrainConfig`.
-A `loss_fn` is required to be a function which expects both a model and data and returns a tuple of (loss, metrics: `<dict>`), where `metrics` is a dict of scalars which can be customized too.
+A `loss_fn` is required to be a function which expects both a model and data and returns a tuple of (loss, metrics: `<dict>`, ...), where `metrics` is a dict of scalars which can be customized too. It can optionally also return additional values which are utilised by the corresponding user-provided `optimize_step` function inside `train_with_grad`.
 
 ```python exec="on" source="material-block"
 import torch
@@ -306,3 +306,129 @@ def train(
 
     return model, optimizer
 ```
+
+## Experiment tracking with mlflow
+
+Qadence allows to track runs and log hyperparameters, models and plots with [tensorboard](https://pytorch.org/tutorials/recipes/recipes/tensorboard_with_pytorch.html) and [mlflow](https://mlflow.org/). In the following, we demonstrate the integration with mlflow.
+
+### mlflow configuration
+We have control over our tracking configuration by setting environment variables. First, let's look at the tracking URI. For the purpose of this demo we will be working with a local database, in a similar fashion as described [here](https://mlflow.org/docs/latest/tracking/tutorials/local-database.html),
+```bash
+export MLFLOW_TRACKING_URI=sqlite:///mlruns.db
+```
+
+Qadence can also read the following two environment variables to define the mlflow experiment name and run name
+```bash
+export MLFLOW_EXPERIMENT=test_experiment
+export MLFLOW_RUN_NAME=run_0
+```
+
+If no tracking URI is provided, mlflow stores run information and artifacts in the local `./mlflow` directory and if no names are defined, the experiment and run will be named with random UUIDs.
+
+### Setup
+Let's do the necessary imports and declare a `DataLoader`. We can already define some hyperparameters here, including the seed for random number generators. mlflow can log hyperparameters with arbitrary types, for example the observable that we want to monitor (`Z` in this case, which has a `qadence.Operation` type).
+
+```python
+import random
+from itertools import count
+
+import numpy as np
+import torch
+from matplotlib import pyplot as plt
+from matplotlib.figure import Figure
+from torch.nn import Module
+from torch.utils.data import DataLoader
+
+from qadence import hea, QuantumCircuit, Z
+from qadence.constructors import feature_map, hamiltonian_factory
+from qadence.ml_tools import train_with_grad, TrainConfig
+from qadence.ml_tools.data import to_dataloader
+from qadence.ml_tools.utils import rand_featureparameters
+from qadence.models import QNN, QuantumModel
+from qadence.types import ExperimentTrackingTool
+
+hyperparams = {
+    "seed": 42,
+    "batch_size": 10,
+    "n_qubits": 2,
+    "ansatz_depth": 1,
+    "observable": Z,
+}
+
+np.random.seed(hyperparams["seed"])
+torch.manual_seed(hyperparams["seed"])
+random.seed(hyperparams["seed"])
+
+
+def dataloader(batch_size: int = 25) -> DataLoader:
+    x = torch.linspace(0, 1, batch_size).reshape(-1, 1)
+    y = torch.cos(x)
+    return to_dataloader(x, y, batch_size=batch_size, infinite=True)
+```
+
+We continue with the regular QNN definition, together with the loss function and optimizer.
+
+```python
+obs = hamiltonian_factory(register=hyperparams["n_qubits"], detuning=hyperparams["observable"])
+
+data = dataloader(hyperparams["batch_size"])
+fm = feature_map(hyperparams["n_qubits"], param="x")
+
+model = QNN(
+    QuantumCircuit(
+        hyperparams["n_qubits"], fm, hea(hyperparams["n_qubits"], hyperparams["ansatz_depth"])
+    ),
+    observable=obs,
+    inputs=["x"],
+)
+
+cnt = count()
+criterion = torch.nn.MSELoss()
+optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
+
+inputs = rand_featureparameters(model, 1)
+
+def loss_fn(model: QuantumModel, data: torch.Tensor) -> tuple[torch.Tensor, dict]:
+    next(cnt)
+    out = model.expectation(inputs)
+    loss = criterion(out, torch.rand(1))
+    return loss, {}
+```
+
+### `TrainConfig` specifications
+Qadence offers different tracking options via `TrainConfig`. Here we use the `ExperimentTrackingTool` type to specify that we want to track the experiment with mlflow. Tracking with tensorboard is also possible. We can then indicate *what* and *how often* we want to track or log. `write_every` controls the number of epochs after which the loss values is logged. Thanks to the `plotting_functions` and `plot_every`arguments, we are also able to plot model-related quantities throughout training. Notice that arbitrary plotting functions can be passed, as long as the signature is the same as `plot_fn` below. Finally, the trained model can be logged by setting `log_model=True`. Here is an example of plotting function and training configuration
+
+```python
+def plot_fn(model: Module, iteration: int) -> tuple[str, Figure]:
+    descr = f"ufa_prediction_epoch_{iteration}.png"
+    fig, ax = plt.subplots()
+    x = torch.linspace(0, 1, 100).reshape(-1, 1)
+    out = model.expectation(x)
+    ax.plot(x.detach().numpy(), out.detach().numpy())
+    return descr, fig
+
+
+config = TrainConfig(
+    folder="mlflow_demonstration",
+    max_iter=10,
+    checkpoint_every=1,
+    plot_every=2,
+    write_every=1,
+    log_model=True,
+    tracking_tool=ExperimentTrackingTool.MLFLOW,
+    hyperparams=hyperparams,
+    plotting_functions=(plot_fn,),
+)
+```
+
+### Training and inspecting
+Model training happens as usual
+```python
+train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
+```
+
+After training , we can inspect our experiment via the mlflow UI
+```bash
+mlflow ui --port 8080 --backend-store-uri sqlite:///mlruns.db
+```
+In this case, since we're running on a local server, we can access the mlflow UI by navigating to http://localhost:8080/.

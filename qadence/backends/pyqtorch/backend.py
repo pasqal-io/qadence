@@ -12,6 +12,7 @@ from torch import Tensor
 from qadence.backend import Backend as BackendInterface
 from qadence.backend import ConvertedCircuit, ConvertedObservable
 from qadence.backends.utils import (
+    infer_batchsize,
     pyqify,
     to_list_of_dicts,
     unpyqify,
@@ -31,7 +32,6 @@ from qadence.transpile import (
     transpile,
 )
 from qadence.types import BackendName, Endianness, Engine
-from qadence.utils import infer_batchsize
 
 from .config import Configuration, default_passes
 from .convert_ops import convert_block
@@ -71,19 +71,16 @@ class Backend(BackendInterface):
     def observable(self, observable: AbstractBlock, n_qubits: int) -> ConvertedObservable:
         # make sure only leaves, i.e. primitive blocks are scaled
         transpilations = [
-            lambda block: chain_single_qubit_ops(block)
-            if self.config.use_single_qubit_composition
-            else flatten(block),
+            lambda block: (
+                chain_single_qubit_ops(block)
+                if self.config.use_single_qubit_composition
+                else flatten(block)
+            ),
             scale_primitive_blocks_only,
         ]
         block = transpile(*transpilations)(observable)  # type: ignore[call-overload]
         operations = convert_block(block, n_qubits, self.config)
-        obs_cls = (
-            pyq.DiagonalObservable
-            if block._is_diag_pauli and not block.is_parametric
-            else pyq.Observable
-        )
-        native = obs_cls(n_qubits=n_qubits, operations=operations)
+        native = pyq.Observable(operations=operations)
         return ConvertedObservable(native=native, abstract=block, original=observable)
 
     def run(
@@ -140,7 +137,7 @@ class Backend(BackendInterface):
         )
         observable = observable if isinstance(observable, list) else [observable]
         _expectation = torch.hstack(
-            [obs.native(state, param_values).reshape(-1, 1) for obs in observable]
+            [obs.native.expectation(state, param_values).reshape(-1, 1) for obs in observable]
         )
         return _expectation
 
@@ -165,12 +162,11 @@ class Backend(BackendInterface):
                 "Looping expectation does not make sense with batched initial state. "
                 "Define your initial state with `batch_size=1`"
             )
-
         list_expvals = []
         observables = observable if isinstance(observable, list) else [observable]
         for vals in to_list_of_dicts(param_values):
             wf = self.run(circuit, vals, state, endianness, pyqify_state=True, unpyqify_state=False)
-            exs = torch.cat([obs.native(wf, vals) for obs in observables], 0)
+            exs = torch.cat([obs.native.expectation(wf, vals) for obs in observables], 0)
             list_expvals.append(exs)
 
         batch_expvals = torch.vstack(list_expvals)

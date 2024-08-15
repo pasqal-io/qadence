@@ -79,8 +79,8 @@ def wf_is_normalized(wf: torch.Tensor) -> torch.Tensor:
     "observable",
     [
         total_magnetization(4),
-        # single_z(0), # FIXME: enable those again
-        # single_z(1) * 3.0,
+        Z(0),
+        Z(1) * 3.0,
         ising_hamiltonian(4, x_terms=np.array([0.1, 0.2, 0.3, 0.4])),
         custom_obs(),
     ],

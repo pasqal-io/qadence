@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+
 from sympy import cos, sin
 
 from qadence import *

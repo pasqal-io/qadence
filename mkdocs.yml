@@ -16,6 +16,7 @@ nav:
   - Contents:
     - Block system: content/block_system.md
     - Parametric programs: content/parameters.md
+    - Time-dependent generators: content/time_dependent.md
     - Quantum models: content/quantummodels.md
     - Quantum registers: content/register.md
     - State initialization: content/state_init.md
@@ -32,9 +33,10 @@ nav:
     - Digital-analog quantum computing:
       - tutorials/digital_analog_qc/index.md
       - Basic operations on neutral-atoms: tutorials/digital_analog_qc/analog-basics.md
-      - Fitting a simple function: tutorials/digital_analog_qc/analog-qcl.md
+      - Fitting a function with analog blocks: tutorials/digital_analog_qc/analog-blocks-qcl.md
       - Restricted local addressability: tutorials/digital_analog_qc/semi-local-addressing.md
       - Pulse-level programming with Pulser: tutorials/digital_analog_qc/pulser-basic.md
+      - Fitting a function with a Hamiltonian ansatz: tutorials/digital_analog_qc/digital-analog-qcl.md
       - Solve a QUBO problem: tutorials/digital_analog_qc/analog-qubo.md
       - CNOT with interacting qubits: tutorials/digital_analog_qc/daqc-cnot.md
 

@@ -10,7 +10,7 @@ from qadence.types import PI
 from qadence.utils import _round_complex
 
 
-def general_psr(spectrum: Tensor, n_eqs: int | None = None, shift_prefac: float = 0.5) -> Callable:
+def general_psr(spectrum: Tensor, shift_prefac: float = 0.5) -> Callable:
     diffs = _round_complex(spectrum - spectrum.reshape(-1, 1))
     sorted_unique_spectral_gaps = torch.unique(torch.abs(torch.tril(diffs)))
 
@@ -126,6 +126,7 @@ def multi_gap_psr(
 
     # get number of observables from expectation value tensor
     if f_plus.numel() > 1:
+        batch_size = F[0].shape[0]
         n_obs = F[0].shape[1]
 
     # reshape F vector

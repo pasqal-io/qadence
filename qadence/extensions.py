@@ -2,62 +2,113 @@ from __future__ import annotations
 
 import importlib
 from logging import getLogger
-from string import Template
+from typing import TypeVar
 
-from qadence.backend import Backend
+from qadence.backend import Backend, BackendConfiguration
 from qadence.blocks.abstract import TAbstractBlock
+from qadence.engines.differentiable_backend import DifferentiableBackend
 from qadence.types import BackendName, DiffMode, Engine
 
-backends_namespace = Template("qadence.backends.$name")
+BackendClsType = TypeVar("BackendClsType", bound=Backend)
+EngineClsType = TypeVar("EngineClsType", bound=DifferentiableBackend)
 
 logger = getLogger(__name__)
 
 
-def _available_engines() -> dict:
-    """Returns a dictionary of currently installed, native qadence engines."""
-    res = {}
-    for engine in Engine.list():
-        module_path = f"qadence.engines.{engine}.differentiable_backend"
+class ConfigNotFoundError(ModuleNotFoundError):
+    ...
+
+
+class BackendNotFoundError(ModuleNotFoundError):
+    ...
+
+
+class EngineNotFoundError(ModuleNotFoundError):
+    ...
+
+
+class SupportedGatesNotFoundError(ModuleNotFoundError):
+    ...
+
+
+def import_config(backend_name: str | BackendName) -> BackendConfiguration:
+    module_path = f"qadence.backends.{backend_name}.config"
+    cfg: BackendConfiguration
+    try:
+        module = importlib.import_module(module_path)
+        cfg = getattr(module, "Configuration")
+    except (ModuleNotFoundError, ImportError) as e:
+        msg = f"Failed to import backend config for '{backend_name}' due to: '{e.msg}'."
+        raise ConfigNotFoundError(msg)
+    return cfg
+
+
+def import_backend(backend_name: str | BackendName) -> Backend:
+    module_path = f"qadence.backends.{backend_name}.backend"
+    backend: Backend
+    try:
+        module = importlib.import_module(module_path)
+    except (ModuleNotFoundError, ImportError) as e:
+        # If backend is not in Qadence, search in extensions.
+        module_path = f"qadence_extensions.backends.{backend_name}.backend"
         try:
             module = importlib.import_module(module_path)
-            DifferentiableBackendCls = getattr(module, "DifferentiableBackend")
-            res[engine] = DifferentiableBackendCls
-        except (ImportError, ModuleNotFoundError):
-            pass
-    logger.debug(f"Found engines: {res.keys()}")
-    return res
+        except (ModuleNotFoundError, ImportError) as e:
+            msg = f"Failed to import backend '{backend_name}' due to: '{e.msg}'."
+            raise BackendNotFoundError(msg)
+    backend = getattr(module, "Backend")
+    return backend
 
 
-def _available_backends() -> dict:
-    """Returns a dictionary of currently installed, native qadence backends."""
-    res = {}
+def _available_backends() -> dict[BackendName, Backend]:
+    """Return a dictionary of currently installed, native qadence backends."""
+    res: dict[BackendName, Backend] = dict()
     for backend in BackendName.list():
-        module_path = f"qadence.backends.{backend}.backend"
         try:
-            module = importlib.import_module(module_path)
-            BackendCls = getattr(module, "Backend")
-            res[backend] = BackendCls
-        except (ImportError, ModuleNotFoundError):
-            pass
+            res[backend] = import_backend(backend)
+        except BackendNotFoundError as e:
+            raise e
     logger.debug(f"Found backends: {res.keys()}")
     return res
 
 
-def _supported_gates(name: BackendName | str) -> list[TAbstractBlock]:
-    """Returns a list of supported gates for the queried backend 'name'."""
+def import_engine(engine_name: str | Engine) -> DifferentiableBackend:
+    module_path = f"qadence.engines.{engine_name}.differentiable_backend"
+    engine: DifferentiableBackend
+    try:
+        module = importlib.import_module(module_path)
+        engine = getattr(module, "DifferentiableBackend")
+    except (ModuleNotFoundError, ImportError) as e:
+        msg = f"Failed to import engine '{engine_name}' due to: '{e.msg}'."
+        raise EngineNotFoundError(msg)
+    return engine
+
+
+def _available_engines() -> dict[Engine, DifferentiableBackend]:
+    """Return a dictionary of currently installed, native qadence engines."""
+    res: dict[Engine, DifferentiableBackend] = dict()
+    for engine in Engine.list():
+        try:
+            res[engine] = import_engine(engine)
+        except EngineNotFoundError as e:
+            raise e
+    logger.debug(f"Found engines: {res.keys()}")
+    return res
+
+
+def _supported_gates(backend_name: str) -> list[TAbstractBlock]:
+    """Return a list of supported gates for the queried backend 'name'."""
     from qadence import operations
 
-    name = str(BackendName(name).name.lower())
+    backend_name = BackendName(backend_name)  # Validate backend name.
+    module_path = f"qadence.backends.{backend_name}"
 
     try:
-        backend_namespace = backends_namespace.substitute(name=name)
-        module = importlib.import_module(backend_namespace)
-    except KeyError:
-        pass
-    _supported_gates = getattr(module, "supported_gates", None)
-    assert (
-        _supported_gates is not None
-    ), f"{name} backend should define a 'supported_gates' variable"
+        module = importlib.import_module(module_path)
+    except (ModuleNotFoundError, ImportError) as e:
+        msg = f"Failed to import supported gates for '{backend_name}' due to: '{e.msg}'."
+        raise SupportedGatesNotFoundError(msg)
+    _supported_gates = getattr(module, "supported_gates")
     return [getattr(operations, gate) for gate in _supported_gates]
 
 
