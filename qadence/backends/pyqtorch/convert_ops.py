@@ -44,7 +44,6 @@ from qadence.blocks import (
 )
 from qadence.blocks.block_to_tensor import (
     _block_to_tensor_embedded,
-    block_to_tensor,
 )
 from qadence.blocks.primitive import ProjectorBlock
 from qadence.blocks.utils import parameters
@@ -111,16 +110,15 @@ def convert_block(
             if isinstance(block.generator, sympy.Basic):
                 generator = config.get_param_name(block)[1]
             elif isinstance(block.generator, Tensor):
-                generator = block_to_tensor(
+                m = block.generator.to(dtype=cdouble)
+                generator = convert_block(
                     MatrixBlock(
-                        block.generator,
+                        m,
                         qubit_support=qubit_support,
                         check_unitary=False,
                         check_hermitian=True,
-                    ),
-                    qubit_support=qubit_support,
-                    use_full_support=False,
-                ).permute(1, 2, 0)
+                    )
+                )[0]
             else:
                 generator = convert_block(block.generator, n_qubits, config)[0]  # type: ignore[arg-type]
             time_param = config.get_param_name(block)[0]
