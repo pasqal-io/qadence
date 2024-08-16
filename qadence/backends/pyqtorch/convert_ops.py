@@ -121,13 +121,31 @@ def convert_block(
         else:
             time_param = config.get_param_name(block)[0]
             if isinstance(block.generator, sympy.Basic):
-                generator = config.get_param_name(block.generator)[1]
+                generator = config.get_param_name(block)[1]
                 return [
                     pyq.HamiltonianEvolution(
                         qubit_support=qubit_support,
                         generator=generator,
                         time=time_param,
                         generator_parametric=True,
+                    )
+                ]
+            elif isinstance(block.generator, Tensor):
+                m = block.generator.to(dtype=cdouble)
+                generator = convert_block(
+                    MatrixBlock(
+                        m,
+                        qubit_support=qubit_support,
+                        check_unitary=False,
+                        check_hermitian=True,
+                    )
+                )[0]
+                return [
+                    pyq.HamiltonianEvolution(
+                        qubit_support=qubit_support,
+                        generator=generator,
+                        time=time_param,
+                        generator_parametric=False,
                     )
                 ]
             return [PyQHamiltonianEvolution(qubit_support, n_qubits, block, config)]
