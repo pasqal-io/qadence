@@ -116,7 +116,21 @@ def convert_block(
         #         generator_parametric=is_parametric,  # type: ignore[union-attr]
         #     )
         # ]
-        return [PyQHamiltonianEvolution(qubit_support, n_qubits, block, config)]
+        if getattr(block.generator, "is_time_dependent", False):
+            return [PyQHamiltonianEvolution(qubit_support, n_qubits, block, config)]
+        else:
+            time_param = config.get_param_name(block)[0]
+            if isinstance(block.generator, sympy.Basic):
+                generator = config.get_param_name(block.generator)[1]
+                return [
+                    pyq.HamiltonianEvolution(
+                        qubit_support=qubit_support,
+                        generator=generator,
+                        time=time_param,
+                        generator_parametric=True,
+                    )
+                ]
+            return [PyQHamiltonianEvolution(qubit_support, n_qubits, block, config)]
     elif isinstance(block, MatrixBlock):
         return [pyq.primitives.Primitive(block.matrix, block.qubit_support)]
     elif isinstance(block, CompositeBlock):
