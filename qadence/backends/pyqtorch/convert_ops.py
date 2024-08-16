@@ -133,6 +133,7 @@ def convert_block(
                     generator=generator,
                     time=time_param,
                     generator_parametric=is_parametric,  # type: ignore[union-attr]
+                    cache_length=0,
                 )
             ]
 
