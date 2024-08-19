@@ -161,7 +161,8 @@ def train(
         ]
 
     def run_callbacks(callback_iterable: list[Callback], opt_res: OptimizeResult) -> None:
-        [callback(opt_res) for callback in callback_iterable]
+        for callback in callback_iterable:
+            callback(opt_res)
 
     callbacks_end_opt = [
         callback

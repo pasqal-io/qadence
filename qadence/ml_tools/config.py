@@ -37,7 +37,7 @@ class Callback:
 
     Attributes:
         callback (Callable[..., None]): Callback function accepting an
-            OptimizeResult as ifrst argument.
+            OptimizeResult as first argument.
         callback_condition (Callable[..., bool] | None, optional): Function that conditions the
             call to callback. Defaults to None.
         every (int, optional): Callback to be called each `every` epoch. Defaults to 1.
