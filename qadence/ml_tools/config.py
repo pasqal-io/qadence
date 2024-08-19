@@ -28,6 +28,9 @@ from qadence.types import (
 
 logger = getLogger(__file__)
 
+CallbackFunction = Callable[[OptimizeResult], None]
+CallbackConditionFunction = Callable[[OptimizeResult], bool]
+
 
 class Callback:
     """Callback functions are calling in train functions.
@@ -36,10 +39,10 @@ class Callback:
     an OptimizeResult instance.
 
     Attributes:
-        callback (Callable[..., None]): Callback function accepting an
+        callback (CallbackFunction): Callback function accepting an
             OptimizeResult as first argument.
-        callback_condition (Callable[..., bool] | None, optional): Function that conditions the
-            call to callback. Defaults to None.
+        callback_condition (CallbackConditionFunction | None, optional): Function that
+            conditions the call to callback. Defaults to None.
         every (int, optional): Callback to be called each `every` epoch. Defaults to 1.
             If callback_condition is None, we set
             callback_condition to returns True when iteration % every == 0.
@@ -55,8 +58,8 @@ class Callback:
 
     def __init__(
         self,
-        callback: Callable[..., None],
-        callback_condition: Callable[..., bool] | None = None,
+        callback: CallbackFunction,
+        callback_condition: CallbackConditionFunction | None = None,
         every: int = 1,
         call_before_opt: bool = False,
         call_end_epoch: bool = True,
@@ -66,10 +69,10 @@ class Callback:
         """Initialized Callback.
 
         Args:
-            callback (Callable[..., None]): Callback function accepting an
+            callback (CallbackFunction): Callback function accepting an
                 OptimizeResult as ifrst argument.
-            callback_condition (Callable[..., bool] | None, optional): Function that conditions the
-                call to callback. Defaults to None.
+            callback_condition (CallbackConditionFunction | None, optional): Function that
+                conditions the call to callback. Defaults to None.
             every (int, optional): Callback to be called each `every` epoch. Defaults to 1.
                 If callback_condition is None, we set
                 callback_condition to returns True when iteration % every == 0.
