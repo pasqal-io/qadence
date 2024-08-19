@@ -98,9 +98,9 @@ class Callback:
         else:
             self.callback_condition = callback_condition
 
-    def __call__(self, opt_result: OptimizeResult, *args: Any, **kwargs: Any) -> Any:
+    def __call__(self, opt_result: OptimizeResult) -> Any:
         if self.callback_condition(opt_result):
-            return self.callback(opt_result, *args, **kwargs)
+            return self.callback(opt_result)
 
 
 @dataclass
