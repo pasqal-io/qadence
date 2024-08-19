@@ -167,6 +167,16 @@ def train(
         )
 
     def next_loss_iter(dl_iter: Union[None, DataLoader, DictDataLoader]) -> Any:
+        """Get loss on the next batch of a dataloader.
+
+            loaded on device if not None.
+
+        Args:
+            dl_iter (Union[None, DataLoader, DictDataLoader]): Dataloader.
+
+        Returns:
+            Any: Loss value
+        """
         xs = next(dl_iter) if dl_iter is not None else None
         xs_to_device = data_to_device(xs, device=device, dtype=data_dtype)
         return loss_fn(model, xs_to_device)
