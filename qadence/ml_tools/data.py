@@ -28,7 +28,7 @@ class OptimizeResult:
     """Model at iteration."""
     optimizer: Optimizer | NGOptimizer
     """Optimizer at iteration."""
-    loss: Tensor | float | None
+    loss: Tensor | float | None = None
     """Loss value."""
     metrics: dict = field(default_factory=lambda: dict())
     """Metrics that can be saved during training."""

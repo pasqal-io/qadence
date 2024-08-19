@@ -270,7 +270,7 @@ def train(
 
         # Initial validation evaluation
         try:
-            opt_result = OptimizeResult(init_iter, model, optimizer, None, dict())
+            opt_result = OptimizeResult(init_iter, model, optimizer)
             if perform_val:
                 dl_iter_val = iter(val_dataloader) if val_dataloader is not None else None
                 best_val_loss, metrics, *_ = next_loss_iter(dl_iter_val)
