@@ -94,15 +94,12 @@ class Callback:
         self.every = every
 
         if callback_condition is None:
-            if self.every > 1:
-                self.callback_condition = lambda opt_result: opt_result.iteration % self.every == 0
-            else:
-                self.callback_condition = lambda opt_result: True
+            self.callback_condition = lambda opt_result: True
         else:
             self.callback_condition = callback_condition
 
     def __call__(self, opt_result: OptimizeResult) -> Any:
-        if self.callback_condition(opt_result):
+        if opt_result.iteration % self.every == 0 and self.callback_condition(opt_result):
             return self.callback(opt_result)
 
 
