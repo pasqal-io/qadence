@@ -78,12 +78,17 @@ def loss_fn(model: torch.nn.Module, data: torch.Tensor) -> tuple[torch.Tensor, d
 
 The [`TrainConfig`][qadence.ml_tools.config.TrainConfig] tells `train_with_grad` what batch_size should be used,
 how many epochs to train, in which intervals to print/log metrics and how often to store intermediate checkpoints.
+It is also possible to provide custom callback functions by instantiating a [`Callback`][qadence.ml_tools.config.Callback]
+with a function `callback` that only accept as argument an instance of [`OptimizeResult`][qadence.ml_tools.data.OptimizeResult] created within the `train` functions.
+One can also provide a `callback_condition` function, also only accepting an instance of [`OptimizeResult`][qadence.ml_tools.data.OptimizeResult], which returns True if `callback` should be called. If no `callback_condition` is provided, `callback` is called at every x epochs (specified by `Callback`'s `every` argument). We can also specify in which part of the training function the `Callback` will be applied.
 
 ```python exec="on" source="material-block"
-from qadence.ml_tools import TrainConfig
+from qadence.ml_tools import TrainConfig, Callback
 
 batch_size = 5
 n_epochs = 100
+
+custom_callback = Callback(lambda opt_res: print(opt_res.model.parameters()) if opt_res.loss < 1.0e-03 else print('Loss threshold not yet reached.'), every=10, call_end_epoch=True)
 
 config = TrainConfig(
     folder="some_path/",
@@ -91,6 +96,7 @@ config = TrainConfig(
     checkpoint_every=100,
     write_every=100,
     batch_size=batch_size,
+    callbacks = [custom_callback]
 )
 ```
 
