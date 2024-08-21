@@ -93,6 +93,8 @@ class Callback:
         self.call_after_opt = call_after_opt
         self.call_during_eval = call_during_eval
 
+        if called_every <= 0:
+            raise ValueError("Please provide a strictly positive `called_every` argument.")
         self.called_every = called_every
 
         if callback_condition is None:
@@ -101,11 +103,7 @@ class Callback:
             self.callback_condition = callback_condition
 
     def __call__(self, opt_result: OptimizeResult) -> Any:
-        if (
-            (self.called_every > 0)
-            and opt_result.iteration % self.called_every == 0
-            and self.callback_condition(opt_result)
-        ):
+        if opt_result.iteration % self.called_every == 0 and self.callback_condition(opt_result):
             return self.callback(opt_result)
 
 
