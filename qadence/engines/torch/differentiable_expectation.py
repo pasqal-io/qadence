@@ -233,7 +233,11 @@ class DifferentiableExpectation:
             else:
                 psr_args_factor = psr_args.copy()
                 if "shift_prefac" in psr_args_factor:
-                    psr_args_factor["shift_prefac"] = shift_factor * psr_args_factor["shift_prefac"]
+                    psr_args_factor["shift_prefac"] = (
+                        shift_factor * psr_args_factor["shift_prefac"]
+                        if psr_args_factor["shift_prefac"] is not None
+                        else shift_factor
+                    )
                 else:
                     psr_args_factor["shift_prefac"] = shift_factor
                 param_to_psr[param_id] = psr_fn(eigenvalues, **psr_args_factor)
