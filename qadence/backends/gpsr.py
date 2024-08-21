@@ -10,14 +10,30 @@ from qadence.types import PI
 from qadence.utils import _round_complex
 
 
-def general_psr(spectrum: Tensor, shift_prefac: float = 0.5) -> Callable:
+def general_psr(spectrum: Tensor, n_eqs: int | None = None, shift_prefac: float = 0.5) -> Callable:
+    """Define whether single_gap_psr or multi_gap_psr is used.
+
+    Args:
+        spectrum (Tensor): Spectrum of the operation we apply PSR onto.
+        n_eqs (int | None, optional): Number of equations. Defaults to None.
+            If provided, we keep the n_eqs higher spectral gaps.
+        shift_prefac (float, optional): Shift prefactor. Defaults to 0.5.
+
+    Returns:
+        Callable: single_gap_psr or multi_gap_psr function for
+            concerned operation.
+    """
     diffs = _round_complex(spectrum - spectrum.reshape(-1, 1))
     sorted_unique_spectral_gaps = torch.unique(torch.abs(torch.tril(diffs)))
 
     # We have to filter out zeros
     sorted_unique_spectral_gaps = sorted_unique_spectral_gaps[sorted_unique_spectral_gaps > 0]
-    n_eqs = len(sorted_unique_spectral_gaps)
-    sorted_unique_spectral_gaps = torch.tensor(list(sorted_unique_spectral_gaps))
+    n_eqs = (
+        len(sorted_unique_spectral_gaps)
+        if n_eqs is None
+        else min(n_eqs, len(sorted_unique_spectral_gaps))
+    )
+    sorted_unique_spectral_gaps = torch.tensor(list(sorted_unique_spectral_gaps)[:n_eqs])
 
     if n_eqs == 1:
         return single_gap_psr
