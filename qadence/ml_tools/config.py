@@ -5,7 +5,7 @@ import os
 from dataclasses import dataclass, field, fields
 from logging import getLogger
 from pathlib import Path
-from typing import Callable, Type
+from typing import Any, Callable, Type
 from uuid import uuid4
 
 from sympy import Basic
@@ -13,6 +13,7 @@ from torch import Tensor
 
 from qadence.blocks.analog import AnalogBlock
 from qadence.blocks.primitive import ParametricBlock
+from qadence.ml_tools.data import OptimizeResult
 from qadence.operations import RX, AnalogRX
 from qadence.parameters import Parameter
 from qadence.types import (
@@ -26,6 +27,84 @@ from qadence.types import (
 )
 
 logger = getLogger(__file__)
+
+CallbackFunction = Callable[[OptimizeResult], None]
+CallbackConditionFunction = Callable[[OptimizeResult], bool]
+
+
+class Callback:
+    """Callback functions are calling in train functions.
+
+    Each callback function should take at least as first input
+    an OptimizeResult instance.
+
+    Attributes:
+        callback (CallbackFunction): Callback function accepting an
+            OptimizeResult as first argument.
+        callback_condition (CallbackConditionFunction | None, optional): Function that
+            conditions the call to callback. Defaults to None.
+        called_every (int, optional): Callback to be called each `called_every` epoch.
+            Defaults to 1.
+            If callback_condition is None, we set
+            callback_condition to returns True when iteration % every == 0.
+        call_before_opt (bool, optional): If true, callback is applied before training.
+            Defaults to False.
+        call_end_epoch (bool, optional): If true, callback is applied during training,
+            after an epoch is performed. Defaults to True.
+        call_after_opt (bool, optional): If true, callback is applied after training.
+            Defaults to False.
+        call_during_eval (bool, optional): If true, callback is applied during evaluation.
+            Defaults to False.
+    """
+
+    def __init__(
+        self,
+        callback: CallbackFunction,
+        callback_condition: CallbackConditionFunction | None = None,
+        called_every: int = 1,
+        call_before_opt: bool = False,
+        call_end_epoch: bool = True,
+        call_after_opt: bool = False,
+        call_during_eval: bool = False,
+    ) -> None:
+        """Initialized Callback.
+
+        Args:
+            callback (CallbackFunction): Callback function accepting an
+                OptimizeResult as ifrst argument.
+            callback_condition (CallbackConditionFunction | None, optional): Function that
+                conditions the call to callback. Defaults to None.
+            called_every (int, optional): Callback to be called each `called_every` epoch.
+                Defaults to 1.
+                If callback_condition is None, we set
+                callback_condition to returns True when iteration % every == 0.
+            call_before_opt (bool, optional): If true, callback is applied before training.
+                Defaults to False.
+            call_end_epoch (bool, optional): If true, callback is applied during training,
+                after an epoch is performed. Defaults to True.
+            call_after_opt (bool, optional): If true, callback is applied after training.
+                Defaults to False.
+            call_during_eval (bool, optional): If true, callback is applied during evaluation.
+                Defaults to False.
+        """
+        self.callback = callback
+        self.call_before_opt = call_before_opt
+        self.call_end_epoch = call_end_epoch
+        self.call_after_opt = call_after_opt
+        self.call_during_eval = call_during_eval
+
+        if called_every <= 0:
+            raise ValueError("Please provide a strictly positive `called_every` argument.")
+        self.called_every = called_every
+
+        if callback_condition is None:
+            self.callback_condition = lambda opt_result: True
+        else:
+            self.callback_condition = callback_condition
+
+    def __call__(self, opt_result: OptimizeResult) -> Any:
+        if opt_result.iteration % self.called_every == 0 and self.callback_condition(opt_result):
+            return self.callback(opt_result)
 
 
 @dataclass
@@ -64,6 +143,8 @@ class TrainConfig:
 
     Set to 0 to disable
     """
+    callbacks: list[Callback] = field(default_factory=lambda: list())
+    """List of callbacks."""
     log_model: bool = False
     """Logs a serialised version of the model."""
     folder: Path | None = None

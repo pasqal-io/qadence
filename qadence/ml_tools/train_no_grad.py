@@ -12,8 +12,8 @@ from torch.nn import Module
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
-from qadence.ml_tools.config import TrainConfig
-from qadence.ml_tools.data import DictDataLoader
+from qadence.ml_tools.config import Callback, TrainConfig
+from qadence.ml_tools.data import DictDataLoader, OptimizeResult
 from qadence.ml_tools.parameters import get_parameters, set_parameters
 from qadence.ml_tools.printing import (
     log_model_tracker,
@@ -86,6 +86,12 @@ def train(
     params = get_parameters(model).detach().numpy()
     ng_params = ng.p.Array(init=params)
 
+    if not ((dataloader is None) or isinstance(dataloader, (DictDataLoader, DataLoader))):
+        raise NotImplementedError(
+            f"Unsupported dataloader type: {type(dataloader)}. "
+            "You can use e.g. `qadence.ml_tools.to_dataloader` to build a dataloader."
+        )
+
     # serial training
     # TODO: Add a parallelization using the num_workers argument in Nevergrad
     progress = Progress(
@@ -94,38 +100,85 @@ def train(
         TaskProgressColumn(),
         TimeRemainingColumn(elapsed_when_finished=True),
     )
+
+    # populate callbacks with already available internal functions
+    # printing, writing and plotting
+    callbacks = config.callbacks
+
+    # printing
+    if config.verbose and config.print_every > 0:
+        callbacks += [
+            Callback(
+                lambda opt_res: print_metrics(opt_res.loss, opt_res.metrics, opt_res.iteration),
+                called_every=config.print_every,
+            )
+        ]
+
+    # writing metrics
+    if config.write_every > 0:
+        callbacks += [
+            Callback(
+                lambda opt_res: write_tracker(
+                    writer,
+                    opt_res.loss,
+                    opt_res.metrics,
+                    opt_res.iteration,
+                    tracking_tool=config.tracking_tool,
+                ),
+                called_every=config.write_every,
+                call_after_opt=True,
+            )
+        ]
+
+    # plot tracker
+    if config.plot_every > 0:
+        callbacks += [
+            Callback(
+                lambda opt_res: plot_tracker(
+                    writer,
+                    opt_res.model,
+                    opt_res.iteration,
+                    config.plotting_functions,
+                    tracking_tool=config.tracking_tool,
+                ),
+                called_every=config.plot_every,
+            )
+        ]
+
+    # checkpointing
+    if config.folder and config.checkpoint_every > 0:
+        callbacks += [
+            Callback(
+                lambda opt_res: write_checkpoint(
+                    config.folder,  # type: ignore[arg-type]
+                    opt_res.model,
+                    opt_res.optimizer,
+                    opt_res.iteration,
+                ),
+                called_every=config.checkpoint_every,
+                call_after_opt=True,
+            )
+        ]
+
+    def run_callbacks(callback_iterable: list[Callback], opt_res: OptimizeResult) -> None:
+        for callback in callback_iterable:
+            callback(opt_res)
+
+    callbacks_end_opt = [
+        callback
+        for callback in callbacks
+        if callback.call_end_epoch and not callback.call_during_eval
+    ]
+
     with progress:
         dl_iter = iter(dataloader) if dataloader is not None else None
 
         for iteration in progress.track(range(init_iter, init_iter + config.max_iter)):
-            if dataloader is None:
-                loss, metrics, ng_params = _update_parameters(None, ng_params)
-
-            elif isinstance(dataloader, (DictDataLoader, DataLoader)):
-                data = next(dl_iter)  # type: ignore[arg-type]
-                loss, metrics, ng_params = _update_parameters(data, ng_params)
-
-            else:
-                raise NotImplementedError("Unsupported dataloader type!")
-
-            if config.print_every > 0 and iteration % config.print_every == 0 and config.verbose:
-                print_metrics(loss, metrics, iteration)
-
-            if config.write_every > 0 and iteration % config.write_every == 0:
-                write_tracker(writer, loss, metrics, iteration, tracking_tool=config.tracking_tool)
-
-            if config.plot_every > 0 and iteration % config.plot_every == 0:
-                plot_tracker(
-                    writer,
-                    model,
-                    iteration,
-                    config.plotting_functions,
-                    tracking_tool=config.tracking_tool,
-                )
-
-            if config.folder:
-                if config.checkpoint_every > 0 and iteration % config.checkpoint_every == 0:
-                    write_checkpoint(config.folder, model, optimizer, iteration)
+            loss, metrics, ng_params = _update_parameters(
+                None if dataloader is None else next(dl_iter), ng_params  # type: ignore[arg-type]
+            )
+            opt_result = OptimizeResult(iteration, model, optimizer, loss, metrics)
+            run_callbacks(callbacks_end_opt, opt_result)
 
             if iteration >= init_iter + config.max_iter:
                 break
@@ -137,10 +190,9 @@ def train(
     if config.log_model:
         log_model_tracker(writer, model, dataloader, tracking_tool=config.tracking_tool)
 
-    # Final writing and checkpointing
-    if config.folder:
-        write_checkpoint(config.folder, model, optimizer, iteration)
-    write_tracker(writer, loss, metrics, iteration, tracking_tool=config.tracking_tool)
+    # Final callbacks
+    callbacks_after_opt = [callback for callback in callbacks if callback.call_after_opt]
+    run_callbacks(callbacks_after_opt, opt_result)
 
     # close tracker
     if config.tracking_tool == ExperimentTrackingTool.TENSORBOARD:

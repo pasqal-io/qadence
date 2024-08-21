@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .config import AnsatzConfig, FeatureMapConfig, TrainConfig
+from .config import AnsatzConfig, Callback, FeatureMapConfig, TrainConfig
 from .constructors import create_ansatz, create_fm_blocks, observable_from_config
 from .data import DictDataLoader, InfiniteTensorDataset, to_dataloader
 from .models import QNN
@@ -23,6 +23,7 @@ __all__ = [
     "observable_from_config",
     "QNN",
     "TrainConfig",
+    "Callback",
     "train_with_grad",
     "train_gradient_free",
     "write_checkpoint",
