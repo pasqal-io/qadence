@@ -88,7 +88,7 @@ from qadence.ml_tools import TrainConfig, Callback
 batch_size = 5
 n_epochs = 100
 
-custom_callback = Callback(lambda opt_res: print(opt_res.model.parameters()) if opt_res.loss < 1.0e-03 else print('Loss threshold not yet reached.'), every=10, call_end_epoch=True)
+custom_callback = Callback(lambda opt_res: print(opt_res.model.parameters()), callback_condition=lambda opt_res: opt_res.loss < 1.0e-03, called_every=10, call_end_epoch=True)
 
 config = TrainConfig(
     folder="some_path/",

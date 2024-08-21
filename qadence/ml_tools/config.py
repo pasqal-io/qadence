@@ -43,7 +43,8 @@ class Callback:
             OptimizeResult as first argument.
         callback_condition (CallbackConditionFunction | None, optional): Function that
             conditions the call to callback. Defaults to None.
-        every (int, optional): Callback to be called each `every` epoch. Defaults to 1.
+        called_every (int, optional): Callback to be called each `called_every` epoch.
+            Defaults to 1.
             If callback_condition is None, we set
             callback_condition to returns True when iteration % every == 0.
         call_before_opt (bool, optional): If true, callback is applied before training.
@@ -60,7 +61,7 @@ class Callback:
         self,
         callback: CallbackFunction,
         callback_condition: CallbackConditionFunction | None = None,
-        every: int = 1,
+        called_every: int = 1,
         call_before_opt: bool = False,
         call_end_epoch: bool = True,
         call_after_opt: bool = False,
@@ -73,7 +74,8 @@ class Callback:
                 OptimizeResult as ifrst argument.
             callback_condition (CallbackConditionFunction | None, optional): Function that
                 conditions the call to callback. Defaults to None.
-            every (int, optional): Callback to be called each `every` epoch. Defaults to 1.
+            called_every (int, optional): Callback to be called each `called_every` epoch.
+                Defaults to 1.
                 If callback_condition is None, we set
                 callback_condition to returns True when iteration % every == 0.
             call_before_opt (bool, optional): If true, callback is applied before training.
@@ -91,7 +93,7 @@ class Callback:
         self.call_after_opt = call_after_opt
         self.call_during_eval = call_during_eval
 
-        self.every = every
+        self.called_every = called_every
 
         if callback_condition is None:
             self.callback_condition = lambda opt_result: True
@@ -99,7 +101,11 @@ class Callback:
             self.callback_condition = callback_condition
 
     def __call__(self, opt_result: OptimizeResult) -> Any:
-        if opt_result.iteration % self.every == 0 and self.callback_condition(opt_result):
+        if (
+            (self.called_every > 0)
+            and opt_result.iteration % self.called_every == 0
+            and self.callback_condition(opt_result)
+        ):
             return self.callback(opt_result)
 
 

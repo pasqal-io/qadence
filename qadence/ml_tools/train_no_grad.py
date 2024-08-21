@@ -110,7 +110,7 @@ def train(
         callbacks += [
             Callback(
                 lambda opt_res: print_metrics(opt_res.loss, opt_res.metrics, opt_res.iteration),
-                every=config.print_every,
+                called_every=config.print_every,
             )
         ]
 
@@ -125,7 +125,7 @@ def train(
                     opt_res.iteration,
                     tracking_tool=config.tracking_tool,
                 ),
-                every=config.write_every,
+                called_every=config.write_every,
                 call_after_opt=True,
             )
         ]
@@ -141,7 +141,7 @@ def train(
                     config.plotting_functions,
                     tracking_tool=config.tracking_tool,
                 ),
-                every=config.plot_every,
+                called_every=config.plot_every,
             )
         ]
 
@@ -155,7 +155,7 @@ def train(
                     opt_res.optimizer,
                     opt_res.iteration,
                 ),
-                every=config.checkpoint_every,
+                called_every=config.checkpoint_every,
                 call_after_opt=True,
             )
         ]
