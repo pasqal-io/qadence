@@ -88,6 +88,83 @@ def hea(
     return hea_block
 
 
+def alternating_layer_ansatz(
+    n_qubits: int,
+    depth: int = 1,
+    m_qubits_block: int = 2,
+    param_prefix: str = "theta",
+    support: tuple[int, ...] = None,
+    strategy: Strategy = Strategy.DIGITAL,
+    **strategy_args: Any,
+) -> AbstractBlock:
+    """
+    Factory function for the Alternating Layer Ansatz (ALT).
+
+    Args:
+        n_qubits: number of qubits in the circuit
+        depth: number of layers of the HEA
+        m_qubits_block: number of qubits in a circuit block
+        param_prefix: the base name of the variational parameters
+        support: qubit indexes where the HEA is applied
+        strategy: Strategy.Digital or Strategy.DigitalAnalog
+        **strategy_args: see below
+
+    Keyword Arguments:
+        operations (list): list of operations to cycle through in the
+            digital single-qubit rotations of each layer. Valid for
+            Digital and DigitalAnalog HEA.
+        periodic (bool): if the qubits should be linked periodically.
+            periodic=False is not supported in emu-c. Valid for only
+            for Digital HEA.
+        entangler (AbstractBlock):
+            - Digital: 2-qubit entangling operation. Supports CNOT, CZ,
+            CRX, CRY, CRZ, CPHASE. Controlled rotations will have variational
+            parameters on the rotation angles.
+            - DigitaAnalog | Analog: Hamiltonian generator for the
+            analog entangling layer. Defaults to global ZZ Hamiltonian.
+            Time parameter is considered variational.
+
+    Examples:
+    ```python exec="on" source="material-block" result="json"
+    from qadence import RZ, RX
+    from qadence import hea
+
+    # create the circuit
+    n_qubits, depth, m_qubits = 4, 4, 2
+    ansatz = alternating_layer_ansatz(
+        n_qubits=n_qubits,
+        depth=depth,
+        m_qubits_block=m_qubits,
+        strategy="DIGITAL",
+        operations=[RZ,RX,RZ]
+    )
+    ```
+    """
+
+    if support is None:
+        support = tuple(range(n_qubits))
+
+    alt_func_dict = {
+        Strategy.DIGITAL: alt_digital,
+    }
+
+    try:
+        alt_func = alt_func_dict[strategy]
+    except KeyError:
+        raise KeyError(f"Strategy {strategy} not recognized.")
+
+    alt_block: AbstractBlock = alt_func(
+        n_qubits=n_qubits,
+        depth=depth,
+        m_qubits_block=m_qubits_block,
+        param_prefix=param_prefix,
+        support=support,
+        **strategy_args,
+    )  # type: ignore
+
+    return alt_block
+
+
 #############
 ## DIGITAL ##
 #############
@@ -230,6 +307,115 @@ def hea_digital(
         layers.append(rot_list[d])
         layers.append(ent_list[d])
     return tag(chain(*layers), "HEA")
+
+
+def alt_digital(
+    n_qubits: int,
+    depth: int = 1,
+    m_qubits_block: int = 2,
+    param_prefix: str = "theta",
+    periodic: bool = False,
+    operations: list[type[AbstractBlock]] = [RX, RY, RX],
+    support: tuple[int, ...] = None,
+    entangler: Type[DigitalEntanglers] = CNOT,
+) -> AbstractBlock:
+    """
+    Construct the Digital Hardware Efficient Ansatz (ALT).
+
+    Args:
+        n_qubits (int): number of qubits in the circuit.
+        depth (int): number of layers of the ALT.
+        m_qubits_block (int): number of qubits in a circuit block.
+        param_prefix (str): the base name of the variational parameters
+        periodic (bool): if the qubits should be linked periodically.
+            periodic=False is not supported in emu-c.
+        operations (list): list of operations to cycle through in the
+            digital single-qubit rotations of each layer.
+        support (tuple): qubit indexes where the ALT is applied.
+        entangler (AbstractBlock): 2-qubit entangling operation.
+            Supports CNOT, CZ, CRX, CRY, CRZ. Controlld rotations
+            will have variational parameters on the rotation angles.
+    """
+    try:
+        if entangler not in [CNOT, CZ, CRX, CRY, CRZ, CPHASE]:
+            raise ValueError(
+                "Please provide a valid two-qubit entangler operation for digital ALT."
+            )
+    except TypeError:
+        raise ValueError("Please provide a valid two-qubit entangler operation for digital ALT.")
+
+    if support is None:
+        support = tuple(range(n_qubits))
+
+    support_length = len(support)
+    support_odd = [
+        support[i : i + m_qubits_block]
+        for i in range(0, support_length, support_length // m_qubits_block)
+    ]
+
+    m2 = m_qubits_block // 2
+    support_even = [support[:m2]]
+    support_even += [
+        support[i : i + m_qubits_block]
+        for i in range(m2 + 1, support_length - m2, support_length // m_qubits_block)
+    ]
+    support_even += [support[support_length - m2 + 1 :]]
+
+    rot_list_odd = [
+        _rotations_digital(
+            n_qubits=len(s),
+            depth=1,
+            param_prefix=param_prefix,
+            support=s,
+            operations=operations,
+        )
+        for s in support_odd
+    ]
+
+    rot_list_even = [
+        _rotations_digital(
+            n_qubits=len(s),
+            depth=1,
+            param_prefix=param_prefix,
+            support=s,
+            operations=operations,
+        )
+        for s in support_odd
+    ]
+
+    ent_list_odd = [
+        _entanglers_digital(
+            n_qubits=n_qubits,
+            depth=depth,
+            param_prefix=param_prefix,
+            support=support,
+            periodic=periodic,
+            entangler=entangler,
+        )
+        for s in support_odd
+    ]
+
+    ent_list_even = [
+        _entanglers_digital(
+            n_qubits=n_qubits,
+            depth=depth,
+            param_prefix=param_prefix,
+            support=support,
+            periodic=periodic,
+            entangler=entangler,
+        )
+        for s in support_odd
+    ]
+
+    layers = []
+    for d in range(depth):
+        if d % 2 == 0:
+            layers.append(rot_list_even[d // 2])
+            layers.append(ent_list_even[d // 2])
+        else:
+            layers.append(rot_list_odd[d // 2 + 1])
+            layers.append(ent_list_odd[d // 2 + 1])
+    return tag(chain(*layers), "ALT")
 
 
 ###########
