@@ -1,0 +1,4046 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://pasqal-io.github.io/qadence/v1.7.5/tutorials/qml/qaoa/">
+      
+      
+        <link rel="prev" href="../qcl/">
+      
+      
+        <link rel="next" href="../dqc_1d/">
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.32">
+    
+    
+      
+        <title>Solving MaxCut with QAOA - Qadence</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.3cba04c6.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/_markdown_exec_pyodide.css">
+    
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../../extras/css/mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../../extras/css/colors.css">
+    
+      <link rel="stylesheet" href="../../../extras/css/home.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#the-qaoa-quantum-circuit" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="Qadence" class="md-header__button md-logo" aria-label="Qadence" data-md-component="logo">
+      
+  <img src="../../../extras/assets/logo/qadence_logo_small_white.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Qadence
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Solving MaxCut with QAOA
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5c-.84 0-1.65.15-2.39.42L12 2M3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29L3.34 7m.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14L3.36 17M20.65 7l-1.77 3.79a7.023 7.023 0 0 0-2.38-4.15l4.15.36m-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29L20.64 17M12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44L12 22Z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3 3.19.09m3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95 2.06.05m-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31Z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/pasqal-io/qadence/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    qadence
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../getting_started/installation/" class="md-tabs__link">
+          
+  
+    
+  
+  Getting started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../content/block_system/" class="md-tabs__link">
+          
+  
+    
+  
+  Contents
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="../../" class="md-tabs__link">
+        
+  
+    
+  
+  Tutorials
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../api/blocks/" class="md-tabs__link">
+          
+  
+    
+  
+  API
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="Qadence" class="md-nav__button md-logo" aria-label="Qadence" data-md-component="logo">
+      
+  <img src="../../../extras/assets/logo/qadence_logo_small_white.svg" alt="logo">
+
+    </a>
+    Qadence
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/pasqal-io/qadence/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    qadence
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Getting started
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Getting started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting_started/installation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_2" id="__nav_2_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Development & Info
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            Development & Info
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting_started/CONTRIBUTING/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Contributing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting_started/CODE_OF_CONDUCT/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Code of conduct
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting_started/LICENSE/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    License
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Contents
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Contents
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../content/block_system/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Block system
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../content/parameters/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Parametric programs
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../content/time_dependent/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Time-dependent generators
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../content/quantummodels/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quantum models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../content/register/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quantum registers
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../content/state_init/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    State initialization
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../content/hamiltonians/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Arbitrary Hamiltonians
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../content/qml_constructors/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    QML Constructors
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../content/overlap/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Wavefunction overlaps
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../content/backends/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Backends
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Useful info
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_11">
+            <span class="md-nav__icon md-icon"></span>
+            Useful info
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../content/state_conventions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    State conventions
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../content/serializ_and_prep/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Serialization
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Tutorials
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Tutorials
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_1" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../digital_analog_qc/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Digital-analog quantum computing
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_1" id="__nav_4_1_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_1">
+            <span class="md-nav__icon md-icon"></span>
+            Digital-analog quantum computing
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../digital_analog_qc/analog-basics/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Basic operations on neutral-atoms
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../digital_analog_qc/analog-blocks-qcl/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Fitting a function with analog blocks
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../digital_analog_qc/semi-local-addressing/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Restricted local addressability
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../digital_analog_qc/pulser-basic/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Pulse-level programming with Pulser
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../digital_analog_qc/digital-analog-qcl/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Fitting a function with a Hamiltonian ansatz
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../digital_analog_qc/analog-qubo/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Solve a QUBO problem
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../digital_analog_qc/daqc-cnot/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    CNOT with interacting qubits
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" checked>
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Variational quantum algorithms
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_2" id="__nav_4_2_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            Variational quantum algorithms
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ml_tools/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Training tools
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config_qnn/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Configuring a QNN
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../qcl/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quantum circuit learning
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Solving MaxCut with QAOA
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Solving MaxCut with QAOA
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-qaoa-quantum-circuit" class="md-nav__link">
+    <span class="md-ellipsis">
+      The QAOA quantum circuit
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#train-the-qaoa-circuit-to-solve-maxcut" class="md-nav__link">
+    <span class="md-ellipsis">
+      Train the QAOA circuit to solve MaxCut
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#results" class="md-nav__link">
+    <span class="md-ellipsis">
+      Results
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      References
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dqc_1d/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Solving a 1D ODE
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_3" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../advanced_tutorials/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Advanced Tutorials
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_3" id="__nav_4_3_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_3">
+            <span class="md-nav__icon md-icon"></span>
+            Advanced Tutorials
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../advanced_tutorials/differentiability/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quantum circuits differentiation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../advanced_tutorials/custom-models/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Custom quantum models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../advanced_tutorials/projectors/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Projector blocks
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../advanced_tutorials/profiling-and-debugging/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Profiling and debugging on CUDA devices
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_4" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../realistic_sims/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Realistic simulations
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_4" id="__nav_4_4_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_4">
+            <span class="md-nav__icon md-icon"></span>
+            Realistic simulations
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../realistic_sims/measurements/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Measurement protocols
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../realistic_sims/noise/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Simulated errors
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../realistic_sims/mitigation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Error mitigation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_5" id="__nav_4_5_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Development
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_5">
+            <span class="md-nav__icon md-icon"></span>
+            Development
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/architecture/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Architecture and sharp bits
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/draw/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Drawing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    API
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            API
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/blocks/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Block system
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/operations/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Operations
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/register/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Register
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/quantumcircuit/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    QuantumCircuit
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/parameters/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Parameters
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/states/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    State preparation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/constructors/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Constructors
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/transpile/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Transpilation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/execution/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Execution
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/models/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quantum models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/ml_tools/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    QML tools
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/serialization/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Serialization
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/types/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Types
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/draw/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Drawing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_15" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_15" id="__nav_5_15_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Backends
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_15_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_15">
+            <span class="md-nav__icon md-icon"></span>
+            Backends
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/backends/backend/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Abstract backend
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/backends/pyqtorch/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    PyQTorch
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/backends/pulser/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Pulser
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/backends/differentiable/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DifferentiableBackend
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-qaoa-quantum-circuit" class="md-nav__link">
+    <span class="md-ellipsis">
+      The QAOA quantum circuit
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#train-the-qaoa-circuit-to-solve-maxcut" class="md-nav__link">
+    <span class="md-ellipsis">
+      Train the QAOA circuit to solve MaxCut
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#results" class="md-nav__link">
+    <span class="md-ellipsis">
+      Results
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      References
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+  <h1>Solving MaxCut with QAOA</h1>
+
+<p>This tutorial shows how to solve the maximum cut (MaxCut) combinatorial
+optimization problem on a graph using the Quantum Approximate Optimization
+Algorithm (QAOA), first introduced by Farhi <em>et al.</em> in 2014 <sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup>.</p>
+<p>Given an arbitrary graph, the MaxCut problem consists in finding a
+graph <a href="https://en.wikipedia.org/wiki/Cut_(graph_theory)"><em>cut</em></a> which partitions
+the nodes into two disjoint sets, such that the number of edges in the
+cut is maximized. This is a very common combinatorial optimization problem known to be computationally hard (NP-hard).</p>
+<p>The graph used for this tutorial is an unweighted graph randomly generated using the <code>networkx</code> library with
+a certain probability <span class="arithmatex">\(p\)</span> of having an edge between two arbitrary nodes (known as <a href="https://en.wikipedia.org/wiki/Erd%C5%91s%E2%80%93R%C3%A9nyi_model">Erdős–Rényi</a> graph).</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="kn">import</span> <span class="nn">random</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="c1"># ensure reproducibility</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">seed</span> <span class="o">=</span> <span class="mi">42</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="c1"># Create random graph</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="n">n_nodes</span> <span class="o">=</span> <span class="mi">4</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="n">edge_prob</span> <span class="o">=</span> <span class="mf">0.8</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="n">graph</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">gnp_random_graph</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">,</span> <span class="n">edge_prob</span><span class="p">)</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="n">nx</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
+</code></pre></div>
+<div class="result" markdown="1" >
+
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="432pt" height="360pt" viewBox="0 0 432 360" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2024-08-21T11:48:49.000829</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.7.5, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 360 
+L 432 360 
+L 432 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="LineCollection_1">
+    <path d="M 279.995843 31.239669 
+L 394.512397 232.684202 
+" clip-path="url(#p749ce4a43b)" style="fill: none; stroke: #000000"/>
+    <path d="M 279.995843 31.239669 
+L 152.004157 328.760331 
+" clip-path="url(#p749ce4a43b)" style="fill: none; stroke: #000000"/>
+    <path d="M 279.995843 31.239669 
+L 37.487603 127.315798 
+" clip-path="url(#p749ce4a43b)" style="fill: none; stroke: #000000"/>
+    <path d="M 394.512397 232.684202 
+L 152.004157 328.760331 
+" clip-path="url(#p749ce4a43b)" style="fill: none; stroke: #000000"/>
+    <path d="M 394.512397 232.684202 
+L 37.487603 127.315798 
+" clip-path="url(#p749ce4a43b)" style="fill: none; stroke: #000000"/>
+    <path d="M 152.004157 328.760331 
+L 37.487603 127.315798 
+" clip-path="url(#p749ce4a43b)" style="fill: none; stroke: #000000"/>
+   </g>
+   <g id="PathCollection_1">
+    <defs>
+     <path id="mce72cc0d1c" d="M 0 8.660254 
+C 2.296726 8.660254 4.499694 7.747755 6.123724 6.123724 
+C 7.747755 4.499694 8.660254 2.296726 8.660254 0 
+C 8.660254 -2.296726 7.747755 -4.499694 6.123724 -6.123724 
+C 4.499694 -7.747755 2.296726 -8.660254 0 -8.660254 
+C -2.296726 -8.660254 -4.499694 -7.747755 -6.123724 -6.123724 
+C -7.747755 -4.499694 -8.660254 -2.296726 -8.660254 0 
+C -8.660254 2.296726 -7.747755 4.499694 -6.123724 6.123724 
+C -4.499694 7.747755 -2.296726 8.660254 0 8.660254 
+z
+" style="stroke: #1f78b4"/>
+    </defs>
+    <g clip-path="url(#p749ce4a43b)">
+     <use xlink:href="#mce72cc0d1c" x="279.995843" y="31.239669" style="fill: #1f78b4; stroke: #1f78b4"/>
+     <use xlink:href="#mce72cc0d1c" x="394.512397" y="232.684202" style="fill: #1f78b4; stroke: #1f78b4"/>
+     <use xlink:href="#mce72cc0d1c" x="152.004157" y="328.760331" style="fill: #1f78b4; stroke: #1f78b4"/>
+     <use xlink:href="#mce72cc0d1c" x="37.487603" y="127.315798" style="fill: #1f78b4; stroke: #1f78b4"/>
+    </g>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p749ce4a43b">
+   <rect x="0" y="0" width="432" height="360"/>
+  </clipPath>
+ </defs>
+</svg>
+
+
+
+</div>
+<p>The goal of the MaxCut algorithm is to maximize the following cost function:</p>
+<div class="arithmatex">\[\mathcal{C}(p) = \sum_{\alpha}^m \mathcal{C}_{\alpha}(p)\]</div>
+<p>where <span class="arithmatex">\(p\)</span> is a given cut of the graph, <span class="arithmatex">\(\alpha\)</span> is an index over the edges and <span class="arithmatex">\(\mathcal{C}_{\alpha}(p)\)</span> is written
+such that if the nodes connected by the <span class="arithmatex">\(\alpha\)</span> edge are in the same set, it returns <span class="arithmatex">\(0\)</span>, otherwise it returns <span class="arithmatex">\(1\)</span>.
+We will represent a cut <span class="arithmatex">\(p\)</span> as a bitstring of length <span class="arithmatex">\(N\)</span>, where <span class="arithmatex">\(N\)</span> is the number of nodes, and where the bit in position <span class="arithmatex">\(i\)</span> shows to which partition node <span class="arithmatex">\(i\)</span> belongs. We assign value 0 to one of the partitions defined by the cut and 1 to the other. Since this choice is arbitrary, every cut is represented by two bitstrings, e.g. "0011" and "1100" are equivalent.</p>
+<p>Since in this tutorial we are only dealing with small graphs, we can find the maximum cut by brute force to make sure QAOA works as intended.
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Function to calculate the cost associated with a cut</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="k">def</span> <span class="nf">calculate_cost</span><span class="p">(</span><span class="n">cut</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">graph</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">graph</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the cost of a given cut (represented by a bitstring)&quot;&quot;&quot;</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">cost</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span> <span class="o">=</span> <span class="n">edge</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>        <span class="k">if</span> <span class="n">cut</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="n">cut</span><span class="p">[</span><span class="n">j</span><span class="p">]:</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>            <span class="n">cost</span> <span class="o">+=</span> <span class="mi">1</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="k">return</span> <span class="n">cost</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="c1"># Function to get a binary representation of an int</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="n">get_binary</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">format</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="c1"># List of all possible cuts</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="n">all_possible_cuts</span> <span class="o">=</span> <span class="p">[</span><span class="nb">bin</span><span class="p">(</span><span class="n">k</span><span class="p">)[</span><span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">rjust</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">,</span> <span class="s2">&quot;0&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">n_nodes</span><span class="p">)]</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="c1"># List with the costs associated to each cut</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="n">all_costs</span> <span class="o">=</span> <span class="p">[</span><span class="n">calculate_cost</span><span class="p">(</span><span class="n">cut</span><span class="p">,</span> <span class="n">graph</span><span class="p">)</span> <span class="k">for</span> <span class="n">cut</span> <span class="ow">in</span> <span class="n">all_possible_cuts</span><span class="p">]</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="c1"># Get the maximum cost</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="n">maxcost</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">all_costs</span><span class="p">)</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="c1"># Get all cuts that correspond to the maximum cost</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="n">maxcuts</span> <span class="o">=</span> <span class="p">[</span><span class="n">get_binary</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">n_nodes</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">all_costs</span><span class="p">)</span> <span class="k">if</span> <span class="n">j</span> <span class="o">==</span> <span class="n">maxcost</span><span class="p">]</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The maximum cut is represented by the bitstrings </span><span class="si">{</span><span class="n">maxcuts</span><span class="si">}</span><span class="s2">, with a cost of </span><span class="si">{</span><span class="n">maxcost</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+<div class="result" markdown="1" >
+
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="err">The</span><span class="w"> </span><span class="err">maximum</span><span class="w"> </span><span class="err">cu</span><span class="kc">t</span><span class="w"> </span><span class="err">is</span><span class="w"> </span><span class="err">represe</span><span class="kc">nte</span><span class="err">d</span><span class="w"> </span><span class="err">by</span><span class="w"> </span><span class="kc">t</span><span class="err">he</span><span class="w"> </span><span class="err">bi</span><span class="kc">tstr</span><span class="err">i</span><span class="kc">n</span><span class="err">gs</span><span class="w"> </span><span class="p">[</span><span class="err">&#39;</span><span class="mi">0011</span><span class="err">&#39;</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">0101</span><span class="err">&#39;</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">0110</span><span class="err">&#39;</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">1001</span><span class="err">&#39;</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">1010</span><span class="err">&#39;</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">1100</span><span class="err">&#39;</span><span class="p">],</span><span class="w"> </span><span class="err">wi</span><span class="kc">t</span><span class="err">h</span><span class="w"> </span><span class="err">a</span><span class="w"> </span><span class="err">cos</span><span class="kc">t</span><span class="w"> </span><span class="err">o</span><span class="kc">f</span><span class="w"> </span><span class="mi">4</span>
+</code></pre></div>
+
+</div></p>
+<h2 id="the-qaoa-quantum-circuit">The QAOA quantum circuit</h2>
+<p>The Max-Cut problem can be solved by using the QAOA algorithm. QAOA belongs to the class of Variational Quantum Algorithms (VQAs), which means that its quantum circuit contains a certain number of parametrized quantum gates that need to be optimized with a classical optimizer.
+The QAOA circuit is composed of two operators:</p>
+<ul>
+<li>The <strong>cost operator <span class="arithmatex">\(U_c\)</span></strong>: a circuit generated by the cost Hamiltonian which
+encodes the cost function described above into a quantum circuit. The solution to the optimization problem is encoded in the ground state of the cost Hamiltonian <span class="arithmatex">\(H_c\)</span>.
+The cost operator  is simply the evolution of the cost Hamiltonian parametrized by a variational parameter <span class="arithmatex">\(\gamma\)</span> so that <span class="arithmatex">\(U_c = e^{i\gamma H_c}.\)</span></li>
+<li>The <strong>mixing operator <span class="arithmatex">\(U_b\)</span></strong>: a simple set of single-qubit rotations with adjustable
+  angles which are tuned during the classical optimization loop to minimize the cost</li>
+</ul>
+<p>The cost Hamiltonian of the MaxCut problem can be written as:</p>
+<div class="arithmatex">\[H_c = \frac12 \sum_{\langle i,j\rangle} (\mathbb{1} - Z_iZ_j)\]</div>
+<p>where <span class="arithmatex">\(\langle i,j\rangle\)</span> represents the edge between nodes <span class="arithmatex">\(i\)</span> and <span class="arithmatex">\(j\)</span>. The solution of the MaxCut problem is encoded in the ground state of the above Hamiltonian.</p>
+<p>The QAOA quantum circuit consists of a number of layers, each layer containing a cost and a mixing operator.
+Below, the QAOA quantum circuit is defined using
+<code>qadence</code> operations.
+First, a layer of Hadamard gates is applied to all qubits to prepare the initial state <span class="arithmatex">\(|+\rangle ^{\otimes n}\)</span>.
+The cost operator of each layer can be built "manually", implementing the <span class="arithmatex">\(e^{iZZ\gamma}\)</span> terms with CNOTs and a <span class="arithmatex">\(\rm{RZ}(2\gamma)\)</span> rotation, or it can also be automatically decomposed
+into digital single and two-qubits operations via the <code>.digital_decomposition()</code> method.
+The decomposition is exact since the Hamiltonian generator is diagonal.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">qadence</span> <span class="kn">import</span> <span class="n">tag</span><span class="p">,</span> <span class="n">kron</span><span class="p">,</span> <span class="n">chain</span><span class="p">,</span> <span class="n">RX</span><span class="p">,</span> <span class="n">RZ</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">CNOT</span><span class="p">,</span> <span class="n">I</span><span class="p">,</span> <span class="n">add</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span> <span class="nn">qadence</span> <span class="kn">import</span> <span class="n">HamEvo</span><span class="p">,</span> <span class="n">QuantumCircuit</span><span class="p">,</span> <span class="n">Parameter</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">n_qubits</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">number_of_nodes</span><span class="p">()</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">n_edges</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">number_of_edges</span><span class="p">()</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">n_layers</span> <span class="o">=</span> <span class="mi">6</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="c1"># Generate the cost Hamiltonian</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="n">zz_ops</span> <span class="o">=</span> <span class="n">add</span><span class="p">(</span><span class="n">Z</span><span class="p">(</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">@</span> <span class="n">Z</span><span class="p">(</span><span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">)</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">cost_ham</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">n_edges</span> <span class="o">*</span> <span class="n">kron</span><span class="p">(</span><span class="n">I</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_qubits</span><span class="p">))</span> <span class="o">-</span> <span class="n">zz_ops</span><span class="p">)</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="c1"># QAOA circuit</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="k">def</span> <span class="nf">build_qaoa_circuit</span><span class="p">(</span><span class="n">n_qubits</span><span class="p">,</span> <span class="n">n_layers</span><span class="p">,</span> <span class="n">graph</span><span class="p">):</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    <span class="n">layers</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>    <span class="c1"># Layer of Hadamards</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>    <span class="n">initial_layer</span> <span class="o">=</span> <span class="n">kron</span><span class="p">(</span><span class="n">H</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_qubits</span><span class="p">))</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>    <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">initial_layer</span><span class="p">)</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>    <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_layers</span><span class="p">):</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>        <span class="c1"># cost layer with digital decomposition</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>        <span class="c1"># cost_layer = HamEvo(cost_ham, f&quot;g{layer}&quot;).digital_decomposition(approximation=&quot;basic&quot;)</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>        <span class="n">cost_layer</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>        <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>            <span class="p">(</span><span class="n">q0</span><span class="p">,</span> <span class="n">q1</span><span class="p">)</span> <span class="o">=</span> <span class="n">edge</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>            <span class="n">zz_term</span> <span class="o">=</span> <span class="n">chain</span><span class="p">(</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>                <span class="n">CNOT</span><span class="p">(</span><span class="n">q0</span><span class="p">,</span> <span class="n">q1</span><span class="p">),</span>
+<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>                <span class="n">RZ</span><span class="p">(</span><span class="n">q1</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;g</span><span class="si">{</span><span class="n">layer</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)),</span>
+<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>                <span class="n">CNOT</span><span class="p">(</span><span class="n">q0</span><span class="p">,</span> <span class="n">q1</span><span class="p">),</span>
+<a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>            <span class="p">)</span>
+<a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>            <span class="n">cost_layer</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">zz_term</span><span class="p">)</span>
+<a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>        <span class="n">cost_layer</span> <span class="o">=</span> <span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="n">cost_layer</span><span class="p">)</span>
+<a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>        <span class="n">cost_layer</span> <span class="o">=</span> <span class="n">tag</span><span class="p">(</span><span class="n">cost_layer</span><span class="p">,</span> <span class="s2">&quot;cost&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a>
+<a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a>        <span class="c1"># mixing layer with single qubit rotations</span>
+<a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a>        <span class="n">mixing_layer</span> <span class="o">=</span> <span class="n">kron</span><span class="p">(</span><span class="n">RX</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;b</span><span class="si">{</span><span class="n">layer</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_qubits</span><span class="p">))</span>
+<a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a>        <span class="n">mixing_layer</span> <span class="o">=</span> <span class="n">tag</span><span class="p">(</span><span class="n">mixing_layer</span><span class="p">,</span> <span class="s2">&quot;mixing&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a>
+<a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a>        <span class="c1"># putting all together in a single ChainBlock</span>
+<a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a>        <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chain</span><span class="p">(</span><span class="n">cost_layer</span><span class="p">,</span> <span class="n">mixing_layer</span><span class="p">))</span>
+<a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a>
+<a id="__codelineno-0-42" name="__codelineno-0-42" href="#__codelineno-0-42"></a>    <span class="n">final_b</span> <span class="o">=</span> <span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="n">layers</span><span class="p">)</span>
+<a id="__codelineno-0-43" name="__codelineno-0-43" href="#__codelineno-0-43"></a>    <span class="k">return</span> <span class="n">QuantumCircuit</span><span class="p">(</span><span class="n">n_qubits</span><span class="p">,</span> <span class="n">final_b</span><span class="p">)</span>
+<a id="__codelineno-0-44" name="__codelineno-0-44" href="#__codelineno-0-44"></a>
+<a id="__codelineno-0-45" name="__codelineno-0-45" href="#__codelineno-0-45"></a>
+<a id="__codelineno-0-46" name="__codelineno-0-46" href="#__codelineno-0-46"></a><span class="n">circuit</span> <span class="o">=</span> <span class="n">build_qaoa_circuit</span><span class="p">(</span><span class="n">n_qubits</span><span class="p">,</span> <span class="n">n_layers</span><span class="p">,</span> <span class="n">graph</span><span class="p">)</span>
+<a id="__codelineno-0-47" name="__codelineno-0-47" href="#__codelineno-0-47"></a>
+<a id="__codelineno-0-48" name="__codelineno-0-48" href="#__codelineno-0-48"></a><span class="c1"># Print a single layer of the circuit</span>
+</code></pre></div>
+<div class="result" markdown="1" >
+
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.43.0 (0)
+ -->
+<!-- Title: %3 Pages: 1 -->
+<svg width="2445pt" height="327pt"
+ viewBox="0.00 0.00 2445.00 327.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 323)">
+<title>%3</title>
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-323 2441,-323 2441,4 -4,4"/>
+<g id="clust1" class="cluster">
+<title>cluster_d2b8b0979c7f4d56a518c711eefbe96c</title>
+<path fill="white" stroke="black" stroke-width="2" d="M2234,-8C2234,-8 2343,-8 2343,-8 2349,-8 2355,-14 2355,-20 2355,-20 2355,-299 2355,-299 2355,-305 2349,-311 2343,-311 2343,-311 2234,-311 2234,-311 2228,-311 2222,-305 2222,-299 2222,-299 2222,-20 2222,-20 2222,-14 2228,-8 2234,-8"/>
+<text text-anchor="middle" x="2288.5" y="-296.6" font-family="JetBrains Mono" font-size="13.00">mixing</text>
+</g>
+<g id="clust2" class="cluster">
+<title>cluster_a445123d38244525b9ebdfc30a9cd840</title>
+<path fill="white" stroke="black" stroke-width="2" d="M188,-8C188,-8 2190,-8 2190,-8 2196,-8 2202,-14 2202,-20 2202,-20 2202,-277 2202,-277 2202,-283 2196,-289 2190,-289 2190,-289 188,-289 188,-289 182,-289 176,-283 176,-277 176,-277 176,-20 176,-20 176,-14 182,-8 188,-8"/>
+<text text-anchor="middle" x="1189" y="-274.6" font-family="JetBrains Mono" font-size="13.00">cost</text>
+</g>
+<!-- bc40783997d64d8bbc53f57e331480f3 -->
+<g id="node1" class="node">
+<title>bc40783997d64d8bbc53f57e331480f3</title>
+<text text-anchor="middle" x="27" y="-248.5" font-family="JetBrains Mono" font-size="15.00">0</text>
+</g>
+<!-- 857e32783db54d8bbaf2472ee7451fe9 -->
+<g id="node2" class="node">
+<title>857e32783db54d8bbaf2472ee7451fe9</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M136,-281C136,-281 102,-281 102,-281 96,-281 90,-275 90,-269 90,-269 90,-235 90,-235 90,-229 96,-223 102,-223 102,-223 136,-223 136,-223 142,-223 148,-229 148,-235 148,-235 148,-269 148,-269 148,-275 142,-281 136,-281"/>
+<text text-anchor="middle" x="119" y="-247" font-family="JetBrains Mono" font-size="20.00">H</text>
+</g>
+<!-- bc40783997d64d8bbc53f57e331480f3&#45;&#45;857e32783db54d8bbaf2472ee7451fe9 -->
+<g id="edge1" class="edge">
+<title>bc40783997d64d8bbc53f57e331480f3&#45;&#45;857e32783db54d8bbaf2472ee7451fe9</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54.03,-252C65.25,-252 78.38,-252 89.82,-252"/>
+</g>
+<!-- adfe84af6b7145b597bf785397e6f1ef -->
+<g id="node23" class="node">
+<title>adfe84af6b7145b597bf785397e6f1ef</title>
+<text text-anchor="middle" x="27" y="-179.5" font-family="JetBrains Mono" font-size="15.00">1</text>
+</g>
+<!-- bc40783997d64d8bbc53f57e331480f3&#45;&#45;adfe84af6b7145b597bf785397e6f1ef -->
+<!-- c863396c5d70487ca47a5e323c6e6aa4 -->
+<g id="node3" class="node">
+<title>c863396c5d70487ca47a5e323c6e6aa4</title>
+<ellipse fill="black" stroke="black" cx="213" cy="-252" rx="7.2" ry="7.2"/>
+</g>
+<!-- 857e32783db54d8bbaf2472ee7451fe9&#45;&#45;c863396c5d70487ca47a5e323c6e6aa4 -->
+<g id="edge2" class="edge">
+<title>857e32783db54d8bbaf2472ee7451fe9&#45;&#45;c863396c5d70487ca47a5e323c6e6aa4</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M148.1,-252C168.18,-252 193.65,-252 205.45,-252"/>
+</g>
+<!-- 5882d26f82aa494190c0e513a14a27fe -->
+<g id="node4" class="node">
+<title>5882d26f82aa494190c0e513a14a27fe</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="337,-252.5 336,-252.5 336,-251.5 337,-251.5 337,-252.5"/>
+</g>
+<!-- c863396c5d70487ca47a5e323c6e6aa4&#45;&#45;5882d26f82aa494190c0e513a14a27fe -->
+<g id="edge3" class="edge">
+<title>c863396c5d70487ca47a5e323c6e6aa4&#45;&#45;5882d26f82aa494190c0e513a14a27fe</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M220.53,-252C245.37,-252 332.71,-252 335.43,-252"/>
+</g>
+<!-- 71e98f8a882b437d9eaea855756f7aae -->
+<g id="node5" class="node">
+<title>71e98f8a882b437d9eaea855756f7aae</title>
+<ellipse fill="black" stroke="black" cx="460" cy="-252" rx="7.2" ry="7.2"/>
+</g>
+<!-- 5882d26f82aa494190c0e513a14a27fe&#45;&#45;71e98f8a882b437d9eaea855756f7aae -->
+<g id="edge4" class="edge">
+<title>5882d26f82aa494190c0e513a14a27fe&#45;&#45;71e98f8a882b437d9eaea855756f7aae</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M337.59,-252C340.75,-252 428.14,-252 452.66,-252"/>
+</g>
+<!-- ab615c7acc584f35999a173c85525245 -->
+<g id="node6" class="node">
+<title>ab615c7acc584f35999a173c85525245</title>
+<ellipse fill="black" stroke="black" cx="554" cy="-252" rx="7.2" ry="7.2"/>
+</g>
+<!-- 71e98f8a882b437d9eaea855756f7aae&#45;&#45;ab615c7acc584f35999a173c85525245 -->
+<g id="edge5" class="edge">
+<title>71e98f8a882b437d9eaea855756f7aae&#45;&#45;ab615c7acc584f35999a173c85525245</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M467.32,-252C484.13,-252 529.77,-252 546.63,-252"/>
+</g>
+<!-- c8eb5252e405404fbb3b4c8d6f75f220 -->
+<g id="node7" class="node">
+<title>c8eb5252e405404fbb3b4c8d6f75f220</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="678,-252.5 677,-252.5 677,-251.5 678,-251.5 678,-252.5"/>
+</g>
+<!-- ab615c7acc584f35999a173c85525245&#45;&#45;c8eb5252e405404fbb3b4c8d6f75f220 -->
+<g id="edge6" class="edge">
+<title>ab615c7acc584f35999a173c85525245&#45;&#45;c8eb5252e405404fbb3b4c8d6f75f220</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M561.53,-252C586.37,-252 673.71,-252 676.43,-252"/>
+</g>
+<!-- ba90d10f49274f8b9f4fe901a2b1f5a1 -->
+<g id="node8" class="node">
+<title>ba90d10f49274f8b9f4fe901a2b1f5a1</title>
+<ellipse fill="black" stroke="black" cx="801" cy="-252" rx="7.2" ry="7.2"/>
+</g>
+<!-- c8eb5252e405404fbb3b4c8d6f75f220&#45;&#45;ba90d10f49274f8b9f4fe901a2b1f5a1 -->
+<g id="edge7" class="edge">
+<title>c8eb5252e405404fbb3b4c8d6f75f220&#45;&#45;ba90d10f49274f8b9f4fe901a2b1f5a1</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M678.59,-252C681.75,-252 769.14,-252 793.66,-252"/>
+</g>
+<!-- b296d38064b54a61b7ef28cbe25e832f -->
+<g id="node9" class="node">
+<title>b296d38064b54a61b7ef28cbe25e832f</title>
+<ellipse fill="black" stroke="black" cx="895" cy="-252" rx="7.2" ry="7.2"/>
+</g>
+<!-- ba90d10f49274f8b9f4fe901a2b1f5a1&#45;&#45;b296d38064b54a61b7ef28cbe25e832f -->
+<g id="edge8" class="edge">
+<title>ba90d10f49274f8b9f4fe901a2b1f5a1&#45;&#45;b296d38064b54a61b7ef28cbe25e832f</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M808.32,-252C825.13,-252 870.77,-252 887.63,-252"/>
+</g>
+<!-- bedb475dece5458a83a19f3c9a56c3af -->
+<g id="node10" class="node">
+<title>bedb475dece5458a83a19f3c9a56c3af</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="1019,-252.5 1018,-252.5 1018,-251.5 1019,-251.5 1019,-252.5"/>
+</g>
+<!-- b296d38064b54a61b7ef28cbe25e832f&#45;&#45;bedb475dece5458a83a19f3c9a56c3af -->
+<g id="edge9" class="edge">
+<title>b296d38064b54a61b7ef28cbe25e832f&#45;&#45;bedb475dece5458a83a19f3c9a56c3af</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M902.53,-252C927.37,-252 1014.71,-252 1017.43,-252"/>
+</g>
+<!-- 85cd24cf6da74604a83ff1b683320cba -->
+<g id="node11" class="node">
+<title>85cd24cf6da74604a83ff1b683320cba</title>
+<ellipse fill="black" stroke="black" cx="1142" cy="-252" rx="7.2" ry="7.2"/>
+</g>
+<!-- bedb475dece5458a83a19f3c9a56c3af&#45;&#45;85cd24cf6da74604a83ff1b683320cba -->
+<g id="edge10" class="edge">
+<title>bedb475dece5458a83a19f3c9a56c3af&#45;&#45;85cd24cf6da74604a83ff1b683320cba</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1019.59,-252C1022.75,-252 1110.14,-252 1134.66,-252"/>
+</g>
+<!-- 22d9c5195dba449a8d62bace9aa5c93e -->
+<g id="node12" class="node">
+<title>22d9c5195dba449a8d62bace9aa5c93e</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="1236.5,-252.5 1235.5,-252.5 1235.5,-251.5 1236.5,-251.5 1236.5,-252.5"/>
+</g>
+<!-- 85cd24cf6da74604a83ff1b683320cba&#45;&#45;22d9c5195dba449a8d62bace9aa5c93e -->
+<g id="edge11" class="edge">
+<title>85cd24cf6da74604a83ff1b683320cba&#45;&#45;22d9c5195dba449a8d62bace9aa5c93e</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1149.32,-252C1169.78,-252 1232.98,-252 1234.95,-252"/>
+</g>
+<!-- e5a89de7c1344162854544f3bda598d3 -->
+<g id="node13" class="node">
+<title>e5a89de7c1344162854544f3bda598d3</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="1360,-252.5 1359,-252.5 1359,-251.5 1360,-251.5 1360,-252.5"/>
+</g>
+<!-- 22d9c5195dba449a8d62bace9aa5c93e&#45;&#45;e5a89de7c1344162854544f3bda598d3 -->
+<g id="edge12" class="edge">
+<title>22d9c5195dba449a8d62bace9aa5c93e&#45;&#45;e5a89de7c1344162854544f3bda598d3</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1237.09,-252C1240.71,-252 1354.85,-252 1358.41,-252"/>
+</g>
+<!-- 6545e448ba1c47549cf68a3d781b1207 -->
+<g id="node14" class="node">
+<title>6545e448ba1c47549cf68a3d781b1207</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="1483.5,-252.5 1482.5,-252.5 1482.5,-251.5 1483.5,-251.5 1483.5,-252.5"/>
+</g>
+<!-- e5a89de7c1344162854544f3bda598d3&#45;&#45;6545e448ba1c47549cf68a3d781b1207 -->
+<g id="edge13" class="edge">
+<title>e5a89de7c1344162854544f3bda598d3&#45;&#45;6545e448ba1c47549cf68a3d781b1207</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1360.59,-252C1364.21,-252 1478.35,-252 1481.91,-252"/>
+</g>
+<!-- 11829ef07f1b4522bc65bff1c2495b2f -->
+<g id="node15" class="node">
+<title>11829ef07f1b4522bc65bff1c2495b2f</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="1577.5,-252.5 1576.5,-252.5 1576.5,-251.5 1577.5,-251.5 1577.5,-252.5"/>
+</g>
+<!-- 6545e448ba1c47549cf68a3d781b1207&#45;&#45;11829ef07f1b4522bc65bff1c2495b2f -->
+<g id="edge14" class="edge">
+<title>6545e448ba1c47549cf68a3d781b1207&#45;&#45;11829ef07f1b4522bc65bff1c2495b2f</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1484.07,-252C1486.81,-252 1573.24,-252 1575.94,-252"/>
+</g>
+<!-- c63b293218d04b8ab5c07bea499fdcaf -->
+<g id="node16" class="node">
+<title>c63b293218d04b8ab5c07bea499fdcaf</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="1701,-252.5 1700,-252.5 1700,-251.5 1701,-251.5 1701,-252.5"/>
+</g>
+<!-- 11829ef07f1b4522bc65bff1c2495b2f&#45;&#45;c63b293218d04b8ab5c07bea499fdcaf -->
+<g id="edge15" class="edge">
+<title>11829ef07f1b4522bc65bff1c2495b2f&#45;&#45;c63b293218d04b8ab5c07bea499fdcaf</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1578.09,-252C1581.71,-252 1695.85,-252 1699.41,-252"/>
+</g>
+<!-- 38b2305962e446b19217d16b03d91359 -->
+<g id="node17" class="node">
+<title>38b2305962e446b19217d16b03d91359</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="1824.5,-252.5 1823.5,-252.5 1823.5,-251.5 1824.5,-251.5 1824.5,-252.5"/>
+</g>
+<!-- c63b293218d04b8ab5c07bea499fdcaf&#45;&#45;38b2305962e446b19217d16b03d91359 -->
+<g id="edge16" class="edge">
+<title>c63b293218d04b8ab5c07bea499fdcaf&#45;&#45;38b2305962e446b19217d16b03d91359</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1701.59,-252C1705.21,-252 1819.35,-252 1822.91,-252"/>
+</g>
+<!-- 09990e4ecb4241c499eb90f58610faf0 -->
+<g id="node18" class="node">
+<title>09990e4ecb4241c499eb90f58610faf0</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="1918.5,-252.5 1917.5,-252.5 1917.5,-251.5 1918.5,-251.5 1918.5,-252.5"/>
+</g>
+<!-- 38b2305962e446b19217d16b03d91359&#45;&#45;09990e4ecb4241c499eb90f58610faf0 -->
+<g id="edge17" class="edge">
+<title>38b2305962e446b19217d16b03d91359&#45;&#45;09990e4ecb4241c499eb90f58610faf0</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1825.07,-252C1827.81,-252 1914.24,-252 1916.94,-252"/>
+</g>
+<!-- 0f8cd598532c4282a31a4364ec40a523 -->
+<g id="node19" class="node">
+<title>0f8cd598532c4282a31a4364ec40a523</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="2042,-252.5 2041,-252.5 2041,-251.5 2042,-251.5 2042,-252.5"/>
+</g>
+<!-- 09990e4ecb4241c499eb90f58610faf0&#45;&#45;0f8cd598532c4282a31a4364ec40a523 -->
+<g id="edge18" class="edge">
+<title>09990e4ecb4241c499eb90f58610faf0&#45;&#45;0f8cd598532c4282a31a4364ec40a523</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1919.09,-252C1922.71,-252 2036.85,-252 2040.41,-252"/>
+</g>
+<!-- 928bb54f2ccf4b888a3e4dd90182b728 -->
+<g id="node20" class="node">
+<title>928bb54f2ccf4b888a3e4dd90182b728</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="2165.5,-252.5 2164.5,-252.5 2164.5,-251.5 2165.5,-251.5 2165.5,-252.5"/>
+</g>
+<!-- 0f8cd598532c4282a31a4364ec40a523&#45;&#45;928bb54f2ccf4b888a3e4dd90182b728 -->
+<g id="edge19" class="edge">
+<title>0f8cd598532c4282a31a4364ec40a523&#45;&#45;928bb54f2ccf4b888a3e4dd90182b728</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M2042.59,-252C2046.21,-252 2160.35,-252 2163.91,-252"/>
+</g>
+<!-- 102e1cd8a07d4e51bbb26ad608294386 -->
+<g id="node21" class="node">
+<title>102e1cd8a07d4e51bbb26ad608294386</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M2335,-281C2335,-281 2242,-281 2242,-281 2236,-281 2230,-275 2230,-269 2230,-269 2230,-235 2230,-235 2230,-229 2236,-223 2242,-223 2242,-223 2335,-223 2335,-223 2341,-223 2347,-229 2347,-235 2347,-235 2347,-269 2347,-269 2347,-275 2341,-281 2335,-281"/>
+<text text-anchor="middle" x="2288.5" y="-247" font-family="JetBrains Mono" font-size="20.00">RX(b0)</text>
+</g>
+<!-- 928bb54f2ccf4b888a3e4dd90182b728&#45;&#45;102e1cd8a07d4e51bbb26ad608294386 -->
+<g id="edge20" class="edge">
+<title>928bb54f2ccf4b888a3e4dd90182b728&#45;&#45;102e1cd8a07d4e51bbb26ad608294386</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M2166.09,-252C2167.96,-252 2199.48,-252 2229.92,-252"/>
+</g>
+<!-- eb6fb32cdd3a4ce1943bd0ec04e887eb -->
+<g id="node22" class="node">
+<title>eb6fb32cdd3a4ce1943bd0ec04e887eb</title>
+</g>
+<!-- 102e1cd8a07d4e51bbb26ad608294386&#45;&#45;eb6fb32cdd3a4ce1943bd0ec04e887eb -->
+<g id="edge21" class="edge">
+<title>102e1cd8a07d4e51bbb26ad608294386&#45;&#45;eb6fb32cdd3a4ce1943bd0ec04e887eb</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M2347.15,-252C2359.68,-252 2372.34,-252 2382.91,-252"/>
+</g>
+<!-- 0d14d2abccbe41d19c3419a8df69e85b -->
+<g id="node44" class="node">
+<title>0d14d2abccbe41d19c3419a8df69e85b</title>
+</g>
+<!-- eb6fb32cdd3a4ce1943bd0ec04e887eb&#45;&#45;0d14d2abccbe41d19c3419a8df69e85b -->
+<!-- bff1ba0a60f94703a0fa003fa45bfd3b -->
+<g id="node24" class="node">
+<title>bff1ba0a60f94703a0fa003fa45bfd3b</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M136,-212C136,-212 102,-212 102,-212 96,-212 90,-206 90,-200 90,-200 90,-166 90,-166 90,-160 96,-154 102,-154 102,-154 136,-154 136,-154 142,-154 148,-160 148,-166 148,-166 148,-200 148,-200 148,-206 142,-212 136,-212"/>
+<text text-anchor="middle" x="119" y="-178" font-family="JetBrains Mono" font-size="20.00">H</text>
+</g>
+<!-- adfe84af6b7145b597bf785397e6f1ef&#45;&#45;bff1ba0a60f94703a0fa003fa45bfd3b -->
+<g id="edge22" class="edge">
+<title>adfe84af6b7145b597bf785397e6f1ef&#45;&#45;bff1ba0a60f94703a0fa003fa45bfd3b</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54.03,-183C65.25,-183 78.38,-183 89.82,-183"/>
+</g>
+<!-- 06a5fd54e0a64de7a3ad4e35bb2cbd57 -->
+<g id="node45" class="node">
+<title>06a5fd54e0a64de7a3ad4e35bb2cbd57</title>
+<text text-anchor="middle" x="27" y="-110.5" font-family="JetBrains Mono" font-size="15.00">2</text>
+</g>
+<!-- adfe84af6b7145b597bf785397e6f1ef&#45;&#45;06a5fd54e0a64de7a3ad4e35bb2cbd57 -->
+<!-- 007ee71c7d8c4d8e98afd2c0e09d2c5f -->
+<g id="node25" class="node">
+<title>007ee71c7d8c4d8e98afd2c0e09d2c5f</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M230,-212C230,-212 196,-212 196,-212 190,-212 184,-206 184,-200 184,-200 184,-166 184,-166 184,-160 190,-154 196,-154 196,-154 230,-154 230,-154 236,-154 242,-160 242,-166 242,-166 242,-200 242,-200 242,-206 236,-212 230,-212"/>
+<text text-anchor="middle" x="213" y="-178" font-family="JetBrains Mono" font-size="20.00">X</text>
+</g>
+<!-- bff1ba0a60f94703a0fa003fa45bfd3b&#45;&#45;007ee71c7d8c4d8e98afd2c0e09d2c5f -->
+<g id="edge23" class="edge">
+<title>bff1ba0a60f94703a0fa003fa45bfd3b&#45;&#45;007ee71c7d8c4d8e98afd2c0e09d2c5f</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M148.1,-183C159.41,-183 172.43,-183 183.75,-183"/>
+</g>
+<!-- 007ee71c7d8c4d8e98afd2c0e09d2c5f&#45;&#45;c863396c5d70487ca47a5e323c6e6aa4 -->
+<g id="edge85" class="edge">
+<title>007ee71c7d8c4d8e98afd2c0e09d2c5f&#45;&#45;c863396c5d70487ca47a5e323c6e6aa4</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M213,-212.11C213,-222.91 213,-233.72 213,-244.52"/>
+</g>
+<!-- dcb408eb31ab425ba1c6430a3691dec6 -->
+<g id="node26" class="node">
+<title>dcb408eb31ab425ba1c6430a3691dec6</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M383,-212C383,-212 290,-212 290,-212 284,-212 278,-206 278,-200 278,-200 278,-166 278,-166 278,-160 284,-154 290,-154 290,-154 383,-154 383,-154 389,-154 395,-160 395,-166 395,-166 395,-200 395,-200 395,-206 389,-212 383,-212"/>
+<text text-anchor="middle" x="336.5" y="-178" font-family="JetBrains Mono" font-size="20.00">RZ(g0)</text>
+</g>
+<!-- 007ee71c7d8c4d8e98afd2c0e09d2c5f&#45;&#45;dcb408eb31ab425ba1c6430a3691dec6 -->
+<g id="edge24" class="edge">
+<title>007ee71c7d8c4d8e98afd2c0e09d2c5f&#45;&#45;dcb408eb31ab425ba1c6430a3691dec6</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M242.18,-183C252.84,-183 265.39,-183 277.77,-183"/>
+</g>
+<!-- 34c3ebb2e2154eb899ac96ed0ccc9ef7 -->
+<g id="node27" class="node">
+<title>34c3ebb2e2154eb899ac96ed0ccc9ef7</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M477,-212C477,-212 443,-212 443,-212 437,-212 431,-206 431,-200 431,-200 431,-166 431,-166 431,-160 437,-154 443,-154 443,-154 477,-154 477,-154 483,-154 489,-160 489,-166 489,-166 489,-200 489,-200 489,-206 483,-212 477,-212"/>
+<text text-anchor="middle" x="460" y="-178" font-family="JetBrains Mono" font-size="20.00">X</text>
+</g>
+<!-- dcb408eb31ab425ba1c6430a3691dec6&#45;&#45;34c3ebb2e2154eb899ac96ed0ccc9ef7 -->
+<g id="edge25" class="edge">
+<title>dcb408eb31ab425ba1c6430a3691dec6&#45;&#45;34c3ebb2e2154eb899ac96ed0ccc9ef7</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M395.05,-183C407.56,-183 420.25,-183 431,-183"/>
+</g>
+<!-- 34c3ebb2e2154eb899ac96ed0ccc9ef7&#45;&#45;71e98f8a882b437d9eaea855756f7aae -->
+<g id="edge86" class="edge">
+<title>34c3ebb2e2154eb899ac96ed0ccc9ef7&#45;&#45;71e98f8a882b437d9eaea855756f7aae</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M460,-212.11C460,-222.91 460,-233.72 460,-244.52"/>
+</g>
+<!-- 99255d887e8643a980422ae908a4b4a6 -->
+<g id="node28" class="node">
+<title>99255d887e8643a980422ae908a4b4a6</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="554.5,-183.5 553.5,-183.5 553.5,-182.5 554.5,-182.5 554.5,-183.5"/>
+</g>
+<!-- 34c3ebb2e2154eb899ac96ed0ccc9ef7&#45;&#45;99255d887e8643a980422ae908a4b4a6 -->
+<g id="edge26" class="edge">
+<title>34c3ebb2e2154eb899ac96ed0ccc9ef7&#45;&#45;99255d887e8643a980422ae908a4b4a6</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M489.1,-183C515.31,-183 550.71,-183 552.89,-183"/>
+</g>
+<!-- a2a559cf503240c8a69150c7c1ea688b -->
+<g id="node29" class="node">
+<title>a2a559cf503240c8a69150c7c1ea688b</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="678,-183.5 677,-183.5 677,-182.5 678,-182.5 678,-183.5"/>
+</g>
+<!-- 99255d887e8643a980422ae908a4b4a6&#45;&#45;a2a559cf503240c8a69150c7c1ea688b -->
+<g id="edge27" class="edge">
+<title>99255d887e8643a980422ae908a4b4a6&#45;&#45;a2a559cf503240c8a69150c7c1ea688b</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M555.09,-183C558.71,-183 672.85,-183 676.41,-183"/>
+</g>
+<!-- 34a018a16ea74d7085c38edb39b1533a -->
+<g id="node30" class="node">
+<title>34a018a16ea74d7085c38edb39b1533a</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="801.5,-183.5 800.5,-183.5 800.5,-182.5 801.5,-182.5 801.5,-183.5"/>
+</g>
+<!-- a2a559cf503240c8a69150c7c1ea688b&#45;&#45;34a018a16ea74d7085c38edb39b1533a -->
+<g id="edge28" class="edge">
+<title>a2a559cf503240c8a69150c7c1ea688b&#45;&#45;34a018a16ea74d7085c38edb39b1533a</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M678.59,-183C682.21,-183 796.35,-183 799.91,-183"/>
+</g>
+<!-- dd86da6027a54ca79ce7adbeb053054c -->
+<g id="node31" class="node">
+<title>dd86da6027a54ca79ce7adbeb053054c</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="895.5,-183.5 894.5,-183.5 894.5,-182.5 895.5,-182.5 895.5,-183.5"/>
+</g>
+<!-- 34a018a16ea74d7085c38edb39b1533a&#45;&#45;dd86da6027a54ca79ce7adbeb053054c -->
+<g id="edge29" class="edge">
+<title>34a018a16ea74d7085c38edb39b1533a&#45;&#45;dd86da6027a54ca79ce7adbeb053054c</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M802.07,-183C804.81,-183 891.24,-183 893.94,-183"/>
+</g>
+<!-- 2b6bcb49080f427abaea96a2ba11c354 -->
+<g id="node32" class="node">
+<title>2b6bcb49080f427abaea96a2ba11c354</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="1019,-183.5 1018,-183.5 1018,-182.5 1019,-182.5 1019,-183.5"/>
+</g>
+<!-- dd86da6027a54ca79ce7adbeb053054c&#45;&#45;2b6bcb49080f427abaea96a2ba11c354 -->
+<g id="edge30" class="edge">
+<title>dd86da6027a54ca79ce7adbeb053054c&#45;&#45;2b6bcb49080f427abaea96a2ba11c354</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M896.09,-183C899.71,-183 1013.85,-183 1017.41,-183"/>
+</g>
+<!-- 06862f9d1f5e4134a6e6e353dc829be5 -->
+<g id="node33" class="node">
+<title>06862f9d1f5e4134a6e6e353dc829be5</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="1142.5,-183.5 1141.5,-183.5 1141.5,-182.5 1142.5,-182.5 1142.5,-183.5"/>
+</g>
+<!-- 2b6bcb49080f427abaea96a2ba11c354&#45;&#45;06862f9d1f5e4134a6e6e353dc829be5 -->
+<g id="edge31" class="edge">
+<title>2b6bcb49080f427abaea96a2ba11c354&#45;&#45;06862f9d1f5e4134a6e6e353dc829be5</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1019.59,-183C1023.21,-183 1137.35,-183 1140.91,-183"/>
+</g>
+<!-- 5f84f9d343f9404fb0af2024b06182b5 -->
+<g id="node34" class="node">
+<title>5f84f9d343f9404fb0af2024b06182b5</title>
+<ellipse fill="black" stroke="black" cx="1236" cy="-183" rx="7.2" ry="7.2"/>
+</g>
+<!-- 06862f9d1f5e4134a6e6e353dc829be5&#45;&#45;5f84f9d343f9404fb0af2024b06182b5 -->
+<g id="edge32" class="edge">
+<title>06862f9d1f5e4134a6e6e353dc829be5&#45;&#45;5f84f9d343f9404fb0af2024b06182b5</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1143.07,-183C1145.4,-183 1208.07,-183 1228.58,-183"/>
+</g>
+<!-- 55e639cd529848e18bb30705b34be4b5 -->
+<g id="node35" class="node">
+<title>55e639cd529848e18bb30705b34be4b5</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="1360,-183.5 1359,-183.5 1359,-182.5 1360,-182.5 1360,-183.5"/>
+</g>
+<!-- 5f84f9d343f9404fb0af2024b06182b5&#45;&#45;55e639cd529848e18bb30705b34be4b5 -->
+<g id="edge33" class="edge">
+<title>5f84f9d343f9404fb0af2024b06182b5&#45;&#45;55e639cd529848e18bb30705b34be4b5</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1243.53,-183C1268.37,-183 1355.71,-183 1358.43,-183"/>
+</g>
+<!-- fcb531a7577c48c295a8614d5b5d903b -->
+<g id="node36" class="node">
+<title>fcb531a7577c48c295a8614d5b5d903b</title>
+<ellipse fill="black" stroke="black" cx="1483" cy="-183" rx="7.2" ry="7.2"/>
+</g>
+<!-- 55e639cd529848e18bb30705b34be4b5&#45;&#45;fcb531a7577c48c295a8614d5b5d903b -->
+<g id="edge34" class="edge">
+<title>55e639cd529848e18bb30705b34be4b5&#45;&#45;fcb531a7577c48c295a8614d5b5d903b</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1360.59,-183C1363.75,-183 1451.14,-183 1475.66,-183"/>
+</g>
+<!-- a7be82ec77fa491683516795ae8efb04 -->
+<g id="node37" class="node">
+<title>a7be82ec77fa491683516795ae8efb04</title>
+<ellipse fill="black" stroke="black" cx="1577" cy="-183" rx="7.2" ry="7.2"/>
+</g>
+<!-- fcb531a7577c48c295a8614d5b5d903b&#45;&#45;a7be82ec77fa491683516795ae8efb04 -->
+<g id="edge35" class="edge">
+<title>fcb531a7577c48c295a8614d5b5d903b&#45;&#45;a7be82ec77fa491683516795ae8efb04</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1490.32,-183C1507.13,-183 1552.77,-183 1569.63,-183"/>
+</g>
+<!-- 57f727b3599949bc9192394302511cb8 -->
+<g id="node38" class="node">
+<title>57f727b3599949bc9192394302511cb8</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="1701,-183.5 1700,-183.5 1700,-182.5 1701,-182.5 1701,-183.5"/>
+</g>
+<!-- a7be82ec77fa491683516795ae8efb04&#45;&#45;57f727b3599949bc9192394302511cb8 -->
+<g id="edge36" class="edge">
+<title>a7be82ec77fa491683516795ae8efb04&#45;&#45;57f727b3599949bc9192394302511cb8</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1584.53,-183C1609.37,-183 1696.71,-183 1699.43,-183"/>
+</g>
+<!-- 9bd05b50508d4562aa73a56c12b5fe74 -->
+<g id="node39" class="node">
+<title>9bd05b50508d4562aa73a56c12b5fe74</title>
+<ellipse fill="black" stroke="black" cx="1824" cy="-183" rx="7.2" ry="7.2"/>
+</g>
+<!-- 57f727b3599949bc9192394302511cb8&#45;&#45;9bd05b50508d4562aa73a56c12b5fe74 -->
+<g id="edge37" class="edge">
+<title>57f727b3599949bc9192394302511cb8&#45;&#45;9bd05b50508d4562aa73a56c12b5fe74</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1701.59,-183C1704.75,-183 1792.14,-183 1816.66,-183"/>
+</g>
+<!-- d1f5171ef58d4003ba0c93c624493598 -->
+<g id="node40" class="node">
+<title>d1f5171ef58d4003ba0c93c624493598</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="1918.5,-183.5 1917.5,-183.5 1917.5,-182.5 1918.5,-182.5 1918.5,-183.5"/>
+</g>
+<!-- 9bd05b50508d4562aa73a56c12b5fe74&#45;&#45;d1f5171ef58d4003ba0c93c624493598 -->
+<g id="edge38" class="edge">
+<title>9bd05b50508d4562aa73a56c12b5fe74&#45;&#45;d1f5171ef58d4003ba0c93c624493598</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1831.32,-183C1851.78,-183 1914.98,-183 1916.95,-183"/>
+</g>
+<!-- f6250f3470504a5585662aac551907ba -->
+<g id="node41" class="node">
+<title>f6250f3470504a5585662aac551907ba</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="2042,-183.5 2041,-183.5 2041,-182.5 2042,-182.5 2042,-183.5"/>
+</g>
+<!-- d1f5171ef58d4003ba0c93c624493598&#45;&#45;f6250f3470504a5585662aac551907ba -->
+<g id="edge39" class="edge">
+<title>d1f5171ef58d4003ba0c93c624493598&#45;&#45;f6250f3470504a5585662aac551907ba</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1919.09,-183C1922.71,-183 2036.85,-183 2040.41,-183"/>
+</g>
+<!-- 54c047bda1fe4128ad219275906c21f9 -->
+<g id="node42" class="node">
+<title>54c047bda1fe4128ad219275906c21f9</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="2165.5,-183.5 2164.5,-183.5 2164.5,-182.5 2165.5,-182.5 2165.5,-183.5"/>
+</g>
+<!-- f6250f3470504a5585662aac551907ba&#45;&#45;54c047bda1fe4128ad219275906c21f9 -->
+<g id="edge40" class="edge">
+<title>f6250f3470504a5585662aac551907ba&#45;&#45;54c047bda1fe4128ad219275906c21f9</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M2042.59,-183C2046.21,-183 2160.35,-183 2163.91,-183"/>
+</g>
+<!-- a44e64d64dd044aab66f9d5820346d75 -->
+<g id="node43" class="node">
+<title>a44e64d64dd044aab66f9d5820346d75</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M2335,-212C2335,-212 2242,-212 2242,-212 2236,-212 2230,-206 2230,-200 2230,-200 2230,-166 2230,-166 2230,-160 2236,-154 2242,-154 2242,-154 2335,-154 2335,-154 2341,-154 2347,-160 2347,-166 2347,-166 2347,-200 2347,-200 2347,-206 2341,-212 2335,-212"/>
+<text text-anchor="middle" x="2288.5" y="-178" font-family="JetBrains Mono" font-size="20.00">RX(b0)</text>
+</g>
+<!-- 54c047bda1fe4128ad219275906c21f9&#45;&#45;a44e64d64dd044aab66f9d5820346d75 -->
+<g id="edge41" class="edge">
+<title>54c047bda1fe4128ad219275906c21f9&#45;&#45;a44e64d64dd044aab66f9d5820346d75</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M2166.09,-183C2167.96,-183 2199.48,-183 2229.92,-183"/>
+</g>
+<!-- a44e64d64dd044aab66f9d5820346d75&#45;&#45;0d14d2abccbe41d19c3419a8df69e85b -->
+<g id="edge42" class="edge">
+<title>a44e64d64dd044aab66f9d5820346d75&#45;&#45;0d14d2abccbe41d19c3419a8df69e85b</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M2347.15,-183C2359.68,-183 2372.34,-183 2382.91,-183"/>
+</g>
+<!-- d4ca6106f54c4c969aee8d4aec39952d -->
+<g id="node66" class="node">
+<title>d4ca6106f54c4c969aee8d4aec39952d</title>
+</g>
+<!-- 0d14d2abccbe41d19c3419a8df69e85b&#45;&#45;d4ca6106f54c4c969aee8d4aec39952d -->
+<!-- d8bc3ad701b540fc823d37c94a4c6516 -->
+<g id="node46" class="node">
+<title>d8bc3ad701b540fc823d37c94a4c6516</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M136,-143C136,-143 102,-143 102,-143 96,-143 90,-137 90,-131 90,-131 90,-97 90,-97 90,-91 96,-85 102,-85 102,-85 136,-85 136,-85 142,-85 148,-91 148,-97 148,-97 148,-131 148,-131 148,-137 142,-143 136,-143"/>
+<text text-anchor="middle" x="119" y="-109" font-family="JetBrains Mono" font-size="20.00">H</text>
+</g>
+<!-- 06a5fd54e0a64de7a3ad4e35bb2cbd57&#45;&#45;d8bc3ad701b540fc823d37c94a4c6516 -->
+<g id="edge43" class="edge">
+<title>06a5fd54e0a64de7a3ad4e35bb2cbd57&#45;&#45;d8bc3ad701b540fc823d37c94a4c6516</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54.03,-114C65.25,-114 78.38,-114 89.82,-114"/>
+</g>
+<!-- 5f4f6fdd43184735bc91b4dd44239ee0 -->
+<g id="node67" class="node">
+<title>5f4f6fdd43184735bc91b4dd44239ee0</title>
+<text text-anchor="middle" x="27" y="-41.5" font-family="JetBrains Mono" font-size="15.00">3</text>
+</g>
+<!-- 06a5fd54e0a64de7a3ad4e35bb2cbd57&#45;&#45;5f4f6fdd43184735bc91b4dd44239ee0 -->
+<!-- 7817cd6b3af14b6d84f5c5ab28577213 -->
+<g id="node47" class="node">
+<title>7817cd6b3af14b6d84f5c5ab28577213</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="213.5,-114.5 212.5,-114.5 212.5,-113.5 213.5,-113.5 213.5,-114.5"/>
+</g>
+<!-- d8bc3ad701b540fc823d37c94a4c6516&#45;&#45;7817cd6b3af14b6d84f5c5ab28577213 -->
+<g id="edge44" class="edge">
+<title>d8bc3ad701b540fc823d37c94a4c6516&#45;&#45;7817cd6b3af14b6d84f5c5ab28577213</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M148.1,-114C174.31,-114 209.71,-114 211.89,-114"/>
+</g>
+<!-- 561ff27b9f5544118838012ede178d4e -->
+<g id="node48" class="node">
+<title>561ff27b9f5544118838012ede178d4e</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="337,-114.5 336,-114.5 336,-113.5 337,-113.5 337,-114.5"/>
+</g>
+<!-- 7817cd6b3af14b6d84f5c5ab28577213&#45;&#45;561ff27b9f5544118838012ede178d4e -->
+<g id="edge45" class="edge">
+<title>7817cd6b3af14b6d84f5c5ab28577213&#45;&#45;561ff27b9f5544118838012ede178d4e</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M214.09,-114C217.71,-114 331.85,-114 335.41,-114"/>
+</g>
+<!-- 80518b928a5d45a9963ffeac28acdcd6 -->
+<g id="node49" class="node">
+<title>80518b928a5d45a9963ffeac28acdcd6</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="460.5,-114.5 459.5,-114.5 459.5,-113.5 460.5,-113.5 460.5,-114.5"/>
+</g>
+<!-- 561ff27b9f5544118838012ede178d4e&#45;&#45;80518b928a5d45a9963ffeac28acdcd6 -->
+<g id="edge46" class="edge">
+<title>561ff27b9f5544118838012ede178d4e&#45;&#45;80518b928a5d45a9963ffeac28acdcd6</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M337.59,-114C341.21,-114 455.35,-114 458.91,-114"/>
+</g>
+<!-- dc6e45455d524baeb34ee8bd90af8a5c -->
+<g id="node50" class="node">
+<title>dc6e45455d524baeb34ee8bd90af8a5c</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M571,-143C571,-143 537,-143 537,-143 531,-143 525,-137 525,-131 525,-131 525,-97 525,-97 525,-91 531,-85 537,-85 537,-85 571,-85 571,-85 577,-85 583,-91 583,-97 583,-97 583,-131 583,-131 583,-137 577,-143 571,-143"/>
+<text text-anchor="middle" x="554" y="-109" font-family="JetBrains Mono" font-size="20.00">X</text>
+</g>
+<!-- 80518b928a5d45a9963ffeac28acdcd6&#45;&#45;dc6e45455d524baeb34ee8bd90af8a5c -->
+<g id="edge47" class="edge">
+<title>80518b928a5d45a9963ffeac28acdcd6&#45;&#45;dc6e45455d524baeb34ee8bd90af8a5c</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M461.07,-114C462.81,-114 498.28,-114 524.65,-114"/>
+</g>
+<!-- dc6e45455d524baeb34ee8bd90af8a5c&#45;&#45;ab615c7acc584f35999a173c85525245 -->
+<g id="edge87" class="edge">
+<title>dc6e45455d524baeb34ee8bd90af8a5c&#45;&#45;ab615c7acc584f35999a173c85525245</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M554,-143.11C554,-177 554,-210.88 554,-244.77"/>
+</g>
+<!-- e610ba85239f4f188778e1faf1fff7f9 -->
+<g id="node51" class="node">
+<title>e610ba85239f4f188778e1faf1fff7f9</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M724,-143C724,-143 631,-143 631,-143 625,-143 619,-137 619,-131 619,-131 619,-97 619,-97 619,-91 625,-85 631,-85 631,-85 724,-85 724,-85 730,-85 736,-91 736,-97 736,-97 736,-131 736,-131 736,-137 730,-143 724,-143"/>
+<text text-anchor="middle" x="677.5" y="-109" font-family="JetBrains Mono" font-size="20.00">RZ(g0)</text>
+</g>
+<!-- dc6e45455d524baeb34ee8bd90af8a5c&#45;&#45;e610ba85239f4f188778e1faf1fff7f9 -->
+<g id="edge48" class="edge">
+<title>dc6e45455d524baeb34ee8bd90af8a5c&#45;&#45;e610ba85239f4f188778e1faf1fff7f9</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M583.18,-114C593.84,-114 606.39,-114 618.77,-114"/>
+</g>
+<!-- a91f3ee2e8814ee9bd093cf2d21ade5f -->
+<g id="node52" class="node">
+<title>a91f3ee2e8814ee9bd093cf2d21ade5f</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M818,-143C818,-143 784,-143 784,-143 778,-143 772,-137 772,-131 772,-131 772,-97 772,-97 772,-91 778,-85 784,-85 784,-85 818,-85 818,-85 824,-85 830,-91 830,-97 830,-97 830,-131 830,-131 830,-137 824,-143 818,-143"/>
+<text text-anchor="middle" x="801" y="-109" font-family="JetBrains Mono" font-size="20.00">X</text>
+</g>
+<!-- e610ba85239f4f188778e1faf1fff7f9&#45;&#45;a91f3ee2e8814ee9bd093cf2d21ade5f -->
+<g id="edge49" class="edge">
+<title>e610ba85239f4f188778e1faf1fff7f9&#45;&#45;a91f3ee2e8814ee9bd093cf2d21ade5f</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M736.05,-114C748.56,-114 761.25,-114 772,-114"/>
+</g>
+<!-- a91f3ee2e8814ee9bd093cf2d21ade5f&#45;&#45;ba90d10f49274f8b9f4fe901a2b1f5a1 -->
+<g id="edge88" class="edge">
+<title>a91f3ee2e8814ee9bd093cf2d21ade5f&#45;&#45;ba90d10f49274f8b9f4fe901a2b1f5a1</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M801,-143.11C801,-177 801,-210.88 801,-244.77"/>
+</g>
+<!-- 02ae7a939e5c4c58abe40809bd23b4fa -->
+<g id="node53" class="node">
+<title>02ae7a939e5c4c58abe40809bd23b4fa</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="895.5,-114.5 894.5,-114.5 894.5,-113.5 895.5,-113.5 895.5,-114.5"/>
+</g>
+<!-- a91f3ee2e8814ee9bd093cf2d21ade5f&#45;&#45;02ae7a939e5c4c58abe40809bd23b4fa -->
+<g id="edge50" class="edge">
+<title>a91f3ee2e8814ee9bd093cf2d21ade5f&#45;&#45;02ae7a939e5c4c58abe40809bd23b4fa</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M830.1,-114C856.31,-114 891.71,-114 893.89,-114"/>
+</g>
+<!-- d2f36dee3e034efc8321f4ff5b354e6e -->
+<g id="node54" class="node">
+<title>d2f36dee3e034efc8321f4ff5b354e6e</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="1019,-114.5 1018,-114.5 1018,-113.5 1019,-113.5 1019,-114.5"/>
+</g>
+<!-- 02ae7a939e5c4c58abe40809bd23b4fa&#45;&#45;d2f36dee3e034efc8321f4ff5b354e6e -->
+<g id="edge51" class="edge">
+<title>02ae7a939e5c4c58abe40809bd23b4fa&#45;&#45;d2f36dee3e034efc8321f4ff5b354e6e</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M896.09,-114C899.71,-114 1013.85,-114 1017.41,-114"/>
+</g>
+<!-- f9050270c33c49958790414d692cef6a -->
+<g id="node55" class="node">
+<title>f9050270c33c49958790414d692cef6a</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="1142.5,-114.5 1141.5,-114.5 1141.5,-113.5 1142.5,-113.5 1142.5,-114.5"/>
+</g>
+<!-- d2f36dee3e034efc8321f4ff5b354e6e&#45;&#45;f9050270c33c49958790414d692cef6a -->
+<g id="edge52" class="edge">
+<title>d2f36dee3e034efc8321f4ff5b354e6e&#45;&#45;f9050270c33c49958790414d692cef6a</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1019.59,-114C1023.21,-114 1137.35,-114 1140.91,-114"/>
+</g>
+<!-- e75740f942ec48d0b1c9377f28f8ba36 -->
+<g id="node56" class="node">
+<title>e75740f942ec48d0b1c9377f28f8ba36</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M1253,-143C1253,-143 1219,-143 1219,-143 1213,-143 1207,-137 1207,-131 1207,-131 1207,-97 1207,-97 1207,-91 1213,-85 1219,-85 1219,-85 1253,-85 1253,-85 1259,-85 1265,-91 1265,-97 1265,-97 1265,-131 1265,-131 1265,-137 1259,-143 1253,-143"/>
+<text text-anchor="middle" x="1236" y="-109" font-family="JetBrains Mono" font-size="20.00">X</text>
+</g>
+<!-- f9050270c33c49958790414d692cef6a&#45;&#45;e75740f942ec48d0b1c9377f28f8ba36 -->
+<g id="edge53" class="edge">
+<title>f9050270c33c49958790414d692cef6a&#45;&#45;e75740f942ec48d0b1c9377f28f8ba36</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1143.07,-114C1144.81,-114 1180.28,-114 1206.65,-114"/>
+</g>
+<!-- e75740f942ec48d0b1c9377f28f8ba36&#45;&#45;5f84f9d343f9404fb0af2024b06182b5 -->
+<g id="edge91" class="edge">
+<title>e75740f942ec48d0b1c9377f28f8ba36&#45;&#45;5f84f9d343f9404fb0af2024b06182b5</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1236,-143.11C1236,-153.91 1236,-164.72 1236,-175.52"/>
+</g>
+<!-- e3c719396d5f441eb72dcfd5f0d6ca18 -->
+<g id="node57" class="node">
+<title>e3c719396d5f441eb72dcfd5f0d6ca18</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M1406,-143C1406,-143 1313,-143 1313,-143 1307,-143 1301,-137 1301,-131 1301,-131 1301,-97 1301,-97 1301,-91 1307,-85 1313,-85 1313,-85 1406,-85 1406,-85 1412,-85 1418,-91 1418,-97 1418,-97 1418,-131 1418,-131 1418,-137 1412,-143 1406,-143"/>
+<text text-anchor="middle" x="1359.5" y="-109" font-family="JetBrains Mono" font-size="20.00">RZ(g0)</text>
+</g>
+<!-- e75740f942ec48d0b1c9377f28f8ba36&#45;&#45;e3c719396d5f441eb72dcfd5f0d6ca18 -->
+<g id="edge54" class="edge">
+<title>e75740f942ec48d0b1c9377f28f8ba36&#45;&#45;e3c719396d5f441eb72dcfd5f0d6ca18</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1265.18,-114C1275.84,-114 1288.39,-114 1300.77,-114"/>
+</g>
+<!-- 7b1d24a58d584276bf151997cd8902b3 -->
+<g id="node58" class="node">
+<title>7b1d24a58d584276bf151997cd8902b3</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M1500,-143C1500,-143 1466,-143 1466,-143 1460,-143 1454,-137 1454,-131 1454,-131 1454,-97 1454,-97 1454,-91 1460,-85 1466,-85 1466,-85 1500,-85 1500,-85 1506,-85 1512,-91 1512,-97 1512,-97 1512,-131 1512,-131 1512,-137 1506,-143 1500,-143"/>
+<text text-anchor="middle" x="1483" y="-109" font-family="JetBrains Mono" font-size="20.00">X</text>
+</g>
+<!-- e3c719396d5f441eb72dcfd5f0d6ca18&#45;&#45;7b1d24a58d584276bf151997cd8902b3 -->
+<g id="edge55" class="edge">
+<title>e3c719396d5f441eb72dcfd5f0d6ca18&#45;&#45;7b1d24a58d584276bf151997cd8902b3</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1418.05,-114C1430.56,-114 1443.25,-114 1454,-114"/>
+</g>
+<!-- 7b1d24a58d584276bf151997cd8902b3&#45;&#45;fcb531a7577c48c295a8614d5b5d903b -->
+<g id="edge92" class="edge">
+<title>7b1d24a58d584276bf151997cd8902b3&#45;&#45;fcb531a7577c48c295a8614d5b5d903b</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1483,-143.11C1483,-153.91 1483,-164.72 1483,-175.52"/>
+</g>
+<!-- 3828fb84f6024d0d90cd1c8d9d990b1e -->
+<g id="node59" class="node">
+<title>3828fb84f6024d0d90cd1c8d9d990b1e</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="1577.5,-114.5 1576.5,-114.5 1576.5,-113.5 1577.5,-113.5 1577.5,-114.5"/>
+</g>
+<!-- 7b1d24a58d584276bf151997cd8902b3&#45;&#45;3828fb84f6024d0d90cd1c8d9d990b1e -->
+<g id="edge56" class="edge">
+<title>7b1d24a58d584276bf151997cd8902b3&#45;&#45;3828fb84f6024d0d90cd1c8d9d990b1e</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1512.1,-114C1538.31,-114 1573.71,-114 1575.89,-114"/>
+</g>
+<!-- 9c911c4187874f4facaff28358562b77 -->
+<g id="node60" class="node">
+<title>9c911c4187874f4facaff28358562b77</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="1701,-114.5 1700,-114.5 1700,-113.5 1701,-113.5 1701,-114.5"/>
+</g>
+<!-- 3828fb84f6024d0d90cd1c8d9d990b1e&#45;&#45;9c911c4187874f4facaff28358562b77 -->
+<g id="edge57" class="edge">
+<title>3828fb84f6024d0d90cd1c8d9d990b1e&#45;&#45;9c911c4187874f4facaff28358562b77</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1578.09,-114C1581.71,-114 1695.85,-114 1699.41,-114"/>
+</g>
+<!-- b1b9bbc57a204b0e8d405e77be3c8d68 -->
+<g id="node61" class="node">
+<title>b1b9bbc57a204b0e8d405e77be3c8d68</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="1824.5,-114.5 1823.5,-114.5 1823.5,-113.5 1824.5,-113.5 1824.5,-114.5"/>
+</g>
+<!-- 9c911c4187874f4facaff28358562b77&#45;&#45;b1b9bbc57a204b0e8d405e77be3c8d68 -->
+<g id="edge58" class="edge">
+<title>9c911c4187874f4facaff28358562b77&#45;&#45;b1b9bbc57a204b0e8d405e77be3c8d68</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1701.59,-114C1705.21,-114 1819.35,-114 1822.91,-114"/>
+</g>
+<!-- 160bdcaba4bb43568d5e036916569419 -->
+<g id="node62" class="node">
+<title>160bdcaba4bb43568d5e036916569419</title>
+<ellipse fill="black" stroke="black" cx="1918" cy="-114" rx="7.2" ry="7.2"/>
+</g>
+<!-- b1b9bbc57a204b0e8d405e77be3c8d68&#45;&#45;160bdcaba4bb43568d5e036916569419 -->
+<g id="edge59" class="edge">
+<title>b1b9bbc57a204b0e8d405e77be3c8d68&#45;&#45;160bdcaba4bb43568d5e036916569419</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1825.07,-114C1827.4,-114 1890.07,-114 1910.58,-114"/>
+</g>
+<!-- fcc7144288f54faea25e334aa01961a3 -->
+<g id="node63" class="node">
+<title>fcc7144288f54faea25e334aa01961a3</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="2042,-114.5 2041,-114.5 2041,-113.5 2042,-113.5 2042,-114.5"/>
+</g>
+<!-- 160bdcaba4bb43568d5e036916569419&#45;&#45;fcc7144288f54faea25e334aa01961a3 -->
+<g id="edge60" class="edge">
+<title>160bdcaba4bb43568d5e036916569419&#45;&#45;fcc7144288f54faea25e334aa01961a3</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1925.53,-114C1950.37,-114 2037.71,-114 2040.43,-114"/>
+</g>
+<!-- 82dff68eeaca40b4a15f9ada5f5be1e4 -->
+<g id="node64" class="node">
+<title>82dff68eeaca40b4a15f9ada5f5be1e4</title>
+<ellipse fill="black" stroke="black" cx="2165" cy="-114" rx="7.2" ry="7.2"/>
+</g>
+<!-- fcc7144288f54faea25e334aa01961a3&#45;&#45;82dff68eeaca40b4a15f9ada5f5be1e4 -->
+<g id="edge61" class="edge">
+<title>fcc7144288f54faea25e334aa01961a3&#45;&#45;82dff68eeaca40b4a15f9ada5f5be1e4</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M2042.59,-114C2045.75,-114 2133.14,-114 2157.66,-114"/>
+</g>
+<!-- 05f60fdaa5be4f8f8d109709f5b00e55 -->
+<g id="node65" class="node">
+<title>05f60fdaa5be4f8f8d109709f5b00e55</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M2335,-143C2335,-143 2242,-143 2242,-143 2236,-143 2230,-137 2230,-131 2230,-131 2230,-97 2230,-97 2230,-91 2236,-85 2242,-85 2242,-85 2335,-85 2335,-85 2341,-85 2347,-91 2347,-97 2347,-97 2347,-131 2347,-131 2347,-137 2341,-143 2335,-143"/>
+<text text-anchor="middle" x="2288.5" y="-109" font-family="JetBrains Mono" font-size="20.00">RX(b0)</text>
+</g>
+<!-- 82dff68eeaca40b4a15f9ada5f5be1e4&#45;&#45;05f60fdaa5be4f8f8d109709f5b00e55 -->
+<g id="edge62" class="edge">
+<title>82dff68eeaca40b4a15f9ada5f5be1e4&#45;&#45;05f60fdaa5be4f8f8d109709f5b00e55</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M2172.53,-114C2183.57,-114 2206.96,-114 2229.77,-114"/>
+</g>
+<!-- 05f60fdaa5be4f8f8d109709f5b00e55&#45;&#45;d4ca6106f54c4c969aee8d4aec39952d -->
+<g id="edge63" class="edge">
+<title>05f60fdaa5be4f8f8d109709f5b00e55&#45;&#45;d4ca6106f54c4c969aee8d4aec39952d</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M2347.15,-114C2359.68,-114 2372.34,-114 2382.91,-114"/>
+</g>
+<!-- fae556fa17d1467a9d267bb1190cdece -->
+<g id="node88" class="node">
+<title>fae556fa17d1467a9d267bb1190cdece</title>
+</g>
+<!-- d4ca6106f54c4c969aee8d4aec39952d&#45;&#45;fae556fa17d1467a9d267bb1190cdece -->
+<!-- 15affe2f6cf4471fb31beaac4ba85005 -->
+<g id="node68" class="node">
+<title>15affe2f6cf4471fb31beaac4ba85005</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M136,-74C136,-74 102,-74 102,-74 96,-74 90,-68 90,-62 90,-62 90,-28 90,-28 90,-22 96,-16 102,-16 102,-16 136,-16 136,-16 142,-16 148,-22 148,-28 148,-28 148,-62 148,-62 148,-68 142,-74 136,-74"/>
+<text text-anchor="middle" x="119" y="-40" font-family="JetBrains Mono" font-size="20.00">H</text>
+</g>
+<!-- 5f4f6fdd43184735bc91b4dd44239ee0&#45;&#45;15affe2f6cf4471fb31beaac4ba85005 -->
+<g id="edge64" class="edge">
+<title>5f4f6fdd43184735bc91b4dd44239ee0&#45;&#45;15affe2f6cf4471fb31beaac4ba85005</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54.03,-45C65.25,-45 78.38,-45 89.82,-45"/>
+</g>
+<!-- 49e21edf1c324ee88b6de6054211f3fd -->
+<g id="node69" class="node">
+<title>49e21edf1c324ee88b6de6054211f3fd</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="213.5,-45.5 212.5,-45.5 212.5,-44.5 213.5,-44.5 213.5,-45.5"/>
+</g>
+<!-- 15affe2f6cf4471fb31beaac4ba85005&#45;&#45;49e21edf1c324ee88b6de6054211f3fd -->
+<g id="edge65" class="edge">
+<title>15affe2f6cf4471fb31beaac4ba85005&#45;&#45;49e21edf1c324ee88b6de6054211f3fd</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M148.1,-45C174.31,-45 209.71,-45 211.89,-45"/>
+</g>
+<!-- 860d8660f0fb4a12afff9c2707ddc79e -->
+<g id="node70" class="node">
+<title>860d8660f0fb4a12afff9c2707ddc79e</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="337,-45.5 336,-45.5 336,-44.5 337,-44.5 337,-45.5"/>
+</g>
+<!-- 49e21edf1c324ee88b6de6054211f3fd&#45;&#45;860d8660f0fb4a12afff9c2707ddc79e -->
+<g id="edge66" class="edge">
+<title>49e21edf1c324ee88b6de6054211f3fd&#45;&#45;860d8660f0fb4a12afff9c2707ddc79e</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M214.09,-45C217.71,-45 331.85,-45 335.41,-45"/>
+</g>
+<!-- b9e7b48af6b84463ad369256ae4f92f1 -->
+<g id="node71" class="node">
+<title>b9e7b48af6b84463ad369256ae4f92f1</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="460.5,-45.5 459.5,-45.5 459.5,-44.5 460.5,-44.5 460.5,-45.5"/>
+</g>
+<!-- 860d8660f0fb4a12afff9c2707ddc79e&#45;&#45;b9e7b48af6b84463ad369256ae4f92f1 -->
+<g id="edge67" class="edge">
+<title>860d8660f0fb4a12afff9c2707ddc79e&#45;&#45;b9e7b48af6b84463ad369256ae4f92f1</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M337.59,-45C341.21,-45 455.35,-45 458.91,-45"/>
+</g>
+<!-- a6eabea5fd40434ca50389b0e577f712 -->
+<g id="node72" class="node">
+<title>a6eabea5fd40434ca50389b0e577f712</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="554.5,-45.5 553.5,-45.5 553.5,-44.5 554.5,-44.5 554.5,-45.5"/>
+</g>
+<!-- b9e7b48af6b84463ad369256ae4f92f1&#45;&#45;a6eabea5fd40434ca50389b0e577f712 -->
+<g id="edge68" class="edge">
+<title>b9e7b48af6b84463ad369256ae4f92f1&#45;&#45;a6eabea5fd40434ca50389b0e577f712</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M461.07,-45C463.81,-45 550.24,-45 552.94,-45"/>
+</g>
+<!-- b4f29b9152e645ccb55da5114a94dbf4 -->
+<g id="node73" class="node">
+<title>b4f29b9152e645ccb55da5114a94dbf4</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="678,-45.5 677,-45.5 677,-44.5 678,-44.5 678,-45.5"/>
+</g>
+<!-- a6eabea5fd40434ca50389b0e577f712&#45;&#45;b4f29b9152e645ccb55da5114a94dbf4 -->
+<g id="edge69" class="edge">
+<title>a6eabea5fd40434ca50389b0e577f712&#45;&#45;b4f29b9152e645ccb55da5114a94dbf4</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M555.09,-45C558.71,-45 672.85,-45 676.41,-45"/>
+</g>
+<!-- da8575dfa48f4962aa156d0706ce7bb3 -->
+<g id="node74" class="node">
+<title>da8575dfa48f4962aa156d0706ce7bb3</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="801.5,-45.5 800.5,-45.5 800.5,-44.5 801.5,-44.5 801.5,-45.5"/>
+</g>
+<!-- b4f29b9152e645ccb55da5114a94dbf4&#45;&#45;da8575dfa48f4962aa156d0706ce7bb3 -->
+<g id="edge70" class="edge">
+<title>b4f29b9152e645ccb55da5114a94dbf4&#45;&#45;da8575dfa48f4962aa156d0706ce7bb3</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M678.59,-45C682.21,-45 796.35,-45 799.91,-45"/>
+</g>
+<!-- bae4f2ecb3824f88a7587de65e2db0f7 -->
+<g id="node75" class="node">
+<title>bae4f2ecb3824f88a7587de65e2db0f7</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M912,-74C912,-74 878,-74 878,-74 872,-74 866,-68 866,-62 866,-62 866,-28 866,-28 866,-22 872,-16 878,-16 878,-16 912,-16 912,-16 918,-16 924,-22 924,-28 924,-28 924,-62 924,-62 924,-68 918,-74 912,-74"/>
+<text text-anchor="middle" x="895" y="-40" font-family="JetBrains Mono" font-size="20.00">X</text>
+</g>
+<!-- da8575dfa48f4962aa156d0706ce7bb3&#45;&#45;bae4f2ecb3824f88a7587de65e2db0f7 -->
+<g id="edge71" class="edge">
+<title>da8575dfa48f4962aa156d0706ce7bb3&#45;&#45;bae4f2ecb3824f88a7587de65e2db0f7</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M802.07,-45C803.81,-45 839.28,-45 865.65,-45"/>
+</g>
+<!-- bae4f2ecb3824f88a7587de65e2db0f7&#45;&#45;b296d38064b54a61b7ef28cbe25e832f -->
+<g id="edge89" class="edge">
+<title>bae4f2ecb3824f88a7587de65e2db0f7&#45;&#45;b296d38064b54a61b7ef28cbe25e832f</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M895,-74.11C895,-130.97 895,-187.84 895,-244.7"/>
+</g>
+<!-- 4fd946a4b9fc48468c642b6d79f3837f -->
+<g id="node76" class="node">
+<title>4fd946a4b9fc48468c642b6d79f3837f</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M1065,-74C1065,-74 972,-74 972,-74 966,-74 960,-68 960,-62 960,-62 960,-28 960,-28 960,-22 966,-16 972,-16 972,-16 1065,-16 1065,-16 1071,-16 1077,-22 1077,-28 1077,-28 1077,-62 1077,-62 1077,-68 1071,-74 1065,-74"/>
+<text text-anchor="middle" x="1018.5" y="-40" font-family="JetBrains Mono" font-size="20.00">RZ(g0)</text>
+</g>
+<!-- bae4f2ecb3824f88a7587de65e2db0f7&#45;&#45;4fd946a4b9fc48468c642b6d79f3837f -->
+<g id="edge72" class="edge">
+<title>bae4f2ecb3824f88a7587de65e2db0f7&#45;&#45;4fd946a4b9fc48468c642b6d79f3837f</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M924.18,-45C934.84,-45 947.39,-45 959.77,-45"/>
+</g>
+<!-- 99f3410e65e64b0dbc6bc4e3794f23f7 -->
+<g id="node77" class="node">
+<title>99f3410e65e64b0dbc6bc4e3794f23f7</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M1159,-74C1159,-74 1125,-74 1125,-74 1119,-74 1113,-68 1113,-62 1113,-62 1113,-28 1113,-28 1113,-22 1119,-16 1125,-16 1125,-16 1159,-16 1159,-16 1165,-16 1171,-22 1171,-28 1171,-28 1171,-62 1171,-62 1171,-68 1165,-74 1159,-74"/>
+<text text-anchor="middle" x="1142" y="-40" font-family="JetBrains Mono" font-size="20.00">X</text>
+</g>
+<!-- 4fd946a4b9fc48468c642b6d79f3837f&#45;&#45;99f3410e65e64b0dbc6bc4e3794f23f7 -->
+<g id="edge73" class="edge">
+<title>4fd946a4b9fc48468c642b6d79f3837f&#45;&#45;99f3410e65e64b0dbc6bc4e3794f23f7</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1077.05,-45C1089.56,-45 1102.25,-45 1113,-45"/>
+</g>
+<!-- 99f3410e65e64b0dbc6bc4e3794f23f7&#45;&#45;85cd24cf6da74604a83ff1b683320cba -->
+<g id="edge90" class="edge">
+<title>99f3410e65e64b0dbc6bc4e3794f23f7&#45;&#45;85cd24cf6da74604a83ff1b683320cba</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1142,-74.11C1142,-130.97 1142,-187.84 1142,-244.7"/>
+</g>
+<!-- 1cc2d8cad63244a18f2806f1ec00e942 -->
+<g id="node78" class="node">
+<title>1cc2d8cad63244a18f2806f1ec00e942</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="1236.5,-45.5 1235.5,-45.5 1235.5,-44.5 1236.5,-44.5 1236.5,-45.5"/>
+</g>
+<!-- 99f3410e65e64b0dbc6bc4e3794f23f7&#45;&#45;1cc2d8cad63244a18f2806f1ec00e942 -->
+<g id="edge74" class="edge">
+<title>99f3410e65e64b0dbc6bc4e3794f23f7&#45;&#45;1cc2d8cad63244a18f2806f1ec00e942</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1171.1,-45C1197.31,-45 1232.71,-45 1234.89,-45"/>
+</g>
+<!-- 288f2948d95445f795c24a7161f02832 -->
+<g id="node79" class="node">
+<title>288f2948d95445f795c24a7161f02832</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="1360,-45.5 1359,-45.5 1359,-44.5 1360,-44.5 1360,-45.5"/>
+</g>
+<!-- 1cc2d8cad63244a18f2806f1ec00e942&#45;&#45;288f2948d95445f795c24a7161f02832 -->
+<g id="edge75" class="edge">
+<title>1cc2d8cad63244a18f2806f1ec00e942&#45;&#45;288f2948d95445f795c24a7161f02832</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1237.09,-45C1240.71,-45 1354.85,-45 1358.41,-45"/>
+</g>
+<!-- d5e9fbac74664347ac1e8886c4234f21 -->
+<g id="node80" class="node">
+<title>d5e9fbac74664347ac1e8886c4234f21</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="1483.5,-45.5 1482.5,-45.5 1482.5,-44.5 1483.5,-44.5 1483.5,-45.5"/>
+</g>
+<!-- 288f2948d95445f795c24a7161f02832&#45;&#45;d5e9fbac74664347ac1e8886c4234f21 -->
+<g id="edge76" class="edge">
+<title>288f2948d95445f795c24a7161f02832&#45;&#45;d5e9fbac74664347ac1e8886c4234f21</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1360.59,-45C1364.21,-45 1478.35,-45 1481.91,-45"/>
+</g>
+<!-- b19940bd07324c618d6abbd0711a6f5f -->
+<g id="node81" class="node">
+<title>b19940bd07324c618d6abbd0711a6f5f</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M1594,-74C1594,-74 1560,-74 1560,-74 1554,-74 1548,-68 1548,-62 1548,-62 1548,-28 1548,-28 1548,-22 1554,-16 1560,-16 1560,-16 1594,-16 1594,-16 1600,-16 1606,-22 1606,-28 1606,-28 1606,-62 1606,-62 1606,-68 1600,-74 1594,-74"/>
+<text text-anchor="middle" x="1577" y="-40" font-family="JetBrains Mono" font-size="20.00">X</text>
+</g>
+<!-- d5e9fbac74664347ac1e8886c4234f21&#45;&#45;b19940bd07324c618d6abbd0711a6f5f -->
+<g id="edge77" class="edge">
+<title>d5e9fbac74664347ac1e8886c4234f21&#45;&#45;b19940bd07324c618d6abbd0711a6f5f</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1484.07,-45C1485.81,-45 1521.28,-45 1547.65,-45"/>
+</g>
+<!-- b19940bd07324c618d6abbd0711a6f5f&#45;&#45;a7be82ec77fa491683516795ae8efb04 -->
+<g id="edge93" class="edge">
+<title>b19940bd07324c618d6abbd0711a6f5f&#45;&#45;a7be82ec77fa491683516795ae8efb04</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1577,-74.11C1577,-108 1577,-141.88 1577,-175.77"/>
+</g>
+<!-- e61d370f51534d189792a21e7f740d19 -->
+<g id="node82" class="node">
+<title>e61d370f51534d189792a21e7f740d19</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M1747,-74C1747,-74 1654,-74 1654,-74 1648,-74 1642,-68 1642,-62 1642,-62 1642,-28 1642,-28 1642,-22 1648,-16 1654,-16 1654,-16 1747,-16 1747,-16 1753,-16 1759,-22 1759,-28 1759,-28 1759,-62 1759,-62 1759,-68 1753,-74 1747,-74"/>
+<text text-anchor="middle" x="1700.5" y="-40" font-family="JetBrains Mono" font-size="20.00">RZ(g0)</text>
+</g>
+<!-- b19940bd07324c618d6abbd0711a6f5f&#45;&#45;e61d370f51534d189792a21e7f740d19 -->
+<g id="edge78" class="edge">
+<title>b19940bd07324c618d6abbd0711a6f5f&#45;&#45;e61d370f51534d189792a21e7f740d19</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1606.18,-45C1616.84,-45 1629.39,-45 1641.77,-45"/>
+</g>
+<!-- 2a881c83526f4046ba2fc1f964e9a953 -->
+<g id="node83" class="node">
+<title>2a881c83526f4046ba2fc1f964e9a953</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M1841,-74C1841,-74 1807,-74 1807,-74 1801,-74 1795,-68 1795,-62 1795,-62 1795,-28 1795,-28 1795,-22 1801,-16 1807,-16 1807,-16 1841,-16 1841,-16 1847,-16 1853,-22 1853,-28 1853,-28 1853,-62 1853,-62 1853,-68 1847,-74 1841,-74"/>
+<text text-anchor="middle" x="1824" y="-40" font-family="JetBrains Mono" font-size="20.00">X</text>
+</g>
+<!-- e61d370f51534d189792a21e7f740d19&#45;&#45;2a881c83526f4046ba2fc1f964e9a953 -->
+<g id="edge79" class="edge">
+<title>e61d370f51534d189792a21e7f740d19&#45;&#45;2a881c83526f4046ba2fc1f964e9a953</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1759.05,-45C1771.56,-45 1784.25,-45 1795,-45"/>
+</g>
+<!-- 2a881c83526f4046ba2fc1f964e9a953&#45;&#45;9bd05b50508d4562aa73a56c12b5fe74 -->
+<g id="edge94" class="edge">
+<title>2a881c83526f4046ba2fc1f964e9a953&#45;&#45;9bd05b50508d4562aa73a56c12b5fe74</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1824,-74.11C1824,-108 1824,-141.88 1824,-175.77"/>
+</g>
+<!-- c43f49f60909476094cae1cce1e49e64 -->
+<g id="node84" class="node">
+<title>c43f49f60909476094cae1cce1e49e64</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M1935,-74C1935,-74 1901,-74 1901,-74 1895,-74 1889,-68 1889,-62 1889,-62 1889,-28 1889,-28 1889,-22 1895,-16 1901,-16 1901,-16 1935,-16 1935,-16 1941,-16 1947,-22 1947,-28 1947,-28 1947,-62 1947,-62 1947,-68 1941,-74 1935,-74"/>
+<text text-anchor="middle" x="1918" y="-40" font-family="JetBrains Mono" font-size="20.00">X</text>
+</g>
+<!-- 2a881c83526f4046ba2fc1f964e9a953&#45;&#45;c43f49f60909476094cae1cce1e49e64 -->
+<g id="edge80" class="edge">
+<title>2a881c83526f4046ba2fc1f964e9a953&#45;&#45;c43f49f60909476094cae1cce1e49e64</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1853.1,-45C1864.41,-45 1877.43,-45 1888.75,-45"/>
+</g>
+<!-- c43f49f60909476094cae1cce1e49e64&#45;&#45;160bdcaba4bb43568d5e036916569419 -->
+<g id="edge95" class="edge">
+<title>c43f49f60909476094cae1cce1e49e64&#45;&#45;160bdcaba4bb43568d5e036916569419</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1918,-74.11C1918,-84.91 1918,-95.72 1918,-106.52"/>
+</g>
+<!-- 5481033f49474abc8cf292c2ea004270 -->
+<g id="node85" class="node">
+<title>5481033f49474abc8cf292c2ea004270</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M2088,-74C2088,-74 1995,-74 1995,-74 1989,-74 1983,-68 1983,-62 1983,-62 1983,-28 1983,-28 1983,-22 1989,-16 1995,-16 1995,-16 2088,-16 2088,-16 2094,-16 2100,-22 2100,-28 2100,-28 2100,-62 2100,-62 2100,-68 2094,-74 2088,-74"/>
+<text text-anchor="middle" x="2041.5" y="-40" font-family="JetBrains Mono" font-size="20.00">RZ(g0)</text>
+</g>
+<!-- c43f49f60909476094cae1cce1e49e64&#45;&#45;5481033f49474abc8cf292c2ea004270 -->
+<g id="edge81" class="edge">
+<title>c43f49f60909476094cae1cce1e49e64&#45;&#45;5481033f49474abc8cf292c2ea004270</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1947.18,-45C1957.84,-45 1970.39,-45 1982.77,-45"/>
+</g>
+<!-- fb5209721d6d4681aac1a5cdc43ca171 -->
+<g id="node86" class="node">
+<title>fb5209721d6d4681aac1a5cdc43ca171</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M2182,-74C2182,-74 2148,-74 2148,-74 2142,-74 2136,-68 2136,-62 2136,-62 2136,-28 2136,-28 2136,-22 2142,-16 2148,-16 2148,-16 2182,-16 2182,-16 2188,-16 2194,-22 2194,-28 2194,-28 2194,-62 2194,-62 2194,-68 2188,-74 2182,-74"/>
+<text text-anchor="middle" x="2165" y="-40" font-family="JetBrains Mono" font-size="20.00">X</text>
+</g>
+<!-- 5481033f49474abc8cf292c2ea004270&#45;&#45;fb5209721d6d4681aac1a5cdc43ca171 -->
+<g id="edge82" class="edge">
+<title>5481033f49474abc8cf292c2ea004270&#45;&#45;fb5209721d6d4681aac1a5cdc43ca171</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M2100.05,-45C2112.56,-45 2125.25,-45 2136,-45"/>
+</g>
+<!-- fb5209721d6d4681aac1a5cdc43ca171&#45;&#45;82dff68eeaca40b4a15f9ada5f5be1e4 -->
+<g id="edge96" class="edge">
+<title>fb5209721d6d4681aac1a5cdc43ca171&#45;&#45;82dff68eeaca40b4a15f9ada5f5be1e4</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M2165,-74.11C2165,-84.91 2165,-95.72 2165,-106.52"/>
+</g>
+<!-- ed044b4c2db34c7a9db1e37d0e22d8a1 -->
+<g id="node87" class="node">
+<title>ed044b4c2db34c7a9db1e37d0e22d8a1</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M2335,-74C2335,-74 2242,-74 2242,-74 2236,-74 2230,-68 2230,-62 2230,-62 2230,-28 2230,-28 2230,-22 2236,-16 2242,-16 2242,-16 2335,-16 2335,-16 2341,-16 2347,-22 2347,-28 2347,-28 2347,-62 2347,-62 2347,-68 2341,-74 2335,-74"/>
+<text text-anchor="middle" x="2288.5" y="-40" font-family="JetBrains Mono" font-size="20.00">RX(b0)</text>
+</g>
+<!-- fb5209721d6d4681aac1a5cdc43ca171&#45;&#45;ed044b4c2db34c7a9db1e37d0e22d8a1 -->
+<g id="edge83" class="edge">
+<title>fb5209721d6d4681aac1a5cdc43ca171&#45;&#45;ed044b4c2db34c7a9db1e37d0e22d8a1</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M2194.18,-45C2204.84,-45 2217.39,-45 2229.77,-45"/>
+</g>
+<!-- ed044b4c2db34c7a9db1e37d0e22d8a1&#45;&#45;fae556fa17d1467a9d267bb1190cdece -->
+<g id="edge84" class="edge">
+<title>ed044b4c2db34c7a9db1e37d0e22d8a1&#45;&#45;fae556fa17d1467a9d267bb1190cdece</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M2347.15,-45C2359.68,-45 2372.34,-45 2382.91,-45"/>
+</g>
+</g>
+</svg>
+
+
+
+</div>
+<h2 id="train-the-qaoa-circuit-to-solve-maxcut">Train the QAOA circuit to solve MaxCut</h2>
+<p>Given the QAOA circuit above, one can construct the associated Qadence <code>QuantumModel</code>
+and train it using standard gradient based optimization.</p>
+<p>The loss function to be minimized reads:</p>
+<div class="arithmatex">\[\mathcal{L} =-\langle \psi | H_c| \psi \rangle= -\frac12 \sum_{\langle i,j\rangle}  \left(1 - \langle \psi | Z_i Z_j | \psi \rangle \right)\]</div>
+<p>where <span class="arithmatex">\(|\psi\rangle(\beta, \gamma)\)</span> is the wavefunction obtained by running the QAQA
+quantum circuit and the sum runs over the edges of the graph <span class="arithmatex">\(\langle i,j\rangle\)</span>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span> <span class="nn">torch</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span> <span class="nn">qadence</span> <span class="kn">import</span> <span class="n">QuantumModel</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="k">def</span> <span class="nf">loss_function</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">QuantumModel</span><span class="p">):</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="c1"># The loss corresponds to the expectation</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="c1"># value of the cost Hamiltonian</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="k">return</span> <span class="o">-</span><span class="mf">1.0</span> <span class="o">*</span> <span class="n">model</span><span class="o">.</span><span class="n">expectation</span><span class="p">()</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="c1"># initialize the parameters to random values</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="n">model</span> <span class="o">=</span> <span class="n">QuantumModel</span><span class="p">(</span><span class="n">circuit</span><span class="p">,</span> <span class="n">observable</span><span class="o">=</span><span class="n">cost_ham</span><span class="p">)</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="n">model</span><span class="o">.</span><span class="n">reset_vparams</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">num_vparams</span><span class="p">))</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="n">initial_loss</span> <span class="o">=</span> <span class="n">loss_function</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initial loss: </span><span class="si">{</span><span class="n">initial_loss</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="c1"># train the model</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="n">n_epochs</span> <span class="o">=</span> <span class="mi">100</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="n">lr</span> <span class="o">=</span> <span class="mf">0.1</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">)</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_epochs</span><span class="p">):</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>    <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>    <span class="n">loss</span> <span class="o">=</span> <span class="n">loss_function</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>    <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>    <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+<a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>    <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="n">n_epochs</span> <span class="o">//</span> <span class="mi">10</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+<a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;MaxCut cost at iteration </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="o">-</span><span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+<div class="result" markdown="1" >
+
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="err">I</span><span class="kc">n</span><span class="err">i</span><span class="kc">t</span><span class="err">ial</span><span class="w"> </span><span class="err">loss</span><span class="p">:</span><span class="w"> </span><span class="mf">-2.1782381363858794</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="err">MaxCu</span><span class="kc">t</span><span class="w"> </span><span class="err">cos</span><span class="kc">t</span><span class="w"> </span><span class="err">a</span><span class="kc">t</span><span class="w"> </span><span class="err">i</span><span class="kc">terat</span><span class="err">io</span><span class="kc">n</span><span class="w"> </span><span class="mi">10</span><span class="p">:</span><span class="w"> </span><span class="mf">3.7470706807026417</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="err">MaxCu</span><span class="kc">t</span><span class="w"> </span><span class="err">cos</span><span class="kc">t</span><span class="w"> </span><span class="err">a</span><span class="kc">t</span><span class="w"> </span><span class="err">i</span><span class="kc">terat</span><span class="err">io</span><span class="kc">n</span><span class="w"> </span><span class="mi">20</span><span class="p">:</span><span class="w"> </span><span class="mf">3.8378810288930216</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="err">MaxCu</span><span class="kc">t</span><span class="w"> </span><span class="err">cos</span><span class="kc">t</span><span class="w"> </span><span class="err">a</span><span class="kc">t</span><span class="w"> </span><span class="err">i</span><span class="kc">terat</span><span class="err">io</span><span class="kc">n</span><span class="w"> </span><span class="mi">30</span><span class="p">:</span><span class="w"> </span><span class="mf">3.9424197899236133</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="err">MaxCu</span><span class="kc">t</span><span class="w"> </span><span class="err">cos</span><span class="kc">t</span><span class="w"> </span><span class="err">a</span><span class="kc">t</span><span class="w"> </span><span class="err">i</span><span class="kc">terat</span><span class="err">io</span><span class="kc">n</span><span class="w"> </span><span class="mi">40</span><span class="p">:</span><span class="w"> </span><span class="mf">3.9981256255766002</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="err">MaxCu</span><span class="kc">t</span><span class="w"> </span><span class="err">cos</span><span class="kc">t</span><span class="w"> </span><span class="err">a</span><span class="kc">t</span><span class="w"> </span><span class="err">i</span><span class="kc">terat</span><span class="err">io</span><span class="kc">n</span><span class="w"> </span><span class="mi">50</span><span class="p">:</span><span class="w"> </span><span class="mf">3.996470528508214</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="err">MaxCu</span><span class="kc">t</span><span class="w"> </span><span class="err">cos</span><span class="kc">t</span><span class="w"> </span><span class="err">a</span><span class="kc">t</span><span class="w"> </span><span class="err">i</span><span class="kc">terat</span><span class="err">io</span><span class="kc">n</span><span class="w"> </span><span class="mi">60</span><span class="p">:</span><span class="w"> </span><span class="mf">3.9991374608876606</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="err">MaxCu</span><span class="kc">t</span><span class="w"> </span><span class="err">cos</span><span class="kc">t</span><span class="w"> </span><span class="err">a</span><span class="kc">t</span><span class="w"> </span><span class="err">i</span><span class="kc">terat</span><span class="err">io</span><span class="kc">n</span><span class="w"> </span><span class="mi">70</span><span class="p">:</span><span class="w"> </span><span class="mf">3.9994678542919555</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="err">MaxCu</span><span class="kc">t</span><span class="w"> </span><span class="err">cos</span><span class="kc">t</span><span class="w"> </span><span class="err">a</span><span class="kc">t</span><span class="w"> </span><span class="err">i</span><span class="kc">terat</span><span class="err">io</span><span class="kc">n</span><span class="w"> </span><span class="mi">80</span><span class="p">:</span><span class="w"> </span><span class="mf">3.999872558672829</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="err">MaxCu</span><span class="kc">t</span><span class="w"> </span><span class="err">cos</span><span class="kc">t</span><span class="w"> </span><span class="err">a</span><span class="kc">t</span><span class="w"> </span><span class="err">i</span><span class="kc">terat</span><span class="err">io</span><span class="kc">n</span><span class="w"> </span><span class="mi">90</span><span class="p">:</span><span class="w"> </span><span class="mf">3.9999475834121063</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="err">MaxCu</span><span class="kc">t</span><span class="w"> </span><span class="err">cos</span><span class="kc">t</span><span class="w"> </span><span class="err">a</span><span class="kc">t</span><span class="w"> </span><span class="err">i</span><span class="kc">terat</span><span class="err">io</span><span class="kc">n</span><span class="w"> </span><span class="mi">100</span><span class="p">:</span><span class="w"> </span><span class="mf">3.9999793311641003</span>
+</code></pre></div>
+
+</div>
+<p>Qadence offers some convenience functions to implement this training loop with advanced
+logging and metrics track features. You can refer to <a href="../ml_tools/">this tutorial</a> for more details.</p>
+<h2 id="results">Results</h2>
+<p>Given the trained quantum model, one needs to sample the resulting quantum state to
+recover the bitstring with the highest probability which corresponds to the maximum
+cut of the graph.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">samples</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">n_shots</span><span class="o">=</span><span class="mi">100</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">most_frequent</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">samples</span><span class="o">.</span><span class="n">get</span><span class="p">)</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Most frequently sampled bitstring corresponding to the maximum cut: </span><span class="si">{</span><span class="n">most_frequent</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="c1"># let&#39;s now draw the cut obtained with the QAOA procedure</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">colors</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">labels</span> <span class="o">=</span> <span class="p">{}</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="k">for</span> <span class="n">node</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">(),</span> <span class="n">most_frequent</span><span class="p">):</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="n">colors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;green&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">colors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;red&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    <span class="n">labels</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;A&quot;</span> <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;B&quot;</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="n">nx</span><span class="o">.</span><span class="n">draw_networkx</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">node_color</span><span class="o">=</span><span class="n">colors</span><span class="p">,</span> <span class="n">with_labels</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">labels</span><span class="p">)</span>
+</code></pre></div>
+<div class="result" markdown="1" >
+
+Most frequently sampled bitstring corresponding to the maximum cut: 1001
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="432pt" height="360pt" viewBox="0 0 432 360" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2024-08-21T11:48:53.557508</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.7.5, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 360 
+L 432 360 
+L 432 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 54 320.4 
+L 388.8 320.4 
+L 388.8 43.2 
+L 54 43.2 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="LineCollection_1">
+    <path d="M 341.073061 67.254545 
+L 83.052893 83.245823 
+" clip-path="url(#p0cd13ccd6b)" style="fill: none; stroke: #000000"/>
+    <path d="M 341.073061 67.254545 
+L 359.747107 280.354177 
+" clip-path="url(#p0cd13ccd6b)" style="fill: none; stroke: #000000"/>
+    <path d="M 341.073061 67.254545 
+L 101.726939 296.345455 
+" clip-path="url(#p0cd13ccd6b)" style="fill: none; stroke: #000000"/>
+    <path d="M 83.052893 83.245823 
+L 359.747107 280.354177 
+" clip-path="url(#p0cd13ccd6b)" style="fill: none; stroke: #000000"/>
+    <path d="M 83.052893 83.245823 
+L 101.726939 296.345455 
+" clip-path="url(#p0cd13ccd6b)" style="fill: none; stroke: #000000"/>
+    <path d="M 359.747107 280.354177 
+L 101.726939 296.345455 
+" clip-path="url(#p0cd13ccd6b)" style="fill: none; stroke: #000000"/>
+   </g>
+   <g id="matplotlib.axis_1">
+    <g id="xtick_1"/>
+    <g id="xtick_2"/>
+    <g id="xtick_3"/>
+    <g id="xtick_4"/>
+    <g id="xtick_5"/>
+   </g>
+   <g id="matplotlib.axis_2">
+    <g id="ytick_1"/>
+    <g id="ytick_2"/>
+    <g id="ytick_3"/>
+    <g id="ytick_4"/>
+    <g id="ytick_5"/>
+   </g>
+   <g id="PathCollection_1">
+    <defs>
+     <path id="C0_0_87854d25ee" d="M 0 8.660254 
+C 2.296726 8.660254 4.499694 7.747755 6.123724 6.123724 
+C 7.747755 4.499694 8.660254 2.296726 8.660254 -0 
+C 8.660254 -2.296726 7.747755 -4.499694 6.123724 -6.123724 
+C 4.499694 -7.747755 2.296726 -8.660254 0 -8.660254 
+C -2.296726 -8.660254 -4.499694 -7.747755 -6.123724 -6.123724 
+C -7.747755 -4.499694 -8.660254 -2.296726 -8.660254 0 
+C -8.660254 2.296726 -7.747755 4.499694 -6.123724 6.123724 
+C -4.499694 7.747755 -2.296726 8.660254 0 8.660254 
+z
+"/>
+    </defs>
+    <g clip-path="url(#p0cd13ccd6b)">
+     <use xlink:href="#C0_0_87854d25ee" x="341.073061" y="67.254545" style="fill: #ff0000; stroke: #ff0000"/>
+    </g>
+    <g clip-path="url(#p0cd13ccd6b)">
+     <use xlink:href="#C0_0_87854d25ee" x="83.052893" y="83.245823" style="fill: #008000; stroke: #008000"/>
+    </g>
+    <g clip-path="url(#p0cd13ccd6b)">
+     <use xlink:href="#C0_0_87854d25ee" x="359.747107" y="280.354177" style="fill: #008000; stroke: #008000"/>
+    </g>
+    <g clip-path="url(#p0cd13ccd6b)">
+     <use xlink:href="#C0_0_87854d25ee" x="101.726939" y="296.345455" style="fill: #ff0000; stroke: #ff0000"/>
+    </g>
+   </g>
+   <g id="patch_3">
+    <path d="M 54 320.4 
+L 54 43.2 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 388.8 320.4 
+L 388.8 43.2 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 54 320.4 
+L 388.8 320.4 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 54 43.2 
+L 388.8 43.2 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="text_1">
+    <g clip-path="url(#p0cd13ccd6b)">
+     <!-- B -->
+     <g transform="translate(336.956498 70.565795) scale(0.12 -0.12)">
+      <defs>
+       <path id="DejaVuSans-42" d="M 1259 2228 
+L 1259 519 
+L 2272 519 
+Q 2781 519 3026 730 
+Q 3272 941 3272 1375 
+Q 3272 1813 3026 2020 
+Q 2781 2228 2272 2228 
+L 1259 2228 
+z
+M 1259 4147 
+L 1259 2741 
+L 2194 2741 
+Q 2656 2741 2882 2914 
+Q 3109 3088 3109 3444 
+Q 3109 3797 2882 3972 
+Q 2656 4147 2194 4147 
+L 1259 4147 
+z
+M 628 4666 
+L 2241 4666 
+Q 2963 4666 3353 4366 
+Q 3744 4066 3744 3513 
+Q 3744 3084 3544 2831 
+Q 3344 2578 2956 2516 
+Q 3422 2416 3680 2098 
+Q 3938 1781 3938 1306 
+Q 3938 681 3513 340 
+Q 3088 0 2303 0 
+L 628 0 
+L 628 4666 
+z
+" transform="scale(0.015625)"/>
+      </defs>
+      <use xlink:href="#DejaVuSans-42"/>
+     </g>
+    </g>
+   </g>
+   <g id="text_2">
+    <g clip-path="url(#p0cd13ccd6b)">
+     <!-- A -->
+     <g transform="translate(78.948518 86.557073) scale(0.12 -0.12)">
+      <defs>
+       <path id="DejaVuSans-41" d="M 2188 4044 
+L 1331 1722 
+L 3047 1722 
+L 2188 4044 
+z
+M 1831 4666 
+L 2547 4666 
+L 4325 0 
+L 3669 0 
+L 3244 1197 
+L 1141 1197 
+L 716 0 
+L 50 0 
+L 1831 4666 
+z
+" transform="scale(0.015625)"/>
+      </defs>
+      <use xlink:href="#DejaVuSans-41"/>
+     </g>
+    </g>
+   </g>
+   <g id="text_3">
+    <g clip-path="url(#p0cd13ccd6b)">
+     <!-- A -->
+     <g transform="translate(355.642732 283.665427) scale(0.12 -0.12)">
+      <use xlink:href="#DejaVuSans-41"/>
+     </g>
+    </g>
+   </g>
+   <g id="text_4">
+    <g clip-path="url(#p0cd13ccd6b)">
+     <!-- B -->
+     <g transform="translate(97.610377 299.656705) scale(0.12 -0.12)">
+      <use xlink:href="#DejaVuSans-42"/>
+     </g>
+    </g>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p0cd13ccd6b">
+   <rect x="54" y="43.2" width="334.8" height="277.2"/>
+  </clipPath>
+ </defs>
+</svg>
+
+
+
+</div>
+<h2 id="references">References</h2>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p><a href="https://arxiv.org/abs/1411.4028">Farhi et al.</a> - A Quantum Approximate Optimization Algorithm&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["content.code.annotate", "navigation.tabs", "navigation.indexes", "navigation.sections", "content.code.copy", "content.code.annotate"], "search": "../../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.471ce7a9.min.js"></script>
+      
+        <script src="../../../assets/_markdown_exec_pyodide.js"></script>
+      
+        <script src="../../../extras/javascripts/mathjax.js"></script>
+      
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
