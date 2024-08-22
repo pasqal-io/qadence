@@ -27,9 +27,9 @@ body:
       label: What is the expected result?
       placeholder: I expected this to happen
   - type: textarea
-    id: screenshots
+    id: texterror
     attributes:
-      label: Put here any screenshots or videos (optional)
+      label: Copy the text of the error here (optional)
   - type: dropdown
     id: assign
     attributes:
