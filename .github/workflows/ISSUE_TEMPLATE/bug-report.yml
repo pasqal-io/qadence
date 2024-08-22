@@ -1,0 +1,52 @@
+name: Bug Report
+description: Report a bug
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please fill out the sections below to help everyone identify and fix the bug
+  - type: textarea
+    id: description
+    attributes:
+      label: Short description
+      placeholder: Describe here
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What is the expected result?
+      placeholder: Describe here
+  - type: textarea
+    id: actual
+    attributes:
+      label: What is the actual result?
+      placeholder: Describe here
+  - type: textarea
+    id: code_bug
+    attributes:
+      label: Steps/Code to reproduce
+      placeholder: |
+        from qadence import *
+    validations:
+      required: true
+  - type: textarea
+    id: texterror
+    attributes:
+      label: Tracebacks (optional)
+  - type: textarea
+    id: textenv
+    attributes:
+      label: Environment details (optional)
+      placeholder: Qadence version, Operating  system, Python version, PyTorch version
+  - type: dropdown
+    id: assign
+    attributes:
+      label: "Would you like to work on this issue?"
+      options:
+        - "Yes"
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting this issue! We will get back to you as soon as possible.
