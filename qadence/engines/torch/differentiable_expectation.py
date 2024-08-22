@@ -231,8 +231,15 @@ class DifferentiableExpectation:
             if shift_factor == 1:
                 param_to_psr[param_id] = psr_fn(eigenvalues, **psr_args)
             else:
-                psr_args_factor = {k: v * shift_factor for k, v in psr_args.items()}
-                param_to_psr[param_id] = psr_fn(eigenvalues, **psr_args)
+                psr_args_factor = psr_args.copy()
+                if "shift_prefac" in psr_args_factor:
+                    if psr_args_factor["shift_prefac"] is not None:
+                        psr_args_factor["shift_prefac"] = (
+                            shift_factor * psr_args_factor["shift_prefac"]
+                        )
+                else:
+                    psr_args_factor["shift_prefac"] = shift_factor
+                param_to_psr[param_id] = psr_fn(eigenvalues, **psr_args_factor)
         for obs in observable:
             for param_id, _ in uuid_to_eigen(obs).items():
                 # We need the embedded fixed params of the observable in the param_values dict
