@@ -7,7 +7,6 @@ from typing import Any, Sequence, Tuple
 import pyqtorch as pyq
 import sympy
 import torch
-from pyqtorch.apply import apply_operator
 from pyqtorch.embed import Embedding
 from pyqtorch.matrices import _dagger
 from pyqtorch.time_dependent.sesolve import sesolve
@@ -45,7 +44,6 @@ from qadence.blocks import (
 )
 from qadence.blocks.block_to_tensor import (
     _block_to_tensor_embedded,
-    block_to_tensor,
 )
 from qadence.blocks.primitive import ProjectorBlock
 from qadence.blocks.utils import parameters
@@ -78,6 +76,14 @@ def is_single_qubit_chain(block: AbstractBlock) -> bool:
     )
 
 
+def extract_parameter(block: ScaleBlock | ParametricBlock, config: Configuration) -> str | Tensor:
+    return (
+        tensor([block.parameters.parameter], dtype=float64)
+        if not block.is_parametric
+        else config.get_param_name(block)[0]
+    )
+
+
 def convert_block(
     block: AbstractBlock, n_qubits: int = None, config: Configuration = None
 ) -> Sequence[Module | Tensor | str | sympy.Expr]:
@@ -94,29 +100,43 @@ def convert_block(
 
     if isinstance(block, ScaleBlock):
         scaled_ops = convert_block(block.block, n_qubits, config)
-        scale = (
-            tensor([block.parameters.parameter], dtype=float64)
-            if not block.is_parametric
-            else config.get_param_name(block)[0]
-        )
+        scale = extract_parameter(block, config)
         return [pyq.Scale(pyq.Sequence(scaled_ops), scale)]
 
     elif isinstance(block, TimeEvolutionBlock):
-        # TODO add native pyq hamevo
-        # generator = convert_block(block.generator, n_qubits, config)[0]  # type: ignore[arg-type]
-        # time_param = config.get_param_name(block)[0]
-        # is_parametric = (
-        #     block.generator.is_parametric if isinstance(block.generator, AbstractBlock) else False
-        # )
-        # return [
-        #     pyq.HamiltonianEvolution(
-        #         qubit_support=qubit_support,
-        #         generator=generator,
-        #         time=time_param,
-        #         generator_parametric=is_parametric,  # type: ignore[union-attr]
-        #     )
-        # ]
-        return [PyQHamiltonianEvolution(qubit_support, n_qubits, block, config)]
+        if getattr(block.generator, "is_time_dependent", False):
+            return [PyQTimeDependentEvolution(qubit_support, n_qubits, block, config)]
+        else:
+            if isinstance(block.generator, sympy.Basic):
+                generator = config.get_param_name(block)[1]
+            elif isinstance(block.generator, Tensor):
+                m = block.generator.to(dtype=cdouble)
+                generator = convert_block(
+                    MatrixBlock(
+                        m,
+                        qubit_support=qubit_support,
+                        check_unitary=False,
+                        check_hermitian=True,
+                    )
+                )[0]
+            else:
+                generator = convert_block(block.generator, n_qubits, config)[0]  # type: ignore[arg-type]
+            time_param = config.get_param_name(block)[0]
+            is_parametric = (
+                block.generator.is_parametric
+                if isinstance(block.generator, AbstractBlock)
+                else False
+            )
+            return [
+                pyq.HamiltonianEvolution(
+                    qubit_support=qubit_support,
+                    generator=generator,
+                    time=time_param,
+                    generator_parametric=is_parametric,  # type: ignore[union-attr]
+                    cache_length=0,
+                )
+            ]
+
     elif isinstance(block, MatrixBlock):
         return [pyq.primitives.Primitive(block.matrix, block.qubit_support)]
     elif isinstance(block, CompositeBlock):
@@ -142,14 +162,14 @@ def convert_block(
             if isinstance(block, U):
                 op = pyq_cls(qubit_support[0], *config.get_param_name(block))
             else:
-                op = pyq_cls(qubit_support[0], config.get_param_name(block)[0])
+                op = pyq_cls(qubit_support[0], extract_parameter(block, config))
         else:
             op = pyq_cls(qubit_support[0])
         return [op]
     elif isinstance(block, tuple(two_qubit_gateset)):
         pyq_cls = getattr(pyq, block.name)
         if isinstance(block, ParametricBlock):
-            op = pyq_cls(qubit_support[0], qubit_support[1], config.get_param_name(block)[0])
+            op = pyq_cls(qubit_support[0], qubit_support[1], extract_parameter(block, config))
         else:
             op = pyq_cls(qubit_support[0], qubit_support[1])
         return [op]
@@ -157,7 +177,7 @@ def convert_block(
         block_name = block.name[1:] if block.name.startswith("M") else block.name
         pyq_cls = getattr(pyq, block_name)
         if isinstance(block, ParametricBlock):
-            op = pyq_cls(qubit_support[:-1], qubit_support[-1], config.get_param_name(block)[0])
+            op = pyq_cls(qubit_support[:-1], qubit_support[-1], extract_parameter(block, config))
         else:
             if "CSWAP" in block_name:
                 op = pyq_cls(qubit_support[:-2], qubit_support[-2:])
@@ -172,7 +192,7 @@ def convert_block(
         )
 
 
-class PyQHamiltonianEvolution(Module):
+class PyQTimeDependentEvolution(Module):
     def __init__(
         self,
         qubit_support: Tuple[int, ...],
@@ -188,50 +208,17 @@ class PyQHamiltonianEvolution(Module):
         self.hmat: Tensor
         self.config = config
 
-        if isinstance(block.generator, AbstractBlock) and not block.generator.is_parametric:
-            hmat = block_to_tensor(
-                block.generator,
+        def _hamiltonian(self: PyQTimeDependentEvolution, values: dict[str, Tensor]) -> Tensor:
+            hmat = _block_to_tensor_embedded(
+                block.generator,  # type: ignore[arg-type]
+                values=values,
                 qubit_support=self.qubit_support,
                 use_full_support=False,
+                device=self.device,
             )
-            hmat = hmat.permute(1, 2, 0)
-            self.register_buffer("hmat", hmat)
-            self._hamiltonian = lambda self, values: self.hmat
+            return hmat.permute(1, 2, 0)
 
-        elif isinstance(block.generator, Tensor):
-            m = block.generator.to(dtype=cdouble)
-            hmat = block_to_tensor(
-                MatrixBlock(
-                    m,
-                    qubit_support=block.qubit_support,
-                    check_unitary=False,
-                    check_hermitian=True,
-                ),
-                qubit_support=self.qubit_support,
-                use_full_support=False,
-            )
-            hmat = hmat.permute(1, 2, 0)
-            self.register_buffer("hmat", hmat)
-            self._hamiltonian = lambda self, values: self.hmat
-
-        elif isinstance(block.generator, sympy.Basic):
-            self._hamiltonian = (
-                lambda self, values: values[self.param_names[1]].squeeze(3).permute(1, 2, 0)
-            )
-            # FIXME Why are we squeezing
-        else:
-
-            def _hamiltonian(self: PyQHamiltonianEvolution, values: dict[str, Tensor]) -> Tensor:
-                hmat = _block_to_tensor_embedded(
-                    block.generator,  # type: ignore[arg-type]
-                    values=values,
-                    qubit_support=self.qubit_support,
-                    use_full_support=False,
-                    device=self.device,
-                )
-                return hmat.permute(1, 2, 0)
-
-            self._hamiltonian = _hamiltonian
+        self._hamiltonian = _hamiltonian
 
         self._time_evolution = lambda values: values[self.param_names[0]]
         self._device: torch_device = (
@@ -322,59 +309,51 @@ class PyQHamiltonianEvolution(Module):
         values: dict[str, Tensor] | ParameterDict = dict(),
         embedding: Embedding | None = None,
     ) -> Tensor:
-        if getattr(self.block.generator, "is_time_dependent", False):  # type: ignore [union-attr]
+        def Ht(t: Tensor | float) -> Tensor:
+            # values dict has to change with new value of t
+            # initial value of a feature parameter inside generator block
+            # has to be inferred here
+            new_vals = dict()
+            for str_expr, val in values.items():
+                expr = sympy.sympify(str_expr)
+                t_symb = sympy.Symbol(self._get_time_parameter())
+                free_symbols = expr.free_symbols
+                if t_symb in free_symbols:
+                    # create substitution list for time and feature params
+                    subs_list = [(t_symb, t)]
 
-            def Ht(t: Tensor | float) -> Tensor:
-                # values dict has to change with new value of t
-                # initial value of a feature parameter inside generator block
-                # has to be inferred here
-                new_vals = dict()
-                for str_expr, val in values.items():
-                    expr = sympy.sympify(str_expr)
-                    t_symb = sympy.Symbol(self._get_time_parameter())
-                    free_symbols = expr.free_symbols
-                    if t_symb in free_symbols:
-                        # create substitution list for time and feature params
-                        subs_list = [(t_symb, t)]
+                    if len(free_symbols) > 1:
+                        # get feature param symbols
+                        feat_symbols = free_symbols.difference(set([t_symb]))
 
-                        if len(free_symbols) > 1:
-                            # get feature param symbols
-                            feat_symbols = free_symbols.difference(set([t_symb]))
+                        # get feature param values
+                        feat_vals = values["orig_param_values"]
 
-                            # get feature param values
-                            feat_vals = values["orig_param_values"]
+                        # update substitution list with feature param values
+                        for fs in feat_symbols:
+                            subs_list.append((fs, feat_vals[str(fs)]))
 
-                            # update substitution list with feature param values
-                            for fs in feat_symbols:
-                                subs_list.append((fs, feat_vals[str(fs)]))
+                    # evaluate expression with new time param value
+                    new_vals[str_expr] = torch.tensor(float(expr.subs(subs_list)))
+                else:
+                    # expression doesn't contain time parameter - copy it as is
+                    new_vals[str_expr] = val
 
-                        # evaluate expression with new time param value
-                        new_vals[str_expr] = torch.tensor(float(expr.subs(subs_list)))
-                    else:
-                        # expression doesn't contain time parameter - copy it as is
-                        new_vals[str_expr] = val
+            # get matrix form of generator
+            hmat = _block_to_tensor_embedded(
+                self.block.generator,  # type: ignore[arg-type]
+                values=new_vals,
+                qubit_support=self.qubit_support,
+                use_full_support=False,
+                device=self.device,
+            ).squeeze(0)
 
-                # get matrix form of generator
-                hmat = _block_to_tensor_embedded(
-                    self.block.generator,  # type: ignore[arg-type]
-                    values=new_vals,
-                    qubit_support=self.qubit_support,
-                    use_full_support=False,
-                    device=self.device,
-                ).squeeze(0)
+            return hmat
 
-                return hmat
-
-            tsave = torch.linspace(0, self.block.duration, self.config.n_steps_hevo)  # type: ignore [attr-defined]
-            result = pyqify(
-                sesolve(Ht, unpyqify(state).T[:, 0:1], tsave, self.config.ode_solver).states[-1].T
-            )
-        else:
-            result = apply_operator(
-                state,
-                self.unitary(values),
-                self.qubit_support,
-            )
+        tsave = torch.linspace(0, self.block.duration, self.config.n_steps_hevo)  # type: ignore [attr-defined]
+        result = pyqify(
+            sesolve(Ht, unpyqify(state).T[:, 0:1], tsave, self.config.ode_solver).states[-1].T
+        )
 
         return result
 
@@ -386,7 +365,7 @@ class PyQHamiltonianEvolution(Module):
     def dtype(self) -> torch_dtype:
         return self._dtype
 
-    def to(self, *args: Any, **kwargs: Any) -> PyQHamiltonianEvolution:
+    def to(self, *args: Any, **kwargs: Any) -> PyQTimeDependentEvolution:
         if hasattr(self, "hmat"):
             self.hmat = self.hmat.to(*args, **kwargs)
             self._device = self.hmat.device
