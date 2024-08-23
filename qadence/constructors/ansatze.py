@@ -411,7 +411,7 @@ def alt_digital(
 
         
 )->AbstractBlock:
-    print(depth)
+    
     rot_list = _rotations_digital(
         n_qubits=n_qubits,
         
