@@ -14,7 +14,7 @@ from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
-from qadence.ml_tools.config import Callback, TrainConfig
+from qadence.ml_tools.config import Callback, TrainConfig, run_callbacks
 from qadence.ml_tools.data import DictDataLoader, OptimizeResult, data_to_device
 from qadence.ml_tools.optimize_step import optimize_step
 from qadence.ml_tools.printing import (
@@ -262,10 +262,6 @@ def train(
             )
         ]
 
-    def run_callbacks(callback_iterable: list[Callback], opt_res: OptimizeResult) -> None:
-        for callback in callback_iterable:
-            callback(opt_res)
-
     callbacks_before_opt = [
         callback
         for callback in callbacks
@@ -349,7 +345,7 @@ def train(
 
     # Final callbacks, by default checkpointing and writing
     callbacks_after_opt = [callback for callback in callbacks if callback.call_after_opt]
-    run_callbacks(callbacks_after_opt, opt_result)
+    run_callbacks(callbacks_after_opt, opt_result, is_last_iteration=True)
 
     # writing hyperparameters
     if config.hyperparams:
