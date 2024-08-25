@@ -349,7 +349,12 @@ def _entanglers_block_digital(
         if not d%2:
            ents.append(
                kron(
-                   _entangler(control=support[i+j],target=support[i+j+1],param_str=param_prefix + f"_ent_{next(iterator)}",op=entangler)
+                   _entangler(
+                       control=support[i+j],
+                       target=support[i+j+1],
+                       param_str=param_prefix + f"_ent_{next(iterator)}",
+                       op=entangler
+                       )
                    
                    for i in range(0,n_qubits,m_block_qubits)
                    for j in range(0,m_block_qubits,2)  
@@ -360,7 +365,12 @@ def _entanglers_block_digital(
            if m_block_qubits > 2:
                ents.append(
                 kron(
-                    _entangler(control=support[i+j],target=support[i+j+1],param_str=param_prefix + f"_ent_{next(iterator)}",op=entangler)
+                    _entangler(
+                        control=support[i+j],
+                        target=support[i+j+1],
+                        param_str=param_prefix + f"_ent_{next(iterator)}",
+                        op=entangler
+                        )
                     
                     for i in range(0,n_qubits,m_block_qubits) 
                     for j in range(1,m_block_qubits,2) 
@@ -372,7 +382,12 @@ def _entanglers_block_digital(
         elif d%2:
             ents.append(
                kron(
-                   _entangler(control=support[ i +j],target=support[i+j+1],param_str=param_prefix + f"_ent_{next(iterator)}",op=entangler)
+                   _entangler(
+                       control=support[ i +j],
+                       target=support[i+j+1],
+                       param_str=param_prefix + f"_ent_{next(iterator)}",
+                       op=entangler
+                       )
                    
                    for i in range(-m_block_qubits//2,n_qubits,m_block_qubits) 
                    for j in range(0,m_block_qubits,2) 
@@ -383,7 +398,12 @@ def _entanglers_block_digital(
             if m_block_qubits > 2:
                 ents.append(
                     kron(
-                        _entangler(control=support[ i+j],target=support[ i+j+1],param_str=param_prefix + f"_ent_{next(iterator)}",op=entangler)
+                        _entangler(
+                            control=support[ i+j],
+                            target=support[ i+j+1],
+                            param_str=param_prefix + f"_ent_{next(iterator)}",
+                            op=entangler
+                            )
                         
                         for i in range(-m_block_qubits//2,n_qubits,m_block_qubits)  
                         for j in range(1,m_block_qubits,2)
@@ -406,7 +426,7 @@ def alt_digital(
         
         param_prefix:str='theta',
         
-        operations : list[Type(AbstractBlock)]=[RX,RY,RZ],
+        operations : list[type[AbstractBlock]]=[RX,RY],
         entangler: Type[DigitalEntanglers]=CNOT,
 
         
