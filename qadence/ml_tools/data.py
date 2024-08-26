@@ -1,13 +1,39 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import singledispatch
 from itertools import cycle
 from typing import Any, Iterator
 
+from nevergrad.optimization.base import Optimizer as NGOptimizer
 from torch import Tensor
 from torch import device as torch_device
+from torch.nn import Module
+from torch.optim import Optimizer
 from torch.utils.data import DataLoader, IterableDataset, TensorDataset
+
+
+@dataclass
+class OptimizeResult:
+    """OptimizeResult stores many optimization intermediate values.
+
+    We store at a current iteration,
+    the model, optimizer, loss values, metrics. An extra dict
+    can be used for saving other information to be used for callbacks.
+    """
+
+    iteration: int
+    """Current iteration number."""
+    model: Module
+    """Model at iteration."""
+    optimizer: Optimizer | NGOptimizer
+    """Optimizer at iteration."""
+    loss: Tensor | float | None = None
+    """Loss value."""
+    metrics: dict = field(default_factory=lambda: dict())
+    """Metrics that can be saved during training."""
+    extra: dict = field(default_factory=lambda: dict())
+    """Extra dict for saving anything else to be used in callbacks."""
 
 
 @dataclass

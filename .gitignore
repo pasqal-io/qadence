@@ -75,3 +75,7 @@ events.out.tfevents.*
 *.dvi
 
 *.gv
+
+# mlflow
+mlruns/
+mlartifacts/

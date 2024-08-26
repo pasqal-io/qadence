@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import importlib
 import math
 from logging import getLogger
-from typing import Callable, Union
+from typing import Any, Callable, Union
 
 from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, TimeRemainingColumn
-from torch import complex128, float32, float64
+from torch import Tensor, complex128, float32, float64
 from torch import device as torch_device
 from torch import dtype as torch_dtype
 from torch.nn import DataParallel, Module
@@ -13,11 +14,18 @@ from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
-from qadence.ml_tools.config import TrainConfig
-from qadence.ml_tools.data import DictDataLoader, data_to_device
+from qadence.ml_tools.config import Callback, TrainConfig, run_callbacks
+from qadence.ml_tools.data import DictDataLoader, OptimizeResult, data_to_device
 from qadence.ml_tools.optimize_step import optimize_step
-from qadence.ml_tools.printing import print_metrics, write_tensorboard
+from qadence.ml_tools.printing import (
+    log_model_tracker,
+    log_tracker,
+    plot_tracker,
+    print_metrics,
+    write_tracker,
+)
 from qadence.ml_tools.saveload import load_checkpoint, write_checkpoint
+from qadence.types import ExperimentTrackingTool
 
 logger = getLogger(__name__)
 
@@ -30,7 +38,6 @@ def train(
     loss_fn: Callable,
     device: torch_device = None,
     optimize_step: Callable = optimize_step,
-    write_tensorboard: Callable = write_tensorboard,
     dtype: torch_dtype = None,
 ) -> tuple[Module, Optimizer]:
     """Runs the training loop with gradient-based optimizer.
@@ -48,15 +55,11 @@ def train(
             the model
         optimizer: The optimizer to use.
         config: `TrainConfig` with additional training options.
-        loss_fn: Loss function returning (loss: float, metrics: dict[str, float])
+        loss_fn: Loss function returning (loss: float, metrics: dict[str, float], ...)
         device: String defining device to train on, pass 'cuda' for GPU.
         optimize_step: Customizable optimization callback which is called at every iteration.=
             The function must have the signature `optimize_step(model,
             optimizer, loss_fn, xs, device="cpu")`.
-        write_tensorboard: Customizable tensorboard logging callback which is
-            called every `config.write_every` iterations. The function must have
-            the signature `write_tensorboard(writer, loss, metrics, iteration)`
-            (see the example below).
         dtype: The dtype to use for the data.
 
     Example:
@@ -122,8 +125,11 @@ def train(
         model = model.module.to(device=device, dtype=dtype)
     else:
         model = model.to(device=device, dtype=dtype)
-    # initialize tensorboard
-    writer = SummaryWriter(config.folder, purge_step=init_iter)
+    # initialize tracking tool
+    if config.tracking_tool == ExperimentTrackingTool.TENSORBOARD:
+        writer = SummaryWriter(config.folder, purge_step=init_iter)
+    else:
+        writer = importlib.import_module("mlflow")
 
     perform_val = isinstance(config.val_every, int)
     if perform_val:
@@ -154,87 +160,174 @@ def train(
 
     best_val_loss = math.inf
 
+    if not ((dataloader is None) or isinstance(dataloader, (DictDataLoader, DataLoader))):
+        raise NotImplementedError(
+            f"Unsupported dataloader type: {type(dataloader)}. "
+            "You can use e.g. `qadence.ml_tools.to_dataloader` to build a dataloader."
+        )
+
+    def next_loss_iter(dl_iter: Union[None, DataLoader, DictDataLoader]) -> Any:
+        """Get loss on the next batch of a dataloader.
+
+            loaded on device if not None.
+
+        Args:
+            dl_iter (Union[None, DataLoader, DictDataLoader]): Dataloader.
+
+        Returns:
+            Any: Loss value
+        """
+        xs = next(dl_iter) if dl_iter is not None else None
+        xs_to_device = data_to_device(xs, device=device, dtype=data_dtype)
+        return loss_fn(model, xs_to_device)
+
+    # populate callbacks with already available internal functions
+    # printing, writing and plotting
+    callbacks = config.callbacks
+
+    # printing
+    if config.verbose and config.print_every > 0:
+        # Note that the loss returned by optimize_step
+        # is the value before doing the training step
+        # which is printed accordingly by the previous iteration number
+        callbacks += [
+            Callback(
+                lambda opt_res: print_metrics(opt_res.loss, opt_res.metrics, opt_res.iteration - 1),
+                called_every=config.print_every,
+                call_after_opt=True,
+            )
+        ]
+
+    # plotting
+    callbacks += [
+        Callback(
+            lambda opt_res: plot_tracker(
+                writer,
+                opt_res.model,
+                opt_res.iteration,
+                config.plotting_functions,
+                tracking_tool=config.tracking_tool,
+            ),
+            called_every=config.plot_every,
+            call_before_opt=True,
+        )
+    ]
+
+    # writing metrics
+    callbacks += [
+        Callback(
+            lambda opt_res: write_tracker(
+                writer,
+                opt_res.loss,
+                opt_res.metrics,
+                opt_res.iteration,
+                tracking_tool=config.tracking_tool,
+            ),
+            called_every=config.write_every,
+            call_before_opt=False,
+            call_after_opt=True,
+            call_during_eval=True,
+        )
+    ]
+
+    # checkpointing
+    if config.folder and config.checkpoint_every > 0 and not config.checkpoint_best_only:
+        callbacks += [
+            Callback(
+                lambda opt_res: write_checkpoint(
+                    config.folder,  # type: ignore[arg-type]
+                    opt_res.model,
+                    opt_res.optimizer,
+                    opt_res.iteration,
+                ),
+                called_every=config.checkpoint_every,
+                call_before_opt=False,
+                call_after_opt=True,
+            )
+        ]
+
+    if config.folder and config.checkpoint_best_only:
+        callbacks += [
+            Callback(
+                lambda opt_res: write_checkpoint(
+                    config.folder,  # type: ignore[arg-type]
+                    opt_res.model,
+                    opt_res.optimizer,
+                    "best",
+                ),
+                called_every=config.checkpoint_every,
+                call_before_opt=True,
+                call_after_opt=True,
+                call_during_eval=True,
+            )
+        ]
+
+    callbacks_before_opt = [
+        callback
+        for callback in callbacks
+        if callback.call_before_opt and not callback.call_during_eval
+    ]
+    callbacks_before_opt_eval = [
+        callback for callback in callbacks if callback.call_before_opt and callback.call_during_eval
+    ]
+
     with progress:
         dl_iter = iter(dataloader) if dataloader is not None else None
 
         # Initial validation evaluation
         try:
+            opt_result = OptimizeResult(init_iter, model, optimizer)
             if perform_val:
                 dl_iter_val = iter(val_dataloader) if val_dataloader is not None else None
-                xs = next(dl_iter_val)
-                xs_to_device = data_to_device(xs, device=device, dtype=data_dtype)
-                best_val_loss, metrics = loss_fn(model, xs_to_device)
-
+                best_val_loss, metrics, *_ = next_loss_iter(dl_iter_val)
                 metrics["val_loss"] = best_val_loss
-                write_tensorboard(writer, None, metrics, init_iter)
+                opt_result.metrics = metrics
+                run_callbacks(callbacks_before_opt_eval, opt_result)
 
-            if config.folder:
-                if config.checkpoint_best_only:
-                    write_checkpoint(config.folder, model, optimizer, iteration="best")
-                else:
-                    write_checkpoint(config.folder, model, optimizer, init_iter)
+            run_callbacks(callbacks_before_opt, opt_result)
 
         except KeyboardInterrupt:
             logger.info("Terminating training gracefully after the current iteration.")
 
         # outer epoch loop
         init_iter += 1
+        callbacks_end_epoch = [
+            callback
+            for callback in callbacks
+            if callback.call_end_epoch and not callback.call_during_eval
+        ]
+        callbacks_end_epoch_eval = [
+            callback
+            for callback in callbacks
+            if callback.call_end_epoch and callback.call_during_eval
+        ]
         for iteration in progress.track(range(init_iter, init_iter + config.max_iter)):
             try:
                 # in case there is not data needed by the model
                 # this is the case, for example, of quantum models
                 # which do not have classical input data (e.g. chemistry)
-                if dataloader is None:
-                    loss, metrics = optimize_step(
-                        model=model,
-                        optimizer=optimizer,
-                        loss_fn=loss_fn,
-                        xs=None,
-                        device=device,
-                        dtype=data_dtype,
-                    )
+                loss, metrics = optimize_step(
+                    model=model,
+                    optimizer=optimizer,
+                    loss_fn=loss_fn,
+                    xs=None if dataloader is None else next(dl_iter),  # type: ignore[arg-type]
+                    device=device,
+                    dtype=data_dtype,
+                )
+                if isinstance(loss, Tensor):
                     loss = loss.item()
-
-                elif isinstance(dataloader, (DictDataLoader, DataLoader)):
-                    loss, metrics = optimize_step(
-                        model=model,
-                        optimizer=optimizer,
-                        loss_fn=loss_fn,
-                        xs=next(dl_iter),  # type: ignore[arg-type]
-                        device=device,
-                        dtype=data_dtype,
-                    )
-
-                else:
-                    raise NotImplementedError(
-                        f"Unsupported dataloader type: {type(dataloader)}. "
-                        "You can use e.g. `qadence.ml_tools.to_dataloader` to build a dataloader."
-                    )
-
-                if iteration % config.print_every == 0 and config.verbose:
-                    # Note that the loss returned by optimize_step
-                    # is the value before doing the training step
-                    # which is printed accordingly by the previous iteration number
-                    print_metrics(loss, metrics, iteration - 1)
-
-                if iteration % config.write_every == 0:
-                    write_tensorboard(writer, loss, metrics, iteration - 1)
+                opt_result = OptimizeResult(iteration, model, optimizer, loss, metrics)
+                run_callbacks(callbacks_end_epoch, opt_result)
 
                 if perform_val:
                     if iteration % config.val_every == 0:
-                        xs = next(dl_iter_val)
-                        xs_to_device = data_to_device(xs, device=device, dtype=data_dtype)
-                        val_loss, _ = loss_fn(model, xs_to_device)
+                        val_loss, *_ = next_loss_iter(dl_iter_val)
                         if config.validation_criterion(val_loss, best_val_loss, config.val_epsilon):  # type: ignore[misc]
                             best_val_loss = val_loss
-                            if config.folder and config.checkpoint_best_only:
-                                write_checkpoint(config.folder, model, optimizer, iteration="best")
                             metrics["val_loss"] = val_loss
-                            write_tensorboard(writer, None, metrics, iteration)
+                            opt_result.metrics = metrics
 
-                if config.folder:
-                    if iteration % config.checkpoint_every == 0 and not config.checkpoint_best_only:
-                        write_checkpoint(config.folder, model, optimizer, iteration)
+                            run_callbacks(callbacks_end_epoch_eval, opt_result)
 
             except KeyboardInterrupt:
                 logger.info("Terminating training gracefully after the current iteration.")
@@ -243,19 +336,29 @@ def train(
         # Handling printing the last training loss
         # as optimize_step does not give the loss value at the last iteration
         try:
-            xs = next(dl_iter) if dataloader is not None else None  # type: ignore[arg-type]
-            xs_to_device = data_to_device(xs, device=device, dtype=data_dtype)
-            loss, metrics = loss_fn(model, xs_to_device)
+            loss, metrics, *_ = next_loss_iter(dl_iter)
             if iteration % config.print_every == 0 and config.verbose:
                 print_metrics(loss, metrics, iteration)
 
         except KeyboardInterrupt:
             logger.info("Terminating training gracefully after the current iteration.")
 
-    # Final printing, writing and checkpointing
-    if config.folder and not config.checkpoint_best_only:
-        write_checkpoint(config.folder, model, optimizer, iteration)
-    write_tensorboard(writer, loss, metrics, iteration)
-    writer.close()
+    # Final callbacks, by default checkpointing and writing
+    callbacks_after_opt = [callback for callback in callbacks if callback.call_after_opt]
+    run_callbacks(callbacks_after_opt, opt_result, is_last_iteration=True)
+
+    # writing hyperparameters
+    if config.hyperparams:
+        log_tracker(writer, config.hyperparams, metrics, tracking_tool=config.tracking_tool)
+
+    # logging the model
+    if config.log_model:
+        log_model_tracker(writer, model, dataloader, tracking_tool=config.tracking_tool)
+
+    # close tracker
+    if config.tracking_tool == ExperimentTrackingTool.TENSORBOARD:
+        writer.close()
+    elif config.tracking_tool == ExperimentTrackingTool.MLFLOW:
+        writer.end_run()
 
     return model, optimizer

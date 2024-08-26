@@ -6,9 +6,11 @@ from typing import Callable, Iterable, Tuple, Union
 
 import numpy as np
 import sympy
+from matplotlib.figure import Figure
 from numpy.typing import ArrayLike
 from pyqtorch.utils import SolverType
 from torch import Tensor, pi
+from torch.nn import Module
 
 TNumber = Union[int, float, complex, np.int64, np.float64]
 """Union of python and numpy numeric types."""
@@ -154,9 +156,9 @@ class ReuploadScaling(StrEnum):
 class MultivariateStrategy(StrEnum):
     """Multivariate strategy for feature maps."""
 
-    PARALLEL = "parallel"
+    PARALLEL = "Parallel"
     """Parallel strategy."""
-    SERIES = "SERIES"
+    SERIES = "Series"
     """Serial strategy."""
 
 
@@ -445,3 +447,13 @@ class ObservableTransform:
     """Use the given values as min and max."""
     NONE = "none"
     """No transformation."""
+
+
+class ExperimentTrackingTool(StrEnum):
+    TENSORBOARD = "tensorboard"
+    """Use the tensorboard experiment tracker."""
+    MLFLOW = "mlflow"
+    """Use the ml-flow experiment tracker."""
+
+
+LoggablePlotFunction = Callable[[Module, int], tuple[str, Figure]]

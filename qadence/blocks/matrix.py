@@ -66,6 +66,8 @@ class MatrixBlock(PrimitiveBlock):
         matrix: torch.Tensor | np.ndarray,
         qubit_support: tuple[int, ...],
         noise: Noise | dict[str, Noise] | None = None,
+        check_unitary: bool = True,
+        check_hermitian: bool = False,
     ) -> None:
         if isinstance(matrix, np.ndarray):
             matrix = torch.tensor(matrix)
@@ -75,10 +77,12 @@ class MatrixBlock(PrimitiveBlock):
             raise TypeError("Please provide a 2D matrix.")
         if not self.is_square(matrix):
             raise TypeError("Please provide a square matrix.")
-        if not self.is_hermitian(matrix):
-            logger.warning("Provided matrix is not hermitian.")
-        if not self.is_unitary(matrix):
-            logger.warning("Provided matrix is not unitary.")
+        if check_hermitian:
+            if not self.is_hermitian(matrix):
+                logger.warning("Provided matrix is not hermitian.")
+        if check_unitary:
+            if not self.is_unitary(matrix):
+                logger.warning("Provided matrix is not unitary.")
         self.matrix = matrix.clone()
         super().__init__(qubit_support, noise)
 

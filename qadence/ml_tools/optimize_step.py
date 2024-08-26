@@ -29,10 +29,11 @@ def optimize_step(
         xs (dict | list | torch.Tensor | None): the input data. If None it means
             that the given model does not require any input data
         device (torch.device): A target device to run computation on.
+        dtype (torch.dtype): Data type for xs conversion.
 
     Returns:
-        tuple: tuple containing the model, the optimizer, a dictionary with
-            the collected metrics and the compute value loss
+        tuple: tuple containing the computed loss value, and a dictionary with
+            the collected metrics.
     """
 
     loss, metrics = None, {}

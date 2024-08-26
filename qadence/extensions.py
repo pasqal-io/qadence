@@ -15,6 +15,22 @@ EngineClsType = TypeVar("EngineClsType", bound=DifferentiableBackend)
 logger = getLogger(__name__)
 
 
+class ConfigNotFoundError(ModuleNotFoundError):
+    ...
+
+
+class BackendNotFoundError(ModuleNotFoundError):
+    ...
+
+
+class EngineNotFoundError(ModuleNotFoundError):
+    ...
+
+
+class SupportedGatesNotFoundError(ModuleNotFoundError):
+    ...
+
+
 def import_config(backend_name: str | BackendName) -> BackendConfiguration:
     module_path = f"qadence.backends.{backend_name}.config"
     cfg: BackendConfiguration
@@ -22,7 +38,8 @@ def import_config(backend_name: str | BackendName) -> BackendConfiguration:
         module = importlib.import_module(module_path)
         cfg = getattr(module, "Configuration")
     except (ModuleNotFoundError, ImportError) as e:
-        raise type(e)(f"Failed to import backend config of {backend_name} due to {e}.") from e
+        msg = f"Failed to import backend config for '{backend_name}' due to: '{e.msg}'."
+        raise ConfigNotFoundError(msg)
     return cfg
 
 
@@ -31,9 +48,15 @@ def import_backend(backend_name: str | BackendName) -> Backend:
     backend: Backend
     try:
         module = importlib.import_module(module_path)
-        backend = getattr(module, "Backend")
     except (ModuleNotFoundError, ImportError) as e:
-        raise type(e)
+        # If backend is not in Qadence, search in extensions.
+        module_path = f"qadence_extensions.backends.{backend_name}.backend"
+        try:
+            module = importlib.import_module(module_path)
+        except (ModuleNotFoundError, ImportError) as e:
+            msg = f"Failed to import backend '{backend_name}' due to: '{e.msg}'."
+            raise BackendNotFoundError(msg)
+    backend = getattr(module, "Backend")
     return backend
 
 
@@ -43,8 +66,8 @@ def _available_backends() -> dict[BackendName, Backend]:
     for backend in BackendName.list():
         try:
             res[backend] = import_backend(backend)
-        except (ModuleNotFoundError, ImportError) as e:
-            raise type(e)(f"Failed to import backend {backend} due to {e}.") from e
+        except BackendNotFoundError as e:
+            raise e
     logger.debug(f"Found backends: {res.keys()}")
     return res
 
@@ -56,7 +79,8 @@ def import_engine(engine_name: str | Engine) -> DifferentiableBackend:
         module = importlib.import_module(module_path)
         engine = getattr(module, "DifferentiableBackend")
     except (ModuleNotFoundError, ImportError) as e:
-        raise type(e)
+        msg = f"Failed to import engine '{engine_name}' due to: '{e.msg}'."
+        raise EngineNotFoundError(msg)
     return engine
 
 
@@ -66,8 +90,8 @@ def _available_engines() -> dict[Engine, DifferentiableBackend]:
     for engine in Engine.list():
         try:
             res[engine] = import_engine(engine)
-        except (ModuleNotFoundError, ImportError) as e:
-            raise type(e)(f"Failed to import engine {engine} due to {e}.") from e
+        except EngineNotFoundError as e:
+            raise e
     logger.debug(f"Found engines: {res.keys()}")
     return res
 
@@ -82,7 +106,8 @@ def _supported_gates(backend_name: str) -> list[TAbstractBlock]:
     try:
         module = importlib.import_module(module_path)
     except (ModuleNotFoundError, ImportError) as e:
-        raise type(e)(f"Failed to import backend module for {backend_name} due to {e}.") from e
+        msg = f"Failed to import supported gates for '{backend_name}' due to: '{e.msg}'."
+        raise SupportedGatesNotFoundError(msg)
     _supported_gates = getattr(module, "supported_gates")
     return [getattr(operations, gate) for gate in _supported_gates]
 

@@ -353,11 +353,11 @@ class QuantumModel(nn.Module):
         """
         raise NotImplementedError("The overlap method is not implemented for this model.")
 
-    def _to_dict(self, save_params: bool = False) -> dict[str, Any]:
+    def _to_dict(self, save_params: bool = True) -> dict[str, Any]:
         """Convert QuantumModel to a dictionary for serialization.
 
         Arguments:
-            save_params: Optionally save parameters. Defaults to False.
+            save_params: Save parameters. Defaults to True.
 
         Returns:
             The dictionary
@@ -382,7 +382,7 @@ class QuantumModel(nn.Module):
             }
             param_dict_conv = {}
             if save_params:
-                param_dict_conv = {name: param.data for name, param in self._params.items()}
+                param_dict_conv = {name: param for name, param in self._params.items()}
             d = {self.__class__.__name__: d, "param_dict": param_dict_conv}
             logger.debug(f"{self.__class__.__name__} serialized to {d}.")
         except Exception as e:
@@ -431,6 +431,50 @@ class QuantumModel(nn.Module):
             logger.warning(f"Unable to deserialize object {d} to {cls.__name__} due to {e}.")
 
         return qm
+
+    def load_params_from_dict(self, d: dict, strict: bool = True) -> None:
+        """Copy parameters from dictionary into this QuantumModel.
+
+        Unlike :meth:`~qadence.QuantumModel.from_dict`, this method does not create a new
+        QuantumModel instance, but rather loads the parameters into the same QuantumModel.
+        The behaviour of this method is similar to :meth:`~torch.nn.Module.load_state_dict`.
+
+        The dictionary is assumed to have the format as saved via
+        :meth:`~qadence.QuantumModel.to_dict`
+
+        Args:
+            d (dict): The dictionary
+            strict (bool, optional):
+                Whether to strictly enforce that the parameter keys in the dictionary and
+                in the model match exactly. Default: ``True``.
+        """
+        param_dict = d["param_dict"]
+        missing_keys = set(self._params.keys()) - set(param_dict.keys())
+        unexpected_keys = set(param_dict.keys()) - set(self._params.keys())
+
+        if strict:
+            error_msgs = []
+            if len(unexpected_keys) > 0:
+                error_msgs.append(f"Unexpected key(s) in dictionary: {unexpected_keys}")
+            if len(missing_keys) > 0:
+                error_msgs.append(f"Missing key(s) in dictionary: {missing_keys}")
+            if len(error_msgs) > 0:
+                errors_string = "\n\t".join(error_msgs)
+                raise RuntimeError(
+                    f"Error(s) loading the parameter dictionary due to: \n\t{errors_string}\n"
+                    "This error was thrown because the `strict` argument is set `True`."
+                    "If you don't need the parameter keys of the dictionary to exactly match "
+                    "the model parameters, set `strict=False`."
+                )
+
+        for n, param in param_dict.items():
+            try:
+                with torch.no_grad():
+                    self._params[n].copy_(
+                        torch.nn.Parameter(param, requires_grad=param.requires_grad)
+                    )
+            except Exception as e:
+                logger.warning(f"Unable to load parameter {n} from dictionary due to {e}.")
 
     def save(
         self, folder: str | Path, file_name: str = "quantum_model.pt", save_params: bool = True
