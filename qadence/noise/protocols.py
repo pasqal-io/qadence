@@ -4,7 +4,7 @@ import importlib
 from dataclasses import dataclass
 from typing import Callable, Counter, cast
 
-from pyqtorch.noise import Noisy_protocols
+from pyqtorch.noise import NoiseProtocol
 
 PROTOCOL_TO_MODULE = {
     "readout": "qadence.noise.readout",
@@ -41,8 +41,8 @@ class Noise:
     def __repr__(self) -> str:
         return f"protocol: {self.protocol}, options: {self.options}"
 
-    def to_pyq(self) -> Noisy_protocols:
-        return Noisy_protocols(self.protocol, self.options)
+    def to_pyq(self) -> NoiseProtocol:
+        return NoiseProtocol(self.protocol, self.options)
 
     @classmethod
     def _from_dict(cls, d: dict) -> Noise | None:
