@@ -38,6 +38,9 @@ class Callback:
     Each callback function should take at least as first input
     an OptimizeResult instance.
 
+    Note: when setting call_after_opt to True, we skip
+    verifying iteration % called_every == 0.
+
     Attributes:
         callback (CallbackFunction): Callback function accepting an
             OptimizeResult as first argument.
@@ -46,7 +49,7 @@ class Callback:
         called_every (int, optional): Callback to be called each `called_every` epoch.
             Defaults to 1.
             If callback_condition is None, we set
-            callback_condition to returns True when iteration % every == 0.
+            callback_condition to returns True when iteration % called_every == 0.
         call_before_opt (bool, optional): If true, callback is applied before training.
             Defaults to False.
         call_end_epoch (bool, optional): If true, callback is applied during training,
@@ -77,7 +80,7 @@ class Callback:
             called_every (int, optional): Callback to be called each `called_every` epoch.
                 Defaults to 1.
                 If callback_condition is None, we set
-                callback_condition to returns True when iteration % every == 0.
+                callback_condition to returns True when iteration % called_every == 0.
             call_before_opt (bool, optional): If true, callback is applied before training.
                 Defaults to False.
             call_end_epoch (bool, optional): If true, callback is applied during training,
@@ -102,9 +105,39 @@ class Callback:
         else:
             self.callback_condition = callback_condition
 
-    def __call__(self, opt_result: OptimizeResult) -> Any:
+    def __call__(self, opt_result: OptimizeResult, is_last_iteration: bool = False) -> Any:
+        """Apply callback if conditions are met and.
+
+        Args:
+            opt_result (OptimizeResult): Current result.
+            is_last_iteration (bool, optional): When True,
+                avoid verifying modulo. Defaults to False.
+                Useful when call_after_opt is True.
+
+        Returns:
+            Any: The result of the callback.
+        """
         if opt_result.iteration % self.called_every == 0 and self.callback_condition(opt_result):
             return self.callback(opt_result)
+        if is_last_iteration and self.callback_condition(opt_result):
+            return self.callback(opt_result)
+
+
+def run_callbacks(
+    callback_iterable: list[Callback], opt_res: OptimizeResult, is_last_iteration: bool = False
+) -> None:
+    """Run a list of Callback given the current OptimizeResult.
+
+    Used in train functions.
+
+    Args:
+        callback_iterable (list[Callback]): Iterable of Callbacks
+        opt_res (OptimizeResult): Current optimization result,
+        is_last_iteration (bool, optional): Whether we reached the last iteration or not.
+            Defaults to False.
+    """
+    for callback in callback_iterable:
+        callback(opt_res, is_last_iteration)
 
 
 @dataclass
