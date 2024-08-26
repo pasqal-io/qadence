@@ -187,6 +187,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
         endianness: Endianness = Endianness.BIG,
+        noise: Noise | None = None,
     ) -> Tensor:
         vals = to_list_of_dicts(param_values)
 
@@ -197,37 +198,41 @@ class Backend(BackendInterface):
                 "specify any cloud credentials to use the .run() method"
             )
 
-        state = state if state is None else _convert_init_state(state)
-        batched_wf = np.zeros((len(vals), 2**circuit.abstract.n_qubits), dtype=np.complex128)
+        if noise is None:
+            state = state if state is None else _convert_init_state(state)
+            batched_wf = np.zeros((len(vals), 2**circuit.abstract.n_qubits), dtype=np.complex128)
 
-        for i, param_values_el in enumerate(vals):
-            sequence = self.assign_parameters(circuit, param_values_el)
-            pattern = circuit.original.register.device_specs.pattern
-            if pattern is not None:
-                add_addressing_pattern(sequence, pattern)
-            sequence.measure()
-            sim_result = simulate_sequence(sequence, self.config, state, n_shots=None)
-            wf = (
-                sim_result.get_final_state(  # type:ignore [union-attr]
-                    ignore_global_phase=False, normalize=True
+            for i, param_values_el in enumerate(vals):
+                sequence = self.assign_parameters(circuit, param_values_el)
+                pattern = circuit.original.register.device_specs.pattern
+                if pattern is not None:
+                    add_addressing_pattern(sequence, pattern)
+                sequence.measure()
+                sim_result = simulate_sequence(sequence, self.config, state, n_shots=None)
+                wf = (
+                    sim_result.get_final_state(  # type:ignore [union-attr]
+                        ignore_global_phase=False, normalize=True
+                    )
+                    .full()
+                    .flatten()
                 )
-                .full()
-                .flatten()
-            )
-            # We flip the wavefunction coming out of pulser,
-            # essentially changing logic 0 with logic 1 in the basis states.
-            batched_wf[i] = np.flip(wf)
+                # We flip the wavefunction coming out of pulser,
+                # essentially changing logic 0 with logic 1 in the basis states.
+                batched_wf[i] = np.flip(wf)
 
-        batched_wf_torch = torch.from_numpy(batched_wf)
+            batched_wf_torch = torch.from_numpy(batched_wf)
 
-        if endianness != self.native_endianness:
-            from qadence.transpile import invert_endianness
+            if endianness != self.native_endianness:
+                from qadence.transpile import invert_endianness
 
-            batched_wf_torch = invert_endianness(batched_wf_torch)
+                batched_wf_torch = invert_endianness(batched_wf_torch)
 
-        return batched_wf_torch
+            return batched_wf_torch
 
-    def run_dm(
+        else:
+            return self._run_noisy(circuit, noise, param_values, state, endianness)
+
+    def _run_noisy(
         self,
         circuit: ConvertedCircuit,
         noise: Noise,
@@ -342,12 +347,12 @@ class Backend(BackendInterface):
                 res = res if len(res.shape) > 0 else res.reshape(1)
                 return res.real
             elif noise is not None:
-                dms = self.run_dm(
+                dms = self.run(
                     circuit=circuit,
-                    noise=noise,
                     param_values=param_values,
                     state=state,
                     endianness=endianness,
+                    noise=noise,
                 )
                 support = sorted(list(circuit.abstract.register.support))
                 # TODO: There should be a better check for batched density matrices.
