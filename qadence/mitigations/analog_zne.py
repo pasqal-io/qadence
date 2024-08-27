@@ -82,7 +82,7 @@ def pulse_experiment(
         conv_circuit = backend.circuit(stretched_circuit)
         noisy_density_matrices.append(
             # Contain a single experiment result for the stretch.
-            backend.run_dm(
+            backend.run(
                 conv_circuit,
                 param_values=param_values,
                 state=state,
@@ -124,7 +124,7 @@ def noise_level_experiment(
     zne_datasets: list = []
     # Get noisy density matrices.
     conv_circuit = backend.circuit(circuit)
-    noisy_density_matrices = backend.run_dm(
+    noisy_density_matrices = backend.run(
         conv_circuit, param_values=param_values, state=state, noise=noise, endianness=endianness
     )
     # Convert observable to Numpy types compatible with QuTip simulations.
