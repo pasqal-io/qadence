@@ -322,17 +322,14 @@ def hea_analog(*args: Any, **kwargs: Any) -> Any:
     raise NotImplementedError
 
 
-
 #################
 ## DIGITAL ALT ##
 #################
 
 
-
-
 def _entanglers_block_digital(
     n_qubits: int,
-    m_block_qubits:int,
+    m_block_qubits: int,
     depth: int,
     param_prefix: str = "theta",
     support: tuple[int, ...] = None,
@@ -345,115 +342,122 @@ def _entanglers_block_digital(
     ent_list: list[AbstractBlock] = []
 
     for d in range(depth):
-        ents=[]
-        if not d%2:
-           ents.append(
-               kron(
-                   _entangler(
-                       control=support[i+j],
-                       target=support[i+j+1],
-                       param_str=param_prefix + f"_ent_{next(iterator)}",
-                       op=entangler
-                       )
-                   
-                   for i in range(0,n_qubits,m_block_qubits)
-                   for j in range(0,m_block_qubits,2)  
-                   if i+j+1<n_qubits and j+1<m_block_qubits
-                   )
-                   
-                )
-           if m_block_qubits > 2:
-               ents.append(
+        ents = []
+        if not d % 2:
+            ents.append(
                 kron(
                     _entangler(
-                        control=support[i+j],
-                        target=support[i+j+1],
+                        control=support[i + j],
+                        target=support[i + j + 1],
                         param_str=param_prefix + f"_ent_{next(iterator)}",
-                        op=entangler
-                        )
-                    
-                    for i in range(0,n_qubits,m_block_qubits) 
-                    for j in range(1,m_block_qubits,2) 
-                    if i+j+1<n_qubits and j+1<m_block_qubits
+                        op=entangler,
                     )
-                    
+                    for i in range(0, n_qubits, m_block_qubits)
+                    for j in range(0, m_block_qubits, 2)
+                    if i + j + 1 < n_qubits and j + 1 < m_block_qubits
                 )
-                
-        elif d%2:
-            ents.append(
-               kron(
-                   _entangler(
-                       control=support[ i +j],
-                       target=support[i+j+1],
-                       param_str=param_prefix + f"_ent_{next(iterator)}",
-                       op=entangler
-                       )
-                   
-                   for i in range(-m_block_qubits//2,n_qubits,m_block_qubits) 
-                   for j in range(0,m_block_qubits,2) 
-                   if  i+j+1<n_qubits and j+1<m_block_qubits and i+j>=0 
-                   )
-                   
-                )
+            )
             if m_block_qubits > 2:
                 ents.append(
                     kron(
                         _entangler(
-                            control=support[ i+j],
-                            target=support[ i+j+1],
+                            control=support[i + j],
+                            target=support[i + j + 1],
                             param_str=param_prefix + f"_ent_{next(iterator)}",
-                            op=entangler
-                            )
-                        
-                        for i in range(-m_block_qubits//2,n_qubits,m_block_qubits)  
-                        for j in range(1,m_block_qubits,2)
-                        if  i+j+1<n_qubits and j+1<m_block_qubits and i+j>=0
+                            op=entangler,
                         )
-                        
+                        for i in range(0, n_qubits, m_block_qubits)
+                        for j in range(1, m_block_qubits, 2)
+                        if i + j + 1 < n_qubits and j + 1 < m_block_qubits
                     )
+                )
 
-        
-           
+        elif d % 2:
+            ents.append(
+                kron(
+                    _entangler(
+                        control=support[i + j],
+                        target=support[i + j + 1],
+                        param_str=param_prefix + f"_ent_{next(iterator)}",
+                        op=entangler,
+                    )
+                    for i in range(-m_block_qubits // 2, n_qubits, m_block_qubits)
+                    for j in range(0, m_block_qubits, 2)
+                    if i + j + 1 < n_qubits and j + 1 < m_block_qubits and i + j >= 0
+                )
+            )
+            if m_block_qubits > 2:
+                ents.append(
+                    kron(
+                        _entangler(
+                            control=support[i + j],
+                            target=support[i + j + 1],
+                            param_str=param_prefix + f"_ent_{next(iterator)}",
+                            op=entangler,
+                        )
+                        for i in range(-m_block_qubits // 2, n_qubits, m_block_qubits)
+                        for j in range(1, m_block_qubits, 2)
+                        if i + j + 1 < n_qubits and j + 1 < m_block_qubits and i + j >= 0
+                    )
+                )
+
         ent_list.append(chain(*ents))
     return ent_list
 
 
 def alt_digital(
-        n_qubits:int,
-        m_qubits_block:int,
-        depth:int=1,
-        support:tuple[int,...]=None,
-        
-        param_prefix:str='theta',
-        
-        operations : list[type[AbstractBlock]]=[RX,RY],
-        entangler: Type[DigitalEntanglers]=CNOT,
+    n_qubits: int,
+    m_qubits_block: int,
+    depth: int = 1,
+    support: tuple[int, ...] = None,
+    param_prefix: str = "theta",
+    operations: list[type[AbstractBlock]] = [RX, RY],
+    entangler: Type[DigitalEntanglers] = CNOT,
+) -> AbstractBlock:
+    """
+    Construct the digital alternating layer ansatz (ALT).
 
-        
-)->AbstractBlock:
-    
+    Args:
+        n_qubits (int): number of qubits in the ansatz.
+        m_qubits_block (int): number of qubits in the local entangling block.
+        depth (int): number of layers of the ALT.
+        param_prefix (str): the base name of the variational parameters
+        operations (list): list of operations to cycle through in the
+            digital single-qubit rotations of each layer.
+        support (tuple): qubit indexes where the ALT is applied.
+        entangler (AbstractBlock): 2-qubit entangling operation.
+            Supports CNOT, CZ, CRX, CRY, CRZ. Controlld rotations
+            will have variational parameters on the rotation angles.
+    """
+
+    try:
+        if entangler not in [CNOT, CZ, CRX, CRY, CRZ, CPHASE]:
+            raise ValueError(
+                "Please provide a valid two-qubit entangler operation for digital ALT."
+            )
+    except TypeError:
+        raise ValueError("Please provide a valid two-qubit entangler operation for digital ALT.")
+
     rot_list = _rotations_digital(
         n_qubits=n_qubits,
-        
         depth=depth,
         support=support,
         param_prefix=param_prefix,
-        operations=operations
-        )
-    
+        operations=operations,
+    )
+
     ent_list = _entanglers_block_digital(
         n_qubits,
         m_qubits_block,
-        param_prefix=param_prefix+'_ent',
+        param_prefix=param_prefix + "_ent",
         depth=depth,
         support=support,
-        entangler=entangler
-        )
+        entangler=entangler,
+    )
 
     layers = []
     for d in range(depth):
         layers.append(rot_list[d])
         layers.append(ent_list[d])
-    
-    return chain(*layers)
 
+    return tag(chain(*layers), "ALT")
