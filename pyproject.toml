@@ -22,6 +22,7 @@ authors = [
     { name = "Ignacio Fernández Graña", email = "ignacio.fernandez-grana@pasqal.com" },
     { name = "Charles Moussa", email = "charles.moussa@pasqal.com" },
     { name = "Giorgio Tosti Balducci", email = "giorgio.tosti-balducci@pasqal.com" },
+    { name = "Daniele Cucurachi", email = "daniele.cucurachi@pasqal.com" },
 ]
 requires-python = ">=3.9"
 license = { text = "Apache 2.0" }
