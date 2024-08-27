@@ -12,7 +12,7 @@ from torch.nn import Module
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
-from qadence.ml_tools.config import Callback, TrainConfig
+from qadence.ml_tools.config import Callback, TrainConfig, run_callbacks
 from qadence.ml_tools.data import DictDataLoader, OptimizeResult
 from qadence.ml_tools.parameters import get_parameters, set_parameters
 from qadence.ml_tools.printing import (
@@ -160,10 +160,6 @@ def train(
             )
         ]
 
-    def run_callbacks(callback_iterable: list[Callback], opt_res: OptimizeResult) -> None:
-        for callback in callback_iterable:
-            callback(opt_res)
-
     callbacks_end_opt = [
         callback
         for callback in callbacks
@@ -192,7 +188,7 @@ def train(
 
     # Final callbacks
     callbacks_after_opt = [callback for callback in callbacks if callback.call_after_opt]
-    run_callbacks(callbacks_after_opt, opt_result)
+    run_callbacks(callbacks_after_opt, opt_result, is_last_iteration=True)
 
     # close tracker
     if config.tracking_tool == ExperimentTrackingTool.TENSORBOARD:
