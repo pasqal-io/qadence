@@ -322,6 +322,63 @@ def hea_analog(*args: Any, **kwargs: Any) -> Any:
     raise NotImplementedError
 
 
+def alt(
+    n_qubits: int,
+    m_block_qubits: int,
+    depth: int = 1,
+    param_prefix: str = "theta",
+    support: tuple[int, ...] = None,
+    strategy: Strategy = Strategy.DIGITAL,
+    **strategy_args: Any,
+) -> AbstractBlock:
+    """
+    Factory function for the Alternating Layer Ansatz (ALT).
+
+    Args:
+        n_qubits: number of qubits in the block
+        depth: number of layers of the ALT
+        param_prefix: the base name of the variational parameters
+        support: qubit indexes where the ALT is applied
+        strategy: Strategy.Digital or Strategy.DigitalAnalog
+        **strategy_args: see below
+
+    Keyword Arguments:
+        operations (list): list of operations to cycle through in the
+            digital single-qubit rotations of each layer. Valid for
+            Digital .
+        entangler (AbstractBlock):
+            - Digital: 2-qubit entangling operation. Supports CNOT, CZ,
+            CRX, CRY, CRZ, CPHASE. Controlled rotations will have variational
+            parameters on the rotation angles.
+    """
+
+    if support is None:
+        support = tuple(range(n_qubits))
+
+    alt_func_dict = {
+        Strategy.DIGITAL: alt_digital,
+        Strategy.SDAQC: alt_sDAQC,
+        Strategy.BDAQC: alt_bDAQC,
+        Strategy.ANALOG: alt_analog,
+    }
+
+    try:
+        alt_func = alt_func_dict[strategy]
+    except KeyError:
+        raise KeyError(f"Strategy {strategy} not recognized.")
+
+    hea_block: AbstractBlock = alt_func(
+        n_qubits=n_qubits,
+        m_block_qubits=m_block_qubits,
+        depth=depth,
+        param_prefix=param_prefix,
+        support=support,
+        **strategy_args,
+    )  # type: ignore
+
+    return hea_block
+
+
 #################
 ## DIGITAL ALT ##
 #################
@@ -333,7 +390,6 @@ def _entanglers_block_digital(
     depth: int,
     param_prefix: str = "theta",
     support: tuple[int, ...] = None,
-    periodic: bool = False,
     entangler: Type[DigitalEntanglers] = CNOT,
 ) -> list[AbstractBlock]:
     if support is None:
@@ -461,3 +517,24 @@ def alt_digital(
         layers.append(ent_list[d])
 
     return tag(chain(*layers), "ALT")
+
+
+#################
+## sdaqc ALT ##
+#################
+def alt_sDAQC(*args: Any, **kwargs: Any) -> Any:
+    raise NotImplementedError
+
+
+#################
+## bdaqc ALT ##
+#################
+def alt_bDAQC(*args: Any, **kwargs: Any) -> Any:
+    raise NotImplementedError
+
+
+#################
+## analog ALT ##
+#################
+def alt_analog(*args: Any, **kwargs: Any) -> Any:
+    raise NotImplementedError
