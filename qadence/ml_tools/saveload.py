@@ -72,7 +72,11 @@ def write_checkpoint(
     device = None
     try:
         # We extract the device from the pyqtorch native circuit
-        device = model.device if isinstance(QuantumModel, QNN) else next(model.parameters()).device
+        device = (
+            model.device
+            if isinstance(model, (QNN, QuantumModel))
+            else next(model.parameters()).device
+        )
         device = str(device).split(":")[0]  # in case of using several CUDA devices
     except Exception as e:
         msg = (

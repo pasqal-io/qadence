@@ -198,9 +198,8 @@ class Backend(BackendInterface):
                 "specify any cloud credentials to use the .run() method"
             )
 
-        state = state if state is None else _convert_init_state(state)
-
         if noise is None:
+            state = state if state is None else _convert_init_state(state)
             batched_wf = np.zeros((len(vals), 2**circuit.abstract.n_qubits), dtype=np.complex128)
 
             for i, param_values_el in enumerate(vals):
@@ -222,45 +221,67 @@ class Backend(BackendInterface):
                 batched_wf[i] = np.flip(wf)
 
             batched_wf_torch = torch.from_numpy(batched_wf)
+
+            if endianness != self.native_endianness:
+                from qadence.transpile import invert_endianness
+
+                batched_wf_torch = invert_endianness(batched_wf_torch)
+
+            return batched_wf_torch
+
         else:
-            noise_probs = noise.options.get("noise_probs", None)
-            if noise_probs is None:
-                raise KeyError(
-                    "A `noise_probs` option should be passed to the <class QuantumModel>."
-                )
-            if not (isinstance(noise_probs, float) or isinstance(noise_probs, Iterable)):
-                raise KeyError(
-                    "A single or a range of noise probabilities"
-                    " should be passed. Got {type(noise_probs)}."
-                )
+            return self._run_noisy(circuit, noise, param_values, state, endianness)
 
-            def run_noisy_sim(noise_prob: float) -> Tensor:
-                batched_dm = np.zeros(
-                    (len(vals), 2**circuit.abstract.n_qubits, 2**circuit.abstract.n_qubits),
-                    dtype=np.complex128,
-                )
-                sim_config = {"noise": noise.protocol, noise.protocol + "_rate": noise_prob}
-                self.config.sim_config = SimConfig(**sim_config)
+    def _run_noisy(
+        self,
+        circuit: ConvertedCircuit,
+        noise: Noise,
+        param_values: dict[str, Tensor] = dict(),
+        state: Tensor | None = None,
+        endianness: Endianness = Endianness.BIG,
+    ) -> Tensor:
+        vals = to_list_of_dicts(param_values)
+        noise_probs = noise.options.get("noise_probs", None)
+        if noise_probs is None:
+            KeyError("A `noise probs` option should be passed to the <class QuantumModel>.")
+        if not (isinstance(noise_probs, float) or isinstance(noise_probs, Iterable)):
+            KeyError(
+                "A single or a range of noise probabilities"
+                " should be passed. Got {type(noise_probs)}."
+            )
 
-                for i, param_values_el in enumerate(vals):
-                    sequence = self.assign_parameters(circuit, param_values_el)
-                    sim_result: CoherentResults = simulate_sequence(sequence, self.config, state)
-                    final_state = sim_result.get_final_state().data.toarray()
-                    batched_dm[i] = np.flip(final_state)
-                return torch.from_numpy(batched_dm)
+        def run_noisy_sim(noise_prob: float) -> Tensor:
+            batched_dm = np.zeros(
+                (len(vals), 2**circuit.abstract.n_qubits, 2**circuit.abstract.n_qubits),
+                dtype=np.complex128,
+            )
+            sim_config = {"noise": noise.protocol, noise.protocol + "_rate": noise_prob}
+            self.config.sim_config = SimConfig(**sim_config)
 
-            if isinstance(noise_probs, float):
-                batched_wf_torch = run_noisy_sim(noise_probs)
-            else:
-                # Handle the case where noise_probs is an Iterable of probabilities
-                batched_wf_torch = torch.cat([run_noisy_sim(p) for p in noise_probs])
+            for i, param_values_el in enumerate(vals):
+                sequence = self.assign_parameters(circuit, param_values_el)
+                sim_result: CoherentResults = simulate_sequence(sequence, self.config, state)
+                final_state = sim_result.get_final_state().data.toarray()
+                batched_dm[i] = np.flip(final_state)
+            return torch.from_numpy(batched_dm)
+
+        # Pulser requires numpy types.
+        if isinstance(noise_probs, Iterable):
+            noisy_batched_dms = []
+            for noise_prob in noise_probs:
+                noisy_sim = run_noisy_sim(noise_prob)
+                if not param_values:
+                    noisy_sim = noisy_sim[0]
+                noisy_batched_dms.append(noisy_sim)
+            noisy_batched_dms = torch.stack(noisy_batched_dms)
+        else:
+            noisy_batched_dms = run_noisy_sim(noise_probs)
 
         if endianness != self.native_endianness:
             from qadence.transpile import invert_endianness
 
-            batched_wf_torch = invert_endianness(batched_wf_torch)
-
-        return batched_wf_torch
+            noisy_batched_dms = invert_endianness(noisy_batched_dms)
+        return noisy_batched_dms
 
     def sample(
         self,
@@ -328,10 +349,10 @@ class Backend(BackendInterface):
             elif noise is not None:
                 dms = self.run(
                     circuit=circuit,
-                    noise=noise,
                     param_values=param_values,
                     state=state,
                     endianness=endianness,
+                    noise=noise,
                 )
                 support = sorted(list(circuit.abstract.register.support))
                 # TODO: There should be a better check for batched density matrices.
