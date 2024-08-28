@@ -463,7 +463,7 @@ def _entanglers_block_digital(
 
 def alt_digital(
     n_qubits: int,
-    m_qubits_block: int,
+    m_block_qubits: int,
     depth: int = 1,
     support: tuple[int, ...] = None,
     param_prefix: str = "theta",
@@ -504,7 +504,7 @@ def alt_digital(
 
     ent_list = _entanglers_block_digital(
         n_qubits,
-        m_qubits_block,
+        m_block_qubits,
         param_prefix=param_prefix + "_ent",
         depth=depth,
         support=support,
