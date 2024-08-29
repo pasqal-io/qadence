@@ -14,6 +14,7 @@ from pyqtorch.utils import is_diag
 from torch import (
     Tensor,
     cdouble,
+    complex64,
     diag_embed,
     diagonal,
     exp,
@@ -77,11 +78,24 @@ def is_single_qubit_chain(block: AbstractBlock) -> bool:
 
 
 def extract_parameter(block: ScaleBlock | ParametricBlock, config: Configuration) -> str | Tensor:
-    return (
-        tensor([block.parameters.parameter], dtype=float64)
-        if not block.is_parametric
-        else config.get_param_name(block)[0]
-    )
+    """Extract the parameter as string or its tensor value.
+
+    Args:
+        block (ScaleBlock | ParametricBlock): Block to extract parameter from.
+        config (Configuration): Configuration instance.
+
+    Returns:
+        str | Tensor: Parameter value or symbol.
+    """
+    if not block.is_parametric:
+        tensor_val = tensor([block.parameters.parameter], dtype=complex64)
+        return (
+            tensor([block.parameters.parameter], dtype=float64)
+            if torch.all(tensor_val.imag == 0)
+            else tensor_val
+        )
+
+    return config.get_param_name(block)[0]
 
 
 def convert_block(
