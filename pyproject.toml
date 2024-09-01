@@ -134,7 +134,7 @@ filterwarnings = [
 [tool.hatch.envs.docs]
 dependencies = [
     "mkdocs",
-    "mkdocs_autorefs<1.1.0",
+    "mkdocs_autorefs<1.2.1",
     "mkdocs-material",
     "mkdocstrings",
     "mkdocstrings-python",
