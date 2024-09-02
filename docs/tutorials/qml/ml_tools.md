@@ -80,15 +80,19 @@ The [`TrainConfig`][qadence.ml_tools.config.TrainConfig] tells `train_with_grad`
 how many epochs to train, in which intervals to print/log metrics and how often to store intermediate checkpoints.
 It is also possible to provide custom callback functions by instantiating a [`Callback`][qadence.ml_tools.config.Callback]
 with a function `callback` that only accept as argument an instance of [`OptimizeResult`][qadence.ml_tools.data.OptimizeResult] created within the `train` functions.
-One can also provide a `callback_condition` function, also only accepting an instance of [`OptimizeResult`][qadence.ml_tools.data.OptimizeResult], which returns True if `callback` should be called. If no `callback_condition` is provided, `callback` is called at every x epochs (specified by `Callback`'s `called_every` argument). We can also specify in which part of the training function the `Callback` will be applied.
+One can also provide a `callback_condition` function, also only accepting an instance of [`OptimizeResult`][qadence.ml_tools.data.OptimizeResult], which returns True if `callback` should be called. If no `callback_condition` is provided, `callback` is called at every x epochs (specified by `Callback`'s `called_every` argument). We can also specify in which part of the training function the `Callback` will be applied. Note that if you need it, you can modify the instance of [`OptimizeResult`][qadence.ml_tools.data.OptimizeResult] created in the train functions by specifying `Callback`'s `modify_optimize_result`. For instance, we could add inputs to the `extra` field of [`OptimizeResult`][qadence.ml_tools.data.OptimizeResult] to be used within `callback`. An example code is shown below.
 
 ```python exec="on" source="material-block"
-from qadence.ml_tools import TrainConfig, Callback
+from qadence.ml_tools import OptimizeResult, TrainConfig, Callback
 
 batch_size = 5
 n_epochs = 100
 
+def add_bias_extra(opt_res: OptimizeResult):
+    opt_res.extra.update({"model_bias": {name:param for name, param in self.named_parameters() if name in ['bias']}})
+
 custom_callback = Callback(lambda opt_res: print(opt_res.model.parameters()), callback_condition=lambda opt_res: opt_res.loss < 1.0e-03, called_every=10, call_end_epoch=True)
+custom_callback_extra = Callback(lambda opt_res: print(opt_res.extra), modify_optimize_result=add_bias_extra, call_end_epoch=False, call_after_opt=True)
 
 config = TrainConfig(
     folder="some_path/",
@@ -96,7 +100,7 @@ config = TrainConfig(
     checkpoint_every=100,
     write_every=100,
     batch_size=batch_size,
-    callbacks = [custom_callback]
+    callbacks = [custom_callback, custom_callback_extra]
 )
 ```
 

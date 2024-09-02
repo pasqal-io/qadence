@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from .config import AnsatzConfig, Callback, FeatureMapConfig, TrainConfig
 from .constructors import create_ansatz, create_fm_blocks, observable_from_config
-from .data import DictDataLoader, InfiniteTensorDataset, to_dataloader
+from .data import DictDataLoader, InfiniteTensorDataset, OptimizeResult, to_dataloader
 from .models import QNN
 from .optimize_step import optimize_step as default_optimize_step
 from .parameters import get_parameters, num_parameters, set_parameters
@@ -23,6 +23,7 @@ __all__ = [
     "observable_from_config",
     "QNN",
     "TrainConfig",
+    "OptimizeResult",
     "Callback",
     "train_with_grad",
     "train_gradient_free",

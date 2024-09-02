@@ -46,6 +46,9 @@ class Callback:
             OptimizeResult as first argument.
         callback_condition (CallbackConditionFunction | None, optional): Function that
             conditions the call to callback. Defaults to None.
+        modify_optimize_result (CallbackFunction): Function that modify the
+            OptimizeResult before callback. For instance, one can add inputs
+            to the `extra` argument to be used in callback.
         called_every (int, optional): Callback to be called each `called_every` epoch.
             Defaults to 1.
             If callback_condition is None, we set
@@ -64,6 +67,7 @@ class Callback:
         self,
         callback: CallbackFunction,
         callback_condition: CallbackConditionFunction | None = None,
+        modify_optimize_result: CallbackFunction | None = None,
         called_every: int = 1,
         call_before_opt: bool = False,
         call_end_epoch: bool = True,
@@ -77,6 +81,8 @@ class Callback:
                 OptimizeResult as ifrst argument.
             callback_condition (CallbackConditionFunction | None, optional): Function that
                 conditions the call to callback. Defaults to None.
+            modify_optimize_result (CallbackFunction): Function that modify the
+                OptimizeResult before callback.
             called_every (int, optional): Callback to be called each `called_every` epoch.
                 Defaults to 1.
                 If callback_condition is None, we set
@@ -105,8 +111,17 @@ class Callback:
         else:
             self.callback_condition = callback_condition
 
+        if modify_optimize_result is None:
+            self.modify_optimize_result = lambda opt_result: opt_result
+        else:
+            self.modify_optimize_result = modify_optimize_result
+
     def __call__(self, opt_result: OptimizeResult, is_last_iteration: bool = False) -> Any:
-        """Apply callback if conditions are met and.
+        """Apply callback if conditions are met.
+
+        Note that the current result may be modified by specifying a function
+        `modify_optimize_result` for instance to add inputs to the `extra` argument
+        of the current OptimizeResult.
 
         Args:
             opt_result (OptimizeResult): Current result.
@@ -117,6 +132,7 @@ class Callback:
         Returns:
             Any: The result of the callback.
         """
+        opt_result = self.modify_optimize_result(opt_result)
         if opt_result.iteration % self.called_every == 0 and self.callback_condition(opt_result):
             return self.callback(opt_result)
         if is_last_iteration and self.callback_condition(opt_result):
