@@ -46,9 +46,10 @@ class Callback:
             OptimizeResult as first argument.
         callback_condition (CallbackConditionFunction | None, optional): Function that
             conditions the call to callback. Defaults to None.
-        modify_optimize_result (CallbackFunction): Function that modify the
-            OptimizeResult before callback. For instance, one can add inputs
-            to the `extra` argument to be used in callback.
+        modify_optimize_result (CallbackFunction | dict[str, Any] | None, optional):
+            Function that modify the OptimizeResult before callback.
+            For instance, one can change the `extra` (dict) argument to be used in callback.
+            If a dict is provided, the `extra` field of OptimizeResult is updated with the dict.
         called_every (int, optional): Callback to be called each `called_every` epoch.
             Defaults to 1.
             If callback_condition is None, we set
@@ -67,7 +68,7 @@ class Callback:
         self,
         callback: CallbackFunction,
         callback_condition: CallbackConditionFunction | None = None,
-        modify_optimize_result: CallbackFunction | None = None,
+        modify_optimize_result: CallbackFunction | dict[str, Any] | None = None,
         called_every: int = 1,
         call_before_opt: bool = False,
         call_end_epoch: bool = True,
@@ -81,8 +82,9 @@ class Callback:
                 OptimizeResult as ifrst argument.
             callback_condition (CallbackConditionFunction | None, optional): Function that
                 conditions the call to callback. Defaults to None.
-            modify_optimize_result (CallbackFunction): Function that modify the
-                OptimizeResult before callback.
+            modify_optimize_result (CallbackFunction | dict[str, Any] | None , optional):
+                Function that modify the OptimizeResult before callback. If a dict
+                is provided, this updates the `extra` field of OptimizeResult.
             called_every (int, optional): Callback to be called each `called_every` epoch.
                 Defaults to 1.
                 If callback_condition is None, we set
@@ -113,6 +115,13 @@ class Callback:
 
         if modify_optimize_result is None:
             self.modify_optimize_result = lambda opt_result: opt_result
+        elif isinstance(modify_optimize_result, dict):
+
+            def update_extra(opt_result: OptimizeResult) -> OptimizeResult:
+                opt_result.extra.update(modify_optimize_result)
+                return opt_result
+
+            self.modify_optimize_result = update_extra
         else:
             self.modify_optimize_result = modify_optimize_result
 
