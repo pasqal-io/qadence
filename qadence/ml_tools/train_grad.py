@@ -194,7 +194,6 @@ def train(
             Callback(
                 lambda opt_res: print_metrics(opt_res.loss, opt_res.metrics, opt_res.iteration - 1),
                 called_every=config.print_every,
-                call_after_opt=True,
             )
         ]
 
