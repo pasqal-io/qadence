@@ -1,0 +1,132 @@
+/*
+CSS for the homepage
+*/
+
+/*
+TOP IMAGE
+*/
+.md-main {
+    flex-grow: 0
+}
+
+.md-main__inner {
+    display: flex;
+    height: 100%;
+}
+
+.hero-container {
+    background: var(--md-primary-fg-color);
+}
+
+.hero-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.logo-container{
+    padding-top: 3.0rem;
+    padding-bottom: 1.5rem;
+    width:100%;
+}
+
+.logo-image{
+    margin: auto;
+    width: 60%;
+    min-width: 20rem;
+}
+
+
+.button-container {
+    font-size: 11px;
+    max-width: 30rem;
+    margin-top: 1.0rem;
+    margin-bottom: 3.5rem;
+}
+
+@media screen and (min-width:60em) {
+    .button-container {
+        font-size: 16px;
+        max-width: 30rem;
+        margin-top: 1.0rem;
+        margin-bottom: 3.5rem;
+    }
+}
+
+.hero-section .md-button {
+    margin: 10px;
+    color: var(--md-primary-bg-color)
+}
+
+.hero-section .md-button--primary {
+    background-color: var(--md-primary-bg-color);
+    color: var(--md-primary-fg-color);
+    border-color: var(--md-primary-bg-color)
+}
+
+.hero-section .md-button:focus,
+.hero-section .md-button:hover {
+    background-color: var(--md-accent-fg-color);
+    color: light-dark(var(--md-default-bg-color), white);
+    border-color: var(--md-accent-fg-color);
+}
+
+/*
+FEATURE SECTION
+*/
+.main-features{
+    margin-top: 30px;
+}
+
+
+.header{
+    width:100%;
+    text-align: center;
+    margin-right: auto;
+    margin-left: auto;
+    font-size: 18px;
+    font-weight: 500;
+}
+
+
+.features{
+    width:100%;
+    margin-right: auto;
+    margin-left: auto;
+    font-size: 16px;
+    font-weight: 500;
+    text-align:justify;
+}
+
+.arch-container{
+    display:grid;
+    align-items:center;
+    grid-template-columns: 1fr;
+    column-gap:10px;
+    min-width:20rem;
+}
+
+.arch-image{
+    width:80%;
+    min-width:20rem;
+    margin:auto;
+}
+
+@media screen and (min-width:60em) {
+    .arch-container{
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .arch-image{
+        width:100%;
+    }
+
+    .header{
+        font-size: 28px;
+    }
+
+    .features{
+        font-size: 25px;
+    }
+}
