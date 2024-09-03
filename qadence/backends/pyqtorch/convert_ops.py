@@ -136,17 +136,11 @@ def convert_block(
             else:
                 generator = convert_block(block.generator, n_qubits, config)[0]  # type: ignore[arg-type]
             time_param = config.get_param_name(block)[0]
-            is_parametric = (
-                block.generator.is_parametric
-                if isinstance(block.generator, AbstractBlock)
-                else False
-            )
             return [
                 pyq.HamiltonianEvolution(
                     qubit_support=qubit_support,
                     generator=generator,
                     time=time_param,
-                    generator_parametric=is_parametric,  # type: ignore[union-attr]
                     cache_length=0,
                 )
             ]
