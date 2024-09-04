@@ -5,7 +5,7 @@ from .feature_maps import (
     exp_fourier_feature_map,
 )
 
-from .ansatze import hea
+from .ansatze import hea, alt
 
 from .iia import identity_initialized_ansatz
 
@@ -29,6 +29,7 @@ __all__ = [
     "feature_map",
     "exp_fourier_feature_map",
     "hea",
+    "alt",
     "identity_initialized_ansatz",
     "hamiltonian_factory",
     "ising_hamiltonian",
