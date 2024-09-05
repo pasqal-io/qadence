@@ -215,38 +215,33 @@ def train(
     # writing metrics
     # we specify two writers,
     # to write at evaluation time and before evaluation
-    if config.write_every > 0:
+    callbacks += [
+        Callback(
+            lambda opt_res: write_tracker(
+                writer,
+                opt_res.loss,
+                opt_res.metrics,
+                opt_res.iteration - 1,  # same reason as priting above
+                tracking_tool=config.tracking_tool,
+            ),
+            called_every=config.write_every,
+        ),
+    ]
+    if perform_val:
         callbacks += [
             Callback(
                 lambda opt_res: write_tracker(
                     writer,
                     opt_res.loss,
                     opt_res.metrics,
-                    opt_res.iteration - 1,  # same reason as priting above
+                    opt_res.iteration - 1,
                     tracking_tool=config.tracking_tool,
                 ),
                 called_every=config.write_every,
                 call_before_opt=True,
-                call_after_opt=False,
-                call_during_eval=False,
+                call_during_eval=True,
             )
         ]
-        if perform_val:
-            callbacks += [
-                Callback(
-                    lambda opt_res: write_tracker(
-                        writer,
-                        opt_res.loss,
-                        opt_res.metrics,
-                        opt_res.iteration - 1,
-                        tracking_tool=config.tracking_tool,
-                    ),
-                    called_every=config.write_every,
-                    call_before_opt=True,
-                    call_after_opt=False,
-                    call_during_eval=True,
-                )
-            ]
 
     # checkpointing
     if config.folder and config.checkpoint_every > 0 and not config.checkpoint_best_only:
