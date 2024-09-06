@@ -172,29 +172,39 @@ def convert_block(
         pyq_cls = getattr(pyq, block.name)
         if isinstance(block, ParametricBlock):
             if isinstance(block, U):
-                op = pyq_cls(qubit_support[0], *config.get_param_name(block))
+                op = pyq_cls(qubit_support[0], *config.get_param_name(block), noise=block.noise)
             else:
-                op = pyq_cls(qubit_support[0], extract_parameter(block, config))
+                op = pyq_cls(qubit_support[0], extract_parameter(block, config), noise=block.noise)
         else:
-            op = pyq_cls(qubit_support[0])
+            op = pyq_cls(qubit_support[0], noise=block.noise)  # type: ignore [attr-defined]
         return [op]
     elif isinstance(block, tuple(two_qubit_gateset)):
         pyq_cls = getattr(pyq, block.name)
         if isinstance(block, ParametricBlock):
-            op = pyq_cls(qubit_support[0], qubit_support[1], extract_parameter(block, config))
+            op = pyq_cls(
+                qubit_support[0],
+                qubit_support[1],
+                extract_parameter(block, config),
+                noise=block.noise,
+            )
         else:
-            op = pyq_cls(qubit_support[0], qubit_support[1])
+            op = pyq_cls(qubit_support[0], qubit_support[1], noise=block.noise)  # type: ignore [attr-defined]
         return [op]
     elif isinstance(block, tuple(three_qubit_gateset) + tuple(multi_qubit_gateset)):
         block_name = block.name[1:] if block.name.startswith("M") else block.name
         pyq_cls = getattr(pyq, block_name)
         if isinstance(block, ParametricBlock):
-            op = pyq_cls(qubit_support[:-1], qubit_support[-1], extract_parameter(block, config))
+            op = pyq_cls(
+                qubit_support[:-1],
+                qubit_support[-1],
+                extract_parameter(block, config),
+                noise=block.noise,
+            )
         else:
             if "CSWAP" in block_name:
-                op = pyq_cls(qubit_support[:-2], qubit_support[-2:])
+                op = pyq_cls(qubit_support[:-2], qubit_support[-2:], noise=block.noise)  # type: ignore [attr-defined]
             else:
-                op = pyq_cls(qubit_support[:-1], qubit_support[-1])
+                op = pyq_cls(qubit_support[:-1], qubit_support[-1], noise=block.noise)  # type: ignore [attr-defined]
         return [op]
     else:
         raise NotImplementedError(
