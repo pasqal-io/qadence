@@ -213,21 +213,48 @@ def train(
     ]
 
     # writing metrics
+    # we specify two writers,
+    # to write at evaluation time and before evaluation
     callbacks += [
         Callback(
             lambda opt_res: write_tracker(
                 writer,
                 opt_res.loss,
                 opt_res.metrics,
-                opt_res.iteration,
+                opt_res.iteration - 1,  # loss returned be optimized_step is at -1
                 tracking_tool=config.tracking_tool,
             ),
             called_every=config.write_every,
-            call_before_opt=False,
+            call_end_epoch=True,
+        ),
+        Callback(
+            lambda opt_res: write_tracker(
+                writer,
+                opt_res.loss,
+                opt_res.metrics,
+                opt_res.iteration,  # after_opt we match the right loss function
+                tracking_tool=config.tracking_tool,
+            ),
+            called_every=config.write_every,
+            call_end_epoch=False,
             call_after_opt=True,
-            call_during_eval=True,
-        )
+        ),
     ]
+    if perform_val:
+        callbacks += [
+            Callback(
+                lambda opt_res: write_tracker(
+                    writer,
+                    None,
+                    opt_res.metrics,
+                    opt_res.iteration,
+                    tracking_tool=config.tracking_tool,
+                ),
+                called_every=config.write_every,
+                call_before_opt=True,
+                call_during_eval=True,
+            )
+        ]
 
     # checkpointing
     if config.folder and config.checkpoint_every > 0 and not config.checkpoint_best_only:
@@ -332,17 +359,22 @@ def train(
                 logger.info("Terminating training gracefully after the current iteration.")
                 break
 
-        # Handling printing the last training loss
+        # For handling printing/writing the last training loss
         # as optimize_step does not give the loss value at the last iteration
         try:
             loss, metrics, *_ = next_loss_iter(dl_iter)
-            if iteration % config.print_every == 0 and config.verbose:
-                print_metrics(loss, metrics, iteration)
+            if isinstance(loss, Tensor):
+                loss = loss.item()
+            if perform_val:
+                # reputting val_loss as already evaluated before
+                metrics["val_loss"] = val_loss
+            print_metrics(loss, metrics, iteration)
 
         except KeyboardInterrupt:
             logger.info("Terminating training gracefully after the current iteration.")
 
     # Final callbacks, by default checkpointing and writing
+    opt_result = OptimizeResult(iteration, model, optimizer, loss, metrics)
     callbacks_after_opt = [callback for callback in callbacks if callback.call_after_opt]
     run_callbacks(callbacks_after_opt, opt_result, is_last_iteration=True)
 
