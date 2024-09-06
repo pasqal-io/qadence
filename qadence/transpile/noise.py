@@ -6,10 +6,11 @@ from qadence.noise.protocols import DigitalNoise
 
 from .apply_fn import apply_fn_to_blocks
 
+
 def _set_noise(
     block: AbstractBlock,
     noise: DigitalNoise | None,
-    target_class: type[AbstractBlock] | None = None
+    target_class: type[AbstractBlock] | None = None,
 ) -> AbstractBlock:
     """Changes the noise protocol of a given block in place."""
     if target_class is not None:
@@ -19,11 +20,12 @@ def _set_noise(
         block._noise = noise  # type: ignore [attr-defined]
 
     return block
-    
+
+
 def set_noise(
     circuit: QuantumCircuit | AbstractBlock,
     noise: DigitalNoise | None,
-    target_class: AbstractBlock | None = None
+    target_class: AbstractBlock | None = None,
 ) -> QuantumCircuit | AbstractBlock:
     """
     Parses a `QuantumCircuit` or `CompositeBlock` to add noise to specific gates.
