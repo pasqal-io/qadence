@@ -15,7 +15,7 @@ from qadence.blocks.utils import (
     add,  # noqa
     chain,
 )
-from qadence.noise import DigitalNoise
+from qadence.noise.protocols import DigitalNoise
 from qadence.parameters import (
     Parameter,
     ParamMap,

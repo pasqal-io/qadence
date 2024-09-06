@@ -18,7 +18,7 @@ from qadence.blocks.utils import (
     chain,
     kron,
 )
-from qadence.noise import DigitalNoise
+from qadence.noise.protocols import DigitalNoise
 from qadence.parameters import (
     Parameter,
     evaluate,

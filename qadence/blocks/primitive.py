@@ -11,7 +11,7 @@ from rich.panel import Panel
 from rich.tree import Tree
 
 from qadence.blocks.abstract import AbstractBlock
-from qadence.noise import DigitalNoise
+from qadence.noise.protocols import DigitalNoise
 from qadence.parameters import (
     Parameter,
     ParamMap,
