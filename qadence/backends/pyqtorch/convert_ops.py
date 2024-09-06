@@ -159,9 +159,13 @@ def convert_block(
         if isinstance(block, ProjectorBlock):
             projector = getattr(pyq, block.name)
             if block.name == OpName.N:
-                return [projector(target=qubit_support)]
+                return [projector(target=qubit_support, noise=block.noise)]
             else:
-                return [projector(qubit_support=qubit_support, ket=block.ket, bra=block.bra)]
+                return [
+                    projector(
+                        qubit_support=qubit_support, ket=block.ket, bra=block.bra, noise=block.noise
+                    )
+                ]
         else:
             return [getattr(pyq, block.name)(qubit_support[0])]
     elif isinstance(block, tuple(single_qubit_gateset)):

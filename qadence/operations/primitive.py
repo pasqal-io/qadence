@@ -18,6 +18,7 @@ from qadence.blocks.utils import (
     chain,
     kron,
 )
+from qadence.noise import DigitalNoise
 from qadence.parameters import (
     Parameter,
 )
@@ -31,8 +32,8 @@ class X(PrimitiveBlock):
 
     name = OpName.X
 
-    def __init__(self, target: int):
-        super().__init__((target,))
+    def __init__(self, target: int, noise: DigitalNoise | None = None) -> None:
+        super().__init__((target,), noise=noise)
 
     @property
     def generator(self) -> AbstractBlock:
@@ -52,8 +53,8 @@ class Y(PrimitiveBlock):
 
     name = OpName.Y
 
-    def __init__(self, target: int):
-        super().__init__((target,))
+    def __init__(self, target: int, noise: DigitalNoise | None = None) -> None:
+        super().__init__((target,), noise=noise)
 
     @property
     def generator(self) -> AbstractBlock:
@@ -73,8 +74,8 @@ class Z(PrimitiveBlock):
 
     name = OpName.Z
 
-    def __init__(self, target: int):
-        super().__init__((target,))
+    def __init__(self, target: int, noise: DigitalNoise | None = None) -> None:
+        super().__init__((target,), noise=noise)
 
     @property
     def generator(self) -> AbstractBlock:
@@ -94,8 +95,8 @@ class I(PrimitiveBlock):
 
     name = OpName.I
 
-    def __init__(self, target: int):
-        super().__init__((target,))
+    def __init__(self, target: int, noise: DigitalNoise | None = None) -> None:
+        super().__init__((target,), noise=noise)
 
     def __ixor__(self, other: AbstractBlock | int) -> AbstractBlock:
         if not isinstance(other, AbstractBlock):
@@ -137,8 +138,9 @@ class Projector(ProjectorBlock):
         ket: str,
         bra: str,
         qubit_support: int | tuple[int, ...],
-    ):
-        super().__init__(ket=ket, bra=bra, qubit_support=qubit_support)
+        noise: DigitalNoise | None = None,
+    ) -> None:
+        super().__init__(ket=ket, bra=bra, qubit_support=qubit_support, noise=noise)
 
     @property
     def generator(self) -> None:
@@ -154,8 +156,13 @@ class N(Projector):
 
     name = OpName.N
 
-    def __init__(self, target: int, state: str = "1"):
-        super().__init__(ket=state, bra=state, qubit_support=(target,))
+    def __init__(
+        self,
+        target: int,
+        state: str = "1",
+        noise: DigitalNoise | None = None,
+    ) -> None:
+        super().__init__(ket=state, bra=state, qubit_support=(target,), noise=noise)
 
     @property
     def generator(self) -> None:
@@ -175,9 +182,13 @@ class S(PrimitiveBlock):
 
     name = OpName.S
 
-    def __init__(self, target: int):
+    def __init__(
+        self,
+        target: int,
+        noise: DigitalNoise | None = None,
+    ) -> None:
         self.generator = I(target) - Z(target)
-        super().__init__((target,))
+        super().__init__((target,), noise=noise)
 
     @property
     def eigenvalues_generator(self) -> Tensor:
@@ -196,9 +207,13 @@ class SDagger(PrimitiveBlock):
 
     name = OpName.SDAGGER
 
-    def __init__(self, target: int):
+    def __init__(
+        self,
+        target: int,
+        noise: DigitalNoise | None = None,
+    ) -> None:
         self.generator = I(target) - Z(target)
-        super().__init__((target,))
+        super().__init__((target,), noise=noise)
 
     @property
     def eigenvalues_generator(self) -> Tensor:
@@ -217,9 +232,13 @@ class H(PrimitiveBlock):
 
     name = OpName.H
 
-    def __init__(self, target: int):
+    def __init__(
+        self,
+        target: int,
+        noise: DigitalNoise | None = None,
+    ) -> None:
         self.generator = (1 / np.sqrt(2)) * (X(target) + Z(target) - np.sqrt(2) * I(target))
-        super().__init__((target,))
+        super().__init__((target,), noise=noise)
 
     @property
     def eigenvalues_generator(self) -> Tensor:
@@ -275,9 +294,13 @@ class T(PrimitiveBlock):
 
     name = OpName.T
 
-    def __init__(self, target: int):
+    def __init__(
+        self,
+        target: int,
+        noise: DigitalNoise | None = None,
+    ) -> None:
         self.generator = I(target) - Z(target)
-        super().__init__((target,))
+        super().__init__((target,), noise)
 
     @property
     def eigenvalues_generator(self) -> Tensor:
@@ -301,9 +324,13 @@ class TDagger(PrimitiveBlock):
     # FIXME: this gate is not support by any backend
     name = "T_dagger"
 
-    def __init__(self, target: int):
+    def __init__(
+        self,
+        target: int,
+        noise: DigitalNoise | None = None,
+    ) -> None:
         self.generator = I(target) - Z(target)
-        super().__init__((target,))
+        super().__init__((target,), noise)
 
     @property
     def eigenvalues_generator(self) -> Tensor:
@@ -326,7 +353,12 @@ class SWAP(PrimitiveBlock):
 
     name = OpName.SWAP
 
-    def __init__(self, control: int, target: int) -> None:
+    def __init__(
+        self,
+        control: int,
+        target: int,
+        noise: DigitalNoise | None = None,
+    ) -> None:
         a11 = 0.5 * (Z(control) - I(control))
         a22 = -0.5 * (Z(target) + I(target))
         a12 = 0.5 * (chain(X(control), Z(control)) + X(control))
@@ -334,7 +366,7 @@ class SWAP(PrimitiveBlock):
         self.generator = (
             kron(-1.0 * a22, a11) + kron(-1.0 * a11, a22) + kron(a12, a21) + kron(a21, a12)
         )
-        super().__init__((control, target))
+        super().__init__((control, target), noise=noise)
 
     @property
     def eigenvalues_generator(self) -> Tensor:

@@ -4,9 +4,14 @@ import importlib
 from dataclasses import dataclass
 from typing import Callable, Counter, cast
 
+from pyqtorch.noise import NoiseProtocol
+
 PROTOCOL_TO_MODULE = {
     "readout": "qadence.noise.readout",
 }
+
+# Temporary solution
+DigitalNoise = NoiseProtocol
 
 
 @dataclass
