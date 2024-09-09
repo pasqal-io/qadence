@@ -336,6 +336,7 @@ def alt(
 
     Args:
         n_qubits: number of qubits in the block
+        m_block_qubits: number of qubits in the local entangling block
         depth: number of layers of the ALT
         param_prefix: the base name of the variational parameters
         support: qubit indexes where the ALT is applied
@@ -475,7 +476,7 @@ def alt_digital(
 
     Args:
         n_qubits (int): number of qubits in the ansatz.
-        m_qubits_block (int): number of qubits in the local entangling block.
+        m_block_qubits (int): number of qubits in the local entangling block.
         depth (int): number of layers of the ALT.
         param_prefix (str): the base name of the variational parameters
         operations (list): list of operations to cycle through in the
