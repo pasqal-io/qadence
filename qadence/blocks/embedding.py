@@ -111,11 +111,13 @@ def embedding(
             angle: ArrayLike
             values = {}
             for symbol in expr.free_symbols:
-                if not symbol.is_time:
-                    if symbol.name in inputs:
-                        value = inputs[symbol.name]
-                    elif symbol.name in params:
-                        value = params[symbol.name]
+                if symbol.name in inputs:
+                    value = inputs[symbol.name]
+                elif symbol.name in params:
+                    value = params[symbol.name]
+                else:
+                    if symbol.is_time:
+                        value = tensor(1.0)
                     else:
                         msg_trainable = "Trainable" if symbol.trainable else "Non-trainable"
                         raise KeyError(
@@ -123,9 +125,7 @@ def embedding(
                             f"inputs list: {list(inputs.keys())} nor the "
                             f"params list: {list(params.keys())}."
                         )
-                    values[symbol.name] = value
-                else:
-                    values[symbol.name] = tensor(1.0)
+                values[symbol.name] = value
             angle = fn(**values)
             # do not reshape parameters which are multi-dimensional
             # tensors, such as for example generator matrices

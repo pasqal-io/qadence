@@ -253,8 +253,13 @@ def feature_param_y() -> float:
 
 
 @fixture
-def qadence_generator(omega: float) -> AbstractBlock:
-    t = TimeParameter("t")
+def time_param() -> str:
+    return "t"
+
+
+@fixture
+def qadence_generator(omega: float, time_param: str) -> AbstractBlock:
+    t = TimeParameter(time_param)
     x = Parameter("x", trainable=False)
     y = Parameter("y", trainable=False)
     generator_t = omega * (y * sympy.sin(t) * X(0) + x * (t**2) * Y(1))

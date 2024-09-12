@@ -16,6 +16,7 @@ from qadence import AbstractBlock, HamEvo, QuantumCircuit, QuantumModel, Registe
 def test_time_dependent_generator(
     qadence_generator: AbstractBlock,
     qutip_generator: Callable,
+    time_param: str,
     feature_param_x: float,
     feature_param_y: float,
     ode_solver: SolverType,
@@ -24,7 +25,7 @@ def test_time_dependent_generator(
     n_steps = 500
 
     # simulate with qadence HamEvo usin QuantumModel
-    hamevo = HamEvo(qadence_generator, 0.0, duration=duration)
+    hamevo = HamEvo(qadence_generator, time_param, duration=duration)
     reg = Register(2)
     circ = QuantumCircuit(reg, hamevo)
     model = QuantumModel(circ, configuration={"ode_solver": ode_solver, "n_steps_hevo": n_steps})
