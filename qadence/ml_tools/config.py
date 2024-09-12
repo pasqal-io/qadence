@@ -447,6 +447,13 @@ class FeatureMapConfig:
     assign `t, x = xs[:,0], xs[:,1]`.
     """
 
+    tag: str | None = None
+    """
+    String to indicate the name tag of the feature map.
+
+    Defaults to None, in which case no tag will be applied.
+    """
+
     def __post_init__(self) -> None:
         if self.multivariate_strategy == MultivariateStrategy.PARALLEL and self.num_features > 1:
             assert (
@@ -605,6 +612,13 @@ class AnsatzConfig:
 
     param_prefix: str = "theta"
     """The base bame of the variational parameter."""
+
+    tag: str | None = None
+    """
+    String to indicate the name tag of the ansatz.
+
+    Defaults to None, in which case no tag will be applied.
+    """
 
     def __post_init__(self) -> None:
         if self.ansatz_type == AnsatzType.IIA:
