@@ -332,14 +332,14 @@ def alt(
     **strategy_args: Any,
 ) -> AbstractBlock:
     """
-    Factory function for the Alternating Layer Ansatz (ALT).
+    Factory function for the alternating layer ansatz (alt).
 
     Args:
         n_qubits: number of qubits in the block
         m_block_qubits: number of qubits in the local entangling block
-        depth: number of layers of the ALT
+        depth: number of layers of the alt
         param_prefix: the base name of the variational parameters
-        support: qubit indexes where the ALT is applied
+        support: qubit indexes where the alt is applied
         strategy: Strategy.Digital or Strategy.DigitalAnalog
         **strategy_args: see below
 
@@ -399,64 +399,21 @@ def _entanglers_block_digital(
     ent_list: list[AbstractBlock] = []
 
     for d in range(depth):
-        ents = []
-        if not d % 2:
-            ents.append(
-                kron(
-                    _entangler(
-                        control=support[i + j],
-                        target=support[i + j + 1],
-                        param_str=param_prefix + f"_ent_{next(iterator)}",
-                        op=entangler,
-                    )
-                    for i in range(0, n_qubits, m_block_qubits)
-                    for j in range(0, m_block_qubits, 2)
-                    if i + j + 1 < n_qubits and j + 1 < m_block_qubits
+        start_i = 0 if not d % 2 else -m_block_qubits // 2
+        ents = [
+            kron(
+                _entangler(
+                    control=support[i + j],
+                    target=support[i + j + 1],
+                    param_str=param_prefix + f"_ent_{next(iterator)}",
+                    op=entangler,
                 )
+                for j in range(start_j, m_block_qubits, 2)
+                for i in range(start_i, n_qubits, m_block_qubits)
+                if i + j + 1 < n_qubits and j + 1 < m_block_qubits and i + j >= 0
             )
-            if m_block_qubits > 2:
-                ents.append(
-                    kron(
-                        _entangler(
-                            control=support[i + j],
-                            target=support[i + j + 1],
-                            param_str=param_prefix + f"_ent_{next(iterator)}",
-                            op=entangler,
-                        )
-                        for i in range(0, n_qubits, m_block_qubits)
-                        for j in range(1, m_block_qubits, 2)
-                        if i + j + 1 < n_qubits and j + 1 < m_block_qubits
-                    )
-                )
-
-        elif d % 2:
-            ents.append(
-                kron(
-                    _entangler(
-                        control=support[i + j],
-                        target=support[i + j + 1],
-                        param_str=param_prefix + f"_ent_{next(iterator)}",
-                        op=entangler,
-                    )
-                    for i in range(-m_block_qubits // 2, n_qubits, m_block_qubits)
-                    for j in range(0, m_block_qubits, 2)
-                    if i + j + 1 < n_qubits and j + 1 < m_block_qubits and i + j >= 0
-                )
-            )
-            if m_block_qubits > 2:
-                ents.append(
-                    kron(
-                        _entangler(
-                            control=support[i + j],
-                            target=support[i + j + 1],
-                            param_str=param_prefix + f"_ent_{next(iterator)}",
-                            op=entangler,
-                        )
-                        for i in range(-m_block_qubits // 2, n_qubits, m_block_qubits)
-                        for j in range(1, m_block_qubits, 2)
-                        if i + j + 1 < n_qubits and j + 1 < m_block_qubits and i + j >= 0
-                    )
-                )
+            for start_j in [0, 1]
+        ]
 
         ent_list.append(chain(*ents))
     return ent_list
