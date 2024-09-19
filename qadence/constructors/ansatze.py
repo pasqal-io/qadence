@@ -412,7 +412,7 @@ def _entanglers_block_digital(
                 for i in range(start_i, n_qubits, m_block_qubits)
                 if i + j + 1 < n_qubits and j + 1 < m_block_qubits and i + j >= 0
             )
-            for start_j in [0, 1]
+            for start_j in [i for i in range(2) if m_block_qubits>2 or i == 0]
         ]
 
         ent_list.append(chain(*ents))
