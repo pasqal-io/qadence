@@ -14,6 +14,7 @@ from qadence import (
     QuantumModel,
     VariationalParameter,
     Z,
+    alt,
     chain,
     hamiltonian_factory,
     hea,
@@ -169,3 +170,72 @@ def test_iia_sDAQC(n_qubits: int, depth: int, hamiltonian: str) -> None:
         assert not has_duplicate_vparams(iia)
     if hamiltonian == "parametric_local":
         assert has_duplicate_vparams(iia)
+
+
+@pytest.mark.parametrize("n_qubits", [10, 11])
+@pytest.mark.parametrize("m_block_qubits", [2, 3, 4])
+@pytest.mark.parametrize("depth", [2, 3])
+@pytest.mark.parametrize("entangler", [CNOT, CRX])
+def test_alt_duplicate_params(
+    n_qubits: int, m_block_qubits: int, depth: int, entangler: AbstractBlock
+) -> None:
+    """Tests that ALTs are initialized with correct parameter namings."""
+    common_params = {
+        "n_qubits": n_qubits,
+        "m_block_qubits": m_block_qubits,
+        "depth": depth,
+        "operations": [RZ, RX, RZ],
+        "entangler": entangler,
+    }
+    alt1 = alt(
+        n_qubits=n_qubits,
+        m_block_qubits=m_block_qubits,
+        depth=depth,
+        operations=[RZ, RX, RZ],
+        entangler=entangler,
+    )
+    alt2 = alt(
+        n_qubits=n_qubits,
+        m_block_qubits=m_block_qubits,
+        depth=depth,
+        operations=[RZ, RX, RZ],
+        entangler=entangler,
+    )
+    block1 = chain(alt1, alt2)
+    assert has_duplicate_vparams(block1)
+    alt1 = alt(
+        n_qubits=n_qubits,
+        m_block_qubits=m_block_qubits,
+        depth=depth,
+        operations=[RZ, RX, RZ],
+        entangler=entangler,
+        param_prefix="0",
+    )
+    alt2 = alt(
+        n_qubits=n_qubits,
+        m_block_qubits=m_block_qubits,
+        depth=depth,
+        operations=[RZ, RX, RZ],
+        entangler=entangler,
+        param_prefix="1",
+    )
+    block2 = chain(alt1, alt2)
+    assert not has_duplicate_vparams(block2)
+
+
+@pytest.mark.parametrize("n_qubits", [10, 11])
+@pytest.mark.parametrize("m_block_qubits", [2, 3, 4])
+@pytest.mark.parametrize("depth", [2, 3])
+def test_alt_forward(n_qubits: int, m_block_qubits: int, depth: int) -> None:
+    alt1 = alt(
+        n_qubits=n_qubits,
+        m_block_qubits=m_block_qubits,
+        depth=depth,
+        operations=[RZ, RX, RZ],
+        param_prefix="0",
+    )
+    circuit = QuantumCircuit(n_qubits, alt1)
+    model = QuantumModel(circuit)
+
+    wf = model.run({})
+    assert wf.shape == Size([1, 2**n_qubits])
