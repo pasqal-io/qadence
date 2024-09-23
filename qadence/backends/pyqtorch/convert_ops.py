@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from functools import partial, reduce
 from itertools import chain as flatten
 from typing import Callable, Sequence
@@ -50,6 +51,12 @@ SYMPY_TO_PYQ_MAPPING = {
     sympy.log: "log",
     sympy.tan: "tan",
     sympy.tanh: "tanh",
+    sympy.Heaviside: "heaviside",
+    sympy.Abs: "abs",
+    sympy.exp: "exp",
+    sympy.acos: "acos",
+    sympy.asin: "asin",
+    sympy.atan: "atan",
 }
 
 
@@ -91,7 +98,7 @@ def extract_parameter(block: ScaleBlock | ParametricBlock, config: Configuration
     return config.get_param_name(block)[0]
 
 
-def sympy_to_pyq(expr: sympy.Expr) -> ConcretizedCallable:
+def sympy_to_pyq(expr: sympy.Expr) -> ConcretizedCallable | Tensor:
     """Convert sympy expression to pyqtorch ConcretizedCallable object.
 
     Args:
@@ -103,18 +110,14 @@ def sympy_to_pyq(expr: sympy.Expr) -> ConcretizedCallable:
 
     # base case - independent argument
     if len(expr.args) == 0:
-        res = (
-            float(expr)
-            if str(expr).replace(".", "", 1).replace("-", "", 1).isdigit()
-            else str(expr)
-        )
-        if isinstance(res, str):
+        try:
+            res = torch.as_tensor(float(expr))
+        except Exception as e:
+            res = str(expr)
+
             if "/" in res:
                 # found a rational
-                res = float(sympy.Rational(res).evalf())
-            if "fix" in res:  # type: ignore [operator]
-                # found a fixed parameter - convert to float
-                res = torch.as_tensor(float(res.split("_")[1]))  # type: ignore [attr-defined]
+                res = torch.as_tensor(float(sympy.Rational(res).evalf()))
         return res
 
     # iterate through current function arguments
@@ -154,16 +157,25 @@ def convert_block(
 
     if isinstance(block, ScaleBlock):
         scaled_ops = convert_block(block.block, n_qubits, config)
-        scale = extract_parameter(block, config)
-        return [pyq.Scale(pyq.Sequence(scaled_ops), sympy_to_pyq(sympy.parse_expr(scale)))]
+        scale = extract_parameter(block, config=config)
+
+        # replace underscore by dot when underscore is between two numbers in string
+        if isinstance(scale, str):
+            scale = re.sub(r"(?<=\d)_(?=\d)", ".", scale)
+        if isinstance(scale, str) and not config._use_gate_params:
+            param = sympy_to_pyq(sympy.parse_expr(scale))
+        else:
+            param = scale
+
+        return [pyq.Scale(pyq.Sequence(scaled_ops), param)]
 
     elif isinstance(block, TimeEvolutionBlock):
         if getattr(block.generator, "is_time_dependent", False):
-            generator = convert_block(
-                block.generator, config=Configuration(_use_gate_params=False)  # type: ignore [arg-type]
-            )[0]
+            config._use_gate_params = False
+            generator = convert_block(block.generator, config=config)[0]  # type: ignore [arg-type]
         elif isinstance(block.generator, sympy.Basic):
             generator = config.get_param_name(block)[1]
+
         elif isinstance(block.generator, Tensor):
             m = block.generator.to(dtype=cdouble)
             generator = convert_block(
@@ -177,6 +189,7 @@ def convert_block(
         else:
             generator = convert_block(block.generator, n_qubits, config)[0]  # type: ignore[arg-type]
         time_param = config.get_param_name(block)[0]
+
         return [
             pyq.HamiltonianEvolution(
                 qubit_support=qubit_support,
@@ -211,7 +224,6 @@ def convert_block(
             if isinstance(block, U):
                 op = pyq_cls(qubit_support[0], *config.get_param_name(block))
             else:
-                # param = sympy_to_pyq(sympy.parse_expr(extract_parameter(block, config)))
                 param = extract_parameter(block, config)
                 op = pyq_cls(qubit_support[0], param)
         else:

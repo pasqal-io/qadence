@@ -240,10 +240,7 @@ class QuantumModel(nn.Module):
         if values is None:
             values = {}
 
-        if self._backend_name == BackendName.PYQTORCH:
-            params = values
-        else:
-            params = self.embedding_fn(self._params, values)
+        params = self.embedding_fn(self._params, values)
 
         return self.backend.run(self._circuit, params, state=state, endianness=endianness)
 

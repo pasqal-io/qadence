@@ -76,14 +76,10 @@ def _(
         diff_mode = DiffMode.AD
     bknd = backend_factory(backend, diff_mode=diff_mode, configuration=configuration)
     conv = bknd.convert(circuit)
-    if backend == BackendName.PYQTORCH:
-        vals = values
-    else:
-        vals = conv.embedding_fn(conv.params, values)
     with no_grad():
         return bknd.run(
             circuit=conv.circuit,
-            param_values=vals,
+            param_values=conv.embedding_fn(conv.params, values),
             state=state,
             endianness=endianness,
         )

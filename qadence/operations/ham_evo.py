@@ -104,6 +104,7 @@ class HamEvo(TimeEvolutionBlock):
             )
         ps = {"parameter": Parameter(parameter), **gen_exprs}
         self.parameters = ParamMap(**ps)
+        self.time_param = parameter
         self.generator = generator
         self.duration = duration
 
