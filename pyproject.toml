@@ -66,7 +66,7 @@ pulser = [
     "pulser-simulation==0.20.0",
     "pasqal-cloud==0.12.2",
 ]
-braket = ["amazon-braket-sdk<1.71.2"]
+braket = ["amazon-braket-sdk<1.87.2"]
 visualization = [
     "graphviz",
     # FIXME: will be needed once we support latex labels
