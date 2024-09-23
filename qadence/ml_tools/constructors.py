@@ -7,7 +7,7 @@ from qadence.backend import BackendConfiguration
 from qadence.blocks import chain, kron
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.composite import ChainBlock, KronBlock
-from qadence.blocks.utils import add
+from qadence.blocks.utils import add, tag
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import (
     analog_feature_map,
@@ -774,10 +774,15 @@ def build_qnn_from_configs(
             fm_blocks=fm_blocks,
             ansatz_config=ansatz_config,
         )
+        if isinstance(fm_config.tag, str):
+            tag(full_fm, fm_config.tag)
         inputs = fm_config.inputs
         blocks.append(full_fm)
 
-    blocks.append(create_ansatz(register=register, config=ansatz_config))
+    ansatz = create_ansatz(register=register, config=ansatz_config)
+    if isinstance(ansatz_config.tag, str):
+        tag(ansatz, ansatz_config.tag)
+    blocks.append(ansatz)
 
     circ = QuantumCircuit(register, *blocks)
 
