@@ -63,7 +63,7 @@ allow-ambiguous-features = true
 [project.optional-dependencies]
 pulser = [
     "pulser-core==0.20.0",
-    "pulser-simulation==0.20.0",
+    "pulser-simulation==0.20.1",
     "pasqal-cloud==0.12.2",
 ]
 braket = ["amazon-braket-sdk<1.71.2"]
