@@ -64,7 +64,7 @@ allow-ambiguous-features = true
 pulser = [
     "pulser-core==0.20.1",
     "pulser-simulation==0.20.1",
-    "pasqal-cloud==0.12.2",
+    "pasqal-cloud==0.12.3",
 ]
 braket = ["amazon-braket-sdk<1.71.2"]
 visualization = [
