@@ -51,7 +51,7 @@ SYMPY_TO_PYQ_MAPPING = {
     sympy.log: "log",
     sympy.tan: "tan",
     sympy.tanh: "tanh",
-    sympy.Heaviside: "heaviside",
+    sympy.Heaviside: "hs",
     sympy.Abs: "abs",
     sympy.exp: "exp",
     sympy.acos: "acos",

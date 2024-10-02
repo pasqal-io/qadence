@@ -81,7 +81,6 @@ def test_pulser_pyq_addressing(amp: float, det: float, spacing: float) -> None:
     assert torch.allclose(expval_pulser, expval_pyq, atol=MIDDLE_ACCEPTANCE)
 
 
-@pytest.mark.skip(reason="Heaviside function not differentiable in torch; decide how to fix this")
 @pytest.mark.flaky(max_runs=5)
 def test_addressing_training() -> None:
     n_qubits = 3
