@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from functools import partial, reduce
 from itertools import chain as flatten
-from typing import Callable, Sequence
+from typing import Any, Callable, Sequence
 
 import pyqtorch as pyq
 import sympy
@@ -98,6 +98,28 @@ def extract_parameter(block: ScaleBlock | ParametricBlock, config: Configuration
     return config.get_param_name(block)[0]
 
 
+def replace_underscore_floats(s: str) -> str:
+    # Regular expression to match floats written with underscores instead of dots
+    float_with_underscore_pattern = r"""
+        (?<!\w)            # Negative lookbehind to ensure not part of a word
+        -?                 # Optional negative sign
+        \d+                # One or more digits (before underscore)
+        _                  # The underscore acting as decimal separator
+        \d+                # One or more digits (after underscore)
+        ([eE][-+]?\d+)?    # Optional exponent part for scientific notation
+        (?!\w)             # Negative lookahead to ensure not part of a word
+    """
+
+    # Function to replace the underscore with a dot
+    def underscore_to_dot(match: re.Match) -> Any:
+        return match.group(0).replace("_", ".")
+
+    # Compile the regular expression
+    pattern = re.compile(float_with_underscore_pattern, re.VERBOSE)
+
+    return pattern.sub(underscore_to_dot, s)
+
+
 def sympy_to_pyq(expr: sympy.Expr) -> ConcretizedCallable | Tensor:
     """Convert sympy expression to pyqtorch ConcretizedCallable object.
 
@@ -161,7 +183,8 @@ def convert_block(
 
         # replace underscore by dot when underscore is between two numbers in string
         if isinstance(scale, str):
-            scale = re.sub(r"(?<=\d)_(?=\d)", ".", scale)
+            scale = replace_underscore_floats(scale)
+
         if isinstance(scale, str) and not config._use_gate_params:
             param = sympy_to_pyq(sympy.parse_expr(scale))
         else:
