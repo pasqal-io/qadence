@@ -62,7 +62,7 @@ allow-ambiguous-features = true
 
 [project.optional-dependencies]
 pulser = [
-    "pulser-core==0.20.1",
+    "pulser-core==1.0.0",
     "pulser-simulation==0.20.1",
     "pasqal-cloud==0.12.3",
 ]
