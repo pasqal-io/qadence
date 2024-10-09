@@ -5,7 +5,7 @@ import random
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from pulser.devices import Chadoq2
+from pulser.devices import DigitalAnalogDevice
 from scipy.optimize import minimize
 from scipy.spatial.distance import pdist, squareform
 
@@ -46,7 +46,7 @@ def qubo_register_coords(Q):
         """
         Q, shape = args
         new_coords = np.reshape(new_coords, shape)
-        new_Q = squareform(Chadoq2.interaction_coeff / pdist(new_coords) ** 6)
+        new_Q = squareform(DigitalAnalogDevice.interaction_coeff / pdist(new_coords) ** 6)
         return np.linalg.norm(new_Q - Q)
 
     shape = (len(Q), 2)
