@@ -12,6 +12,7 @@ from .circuit import fill_identities
 from .digitalize import digitalize
 from .flatten import flatten
 from .invert import invert_endianness, reassign
+from .noise import set_noise
 from .transpile import blockfn_to_circfn, transpile
 
-__all__ = ["set_trainable", "invert_endianness"]
+__all__ = ["set_trainable", "invert_endianness", "set_noise"]
