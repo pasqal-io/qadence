@@ -5,7 +5,7 @@ from typing import Callable, Iterable, List
 import sympy
 from numpy import array as nparray
 from numpy import cdouble as npcdouble
-from torch import tensor
+from torch import as_tensor, tensor
 
 from qadence.blocks import (
     AbstractBlock,
@@ -111,11 +111,13 @@ def embedding(
             angle: ArrayLike
             values = {}
             for symbol in expr.free_symbols:
-                if not symbol.is_time:
-                    if symbol.name in inputs:
-                        value = inputs[symbol.name]
-                    elif symbol.name in params:
-                        value = params[symbol.name]
+                if symbol.name in inputs:
+                    value = inputs[symbol.name]
+                elif symbol.name in params:
+                    value = params[symbol.name]
+                else:
+                    if symbol.is_time:
+                        value = tensor(1.0)
                     else:
                         msg_trainable = "Trainable" if symbol.trainable else "Non-trainable"
                         raise KeyError(
@@ -123,9 +125,7 @@ def embedding(
                             f"inputs list: {list(inputs.keys())} nor the "
                             f"params list: {list(params.keys())}."
                         )
-                    values[symbol.name] = value
-                else:
-                    values[symbol.name] = tensor(1.0)
+                values[symbol.name] = value
             angle = fn(**values)
             # do not reshape parameters which are multi-dimensional
             # tensors, such as for example generator matrices
@@ -142,8 +142,18 @@ def embedding(
                 gate_lvl_params[uuid] = embedded_params[e]
             return gate_lvl_params
         else:
-            out = {stringify(k): v for k, v in embedded_params.items()}
-            out.update({"orig_param_values": inputs})
+            embedded_params.update(inputs)
+            for k, v in params.items():
+                if k not in embedded_params:
+                    embedded_params[k] = v
+            out = {
+                stringify(k)
+                if not isinstance(k, str)
+                else k: as_tensor(v)[None]
+                if as_tensor(v).ndim == 0
+                else v
+                for k, v in embedded_params.items()
+            }
             return out
 
     params: ParamDictType

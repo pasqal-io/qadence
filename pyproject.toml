@@ -50,7 +50,7 @@ dependencies = [
     "jsonschema",
     "nevergrad",
     "scipy",
-    "pyqtorch==1.4.9",
+    "pyqtorch @ git+https://github.com/pasqal-io/pyqtorch.git@jm/embed_tests",
     "pyyaml",
     "matplotlib",
     "Arpeggio==2.0.2",
