@@ -8,6 +8,7 @@ import torch
 from torch.linalg import eigvals
 
 from qadence.blocks import PrimitiveBlock
+from qadence.noise.protocols import DigitalNoise
 
 logger = getLogger(__name__)
 
@@ -64,6 +65,7 @@ class MatrixBlock(PrimitiveBlock):
         self,
         matrix: torch.Tensor | np.ndarray,
         qubit_support: tuple[int, ...],
+        noise: DigitalNoise | None = None,
         check_unitary: bool = True,
         check_hermitian: bool = False,
     ) -> None:
@@ -82,7 +84,7 @@ class MatrixBlock(PrimitiveBlock):
             if not self.is_unitary(matrix):
                 logger.warning("Provided matrix is not unitary.")
         self.matrix = matrix.clone()
-        super().__init__(qubit_support)
+        super().__init__(qubit_support, noise)
 
     @cached_property
     def eigenvalues_generator(self) -> torch.Tensor:

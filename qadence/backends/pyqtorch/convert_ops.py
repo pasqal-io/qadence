@@ -146,7 +146,7 @@ def convert_block(
             ]
 
     elif isinstance(block, MatrixBlock):
-        return [pyq.primitives.Primitive(block.matrix, block.qubit_support)]
+        return [pyq.primitives.Primitive(block.matrix, block.qubit_support, noise=block.noise)]
     elif isinstance(block, CompositeBlock):
         ops = list(flatten(*(convert_block(b, n_qubits, config) for b in block.blocks)))
         if isinstance(block, AddBlock):
