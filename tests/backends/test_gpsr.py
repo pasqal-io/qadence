@@ -241,10 +241,10 @@ def test_expectation_psr(n_qubits: int, batch_size: int, n_obs: int, circuit_fn:
     ["n_qubits", "generator"],
     [
         (1, 0.5 * X(0)),
-        # (1, X(0)), # FAILS
+        (1, X(0)),
         (2, X(0) + Y(1)),
         (3, X(0) + 0.5 * Z(2)),
-        # (3, 10*(X(0)+0.5*Z(2))), # FAILS
+        (3, 10 * (X(0) + 0.5 * Z(2))),
     ],
 )
 def test_hamevo_gpsr(n_qubits: int, generator: AbstractBlock) -> None:
