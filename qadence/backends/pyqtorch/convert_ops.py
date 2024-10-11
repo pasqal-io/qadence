@@ -141,7 +141,7 @@ def sympy_to_pyq(expr: sympy.Expr) -> ConcretizedCallable | Tensor:
                 res = torch.as_tensor(float(sympy.Rational(res).evalf()))
         return res
 
-    # iterate through current function arguments
+    # Recursively iterate through current function arguments
     all_results = []
     for arg in expr.args:
         res = sympy_to_pyq(arg)
