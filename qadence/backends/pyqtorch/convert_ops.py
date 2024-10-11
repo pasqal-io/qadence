@@ -156,10 +156,10 @@ def sympy_to_pyq(expr: sympy.Expr) -> ConcretizedCallable | Tensor:
                 abstract_args=[x, y]
             )
 
-        cc = reduce(fn, all_results)
+        concretized_callable = reduce(fn, all_results)
     else:
-        cc = ConcretizedCallable(SYMPY_TO_PYQ_MAPPING[expr.func], all_results)
-    return cc
+        concretized_callable = ConcretizedCallable(SYMPY_TO_PYQ_MAPPING[expr.func], all_results)
+    return concretized_callable
 
 
 def convert_block(
