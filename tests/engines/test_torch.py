@@ -96,9 +96,6 @@ def test_embeddings() -> None:
 
     inputs = {"x": torch.ones(batch_size), "y": torch.rand(batch_size)}
     low_level_params = embed(params, inputs)
-    low_level_params.pop(
-        "orig_param_values", {}
-    )  # TODO: remove this when embedding system is updated
 
     assert len(list(low_level_params.keys())) == 9 + len(inputs)
 

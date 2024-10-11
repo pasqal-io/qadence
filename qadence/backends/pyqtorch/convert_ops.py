@@ -99,6 +99,17 @@ def extract_parameter(block: ScaleBlock | ParametricBlock, config: Configuration
 
 
 def replace_underscore_floats(s: str) -> str:
+    """Replace underscores with periods for all floats in given string.
+
+    Needed for correct parsing of string by sympy parser.
+
+    Args:
+        s (str): string expression
+
+    Returns:
+        str: transformed string expression
+    """
+
     # Regular expression to match floats written with underscores instead of dots
     float_with_underscore_pattern = r"""
         (?<!\w)            # Negative lookbehind to ensure not part of a word
