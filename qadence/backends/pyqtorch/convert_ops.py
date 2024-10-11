@@ -137,8 +137,7 @@ def sympy_to_pyq(expr: sympy.Expr) -> ConcretizedCallable | Tensor:
         except Exception as e:
             res = str(expr)
 
-            if "/" in res:
-                # found a rational
+            if "/" in res:  # Found a rational
                 res = torch.as_tensor(float(sympy.Rational(res).evalf()))
         return res
 
