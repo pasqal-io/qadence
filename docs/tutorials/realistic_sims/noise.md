@@ -68,3 +68,46 @@ noisy_exp = model.expectation(measurement=measurement, noise=noise)
 print(f"noiseless = {noiseless_exp}") # markdown-exec: hide
 print(f"noisy = {noisy_exp}") # markdown-exec: hide
 ```
+
+## Digital noisy simulation
+
+When dealing with programs involving only digital operations, several options are made available from [PyQTorch](https://pasqal-io.github.io/pyqtorch/latest/noise/) via the `NoiseType`. One can define noisy digital operations with `DigitalNoise`as follows:
+
+```python exec="on" source="material-block" session="noise" result="json"
+from qadence import NoiseType, DigitalNoise, RX, run
+import torch
+
+noise = DigitalNoise(NoiseType.BITFLIP, error_probability = 0.2)
+noise = DigitalNoise.bitflip(error_probability = 0.2) # equivalent
+
+op = RX(0, torch.pi, noise = noise)
+
+print(run(op))
+```
+
+It is also possible to set a noise configuration to gates within a composite block or circuit as follows:
+
+```python exec="on" source="material-block" session="noise" result="json"
+from qadence import set_noise, chain
+
+n_qubits = 2
+
+block = chain(RX(i, f"theta_{i}") for i in range(n_qubits))
+
+noise = DigitalNoise.bitflip(error_probability = 0.1)
+
+# The function changes the block in place:
+set_noise(block, noise)
+print(run(block))
+```
+
+There is an extra optional argument to specify the type of block we want to apply noise to. E.g., let's say we want to apply noise only to `X` gates, a `target_class` argument can be passed with the corresponding block:
+
+```python exec="on" source="material-block" session="noise" result="json"
+from qadence import X
+block = chain(RX(0, "theta"), X(0))
+set_noise(block, noise, target_class = X)
+
+for block in block.blocks:
+    print(block.noise)
+```

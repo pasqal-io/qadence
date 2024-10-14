@@ -189,3 +189,8 @@ More fine-grained control and better performance is provided via the high-level 
 2. Define a [`QuantumModel`](quantummodels.md) which differentiates, compiles and executes the circuit.
 
 Execution of more complex Qadence programs will be explored in the next tutorials.
+
+
+## Adding noise to gates
+
+It is possible to add noise to gates. Please refer to the noise tutorial [here](../tutorials/realistic_sims/noise.md).

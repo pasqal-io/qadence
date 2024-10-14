@@ -15,6 +15,7 @@ from qadence.blocks.utils import (
     add,  # noqa
     chain,
 )
+from qadence.noise.protocols import DigitalNoise
 from qadence.parameters import (
     Parameter,
     ParamMap,
@@ -32,10 +33,15 @@ class PHASE(ParametricBlock):
 
     name = OpName.PHASE
 
-    def __init__(self, target: int, parameter: Parameter | TNumber | sympy.Expr | str):
+    def __init__(
+        self,
+        target: int,
+        parameter: Parameter | TNumber | sympy.Expr | str,
+        noise: DigitalNoise | None = None,
+    ) -> None:
         self.parameters = ParamMap(parameter=parameter)
         self.generator = I(target) - Z(target)
-        super().__init__((target,))
+        super().__init__((target,), noise=noise)
 
     @classmethod
     def num_parameters(cls) -> int:
@@ -56,13 +62,18 @@ class RX(ParametricBlock):
 
     name = OpName.RX
 
-    def __init__(self, target: int, parameter: Parameter | TParameter | ParamMap):
+    def __init__(
+        self,
+        target: int,
+        parameter: Parameter | TParameter | ParamMap,
+        noise: DigitalNoise | None = None,
+    ) -> None:
         # TODO: should we give them more meaningful names? like 'angle'?
         self.parameters = (
             parameter if isinstance(parameter, ParamMap) else ParamMap(parameter=parameter)
         )
         self.generator = X(target)
-        super().__init__((target,))
+        super().__init__((target,), noise=noise)
 
     @classmethod
     def num_parameters(cls) -> int:
@@ -84,12 +95,17 @@ class RY(ParametricBlock):
 
     name = OpName.RY
 
-    def __init__(self, target: int, parameter: Parameter | TParameter | ParamMap):
+    def __init__(
+        self,
+        target: int,
+        parameter: Parameter | TParameter | ParamMap,
+        noise: DigitalNoise | None = None,
+    ) -> None:
         self.parameters = (
             parameter if isinstance(parameter, ParamMap) else ParamMap(parameter=parameter)
         )
         self.generator = Y(target)
-        super().__init__((target,))
+        super().__init__((target,), noise=noise)
 
     @classmethod
     def num_parameters(cls) -> int:
@@ -111,12 +127,17 @@ class RZ(ParametricBlock):
 
     name = OpName.RZ
 
-    def __init__(self, target: int, parameter: Parameter | TParameter | ParamMap):
+    def __init__(
+        self,
+        target: int,
+        parameter: Parameter | TParameter | ParamMap,
+        noise: DigitalNoise | None = None,
+    ) -> None:
         self.parameters = (
             parameter if isinstance(parameter, ParamMap) else ParamMap(parameter=parameter)
         )
         self.generator = Z(target)
-        super().__init__((target,))
+        super().__init__((target,), noise=noise)
 
     @classmethod
     def num_parameters(cls) -> int:
@@ -147,10 +168,11 @@ class U(ParametricBlock):
         phi: Parameter | TParameter,
         theta: Parameter | TParameter,
         omega: Parameter | TParameter,
-    ):
+        noise: DigitalNoise | None = None,
+    ) -> None:
         self.parameters = ParamMap(phi=phi, theta=theta, omega=omega)
         self.generator = chain(Z(target), Y(target), Z(target))
-        super().__init__((target,))
+        super().__init__((target,), noise=noise)
 
     @classmethod
     def num_parameters(cls) -> int:

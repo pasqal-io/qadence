@@ -11,6 +11,7 @@ from rich.panel import Panel
 from rich.tree import Tree
 
 from qadence.blocks.abstract import AbstractBlock
+from qadence.noise.protocols import DigitalNoise
 from qadence.parameters import (
     Parameter,
     ParamMap,
@@ -33,12 +34,21 @@ class PrimitiveBlock(AbstractBlock):
 
     name = "PrimitiveBlock"
 
-    def __init__(self, qubit_support: tuple[int, ...]):
+    def __init__(
+        self,
+        qubit_support: tuple[int, ...],
+        noise: DigitalNoise | None = None,
+    ):
         self._qubit_support = qubit_support
+        self._noise = noise
 
     @property
     def qubit_support(self) -> Tuple[int, ...]:
         return self._qubit_support
+
+    @property
+    def noise(self) -> DigitalNoise | None:
+        return self._noise
 
     def digital_decomposition(self) -> AbstractBlock:
         """Decomposition into purely digital gates.
@@ -357,14 +367,19 @@ class ControlBlock(PrimitiveBlock):
     control: tuple[int, ...]
     target: tuple[int, ...]
 
-    def __init__(self, control: tuple[int, ...], target_block: PrimitiveBlock) -> None:
+    def __init__(
+        self,
+        control: tuple[int, ...],
+        target_block: PrimitiveBlock,
+        noise: DigitalNoise | None = None,
+    ) -> None:
         self.control = control
         self.blocks = (target_block,)
         self.target = target_block.qubit_support
 
         # using tuple expansion because some control operations could
         # have multiple targets, e.g. CSWAP
-        super().__init__((*control, *self.target))  # target_block.qubit_support[0]))
+        super().__init__((*control, *self.target), noise=noise)  # target_block.qubit_support[0]))
 
     @property
     def n_controls(self) -> int:
@@ -416,11 +431,16 @@ class ParametricControlBlock(ParametricBlock):
     control: tuple[int, ...] = ()
     blocks: tuple[ParametricBlock, ...]
 
-    def __init__(self, control: tuple[int, ...], target_block: ParametricBlock) -> None:
+    def __init__(
+        self,
+        control: tuple[int, ...],
+        target_block: ParametricBlock,
+        noise: DigitalNoise | None = None,
+    ) -> None:
         self.blocks = (target_block,)
         self.control = control
         self.parameters = target_block.parameters
-        super().__init__((*control, *target_block.qubit_support))
+        super().__init__((*control, *target_block.qubit_support), noise=noise)
 
     @property
     def n_controls(self) -> int:
@@ -497,6 +517,7 @@ class ProjectorBlock(PrimitiveBlock):
         ket: str,
         bra: str,
         qubit_support: int | tuple[int, ...],
+        noise: DigitalNoise | None = None,
     ) -> None:
         """
         Arguments:
@@ -522,4 +543,4 @@ class ProjectorBlock(PrimitiveBlock):
 
         self.ket = ket
         self.bra = bra
-        super().__init__(qubit_support)
+        super().__init__(qubit_support, noise=noise)
