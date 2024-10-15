@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Callable, Counter, cast
 
@@ -18,10 +19,6 @@ BlockNoise = NoiseProtocol
 
 @dataclass
 class Noise:
-    DEPHASING = "dephasing"
-    DEPOLARIZING = "depolarizing"
-    READOUT = "readout"
-
     def __init__(self, protocol: str, options: dict = dict(), type: str = "") -> None:
         self.protocol: str = protocol
         self.options: dict = options
@@ -51,6 +48,53 @@ class Noise:
     @classmethod
     def list(cls) -> list:
         return list(filter(lambda el: not el.startswith("__"), dir(cls)))
+
+
+@dataclass
+class PulseNoise(Noise):
+    """Pulse noise is pulser-compatible noise where the right options.
+
+    are created for a SimConfig object in Pulser.
+    """
+
+    DEPHASING = "dephasing"
+    DEPOLARIZING = "depolarizing"
+
+    def __init__(self, protocol: str, options: dict = dict()) -> None:
+        noise_probs = options.get("noise_probs", None)
+        if noise_probs is None:
+            raise KeyError("A `noise_probs` option should be passed in options.")
+        if not (isinstance(noise_probs, float) or isinstance(noise_probs, Iterable)):
+            raise KeyError(
+                "A single or a range of noise probabilities"
+                " should be passed. Got {type(noise_probs)}."
+            )
+
+        super().__init__(protocol, options, NoiseProtocolType.PULSE)
+
+    def _to_dict(self) -> dict:
+        return {"protocol": self.protocol, "options": self.options}
+
+    @classmethod
+    def _from_dict(cls, d: dict) -> PulseNoise:
+        return cls(d["protocol"], **d["options"])
+
+
+@dataclass
+class PostProcessingNoise(Noise):
+    """PostProcessingNoise alters the returned output of quantum programs ."""
+
+    READOUT = "readout"
+
+    def __init__(self, protocol: str, options: dict = dict()) -> None:
+        super().__init__(protocol, options, NoiseProtocolType.POSTPROCESSING)
+
+    def _to_dict(self) -> dict:
+        return {"protocol": self.protocol, "options": self.options}
+
+    @classmethod
+    def _from_dict(cls, d: dict) -> PostProcessingNoise:
+        return cls(d["protocol"], **d["options"])
 
 
 def apply_noise(noise: Noise, samples: list[Counter]) -> list[Counter]:
