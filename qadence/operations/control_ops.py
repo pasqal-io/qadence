@@ -18,7 +18,7 @@ from qadence.blocks.utils import (
     chain,
     kron,
 )
-from qadence.noise.protocols import DigitalNoise
+from qadence.noise.protocols import BlockNoise
 from qadence.parameters import (
     Parameter,
     evaluate,
@@ -36,7 +36,7 @@ class CNOT(ControlBlock):
 
     name = OpName.CNOT
 
-    def __init__(self, control: int, target: int, noise: DigitalNoise | None = None) -> None:
+    def __init__(self, control: int, target: int, noise: BlockNoise | None = None) -> None:
         self.generator = kron(N(control), X(target) - I(target))
         super().__init__((control,), X(target), noise=noise)
 
@@ -65,7 +65,7 @@ class MCZ(ControlBlock):
     name = OpName.MCZ
 
     def __init__(
-        self, control: tuple[int, ...], target: int, noise: DigitalNoise | None = None
+        self, control: tuple[int, ...], target: int, noise: BlockNoise | None = None
     ) -> None:
         self.generator = kron(*[N(qubit) for qubit in control], Z(target) - I(target))
         super().__init__(control, Z(target), noise=noise)
@@ -96,7 +96,7 @@ class CZ(MCZ):
 
     name = OpName.CZ
 
-    def __init__(self, control: int, target: int, noise: DigitalNoise | None = None) -> None:
+    def __init__(self, control: int, target: int, noise: BlockNoise | None = None) -> None:
         super().__init__((control,), target, noise=noise)
 
 
@@ -108,7 +108,7 @@ class MCRX(ParametricControlBlock):
         control: tuple[int, ...],
         target: int,
         parameter: Parameter | TNumber | sympy.Expr | str,
-        noise: DigitalNoise | None = None,
+        noise: BlockNoise | None = None,
     ) -> None:
         self.generator = kron(*[N(qubit) for qubit in control], X(target))
         super().__init__(control, RX(target, parameter), noise=noise)
@@ -140,7 +140,7 @@ class CRX(MCRX):
         control: int,
         target: int,
         parameter: Parameter | TNumber | sympy.Expr | str,
-        noise: DigitalNoise | None = None,
+        noise: BlockNoise | None = None,
     ):
         super().__init__((control,), target, parameter, noise=noise)
 
@@ -153,7 +153,7 @@ class MCRY(ParametricControlBlock):
         control: tuple[int, ...],
         target: int,
         parameter: Parameter | TNumber | sympy.Expr | str,
-        noise: DigitalNoise | None = None,
+        noise: BlockNoise | None = None,
     ) -> None:
         self.generator = kron(*[N(qubit) for qubit in control], Y(target))
         super().__init__(control, RY(target, parameter), noise=noise)
@@ -181,7 +181,7 @@ class CRY(MCRY):
     name = OpName.CRY
 
     def __init__(
-        self, control: int, target: int, parameter: TParameter, noise: DigitalNoise | None = None
+        self, control: int, target: int, parameter: TParameter, noise: BlockNoise | None = None
     ):
         super().__init__((control,), target, parameter, noise=noise)
 
@@ -194,7 +194,7 @@ class MCRZ(ParametricControlBlock):
         control: tuple[int, ...],
         target: int,
         parameter: Parameter | TNumber | sympy.Expr | str,
-        noise: DigitalNoise | None = None,
+        noise: BlockNoise | None = None,
     ) -> None:
         self.generator = kron(*[N(qubit) for qubit in control], Z(target))
         super().__init__(control, RZ(target, parameter), noise=noise)
@@ -226,7 +226,7 @@ class CRZ(MCRZ):
         control: int,
         target: int,
         parameter: Parameter | TNumber | sympy.Expr | str,
-        noise: DigitalNoise | None = None,
+        noise: BlockNoise | None = None,
     ):
         super().__init__((control,), target, parameter, noise=noise)
 
@@ -239,7 +239,7 @@ class MCPHASE(ParametricControlBlock):
         control: tuple[int, ...],
         target: int,
         parameter: Parameter | TNumber | sympy.Expr | str,
-        noise: DigitalNoise | None = None,
+        noise: BlockNoise | None = None,
     ) -> None:
         self.generator = kron(*[N(qubit) for qubit in control], Z(target) - I(target))
         super().__init__(control, PHASE(target, parameter), noise=noise)
@@ -282,7 +282,7 @@ class CPHASE(MCPHASE):
         control: int,
         target: int,
         parameter: Parameter | TNumber | sympy.Expr | str,
-        noise: DigitalNoise | None = None,
+        noise: BlockNoise | None = None,
     ):
         super().__init__((control,), target, parameter, noise=noise)
 
@@ -297,7 +297,7 @@ class CSWAP(ControlBlock):
         control: int | tuple[int, ...],
         target1: int,
         target2: int,
-        noise: DigitalNoise | None = None,
+        noise: BlockNoise | None = None,
     ) -> None:
         if isinstance(control, tuple):
             control = control[0]
@@ -335,7 +335,7 @@ class Toffoli(ControlBlock):
     name = OpName.TOFFOLI
 
     def __init__(
-        self, control: tuple[int, ...], target: int, noise: DigitalNoise | None = None
+        self, control: tuple[int, ...], target: int, noise: BlockNoise | None = None
     ) -> None:
         self.generator = kron(*[N(qubit) for qubit in control], X(target) - I(target))
         super().__init__(control, X(target), noise=noise)

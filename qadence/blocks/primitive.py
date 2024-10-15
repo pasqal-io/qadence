@@ -11,7 +11,7 @@ from rich.panel import Panel
 from rich.tree import Tree
 
 from qadence.blocks.abstract import AbstractBlock
-from qadence.noise.protocols import DigitalNoise
+from qadence.noise.protocols import BlockNoise
 from qadence.parameters import (
     Parameter,
     ParamMap,
@@ -37,7 +37,7 @@ class PrimitiveBlock(AbstractBlock):
     def __init__(
         self,
         qubit_support: tuple[int, ...],
-        noise: DigitalNoise | None = None,
+        noise: BlockNoise | None = None,
     ):
         self._qubit_support = qubit_support
         self._noise = noise
@@ -47,7 +47,7 @@ class PrimitiveBlock(AbstractBlock):
         return self._qubit_support
 
     @property
-    def noise(self) -> DigitalNoise | None:
+    def noise(self) -> BlockNoise | None:
         return self._noise
 
     def digital_decomposition(self) -> AbstractBlock:
@@ -371,7 +371,7 @@ class ControlBlock(PrimitiveBlock):
         self,
         control: tuple[int, ...],
         target_block: PrimitiveBlock,
-        noise: DigitalNoise | None = None,
+        noise: BlockNoise | None = None,
     ) -> None:
         self.control = control
         self.blocks = (target_block,)
@@ -435,7 +435,7 @@ class ParametricControlBlock(ParametricBlock):
         self,
         control: tuple[int, ...],
         target_block: ParametricBlock,
-        noise: DigitalNoise | None = None,
+        noise: BlockNoise | None = None,
     ) -> None:
         self.blocks = (target_block,)
         self.control = control
@@ -517,7 +517,7 @@ class ProjectorBlock(PrimitiveBlock):
         ket: str,
         bra: str,
         qubit_support: int | tuple[int, ...],
-        noise: DigitalNoise | None = None,
+        noise: BlockNoise | None = None,
     ) -> None:
         """
         Arguments:

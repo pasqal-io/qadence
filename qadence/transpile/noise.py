@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from qadence.blocks.abstract import AbstractBlock
 from qadence.circuit import QuantumCircuit
-from qadence.noise.protocols import DigitalNoise
+from qadence.noise.protocols import BlockNoise
 
 from .apply_fn import apply_fn_to_blocks
 
 
 def _set_noise(
     block: AbstractBlock,
-    noise: DigitalNoise | None,
+    noise: BlockNoise | None,
     target_class: type[AbstractBlock] | None = None,
 ) -> AbstractBlock:
     """Changes the noise protocol of a given block in place."""
@@ -24,7 +24,7 @@ def _set_noise(
 
 def set_noise(
     circuit: QuantumCircuit | AbstractBlock,
-    noise: DigitalNoise | None,
+    noise: BlockNoise | None,
     target_class: AbstractBlock | None = None,
 ) -> QuantumCircuit | AbstractBlock:
     """

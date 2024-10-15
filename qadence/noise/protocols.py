@@ -11,7 +11,7 @@ PROTOCOL_TO_MODULE = {
 }
 
 # Temporary solution
-DigitalNoise = NoiseProtocol
+BlockNoise = NoiseProtocol
 
 
 @dataclass
