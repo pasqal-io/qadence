@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from qadence import DigitalNoise
-from qadence.serialization import deserialize
 from qadence.noise.protocols import digital_noise_protocols
+from qadence.serialization import deserialize
+
 
 def test_serialization_noise() -> None:
     for noise in digital_noise_protocols:
