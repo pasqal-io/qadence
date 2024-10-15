@@ -25,7 +25,7 @@ class Noise:
         self.type: str = type
         if protocol == "readout":
             self.type = NoiseProtocolType.POSTPROCESSING
-        else:
+        if protocol in ["dephasing", "depolarizing"]:
             self.type = NoiseProtocolType.PULSE
 
     def get_noise_fn(self) -> Callable:
