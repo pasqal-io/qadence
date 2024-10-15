@@ -8,7 +8,7 @@ import numpy as np
 import sympy
 from matplotlib.figure import Figure
 from numpy.typing import ArrayLike
-from pyqtorch.noise import NoiseType
+from pyqtorch.noise import NoiseType as BlockNoiseType
 from pyqtorch.utils import SolverType
 from torch import Tensor, pi
 from torch.nn import Module
@@ -52,7 +52,8 @@ __all__ = [
     "SerializationFormat",
     "PI",
     "SolverType",
-    "NoiseType",
+    "BlockNoiseType",
+    "NoiseProtocolType",
 ]  # type: ignore
 
 
@@ -459,3 +460,14 @@ class ExperimentTrackingTool(StrEnum):
 
 
 LoggablePlotFunction = Callable[[Module, int], tuple[str, Figure]]
+
+
+class NoiseProtocolType(StrEnum):
+    """Type of noise protocol."""
+
+    PULSE = "pulse"
+    """Noise at the pulse level."""
+    POSTPROCESSING = "postprocessing"
+    """Noise applied on outputs of quantum programs."""
+    BLOCK = "block"
+    """Noise applied to blocks."""
