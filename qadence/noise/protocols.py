@@ -6,6 +6,8 @@ from typing import Callable, Counter, cast
 
 from pyqtorch.noise import NoiseProtocol
 
+from qadence.types import NoiseProtocolType
+
 PROTOCOL_TO_MODULE = {
     "readout": "qadence.noise.readout",
 }
@@ -20,9 +22,14 @@ class Noise:
     DEPOLARIZING = "depolarizing"
     READOUT = "readout"
 
-    def __init__(self, protocol: str, options: dict = dict()) -> None:
+    def __init__(self, protocol: str, options: dict = dict(), type: str = "") -> None:
         self.protocol: str = protocol
         self.options: dict = options
+        self.type: str = type
+        if protocol == "readout":
+            self.type = NoiseProtocolType.POSTPROCESSING
+        else:
+            self.type = NoiseProtocolType.PULSE
 
     def get_noise_fn(self) -> Callable:
         try:
@@ -33,12 +40,12 @@ class Noise:
         return cast(Callable, fn)
 
     def _to_dict(self) -> dict:
-        return {"protocol": self.protocol, "options": self.options}
+        return {"protocol": self.protocol, "options": self.options, "type": self.type}
 
     @classmethod
     def _from_dict(cls, d: dict) -> Noise | None:
         if d:
-            return cls(d["protocol"], **d["options"])
+            return cls(d["protocol"], **d["options"], type=d["type"])
         return None
 
     @classmethod
