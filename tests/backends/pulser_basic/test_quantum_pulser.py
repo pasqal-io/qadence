@@ -4,7 +4,7 @@ import pytest
 import torch
 from torch import Tensor, tensor
 
-from qadence import DiffMode, Noise, QuantumModel
+from qadence import DiffMode, PulseNoise, QuantumModel
 from qadence.backends import backend_factory
 from qadence.blocks import chain, kron
 from qadence.circuit import QuantumCircuit
@@ -60,7 +60,7 @@ def test_noisy_simulations(noiseless_pulser_sim: Tensor, noisy_pulser_sim: Tenso
 
     noise_type = "depolarizing"
     options = {"noise_probs": 0.1}
-    noise = Noise(protocol=noise_type, options=options)
+    noise = PulseNoise(protocol=noise_type, options=options)
     model_noisy = QuantumModel(
         circuit=circuit,
         observable=observable,
@@ -86,7 +86,7 @@ def test_batched_noisy_simulations(
 
     noise_type = "dephasing"
     options = {"noise_probs": [0.1, 0.2, 0.3, 0.4]}
-    noise = Noise(protocol=noise_type, options=options)
+    noise = PulseNoise(protocol=noise_type, options=options)
     model_noisy = QuantumModel(
         circuit=circuit,
         observable=observable,
