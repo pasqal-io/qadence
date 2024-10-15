@@ -110,6 +110,8 @@ def apply_post_processing_noise(
 
 @dataclass
 class DigitalNoise(pyq.NoiseProtocol):
+    """Digital noise protocol representation."""
+
     BITFLIP = "BitFlip"
     PHASEFLIP = "PhaseFlip"
     PAULI_CHANNEL = "PauliChannel"
@@ -122,7 +124,8 @@ class DigitalNoise(pyq.NoiseProtocol):
     def __init__(self, protocol: str | list[str], options: dict = dict()) -> None:
         if len(digital_noise_protocols - set(protocol)) == 0:
             raise ValueError(
-                "Protocol(s) are not available protocols. Currently supporting: {digital_noise_protocols}."
+                "Protocol(s) are not available protocols. \
+                Currently supporting: {digital_noise_protocols}."
             )
 
         error_probability = options.get("error_probability", None)
