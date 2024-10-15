@@ -32,7 +32,7 @@ subjected to physicality constraints $0 \leq p_{corr}(x) \leq 1$ and $\lVert p_{
 ```python exec="on" source="material-block" session="mitigation" result="json"
 from qadence import QuantumModel, QuantumCircuit, kron, H, Z
 from qadence import hamiltonian_factory
-from qadence.noise import Noise
+from qadence.noise import PostProcessingNoise
 from qadence.mitigations import Mitigations
 from qadence.types import ReadOutOptimization
 
@@ -45,7 +45,7 @@ observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
 model = QuantumModel(circuit=circuit, observable=observable)
 
 # Define a noise model to use:
-noise = Noise(protocol=Noise.READOUT)
+noise = PostProcessingNoise(protocol=PostProcessingNoise.READOUT)
 # Define the mitigation method solving the minimization problem:
 options={"optimization_type": ReadOutOptimization.CONSTRAINED}  # ReadOutOptimization.MLE for the alternative method.
 mitigation = Mitigations(protocol=Mitigations.READOUT, options=options)

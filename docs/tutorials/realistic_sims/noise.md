@@ -12,13 +12,13 @@ T(x|x')=\delta_{xx'}
 $$
 
 
-Qadence offers to simulate readout errors with the `Noise` protocol to corrupt the output
+Qadence offers to simulate readout errors with the `PostProcessingNoise` protocol to corrupt the output
 samples of a simulation, through execution via a `QuantumModel`:
 
 ```python exec="on" source="material-block" session="noise" result="json"
 from qadence import QuantumModel, QuantumCircuit, kron, H, Z
 from qadence import hamiltonian_factory
-from qadence.noise import Noise
+from qadence.noise import PostProcessingNoise
 
 # Simple circuit and observable construction.
 block = kron(H(0), Z(1))
@@ -29,7 +29,7 @@ observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
 model = QuantumModel(circuit=circuit, observable=observable)
 
 # Define a noise model to use.
-noise = Noise(protocol=Noise.READOUT)
+noise = PostProcessingNoise(protocol=PostProcessingNoise.READOUT)
 
 # Run noiseless and noisy simulations.
 noiseless_samples = model.sample(n_shots=100)
@@ -55,7 +55,7 @@ from qadence.measurements import Measurements
 
 # Define a noise model with options.
 options = {"error_probability": 0.01}
-noise = Noise(protocol=Noise.READOUT, options=options)
+noise = PostProcessingNoise(protocol=PostProcessingNoise.READOUT, options=options)
 
 # Define a tomographical measurement protocol with options.
 options = {"n_shots": 10000}
