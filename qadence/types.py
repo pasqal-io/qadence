@@ -451,6 +451,17 @@ class ObservableTransform:
     """No transformation."""
 
 
+class NoiseProtocolType(StrEnum):
+    """Type of noise protocol."""
+
+    PULSE = "pulse"
+    """Noise at the pulse level."""
+    POSTPROCESSING = "postprocessing"
+    """Noise applied on outputs of quantum programs."""
+    DIGITAL = "digital"
+    """Digital noise."""
+
+
 class ExperimentTrackingTool(StrEnum):
     TENSORBOARD = "tensorboard"
     """Use the tensorboard experiment tracker."""

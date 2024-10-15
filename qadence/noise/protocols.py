@@ -7,6 +7,8 @@ from typing import Callable, Counter, cast
 
 import pyqtorch as pyq
 
+from qadence.types import NoiseProtocolType
+
 digital_noise_protocols = set([pyq.NoiseType(noise.value) for noise in pyq.NoiseType])
 Postprocessing_PROTOCOL_TO_MODULE = {
     "readout": "qadence.noise.readout",
@@ -17,16 +19,17 @@ Postprocessing_PROTOCOL_TO_MODULE = {
 class NoiseProtocol:
     """Generic class for protocols."""
 
-    def __init__(self, protocol: str, options: dict = dict()) -> None:
+    def __init__(self, protocol: str, type: str = "", options: dict = dict()) -> None:
         self.protocol: str = protocol
         self.options: dict = options
+        self.type = type
 
     def _to_dict(self) -> dict:
-        return {"protocol": self.protocol, "options": self.options}
+        return {"protocol": self.protocol, "type": self.type, "options": self.options}
 
     @classmethod
     def _from_dict(cls, d: dict) -> NoiseProtocol:
-        return cls(d["protocol"], **d["options"])
+        return cls(d["protocol"], d["type"], **d["options"])
 
     @classmethod
     def list(cls) -> list:
@@ -53,7 +56,14 @@ class PulseNoise(NoiseProtocol):
                 " should be passed. Got {type(noise_probs)}."
             )
 
-        super().__init__(protocol, options)
+        super().__init__(protocol, options, NoiseProtocolType.PULSE)
+
+    def _to_dict(self) -> dict:
+        return {"protocol": self.protocol, "options": self.options}
+
+    @classmethod
+    def _from_dict(cls, d: dict) -> PulseNoise:
+        return cls(d["protocol"], **d["options"])
 
 
 @dataclass
@@ -63,7 +73,7 @@ class PostProcessingNoise(NoiseProtocol):
     READOUT = "readout"
 
     def __init__(self, protocol: str, options: dict = dict()) -> None:
-        super().__init__(protocol, options)
+        super().__init__(protocol, options, NoiseProtocolType.POSTPROCESSING)
 
     def get_noise_fn(self) -> Callable:
         try:
@@ -74,6 +84,13 @@ class PostProcessingNoise(NoiseProtocol):
             )
         fn = getattr(module, "add_noise")
         return cast(Callable, fn)
+
+    def _to_dict(self) -> dict:
+        return {"protocol": self.protocol, "options": self.options}
+
+    @classmethod
+    def _from_dict(cls, d: dict) -> PostProcessingNoise:
+        return cls(d["protocol"], **d["options"])
 
 
 def apply_post_processing_noise(
@@ -116,12 +133,13 @@ class DigitalNoise(pyq.NoiseProtocol):
             raise KeyError("A `noise_probs` option should be passed in options.")
 
         super().__init__(protocol, error_probability, target)
+        self.type = NoiseProtocolType.DIGITAL
 
     def _to_dict(self) -> dict:
         return {"protocol": self.protocol, "options": self.options}
 
     @classmethod
-    def _from_dict(cls, d: dict) -> NoiseProtocol:
+    def _from_dict(cls, d: dict) -> DigitalNoise:
         return cls(d["protocol"], **d["options"])
 
     @classmethod
