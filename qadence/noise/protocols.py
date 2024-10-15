@@ -7,9 +7,9 @@ from typing import Callable, Counter, cast
 
 import pyqtorch as pyq
 
-from qadence.types import NoiseProtocolType
+from qadence import CircuitNoiseType, NoiseProtocolType
 
-digital_noise_protocols = set([pyq.NoiseType(noise.value) for noise in pyq.NoiseType])
+digital_noise_protocols = set([CircuitNoiseType(noise.value) for noise in CircuitNoiseType])
 Postprocessing_PROTOCOL_TO_MODULE = {
     "readout": "qadence.noise.readout",
 }
@@ -40,7 +40,7 @@ class NoiseProtocol:
 class PulseNoise(NoiseProtocol):
     """Pulse noise is pulser-compatible noise where the right options.
 
-    are created for a SimConfig object.
+    are created for a SimConfig object in Pulser.
     """
 
     DEPHASING = "dephasing"
@@ -109,8 +109,12 @@ def apply_post_processing_noise(
 
 
 @dataclass
-class DigitalNoise(pyq.NoiseProtocol):
-    """Digital noise protocol representation."""
+class BlockNoise(pyq.NoiseProtocol):
+    """Block noise protocol representation.
+
+    One can pass it to predefined qadence blocks
+    or via the `set_noise` function.
+    """
 
     BITFLIP = "BitFlip"
     PHASEFLIP = "PhaseFlip"
@@ -136,14 +140,18 @@ class DigitalNoise(pyq.NoiseProtocol):
             raise KeyError("A `noise_probs` option should be passed in options.")
 
         super().__init__(protocol, error_probability, target)
-        self.type = NoiseProtocolType.DIGITAL
+        self.type = NoiseProtocolType.BLOCK
 
     def _to_dict(self) -> dict:
-        return {"protocol": self.protocol, "options": self.options}
+        return {
+            "protocol": self.protocol,
+            "error_probability": self.error_probability,
+            "target": self.target,
+        }
 
     @classmethod
-    def _from_dict(cls, d: dict) -> DigitalNoise:
-        return cls(d["protocol"], **d["options"])
+    def _from_dict(cls, d: dict) -> BlockNoise:
+        return cls(d["protocol"], d["error_probability"], d["target"])
 
     @classmethod
     def list(cls) -> list:
