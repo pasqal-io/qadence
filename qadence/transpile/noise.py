@@ -34,7 +34,7 @@ def set_noise(
 
     Arguments:
         circuit: the circuit or block to parse.
-        noise: the DigitalNoise protocol to change to, or `None` to remove the noise.
+        noise: the BlockNoise protocol to change to, or `None` to remove the noise.
         target_class: optional class to selectively add noise to.
     """
     is_circuit_input = isinstance(circuit, QuantumCircuit)

@@ -71,14 +71,14 @@ print(f"noisy = {noisy_exp}") # markdown-exec: hide
 
 ## Digital noisy simulation
 
-When dealing with programs involving only digital operations, several options are made available from [PyQTorch](https://pasqal-io.github.io/pyqtorch/latest/noise/) via the `BlockNoiseType`. One can define noisy digital operations with `DigitalNoise`as follows:
+When dealing with programs involving only digital operations, several options are made available from [PyQTorch](https://pasqal-io.github.io/pyqtorch/latest/noise/) via the `BlockNoiseType`. One can define noisy digital operations with `BlockNoise`as follows:
 
 ```python exec="on" source="material-block" session="noise" result="json"
-from qadence import BlockNoiseType, DigitalNoise, RX, run
+from qadence import BlockNoiseType, BlockNoise, RX, run
 import torch
 
-noise = DigitalNoise(BlockNoiseType.BITFLIP, error_probability = 0.2)
-noise = DigitalNoise.bitflip(error_probability = 0.2) # equivalent
+noise = BlockNoise(BlockNoiseType.BITFLIP, error_probability = 0.2)
+noise = BlockNoise.bitflip(error_probability = 0.2) # equivalent
 
 op = RX(0, torch.pi, noise = noise)
 
@@ -94,7 +94,7 @@ n_qubits = 2
 
 block = chain(RX(i, f"theta_{i}") for i in range(n_qubits))
 
-noise = DigitalNoise.bitflip(error_probability = 0.1)
+noise = BlockNoise.bitflip(error_probability = 0.1)
 
 # The function changes the block in place:
 set_noise(block, noise)
