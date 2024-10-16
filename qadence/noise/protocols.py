@@ -7,15 +7,15 @@ from typing import Callable, Counter, cast
 
 from pyqtorch.noise import NoiseProtocol
 
-from qadence.types import BlockNoiseType, NoiseProtocolType
+from qadence.types import DigitalNoiseType, NoiseProtocolType
 
 PROTOCOL_TO_MODULE = {
     "readout": "qadence.noise.readout",
 }
 
 # Temporary solution
-BlockNoise = NoiseProtocol
-digital_noise_protocols = set([BlockNoiseType(noise.value) for noise in BlockNoiseType])
+DigitalNoise = NoiseProtocol
+digital_noise_protocols = set([DigitalNoiseType(noise.value) for noise in DigitalNoiseType])
 
 
 @dataclass
@@ -28,7 +28,7 @@ class Noise:
         self.type: str = type
 
         # forcing in certain cases the type of predefined protocols
-        # note that depolarizing exists in both BlockNoise and PulseNoise
+        # note that depolarizing exists in both DigitalNoise and PulseNoise
         # albeit the pulse one does not have capital letters
         if self.type == "":
             if protocol == "readout":
