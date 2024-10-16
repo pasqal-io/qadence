@@ -45,7 +45,10 @@ def _construct(
 ) -> TCompositeBlock:
     if len(args) == 1 and isinstance(args[0], Generator):
         args = tuple(args[0])
-    return Block([b for b in args])  # type: ignore [arg-type]
+    if len(args) == 1:
+        return args[0]  # type: ignore [return-value]
+    else:
+        return Block([b for b in args])  # type: ignore [arg-type]
 
 
 def chain(*args: Union[AbstractBlock, Generator, List[AbstractBlock]]) -> ChainBlock:
