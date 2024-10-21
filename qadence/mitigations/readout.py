@@ -88,7 +88,9 @@ def mitigation_minimization(
     Returns:
         Mitigated counts computed by the algorithm
     """
-    noise_matrices = noise.options.get("noise_matrix", noise.options["confusion_matrices"])
+    noise_matrices = noise.options.get(noise.options["confusion_matrices"], None)
+    if noise_matrices is None:
+        raise ValueError("No `confusion_matrices` present in noise options.")
     optimization_type = mitigation.options.get("optimization_type", ReadOutOptimization.MLE)
     n_qubits = len(list(samples[0].keys())[0])
     n_shots = sum(samples[0].values())

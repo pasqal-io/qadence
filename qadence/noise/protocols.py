@@ -94,15 +94,15 @@ class AnalogNoise(Noise):
 class ReadoutNoise(Noise):
     """ReadoutNoise alters the returned output of quantum programs ."""
 
-    def __init__(self, protocol: str, options: dict = dict()) -> None:
-        super().__init__(protocol, options, NoiseProtocolType.READOUT)
+    def __init__(self, options: dict = dict()) -> None:
+        super().__init__("Readout", options, NoiseProtocolType.READOUT)
 
     def _to_dict(self) -> dict:
-        return {"protocol": self.protocol, "options": self.options}
+        return {"options": self.options}
 
     @classmethod
     def _from_dict(cls, d: dict) -> ReadoutNoise:
-        return cls(d["protocol"], **d["options"])
+        return cls(**d["options"])
 
 
 def apply_noise(noise: Noise, samples: list[Counter]) -> list[Counter]:

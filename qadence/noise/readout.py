@@ -189,23 +189,13 @@ def add_noise(
         error_probability = 0.1
         # Return the default error probability for mitigation purposes.
         options["default_error_probability"] = error_probability
-    if noise_matrix is None:
-        # assumes that all bits can be flipped independently of each other
-        noise_matrix = create_noise_matrix(noise_distribution, n_shots, n_qubits)
-        confusion_matrices = create_confusion_matrices(
-            noise_matrix=noise_matrix, error_probability=error_probability
-        )
-        # Return the generated noise matrix for mitigation purposes.
-        options["confusion_matrices"] = confusion_matrices
-    else:
-        # check noise_matrix shape and values
-        assert (
-            noise_matrix.shape[0] == noise_matrix.shape[1]
-        ), "The error probabilities matrix needs to be square."
-        assert noise_matrix.shape == (
-            n_qubits,
-            n_qubits,
-        ), "The error probabilities matrix needs to be n_qubits x n_qubits."
+    # assumes that all bits can be flipped independently of each other
+    noise_matrix = create_noise_matrix(noise_distribution, n_shots, n_qubits)
+    confusion_matrices = create_confusion_matrices(
+        noise_matrix=noise_matrix, error_probability=error_probability
+    )
+    # Return the generated noise matrix for mitigation purposes.
+    options["confusion_matrices"] = confusion_matrices
 
     # the simplest approach - an event occurs if its probability is higher than expected
     # by random chance
