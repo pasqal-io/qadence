@@ -10,7 +10,7 @@ from pyqtorch.noise import NoiseProtocol
 from qadence.types import DigitalNoiseType, NoiseProtocolType
 
 PROTOCOL_TO_MODULE = {
-    "readout": "qadence.noise.readout",
+    "Readout": "qadence.noise.readout",
 }
 
 # Temporary solution
