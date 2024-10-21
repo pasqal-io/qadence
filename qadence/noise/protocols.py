@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import importlib
-from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Callable, Counter, cast
 
@@ -22,6 +21,16 @@ digital_noise_protocols = set([DigitalNoiseType(noise.value) for noise in Digita
 class Noise:
     """A container class for all noise protocols."""
 
+    BITFLIP = "BitFlip"
+    PHASEFLIP = "PhaseFlip"
+    DEPOLARIZING = "Depolarizing"
+    PAULI_CHANNEL = "PauliChannel"
+    AMPLITUDE_DAMPING = "AmplitudeDamping"
+    PHASE_DAMPING = "PhaseDamping"
+    GENERALIZED_AMPLITUDE_DAMPING = "GeneralizedAmplitudeDamping"
+    DEPHASING = "Dephasing"
+    READOUT = "Readout"
+
     def __init__(self, protocol: str, options: dict = dict(), type: str = "") -> None:
         self.protocol: str = protocol
         self.options: dict = options
@@ -35,11 +44,14 @@ class Noise:
                 self.type = NoiseProtocolType.READOUT
             if protocol == "Dephasing":
                 self.type = NoiseProtocolType.ANALOG
+                self.protocol = self.protocol.lower()
             if protocol in digital_noise_protocols:
                 self.type = NoiseProtocolType.DIGITAL
         else:
             if self.type not in [NoiseProtocolType(t.value) for t in NoiseProtocolType]:
                 raise ValueError("Noise type {self.type} is not supported.")
+            if self.type == NoiseProtocolType.ANALOG:
+                self.protocol = self.protocol.lower()
 
     def get_noise_fn(self) -> Callable:
         try:
@@ -55,54 +67,12 @@ class Noise:
     @classmethod
     def _from_dict(cls, d: dict) -> Noise | None:
         if d:
-            return cls(d["protocol"], **d["options"], type=d["type"])
+            return cls(d["protocol"], **d["options"], type=d.get("type", ""))
         return None
 
     @classmethod
     def list(cls) -> list:
         return list(filter(lambda el: not el.startswith("__"), dir(cls)))
-
-
-@dataclass
-class AnalogNoise(Noise):
-    """Analog noise is pulser-compatible noise where the right options.
-
-    are created for a SimConfig object in Pulser.
-    """
-
-    def __init__(self, protocol: str, options: dict = dict()) -> None:
-        noise_probs = options.get("noise_probs", None)
-        if noise_probs is None:
-            raise KeyError("A `noise_probs` option should be passed in options.")
-        if not (isinstance(noise_probs, float) or isinstance(noise_probs, Iterable)):
-            raise KeyError(
-                "A single or a range of noise probabilities"
-                " should be passed. Got {type(noise_probs)}."
-            )
-
-        super().__init__(protocol.lower(), options, NoiseProtocolType.ANALOG)
-
-    def _to_dict(self) -> dict:
-        return {"protocol": self.protocol, "options": self.options}
-
-    @classmethod
-    def _from_dict(cls, d: dict) -> AnalogNoise:
-        return cls(d["protocol"], **d["options"])
-
-
-@dataclass
-class ReadoutNoise(Noise):
-    """ReadoutNoise alters the returned output of quantum programs ."""
-
-    def __init__(self, options: dict = dict()) -> None:
-        super().__init__("Readout", options, NoiseProtocolType.READOUT)
-
-    def _to_dict(self) -> dict:
-        return {"options": self.options}
-
-    @classmethod
-    def _from_dict(cls, d: dict) -> ReadoutNoise:
-        return cls(**d["options"])
 
 
 def apply_noise(noise: Noise, samples: list[Counter]) -> list[Counter]:

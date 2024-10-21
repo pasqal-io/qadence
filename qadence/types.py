@@ -471,17 +471,3 @@ class NoiseProtocolType(StrEnum):
     """Noise applied on outputs of quantum programs."""
     DIGITAL = "Digital"
     """Noise applied to digital blocks."""
-
-
-class NoiseProtocol(StrEnum):
-    """All available protocols."""
-
-    BITFLIP = "BitFlip"
-    PHASEFLIP = "PhaseFlip"
-    DEPOLARIZING = "Depolarizing"
-    PAULI_CHANNEL = "PauliChannel"
-    AMPLITUDE_DAMPING = "AmplitudeDamping"
-    PHASE_DAMPING = "PhaseDamping"
-    GENERALIZED_AMPLITUDE_DAMPING = "GeneralizedAmplitudeDamping"
-    DEPHASING = "Dephasing"
-    READOUT = "Readout"
