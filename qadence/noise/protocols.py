@@ -29,14 +29,17 @@ class Noise:
 
         # forcing in certain cases the type of predefined protocols
         # note that depolarizing exists in both DigitalNoise and PulseNoise
-        # albeit the pulse one does not have capital letters
+
         if self.type == "":
-            if protocol == "readout":
-                self.type = NoiseProtocolType.POSTPROCESSING
-            if protocol in ["dephasing", "depolarizing"]:
-                self.type = NoiseProtocolType.PULSE
+            if protocol == "Readout":
+                self.type = NoiseProtocolType.READOUT
+            if protocol == "Dephasing":
+                self.type = NoiseProtocolType.ANALOG
             if protocol in digital_noise_protocols:
-                self.type = NoiseProtocolType.BLOCK
+                self.type = NoiseProtocolType.DIGITAL
+        else:
+            if self.type not in [NoiseProtocolType(t.value) for t in NoiseProtocolType]:
+                raise ValueError("Noise type {self.type} is not supported.")
 
     def get_noise_fn(self) -> Callable:
         try:
@@ -61,14 +64,11 @@ class Noise:
 
 
 @dataclass
-class PulseNoise(Noise):
-    """Pulse noise is pulser-compatible noise where the right options.
+class AnalogNoise(Noise):
+    """Analog noise is pulser-compatible noise where the right options.
 
     are created for a SimConfig object in Pulser.
     """
-
-    DEPHASING = "dephasing"
-    DEPOLARIZING = "depolarizing"
 
     def __init__(self, protocol: str, options: dict = dict()) -> None:
         noise_probs = options.get("noise_probs", None)
@@ -80,30 +80,28 @@ class PulseNoise(Noise):
                 " should be passed. Got {type(noise_probs)}."
             )
 
-        super().__init__(protocol, options, NoiseProtocolType.PULSE)
+        super().__init__(protocol.lower(), options, NoiseProtocolType.ANALOG)
 
     def _to_dict(self) -> dict:
         return {"protocol": self.protocol, "options": self.options}
 
     @classmethod
-    def _from_dict(cls, d: dict) -> PulseNoise:
+    def _from_dict(cls, d: dict) -> AnalogNoise:
         return cls(d["protocol"], **d["options"])
 
 
 @dataclass
-class PostProcessingNoise(Noise):
-    """PostProcessingNoise alters the returned output of quantum programs ."""
-
-    READOUT = "readout"
+class ReadoutNoise(Noise):
+    """ReadoutNoise alters the returned output of quantum programs ."""
 
     def __init__(self, protocol: str, options: dict = dict()) -> None:
-        super().__init__(protocol, options, NoiseProtocolType.POSTPROCESSING)
+        super().__init__(protocol, options, NoiseProtocolType.READOUT)
 
     def _to_dict(self) -> dict:
         return {"protocol": self.protocol, "options": self.options}
 
     @classmethod
-    def _from_dict(cls, d: dict) -> PostProcessingNoise:
+    def _from_dict(cls, d: dict) -> ReadoutNoise:
         return cls(d["protocol"], **d["options"])
 
 

@@ -463,11 +463,25 @@ LoggablePlotFunction = Callable[[Module, int], tuple[str, Figure]]
 
 
 class NoiseProtocolType(StrEnum):
-    """Type of noise protocol."""
+    """Type of noise."""
 
-    PULSE = "pulse"
-    """Noise at the pulse level."""
-    POSTPROCESSING = "postprocessing"
+    ANALOG = "Analog"
+    """Noise applied in analog blocks."""
+    READOUT = "Readout"
     """Noise applied on outputs of quantum programs."""
-    BLOCK = "block"
-    """Noise applied to blocks."""
+    DIGITAL = "Digital"
+    """Noise applied to digital blocks."""
+
+
+class NoiseProtocol(StrEnum):
+    """All available protocols."""
+
+    BITFLIP = "BitFlip"
+    PHASEFLIP = "PhaseFlip"
+    DEPOLARIZING = "Depolarizing"
+    PAULI_CHANNEL = "PauliChannel"
+    AMPLITUDE_DAMPING = "AmplitudeDamping"
+    PHASE_DAMPING = "PhaseDamping"
+    GENERALIZED_AMPLITUDE_DAMPING = "GeneralizedAmplitudeDamping"
+    DEPHASING = "Dephasing"
+    READOUT = "Readout"
