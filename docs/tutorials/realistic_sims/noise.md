@@ -54,7 +54,7 @@ from qadence.measurements import Measurements
 
 # Define a noise model with options.
 options = {"error_probability": 0.01}
-noise = Noise(options=Noise.READOUT)
+noise = Noise(protocol=Noise.READOUT, options=options)
 
 # Define a tomographical measurement protocol with options.
 options = {"n_shots": 10000}

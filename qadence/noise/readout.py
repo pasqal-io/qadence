@@ -179,7 +179,6 @@ def add_noise(
     seed = options.get("seed", None)
     error_probability = options.get("error_probability")
     noise_distribution = options.get("noise_distribution", WhiteNoise.UNIFORM)
-    noise_matrix = options.get("noise_matrix")
 
     # option for reproducibility
     if seed is not None:

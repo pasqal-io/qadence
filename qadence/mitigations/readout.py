@@ -88,7 +88,7 @@ def mitigation_minimization(
     Returns:
         Mitigated counts computed by the algorithm
     """
-    noise_matrices = noise.options.get(noise.options["confusion_matrices"], None)
+    noise_matrices = noise.options.get("confusion_matrices", None)
     if noise_matrices is None:
         raise ValueError("No `confusion_matrices` present in noise options.")
     optimization_type = mitigation.options.get("optimization_type", ReadOutOptimization.MLE)
