@@ -15,7 +15,7 @@ list_noises = [DigitalNoiseType(noise.value) for noise in DigitalNoiseType]
 @given(st.digital_circuits())
 @settings(deadline=None)
 def test_set_noise(protocol: str, circuit: QuantumCircuit) -> None:
-    all_blocks = circuit.block.blocks if hasattr("blocks", circuit.block) else [circuit.block]  # type: ignore
+    all_blocks = circuit.block.blocks if hasattr(circuit.block, "blocks") else [circuit.block]
     for block in all_blocks:
         assert block.noise is None
     noise = DigitalNoise(protocol, error_probability=0.2)
@@ -32,7 +32,7 @@ def test_set_noise(protocol: str, circuit: QuantumCircuit) -> None:
 def test_set_noise_restricted(protocol: str, circuit: QuantumCircuit) -> None:
     noise = DigitalNoise(protocol, error_probability=0.2)
     assert noise.len == 1
-    all_blocks = circuit.block.blocks if hasattr("blocks", circuit.block) else [circuit.block]  # type: ignore
+    all_blocks = circuit.block.blocks if hasattr(circuit.block, "blocks") else [circuit.block]
     index_random_block = random.randint(0, len(all_blocks) - 1)
     type_target = type(all_blocks[index_random_block])
     set_noise(circuit, noise, target_class=type_target)  # type: ignore[arg-type]
