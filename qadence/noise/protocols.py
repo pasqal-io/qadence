@@ -23,11 +23,11 @@ class Noise:
 
     BITFLIP = "BitFlip"
     PHASEFLIP = "PhaseFlip"
-    DEPOLARIZING = "Depolarizing"
     PAULI_CHANNEL = "PauliChannel"
     AMPLITUDE_DAMPING = "AmplitudeDamping"
     PHASE_DAMPING = "PhaseDamping"
     GENERALIZED_AMPLITUDE_DAMPING = "GeneralizedAmplitudeDamping"
+    DEPOLARIZING = "Depolarizing"
     DEPHASING = "Dephasing"
     READOUT = "Readout"
 
@@ -37,8 +37,6 @@ class Noise:
         self.type: str = type
 
         # forcing in certain cases the type of predefined protocols
-        # note that depolarizing exists in both DigitalNoise and PulseNoise
-
         if self.type == "":
             if protocol == "Readout":
                 self.type = NoiseProtocolType.READOUT
@@ -76,13 +74,25 @@ class Noise:
 
 
 def apply_noise(noise: Noise, samples: list[Counter]) -> list[Counter]:
-    """Apply noise to samples."""
-    error_fn = noise.get_noise_fn()
-    # Get the number of qubits from the sample keys.
-    n_qubits = len(list(samples[0].keys())[0])
-    # Get the number of shots from the sample values.
-    n_shots = sum(samples[0].values())
-    noisy_samples: list = error_fn(
-        counters=samples, n_qubits=n_qubits, options=noise.options, n_shots=n_shots
-    )
-    return noisy_samples
+    """Apply noise to samples if READOUT else do not affect.
+
+    Args:
+        noise (Noise): Noise instance
+        samples (list[Counter]): Samples out of circuit.
+
+    Returns:
+        list[Counter]: Changed samples by readout.
+    """
+
+    if noise.type == NoiseProtocolType.READOUT:
+        error_fn = noise.get_noise_fn()
+        # Get the number of qubits from the sample keys.
+        n_qubits = len(list(samples[0].keys())[0])
+        # Get the number of shots from the sample values.
+        n_shots = sum(samples[0].values())
+        noisy_samples: list = error_fn(
+            counters=samples, n_qubits=n_qubits, options=noise.options, n_shots=n_shots
+        )
+        return noisy_samples
+
+    return samples
