@@ -29,7 +29,7 @@ observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
 model = QuantumModel(circuit=circuit, observable=observable)
 
 # Define a noise model to use.
-noise = Noise(protocol=NoiseType.READOUT)
+noise = NoiseSource(protocol=NoiseType.READOUT)
 
 # Run noiseless and noisy simulations.
 noiseless_samples = model.sample(n_shots=100)
@@ -55,7 +55,7 @@ from qadence.measurements import Measurements
 
 # Define a noise model with options.
 options = {"error_probability": 0.01}
-noise = Noise(protocol=NoiseType.READOUT, options=options)
+noise = NoiseSource(protocol=NoiseType.READOUT, options=options)
 
 # Define a tomographical measurement protocol with options.
 options = {"n_shots": 10000}
