@@ -118,14 +118,26 @@ class NoiseConfig:
         return list(filter(lambda el: not el.startswith("__"), dir(cls)))
 
 
-def apply_noise(noise: NoiseSource, samples: list[Counter]) -> list[Counter]:
-    """Apply noise to samples."""
-    error_fn = noise.get_noise_fn()
-    # Get the number of qubits from the sample keys.
-    n_qubits = len(list(samples[0].keys())[0])
-    # Get the number of shots from the sample values.
-    n_shots = sum(samples[0].values())
-    noisy_samples: list = error_fn(
-        counters=samples, n_qubits=n_qubits, options=noise.options, n_shots=n_shots
-    )
-    return noisy_samples
+def apply_noise(noise: NoiseSource | NoiseConfig, samples: list[Counter]) -> list[Counter]:
+    """Apply readout noise to samples.
+
+    Args:
+        noise (NoiseSource | NoiseConfig): Noise to apply.
+        samples (list[Counter]): Samples to alter
+
+    Returns:
+        list[Counter]: Altered samples.
+    """
+    readout = noise if isinstance(noise, NoiseSource) else noise.noise_sources[-1]
+    if readout.type == NoiseProtocolType.READOUT:
+        error_fn = readout.get_noise_fn()
+        # Get the number of qubits from the sample keys.
+        n_qubits = len(list(samples[0].keys())[0])
+        # Get the number of shots from the sample values.
+        n_shots = sum(samples[0].values())
+        noisy_samples: list = error_fn(
+            counters=samples, n_qubits=n_qubits, options=readout.options, n_shots=n_shots
+        )
+        return noisy_samples
+    else:
+        return samples
