@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import importlib
+from abc import ABC
 from dataclasses import dataclass
-from typing import Callable, Counter, cast
+from typing import Callable, Counter, Iterable, cast
 
 from pyqtorch.noise import NoiseProtocol
 
@@ -18,18 +19,8 @@ digital_noise_protocols = set([DigitalNoiseType(noise.value) for noise in Digita
 
 
 @dataclass
-class Noise:
-    """A container class for all noise protocols."""
-
-    BITFLIP = "BitFlip"
-    PHASEFLIP = "PhaseFlip"
-    PAULI_CHANNEL = "PauliChannel"
-    AMPLITUDE_DAMPING = "AmplitudeDamping"
-    PHASE_DAMPING = "PhaseDamping"
-    GENERALIZED_AMPLITUDE_DAMPING = "GeneralizedAmplitudeDamping"
-    DEPOLARIZING = "Depolarizing"
-    DEPHASING = "Dephasing"
-    READOUT = "Readout"
+class Noise(ABC):
+    """The abstract class that defines the interface for the noise protocols."""
 
     def __init__(self, protocol: str, options: dict = dict(), type: str = "") -> None:
         self.protocol: str = protocol
@@ -51,6 +42,16 @@ class Noise:
             if self.type == NoiseProtocolType.ANALOG:
                 self.protocol = self.protocol.lower()
 
+    def _to_dict(self) -> dict:
+        return {"protocol": self.protocol, "options": self.options, "type": self.type}
+
+    @classmethod
+    def _from_dict(cls, d: dict) -> Noise | None:
+        if d:
+            type = d.get("type", "")
+            return cls(d["protocol"], **d["options"], type=type)
+        return None
+
     def get_noise_fn(self) -> Callable:
         try:
             module = importlib.import_module(PROTOCOL_TO_MODULE[self.protocol])
@@ -59,18 +60,46 @@ class Noise:
         fn = getattr(module, "add_noise")
         return cast(Callable, fn)
 
-    def _to_dict(self) -> dict:
-        return {"protocol": self.protocol, "options": self.options, "type": self.type}
-
-    @classmethod
-    def _from_dict(cls, d: dict) -> Noise | None:
-        if d:
-            return cls(d["protocol"], **d["options"], type=d.get("type", ""))
-        return None
-
     @classmethod
     def list(cls) -> list:
         return list(filter(lambda el: not el.startswith("__"), dir(cls)))
+
+
+@dataclass
+class AnalogNoise(Noise):
+    """Analog noise for analog operations.
+
+    Currently, it is used for the Pulser Backend.
+    A SimConfig object for Pulser is created in the backend.
+    """
+
+    def __init__(self, protocol: str, options: dict = dict()) -> None:
+        noise_probs = options.get("noise_probs", None)
+        if noise_probs is None:
+            raise KeyError("A `noise_probs` option should be passed in options.")
+        if not (isinstance(noise_probs, float) or isinstance(noise_probs, Iterable)):
+            raise KeyError(
+                "A single or a range of noise probabilities"
+                " should be passed. Got {type(noise_probs)}."
+            )
+
+        super().__init__(protocol, options, NoiseProtocolType.ANALOG)
+
+    @classmethod
+    def _from_dict(cls, d: dict) -> AnalogNoise:
+        return cls(d["protocol"], **d["options"])
+
+
+@dataclass
+class ReadoutNoise(Noise):
+    """ReadoutNoise alters the returned output of quantum programs ."""
+
+    def __init__(self, options: dict = dict()) -> None:
+        super().__init__("Readout", options, NoiseProtocolType.READOUT)
+
+    @classmethod
+    def _from_dict(cls, d: dict) -> ReadoutNoise:
+        return cls(d["protocol"], **d["options"])
 
 
 def apply_noise(noise: Noise, samples: list[Counter]) -> list[Counter]:

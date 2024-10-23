@@ -18,7 +18,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.constructors.hamiltonians import hamiltonian_factory
 from qadence.divergences import js_divergence
 from qadence.measurements.protocols import Measurements
-from qadence.noise import Noise
+from qadence.noise import ReadoutNoise
 from qadence.noise.readout import WhiteNoise, bs_corruption, create_noise_matrix, sample_to_matrix
 from qadence.operations import (
     CNOT,
@@ -30,7 +30,7 @@ from qadence.operations import (
     Y,
     Z,
 )
-from qadence.types import DiffMode, NoiseProtocolType
+from qadence.types import DiffMode
 
 
 @pytest.mark.parametrize(
@@ -149,7 +149,7 @@ def test_readout_error_quantum_model(
 
     noisy_samples: list[Counter] = QuantumModel(
         QuantumCircuit(block.n_qubits, block), backend=backend, diff_mode=diff_mode
-    ).sample(noise=Noise(protocol=NoiseProtocolType.READOUT), n_shots=n_shots)
+    ).sample(noise=ReadoutNoise(), n_shots=n_shots)
 
     for noiseless, noisy in zip(noiseless_samples, noisy_samples):
         assert sum(noiseless.values()) == sum(noisy.values()) == n_shots
@@ -172,7 +172,7 @@ def test_readout_error_backends(backend: BackendName) -> None:
     samples = qd.sample(feature_map, n_shots=1000, values=inputs, backend=backend, noise=None)
     # introduce noise
     options = {"error_probability": error_probability}
-    noise = Noise(protocol=NoiseProtocolType.READOUT, options=options).get_noise_fn()
+    noise = ReadoutNoise(options=options).get_noise_fn()
     noisy_samples = noise(counters=samples, n_qubits=n_qubits)
     # compare that the results are with an error of 10% (the default error_probability)
     for sample, noisy_sample in zip(samples, noisy_samples):
@@ -202,7 +202,7 @@ def test_readout_error_with_measurements(
     observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
 
     model = QuantumModel(circuit=circuit, observable=observable, diff_mode=DiffMode.GPSR)
-    noise = Noise(protocol=NoiseProtocolType.READOUT)
+    noise = ReadoutNoise()
     measurement = Measurements(protocol=str(measurement_proto), options=options)
 
     noisy = model.expectation(values=inputs, measurement=measurement, noise=noise)
