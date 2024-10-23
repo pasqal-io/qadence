@@ -68,20 +68,23 @@ class NoiseConfig:
 
     def __init__(
         self,
-        protocol: str | list[str],
+        protocol: str | list[str] | list[NoiseSource],
         options: dict | list[dict] = dict(),
         type: str | list[str] = "",
     ) -> None:
-        protocol = [protocol] if isinstance(protocol, str) else protocol
-        options = [options] * len(protocol) if isinstance(options, dict) else options
-        types = [type] * len(protocol) if isinstance(type, str) else type
-
-        if len(options) != len(protocol) or len(types) != len(protocol):
-            raise ValueError("Specify lists of same length when defining noises.")
-
         self.noise_sources: list = list()
-        for proto, opt_proto, type_proto in zip(protocol, options, types):
-            self.noise_sources.append(NoiseSource(proto, opt_proto, type_proto))
+        if isinstance(protocol, list) and isinstance(protocol[0], NoiseSource):
+            self.noise_sources += protocol
+        else:
+            protocol = [protocol] if isinstance(protocol, str) else protocol
+            options = [options] * len(protocol) if isinstance(options, dict) else options
+            types = [type] * len(protocol) if isinstance(type, str) else type
+
+            if len(options) != len(protocol) or len(types) != len(protocol):
+                raise ValueError("Specify lists of same length when defining noises.")
+
+            for proto, opt_proto, type_proto in zip(protocol, options, types):
+                self.noise_sources.append(NoiseSource(proto, opt_proto, type_proto))  # type: ignore [arg-type]
 
     def _to_dict(self) -> dict:
         return {
