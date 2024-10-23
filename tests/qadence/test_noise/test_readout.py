@@ -68,23 +68,20 @@ def test_bitstring_corruption_all_bitflips(
 
 
 @pytest.mark.parametrize(
-    "error_probability, counters, n_qubits",
+    "counters, n_qubits",
     [
         (
-            rand(),
             [Counter({"00": 27, "01": 23, "10": 24, "11": 26})],
             2,
         ),
         (
-            rand(),
             [Counter({"001": 27, "010": 23, "101": 24, "110": 26})],
             3,
         ),
     ],
 )
-def test_bitstring_corruption_mixed_bitflips(
-    error_probability: float, counters: list, n_qubits: int
-) -> None:
+def test_bitstring_corruption_mixed_bitflips(counters: list, n_qubits: int) -> None:
+    error_probability = rand()
     n_shots = 100
     noise_matrix = create_noise_matrix(WhiteNoise.UNIFORM, n_shots, n_qubits)
     err_idx = torch.as_tensor(noise_matrix < error_probability)
@@ -188,7 +185,7 @@ def test_readout_error_backends(backend: BackendName) -> None:
         )
 
 
-# TODO: Use strategies to test against randomly generated circuits.
+# # TODO: Use strategies to test against randomly generated circuits.
 @pytest.mark.parametrize(
     "measurement_proto, options",
     [
