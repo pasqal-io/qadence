@@ -6,9 +6,9 @@ import pytest
 import strategies as st  # type: ignore
 from hypothesis import given, settings
 
-from qadence import DigitalNoise, NoiseType, QuantumCircuit, set_noise
+from qadence import DigitalNoise, DigitalNoiseType, QuantumCircuit, set_noise
 
-list_noises = [NoiseType(noise.value) for noise in NoiseType]
+list_noises = [DigitalNoiseType(noise.value) for noise in DigitalNoiseType]
 
 
 @pytest.mark.parametrize("protocol", list_noises)
