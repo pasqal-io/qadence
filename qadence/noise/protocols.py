@@ -88,6 +88,10 @@ class NoiseConfig:
             for proto, opt_proto, type_proto in zip(protocol, options, types):
                 self.noise_sources.append(NoiseSource(proto, opt_proto, type_proto))  # type: ignore [arg-type]
 
+        unique_types = set([n.type for n in self.noise_sources])
+        if NoiseProtocolType.DIGITAL in unique_types and NoiseProtocolType.ANALOG in unique_types:
+            raise ValueError("Cannot define a config with both Digital and Analog noises.")
+
     def _to_dict(self) -> dict:
         return {
             "protocol": [n.protocol for n in self.noise_sources],
