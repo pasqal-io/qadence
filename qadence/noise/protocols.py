@@ -7,7 +7,7 @@ from typing import Callable, Counter, cast
 from pyqtorch.noise import NoiseProtocol
 
 PROTOCOL_TO_MODULE = {
-    "readout": "qadence.noise.readout",
+    "Readout": "qadence.noise.readout",
 }
 
 # Temporary solution
@@ -16,10 +16,6 @@ DigitalNoise = NoiseProtocol
 
 @dataclass
 class Noise:
-    DEPHASING = "dephasing"
-    DEPOLARIZING = "depolarizing"
-    READOUT = "readout"
-
     def __init__(self, protocol: str, options: dict = dict()) -> None:
         self.protocol: str = protocol
         self.options: dict = options
