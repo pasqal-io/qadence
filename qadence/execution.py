@@ -12,7 +12,7 @@ from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
-from qadence.noise import Noise
+from qadence.noise import NoiseSource
 from qadence.qubit_support import QubitSupport
 from qadence.register import Register
 from qadence.types import BackendName, DiffMode, Endianness
@@ -118,7 +118,7 @@ def sample(
     n_shots: int = 100,
     backend: BackendName = BackendName.PYQTORCH,
     endianness: Endianness = Endianness.BIG,
-    noise: Union[Noise, None] = None,
+    noise: Union[NoiseSource, None] = None,
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> list[Counter]:
     """Convenience wrapper for the `QuantumModel.sample` method.
@@ -146,7 +146,7 @@ def _(
     state: Union[Tensor, None] = None,
     n_shots: int = 100,
     backend: BackendName = BackendName.PYQTORCH,
-    noise: Union[Noise, None] = None,
+    noise: Union[NoiseSource, None] = None,
     endianness: Endianness = Endianness.BIG,
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> list[Counter]:
@@ -189,7 +189,7 @@ def expectation(
     state: Tensor = None,
     backend: BackendName = BackendName.PYQTORCH,
     diff_mode: Union[DiffMode, str, None] = None,
-    noise: Union[Noise, None] = None,
+    noise: Union[NoiseSource, None] = None,
     endianness: Endianness = Endianness.BIG,
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> Tensor:
@@ -242,7 +242,7 @@ def _(
     backend: BackendName = BackendName.PYQTORCH,
     diff_mode: Union[DiffMode, str, None] = None,
     measurement: Measurements = None,
-    noise: Union[Noise, None] = None,
+    noise: Union[NoiseSource, None] = None,
     mitigation: Mitigations = None,
     endianness: Endianness = Endianness.BIG,
     configuration: Union[BackendConfiguration, dict, None] = None,

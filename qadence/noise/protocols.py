@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import importlib
-from dataclasses import dataclass
 from typing import Callable, Counter, cast
 
 from pyqtorch.noise import NoiseProtocol
@@ -14,8 +13,9 @@ PROTOCOL_TO_MODULE = {
 DigitalNoise = NoiseProtocol
 
 
-@dataclass
-class Noise:
+class NoiseSource:
+    """A container for a single source of noise."""
+
     def __init__(self, protocol: str, options: dict = dict()) -> None:
         self.protocol: str = protocol
         self.options: dict = options
@@ -32,7 +32,7 @@ class Noise:
         return {"protocol": self.protocol, "options": self.options}
 
     @classmethod
-    def _from_dict(cls, d: dict) -> Noise | None:
+    def _from_dict(cls, d: dict) -> NoiseSource | None:
         if d:
             return cls(d["protocol"], **d["options"])
         return None
@@ -42,7 +42,7 @@ class Noise:
         return list(filter(lambda el: not el.startswith("__"), dir(cls)))
 
 
-def apply_noise(noise: Noise, samples: list[Counter]) -> list[Counter]:
+def apply_noise(noise: NoiseSource, samples: list[Counter]) -> list[Counter]:
     """Apply noise to samples."""
     error_fn = noise.get_noise_fn()
     # Get the number of qubits from the sample keys.

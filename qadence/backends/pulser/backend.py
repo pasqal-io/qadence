@@ -24,7 +24,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.mitigations.protocols import apply_mitigation
-from qadence.noise import Noise
+from qadence.noise import NoiseSource
 from qadence.noise.protocols import apply_noise
 from qadence.overlap import overlap_exact
 from qadence.register import Register
@@ -187,7 +187,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
         endianness: Endianness = Endianness.BIG,
-        noise: Noise | None = None,
+        noise: NoiseSource | None = None,
     ) -> Tensor:
         vals = to_list_of_dicts(param_values)
 
@@ -235,7 +235,7 @@ class Backend(BackendInterface):
     def _run_noisy(
         self,
         circuit: ConvertedCircuit,
-        noise: Noise,
+        noise: NoiseSource,
         param_values: dict[str, Tensor] = dict(),
         state: Tensor | None = None,
         endianness: Endianness = Endianness.BIG,
@@ -289,7 +289,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         n_shots: int = 1,
         state: Tensor | None = None,
-        noise: Noise | None = None,
+        noise: NoiseSource | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
@@ -329,7 +329,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
-        noise: Noise | None = None,
+        noise: NoiseSource | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:

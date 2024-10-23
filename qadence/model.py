@@ -24,7 +24,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.engines.differentiable_backend import DifferentiableBackend
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
-from qadence.noise import Noise
+from qadence.noise import NoiseSource
 from qadence.parameters import Parameter
 from qadence.types import DiffMode, Endianness
 
@@ -83,7 +83,7 @@ class QuantumModel(nn.Module):
         backend: BackendName | str = BackendName.PYQTORCH,
         diff_mode: DiffMode = DiffMode.AD,
         measurement: Measurements | None = None,
-        noise: Noise | None = None,
+        noise: NoiseSource | None = None,
         mitigation: Mitigations | None = None,
         configuration: BackendConfiguration | dict | None = None,
     ):
@@ -249,7 +249,7 @@ class QuantumModel(nn.Module):
         values: dict[str, torch.Tensor] = {},
         n_shots: int = 1000,
         state: torch.Tensor | None = None,
-        noise: Noise | None = None,
+        noise: NoiseSource | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
@@ -287,7 +287,7 @@ class QuantumModel(nn.Module):
         observable: list[ConvertedObservable] | ConvertedObservable | None = None,
         state: Optional[Tensor] = None,
         measurement: Measurements | None = None,
-        noise: Noise | None = None,
+        noise: NoiseSource | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
@@ -415,7 +415,7 @@ class QuantumModel(nn.Module):
                 backend=qm_dict["backend"],
                 diff_mode=qm_dict["diff_mode"],
                 measurement=Measurements._from_dict(qm_dict["measurement"]),
-                noise=Noise._from_dict(qm_dict["noise"]),
+                noise=NoiseSource._from_dict(qm_dict["noise"]),
                 configuration=config_factory(qm_dict["backend"], qm_dict["backend_configuration"]),
             )
 

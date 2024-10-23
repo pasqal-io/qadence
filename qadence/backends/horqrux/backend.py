@@ -21,7 +21,7 @@ from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
-from qadence.noise import Noise
+from qadence.noise import NoiseSource
 from qadence.transpile import flatten, scale_primitive_blocks_only, transpile
 from qadence.types import BackendName, Endianness, Engine, ParamDictType
 from qadence.utils import int_to_basis
@@ -114,7 +114,7 @@ class Backend(BackendInterface):
         param_values: ParamDictType = {},
         state: ArrayLike | None = None,
         measurement: Measurements | None = None,
-        noise: Noise | None = None,
+        noise: NoiseSource | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> ArrayLike:
@@ -163,7 +163,7 @@ class Backend(BackendInterface):
         param_values: ParamDictType = {},
         n_shots: int = 1,
         state: ArrayLike | None = None,
-        noise: Noise | None = None,
+        noise: NoiseSource | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:

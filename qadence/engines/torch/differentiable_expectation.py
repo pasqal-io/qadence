@@ -19,7 +19,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.ml_tools import promote_to_tensor
-from qadence.noise import Noise
+from qadence.noise import NoiseSource
 from qadence.types import Endianness
 
 
@@ -95,7 +95,7 @@ class DifferentiableExpectation:
     param_values: dict[str, Tensor]
     state: Tensor | None = None
     measurement: Measurements | None = None
-    noise: Noise | None = None
+    noise: NoiseSource | None = None
     mitigation: Mitigations | None = None
     endianness: Endianness = Endianness.BIG
 
