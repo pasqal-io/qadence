@@ -5,20 +5,40 @@ from typing import Callable, Counter, cast
 
 from pyqtorch.noise import NoiseProtocol
 
+from qadence.types import DigitalNoiseType, NoiseProtocolType
+
 PROTOCOL_TO_MODULE = {
     "Readout": "qadence.noise.readout",
 }
 
 # Temporary solution
 DigitalNoise = NoiseProtocol
+digital_noise_protocols = set(DigitalNoiseType.list())
 
 
 class NoiseSource:
     """A container for a single source of noise."""
 
-    def __init__(self, protocol: str, options: dict = dict()) -> None:
+    def __init__(self, protocol: str, options: dict = dict(), type: str = "") -> None:
         self.protocol: str = protocol
         self.options: dict = options
+
+        self.type: str = type
+
+        # forcing in certain cases the type of predefined protocols
+        if self.type == "":
+            if protocol == "Readout":
+                self.type = NoiseProtocolType.READOUT
+            if protocol == "Dephasing":
+                self.type = NoiseProtocolType.ANALOG
+                self.protocol = self.protocol.lower()
+            if protocol in digital_noise_protocols:
+                self.type = NoiseProtocolType.DIGITAL
+        else:
+            if self.type not in [NoiseProtocolType(t.value) for t in NoiseProtocolType]:
+                raise ValueError("Noise type {self.type} is not supported.")
+            if self.type == NoiseProtocolType.ANALOG:
+                self.protocol = self.protocol.lower()
 
     def get_noise_fn(self) -> Callable:
         try:
@@ -29,12 +49,52 @@ class NoiseSource:
         return cast(Callable, fn)
 
     def _to_dict(self) -> dict:
-        return {"protocol": self.protocol, "options": self.options}
+        return {"protocol": self.protocol, "options": self.options, "type": self.type}
 
     @classmethod
     def _from_dict(cls, d: dict) -> NoiseSource | None:
         if d:
-            return cls(d["protocol"], **d["options"])
+            type = d.get("type", "")
+            return cls(d["protocol"], **d["options"], type=type)
+        return None
+
+    @classmethod
+    def list(cls) -> list:
+        return list(filter(lambda el: not el.startswith("__"), dir(cls)))
+
+
+class NoiseConfig:
+    """A container for multiple sources of noise."""
+
+    def __init__(
+        self,
+        protocol: str | list[str],
+        options: dict | list[dict] = dict(),
+        type: str | list[str] = "",
+    ) -> None:
+        protocol = [protocol] if isinstance(protocol, str) else protocol
+        options = [options] * len(protocol) if isinstance(options, dict) else options
+        types = [type] * len(protocol) if isinstance(type, str) else type
+
+        if len(options) != len(protocol) or len(types) != len(protocol):
+            raise ValueError("Specify lists of same length when defining noises.")
+
+        self.noise_sources: list = list()
+        for proto, opt_proto, type_proto in zip(protocol, options, types):
+            self.noise_sources.append(NoiseSource(proto, opt_proto, type_proto))
+
+    def _to_dict(self) -> dict:
+        return {
+            "protocol": [n.protocol for n in self.noise_sources],
+            "options": [n.options for n in self.noise_sources],
+            "type": [n.type for n in self.noise_sources],
+        }
+
+    @classmethod
+    def _from_dict(cls, d: dict) -> NoiseConfig | None:
+        if d:
+            type = d.get("type", "")
+            return cls(d["protocol"], **d["options"], type=type)
         return None
 
     @classmethod
