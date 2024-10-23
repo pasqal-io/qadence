@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import importlib
-from abc import ABC
 from dataclasses import dataclass
 from typing import Callable, Counter, Iterable, cast
 
@@ -18,8 +17,7 @@ DigitalNoise = NoiseProtocol
 digital_noise_protocols = set(DigitalNoiseType.list())
 
 
-@dataclass
-class Noise(ABC):
+class Noise:
     """The abstract class that defines the interface for the noise protocols."""
 
     def __init__(self, protocol: str, options: dict = dict(), type: str = "") -> None:
@@ -63,18 +61,6 @@ class Noise(ABC):
     @classmethod
     def list(cls) -> list:
         return list(filter(lambda el: not el.startswith("__"), dir(cls)))
-
-
-# @dataclass
-# class DigitalNoise(Noise):
-#     """Digital noise for digital operations."""
-
-#     def __init__(self, protocol: str, options: dict = dict()) -> None:
-#         super().__init__(protocol, options, NoiseProtocolType.DIGITAL)
-
-#     @classmethod
-#     def _from_dict(cls, d: dict) -> DigitalNoise:
-#         return cls(d["protocol"], **d["options"])
 
 
 @dataclass
