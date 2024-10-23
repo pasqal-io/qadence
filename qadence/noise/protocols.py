@@ -68,13 +68,15 @@ class NoiseConfig:
 
     def __init__(
         self,
-        protocol: str | list[str] | list[NoiseSource],
+        protocol: str | NoiseSource | list[str] | list[NoiseSource],
         options: dict | list[dict] = dict(),
         type: str | list[str] = "",
     ) -> None:
         self.noise_sources: list = list()
         if isinstance(protocol, list) and isinstance(protocol[0], NoiseSource):
             self.noise_sources += protocol
+        elif isinstance(protocol, NoiseSource):
+            self.noise_sources += [protocol]
         else:
             protocol = [protocol] if isinstance(protocol, str) else protocol
             options = [options] * len(protocol) if isinstance(options, dict) else options
