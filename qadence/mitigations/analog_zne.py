@@ -18,6 +18,7 @@ from qadence.mitigations import Mitigations
 from qadence.noise import Noise
 from qadence.operations import AnalogRot
 from qadence.transpile import apply_fn_to_blocks
+from qadence.types import NoiseType
 from qadence.utils import Endianness
 
 
@@ -162,7 +163,7 @@ def analog_zne(
     backend = cast(Backend, backend)
     noise_model = mitigation.options.get("noise_model", None)
     if noise_model is None:
-        KeyError(f"A noise model should be choosen from {Noise.list()}. Got {noise_model}.")
+        KeyError(f"A noise model should be choosen from {NoiseType.list()}. Got {noise_model}.")
     stretches = mitigation.options.get("stretches", None)
     if stretches is not None:
         extrapolated_exp_values = pulse_experiment(

@@ -15,7 +15,7 @@ PROTOCOL_TO_MODULE = {
 
 # Temporary solution
 DigitalNoise = NoiseProtocol
-digital_noise_protocols = set([DigitalNoiseType(noise.value) for noise in DigitalNoiseType])
+digital_noise_protocols = set(DigitalNoiseType.list())
 
 
 @dataclass
@@ -63,6 +63,18 @@ class Noise(ABC):
     @classmethod
     def list(cls) -> list:
         return list(filter(lambda el: not el.startswith("__"), dir(cls)))
+
+
+# @dataclass
+# class DigitalNoise(Noise):
+#     """Digital noise for digital operations."""
+
+#     def __init__(self, protocol: str, options: dict = dict()) -> None:
+#         super().__init__(protocol, options, NoiseProtocolType.DIGITAL)
+
+#     @classmethod
+#     def _from_dict(cls, d: dict) -> DigitalNoise:
+#         return cls(d["protocol"], **d["options"])
 
 
 @dataclass
