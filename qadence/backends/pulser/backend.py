@@ -24,7 +24,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.mitigations.protocols import apply_mitigation
-from qadence.noise import NoiseHandler, NoiseSource
+from qadence.noise import NoiseHandler
 from qadence.noise.protocols import apply_noise
 from qadence.overlap import overlap_exact
 from qadence.register import Register
@@ -187,7 +187,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
         endianness: Endianness = Endianness.BIG,
-        noise: NoiseSource | NoiseHandler | None = None,
+        noise: NoiseHandler | None = None,
     ) -> Tensor:
         vals = to_list_of_dicts(param_values)
 
@@ -235,16 +235,16 @@ class Backend(BackendInterface):
     def _run_noisy(
         self,
         circuit: ConvertedCircuit,
-        noise: NoiseSource | NoiseHandler,
+        noise: NoiseHandler,
         param_values: dict[str, Tensor] = dict(),
         state: Tensor | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         vals = to_list_of_dicts(param_values)
-        noise = noise if isinstance(noise, NoiseSource) else noise.noise_sources[-1]
-        if noise.type != NoiseProtocolType.ANALOG:
+        noise_source = noise.noise_sources[-1]
+        if noise_source.type != NoiseProtocolType.ANALOG:
             raise TypeError("Noise must be analog.")
-        noise_probs = noise.options.get("noise_probs", None)
+        noise_probs = noise_source.options.get("noise_probs", None)
 
         def run_noisy_sim(noise_prob: float) -> Tensor:
             batched_dm = np.zeros(
@@ -253,8 +253,8 @@ class Backend(BackendInterface):
             )
             # pulser requires lower letters
             sim_config = {
-                "noise": noise.protocol.lower(),
-                noise.protocol.lower() + "_rate": noise_prob,
+                "noise": noise_source.protocol.lower(),
+                noise_source.protocol.lower() + "_rate": noise_prob,
             }
             self.config.sim_config = SimConfig(**sim_config)
 
@@ -289,7 +289,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         n_shots: int = 1,
         state: Tensor | None = None,
-        noise: NoiseSource | NoiseHandler | None = None,
+        noise: NoiseHandler | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
@@ -329,7 +329,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
-        noise: NoiseSource | NoiseHandler | None = None,
+        noise: NoiseHandler | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:

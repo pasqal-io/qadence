@@ -151,11 +151,11 @@ class DigitalNoiseConfig(NoiseHandler):
         super().__init__(protocol, options, type)
 
 
-def apply_noise(noise: NoiseSource | NoiseHandler, samples: list[Counter]) -> list[Counter]:
+def apply_noise(noise: NoiseHandler, samples: list[Counter]) -> list[Counter]:
     """Apply readout noise to samples if provided.
 
     Args:
-        noise (NoiseSource | NoiseHandler): Noise to apply.
+        noise (NoiseHandler): Noise to apply.
         samples (list[Counter]): Samples to alter
 
     Returns:

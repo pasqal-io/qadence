@@ -11,7 +11,7 @@ from qadence.blocks.utils import uuid_to_block
 from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
-from qadence.noise import NoiseHandler, NoiseSource
+from qadence.noise import NoiseHandler
 from qadence.types import ArrayLike, DiffMode, Endianness, Engine, ParamDictType
 
 
@@ -40,7 +40,7 @@ class DifferentiableBackend(ABC):
         param_values: ParamDictType = {},
         n_shots: int = 100,
         state: ArrayLike | None = None,
-        noise: NoiseSource | NoiseHandler | None = None,
+        noise: NoiseHandler | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
@@ -89,7 +89,7 @@ class DifferentiableBackend(ABC):
         param_values: ParamDictType = {},
         state: ArrayLike | None = None,
         measurement: Measurements | None = None,
-        noise: NoiseSource | NoiseHandler | None = None,
+        noise: NoiseHandler | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Any:

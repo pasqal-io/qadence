@@ -24,7 +24,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.engines.differentiable_backend import DifferentiableBackend
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
-from qadence.noise import NoiseHandler, NoiseSource
+from qadence.noise import NoiseHandler
 from qadence.parameters import Parameter
 from qadence.types import DiffMode, Endianness
 
@@ -83,7 +83,7 @@ class QuantumModel(nn.Module):
         backend: BackendName | str = BackendName.PYQTORCH,
         diff_mode: DiffMode = DiffMode.AD,
         measurement: Measurements | None = None,
-        noise: NoiseSource | NoiseHandler | None = None,
+        noise: NoiseHandler | None = None,
         mitigation: Mitigations | None = None,
         configuration: BackendConfiguration | dict | None = None,
     ):
@@ -249,7 +249,7 @@ class QuantumModel(nn.Module):
         values: dict[str, torch.Tensor] = {},
         n_shots: int = 1000,
         state: torch.Tensor | None = None,
-        noise: NoiseSource | NoiseHandler | None = None,
+        noise: NoiseHandler | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
@@ -287,7 +287,7 @@ class QuantumModel(nn.Module):
         observable: list[ConvertedObservable] | ConvertedObservable | None = None,
         state: Optional[Tensor] = None,
         measurement: Measurements | None = None,
-        noise: NoiseSource | NoiseHandler | None = None,
+        noise: NoiseHandler | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
@@ -405,9 +405,6 @@ class QuantumModel(nn.Module):
         qm: QuantumModel
         try:
             qm_dict = d[cls.__name__]
-            noise = NoiseSource._from_dict(qm_dict["noise"]) or NoiseHandler._from_dict(
-                qm_dict["noise"]
-            )
             qm = cls(
                 circuit=QuantumCircuit._from_dict(qm_dict["circuit"]),
                 observable=(
@@ -418,7 +415,7 @@ class QuantumModel(nn.Module):
                 backend=qm_dict["backend"],
                 diff_mode=qm_dict["diff_mode"],
                 measurement=Measurements._from_dict(qm_dict["measurement"]),
-                noise=noise,
+                noise=NoiseHandler._from_dict(qm_dict["noise"]),
                 configuration=config_factory(qm_dict["backend"], qm_dict["backend_configuration"]),
             )
 

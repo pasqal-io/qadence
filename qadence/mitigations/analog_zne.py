@@ -15,7 +15,7 @@ from qadence.blocks.analog import ConstantAnalogRotation, InteractionBlock
 from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
-from qadence.noise import NoiseHandler, NoiseSource
+from qadence.noise import NoiseHandler
 from qadence.operations import AnalogRot
 from qadence.transpile import apply_fn_to_blocks
 from qadence.types import NoiseType
@@ -45,7 +45,7 @@ def pulse_experiment(
     circuit: QuantumCircuit,
     observable: list[AbstractBlock],
     param_values: dict[str, Tensor],
-    noise: NoiseSource | NoiseHandler,
+    noise: NoiseHandler,
     stretches: Tensor,
     endianness: Endianness,
     state: Tensor | None = None,
@@ -117,12 +117,12 @@ def noise_level_experiment(
     circuit: QuantumCircuit,
     observable: list[AbstractBlock],
     param_values: dict[str, Tensor],
-    noise: NoiseSource | NoiseHandler,
+    noise: NoiseHandler,
     endianness: Endianness,
     state: Tensor | None = None,
 ) -> Tensor:
-    noise = noise if isinstance(noise, NoiseSource) else noise.noise_sources[-1]
-    noise_probs = noise.options.get("noise_probs")
+    noise_source = noise.noise_sources[-1]
+    noise_probs = noise_source.options.get("noise_probs")
     zne_datasets: list = []
     # Get noisy density matrices.
     conv_circuit = backend.circuit(circuit)
@@ -154,7 +154,7 @@ def analog_zne(
     param_values: dict[str, Tensor] = {},
     state: Tensor | None = None,
     measurement: Measurements | None = None,
-    noise: NoiseSource | NoiseHandler | None = None,
+    noise: NoiseHandler | None = None,
     mitigation: Mitigations | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
@@ -197,7 +197,7 @@ def mitigate(
     param_values: dict[str, Tensor] = {},
     state: Tensor | None = None,
     measurement: Measurements | None = None,
-    noise: NoiseSource | NoiseHandler | None = None,
+    noise: NoiseHandler | None = None,
     mitigation: Mitigations | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:

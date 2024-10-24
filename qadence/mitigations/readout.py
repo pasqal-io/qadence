@@ -69,7 +69,7 @@ def matrix_inv(K: npt.NDArray) -> npt.NDArray:
 
 
 def mitigation_minimization(
-    noise: NoiseSource | NoiseHandler,
+    noise: NoiseHandler,
     mitigation: Mitigations,
     samples: list[Counter],
 ) -> list[Counter]:
@@ -161,7 +161,5 @@ def mitigation_minimization(
     return corrected_counters
 
 
-def mitigate(
-    noise: NoiseSource | NoiseHandler, mitigation: Mitigations, samples: list[Counter]
-) -> list[Counter]:
+def mitigate(noise: NoiseHandler, mitigation: Mitigations, samples: list[Counter]) -> list[Counter]:
     return mitigation_minimization(noise=noise, mitigation=mitigation, samples=samples)
