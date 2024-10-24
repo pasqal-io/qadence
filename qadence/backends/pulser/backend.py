@@ -29,7 +29,7 @@ from qadence.noise.protocols import apply_noise
 from qadence.overlap import overlap_exact
 from qadence.register import Register
 from qadence.transpile import transpile
-from qadence.types import BackendName, DeviceType, Endianness, Engine
+from qadence.types import BackendName, DeviceType, Endianness, Engine, NoiseProtocolType
 
 from .channels import GLOBAL_CHANNEL, LOCAL_CHANNEL
 from .cloud import get_client
@@ -242,14 +242,9 @@ class Backend(BackendInterface):
     ) -> Tensor:
         vals = to_list_of_dicts(param_values)
         noise = noise if isinstance(noise, NoiseSource) else noise.noise_sources[-1]
+        if noise.type != NoiseProtocolType.ANALOG:
+            raise TypeError("Noise must be analog.")
         noise_probs = noise.options.get("noise_probs", None)
-        if noise_probs is None:
-            KeyError("A `noise probs` option should be passed to the <class QuantumModel>.")
-        if not (isinstance(noise_probs, float) or isinstance(noise_probs, Iterable)):
-            KeyError(
-                "A single or a range of noise probabilities"
-                " should be passed. Got {type(noise_probs)}."
-            )
 
         def run_noisy_sim(noise_prob: float) -> Tensor:
             batched_dm = np.zeros(

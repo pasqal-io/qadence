@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+from collections.abc import Iterable
 from typing import Callable, Counter, cast
 
 from pyqtorch.noise import NoiseProtocol
@@ -43,6 +44,25 @@ class NoiseSource:
         else:
             if self.type not in [NoiseProtocolType(t.value) for t in NoiseProtocolType]:
                 raise ValueError("Noise type {self.type} is not supported.")
+
+        self.verify_options()
+
+    def verify_options(self) -> None:
+        if self.type == NoiseProtocolType.ANALOG:
+            noise_probs = self.options.get("noise_probs", None)
+            if noise_probs is None:
+                KeyError("A `noise probs` option should be passed to the NoiseSource.")
+            if not (isinstance(noise_probs, float) or isinstance(noise_probs, Iterable)):
+                KeyError(
+                    "A single or a range of noise probabilities"
+                    " should be passed. Got {type(noise_probs)}."
+                )
+        elif self.type == NoiseProtocolType.DIGITAL:
+            error_prob = self.options.get("error_probability", None)
+            if not (error_prob and isinstance(error_prob, float)):
+                KeyError("A `error_probability` option should be passed to the NoiseSource.")
+        else:
+            pass
 
     def get_noise_fn(self) -> Callable:
         try:
@@ -97,11 +117,11 @@ class NoiseConfig:
         if NoiseProtocolType.DIGITAL in unique_types and NoiseProtocolType.ANALOG in unique_types:
             raise ValueError("Cannot define a config with both Digital and Analog noises.")
 
-        if NoiseProtocolType.ANALOG in unique_types and NoiseProtocolType.READOUT in unique_types:
-            raise ValueError("Cannot define a config with both READOUT and Analog noises.")
-
-        if types.count(NoiseProtocolType.ANALOG) > 1:
-            raise ValueError("Only define a NoiseConfig with one ANALOG noise.")
+        if NoiseProtocolType.ANALOG in unique_types:
+            if NoiseProtocolType.READOUT in unique_types:
+                raise ValueError("Cannot define a config with both READOUT and Analog noises.")
+            if types.count(NoiseProtocolType.ANALOG) > 1:
+                raise ValueError("Multiple Analog NoiseSources are not supported.")
 
         if NoiseProtocolType.READOUT in unique_types:
             if types[-1] != NoiseProtocolType.READOUT or types.count(NoiseProtocolType.READOUT) > 1:
@@ -129,7 +149,7 @@ class NoiseConfig:
 
 
 def apply_noise(noise: NoiseSource | NoiseConfig, samples: list[Counter]) -> list[Counter]:
-    """Apply readout noise to samples.
+    """Apply readout noise to samples if provided.
 
     Args:
         noise (NoiseSource | NoiseConfig): Noise to apply.
