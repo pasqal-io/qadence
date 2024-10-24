@@ -32,7 +32,7 @@ subjected to physicality constraints $0 \leq p_{corr}(x) \leq 1$ and $\lVert p_{
 ```python exec="on" source="material-block" session="mitigation" result="json"
 from qadence import QuantumModel, QuantumCircuit, kron, H, Z, NoiseType
 from qadence import hamiltonian_factory
-from qadence.noise import Noise
+from qadence.noise import NoiseSource
 from qadence.mitigations import Mitigations
 from qadence.types import ReadOutOptimization
 
