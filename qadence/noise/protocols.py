@@ -38,14 +38,11 @@ class NoiseSource:
                 self.type = NoiseProtocolType.READOUT
             if self.protocol == "Dephasing":
                 self.type = NoiseProtocolType.ANALOG
-                self.protocol = self.protocol.lower()
             if self.protocol in digital_noise_protocols:
                 self.type = NoiseProtocolType.DIGITAL
         else:
             if self.type not in [NoiseProtocolType(t.value) for t in NoiseProtocolType]:
                 raise ValueError("Noise type {self.type} is not supported.")
-            if self.type == NoiseProtocolType.ANALOG:
-                self.protocol = self.protocol.lower()
 
     def get_noise_fn(self) -> Callable:
         try:
@@ -102,6 +99,9 @@ class NoiseConfig:
 
         if NoiseProtocolType.ANALOG in unique_types and NoiseProtocolType.READOUT in unique_types:
             raise ValueError("Cannot define a config with both READOUT and Analog noises.")
+
+        if types.count(NoiseProtocolType.ANALOG) > 1:
+            raise ValueError("Only define a NoiseConfig with one ANALOG noise.")
 
         if NoiseProtocolType.READOUT in unique_types:
             if types[-1] != NoiseProtocolType.READOUT or types.count(NoiseProtocolType.READOUT) > 1:

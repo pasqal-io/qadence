@@ -14,7 +14,7 @@ from qadence.backends.jax_utils import (
 from qadence.blocks.utils import uuid_to_eigen
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
-from qadence.noise import NoiseSource
+from qadence.noise import NoiseConfig, NoiseSource
 from qadence.types import Endianness, Engine, ParamDictType
 
 
@@ -34,7 +34,7 @@ class DifferentiableExpectation:
     param_values: ParamDictType
     state: Array | None = None
     measurement: Measurements | None = None
-    noise: NoiseSource | None = None
+    noise: NoiseSource | NoiseConfig | None = None
     mitigation: Mitigations | None = None
     endianness: Endianness = Endianness.BIG
     engine: Engine = Engine.JAX

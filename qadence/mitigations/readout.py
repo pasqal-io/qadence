@@ -11,7 +11,7 @@ from scipy.linalg import norm
 from scipy.optimize import LinearConstraint, minimize
 
 from qadence.mitigations.protocols import Mitigations
-from qadence.noise.protocols import NoiseSource
+from qadence.noise.protocols import NoiseConfig, NoiseSource
 from qadence.types import ReadOutOptimization
 
 
@@ -69,7 +69,7 @@ def matrix_inv(K: npt.NDArray) -> npt.NDArray:
 
 
 def mitigation_minimization(
-    noise: NoiseSource,
+    noise: NoiseSource | NoiseConfig,
     mitigation: Mitigations,
     samples: list[Counter],
 ) -> list[Counter]:
@@ -88,7 +88,12 @@ def mitigation_minimization(
     Returns:
         Mitigated counts computed by the algorithm
     """
-    noise_matrices = noise.options.get("noise_matrix", noise.options["confusion_matrices"])
+    readoutnoise = noise if isinstance(noise, NoiseSource) else noise.noise_sources[-1]
+    if readoutnoise.protocol != "Readout":
+        raise ValueError("Specify a noise source of type Readout.")
+    noise_matrices = readoutnoise.options.get(
+        "noise_matrix", readoutnoise.options["confusion_matrices"]
+    )
     optimization_type = mitigation.options.get("optimization_type", ReadOutOptimization.MLE)
     n_qubits = len(list(samples[0].keys())[0])
     n_shots = sum(samples[0].values())
@@ -156,5 +161,7 @@ def mitigation_minimization(
     return corrected_counters
 
 
-def mitigate(noise: NoiseSource, mitigation: Mitigations, samples: list[Counter]) -> list[Counter]:
+def mitigate(
+    noise: NoiseSource | NoiseConfig, mitigation: Mitigations, samples: list[Counter]
+) -> list[Counter]:
     return mitigation_minimization(noise=noise, mitigation=mitigation, samples=samples)

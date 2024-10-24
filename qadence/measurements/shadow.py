@@ -16,7 +16,7 @@ from qadence.blocks.primitive import PrimitiveBlock
 from qadence.blocks.utils import get_pauli_blocks, unroll_block_with_scaling
 from qadence.circuit import QuantumCircuit
 from qadence.engines.differentiable_backend import DifferentiableBackend
-from qadence.noise import NoiseSource
+from qadence.noise import NoiseConfig, NoiseSource
 from qadence.operations import X, Y, Z
 from qadence.types import Endianness
 from qadence.utils import P0_MATRIX, P1_MATRIX
@@ -117,8 +117,7 @@ def classical_shadow(
     param_values: dict,
     state: Tensor | None = None,
     backend: Backend | DifferentiableBackend = PyQBackend(),
-    # FIXME: Changed below from Little to Big, double-check when Roland is back
-    noise: NoiseSource | None = None,
+    noise: NoiseSource | NoiseConfig | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> list:
     shadow: list = []
@@ -249,7 +248,7 @@ def estimations(
     confidence: float = 0.1,
     state: Tensor | None = None,
     backend: Backend | DifferentiableBackend = PyQBackend(),
-    noise: NoiseSource | None = None,
+    noise: NoiseSource | NoiseConfig | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
     """Compute expectation values for all local observables using median of means."""
@@ -302,7 +301,7 @@ def compute_expectation(
     options: dict,
     state: Tensor | None = None,
     backend: Backend | DifferentiableBackend = PyQBackend(),
-    noise: NoiseSource | None = None,
+    noise: NoiseSource | NoiseConfig | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
     """
