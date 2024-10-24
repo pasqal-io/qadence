@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import importlib
-from collections.abc import Iterable
 from typing import Callable, Counter, cast
 
 from pyqtorch.noise import NoiseProtocol
@@ -48,21 +47,15 @@ class NoiseSource:
         self.verify_options()
 
     def verify_options(self) -> None:
-        if self.type == NoiseProtocolType.ANALOG:
-            noise_probs = self.options.get("noise_probs", None)
+        if self.type != NoiseProtocolType.READOUT:
+            name_mandatory_option = (
+                "noise_probs" if self.type == NoiseProtocolType.ANALOG else "error_probability"
+            )
+            noise_probs = self.options.get(name_mandatory_option, None)
             if noise_probs is None:
-                KeyError("A `noise probs` option should be passed to the NoiseSource.")
-            if not (isinstance(noise_probs, float) or isinstance(noise_probs, Iterable)):
                 KeyError(
-                    "A single or a range of noise probabilities"
-                    " should be passed. Got {type(noise_probs)}."
+                    "A `{name_mandatory_option}` option should be passed to the NoiseSource of type {self.type}."
                 )
-        elif self.type == NoiseProtocolType.DIGITAL:
-            error_prob = self.options.get("error_probability", None)
-            if error_prob is None:
-                KeyError("A `error_probability` option should be passed to the NoiseSource.")
-        else:
-            pass
 
     def get_noise_fn(self) -> Callable:
         try:
