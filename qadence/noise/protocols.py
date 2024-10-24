@@ -151,7 +151,7 @@ class DigitalNoiseConfig(NoiseHandler):
         super().__init__(protocol, options, type)
 
 
-def apply_noise(noise: NoiseHandler, samples: list[Counter]) -> list[Counter]:
+def apply_readout_noise(noise: NoiseHandler, samples: list[Counter]) -> list[Counter]:
     """Apply readout noise to samples if provided.
 
     Args:
@@ -161,7 +161,7 @@ def apply_noise(noise: NoiseHandler, samples: list[Counter]) -> list[Counter]:
     Returns:
         list[Counter]: Altered samples.
     """
-    readout = noise if isinstance(noise, NoiseSource) else noise.noise_sources[-1]
+    readout = noise.noise_sources[-1]
     if readout.type == NoiseProtocolType.READOUT:
         error_fn = readout.get_noise_fn()
         # Get the number of qubits from the sample keys.
