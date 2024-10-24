@@ -93,8 +93,11 @@ class NoiseConfig:
         if NoiseProtocolType.DIGITAL in unique_types and NoiseProtocolType.ANALOG in unique_types:
             raise ValueError("Cannot define a config with both Digital and Analog noises.")
 
+        if NoiseProtocolType.ANALOG in unique_types and NoiseProtocolType.READOUT in unique_types:
+            raise ValueError("Cannot define a config with both READOUT and Analog noises.")
+
         if NoiseProtocolType.READOUT in unique_types:
-            if types[-1] != NoiseProtocolType.READOUT or types.count(NoiseProtocolType.READOUT):
+            if types[-1] != NoiseProtocolType.READOUT or types.count(NoiseProtocolType.READOUT) > 1:
                 raise ValueError(
                     "Only define a NoiseConfig with one READOUT as the last NoiseSource."
                 )
