@@ -59,7 +59,7 @@ class NoiseSource:
                 )
         elif self.type == NoiseProtocolType.DIGITAL:
             error_prob = self.options.get("error_probability", None)
-            if not (error_prob and isinstance(error_prob, float)):
+            if error_prob is None:
                 KeyError("A `error_probability` option should be passed to the NoiseSource.")
         else:
             pass
