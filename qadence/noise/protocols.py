@@ -5,7 +5,7 @@ from typing import Callable, Counter, cast
 
 from pyqtorch.noise import NoiseProtocol
 
-from qadence.types import DigitalNoiseType, NoiseProtocolType
+from qadence.types import DigitalNoiseType, NoiseProtocolType, NoiseType
 
 PROTOCOL_TO_MODULE = {
     "Readout": "qadence.noise.readout",
@@ -14,13 +14,20 @@ PROTOCOL_TO_MODULE = {
 # Temporary solution
 DigitalNoise = NoiseProtocol
 digital_noise_protocols = set(DigitalNoiseType.list())
+supported_noise_protocols = NoiseType.list()
 
 
 class NoiseSource:
     """A container for a single source of noise."""
 
     def __init__(self, protocol: str, options: dict = dict(), type: str = "") -> None:
+        if protocol not in supported_noise_protocols:
+            raise ValueError(
+                "Protocol {protocol} is not supported. Choose from {supported_noise_protocols}."
+            )
+
         self.protocol: str = protocol
+
         self.options: dict = options
 
         self.type: str = type
@@ -29,10 +36,10 @@ class NoiseSource:
         if self.type == "":
             if protocol == "Readout":
                 self.type = NoiseProtocolType.READOUT
-            if protocol == "Dephasing":
+            if self.protocol == "Dephasing":
                 self.type = NoiseProtocolType.ANALOG
                 self.protocol = self.protocol.lower()
-            if protocol in digital_noise_protocols:
+            if self.protocol in digital_noise_protocols:
                 self.type = NoiseProtocolType.DIGITAL
         else:
             if self.type not in [NoiseProtocolType(t.value) for t in NoiseProtocolType]:
