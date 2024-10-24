@@ -80,7 +80,7 @@ class NoiseSource:
         return list(filter(lambda el: not el.startswith("__"), dir(cls)))
 
 
-class NoiseConfig:
+class NoiseHandler:
     """A container for multiple sources of noise."""
 
     def __init__(
@@ -119,7 +119,7 @@ class NoiseConfig:
         if NoiseProtocolType.READOUT in unique_types:
             if types[-1] != NoiseProtocolType.READOUT or types.count(NoiseProtocolType.READOUT) > 1:
                 raise ValueError(
-                    "Only define a NoiseConfig with one READOUT as the last NoiseSource."
+                    "Only define a NoiseHandler with one READOUT as the last NoiseSource."
                 )
 
     def _to_dict(self) -> dict:
@@ -130,7 +130,7 @@ class NoiseConfig:
         }
 
     @classmethod
-    def _from_dict(cls, d: dict) -> NoiseConfig | None:
+    def _from_dict(cls, d: dict) -> NoiseHandler | None:
         if d:
             type = d.get("type", "")
             return cls(d["protocol"], **d["options"], type=type)
@@ -141,11 +141,21 @@ class NoiseConfig:
         return list(filter(lambda el: not el.startswith("__"), dir(cls)))
 
 
-def apply_noise(noise: NoiseSource | NoiseConfig, samples: list[Counter]) -> list[Counter]:
+class DigitalNoiseConfig(NoiseHandler):
+    def __init__(
+        self,
+        protocol: str | NoiseSource | list[str] | list[NoiseSource],
+        options: dict | list[dict] = dict(),
+        type: str | list[str] = "",
+    ) -> None:
+        super().__init__(protocol, options, type)
+
+
+def apply_noise(noise: NoiseSource | NoiseHandler, samples: list[Counter]) -> list[Counter]:
     """Apply readout noise to samples if provided.
 
     Args:
-        noise (NoiseSource | NoiseConfig): Noise to apply.
+        noise (NoiseSource | NoiseHandler): Noise to apply.
         samples (list[Counter]): Samples to alter
 
     Returns:

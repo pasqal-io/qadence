@@ -11,7 +11,7 @@ from scipy.linalg import norm
 from scipy.optimize import LinearConstraint, minimize
 
 from qadence.mitigations.protocols import Mitigations
-from qadence.noise.protocols import NoiseConfig, NoiseSource
+from qadence.noise.protocols import NoiseHandler, NoiseSource
 from qadence.types import ReadOutOptimization
 
 
@@ -69,7 +69,7 @@ def matrix_inv(K: npt.NDArray) -> npt.NDArray:
 
 
 def mitigation_minimization(
-    noise: NoiseSource | NoiseConfig,
+    noise: NoiseSource | NoiseHandler,
     mitigation: Mitigations,
     samples: list[Counter],
 ) -> list[Counter]:
@@ -162,6 +162,6 @@ def mitigation_minimization(
 
 
 def mitigate(
-    noise: NoiseSource | NoiseConfig, mitigation: Mitigations, samples: list[Counter]
+    noise: NoiseSource | NoiseHandler, mitigation: Mitigations, samples: list[Counter]
 ) -> list[Counter]:
     return mitigation_minimization(noise=noise, mitigation=mitigation, samples=samples)

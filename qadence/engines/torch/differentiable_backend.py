@@ -11,7 +11,7 @@ from qadence.engines.torch.differentiable_expectation import DifferentiableExpec
 from qadence.extensions import get_gpsr_fns
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
-from qadence.noise import NoiseConfig, NoiseSource
+from qadence.noise import NoiseHandler, NoiseSource
 from qadence.types import ArrayLike, DiffMode, Endianness, Engine, ParamDictType
 
 
@@ -40,7 +40,7 @@ class DifferentiableBackend(DifferentiableBackendInterface):
         param_values: ParamDictType = {},
         state: ArrayLike | None = None,
         measurement: Measurements | None = None,
-        noise: NoiseSource | NoiseConfig | None = None,
+        noise: NoiseSource | NoiseHandler | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> ArrayLike:
