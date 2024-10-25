@@ -83,6 +83,9 @@ class NoiseSource:
     def list(cls) -> list:
         return list(filter(lambda el: not el.startswith("__"), dir(cls)))
 
+    def __repr__(self) -> str:
+        return f"{self.protocol_type} NoiseSource({self.protocol}, {str(self.options)})"
+
 
 class NoiseHandler:
     """A container for multiple sources of noise."""
@@ -133,6 +136,9 @@ class NoiseHandler:
                 raise ValueError(
                     "Only define a NoiseHandler with one READOUT as the last NoiseSource."
                 )
+
+    def __repr__(self) -> str:
+        return "\n".join([str(n) for n in self.noise_sources])
 
     def _to_dict(self) -> dict:
         return {
