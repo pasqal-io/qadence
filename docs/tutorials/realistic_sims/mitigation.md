@@ -30,11 +30,11 @@ $$
 subjected to physicality constraints $0 \leq p_{corr}(x) \leq 1$ and $\lVert p_{corr} \rVert = 1$. At this point, two methods are implemented to solve this problem. The first one relies on solving using standard optimization tools, the second on Maximum-Likelihood Estimation[^2]. In Qadence, this can be user defined using the mitigation protocol:
 
 ```python exec="on" source="material-block" session="mitigation" result="json"
-from qadence import QuantumModel, QuantumCircuit, kron, H, Z, NoiseType
+from qadence import QuantumModel, QuantumCircuit, kron, H, Z
 from qadence import hamiltonian_factory
 from qadence.noise import NoiseHandler
 from qadence.mitigations import Mitigations
-from qadence.types import ReadOutOptimization
+from qadence.types import ReadOutOptimization, NoiseType
 
 # Simple circuit and observable construction.
 block = kron(H(0), Z(1))
