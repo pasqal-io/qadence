@@ -100,9 +100,7 @@ class PrimitiveBlock(AbstractBlock):
 
     @classmethod
     def _from_dict(cls, d: dict) -> PrimitiveBlock:
-        noise_dict = d.get("noise")
-        qubit_support = d["qubit_support"]
-        return cls(qubit_support, noise=NoiseHandler._from_dict(noise_dict) if noise_dict else None)
+        return cls(*d["qubit_support"], NoiseHandler._from_dict(d.get("noise")))  # type: ignore[call-arg]
 
     def __hash__(self) -> int:
         return hash(self._to_json())
@@ -216,14 +214,12 @@ class ParametricBlock(PrimitiveBlock):
     def _from_dict(cls, d: dict) -> ParametricBlock:
         params = ParamMap._from_dict(d["parameters"])
         target = d["qubit_support"][0]
-        noise_dict = d.get("noise")
-        noise = NoiseHandler._from_dict(noise_dict) if noise_dict else None
-        return cls(target, noise, params)  # type: ignore[call-arg]
+        return cls(target, params, NoiseHandler._from_dict(d.get("noise")))  # type: ignore[call-arg, arg-type]
 
     def dagger(self) -> ParametricBlock:
         exprs = self.parameters.expressions()
         params = tuple(-extract_original_param_entry(param) for param in exprs)
-        return type(self)(*self.qubit_support, *params)  # type: ignore[arg-type]
+        return type(self)(*self.qubit_support, *params, self.noise)  # type: ignore[call-arg, arg-type]
 
 
 class ScaleBlock(ParametricBlock):
@@ -423,9 +419,7 @@ class ControlBlock(PrimitiveBlock):
     def _from_dict(cls, d: dict) -> ControlBlock:
         control = d["qubit_support"][0]
         target = d["qubit_support"][1]
-        noise_dict = d.get("noise")
-        noise = NoiseHandler._from_dict(noise_dict) if noise_dict else None
-        return cls(control, target, noise)
+        return cls(control, target, NoiseHandler._from_dict(d.get("noise")))
 
     def dagger(self) -> ControlBlock:
         blk = deepcopy(self)
@@ -490,9 +484,7 @@ class ParametricControlBlock(ParametricBlock):
         target = d["qubit_support"][1]
         targetblock = d["blocks"][0]
         expr = deserialize(targetblock["parameters"])
-        noise_dict = d.get("noise")
-        noise = NoiseHandler._from_dict(noise_dict) if noise_dict else None
-        block = cls(control, target, noise, expr)  # type: ignore[call-arg]
+        block = cls(control, target, NoiseHandler._from_dict(d.get("noise")), expr)  # type: ignore[call-arg]
         return block
 
     @property

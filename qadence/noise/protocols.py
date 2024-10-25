@@ -73,7 +73,7 @@ class NoiseSource:
         }
 
     @classmethod
-    def _from_dict(cls, d: dict) -> NoiseSource | None:
+    def _from_dict(cls, d: dict | None) -> NoiseSource | None:
         if d:
             protocol_type = d.get("protocol_type", "")
             return cls(d["protocol"], **d["options"], protocol_type=protocol_type)
@@ -142,7 +142,7 @@ class NoiseHandler:
         }
 
     @classmethod
-    def _from_dict(cls, d: dict) -> NoiseHandler | None:
+    def _from_dict(cls, d: dict | None) -> NoiseHandler | None:
         if d:
             protocol_type = d.get("protocol_type", "")
             return cls(d["protocol"], **d["options"], protocol_type=protocol_type)
