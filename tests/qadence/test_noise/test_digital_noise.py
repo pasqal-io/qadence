@@ -42,3 +42,7 @@ def test_set_noise_restricted(protocol: str, circuit: QuantumCircuit) -> None:
             assert block.noise is not None
         else:
             assert block.noise is None
+
+
+# def test_raise_errors():
+#     with pytest.raises(ValueError):
