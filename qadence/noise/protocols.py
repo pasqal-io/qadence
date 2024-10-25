@@ -3,8 +3,6 @@ from __future__ import annotations
 import importlib
 from typing import Any, Callable, Counter, cast
 
-from pyqtorch.noise import NoiseProtocol
-
 from qadence.types import DigitalNoiseType, NoiseProtocolType, NoiseType
 
 PROTOCOL_TO_MODULE = {
@@ -12,7 +10,6 @@ PROTOCOL_TO_MODULE = {
 }
 
 # Temporary solution
-DigitalNoise = NoiseProtocol
 digital_noise_protocols = set(DigitalNoiseType.list())
 supported_noise_protocols = NoiseType.list()
 
@@ -102,13 +99,15 @@ class NoiseHandler:
         elif isinstance(protocol, NoiseSource):
             self.noise_sources += [protocol]
         else:
-            protocol = [protocol] if isinstance(protocol, str) else protocol
-            options = [options] * len(protocol) if isinstance(options, dict) else options
+            protocol = protocol if isinstance(protocol, list) else [protocol]
+            options = options if isinstance(options, list) else [options] * len(protocol)
             types = (
-                [protocol_type] * len(protocol) if isinstance(protocol_type, str) else protocol_type
+                protocol_type
+                if isinstance(protocol_type, list)
+                else [protocol_type] * len(protocol)
             )
 
-            if len(options) != len(protocol) or len(protocol_type) != len(protocol):
+            if len(options) != len(protocol) or len(types) != len(protocol):
                 raise ValueError("Specify lists of same length when defining noises.")
 
             for proto, opt_proto, type_proto in zip(protocol, options, types):
@@ -207,7 +206,7 @@ def apply_readout_noise(noise: NoiseHandler, samples: list[Counter]) -> list[Cou
         list[Counter]: Altered samples.
     """
     readout = noise.noise_sources[-1]
-    if readout.type == NoiseProtocolType.READOUT:
+    if readout.protocol_type == NoiseProtocolType.READOUT:
         error_fn = readout.get_noise_fn()
         # Get the number of qubits from the sample keys.
         n_qubits = len(list(samples[0].keys())[0])

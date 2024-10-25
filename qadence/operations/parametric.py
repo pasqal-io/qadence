@@ -15,7 +15,7 @@ from qadence.blocks.utils import (
     add,  # noqa
     chain,
 )
-from qadence.noise.protocols import DigitalNoise
+from qadence.noise import NoiseHandler
 from qadence.parameters import (
     Parameter,
     ParamMap,
@@ -37,7 +37,7 @@ class PHASE(ParametricBlock):
         self,
         target: int,
         parameter: Parameter | TNumber | sympy.Expr | str,
-        noise: DigitalNoise | None = None,
+        noise: NoiseHandler | None = None,
     ) -> None:
         self.parameters = ParamMap(parameter=parameter)
         self.generator = I(target) - Z(target)
@@ -66,7 +66,7 @@ class RX(ParametricBlock):
         self,
         target: int,
         parameter: Parameter | TParameter | ParamMap,
-        noise: DigitalNoise | None = None,
+        noise: NoiseHandler | None = None,
     ) -> None:
         # TODO: should we give them more meaningful names? like 'angle'?
         self.parameters = (
@@ -99,7 +99,7 @@ class RY(ParametricBlock):
         self,
         target: int,
         parameter: Parameter | TParameter | ParamMap,
-        noise: DigitalNoise | None = None,
+        noise: NoiseHandler | None = None,
     ) -> None:
         self.parameters = (
             parameter if isinstance(parameter, ParamMap) else ParamMap(parameter=parameter)
@@ -131,7 +131,7 @@ class RZ(ParametricBlock):
         self,
         target: int,
         parameter: Parameter | TParameter | ParamMap,
-        noise: DigitalNoise | None = None,
+        noise: NoiseHandler | None = None,
     ) -> None:
         self.parameters = (
             parameter if isinstance(parameter, ParamMap) else ParamMap(parameter=parameter)
@@ -168,7 +168,7 @@ class U(ParametricBlock):
         phi: Parameter | TParameter,
         theta: Parameter | TParameter,
         omega: Parameter | TParameter,
-        noise: DigitalNoise | None = None,
+        noise: NoiseHandler | None = None,
     ) -> None:
         self.parameters = ParamMap(phi=phi, theta=theta, omega=omega)
         self.generator = chain(Z(target), Y(target), Z(target))

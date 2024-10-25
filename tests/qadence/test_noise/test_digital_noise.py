@@ -6,7 +6,7 @@ import pytest
 import strategies as st  # type: ignore
 from hypothesis import given, settings
 
-from qadence import DigitalNoise, DigitalNoiseType, QuantumCircuit, set_noise
+from qadence import DigitalNoiseType, NoiseHandler, QuantumCircuit, set_noise
 
 list_noises = [DigitalNoiseType(noise.value) for noise in DigitalNoiseType]
 
@@ -18,8 +18,8 @@ def test_set_noise(protocol: str, circuit: QuantumCircuit) -> None:
     all_blocks = circuit.block.blocks if hasattr(circuit.block, "blocks") else [circuit.block]
     for block in all_blocks:
         assert block.noise is None
-    noise = DigitalNoise(protocol, error_probability=0.2)
-    assert noise.len == 1
+    noise = NoiseHandler(protocol, {"error_probability": 0.2})
+    assert len(noise.noise_sources) == 1
     set_noise(circuit, noise)
 
     for block in all_blocks:
@@ -30,8 +30,8 @@ def test_set_noise(protocol: str, circuit: QuantumCircuit) -> None:
 @given(st.digital_circuits())
 @settings(deadline=None)
 def test_set_noise_restricted(protocol: str, circuit: QuantumCircuit) -> None:
-    noise = DigitalNoise(protocol, error_probability=0.2)
-    assert noise.len == 1
+    noise = NoiseHandler(protocol, {"error_probability": 0.2})
+    assert len(noise.noise_sources) == 1
     all_blocks = circuit.block.blocks if hasattr(circuit.block, "blocks") else [circuit.block]
     index_random_block = random.randint(0, len(all_blocks) - 1)
     type_target = type(all_blocks[index_random_block])

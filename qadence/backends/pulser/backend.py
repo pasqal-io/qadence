@@ -242,7 +242,7 @@ class Backend(BackendInterface):
     ) -> Tensor:
         vals = to_list_of_dicts(param_values)
         noise_source = noise.noise_sources[-1]
-        if noise_source.type != NoiseProtocolType.ANALOG:
+        if noise_source.protocol_type != NoiseProtocolType.ANALOG:
             raise TypeError("Noise must be analog.")
         noise_probs = noise_source.options.get("noise_probs", None)
 

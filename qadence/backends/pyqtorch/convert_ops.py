@@ -30,6 +30,7 @@ from qadence.blocks import (
     TimeEvolutionBlock,
 )
 from qadence.blocks.primitive import ProjectorBlock
+from qadence.noise import NoiseHandler
 from qadence.operations import (
     U,
     multi_qubit_gateset,
@@ -38,7 +39,7 @@ from qadence.operations import (
     three_qubit_gateset,
     two_qubit_gateset,
 )
-from qadence.types import OpName
+from qadence.types import DigitalNoiseType, OpName
 
 from .config import Configuration
 
@@ -233,7 +234,11 @@ def convert_block(
         ]
 
     elif isinstance(block, MatrixBlock):
-        return [pyq.primitives.Primitive(block.matrix, block.qubit_support, noise=block.noise)]
+        return [
+            pyq.primitives.Primitive(
+                block.matrix, block.qubit_support, noise=convert_digital_noise(block.noise)
+            )
+        ]
     elif isinstance(block, CompositeBlock):
         ops = list(flatten(*(convert_block(b, n_qubits, config) for b in block.blocks)))
         if isinstance(block, AddBlock):
@@ -246,11 +251,14 @@ def convert_block(
         if isinstance(block, ProjectorBlock):
             projector = getattr(pyq, block.name)
             if block.name == OpName.N:
-                return [projector(target=qubit_support, noise=block.noise)]
+                return [projector(target=qubit_support, noise=convert_digital_noise(block.noise))]
             else:
                 return [
                     projector(
-                        qubit_support=qubit_support, ket=block.ket, bra=block.bra, noise=block.noise
+                        qubit_support=qubit_support,
+                        ket=block.ket,
+                        bra=block.bra,
+                        noise=convert_digital_noise(block.noise),
                     )
                 ]
         else:
@@ -259,12 +267,16 @@ def convert_block(
         pyq_cls = getattr(pyq, block.name)
         if isinstance(block, ParametricBlock):
             if isinstance(block, U):
-                op = pyq_cls(qubit_support[0], *config.get_param_name(block), noise=block.noise)
+                op = pyq_cls(
+                    qubit_support[0],
+                    *config.get_param_name(block),
+                    noise=convert_digital_noise(block.noise),
+                )
             else:
                 param = extract_parameter(block, config)
-                op = pyq_cls(qubit_support[0], param, noise=block.noise)
+                op = pyq_cls(qubit_support[0], param, noise=convert_digital_noise(block.noise))
         else:
-            op = pyq_cls(qubit_support[0], noise=block.noise)  # type: ignore [attr-defined]
+            op = pyq_cls(qubit_support[0], noise=convert_digital_noise(block.noise))  # type: ignore [attr-defined]
         return [op]
     elif isinstance(block, tuple(two_qubit_gateset)):
         pyq_cls = getattr(pyq, block.name)
@@ -273,10 +285,12 @@ def convert_block(
                 qubit_support[0],
                 qubit_support[1],
                 extract_parameter(block, config),
-                noise=block.noise,
+                noise=convert_digital_noise(block.noise),
             )
         else:
-            op = pyq_cls(qubit_support[0], qubit_support[1], noise=block.noise)  # type: ignore [attr-defined]
+            op = pyq_cls(
+                qubit_support[0], qubit_support[1], noise=convert_digital_noise(block.noise)  # type: ignore [attr-defined]
+            )
         return [op]
     elif isinstance(block, tuple(three_qubit_gateset) + tuple(multi_qubit_gateset)):
         block_name = block.name[1:] if block.name.startswith("M") else block.name
@@ -286,13 +300,17 @@ def convert_block(
                 qubit_support[:-1],
                 qubit_support[-1],
                 extract_parameter(block, config),
-                noise=block.noise,
+                noise=convert_digital_noise(block.noise),
             )
         else:
             if "CSWAP" in block_name:
-                op = pyq_cls(qubit_support[:-2], qubit_support[-2:], noise=block.noise)  # type: ignore [attr-defined]
+                op = pyq_cls(
+                    qubit_support[:-2], qubit_support[-2:], noise=convert_digital_noise(block.noise)  # type: ignore [attr-defined]
+                )
             else:
-                op = pyq_cls(qubit_support[:-1], qubit_support[-1], noise=block.noise)  # type: ignore [attr-defined]
+                op = pyq_cls(
+                    qubit_support[:-1], qubit_support[-1], noise=convert_digital_noise(block.noise)  # type: ignore [attr-defined]
+                )
         return [op]
     else:
         raise NotImplementedError(
@@ -300,3 +318,17 @@ def convert_block(
             "In case you are trying to run an `AnalogBlock`, make sure you "
             "specify the `device_specs` in your `Register` first."
         )
+
+
+def convert_digital_noise(noise: NoiseHandler | None) -> pyq.NoiseProtocol | None:
+    if noise is None:
+        return None
+    digital_part = noise.filter("Digital")
+    if digital_part is None:
+        return None
+    return pyq.NoiseProtocol(
+        [
+            DigitalNoiseType(n.protocol, n.options.get("error_probability"))
+            for n in digital_part.noise_sources
+        ]
+    )
