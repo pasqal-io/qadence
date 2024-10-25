@@ -60,7 +60,7 @@ def test_noisy_simulations(noiseless_pulser_sim: Tensor, noisy_pulser_sim: Tenso
 
     noise_type = NoiseType.DEPOLARIZING
     options = {"noise_probs": 0.1}
-    noise = NoiseHandler(protocol=noise_type, options=options, type=NoiseProtocolType.ANALOG)
+    noise = NoiseHandler(protocol=noise_type, options=options, noise_type=NoiseProtocolType.ANALOG)
     model_noisy = QuantumModel(
         circuit=circuit,
         observable=observable,
@@ -86,7 +86,7 @@ def test_batched_noisy_simulations(
 
     noise_type = NoiseType.DEPHASING
     options = {"noise_probs": [0.1, 0.2, 0.3, 0.4]}
-    noise = NoiseHandler(protocol=noise_type, options=options, type=NoiseProtocolType.ANALOG)
+    noise = NoiseHandler(protocol=noise_type, options=options, noise_type=NoiseProtocolType.ANALOG)
     model_noisy = QuantumModel(
         circuit=circuit,
         observable=observable,
