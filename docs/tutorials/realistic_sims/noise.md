@@ -1,6 +1,19 @@
 Running programs on NISQ devices often leads to partially useful results due to the presence of noise.
-In order to perform realistic simulations, a number of noise models are supported in Qadence and
+In order to perform realistic simulations, a number of noise models (for digital operations, analog operations and simulated readout errors) are supported in Qadence and
 corresponding error mitigation techniques whenever possible.
+
+# NoiseHandler
+
+Noise models can be defined via the `NoiseHandler`. It is a container of several `NoiseSource` instances which require to specify a `protocol` name,
+a dictionary of `options`, and a `protocol_type`. The latter optional field is to differentiate between `Analog`, `Digital` or `Readout` (available via `NoiseProtocolType`) when a `protocol` can be available as both a digital and analog noise model (such as depolarizing).
+
+```python exec="on" source="material-block" session="noise" result="json"
+from qadence import NoiseHandler, NoiseSource, NoiseType, NoiseProtocolType
+
+analog_noise = NoiseHandler(protocol=NoiseType.DEPOLARIZING, options={"noise_probs": 0.1}, protocol_type=NoiseProtocolType.ANALOG)
+digital_noise = NoiseHandler(protocol=NoiseType.DEPOLARIZING, options={"error_probability": 0.1}, protocol_type=NoiseProtocolType.ANALOG)
+readout_noise = NoiseHandler(protocol=NoiseType.READOUT, options={"error_probability": 0.1, "seed": 0})
+```
 
 ## Readout errors
 
@@ -16,9 +29,8 @@ Qadence offers to simulate readout errors with the `NoiseHandler` to corrupt the
 samples of a simulation, through execution via a `QuantumModel`:
 
 ```python exec="on" source="material-block" session="noise" result="json"
-from qadence import QuantumModel, QuantumCircuit, kron, H, Z, NoiseType
+from qadence import QuantumModel, QuantumCircuit, kron, H, Z
 from qadence import hamiltonian_factory
-from qadence.noise import NoiseHandler
 
 # Simple circuit and observable construction.
 block = kron(H(0), Z(1))

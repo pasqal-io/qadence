@@ -320,15 +320,17 @@ def convert_block(
         )
 
 
-def convert_digital_noise(noise: NoiseHandler | None) -> pyq.NoiseProtocol | None:
+def convert_digital_noise(noise: NoiseHandler | None) -> pyq.noise.NoiseProtocol | None:
     if noise is None:
         return None
     digital_part = noise.filter("Digital")
     if digital_part is None:
         return None
-    return pyq.NoiseProtocol(
+    return pyq.noise.NoiseProtocol(
         [
-            DigitalNoiseType(n.protocol, n.options.get("error_probability"))
+            pyq.noise.NoiseProtocol(
+                DigitalNoiseType(n.protocol), n.options.get("error_probability")
+            )
             for n in digital_part.noise_sources
         ]
     )

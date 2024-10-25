@@ -4,9 +4,20 @@ import random
 
 import pytest
 import strategies as st  # type: ignore
+import torch
 from hypothesis import given, settings
 
-from qadence import DigitalNoiseType, NoiseHandler, QuantumCircuit, set_noise
+from qadence import (
+    DigitalNoiseType,
+    H,
+    NoiseHandler,
+    QuantumCircuit,
+    QuantumModel,
+    Z,
+    hamiltonian_factory,
+    kron,
+    set_noise,
+)
 
 list_noises = [DigitalNoiseType(noise.value) for noise in DigitalNoiseType]
 
@@ -44,5 +55,17 @@ def test_set_noise_restricted(protocol: str, circuit: QuantumCircuit) -> None:
             assert block.noise is None
 
 
-# def test_raise_errors():
-#     with pytest.raises(ValueError):
+def test_run_digital() -> None:
+    block = kron(H(0), Z(1))
+    circuit = QuantumCircuit(2, block)
+    observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
+    noise = NoiseHandler(DigitalNoiseType.BITFLIP, {"error_probability": 0.1})
+
+    # Construct a quantum model.
+    model = QuantumModel(circuit=circuit, observable=observable)
+    noiseless_exp = model.expectation()
+
+    set_noise(circuit, noise)
+    noisy_model = QuantumModel(circuit=circuit, observable=observable)
+    noisy_expectation = noisy_model.expectation()
+    assert not torch.allclose(noiseless_exp, noisy_expectation)
