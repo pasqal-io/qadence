@@ -118,7 +118,7 @@ def sample(
     n_shots: int = 100,
     backend: BackendName = BackendName.PYQTORCH,
     endianness: Endianness = Endianness.BIG,
-    noise: NoiseHandler | None = None,
+    noise: Union[NoiseHandler | None] = None,
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> list[Counter]:
     """Convenience wrapper for the `QuantumModel.sample` method.
@@ -146,7 +146,7 @@ def _(
     state: Union[Tensor, None] = None,
     n_shots: int = 100,
     backend: BackendName = BackendName.PYQTORCH,
-    noise: NoiseHandler | None = None,
+    noise: Union[NoiseHandler | None] = None,
     endianness: Endianness = Endianness.BIG,
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> list[Counter]:
@@ -189,7 +189,7 @@ def expectation(
     state: Tensor = None,
     backend: BackendName = BackendName.PYQTORCH,
     diff_mode: Union[DiffMode, str, None] = None,
-    noise: NoiseHandler | None = None,
+    noise: Union[NoiseHandler | None] = None,
     endianness: Endianness = Endianness.BIG,
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> Tensor:
@@ -242,7 +242,7 @@ def _(
     backend: BackendName = BackendName.PYQTORCH,
     diff_mode: Union[DiffMode, str, None] = None,
     measurement: Measurements = None,
-    noise: NoiseHandler | None = None,
+    noise: Union[NoiseHandler | None] = None,
     mitigation: Mitigations = None,
     endianness: Endianness = Endianness.BIG,
     configuration: Union[BackendConfiguration, dict, None] = None,
