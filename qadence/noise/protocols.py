@@ -20,7 +20,7 @@ class NoiseSource:
     def __init__(self, protocol: str, options: dict = dict(), protocol_type: str = "") -> None:
         if protocol not in supported_noise_protocols:
             raise ValueError(
-                "Protocol {protocol} is not supported. Choose from {supported_noise_protocols}."
+                f"Protocol {protocol} is not supported. Choose from {supported_noise_protocols}."
             )
 
         self.protocol: str = protocol
@@ -74,7 +74,7 @@ class NoiseSource:
 
     @classmethod
     def _from_dict(cls, d: dict | None) -> NoiseSource | None:
-        if d:
+        if d is not None:
             protocol_type = d.get("protocol_type", "")
             return cls(d["protocol"], **d["options"], protocol_type=protocol_type)
         return None
@@ -110,7 +110,7 @@ class NoiseHandler:
                 else [protocol_type] * len(protocol)
             )
 
-            if len(options) != len(protocol) or len(types) != len(protocol):
+            if len(options) != len(protocol) and len(types) != len(protocol):
                 raise ValueError("Specify lists of same length when defining noises.")
 
             for proto, opt_proto, type_proto in zip(protocol, options, types):
@@ -149,7 +149,7 @@ class NoiseHandler:
 
     @classmethod
     def _from_dict(cls, d: dict | None) -> NoiseHandler | None:
-        if d:
+        if d is not None:
             protocol_type = d.get("protocol_type", "")
             return cls(d["protocol"], **d["options"], protocol_type=protocol_type)
         return None
