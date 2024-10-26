@@ -11,7 +11,7 @@ from scipy.linalg import norm
 from scipy.optimize import LinearConstraint, minimize
 
 from qadence.mitigations.protocols import Mitigations
-from qadence.noise.protocols import NoiseHandler, NoiseSource
+from qadence.noise.protocols import NoiseHandler
 from qadence.types import NoiseProtocolType, ReadOutOptimization
 
 
@@ -88,9 +88,9 @@ def mitigation_minimization(
     Returns:
         Mitigated counts computed by the algorithm
     """
-    readout_noise = noise if isinstance(noise, NoiseSource) else noise.noise_sources[-1]
-    if readout_noise.protocol != NoiseProtocolType.READOUT:
-        raise ValueError("Specify a noise source of type Readout.")
+    readout_noise = noise.noise_sources[-1]
+    if readout_noise.protocol_type != NoiseProtocolType.READOUT:
+        raise ValueError(f"Specify a noise source of type {NoiseProtocolType.READOUT}.")
     noise_matrices = readout_noise.options.get(
         "noise_matrix", readout_noise.options["confusion_matrices"]
     )
