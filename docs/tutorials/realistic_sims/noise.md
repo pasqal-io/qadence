@@ -1,5 +1,5 @@
 Running programs on NISQ devices often leads to partially useful results due to the presence of noise.
-In order to perform realistic simulations, a number of noise models (for digital operations, analog operations and simulated readout errors) are supported in Qadence and
+In order to perform realistic simulations, a number of noise models (for digital operations, analog operations and simulated readout errors) are supported in Qadence through their implementation in backends and
 corresponding error mitigation techniques whenever possible.
 
 # NoiseHandler
