@@ -22,6 +22,12 @@ from qadence import (
 list_noises = [noise for noise in NoiseProtocol.DIGITAL]
 
 
+def test_serialization() -> None:
+    noise = NoiseHandler.bitflip({"error_probability": 0.2})
+    serialized_noise = NoiseHandler._from_dict(noise._to_dict())
+    assert noise == serialized_noise
+
+
 @pytest.mark.parametrize("protocol", list_noises)
 @given(st.digital_circuits())
 @settings(deadline=None)

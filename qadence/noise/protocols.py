@@ -59,6 +59,13 @@ class NoiseSource:
     def __repr__(self) -> str:
         return f"NoiseSource({self.protocol}, {str(self.options)})"
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, NoiseSource):
+            raise TypeError(f"Cant compare {type(self)} to {type(other)}")
+        if isinstance(other, type(self)):
+            return self.protocol == other.protocol and self.options == other.options
+        return False
+
 
 class NoiseHandler:
     """A container for multiple sources of noise."""
@@ -106,6 +113,13 @@ class NoiseHandler:
 
     def __repr__(self) -> str:
         return "\n".join([str(n) for n in self.noise_sources])
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, NoiseHandler):
+            raise TypeError(f"Cant compare {type(self)} to {type(other)}")
+        if isinstance(other, type(self)):
+            return all([n1 == n2 for n1, n2 in zip(self.noise_sources, other.noise_sources)])
+        return False
 
     def _to_dict(self) -> dict:
         return {

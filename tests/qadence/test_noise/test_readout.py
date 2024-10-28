@@ -220,3 +220,9 @@ def test_readout_error_with_measurements(
         exact_value = torch.abs(exact).item()
         atol = exact_value / 3.0 if exact_value != 0.0 else 0.33
         assert torch.allclose(noisy, exact, atol=atol)
+
+
+def test_serialization() -> None:
+    noise = NoiseHandler(protocol=NoiseProtocol.READOUT.READOUT)
+    serialized_noise = NoiseHandler._from_dict(noise._to_dict())
+    assert noise == serialized_noise
