@@ -9,11 +9,11 @@ a dictionary of `options`. The `protocol` field is to be instantiated from `Nois
 
 ```python exec="on" source="material-block" session="noise" result="json"
 from qadence import NoiseHandler, NoiseSource
-from qadence.types import NoiseType, NoiseProtocol
+from qadence.types import NoiseProtocol
 
-analog_noise = NoiseHandler(protocol=NoiseType.ANALOG.DEPOLARIZING, options={"noise_probs": 0.1})
-digital_noise = NoiseHandler(protocol=NoiseType.DIGITAL.DEPOLARIZING, options={"error_probability": 0.1})
-readout_noise = NoiseHandler(protocol=NoiseType.READOUT.READOUT, options={"error_probability": 0.1, "seed": 0})
+analog_noise = NoiseHandler(protocol=NoiseProtocol.ANALOG.DEPOLARIZING, options={"noise_probs": 0.1})
+digital_noise = NoiseHandler(protocol=NoiseProtocol.DIGITAL.DEPOLARIZING, options={"error_probability": 0.1})
+readout_noise = NoiseHandler(protocol=NoiseProtocol.READOUT.READOUT, options={"error_probability": 0.1, "seed": 0})
 ```
 
 ## Readout errors
@@ -42,7 +42,7 @@ observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
 model = QuantumModel(circuit=circuit, observable=observable)
 
 # Define a noise model to use.
-noise = NoiseHandler(protocol=NoiseType.READOUT.READOUT)
+noise = NoiseHandler(protocol=NoiseProtocol.READOUT.READOUT)
 
 # Run noiseless and noisy simulations.
 noiseless_samples = model.sample(n_shots=100)
@@ -68,7 +68,7 @@ from qadence.measurements import Measurements
 
 # Define a noise model with options.
 options = {"error_probability": 0.01}
-noise = NoiseHandler(protocol=NoiseType.READOUT.READOUT, options=options)
+noise = NoiseHandler(protocol=NoiseProtocol.READOUT.READOUT, options=options)
 
 # Define a tomographical measurement protocol with options.
 options = {"n_shots": 10000}
@@ -84,13 +84,13 @@ print(f"noisy = {noisy_exp}") # markdown-exec: hide
 
 ## Digital noisy simulation
 
-When dealing with programs involving only digital operations, several options are made available from [PyQTorch](https://pasqal-io.github.io/pyqtorch/latest/noise/) via the `DigitalNoiseType`. One can define noisy digital operations with `DigitalNoise`as follows:
+When dealing with programs involving only digital operations, several options are made available from [PyQTorch](https://pasqal-io.github.io/pyqtorch/latest/noise/) via the `NoiseProtocol.DIGITAL`. One can define noisy digital operations with `DigitalNoise`as follows:
 
 ```python exec="on" source="material-block" session="noise" result="json"
-from qadence import DigitalNoiseType, RX, run
+from qadence import NoiseProtocol, RX, run
 import torch
 
-noise = NoiseHandler(DigitalNoiseType.BITFLIP, {"error_probability": 0.2})
+noise = NoiseHandler(NoiseProtocol.DIGITAL.BITFLIP, {"error_probability": 0.2})
 noise = NoiseHandler.bitflip({"error_probability": 0.2}) # equivalent
 
 op = RX(0, torch.pi, noise = noise)
