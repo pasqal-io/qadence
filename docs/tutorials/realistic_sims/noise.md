@@ -5,7 +5,7 @@ corresponding error mitigation techniques whenever possible.
 # NoiseHandler
 
 Noise models can be defined via the `NoiseHandler`. It is a container of several `NoiseSource` instances which require to specify a `protocol`,
-a dictionary of `options`. The `protocol` field is to be instantiated from `NoiseProtocol` .
+a dictionary of `options`. The `protocol` field is to be instantiated from `NoiseProtocol`.
 
 ```python exec="on" source="material-block" session="noise" result="json"
 from qadence import NoiseHandler, NoiseSource
@@ -15,6 +15,22 @@ analog_noise = NoiseHandler(protocol=NoiseProtocol.ANALOG.DEPOLARIZING, options=
 digital_noise = NoiseHandler(protocol=NoiseProtocol.DIGITAL.DEPOLARIZING, options={"error_probability": 0.1})
 readout_noise = NoiseHandler(protocol=NoiseProtocol.READOUT.READOUT, options={"error_probability": 0.1, "seed": 0})
 ```
+
+One can also define a `NoiseHandler` as a list of `NoiseSource` instances:
+
+```python exec="on" source="material-block" session="noise" result="json"
+from qadence import NoiseHandler, NoiseSource
+from qadence.types import NoiseProtocol
+
+digital_noise = NoiseSource(protocol=NoiseProtocol.DIGITAL.DEPOLARIZING, options={"error_probability": 0.1})
+readout_noise = NoiseSource(protocol=NoiseProtocol.READOUT.READOUT, options={"error_probability": 0.1, "seed": 0})
+
+noise_combination = NoiseHandler([digital_noise, readout_noise])
+print(noise_combination)
+```
+
+!!! warning "NoiseHandler scope"
+    Note it is not possible to define a `NoiseHandler` instances with both digital and analog noise sources, both readout and analog noise sources, several analog noise sources, several readout noise sources, or a readout noise source that is not the last defined `NoiseSource` within `NoiseHandler`.
 
 ## Readout errors
 
@@ -82,9 +98,38 @@ print(f"noiseless = {noiseless_exp}") # markdown-exec: hide
 print(f"noisy = {noisy_exp}") # markdown-exec: hide
 ```
 
+## Analog noisy simulation
+
+At the moment, analog noisy simulations are only compatable with the Pulser backend.
+```python exec="on" source="material-block" session="noise" result="json"
+from qadence import DiffMode, NoiseHandler, QuantumModel
+from qadence.blocks import chain, kron
+from qadence.circuit import QuantumCircuit
+from qadence.operations import AnalogRX, AnalogRZ, Z
+from qadence.types import PI, BackendName, NoiseProtocol
+
+
+analog_block = chain(AnalogRX(PI / 2.0), AnalogRZ(PI))
+observable = Z(0) + Z(1)
+circuit = QuantumCircuit(2, analog_block)
+
+options = {"noise_probs": 0.1}
+noise = NoiseHandler(protocol=NoiseProtocol.ANALOG.DEPOLARIZING, options=options)
+model_noisy = QuantumModel(
+    circuit=circuit,
+    observable=observable,
+    backend=BackendName.PULSER,
+    diff_mode=DiffMode.GPSR,
+    noise=noise,
+)
+noisy_expectation = model_noisy.expectation()
+print(f"noisy = {noisy_expectation}") # markdown-exec: hide
+```
+
+
 ## Digital noisy simulation
 
-When dealing with programs involving only digital operations, several options are made available from [PyQTorch](https://pasqal-io.github.io/pyqtorch/latest/noise/) via the `NoiseProtocol.DIGITAL`. One can define noisy digital operations with `DigitalNoise`as follows:
+When dealing with programs involving only digital operations, several options are made available from [PyQTorch](https://pasqal-io.github.io/pyqtorch/latest/noise/) via the `NoiseProtocol.DIGITAL`. One can define noisy digital operations as follows:
 
 ```python exec="on" source="material-block" session="noise" result="json"
 from qadence import NoiseProtocol, RX, run
