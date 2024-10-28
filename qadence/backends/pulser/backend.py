@@ -243,7 +243,7 @@ class Backend(BackendInterface):
         vals = to_list_of_dicts(param_values)
         noise_source = noise.noise_sources[-1]
         if not isinstance(noise_source.protocol, NoiseProtocol.ANALOG):
-            raise TypeError("Noise must be Analog.")
+            raise TypeError("Noise must be of type `NoiseProtocol.ANALOG`.")
         noise_probs = noise_source.options.get("noise_probs", None)
 
         def run_noisy_sim(noise_prob: float) -> Tensor:
