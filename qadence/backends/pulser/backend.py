@@ -29,7 +29,7 @@ from qadence.noise.protocols import apply_readout_noise
 from qadence.overlap import overlap_exact
 from qadence.register import Register
 from qadence.transpile import transpile
-from qadence.types import BackendName, DeviceType, Endianness, Engine, NoiseProtocolType
+from qadence.types import BackendName, DeviceType, Endianness, Engine, NoiseProtocol
 
 from .channels import GLOBAL_CHANNEL, LOCAL_CHANNEL
 from .cloud import get_client
@@ -242,8 +242,8 @@ class Backend(BackendInterface):
     ) -> Tensor:
         vals = to_list_of_dicts(param_values)
         noise_source = noise.noise_sources[-1]
-        if noise_source.protocol_type != NoiseProtocolType.ANALOG:
-            raise TypeError("Noise must be analog.")
+        if not isinstance(noise_source.protocol, NoiseProtocol.ANALOG):
+            raise TypeError("Noise must be Analog.")
         noise_probs = noise_source.options.get("noise_probs", None)
 
         def run_noisy_sim(noise_prob: float) -> Tensor:

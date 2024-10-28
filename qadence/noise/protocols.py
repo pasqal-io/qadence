@@ -3,59 +3,34 @@ from __future__ import annotations
 import importlib
 from typing import Any, Callable, Counter, cast
 
-from qadence.types import DigitalNoiseType, NoiseProtocolType, NoiseType
+from qadence.types import NoiseEnum, NoiseProtocol
 
 PROTOCOL_TO_MODULE = {
     "Readout": "qadence.noise.readout",
 }
 
-# Temporary solution
-digital_noise_protocols = set(DigitalNoiseType.list())
-supported_noise_protocols = NoiseType.list()
-
 
 class NoiseSource:
     """A container for a single source of noise."""
 
-    def __init__(self, protocol: str, options: dict = dict(), protocol_type: str = "") -> None:
-        if protocol not in supported_noise_protocols:
-            raise ValueError(
-                f"Protocol {protocol} is not supported. Choose from {supported_noise_protocols}."
-            )
-
-        self.protocol: str = protocol
-
+    def __init__(self, protocol: NoiseEnum, options: dict = dict()) -> None:
+        self.protocol: NoiseEnum = protocol
         self.options: dict = options
-
-        self.protocol_type: str = protocol_type
-
-        # forcing in certain cases the type of predefined protocols
-        if self.protocol_type == "":
-            if protocol == "Readout":
-                self.protocol_type = NoiseProtocolType.READOUT
-            if self.protocol == "Dephasing":
-                self.protocol_type = NoiseProtocolType.ANALOG
-            if self.protocol in digital_noise_protocols:
-                self.protocol_type = NoiseProtocolType.DIGITAL
-        else:
-            if self.protocol_type not in [NoiseProtocolType(t.value) for t in NoiseProtocolType]:
-                raise ValueError("Noise type {self.protocol_type} is not supported.")
 
         self.verify_options()
 
     def verify_options(self) -> None:
-        if self.protocol_type != NoiseProtocolType.READOUT:
+        if not isinstance(self.protocol, NoiseProtocol.READOUT):
             name_mandatory_option = (
                 "noise_probs"
-                if self.protocol_type == NoiseProtocolType.ANALOG
+                if isinstance(self.protocol, NoiseProtocol.ANALOG)
                 else "error_probability"
             )
             noise_probs = self.options.get(name_mandatory_option, None)
             if noise_probs is None:
-                KeyError(
-                    "A `{name_mandatory_option}` option should be passed \
-                      to the NoiseSource of type {self.protocol_type}."
-                )
+                error_txt = f"A `{name_mandatory_option}` option"
+                error_txt += f"should be passed to {self.protocol} NoiseSource."
+                raise KeyError(error_txt)
 
     def get_noise_fn(self) -> Callable:
         try:
@@ -69,14 +44,12 @@ class NoiseSource:
         return {
             "protocol": self.protocol,
             "options": self.options,
-            "protocol_type": self.protocol_type,
         }
 
     @classmethod
     def _from_dict(cls, d: dict | None) -> NoiseSource | None:
-        if d is not None and d.get("protocol", None) is not None:
-            protocol_type = d.get("protocol_type", "")
-            return cls(d["protocol"], **d["options"], protocol_type=protocol_type)
+        if d is not None and d.get("protocol", None):
+            return cls(d["protocol"], d["options"])
         return None
 
     @classmethod
@@ -84,7 +57,7 @@ class NoiseSource:
         return list(filter(lambda el: not el.startswith("__"), dir(cls)))
 
     def __repr__(self) -> str:
-        return f"{self.protocol_type} NoiseSource({self.protocol}, {str(self.options)})"
+        return f"NoiseSource({self.protocol}, {str(self.options)})"
 
 
 class NoiseHandler:
@@ -92,9 +65,8 @@ class NoiseHandler:
 
     def __init__(
         self,
-        protocol: str | NoiseSource | list[str] | list[NoiseSource],
+        protocol: NoiseEnum | list[NoiseEnum] | NoiseSource | list[NoiseSource],
         options: dict | list[dict] = dict(),
-        protocol_type: str | list[str] = "",
     ) -> None:
         self.noise_sources: list = list()
         if isinstance(protocol, list) and isinstance(protocol[0], NoiseSource):
@@ -104,35 +76,30 @@ class NoiseHandler:
         else:
             protocol = protocol if isinstance(protocol, list) else [protocol]
             options = options if isinstance(options, list) else [options] * len(protocol)
-            types = (
-                protocol_type
-                if isinstance(protocol_type, list)
-                else [protocol_type] * len(protocol)
-            )
 
-            if len(options) != len(protocol) and len(types) != len(protocol):
+            if len(options) != len(protocol):
                 raise ValueError("Specify lists of same length when defining noises.")
 
-            for proto, opt_proto, type_proto in zip(protocol, options, types):
-                self.noise_sources.append(NoiseSource(proto, opt_proto, type_proto))  # type: ignore [arg-type]
+            for proto, opt_proto in zip(protocol, options):
+                self.noise_sources.append(NoiseSource(proto, opt_proto))  # type: ignore [arg-type]
 
         if len(self.noise_sources) == 0:
             raise ValueError("NoiseHandler should be specified with one valid configuration.")
 
-        types = [n.protocol_type for n in self.noise_sources]
+        types = [type(n.protocol) for n in self.noise_sources]
 
         unique_types = set(types)
-        if NoiseProtocolType.DIGITAL in unique_types and NoiseProtocolType.ANALOG in unique_types:
+        if NoiseProtocol.DIGITAL in unique_types and NoiseProtocol.ANALOG in unique_types:
             raise ValueError("Cannot define a config with both Digital and Analog noises.")
 
-        if NoiseProtocolType.ANALOG in unique_types:
-            if NoiseProtocolType.READOUT in unique_types:
+        if NoiseProtocol.ANALOG in unique_types:
+            if NoiseProtocol.READOUT in unique_types:
                 raise ValueError("Cannot define a config with both READOUT and Analog noises.")
-            if types.count(NoiseProtocolType.ANALOG) > 1:
+            if types.count(NoiseProtocol.ANALOG) > 1:
                 raise ValueError("Multiple Analog NoiseSources are not supported yet.")
 
-        if NoiseProtocolType.READOUT in unique_types:
-            if types[-1] != NoiseProtocolType.READOUT or types.count(NoiseProtocolType.READOUT) > 1:
+        if NoiseProtocol.READOUT in unique_types:
+            if types[-1] != NoiseProtocol.READOUT or types.count(NoiseProtocol.READOUT) > 1:
                 raise ValueError(
                     "Only define a NoiseHandler with one READOUT as the last NoiseSource."
                 )
@@ -144,61 +111,61 @@ class NoiseHandler:
         return {
             "protocol": [n.protocol for n in self.noise_sources],
             "options": [n.options for n in self.noise_sources],
-            "protocol_type": [n.protocol_type for n in self.noise_sources],
         }
 
     @classmethod
     def _from_dict(cls, d: dict | None) -> NoiseHandler | None:
-        if d is not None and d.get("protocol", None) is not None:
-            protocol_type = d.get("protocol_type", "")
-            return cls(d["protocol"], **d["options"], protocol_type=protocol_type)
+        if d is not None and d.get("protocol", None):
+            return cls(d["protocol"], d["options"])
         return None
 
     @classmethod
     def list(cls) -> list:
         return list(filter(lambda el: not el.startswith("__"), dir(cls)))
 
-    def filter(self, protocol_type: str) -> NoiseHandler | None:
-        list_noises = [
-            n for n in self.noise_sources if n.protocol_type == NoiseProtocolType(protocol_type)
-        ]
+    def filter(self, protocol_type: NoiseEnum) -> NoiseHandler | None:
+        list_noises = [n for n in self.noise_sources if isinstance(n.protocol, protocol_type)]  # type: ignore [arg-type]
         return NoiseHandler(list_noises) if len(list_noises) > 0 else None
 
     @classmethod
     def bitflip(cls, *args: Any, **kwargs: Any) -> NoiseHandler:
-        return cls(NoiseType.BITFLIP, *args, **kwargs)
+        return cls(NoiseProtocol.DIGITAL.BITFLIP, *args, **kwargs)
 
     @classmethod
     def phaseflip(cls, *args: Any, **kwargs: Any) -> NoiseHandler:
-        return cls(NoiseType.PHASEFLIP, *args, **kwargs)
+        return cls(NoiseProtocol.DIGITAL.PHASEFLIP, *args, **kwargs)
 
     @classmethod
-    def depolarizing(cls, *args: Any, **kwargs: Any) -> NoiseHandler:
-        return cls(NoiseType.DEPOLARIZING, *args, **kwargs)
+    def digital_depolarizing(cls, *args: Any, **kwargs: Any) -> NoiseHandler:
+        return cls(NoiseProtocol.DIGITAL.DEPOLARIZING, *args, **kwargs)
 
     @classmethod
     def pauli_channel(cls, *args: Any, **kwargs: Any) -> NoiseHandler:
-        return cls(NoiseType.PAULI_CHANNEL, *args, **kwargs)
+        return cls(NoiseProtocol.DIGITAL.PAULI_CHANNEL, *args, **kwargs)
 
     @classmethod
     def amplitude_damping(cls, *args: Any, **kwargs: Any) -> NoiseHandler:
-        return cls(NoiseType.AMPLITUDE_DAMPING, *args, **kwargs)
+        return cls(NoiseProtocol.DIGITAL.AMPLITUDE_DAMPING, *args, **kwargs)
 
     @classmethod
     def phase_damping(cls, *args: Any, **kwargs: Any) -> NoiseHandler:
-        return cls(NoiseType.PHASE_DAMPING, *args, **kwargs)
+        return cls(NoiseProtocol.DIGITAL.PHASE_DAMPING, *args, **kwargs)
 
     @classmethod
     def generalized_amplitude_damping(cls, *args: Any, **kwargs: Any) -> NoiseHandler:
-        return cls(NoiseType.GENERALIZED_AMPLITUDE_DAMPING, *args, **kwargs)
+        return cls(NoiseProtocol.DIGITAL.GENERALIZED_AMPLITUDE_DAMPING, *args, **kwargs)
+
+    @classmethod
+    def analog_depolarizing(cls, *args: Any, **kwargs: Any) -> NoiseHandler:
+        return cls(NoiseProtocol.ANALOG.DEPOLARIZING, *args, **kwargs)
 
     @classmethod
     def dephasing(cls, *args: Any, **kwargs: Any) -> NoiseHandler:
-        return cls(NoiseType.DEPHASING, *args, **kwargs)
+        return cls(NoiseProtocol.ANALOG.DEPHASING, *args, **kwargs)
 
     @classmethod
     def readout(cls, *args: Any, **kwargs: Any) -> NoiseHandler:
-        return cls(NoiseType.READOUT, *args, **kwargs)
+        return cls(NoiseProtocol.READOUT.READOUT, *args, **kwargs)
 
 
 def apply_readout_noise(noise: NoiseHandler, samples: list[Counter]) -> list[Counter]:
@@ -212,7 +179,7 @@ def apply_readout_noise(noise: NoiseHandler, samples: list[Counter]) -> list[Cou
         list[Counter]: Altered samples.
     """
     readout = noise.noise_sources[-1]
-    if readout.protocol_type == NoiseProtocolType.READOUT:
+    if isinstance(readout.protocol, NoiseProtocol.READOUT):
         error_fn = readout.get_noise_fn()
         # Get the number of qubits from the sample keys.
         n_qubits = len(list(samples[0].keys())[0])

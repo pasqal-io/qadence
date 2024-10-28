@@ -12,7 +12,7 @@ from scipy.optimize import LinearConstraint, minimize
 
 from qadence.mitigations.protocols import Mitigations
 from qadence.noise.protocols import NoiseHandler
-from qadence.types import NoiseProtocolType, ReadOutOptimization
+from qadence.types import NoiseProtocol, ReadOutOptimization
 
 
 def corrected_probas(p_corr: npt.NDArray, T: npt.NDArray, p_raw: npt.NDArray) -> np.double:
@@ -89,8 +89,8 @@ def mitigation_minimization(
         Mitigated counts computed by the algorithm
     """
     readout_noise = noise.noise_sources[-1]
-    if readout_noise.protocol_type != NoiseProtocolType.READOUT:
-        raise ValueError(f"Specify a noise source of type {NoiseProtocolType.READOUT}.")
+    if not isinstance(readout_noise.protocol, NoiseProtocol.READOUT):
+        raise ValueError("Specify a noise source of type NoiseProtocol.READOUT.")
     noise_matrices = readout_noise.options.get(
         "noise_matrix", readout_noise.options["confusion_matrices"]
     )

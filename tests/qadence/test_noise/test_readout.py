@@ -30,7 +30,7 @@ from qadence.operations import (
     Y,
     Z,
 )
-from qadence.types import DiffMode, NoiseType
+from qadence.types import DiffMode, NoiseProtocol
 
 
 @pytest.mark.parametrize(
@@ -149,7 +149,7 @@ def test_readout_error_quantum_model(
 
     noisy_samples: list[Counter] = QuantumModel(
         QuantumCircuit(block.n_qubits, block), backend=backend, diff_mode=diff_mode
-    ).sample(noise=NoiseHandler(protocol=NoiseType.READOUT), n_shots=n_shots)
+    ).sample(noise=NoiseHandler(protocol=NoiseProtocol.READOUT.READOUT), n_shots=n_shots)
 
     for noiseless, noisy in zip(noiseless_samples, noisy_samples):
         assert sum(noiseless.values()) == sum(noisy.values()) == n_shots
@@ -173,7 +173,9 @@ def test_readout_error_backends(backend: BackendName) -> None:
     # introduce noise
     options = {"error_probability": error_probability}
     noise = (
-        NoiseHandler(protocol=NoiseType.READOUT, options=options).noise_sources[-1].get_noise_fn()
+        NoiseHandler(protocol=NoiseProtocol.READOUT.READOUT, options=options)
+        .noise_sources[-1]
+        .get_noise_fn()
     )
     noisy_samples = noise(counters=samples, n_qubits=n_qubits)
     # compare that the results are with an error of 10% (the default error_probability)
@@ -204,7 +206,7 @@ def test_readout_error_with_measurements(
     observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
 
     model = QuantumModel(circuit=circuit, observable=observable, diff_mode=DiffMode.GPSR)
-    noise = NoiseHandler(protocol=NoiseType.READOUT)
+    noise = NoiseHandler(protocol=NoiseProtocol.READOUT.READOUT)
     measurement = Measurements(protocol=str(measurement_proto), options=options)
 
     noisy = model.expectation(values=inputs, measurement=measurement, noise=noise)

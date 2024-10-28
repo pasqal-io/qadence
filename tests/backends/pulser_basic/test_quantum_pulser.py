@@ -11,7 +11,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.constructors import total_magnetization
 from qadence.operations import RX, AnalogRX, AnalogRZ, Z
 from qadence.parameters import FeatureParameter, VariationalParameter
-from qadence.types import PI, BackendName, NoiseProtocolType, NoiseType
+from qadence.types import PI, BackendName, NoiseProtocol
 
 
 @pytest.fixture
@@ -58,11 +58,8 @@ def test_noisy_simulations(noiseless_pulser_sim: Tensor, noisy_pulser_sim: Tenso
     )
     noiseless_expectation = model_noiseless.expectation()
 
-    noise_type = NoiseType.DEPOLARIZING
     options = {"noise_probs": 0.1}
-    noise = NoiseHandler(
-        protocol=noise_type, options=options, protocol_type=NoiseProtocolType.ANALOG
-    )
+    noise = NoiseHandler(protocol=NoiseProtocol.ANALOG.DEPOLARIZING, options=options)
     model_noisy = QuantumModel(
         circuit=circuit,
         observable=observable,
@@ -86,11 +83,8 @@ def test_batched_noisy_simulations(
     )
     noiseless_expectation = model_noiseless.expectation()
 
-    noise_type = NoiseType.DEPHASING
     options = {"noise_probs": [0.1, 0.2, 0.3, 0.4]}
-    noise = NoiseHandler(
-        protocol=noise_type, options=options, protocol_type=NoiseProtocolType.ANALOG
-    )
+    noise = NoiseHandler(protocol=NoiseProtocol.ANALOG.DEPHASING, options=options)
     model_noisy = QuantumModel(
         circuit=circuit,
         observable=observable,

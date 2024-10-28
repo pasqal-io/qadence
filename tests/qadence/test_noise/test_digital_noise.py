@@ -8,9 +8,9 @@ import torch
 from hypothesis import given, settings
 
 from qadence import (
-    DigitalNoiseType,
     H,
     NoiseHandler,
+    NoiseProtocol,
     QuantumCircuit,
     QuantumModel,
     Z,
@@ -19,7 +19,7 @@ from qadence import (
     set_noise,
 )
 
-list_noises = [DigitalNoiseType(noise.value) for noise in DigitalNoiseType]
+list_noises = [noise for noise in NoiseProtocol.DIGITAL]
 
 
 @pytest.mark.parametrize("protocol", list_noises)
@@ -59,7 +59,7 @@ def test_run_digital() -> None:
     block = kron(H(0), Z(1))
     circuit = QuantumCircuit(2, block)
     observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
-    noise = NoiseHandler(DigitalNoiseType.BITFLIP, {"error_probability": 0.1})
+    noise = NoiseHandler(NoiseProtocol.DIGITAL.BITFLIP, {"error_probability": 0.1})
 
     # Construct a quantum model.
     model = QuantumModel(circuit=circuit, observable=observable)

@@ -4,16 +4,16 @@ corresponding error mitigation techniques whenever possible.
 
 # NoiseHandler
 
-Noise models can be defined via the `NoiseHandler`. It is a container of several `NoiseSource` instances which require to specify a `protocol` name,
-a dictionary of `options`, and a `protocol_type`. The latter optional field is to differentiate between `Analog`, `Digital` or `Readout` (available via `NoiseProtocolType`) when a `protocol` can be available as both a digital and analog noise model (such as depolarizing).
+Noise models can be defined via the `NoiseHandler`. It is a container of several `NoiseSource` instances which require to specify a `protocol`,
+a dictionary of `options`. The `protocol` field is to be instantiated from `NoiseProtocol` .
 
 ```python exec="on" source="material-block" session="noise" result="json"
 from qadence import NoiseHandler, NoiseSource
-from qadence.types import NoiseType, NoiseProtocolType
+from qadence.types import NoiseType, NoiseProtocol
 
-analog_noise = NoiseHandler(protocol=NoiseType.DEPOLARIZING, options={"noise_probs": 0.1}, protocol_type=NoiseProtocolType.ANALOG)
-digital_noise = NoiseHandler(protocol=NoiseType.DEPOLARIZING, options={"error_probability": 0.1}, protocol_type=NoiseProtocolType.ANALOG)
-readout_noise = NoiseHandler(protocol=NoiseType.READOUT, options={"error_probability": 0.1, "seed": 0})
+analog_noise = NoiseHandler(protocol=NoiseType.ANALOG.DEPOLARIZING, options={"noise_probs": 0.1})
+digital_noise = NoiseHandler(protocol=NoiseType.DIGITAL.DEPOLARIZING, options={"error_probability": 0.1})
+readout_noise = NoiseHandler(protocol=NoiseType.READOUT.READOUT, options={"error_probability": 0.1, "seed": 0})
 ```
 
 ## Readout errors
@@ -42,7 +42,7 @@ observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
 model = QuantumModel(circuit=circuit, observable=observable)
 
 # Define a noise model to use.
-noise = NoiseHandler(protocol=NoiseType.READOUT)
+noise = NoiseHandler(protocol=NoiseType.READOUT.READOUT)
 
 # Run noiseless and noisy simulations.
 noiseless_samples = model.sample(n_shots=100)
@@ -68,7 +68,7 @@ from qadence.measurements import Measurements
 
 # Define a noise model with options.
 options = {"error_probability": 0.01}
-noise = NoiseHandler(protocol=NoiseType.READOUT, options=options)
+noise = NoiseHandler(protocol=NoiseType.READOUT.READOUT, options=options)
 
 # Define a tomographical measurement protocol with options.
 options = {"n_shots": 10000}

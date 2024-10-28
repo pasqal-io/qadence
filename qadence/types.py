@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+from dataclasses import dataclass
 from enum import Enum
 from typing import Callable, Iterable, Tuple, Union
 
@@ -8,7 +9,7 @@ import numpy as np
 import sympy
 from matplotlib.figure import Figure
 from numpy.typing import ArrayLike
-from pyqtorch.noise import NoiseType as DigitalNoiseType
+from pyqtorch.noise import NoiseType as DigitalNoise
 from pyqtorch.utils import SolverType
 from torch import Tensor, pi
 from torch.nn import Module
@@ -26,6 +27,7 @@ TArray = Union[Iterable, Tensor, np.ndarray]
 
 TGenerator = Union[Tensor, sympy.Array, sympy.Basic]
 """Union of torch tensors and numpy arrays."""
+
 
 PI = pi
 
@@ -52,7 +54,7 @@ __all__ = [
     "SerializationFormat",
     "PI",
     "SolverType",
-    "DigitalNoiseType",
+    "NoiseProtocol",
 ]  # type: ignore
 
 
@@ -461,26 +463,27 @@ class ExperimentTrackingTool(StrEnum):
 LoggablePlotFunction = Callable[[Module, int], tuple[str, Figure]]
 
 
-class NoiseProtocolType(StrEnum):
+class AnalogNoise(StrEnum):
     """Type of noise protocol."""
 
-    ANALOG = "Analog"
-    """Noise applied in analog blocks."""
+    DEPOLARIZING = "Depolarizing"
+    DEPHASING = "Dephasing"
+
+
+class ReadoutNoise(StrEnum):
     READOUT = "Readout"
+
+
+@dataclass
+class NoiseProtocol:
+    """Type of noise protocol."""
+
+    ANALOG = AnalogNoise
+    """Noise applied in analog blocks."""
+    READOUT = ReadoutNoise
     """Noise applied on outputs of quantum programs."""
-    DIGITAL = "Digital"
+    DIGITAL = DigitalNoise
     """Noise applied to digital blocks."""
 
 
-class NoiseType(StrEnum):
-    """All available noise."""
-
-    BITFLIP = "BitFlip"
-    PHASEFLIP = "PhaseFlip"
-    DEPOLARIZING = "Depolarizing"
-    PAULI_CHANNEL = "PauliChannel"
-    AMPLITUDE_DAMPING = "AmplitudeDamping"
-    PHASE_DAMPING = "PhaseDamping"
-    GENERALIZED_AMPLITUDE_DAMPING = "GeneralizedAmplitudeDamping"
-    DEPHASING = "Dephasing"
-    READOUT = "Readout"
+NoiseEnum = Union[DigitalNoise, AnalogNoise, ReadoutNoise]
