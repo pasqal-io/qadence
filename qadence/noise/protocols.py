@@ -20,7 +20,7 @@ class NoiseSource:
         self.verify_options()
 
     def verify_options(self) -> None:
-        if not isinstance(self.protocol, NoiseProtocol.READOUT):
+        if self.protocol != NoiseProtocol.READOUT:
             name_mandatory_option = (
                 "noise_probs"
                 if isinstance(self.protocol, NoiseProtocol.ANALOG)
@@ -106,7 +106,7 @@ class NoiseHandler:
                 raise ValueError("Multiple Analog NoiseSources are not supported yet.")
 
         if NoiseProtocol.READOUT in unique_types:
-            if types[-1] != NoiseProtocol.READOUT or types.count(NoiseProtocol.READOUT) > 1:
+            if types[-1] != NoiseProtocol.READOUT or types.count(NoiseProtocol.READOUT) > 1:  # type: ignore [arg-type]
                 raise ValueError(
                     "Only define a NoiseHandler with one READOUT as the last NoiseSource."
                 )
@@ -179,7 +179,7 @@ class NoiseHandler:
 
     @classmethod
     def readout(cls, *args: Any, **kwargs: Any) -> NoiseHandler:
-        return cls(NoiseProtocol.READOUT.READOUT, *args, **kwargs)
+        return cls(NoiseProtocol.READOUT, *args, **kwargs)
 
 
 def apply_readout_noise(noise: NoiseHandler, samples: list[Counter]) -> list[Counter]:
@@ -193,7 +193,7 @@ def apply_readout_noise(noise: NoiseHandler, samples: list[Counter]) -> list[Cou
         list[Counter]: Altered samples.
     """
     readout = noise.noise_sources[-1]
-    if isinstance(readout.protocol, NoiseProtocol.READOUT):
+    if readout.protocol == NoiseProtocol.READOUT:
         error_fn = readout.get_noise_fn()
         # Get the number of qubits from the sample keys.
         n_qubits = len(list(samples[0].keys())[0])

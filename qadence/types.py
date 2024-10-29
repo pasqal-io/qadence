@@ -470,20 +470,16 @@ class AnalogNoise(StrEnum):
     DEPHASING = "Dephasing"
 
 
-class ReadoutNoise(StrEnum):
-    READOUT = "Readout"
-
-
 @dataclass
 class NoiseProtocol:
     """Type of noise protocol."""
 
     ANALOG = AnalogNoise
     """Noise applied in analog blocks."""
-    READOUT = ReadoutNoise
+    READOUT = "Readout"
     """Noise applied on outputs of quantum programs."""
     DIGITAL = DigitalNoise
     """Noise applied to digital blocks."""
 
 
-NoiseEnum = Union[DigitalNoise, AnalogNoise, ReadoutNoise]
+NoiseEnum = Union[DigitalNoise, AnalogNoise, str]

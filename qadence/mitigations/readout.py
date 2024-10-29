@@ -89,7 +89,7 @@ def mitigation_minimization(
         Mitigated counts computed by the algorithm
     """
     readout_noise = noise.noise_sources[-1]
-    if not isinstance(readout_noise.protocol, NoiseProtocol.READOUT):
+    if readout_noise.protocol != NoiseProtocol.READOUT:
         raise ValueError("Specify a noise source of type NoiseProtocol.READOUT.")
     noise_matrices = readout_noise.options.get(
         "noise_matrix", readout_noise.options["confusion_matrices"]
