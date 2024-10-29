@@ -72,22 +72,19 @@ def check_status(connection: SDK, workload_id: str) -> WorkloadResult:
     """
     # TODO Make the function return a "nice" result object
     result = connection.get_workload(workload_id)
-    match result.status:
-        case "PENDING" | "RUNNING" | "PAUSED":
-            raise WorkloadNotDoneError(
-                f"Workload with id {workload_id} is not yet finished, the status is {result.status}"
-            )
-        case "DONE":
-            return result
-        case "CANCELED" | "TIMED_OUT" | "ERROR":
-            raise WorkloadStoppedError(
-                f"Workload with id {workload_id} couldn't finish, the status is {result.status}"
-            )
-        case _:
-            raise ValueError(
-                f"Undefined workload status ({result.status}) was returned for "
-                + f"workload ({result.id})"
-            )
+    if result.status == "DONE":
+        return result
+    if result.status in ("PENDING", "RUNNING", "PAUSED"):
+        raise WorkloadNotDoneError(
+            f"Workload with id {workload_id} is not yet finished, the status is {result.status}"
+        )
+    if result.status in ("CANCELED", "TIMED_OUT", "ERROR"):
+        raise WorkloadStoppedError(
+            f"Workload with id {workload_id} couldn't finish, the status is {result.status}"
+        )
+    raise ValueError(
+        f"Undefined workload status ({result.status}) was returned for workload ({result.id})"
+    )
 
 
 def get_result(
