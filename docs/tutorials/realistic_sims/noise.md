@@ -29,6 +29,21 @@ noise_combination = NoiseHandler([digital_noise, readout_noise])
 print(noise_combination)
 ```
 
+And finally one can append to a `NoiseHandler`  `NoiseSource` or `NoiseHandler` instances:
+
+```python exec="on" source="material-block" session="noise" result="json"
+from qadence import NoiseHandler, NoiseSource
+from qadence.types import NoiseProtocol
+
+bf_noise = NoiseSource(protocol=NoiseProtocol.DIGITAL.BITFLIP, options={"error_probability": 0.1})
+depo_noise = NoiseSource(protocol=NoiseProtocol.DIGITAL.DEPOLARIZING, options={"error_probability": 0.1})
+readout_noise = NoiseSource(protocol=NoiseProtocol.READOUT, options={"error_probability": 0.1, "seed": 0})
+
+noise_combination = NoiseHandler(bf_noise)
+noise_combination.append([depo_noise, readout_noise])
+print(noise_combination)
+```
+
 !!! warning "NoiseHandler scope"
     Note it is not possible to define a `NoiseHandler` instances with both digital and analog noise sources, both readout and analog noise sources, several analog noise sources, several readout noise sources, or a readout noise source that is not the last defined `NoiseSource` within `NoiseHandler`.
 
@@ -63,6 +78,16 @@ noise = NoiseHandler(protocol=NoiseProtocol.READOUT)
 # Run noiseless and noisy simulations.
 noiseless_samples = model.sample(n_shots=100)
 noisy_samples = model.sample(noise=noise, n_shots=100)
+
+print(f"noiseless = {noiseless_samples}") # markdown-exec: hide
+print(f"noisy = {noisy_samples}") # markdown-exec: hide
+```
+
+Note we can apply directly the method `apply_readout_noise` to the noiseless samples as follows:
+
+```python exec="on" source="material-block" session="noise" result="json"
+from qadence.noise import apply_readout_noise
+altered_samples = apply_readout_noise(noise, noiseless_samples)
 
 print(f"noiseless = {noiseless_samples}") # markdown-exec: hide
 print(f"noisy = {noisy_samples}") # markdown-exec: hide

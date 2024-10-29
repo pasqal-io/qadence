@@ -11,7 +11,18 @@ PROTOCOL_TO_MODULE = {
 
 
 class NoiseSource:
-    """A container for a single source of noise."""
+    """A container for a single source of noise.
+
+    Args:
+        protocol: The name of the protocol. To be taken from `NoiseProtocol`
+        options: A list of options defining the protocol.
+
+    Examples:
+    ```
+        from qadence import NoiseProtocol, NoiseSource
+        protocol = NoiseSource(NoiseProtocol.BITFLIP, {"error_probability": 0.5})
+    ```
+    """
 
     def __init__(self, protocol: NoiseEnum, options: dict = dict()) -> None:
         self.protocol: NoiseEnum = protocol
@@ -68,7 +79,44 @@ class NoiseSource:
 
 
 class NoiseHandler:
-    """A container for multiple sources of noise."""
+    """A container for multiple sources of noise.
+
+    Note `NoiseProtocol.ANALOG` and `NoiseProtocol.DIGITAL` sources cannot be both present.
+    Also `NoiseProtocol.READOUT` can only be present once as the last noise sources, and only
+    exclusively with `NoiseProtocol.DIGITAL` sources.
+
+    Args:
+        protocol: The protocol(s) applied. Can be
+        options: A list of options defining the protocol.
+
+    Examples:
+    ```
+        from qadence import NoiseProtocol, NoiseSource, NoiseHandler
+
+        analog_options = {"noise_probs": 0.1}
+        digital_options = {"error_probability": 0.1}
+        readout_options = {"error_probability": 0.1, "seed": 0}
+
+        # single noise sources
+        analog_noise = NoiseHandler(NoiseProtocol.ANALOG.DEPOLARIZING, analog_options)
+        digital_noise = NoiseHandler(NoiseProtocol.DIGITAL.DEPOLARIZING, digital_options)
+        readout_noise = NoiseHandler(NoiseProtocol.READOUT, readout_options)
+
+        # init from multiple sources
+
+        digital_noise = NoiseSource(NoiseProtocol.DIGITAL.DEPOLARIZING, digital_options)
+        readout_noise = NoiseSource(NoiseProtocol.READOUT, readout_options)
+        noise_combination = NoiseHandler([digital_noise, readout_noise])
+
+        # Appending noise sources
+        bf_noise = NoiseSource(NoiseProtocol.DIGITAL.BITFLIP, digital_options)
+        depo_noise = NoiseSource(NoiseProtocol.DIGITAL.DEPOLARIZING, digital_options)
+        readout_noise = NoiseSource(NoiseProtocol.READOUT, readout_options)
+
+        noise_combination = NoiseHandler(bf_noise)
+        noise_combination.append([depo_noise, readout_noise])
+    ```
+    """
 
     def __init__(
         self,
