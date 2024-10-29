@@ -122,11 +122,6 @@ def get_result(
     Returns:
         The workload result if its status is "DONE" as a `pasqal_cloud.Workload` object.
     """
-    """Repeatedly checks if a workload has finished and returns the result.
-
-    Raises `WorkloadStoppedError` when the workload has stopped running on remote
-    Raises `TimeoutError` when the workload is not finished after `timeout` seconds
-    """
     max_refresh_count = int(timeout // refresh_time)
     for _ in range(max_refresh_count):
         try:
