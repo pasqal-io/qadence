@@ -90,10 +90,16 @@ class NoiseHandler:
             for proto, opt_proto in zip(protocol, options):
                 self.noise_sources.append(NoiseSource(proto, opt_proto))  # type: ignore [arg-type]
 
+        self.verify_noise_sources()
+
+    def verify_noise_sources(self) -> None:
+        """Make sure noise_sources are correct in terms of combinaison of noises."""
+
         if len(self.noise_sources) == 0:
             raise ValueError("NoiseHandler should be specified with one valid configuration.")
 
-        types = [type(n.protocol) for n in self.noise_sources]
+        protocols = [n.protocol for n in self.noise_sources]
+        types = [type(p) for p in protocols]
 
         unique_types = set(types)
         if NoiseProtocol.DIGITAL in unique_types and NoiseProtocol.ANALOG in unique_types:
@@ -105,14 +111,35 @@ class NoiseHandler:
             if types.count(NoiseProtocol.ANALOG) > 1:
                 raise ValueError("Multiple Analog NoiseSources are not supported yet.")
 
-        if NoiseProtocol.READOUT in unique_types:
-            if types[-1] != NoiseProtocol.READOUT or types.count(NoiseProtocol.READOUT) > 1:  # type: ignore [arg-type]
+        if NoiseProtocol.READOUT in protocols:
+            if protocols[-1] != NoiseProtocol.READOUT or protocols.count(NoiseProtocol.READOUT) > 1:
                 raise ValueError(
                     "Only define a NoiseHandler with one READOUT as the last NoiseSource."
                 )
 
     def __repr__(self) -> str:
         return "\n".join([str(n) for n in self.noise_sources])
+
+    def append(
+        self, other: NoiseSource | NoiseHandler | list[NoiseSource] | list[NoiseHandler]
+    ) -> None:
+        """Append noises to noise_sources.
+
+        Args:
+            other (NoiseSource | NoiseHandler): The noises to add.
+        """
+        # To avoid overwriting the noise_sources list if an error is raised, make a copy
+        noises = self.noise_sources[:]
+        other_list = other if isinstance(other, list) else [other]
+        for noise in other_list:
+            if isinstance(noise, NoiseSource):
+                noises.append(noise)
+            else:
+                noises += noise.noise_sources
+        # init may raise an error
+        temp_handler = NoiseHandler(noises)
+        # if verify passes, replace noise_sources
+        self.noise_sources = temp_handler.noise_sources
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, NoiseHandler):

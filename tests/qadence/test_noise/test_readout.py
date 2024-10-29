@@ -18,7 +18,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.constructors.hamiltonians import hamiltonian_factory
 from qadence.divergences import js_divergence
 from qadence.measurements.protocols import Measurements
-from qadence.noise import NoiseHandler
+from qadence.noise import NoiseHandler, NoiseSource
 from qadence.noise.readout import WhiteNoise, bs_corruption, create_noise_matrix, sample_to_matrix
 from qadence.operations import (
     CNOT,
@@ -226,3 +226,22 @@ def test_serialization() -> None:
     noise = NoiseHandler(protocol=NoiseProtocol.READOUT)
     serialized_noise = NoiseHandler._from_dict(noise._to_dict())
     assert noise == serialized_noise
+
+
+@pytest.mark.parametrize(
+    "noise_config",
+    [
+        NoiseProtocol.READOUT,
+        NoiseProtocol.DIGITAL.BITFLIP,
+        [NoiseProtocol.DIGITAL.BITFLIP, NoiseProtocol.DIGITAL.PHASEFLIP],
+    ],
+)
+def test_append(noise_config: NoiseProtocol | list[NoiseProtocol]) -> None:
+    noise = NoiseHandler(protocol=NoiseProtocol.READOUT)
+    options = {"error_probability": 0.1}
+    with pytest.raises(ValueError):
+        noise.append(
+            NoiseHandler(noise_config, options)
+            if isinstance(noise_config, list)
+            else NoiseSource(noise_config, options)
+        )

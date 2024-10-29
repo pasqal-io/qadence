@@ -11,6 +11,7 @@ from qadence import (
     H,
     NoiseHandler,
     NoiseProtocol,
+    NoiseSource,
     QuantumCircuit,
     QuantumModel,
     Z,
@@ -90,3 +91,25 @@ def test_run_digital(noisy_config: NoiseProtocol | list[NoiseProtocol]) -> None:
     native_output = backend.run(pyqtorch_circ, embed(params, {}))
 
     assert torch.allclose(noisy_output, native_output)
+
+
+@pytest.mark.parametrize(
+    "noise_config",
+    [
+        NoiseProtocol.READOUT,
+        NoiseProtocol.DIGITAL.BITFLIP,
+        [NoiseProtocol.DIGITAL.BITFLIP, NoiseProtocol.DIGITAL.PHASEFLIP],
+    ],
+)
+def test_append(noise_config: NoiseProtocol | list[NoiseProtocol]) -> None:
+    options = {"error_probability": 0.1}
+    noise = NoiseHandler(NoiseProtocol.DIGITAL.BITFLIP, options)
+
+    if isinstance(noise_config, list):
+        noise.append(NoiseHandler(noise_config, options))
+        len_noise2 = len(noise_config)
+    else:
+        noise.append(NoiseSource(noise_config, options))
+        len_noise2 = 1
+
+    assert len(noise.noise_sources) == (len_noise2 + 1)
