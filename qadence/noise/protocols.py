@@ -36,8 +36,8 @@ class NoiseHandler:
         readout_noise = NoiseHandler(NoiseProtocol.READOUT, readout_options)
 
         # init from multiple sources
-        protocols = [NoiseProtocol.DIGITAL.DEPOLARIZING, NoiseProtocol.READOUT]
-        options = [digital_options, readout_noise]
+        protocols: list = [NoiseProtocol.DIGITAL.DEPOLARIZING, NoiseProtocol.READOUT]
+        options: list = [digital_options, readout_noise]
         noise_combination = NoiseHandler(protocols, options)
 
         # Appending noise sources
@@ -99,7 +99,7 @@ class NoiseHandler:
     def __repr__(self) -> str:
         return "\n".join(
             [
-                f"Noisee({protocol}, {str(option)})"
+                f"Noise({protocol}, {str(option)})"
                 for protocol, option in zip(self.protocols, self.options)
             ]
         )
