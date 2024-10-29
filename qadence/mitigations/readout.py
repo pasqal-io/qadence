@@ -88,12 +88,10 @@ def mitigation_minimization(
     Returns:
         Mitigated counts computed by the algorithm
     """
-    readout_noise = noise.noise_sources[-1]
-    if readout_noise.protocol != NoiseProtocol.READOUT:
+    protocol, options = noise.protocols[-1], noise.options[-1]
+    if protocol != NoiseProtocol.READOUT:
         raise ValueError("Specify a noise source of type NoiseProtocol.READOUT.")
-    noise_matrices = readout_noise.options.get(
-        "noise_matrix", readout_noise.options["confusion_matrices"]
-    )
+    noise_matrices = options.get("noise_matrix", options["confusion_matrices"])
     optimization_type = mitigation.options.get("optimization_type", ReadOutOptimization.MLE)
     n_qubits = len(list(samples[0].keys())[0])
     n_shots = sum(samples[0].values())

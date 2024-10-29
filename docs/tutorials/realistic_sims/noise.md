@@ -4,48 +4,57 @@ corresponding error mitigation techniques whenever possible.
 
 # NoiseHandler
 
-Noise models can be defined via the `NoiseHandler`. It is a container of several `NoiseSource` instances which require to specify a `protocol`,
-a dictionary of `options`. The `protocol` field is to be instantiated from `NoiseProtocol`.
+Noise models can be defined via the `NoiseHandler`. It is a container of several noise instances which require to specify a `protocols` and
+a dictionary of `options` (or lists). The `protocol` field is to be instantiated from `NoiseProtocol`.
 
 ```python exec="on" source="material-block" session="noise" result="json"
-from qadence import NoiseHandler, NoiseSource
+from qadence import NoiseHandler
 from qadence.types import NoiseProtocol
 
-analog_noise = NoiseHandler(protocol=NoiseProtocol.ANALOG.DEPOLARIZING, options={"noise_probs": 0.1})
-digital_noise = NoiseHandler(protocol=NoiseProtocol.DIGITAL.DEPOLARIZING, options={"error_probability": 0.1})
-readout_noise = NoiseHandler(protocol=NoiseProtocol.READOUT, options={"error_probability": 0.1, "seed": 0})
+analog_noise = NoiseHandler(protocols=NoiseProtocol.ANALOG.DEPOLARIZING, options={"noise_probs": 0.1})
+digital_noise = NoiseHandler(protocols=NoiseProtocol.DIGITAL.DEPOLARIZING, options={"error_probability": 0.1})
+readout_noise = NoiseHandler(protocols=NoiseProtocol.READOUT, options={"error_probability": 0.1, "seed": 0})
 ```
 
-One can also define a `NoiseHandler` as a list of `NoiseSource` instances:
+One can also define a `NoiseHandler` passing a list of protocols and a list of options (careful with the order):
 
 ```python exec="on" source="material-block" session="noise" result="json"
-from qadence import NoiseHandler, NoiseSource
+from qadence import NoiseHandler
 from qadence.types import NoiseProtocol
 
-digital_noise = NoiseSource(protocol=NoiseProtocol.DIGITAL.DEPOLARIZING, options={"error_probability": 0.1})
-readout_noise = NoiseSource(protocol=NoiseProtocol.READOUT, options={"error_probability": 0.1, "seed": 0})
+protocols = [NoiseProtocol.DIGITAL.DEPOLARIZING, NoiseProtocol.READOUT]
+options = [{"error_probability": 0.1}, {"error_probability": 0.1, "seed": 0}]
 
-noise_combination = NoiseHandler([digital_noise, readout_noise])
+noise_combination = NoiseHandler(protocols, options)
 print(noise_combination)
 ```
 
-And finally one can append to a `NoiseHandler`  `NoiseSource` or `NoiseHandler` instances:
+One can also append to a `NoiseHandler` other `NoiseHandler` instances:
 
 ```python exec="on" source="material-block" session="noise" result="json"
-from qadence import NoiseHandler, NoiseSource
+from qadence import NoiseHandler
 from qadence.types import NoiseProtocol
 
-bf_noise = NoiseSource(protocol=NoiseProtocol.DIGITAL.BITFLIP, options={"error_probability": 0.1})
-depo_noise = NoiseSource(protocol=NoiseProtocol.DIGITAL.DEPOLARIZING, options={"error_probability": 0.1})
-readout_noise = NoiseSource(protocol=NoiseProtocol.READOUT, options={"error_probability": 0.1, "seed": 0})
+depo_noise = NoiseHandler(protocol=NoiseProtocol.DIGITAL.DEPOLARIZING, options={"error_probability": 0.1})
+readout_noise = NoiseHandler(protocol=NoiseProtocol.READOUT, options={"error_probability": 0.1, "seed": 0})
 
-noise_combination = NoiseHandler(bf_noise)
+noise_combination = NoiseHandler(protocol=NoiseProtocol.DIGITAL.BITFLIP, options={"error_probability": 0.1})
 noise_combination.append([depo_noise, readout_noise])
 print(noise_combination)
 ```
 
+Finally, one can add directly a few pre-defined types using several `NoiseHandler` methods:
+
+```python exec="on" source="material-block" session="noise" result="json"
+from qadence import NoiseHandler
+from qadence.types import NoiseProtocol
+noise_combination = NoiseHandler(protocol=NoiseProtocol.DIGITAL.BITFLIP, options={"error_probability": 0.1})
+noise_combination.digital_depolarizing({"error_probability": 0.1}).readout({"error_probability": 0.1, "seed": 0})
+print(noise_combination)
+```
+
 !!! warning "NoiseHandler scope"
-    Note it is not possible to define a `NoiseHandler` instances with both digital and analog noise sources, both readout and analog noise sources, several analog noise sources, several readout noise sources, or a readout noise source that is not the last defined `NoiseSource` within `NoiseHandler`.
+    Note it is not possible to define a `NoiseHandler` instances with both digital and analog noises, both readout and analog noises, several analog noises, several readout noises, or a readout noise that is not the last defined protocol within `NoiseHandler`.
 
 ## Readout errors
 
@@ -161,8 +170,6 @@ from qadence import NoiseProtocol, RX, run
 import torch
 
 noise = NoiseHandler(NoiseProtocol.DIGITAL.BITFLIP, {"error_probability": 0.2})
-noise = NoiseHandler.bitflip({"error_probability": 0.2}) # equivalent
-
 op = RX(0, torch.pi, noise = noise)
 
 print(run(op))
@@ -177,7 +184,7 @@ n_qubits = 2
 
 block = chain(RX(i, f"theta_{i}") for i in range(n_qubits))
 
-noise = NoiseHandler.bitflip({"error_probability": 0.1})
+noise = NoiseHandler(NoiseProtocol.DIGITAL.BITFLIP, {"error_probability": 0.1})
 
 # The function changes the block in place:
 set_noise(block, noise)

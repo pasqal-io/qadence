@@ -241,10 +241,9 @@ class Backend(BackendInterface):
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         vals = to_list_of_dicts(param_values)
-        noise_source = noise.noise_sources[-1]
-        if not isinstance(noise_source.protocol, NoiseProtocol.ANALOG):
+        if not isinstance(noise.protocols[-1], NoiseProtocol.ANALOG):
             raise TypeError("Noise must be of type `NoiseProtocol.ANALOG`.")
-        noise_probs = noise_source.options.get("noise_probs", None)
+        noise_probs = noise.options[-1].get("noise_probs", None)
 
         def run_noisy_sim(noise_prob: float) -> Tensor:
             batched_dm = np.zeros(
@@ -253,8 +252,8 @@ class Backend(BackendInterface):
             )
             # pulser requires lower letters
             sim_config = {
-                "noise": noise_source.protocol.lower(),
-                noise_source.protocol.lower() + "_rate": noise_prob,
+                "noise": noise.protocols[-1].lower(),
+                noise.protocols[-1].lower() + "_rate": noise_prob,
             }
             self.config.sim_config = SimConfig(**sim_config)
 

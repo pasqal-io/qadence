@@ -11,7 +11,6 @@ from qadence import (
     H,
     NoiseHandler,
     NoiseProtocol,
-    NoiseSource,
     QuantumCircuit,
     QuantumModel,
     Z,
@@ -26,7 +25,7 @@ list_noises = [noise for noise in NoiseProtocol.DIGITAL]
 
 
 def test_serialization() -> None:
-    noise = NoiseHandler.bitflip({"error_probability": 0.2})
+    noise = NoiseHandler(NoiseProtocol.DIGITAL.BITFLIP, {"error_probability": 0.2})
     serialized_noise = NoiseHandler._from_dict(noise._to_dict())
     assert noise == serialized_noise
 
@@ -39,7 +38,7 @@ def test_set_noise(protocol: str, circuit: QuantumCircuit) -> None:
     for block in all_blocks:
         assert block.noise is None
     noise = NoiseHandler(protocol, {"error_probability": 0.2})
-    assert len(noise.noise_sources) == 1
+    assert len(noise.protocols) == 1
     set_noise(circuit, noise)
 
     for block in all_blocks:
@@ -51,7 +50,7 @@ def test_set_noise(protocol: str, circuit: QuantumCircuit) -> None:
 @settings(deadline=None)
 def test_set_noise_restricted(protocol: str, circuit: QuantumCircuit) -> None:
     noise = NoiseHandler(protocol, {"error_probability": 0.2})
-    assert len(noise.noise_sources) == 1
+    assert len(noise.protocols) == 1
     all_blocks = circuit.block.blocks if hasattr(circuit.block, "blocks") else [circuit.block]
     index_random_block = random.randint(0, len(all_blocks) - 1)
     type_target = type(all_blocks[index_random_block])
@@ -105,11 +104,7 @@ def test_append(noise_config: NoiseProtocol | list[NoiseProtocol]) -> None:
     options = {"error_probability": 0.1}
     noise = NoiseHandler(NoiseProtocol.DIGITAL.BITFLIP, options)
 
-    if isinstance(noise_config, list):
-        noise.append(NoiseHandler(noise_config, options))
-        len_noise2 = len(noise_config)
-    else:
-        noise.append(NoiseSource(noise_config, options))
-        len_noise2 = 1
+    len_noise2 = len(noise_config) if isinstance(noise_config, list) else 1
+    noise.append(NoiseHandler(noise_config, options))
 
-    assert len(noise.noise_sources) == (len_noise2 + 1)
+    assert len(noise.protocols) == (len_noise2 + 1)
