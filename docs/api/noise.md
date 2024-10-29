@@ -1,5 +1,3 @@
-`qadence` offers an interface to construct noise models in a flexible manner.
+## Noise for simulations
 
-::: qadence.noise.protocols
-
-::: qadence.noise.readout
+### ::: qadence.noise.protocols
