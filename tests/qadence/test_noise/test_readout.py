@@ -237,3 +237,5 @@ def test_append(noise_config: NoiseProtocol | list[NoiseProtocol]) -> None:
     options = {"error_probability": 0.1}
     with pytest.raises(ValueError):
         noise.append(NoiseHandler(noise_config, options))
+    with pytest.raises(ValueError):
+        noise.readout(options)
