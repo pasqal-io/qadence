@@ -18,6 +18,8 @@ from qadence import (
     kron,
     set_noise,
 )
+from qadence.backends import backend_factory
+from qadence.types import BackendName, DiffMode
 
 list_noises = [noise for noise in NoiseProtocol.DIGITAL]
 
@@ -61,17 +63,30 @@ def test_set_noise_restricted(protocol: str, circuit: QuantumCircuit) -> None:
             assert block.noise is None
 
 
-def test_run_digital() -> None:
+@pytest.mark.parametrize(
+    "noisy_config",
+    [
+        NoiseProtocol.DIGITAL.BITFLIP,
+        [NoiseProtocol.DIGITAL.BITFLIP, NoiseProtocol.DIGITAL.PHASEFLIP],
+    ],
+)
+def test_run_digital(noisy_config: NoiseProtocol | list[NoiseProtocol]) -> None:
     block = kron(H(0), Z(1))
     circuit = QuantumCircuit(2, block)
     observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
-    noise = NoiseHandler(NoiseProtocol.DIGITAL.BITFLIP, {"error_probability": 0.1})
+    noise = NoiseHandler(noisy_config, {"error_probability": 0.1})
 
     # Construct a quantum model.
     model = QuantumModel(circuit=circuit, observable=observable)
-    noiseless_exp = model.expectation()
+    noiseless_output = model.run()
 
     set_noise(circuit, noise)
     noisy_model = QuantumModel(circuit=circuit, observable=observable)
-    noisy_expectation = noisy_model.expectation()
-    assert not torch.allclose(noiseless_exp, noisy_expectation)
+    noisy_output = noisy_model.run()
+    assert not torch.allclose(noiseless_output, noisy_output)
+
+    backend = backend_factory(backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD)
+    (pyqtorch_circ, _, embed, params) = backend.convert(circuit)
+    native_output = backend.run(pyqtorch_circ, embed(params, {}))
+
+    assert torch.allclose(noisy_output, native_output)
