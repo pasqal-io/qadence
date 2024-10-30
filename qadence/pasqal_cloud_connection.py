@@ -96,6 +96,9 @@ def check_status(connection: SDK, workload_id: str) -> WorkloadResult:
             f"Workload with id {workload_id} is not yet finished, the status is {result.status}"
         )
     if result.status in ("CANCELED", "TIMED_OUT", "ERROR"):
+        message = f"Workload with id {workload_id} couldn't finish, the status is {result.status}."
+        if result.status == "ERROR":
+            message += f"The following error(s) occurred {result.errors}"
         raise WorkloadStoppedError(
             f"Workload with id {workload_id} couldn't finish, the status is {result.status}"
         )
