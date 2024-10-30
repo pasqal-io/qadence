@@ -19,7 +19,7 @@ class NoiseHandler:
     exclusively with `NoiseProtocol.DIGITAL` sources.
 
     Args:
-        protocols: The protocol(s) applied. To be defined from `NoiseProtocol`.
+        protocol: The protocol(s) applied. To be defined from `NoiseProtocol`.
         options: A list of options defining the protocol.
             For `NoiseProtocol.ANALOG`, options should contain a field `noise_probs`.
             For `NoiseProtocol.DIGITAL`, options should contain a field `error_probability`.
