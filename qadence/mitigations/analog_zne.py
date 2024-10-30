@@ -15,7 +15,7 @@ from qadence.blocks.analog import ConstantAnalogRotation, InteractionBlock
 from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
-from qadence.noise import Noise
+from qadence.noise import NoiseHandler
 from qadence.operations import AnalogRot
 from qadence.transpile import apply_fn_to_blocks
 from qadence.utils import Endianness
@@ -44,7 +44,7 @@ def pulse_experiment(
     circuit: QuantumCircuit,
     observable: list[AbstractBlock],
     param_values: dict[str, Tensor],
-    noise: Noise,
+    noise: NoiseHandler,
     stretches: Tensor,
     endianness: Endianness,
     state: Tensor | None = None,
@@ -116,11 +116,12 @@ def noise_level_experiment(
     circuit: QuantumCircuit,
     observable: list[AbstractBlock],
     param_values: dict[str, Tensor],
-    noise: Noise,
+    noise: NoiseHandler,
     endianness: Endianness,
     state: Tensor | None = None,
 ) -> Tensor:
-    noise_probs = noise.options.get("noise_probs")
+    protocol, options = noise.protocol[-1], noise.options[-1]
+    noise_probs = options.get("noise_probs")
     zne_datasets: list = []
     # Get noisy density matrices.
     conv_circuit = backend.circuit(circuit)
@@ -152,7 +153,7 @@ def analog_zne(
     param_values: dict[str, Tensor] = {},
     state: Tensor | None = None,
     measurement: Measurements | None = None,
-    noise: Noise | None = None,
+    noise: NoiseHandler | None = None,
     mitigation: Mitigations | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
@@ -162,7 +163,7 @@ def analog_zne(
     backend = cast(Backend, backend)
     noise_model = mitigation.options.get("noise_model", None)
     if noise_model is None:
-        KeyError(f"A noise model should be choosen from {Noise.list()}. Got {noise_model}.")
+        raise KeyError("A noise model should be specified.")
     stretches = mitigation.options.get("stretches", None)
     if stretches is not None:
         extrapolated_exp_values = pulse_experiment(
@@ -195,7 +196,7 @@ def mitigate(
     param_values: dict[str, Tensor] = {},
     state: Tensor | None = None,
     measurement: Measurements | None = None,
-    noise: Noise | None = None,
+    noise: NoiseHandler | None = None,
     mitigation: Mitigations | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:

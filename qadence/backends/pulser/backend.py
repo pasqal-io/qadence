@@ -24,12 +24,12 @@ from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.mitigations.protocols import apply_mitigation
-from qadence.noise import Noise
-from qadence.noise.protocols import apply_noise
+from qadence.noise import NoiseHandler
+from qadence.noise.protocols import apply_readout_noise
 from qadence.overlap import overlap_exact
 from qadence.register import Register
 from qadence.transpile import transpile
-from qadence.types import BackendName, DeviceType, Endianness, Engine
+from qadence.types import BackendName, DeviceType, Endianness, Engine, NoiseProtocol
 
 from .channels import GLOBAL_CHANNEL, LOCAL_CHANNEL
 from .cloud import get_client
@@ -187,7 +187,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
         endianness: Endianness = Endianness.BIG,
-        noise: Noise | None = None,
+        noise: NoiseHandler | None = None,
     ) -> Tensor:
         vals = to_list_of_dicts(param_values)
 
@@ -235,27 +235,26 @@ class Backend(BackendInterface):
     def _run_noisy(
         self,
         circuit: ConvertedCircuit,
-        noise: Noise,
+        noise: NoiseHandler,
         param_values: dict[str, Tensor] = dict(),
         state: Tensor | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         vals = to_list_of_dicts(param_values)
-        noise_probs = noise.options.get("noise_probs", None)
-        if noise_probs is None:
-            KeyError("A `noise probs` option should be passed to the <class QuantumModel>.")
-        if not (isinstance(noise_probs, float) or isinstance(noise_probs, Iterable)):
-            KeyError(
-                "A single or a range of noise probabilities"
-                " should be passed. Got {type(noise_probs)}."
-            )
+        if not isinstance(noise.protocol[-1], NoiseProtocol.ANALOG):
+            raise TypeError("Noise must be of type `NoiseProtocol.ANALOG`.")
+        noise_probs = noise.options[-1].get("noise_probs", None)
 
         def run_noisy_sim(noise_prob: float) -> Tensor:
             batched_dm = np.zeros(
                 (len(vals), 2**circuit.abstract.n_qubits, 2**circuit.abstract.n_qubits),
                 dtype=np.complex128,
             )
-            sim_config = {"noise": noise.protocol, noise.protocol + "_rate": noise_prob}
+            # pulser requires lower letters
+            sim_config = {
+                "noise": noise.protocol[-1].lower(),
+                noise.protocol[-1].lower() + "_rate": noise_prob,
+            }
             self.config.sim_config = SimConfig(**sim_config)
 
             for i, param_values_el in enumerate(vals):
@@ -289,7 +288,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         n_shots: int = 1,
         state: Tensor | None = None,
-        noise: Noise | None = None,
+        noise: NoiseHandler | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
@@ -313,7 +312,7 @@ class Backend(BackendInterface):
 
             samples = invert_endianness(samples)
         if noise is not None:
-            samples = apply_noise(noise=noise, samples=samples)
+            samples = apply_readout_noise(noise=noise, samples=samples)
         if mitigation is not None:
             logger.warning(
                 "Mitigation protocol is deprecated. Use qadence-protocols instead.",
@@ -329,7 +328,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
-        noise: Noise | None = None,
+        noise: NoiseHandler | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:

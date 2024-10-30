@@ -5,7 +5,7 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Callable, cast
 
-from qadence.noise.protocols import Noise
+from qadence.noise.protocols import NoiseHandler
 
 PROTOCOL_TO_MODULE = {
     "readout": "qadence.mitigations.readout",
@@ -45,7 +45,7 @@ class Mitigations:
 
 
 def apply_mitigation(
-    noise: Noise, mitigation: Mitigations, samples: list[Counter]
+    noise: NoiseHandler, mitigation: Mitigations, samples: list[Counter]
 ) -> list[Counter]:
     """Apply mitigation to samples."""
     mitigation_fn = mitigation.get_mitigation_fn()

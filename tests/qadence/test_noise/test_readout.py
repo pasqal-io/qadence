@@ -18,7 +18,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.constructors.hamiltonians import hamiltonian_factory
 from qadence.divergences import js_divergence
 from qadence.measurements.protocols import Measurements
-from qadence.noise import Noise
+from qadence.noise import NoiseHandler
 from qadence.noise.readout import WhiteNoise, bs_corruption, create_noise_matrix, sample_to_matrix
 from qadence.operations import (
     CNOT,
@@ -30,7 +30,7 @@ from qadence.operations import (
     Y,
     Z,
 )
-from qadence.types import DiffMode
+from qadence.types import DiffMode, NoiseProtocol
 
 
 @pytest.mark.parametrize(
@@ -68,23 +68,20 @@ def test_bitstring_corruption_all_bitflips(
 
 
 @pytest.mark.parametrize(
-    "error_probability, counters, n_qubits",
+    "counters, n_qubits",
     [
         (
-            rand(),
             [Counter({"00": 27, "01": 23, "10": 24, "11": 26})],
             2,
         ),
         (
-            rand(),
             [Counter({"001": 27, "010": 23, "101": 24, "110": 26})],
             3,
         ),
     ],
 )
-def test_bitstring_corruption_mixed_bitflips(
-    error_probability: float, counters: list, n_qubits: int
-) -> None:
+def test_bitstring_corruption_mixed_bitflips(counters: list, n_qubits: int) -> None:
+    error_probability = rand()
     n_shots = 100
     noise_matrix = create_noise_matrix(WhiteNoise.UNIFORM, n_shots, n_qubits)
     err_idx = torch.as_tensor(noise_matrix < error_probability)
@@ -152,7 +149,7 @@ def test_readout_error_quantum_model(
 
     noisy_samples: list[Counter] = QuantumModel(
         QuantumCircuit(block.n_qubits, block), backend=backend, diff_mode=diff_mode
-    ).sample(noise=Noise(protocol=Noise.READOUT), n_shots=n_shots)
+    ).sample(noise=NoiseHandler(protocol=NoiseProtocol.READOUT), n_shots=n_shots)
 
     for noiseless, noisy in zip(noiseless_samples, noisy_samples):
         assert sum(noiseless.values()) == sum(noisy.values()) == n_shots
@@ -175,7 +172,7 @@ def test_readout_error_backends(backend: BackendName) -> None:
     samples = qd.sample(feature_map, n_shots=1000, values=inputs, backend=backend, noise=None)
     # introduce noise
     options = {"error_probability": error_probability}
-    noise = Noise(protocol=Noise.READOUT, options=options).get_noise_fn()
+    noise = NoiseHandler(protocol=NoiseProtocol.READOUT, options=options).get_noise_fn(-1)
     noisy_samples = noise(counters=samples, n_qubits=n_qubits)
     # compare that the results are with an error of 10% (the default error_probability)
     for sample, noisy_sample in zip(samples, noisy_samples):
@@ -188,7 +185,7 @@ def test_readout_error_backends(backend: BackendName) -> None:
         )
 
 
-# TODO: Use strategies to test against randomly generated circuits.
+# # TODO: Use strategies to test against randomly generated circuits.
 @pytest.mark.parametrize(
     "measurement_proto, options",
     [
@@ -205,7 +202,7 @@ def test_readout_error_with_measurements(
     observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
 
     model = QuantumModel(circuit=circuit, observable=observable, diff_mode=DiffMode.GPSR)
-    noise = Noise(protocol=Noise.READOUT)
+    noise = NoiseHandler(protocol=NoiseProtocol.READOUT)
     measurement = Measurements(protocol=str(measurement_proto), options=options)
 
     noisy = model.expectation(values=inputs, measurement=measurement, noise=noise)
@@ -219,3 +216,26 @@ def test_readout_error_with_measurements(
         exact_value = torch.abs(exact).item()
         atol = exact_value / 3.0 if exact_value != 0.0 else 0.33
         assert torch.allclose(noisy, exact, atol=atol)
+
+
+def test_serialization() -> None:
+    noise = NoiseHandler(protocol=NoiseProtocol.READOUT)
+    serialized_noise = NoiseHandler._from_dict(noise._to_dict())
+    assert noise == serialized_noise
+
+
+@pytest.mark.parametrize(
+    "noise_config",
+    [
+        NoiseProtocol.READOUT,
+        NoiseProtocol.DIGITAL.BITFLIP,
+        [NoiseProtocol.DIGITAL.BITFLIP, NoiseProtocol.DIGITAL.PHASEFLIP],
+    ],
+)
+def test_append(noise_config: NoiseProtocol | list[NoiseProtocol]) -> None:
+    noise = NoiseHandler(protocol=NoiseProtocol.READOUT)
+    options = {"error_probability": 0.1}
+    with pytest.raises(ValueError):
+        noise.append(NoiseHandler(noise_config, options))
+    with pytest.raises(ValueError):
+        noise.readout(options)

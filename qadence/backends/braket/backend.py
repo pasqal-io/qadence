@@ -19,8 +19,8 @@ from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.mitigations.protocols import apply_mitigation
-from qadence.noise import Noise
-from qadence.noise.protocols import apply_noise
+from qadence.noise import NoiseHandler
+from qadence.noise.protocols import apply_readout_noise
 from qadence.overlap import overlap_exact
 from qadence.transpile import transpile
 from qadence.types import BackendName, Engine
@@ -137,7 +137,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         n_shots: int = 1,
         state: Tensor | None = None,
-        noise: Noise | None = None,
+        noise: NoiseHandler | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
@@ -164,7 +164,7 @@ class Backend(BackendInterface):
 
             samples = invert_endianness(samples)
         if noise is not None:
-            samples = apply_noise(noise=noise, samples=samples)
+            samples = apply_readout_noise(noise=noise, samples=samples)
         if mitigation is not None:
             logger.warning(
                 "Mitigation protocol is deprecated. Use qadence-protocols instead.",
@@ -180,7 +180,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
-        noise: Noise | None = None,
+        noise: NoiseHandler | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:

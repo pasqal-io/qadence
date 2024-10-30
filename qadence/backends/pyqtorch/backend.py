@@ -22,8 +22,8 @@ from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.mitigations.protocols import Mitigations, apply_mitigation
-from qadence.noise import Noise
-from qadence.noise.protocols import apply_noise
+from qadence.noise import NoiseHandler
+from qadence.noise.protocols import apply_readout_noise
 from qadence.transpile import (
     chain_single_qubit_ops,
     flatten,
@@ -113,7 +113,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
-        noise: Noise | None = None,
+        noise: NoiseHandler | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         state = self.run(
@@ -138,7 +138,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
-        noise: Noise | None = None,
+        noise: NoiseHandler | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         if state is None:
@@ -169,7 +169,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
-        noise: Noise | None = None,
+        noise: NoiseHandler | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
@@ -196,7 +196,7 @@ class Backend(BackendInterface):
         param_values: dict[str, Tensor] = {},
         n_shots: int = 1,
         state: Tensor | None = None,
-        noise: Noise | None = None,
+        noise: NoiseHandler | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
         pyqify_state: bool = True,
@@ -211,7 +211,7 @@ class Backend(BackendInterface):
         )
         samples = invert_endianness(samples) if endianness != Endianness.BIG else samples
         if noise is not None:
-            samples = apply_noise(noise=noise, samples=samples)
+            samples = apply_readout_noise(noise=noise, samples=samples)
         if mitigation is not None:
             logger.warning(
                 "Mitigation protocol is deprecated. Use qadence-protocols instead.",
