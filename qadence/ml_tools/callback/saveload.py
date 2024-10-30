@@ -67,7 +67,7 @@ def write_checkpoint(
 ) -> None:
     from qadence import QuantumModel
 
-    from .models import QNN
+    from qadence.ml_tools.models import QNN
 
     device = None
     try:
