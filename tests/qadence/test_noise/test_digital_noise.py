@@ -38,7 +38,7 @@ def test_set_noise(protocol: str, circuit: QuantumCircuit) -> None:
     for block in all_blocks:
         assert block.noise is None
     noise = NoiseHandler(protocol, {"error_probability": 0.2})
-    assert len(noise.protocols) == 1
+    assert len(noise.protocol) == 1
     set_noise(circuit, noise)
 
     for block in all_blocks:
@@ -50,7 +50,7 @@ def test_set_noise(protocol: str, circuit: QuantumCircuit) -> None:
 @settings(deadline=None)
 def test_set_noise_restricted(protocol: str, circuit: QuantumCircuit) -> None:
     noise = NoiseHandler(protocol, {"error_probability": 0.2})
-    assert len(noise.protocols) == 1
+    assert len(noise.protocol) == 1
     all_blocks = circuit.block.blocks if hasattr(circuit.block, "blocks") else [circuit.block]
     index_random_block = random.randint(0, len(all_blocks) - 1)
     type_target = type(all_blocks[index_random_block])
@@ -107,7 +107,7 @@ def test_append(noise_config: NoiseProtocol | list[NoiseProtocol]) -> None:
     len_noise_config = len(noise_config) if isinstance(noise_config, list) else 1
     noise.append(NoiseHandler(noise_config, options))
 
-    assert len(noise.protocols) == (len_noise_config + 1)
+    assert len(noise.protocol) == (len_noise_config + 1)
 
 
 def test_equality() -> None:

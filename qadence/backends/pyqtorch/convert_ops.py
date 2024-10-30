@@ -327,6 +327,6 @@ def convert_digital_noise(noise: NoiseHandler) -> pyq.noise.NoiseProtocol:
     return pyq.noise.NoiseProtocol(
         [
             pyq.noise.NoiseProtocol(proto, option.get("error_probability"))
-            for proto, option in zip(digital_part.protocols, digital_part.options)
+            for proto, option in zip(digital_part.protocol, digital_part.options)
         ]
     )

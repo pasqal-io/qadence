@@ -241,7 +241,7 @@ class Backend(BackendInterface):
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         vals = to_list_of_dicts(param_values)
-        if not isinstance(noise.protocols[-1], NoiseProtocol.ANALOG):
+        if not isinstance(noise.protocol[-1], NoiseProtocol.ANALOG):
             raise TypeError("Noise must be of type `NoiseProtocol.ANALOG`.")
         noise_probs = noise.options[-1].get("noise_probs", None)
 
@@ -252,8 +252,8 @@ class Backend(BackendInterface):
             )
             # pulser requires lower letters
             sim_config = {
-                "noise": noise.protocols[-1].lower(),
-                noise.protocols[-1].lower() + "_rate": noise_prob,
+                "noise": noise.protocol[-1].lower(),
+                noise.protocol[-1].lower() + "_rate": noise_prob,
             }
             self.config.sim_config = SimConfig(**sim_config)
 

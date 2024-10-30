@@ -11,9 +11,9 @@ a dictionary of `options` (or lists). The `protocol` field is to be instantiated
 from qadence import NoiseHandler
 from qadence.types import NoiseProtocol
 
-analog_noise = NoiseHandler(protocols=NoiseProtocol.ANALOG.DEPOLARIZING, options={"noise_probs": 0.1})
-digital_noise = NoiseHandler(protocols=NoiseProtocol.DIGITAL.DEPOLARIZING, options={"error_probability": 0.1})
-readout_noise = NoiseHandler(protocols=NoiseProtocol.READOUT, options={"error_probability": 0.1, "seed": 0})
+analog_noise = NoiseHandler(protocol=NoiseProtocol.ANALOG.DEPOLARIZING, options={"noise_probs": 0.1})
+digital_noise = NoiseHandler(protocol=NoiseProtocol.DIGITAL.DEPOLARIZING, options={"error_probability": 0.1})
+readout_noise = NoiseHandler(protocol=NoiseProtocol.READOUT, options={"error_probability": 0.1, "seed": 0})
 ```
 
 One can also define a `NoiseHandler` passing a list of protocols and a list of options (careful with the order):
@@ -35,10 +35,10 @@ One can also append to a `NoiseHandler` other `NoiseHandler` instances:
 from qadence import NoiseHandler
 from qadence.types import NoiseProtocol
 
-depo_noise = NoiseHandler(protocols=NoiseProtocol.DIGITAL.DEPOLARIZING, options={"error_probability": 0.1})
-readout_noise = NoiseHandler(protocols=NoiseProtocol.READOUT, options={"error_probability": 0.1, "seed": 0})
+depo_noise = NoiseHandler(protocol=NoiseProtocol.DIGITAL.DEPOLARIZING, options={"error_probability": 0.1})
+readout_noise = NoiseHandler(protocol=NoiseProtocol.READOUT, options={"error_probability": 0.1, "seed": 0})
 
-noise_combination = NoiseHandler(protocols=NoiseProtocol.DIGITAL.BITFLIP, options={"error_probability": 0.1})
+noise_combination = NoiseHandler(protocol=NoiseProtocol.DIGITAL.BITFLIP, options={"error_probability": 0.1})
 noise_combination.append([depo_noise, readout_noise])
 print(noise_combination)
 ```
@@ -48,7 +48,7 @@ Finally, one can add directly a few pre-defined types using several `NoiseHandle
 ```python exec="on" source="material-block" session="noise" result="json"
 from qadence import NoiseHandler
 from qadence.types import NoiseProtocol
-noise_combination = NoiseHandler(protocols=NoiseProtocol.DIGITAL.BITFLIP, options={"error_probability": 0.1})
+noise_combination = NoiseHandler(protocol=NoiseProtocol.DIGITAL.BITFLIP, options={"error_probability": 0.1})
 noise_combination.digital_depolarizing({"error_probability": 0.1}).readout({"error_probability": 0.1, "seed": 0})
 print(noise_combination)
 ```
@@ -82,7 +82,7 @@ observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
 model = QuantumModel(circuit=circuit, observable=observable)
 
 # Define a noise model to use.
-noise = NoiseHandler(protocols=NoiseProtocol.READOUT)
+noise = NoiseHandler(protocol=NoiseProtocol.READOUT)
 
 # Run noiseless and noisy simulations.
 noiseless_samples = model.sample(n_shots=100)
@@ -118,7 +118,7 @@ from qadence.measurements import Measurements
 
 # Define a noise model with options.
 options = {"error_probability": 0.01}
-noise = NoiseHandler(protocols=NoiseProtocol.READOUT, options=options)
+noise = NoiseHandler(protocol=NoiseProtocol.READOUT, options=options)
 
 # Define a tomographical measurement protocol with options.
 options = {"n_shots": 10000}
@@ -148,7 +148,7 @@ observable = Z(0) + Z(1)
 circuit = QuantumCircuit(2, analog_block)
 
 options = {"noise_probs": 0.1}
-noise = NoiseHandler(protocols=NoiseProtocol.ANALOG.DEPOLARIZING, options=options)
+noise = NoiseHandler(protocol=NoiseProtocol.ANALOG.DEPOLARIZING, options=options)
 model_noisy = QuantumModel(
     circuit=circuit,
     observable=observable,

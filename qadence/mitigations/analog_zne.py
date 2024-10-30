@@ -120,7 +120,7 @@ def noise_level_experiment(
     endianness: Endianness,
     state: Tensor | None = None,
 ) -> Tensor:
-    protocol, options = noise.protocols[-1], noise.options[-1]
+    protocol, options = noise.protocol[-1], noise.options[-1]
     noise_probs = options.get("noise_probs")
     zne_datasets: list = []
     # Get noisy density matrices.

@@ -50,11 +50,11 @@ class NoiseHandler:
 
     def __init__(
         self,
-        protocols: NoiseEnum | list[NoiseEnum],
+        protocol: NoiseEnum | list[NoiseEnum],
         options: dict | list[dict] = dict(),
     ) -> None:
-        self.protocols = protocols if isinstance(protocols, list) else [protocols]
-        self.options = options if isinstance(options, list) else [options] * len(self.protocols)
+        self.protocol = protocol if isinstance(protocol, list) else [protocol]
+        self.options = options if isinstance(options, list) else [options] * len(self.protocol)
         self.verify_all_protocols()
 
     def _verify_single_protocol(self, protocol: NoiseEnum, option: dict) -> None:
@@ -71,16 +71,16 @@ class NoiseHandler:
     def verify_all_protocols(self) -> None:
         """Make sure all protocols are correct in terms and their combination too."""
 
-        if len(self.protocols) == 0:
+        if len(self.protocol) == 0:
             raise ValueError("NoiseHandler should be specified with one valid configuration.")
 
-        if len(self.protocols) != len(self.options):
+        if len(self.protocol) != len(self.options):
             raise ValueError("Specify lists of same length when defining noises.")
 
-        for protocol, option in zip(self.protocols, self.options):
+        for protocol, option in zip(self.protocol, self.options):
             self._verify_single_protocol(protocol, option)
 
-        types = [type(p) for p in self.protocols]
+        types = [type(p) for p in self.protocol]
         unique_types = set(types)
         if NoiseProtocol.DIGITAL in unique_types and NoiseProtocol.ANALOG in unique_types:
             raise ValueError("Cannot define a config with both Digital and Analog noises.")
@@ -91,10 +91,10 @@ class NoiseHandler:
             if types.count(NoiseProtocol.ANALOG) > 1:
                 raise ValueError("Multiple Analog Noises are not supported yet.")
 
-        if NoiseProtocol.READOUT in self.protocols:
+        if NoiseProtocol.READOUT in self.protocol:
             if (
-                self.protocols[-1] != NoiseProtocol.READOUT
-                or self.protocols.count(NoiseProtocol.READOUT) > 1
+                self.protocol[-1] != NoiseProtocol.READOUT
+                or self.protocol.count(NoiseProtocol.READOUT) > 1
             ):
                 raise ValueError("Only define a NoiseHandler with one READOUT as the last Noise.")
 
@@ -102,16 +102,16 @@ class NoiseHandler:
         return "\n".join(
             [
                 f"Noise({protocol}, {str(option)})"
-                for protocol, option in zip(self.protocols, self.options)
+                for protocol, option in zip(self.protocol, self.options)
             ]
         )
 
     def get_noise_fn(self, index_protocol: int) -> Callable:
         try:
-            module = importlib.import_module(PROTOCOL_TO_MODULE[self.protocols[index_protocol]])
+            module = importlib.import_module(PROTOCOL_TO_MODULE[self.protocol[index_protocol]])
         except KeyError:
             ImportError(
-                f"The module for the protocol {self.protocols[index_protocol]} is not found."
+                f"The module for the protocol {self.protocol[index_protocol]} is not found."
             )
         fn = getattr(module, "add_noise")
         return cast(Callable, fn)
@@ -124,24 +124,24 @@ class NoiseHandler:
         """
         # To avoid overwriting the noise_sources list if an error is raised, make a copy
         other_list = other if isinstance(other, list) else [other]
-        protocols = self.protocols[:]
+        protocols = self.protocol[:]
         options = self.options[:]
 
         for noise in other_list:
-            protocols += noise.protocols
+            protocols += noise.protocol
             options += noise.options
 
         # init may raise an error
         temp_handler = NoiseHandler(protocols, options)
         # if verify passes, replace protocols and options
-        self.protocols = temp_handler.protocols
+        self.protocol = temp_handler.protocol
         self.options = temp_handler.options
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, NoiseHandler):
             raise TypeError(f"Cant compare {type(self)} to {type(other)}")
         if isinstance(other, type(self)):
-            protocols_equal = all([p1 == p2 for p1, p2 in zip(self.protocols, other.protocols)])
+            protocols_equal = all([p1 == p2 for p1, p2 in zip(self.protocol, other.protocol)])
             options_equal = all([o1 == o2 for o1, o2 in zip(self.options, other.options)])
             return protocols_equal and options_equal
 
@@ -149,8 +149,8 @@ class NoiseHandler:
 
     def _to_dict(self) -> dict:
         return {
-            "protocol": [protocol for protocol in self.protocols],
-            "options": [options for options in self.options],
+            "protocol": self.protocol,
+            "options": self.options,
         }
 
     @classmethod
@@ -164,10 +164,10 @@ class NoiseHandler:
         return list(filter(lambda el: not el.startswith("__"), dir(cls)))
 
     def filter(self, protocol: NoiseEnum) -> NoiseHandler | None:
-        is_protocol: list = [isinstance(p, protocol) for p in self.protocols]  # type: ignore[arg-type]
+        is_protocol: list = [isinstance(p, protocol) for p in self.protocol]  # type: ignore[arg-type]
         return (
             NoiseHandler(
-                list(compress(self.protocols, is_protocol)),
+                list(compress(self.protocol, is_protocol)),
                 list(compress(self.options, is_protocol)),
             )
             if len(is_protocol) > 0
@@ -227,7 +227,7 @@ def apply_readout_noise(noise: NoiseHandler, samples: list[Counter]) -> list[Cou
     Returns:
         list[Counter]: Altered samples.
     """
-    if noise.protocols[-1] == NoiseProtocol.READOUT:
+    if noise.protocol[-1] == NoiseProtocol.READOUT:
         error_fn = noise.get_noise_fn(-1)
         # Get the number of qubits from the sample keys.
         n_qubits = len(list(samples[0].keys())[0])

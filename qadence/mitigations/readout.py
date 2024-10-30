@@ -88,7 +88,7 @@ def mitigation_minimization(
     Returns:
         Mitigated counts computed by the algorithm
     """
-    protocol, options = noise.protocols[-1], noise.options[-1]
+    protocol, options = noise.protocol[-1], noise.options[-1]
     if protocol != NoiseProtocol.READOUT:
         raise ValueError("Specify a noise source of type NoiseProtocol.READOUT.")
     noise_matrices = options.get("noise_matrix", options["confusion_matrices"])
