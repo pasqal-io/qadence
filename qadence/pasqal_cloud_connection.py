@@ -99,9 +99,7 @@ def check_status(connection: SDK, workload_id: str) -> WorkloadResult:
         message = f"Workload with id {workload_id} couldn't finish, the status is {result.status}."
         if result.status == "ERROR":
             message += f"The following error(s) occurred {result.errors}"
-        raise WorkloadStoppedError(
-            f"Workload with id {workload_id} couldn't finish, the status is {result.status}"
-        )
+        raise WorkloadStoppedError(message)
     raise ValueError(
         f"Undefined workload status ({result.status}) was returned for workload ({result.id})"
     )
