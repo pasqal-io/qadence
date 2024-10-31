@@ -79,9 +79,9 @@ Backends are purely functional objects which take as input the values for the ci
 parameters and return the desired output from a call to a method. In order to use a backend directly,
 *embedded* parameters must be supplied as they are returned by the backend specific embedding function.
 
-Here is a simple demonstration of the use of the Braket backend to execute a circuit in non-differentiable mode:
+Here is a simple demonstration of the use of the PyQTorch backend to execute a circuit in non-differentiable mode:
 
-```python exec="on" source="material-block" session="low-level-braket"
+```python exec="on" source="material-block" session="low-level-pyq"
 from qadence import QuantumCircuit, FeatureParameter, RX, RZ, CNOT, hea, chain
 
 # Construct a feature map.
@@ -93,14 +93,14 @@ fm = chain(RX(0, 3 * x), RZ(1, z), CNOT(0, 1))
 circuit = QuantumCircuit(3, fm, hea(3,1))
 ```
 
-The abstract `QuantumCircuit` can now be converted to its native representation via the Braket
+The abstract `QuantumCircuit` can now be converted to its native representation via the PyQTorch
 backend.
 
-```python exec="on" source="material-block" result="json" session="low-level-braket"
+```python exec="on" source="material-block" result="json" session="low-level-pyq"
 from qadence import backend_factory
 
-# Use only Braket in non-differentiable mode:
-backend = backend_factory("braket")
+# Use only PyQtorch in non-differentiable mode:
+backend = backend_factory("pyqtorch")
 
 # The `Converted` object
 # (contains a `ConvertedCircuit` with the original and native representation)
@@ -113,7 +113,7 @@ Additionally, `Converted` contains all fixed and variational parameters, as well
 function which accepts feature parameters to construct a dictionary of *circuit native parameters*.
 These are needed as each backend uses a different representation of the circuit parameters:
 
-```python exec="on" source="material-block" result="json" session="low-level-braket"
+```python exec="on" source="material-block" result="json" session="low-level-pyq"
 import torch
 
 # Contains fixed parameters and variational (from the HEA)
@@ -134,7 +134,7 @@ print("}") # markdown-exec: hide
 Note that above the parameters keys have changed as they now address the keys on the
 Braket device. A more readable embedding is provided by the PyQTorch backend:
 
-```python exec="on" source="material-block" result="json" session="low-level-braket"
+```python exec="on" source="material-block" result="json" session="low-level-pyq"
 from qadence import BackendName, DiffMode
 pyq_backend = backend_factory(backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD)
 
@@ -149,7 +149,7 @@ print("}") # markdown-exec: hide
 
 With the embedded parameters, `QuantumModel` methods are accessible:
 
-```python exec="on" source="material-block" result="json" session="low-level-braket"
+```python exec="on" source="material-block" result="json" session="low-level-pyq"
 embedded = conv.embedding_fn(conv.params, inputs)
 samples = backend.run(conv.circuit, embedded)
 print(f"{samples = }")
@@ -158,9 +158,9 @@ print(f"{samples = }")
 ## Lower-level: the `Backend` representation
 
 If there is a requirement to work with a specific backend, it is possible to access _**directly the native circuit**_.
-For example, Braket noise features can be imported which are not exposed directly by Qadence.
+<!-- For example, Braket noise features can be imported which are not exposed directly by Qadence.
 
-```python exec="on" source="material-block" session="low-level-braket"
+```python exec="on" source="material-block" session="low-level-pyq"
 from braket.circuits import Noise
 
 # Get the native Braket circuit with the given parameters
@@ -177,16 +177,16 @@ native.apply_gate_noise(noise)
 
 In order to run this noisy circuit, the density matrix simulator is needed in Braket:
 
-```python exec="on" source="material-block" result="json" session="low-level-braket"
+```python exec="on" source="material-block" result="json" session="low-level-pyq"
 from braket.devices import LocalSimulator
 
 device = LocalSimulator("braket_dm")
 result = device.run(native, shots=1000).result().measurement_counts
 print(result)
 ```
-```python exec="on" source="material-block" result="json" session="low-level-braket"
+```python exec="on" source="material-block" result="json" session="low-level-pyq"
 print(conv.circuit.native.diagram())
 ```
-```python exec="on" source="material-block" result="json" session="low-level-braket"
+```python exec="on" source="material-block" result="json" session="low-level-pyq"
 print(native.diagram())
-```
+``` -->

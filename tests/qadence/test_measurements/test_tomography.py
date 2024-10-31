@@ -43,7 +43,7 @@ from qadence.types import BackendName, BasisSet, DiffMode
 
 manual_seed(1)
 
-BACKENDS = ["pyqtorch", "braket"]
+BACKENDS = ["pyqtorch"]
 DIFF_MODE = ["ad", "gpsr"]
 
 

@@ -18,7 +18,7 @@ from qadence.register import Register
 from qadence.states import equivalent_state
 from qadence.types import BackendName, DiffMode
 
-BACKENDS = [BackendName.PYQTORCH, BackendName.BRAKET]
+BACKENDS = [BackendName.PYQTORCH]
 
 
 @pytest.mark.parametrize("backend", list(BACKENDS))

@@ -50,7 +50,10 @@ def test_base_states(n_qubits: int, state_generators: tuple[Callable, Callable])
 
 @pytest.mark.parametrize(
     "n_qubits, backend",
-    [(2, "pyqtorch"), (4, "horqrux"), (6, "braket")],
+    [
+        (2, "pyqtorch"),
+        (4, "horqrux"),
+    ],
 )
 def test_product_state(n_qubits: int, backend: str) -> None:
     bitstring = rand_bitstring(n_qubits)

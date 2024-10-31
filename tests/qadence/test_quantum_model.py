@@ -5,20 +5,15 @@ from typing import Any
 
 import numpy as np
 import pytest
-import strategies as st  # type: ignore
 import torch
-from hypothesis import given, settings
-from metrics import ADJOINT_ACCEPTANCE, ATOL_DICT, JS_ACCEPTANCE  # type: ignore
+from metrics import ADJOINT_ACCEPTANCE, ATOL_DICT  # type: ignore
 
 from qadence.blocks import AbstractBlock, chain, kron
 from qadence.circuit import QuantumCircuit
-from qadence.constructors import hea, total_magnetization
-from qadence.divergences import js_divergence
-from qadence.ml_tools.utils import rand_featureparameters
+from qadence.constructors import hea
 from qadence.model import QuantumModel
 from qadence.operations import MCRX, RX, HamEvo, I, Toffoli, X, Z
 from qadence.parameters import FeatureParameter, VariationalParameter
-from qadence.states import equivalent_state
 from qadence.transpile import invert_endianness
 from qadence.types import PI, BackendName, DiffMode
 
@@ -103,45 +98,45 @@ def test_quantum_model_with_multi_controlled_rotation(gate: Any, n_qubits: int) 
     assert wf[0][-1] == -1
 
 
-@given(st.restricted_circuits())
-@settings(deadline=None)
-def test_run_for_different_backends(circuit: QuantumCircuit) -> None:
-    pyq_model = QuantumModel(circuit, backend=BackendName.PYQTORCH, diff_mode="ad")
-    braket_model = QuantumModel(circuit, backend=BackendName.BRAKET, diff_mode="gpsr")
-    inputs = rand_featureparameters(circuit, 1)
-    assert equivalent_state(
-        pyq_model.run(inputs), braket_model.run(inputs), atol=ATOL_DICT[BackendName.BRAKET]
-    )
+# @given(st.restricted_circuits())
+# @settings(deadline=None)
+# def test_run_for_different_backends(circuit: QuantumCircuit) -> None:
+#     pyq_model = QuantumModel(circuit, backend=BackendName.PYQTORCH, diff_mode="ad")
+#     braket_model = QuantumModel(circuit, backend=BackendName.BRAKET, diff_mode="gpsr")
+#     inputs = rand_featureparameters(circuit, 1)
+#     assert equivalent_state(
+#         pyq_model.run(inputs), braket_model.run(inputs), atol=ATOL_DICT[BackendName.BRAKET]
+#     )
 
 
-@given(st.restricted_circuits())
-@settings(deadline=None)
-def test_sample_for_different_backends(circuit: QuantumCircuit) -> None:
-    pyq_model = QuantumModel(circuit, backend=BackendName.PYQTORCH, diff_mode="ad")
-    braket_model = QuantumModel(circuit, backend=BackendName.BRAKET, diff_mode="gpsr")
-    inputs = rand_featureparameters(circuit, 1)
-    pyq_samples = pyq_model.sample(inputs, n_shots=100)
-    braket_samples = braket_model.sample(inputs, n_shots=100)
-    # Compare bitstring counts in pyq_samples with ones in braket_samples
-    # avoiding non-sampled ones.
-    for pyq_sample, sample in zip(pyq_samples, braket_samples):
-        assert js_divergence(pyq_sample, sample) < JS_ACCEPTANCE + ATOL_DICT[BackendName.BRAKET]
+# @given(st.restricted_circuits())
+# @settings(deadline=None)
+# def test_sample_for_different_backends(circuit: QuantumCircuit) -> None:
+#     pyq_model = QuantumModel(circuit, backend=BackendName.PYQTORCH, diff_mode="ad")
+#     braket_model = QuantumModel(circuit, backend=BackendName.BRAKET, diff_mode="gpsr")
+#     inputs = rand_featureparameters(circuit, 1)
+#     pyq_samples = pyq_model.sample(inputs, n_shots=100)
+#     braket_samples = braket_model.sample(inputs, n_shots=100)
+#     # Compare bitstring counts in pyq_samples with ones in braket_samples
+#     # avoiding non-sampled ones.
+#     for pyq_sample, sample in zip(pyq_samples, braket_samples):
+#         assert js_divergence(pyq_sample, sample) < JS_ACCEPTANCE + ATOL_DICT[BackendName.BRAKET]
 
 
-@given(st.restricted_circuits())
-@settings(deadline=None)
-def test_expectation_for_different_backends(circuit: QuantumCircuit) -> None:
-    observable = [total_magnetization(circuit.n_qubits) for _ in range(np.random.randint(1, 5))]
-    pyq_model = QuantumModel(
-        circuit, observable, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD
-    )
-    braket_model = QuantumModel(
-        circuit, observable, backend=BackendName.BRAKET, diff_mode=DiffMode.GPSR
-    )
-    inputs = rand_featureparameters(circuit, 1)
-    pyq_expectation = pyq_model.expectation(inputs)
-    braket_expectation = braket_model.expectation(inputs)
-    assert torch.allclose(pyq_expectation, braket_expectation)
+# @given(st.restricted_circuits())
+# @settings(deadline=None)
+# def test_expectation_for_different_backends(circuit: QuantumCircuit) -> None:
+#     observable = [total_magnetization(circuit.n_qubits) for _ in range(np.random.randint(1, 5))]
+#     pyq_model = QuantumModel(
+#         circuit, observable, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD
+#     )
+#     braket_model = QuantumModel(
+#         circuit, observable, backend=BackendName.BRAKET, diff_mode=DiffMode.GPSR
+#     )
+#     inputs = rand_featureparameters(circuit, 1)
+#     pyq_expectation = pyq_model.expectation(inputs)
+#     braket_expectation = braket_model.expectation(inputs)
+#     assert torch.allclose(pyq_expectation, braket_expectation)
 
 
 def test_negative_scale_qm() -> None:
@@ -194,7 +189,6 @@ def test_hamevo_qm() -> None:
 @pytest.mark.parametrize(
     "backend",
     [
-        BackendName.BRAKET,
         pytest.param(BackendName.PULSER, marks=[pytest.mark.xfail]),
     ],
 )
@@ -213,7 +207,7 @@ def test_correct_order(backend: BackendName) -> None:
     other_exp = other_model.expectation({})
 
     assert pyq_exp.size() == other_exp.size()
-    assert torch.all(torch.isclose(pyq_exp, other_exp, atol=ATOL_DICT[BackendName.BRAKET]))
+    assert torch.all(torch.isclose(pyq_exp, other_exp, atol=ATOL_DICT[BackendName.PULSER]))
 
 
 def test_qc_obs_different_support_0() -> None:
@@ -291,21 +285,7 @@ def test_distinct_obs_invert() -> None:
         diff_mode=DiffMode.AD,
     )
 
-    m_braket = QuantumModel(
-        qc,
-        obs,
-        backend=BackendName.PYQTORCH,
-        diff_mode=DiffMode.AD,
-    )
-
     m_pyq_inv = QuantumModel(
-        qc_inv,
-        obs_inv,
-        backend=BackendName.PYQTORCH,
-        diff_mode=DiffMode.AD,
-    )
-
-    m_braket_inv = QuantumModel(
         qc_inv,
         obs_inv,
         backend=BackendName.PYQTORCH,
@@ -314,8 +294,7 @@ def test_distinct_obs_invert() -> None:
 
     query_dict = {"x": torch.tensor([2.1]), "y": torch.tensor([2.1])}
 
-    assert torch.isclose(m_pyq.expectation(query_dict), m_braket.expectation(query_dict))
-    assert torch.isclose(m_pyq_inv.expectation(query_dict), m_braket_inv.expectation(query_dict))
+    assert not torch.isclose(m_pyq.expectation(query_dict), m_pyq_inv.expectation(query_dict))
 
 
 def test_qm_obs_single_feature_param() -> None:

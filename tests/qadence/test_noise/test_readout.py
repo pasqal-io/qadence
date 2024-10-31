@@ -23,7 +23,6 @@ from qadence.noise.readout import WhiteNoise, bs_corruption, create_noise_matrix
 from qadence.operations import (
     CNOT,
     RX,
-    RZ,
     H,
     HamEvo,
     X,
@@ -96,28 +95,6 @@ def test_bitstring_corruption_mixed_bitflips(counters: list, n_qubits: int) -> N
 @pytest.mark.parametrize(
     "error_probability, n_shots, block, backend",
     [
-        (0.1, 100, kron(X(0), X(1)), BackendName.BRAKET),
-        (0.1, 1000, kron(Z(0), Z(1), Z(2)) + kron(X(0), Y(1), Z(2)), BackendName.BRAKET),
-        (0.15, 1000, add(Z(0), Z(1), Z(2)), BackendName.BRAKET),
-        (0.1, 5000, kron(X(0), X(1)) + kron(Z(0), Z(1)) + kron(X(2), X(3)), BackendName.BRAKET),
-        (0.1, 500, add(Z(0), Z(1), kron(X(2), X(3))) + add(X(2), X(3)), BackendName.BRAKET),
-        (0.1, 2000, add(kron(Z(0), Z(1)), kron(X(2), X(3))), BackendName.BRAKET),
-        (0.1, 1300, kron(Z(0), Z(1)) + CNOT(0, 1), BackendName.BRAKET),
-        (
-            0.05,
-            1500,
-            kron(RZ(0, parameter=0.01), RZ(1, parameter=0.01))
-            + kron(RX(0, parameter=0.01), RX(1, parameter=0.01)),
-            BackendName.PULSER,
-        ),
-        (0.001, 5000, HamEvo(generator=kron(Z(0), Z(1)), parameter=0.05), BackendName.BRAKET),
-        (0.12, 2000, HamEvo(generator=kron(Z(0), Z(1), Z(2)), parameter=0.001), BackendName.BRAKET),
-        (
-            0.1,
-            1000,
-            HamEvo(generator=kron(Z(0), Z(1)) + kron(Z(0), Z(1), Z(2)), parameter=0.005),
-            BackendName.BRAKET,
-        ),
         (0.1, 100, kron(X(0), X(1)), BackendName.PYQTORCH),
         (0.1, 200, kron(Z(0), Z(1), Z(2)) + kron(X(0), Y(1), Z(2)), BackendName.PYQTORCH),
         (0.01, 1000, add(Z(0), Z(1), Z(2)), BackendName.PYQTORCH),
@@ -161,7 +138,7 @@ def test_readout_error_quantum_model(
         )
 
 
-@pytest.mark.parametrize("backend", [BackendName.BRAKET, BackendName.PYQTORCH, BackendName.PULSER])
+@pytest.mark.parametrize("backend", [BackendName.PYQTORCH, BackendName.PULSER])
 def test_readout_error_backends(backend: BackendName) -> None:
     n_qubits = 5
     error_probability = 0.1

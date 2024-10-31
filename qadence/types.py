@@ -225,8 +225,6 @@ class _BackendName(StrEnum):
 
     PYQTORCH = "pyqtorch"
     """The Pyqtorch backend."""
-    BRAKET = "braket"
-    """The Braket backend."""
     PULSER = "pulser"
     """The Pulser backend."""
     HORQRUX = "horqrux"
