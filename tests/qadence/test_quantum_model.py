@@ -98,47 +98,6 @@ def test_quantum_model_with_multi_controlled_rotation(gate: Any, n_qubits: int) 
     assert wf[0][-1] == -1
 
 
-# @given(st.restricted_circuits())
-# @settings(deadline=None)
-# def test_run_for_different_backends(circuit: QuantumCircuit) -> None:
-#     pyq_model = QuantumModel(circuit, backend=BackendName.PYQTORCH, diff_mode="ad")
-#     braket_model = QuantumModel(circuit, backend=BackendName.BRAKET, diff_mode="gpsr")
-#     inputs = rand_featureparameters(circuit, 1)
-#     assert equivalent_state(
-#         pyq_model.run(inputs), braket_model.run(inputs), atol=ATOL_DICT[BackendName.BRAKET]
-#     )
-
-
-# @given(st.restricted_circuits())
-# @settings(deadline=None)
-# def test_sample_for_different_backends(circuit: QuantumCircuit) -> None:
-#     pyq_model = QuantumModel(circuit, backend=BackendName.PYQTORCH, diff_mode="ad")
-#     braket_model = QuantumModel(circuit, backend=BackendName.BRAKET, diff_mode="gpsr")
-#     inputs = rand_featureparameters(circuit, 1)
-#     pyq_samples = pyq_model.sample(inputs, n_shots=100)
-#     braket_samples = braket_model.sample(inputs, n_shots=100)
-#     # Compare bitstring counts in pyq_samples with ones in braket_samples
-#     # avoiding non-sampled ones.
-#     for pyq_sample, sample in zip(pyq_samples, braket_samples):
-#         assert js_divergence(pyq_sample, sample) < JS_ACCEPTANCE + ATOL_DICT[BackendName.BRAKET]
-
-
-# @given(st.restricted_circuits())
-# @settings(deadline=None)
-# def test_expectation_for_different_backends(circuit: QuantumCircuit) -> None:
-#     observable = [total_magnetization(circuit.n_qubits) for _ in range(np.random.randint(1, 5))]
-#     pyq_model = QuantumModel(
-#         circuit, observable, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD
-#     )
-#     braket_model = QuantumModel(
-#         circuit, observable, backend=BackendName.BRAKET, diff_mode=DiffMode.GPSR
-#     )
-#     inputs = rand_featureparameters(circuit, 1)
-#     pyq_expectation = pyq_model.expectation(inputs)
-#     braket_expectation = braket_model.expectation(inputs)
-#     assert torch.allclose(pyq_expectation, braket_expectation)
-
-
 def test_negative_scale_qm() -> None:
     hamilt = kron(Z(0), Z(1)) - 10 * Z(0)
     circ = QuantumCircuit(2, HamEvo(hamilt, 3))
@@ -195,7 +154,6 @@ def test_hamevo_qm() -> None:
 def test_correct_order(backend: BackendName) -> None:
     circ = QuantumCircuit(3, X(0))
     obs = [Z(0) for _ in range(np.random.randint(1, 5))]
-    n_obs = len(obs)
     pyq_model = QuantumModel(
         circ, observable=obs, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD  # type: ignore
     )

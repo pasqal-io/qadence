@@ -169,36 +169,6 @@ def test_custom_initial_state(backend: str) -> None:
     )
 
 
-# @pytest.mark.parametrize(
-#     "circ", [QuantumCircuit(2, chain(X(0), X(1))), QuantumCircuit(2, chain(H(0), H(1)))]
-# )
-# @pytest.mark.flaky(max_runs=5)
-# def test_backend_sampling(circ: QuantumCircuit) -> None:
-#     bknd_pyqtorch = backend_factory(BackendName.PYQTORCH)
-#     bknd_braket = backend_factory(BackendName.BRAKET)
-
-#     (circ_pyqtorch, _, _, _) = bknd_pyqtorch.convert(circ)
-#     (circ_braket, _, embed, params) = bknd_braket.convert(circ)
-
-#     # braket doesn't support custom initial states, so we use state=None for the zero state
-#     pyqtorch_samples = bknd_pyqtorch.sample(
-#         circ_pyqtorch, embed(params, {}), state=None, n_shots=100
-#     )
-#     braket_samples = bknd_braket.sample(
-#         circ_braket,
-#         embed(params, {}),
-#         state=None,
-#         n_shots=100,
-#     )
-
-#     for pyqtorch_sample, braket_sample in zip(pyqtorch_samples, braket_samples):
-#         assert js_divergence(pyqtorch_sample, braket_sample) < JS_ACCEPTANCE
-
-#     wf_braket = bknd_braket.run(circ_braket)
-#     wf_pyqtorch = bknd_pyqtorch.run(circ_pyqtorch)
-#     assert equivalent_state(wf_braket, wf_pyqtorch, atol=ATOL_DICT[BackendName.BRAKET])
-
-
 @given(st.restricted_circuits())
 @settings(deadline=None)
 @pytest.mark.parametrize("backend", BACKENDS)
@@ -321,36 +291,6 @@ def test_run_for_random_state(backend: str, circuit: QuantumCircuit) -> None:
     assert not torch.any(torch.isnan(wf_randbit))
 
 
-# @pytest.mark.parametrize("bsize", [i for i in range(1, 10, 2)])
-# def test_output_cphase_batching(bsize: int) -> None:
-#     backend_list = [BackendName.BRAKET, BackendName.PYQTORCH]
-
-#     n_qubits = 4
-#     w = FeatureParameter("w")
-
-#     # Circuit is created here.
-#     circuit = QuantumCircuit(n_qubits, chain(X(0), CPHASE(1, 0, w), CPHASE(2, 1, w), RX(1, "x")))
-#     values = {"w": torch.rand(bsize)}
-#     exp_list = []
-#     wf_list = []
-#     for backend_name in backend_list:
-#         backend = backend_factory(backend_name)
-#         observable = [total_magnetization(n_qubits=circuit.n_qubits)] * 1
-#         (circ, obs, embed, params) = backend.convert(circuit, observable)
-
-#         val = embed(params, values)
-#         wf = backend.run(circ, val)
-#         wf_list.append(wf)
-
-#         expected = zero_state(n_qubits=4, batch_size=10)
-#         expected[0] = 1.0
-
-#         exp_list.append(backend.expectation(circ, obs, val))
-
-#     assert torch.allclose(exp_list[0], exp_list[1])
-#     assert equivalent_state(wf_list[0], wf_list[1])
-
-
 def test_custom_transpilation_passes() -> None:
     backend_list = [BackendName.PYQTORCH, BackendName.PULSER]
 
@@ -370,15 +310,6 @@ def test_custom_transpilation_passes() -> None:
 
         assert conv.circuit.original == conv_no_transp.circuit.original
         assert conv.circuit.abstract != conv_no_transp.circuit.abstract
-
-
-# def test_braket_parametric_cphase() -> None:
-#     param_name = "y"
-#     block = chain(X(0), H(1), CPHASE(0, 1, param_name))
-#     values = {param_name: torch.rand(1)}
-#     equivalent_state(
-#         run(block, values=values, backend="braket"), run(block, values=values, backend="pyqtorch")
-#     )
 
 
 @pytest.mark.parametrize("backend_name", [BackendName.PYQTORCH, BackendName.HORQRUX])
