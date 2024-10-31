@@ -10,7 +10,7 @@ a backend is via the high-level API `QuantumModel`.
 
 [_**PyQTorch**_](https://github.com/pasqal-io/PyQ): An efficient, large-scale simulator designed for
 quantum machine learning, seamlessly integrated with the popular [PyTorch](https://pytorch.org/) deep learning framework for automatic differentiability.
-It also offers analog computing for time-independent pulses. See [`PyQTorchBackend`][qadence.backends.pyqtorch.backend.Backend].
+It also offers analog computing for time-(in)dependent pulses. See [`PyQTorchBackend`][qadence.backends.pyqtorch.backend.Backend].
 
 [_**Pulser**_](https://github.com/pasqal-io/Pulser): A Python library for pulse-level/analog control of
 neutral atom devices. Execution via [QuTiP](https://qutip.org/). See [`PulserBackend`][qadence.backends.pulser.backend.Backend].
@@ -134,42 +134,32 @@ print("}") # markdown-exec: hide
 With the embedded parameters, `QuantumModel` methods are accessible:
 
 ```python exec="on" source="material-block" result="json" session="low-level-pyq"
-samples = backend.run(conv.circuit, embedded)
-print(f"{samples = }")
+output = backend.run(conv.circuit, embedded)
+print(f"{output = }")
 ```
 
 ## Lower-level: the `Backend` representation
 
 If there is a requirement to work with a specific backend, it is possible to access _**directly the native circuit**_.
-<!-- For example, Braket noise features can be imported which are not exposed directly by Qadence.
+For example, should one wish to use PyQtorch noise features directly instead of using the `NoiseHandler` interface from Qadence:
 
 ```python exec="on" source="material-block" session="low-level-pyq"
-from braket.circuits import Noise
+from pyqtorch.noise import Depolarizing
 
 # Get the native Braket circuit with the given parameters
 inputs = {"x": torch.rand(1), "y":torch.rand(1)}
 embedded = conv.embedding_fn(conv.params, inputs)
-native = backend.assign_parameters(conv.circuit, embedded)
 
-# Define a noise channel
-noise = Noise.Depolarizing(probability=0.1)
+# Define a noise channel on qubit 0
+noise = Depolarizing(0, error_probability=0.1)
 
-# Add noise to every gate in the circuit
-native.apply_gate_noise(noise)
+# Add noise to circuit
+conv.circuit.native.operations.append(noise)
 ```
 
-In order to run this noisy circuit, the density matrix simulator is needed in Braket:
+When running With noise, one can see that the output is a density matrix:
 
 ```python exec="on" source="material-block" result="json" session="low-level-pyq"
-from braket.devices import LocalSimulator
-
-device = LocalSimulator("braket_dm")
-result = device.run(native, shots=1000).result().measurement_counts
-print(result)
+density_result = backend.run(conv.circuit, embedded)
+print(density_result.shape)
 ```
-```python exec="on" source="material-block" result="json" session="low-level-pyq"
-print(conv.circuit.native.diagram())
-```
-```python exec="on" source="material-block" result="json" session="low-level-pyq"
-print(native.diagram())
-``` -->
