@@ -146,7 +146,6 @@ For example, should one wish to use PyQtorch noise features directly instead of 
 ```python exec="on" source="material-block" session="low-level-pyq"
 from pyqtorch.noise import Depolarizing
 
-# Get the native Braket circuit with the given parameters
 inputs = {"x": torch.rand(1), "y":torch.rand(1)}
 embedded = conv.embedding_fn(conv.params, inputs)
 
