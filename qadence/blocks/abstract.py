@@ -263,7 +263,7 @@ class AbstractBlock(ABC):
 
     @classmethod
     def _from_json(cls, path: str | Path) -> AbstractBlock:
-        d: dict = {}
+        d: dict = dict()
         if isinstance(path, str):
             path = Path(path)
         try:

@@ -36,7 +36,7 @@ from qadence.constructors import hea
 def test_psr_firstOrder() -> None:
     circ = QuantumCircuit(2, hea(2, 1))
     v_list = []
-    grad_dict = {}
+    grad_dict = dict()
     for diff_mode in ["ad", "gpsr"]:
         hq_bknd = backend_factory("horqrux", diff_mode)
         hq_circ, hq_obs, hq_fn, hq_params = hq_bknd.convert(circ, Z(0))
@@ -60,7 +60,7 @@ def test_psr_firstOrder() -> None:
 def test_psr_d3fdx(batch_size: int, obs: AbstractBlock) -> None:
     n_qubits: int = 2
     circ = QuantumCircuit(n_qubits, RX(0, "theta"))
-    grad_dict = {}
+    grad_dict = dict()
     for diff_mode in ["ad", "gpsr"]:
         hq_bknd = backend_factory("horqrux", diff_mode)
         hq_circ, hq_obs, hq_fn, hq_params = hq_bknd.convert(circ, obs)
@@ -85,7 +85,7 @@ def test_psr_d3fdx(batch_size: int, obs: AbstractBlock) -> None:
 def test_psr_2nd_order_mixed(batch_size: int, obs: AbstractBlock) -> None:
     n_qubits: int = 2
     circ = QuantumCircuit(n_qubits, hea(n_qubits=n_qubits, depth=1))
-    grad_dict = {}
+    grad_dict = dict()
     for diff_mode in ["ad", "gpsr"]:
         hq_bknd = backend_factory("horqrux", diff_mode)
         hq_circ, hq_obs, hq_fn, hq_params = hq_bknd.convert(circ, obs)
