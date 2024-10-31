@@ -35,7 +35,7 @@ def _n_qubits_block(block: AbstractBlock) -> int:
 def run(
     x: Union[QuantumCircuit, AbstractBlock, Register, int],
     *args: Any,
-    values: dict | None = None,
+    values: Union[dict, None] = None,
     state: Tensor = None,
     backend: BackendName = BackendName.PYQTORCH,
     endianness: Endianness = Endianness.BIG,
@@ -65,7 +65,7 @@ def run(
 @run.register
 def _(
     circuit: QuantumCircuit,
-    values: dict | None = None,
+    values: Union[dict, None] = None,
     state: Tensor = None,
     backend: BackendName = BackendName.PYQTORCH,
     endianness: Endianness = Endianness.BIG,
@@ -113,7 +113,7 @@ def _(circs: list, **kwargs: Any) -> Tensor:  # type: ignore[misc]
 def sample(
     x: Union[QuantumCircuit, AbstractBlock, Register, int],
     *args: Any,
-    values: dict | None = None,
+    values: Union[dict, None] = None,
     state: Union[Tensor, None] = None,
     n_shots: int = 100,
     backend: BackendName = BackendName.PYQTORCH,
@@ -142,7 +142,7 @@ def sample(
 @sample.register
 def _(
     circuit: QuantumCircuit,
-    values: dict | None = None,
+    values: Union[dict, None] = None,
     state: Union[Tensor, None] = None,
     n_shots: int = 100,
     backend: BackendName = BackendName.PYQTORCH,
@@ -185,7 +185,7 @@ def _(block: AbstractBlock, **kwargs: Any) -> Tensor:
 def expectation(
     x: Union[QuantumCircuit, AbstractBlock, Register, int],
     observable: Union[list[AbstractBlock], AbstractBlock],
-    values: dict | None = None,
+    values: Union[dict, None] = None,
     state: Tensor = None,
     backend: BackendName = BackendName.PYQTORCH,
     diff_mode: Union[DiffMode, str, None] = None,
@@ -237,7 +237,7 @@ def expectation(
 def _(
     circuit: QuantumCircuit,
     observable: Union[list[AbstractBlock], AbstractBlock],
-    values: dict | None = None,
+    values: Union[dict, None] = None,
     state: Tensor = None,
     backend: BackendName = BackendName.PYQTORCH,
     diff_mode: Union[DiffMode, str, None] = None,
