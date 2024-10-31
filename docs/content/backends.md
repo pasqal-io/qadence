@@ -131,26 +131,9 @@ for k, v in embedded.items(): print(f"  {k}: {v}") # markdown-exec: hide
 print("}") # markdown-exec: hide
 ```
 
-Note that above the parameters keys have changed as they now address the keys on the
-Braket device. A more readable embedding is provided by the PyQTorch backend:
-
-```python exec="on" source="material-block" result="json" session="low-level-pyq"
-from qadence import BackendName, DiffMode
-pyq_backend = backend_factory(backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD)
-
-# the `Converted` object
-# (contains a `ConvertedCircuit` wiht the original and native representation)
-pyq_conv = pyq_backend.convert(circuit)
-embedded = pyq_conv.embedding_fn(pyq_conv.params, inputs)
-print("embedded = {") # markdown-exec: hide
-for k, v in embedded.items(): print(f"  {k}: {v}") # markdown-exec: hide
-print("}") # markdown-exec: hide
-```
-
 With the embedded parameters, `QuantumModel` methods are accessible:
 
 ```python exec="on" source="material-block" result="json" session="low-level-pyq"
-embedded = conv.embedding_fn(conv.params, inputs)
 samples = backend.run(conv.circuit, embedded)
 print(f"{samples = }")
 ```

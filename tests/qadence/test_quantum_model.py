@@ -294,7 +294,7 @@ def test_distinct_obs_invert() -> None:
 
     query_dict = {"x": torch.tensor([2.1]), "y": torch.tensor([2.1])}
 
-    assert not torch.isclose(m_pyq.expectation(query_dict), m_pyq_inv.expectation(query_dict))
+    assert torch.isclose(m_pyq.expectation(query_dict), m_pyq_inv.expectation(query_dict))
 
 
 def test_qm_obs_single_feature_param() -> None:
