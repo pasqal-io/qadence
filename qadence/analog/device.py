@@ -49,7 +49,7 @@ class RydbergDevice:
             )
 
     def _to_dict(self) -> dict:
-        device_dict = {}
+        device_dict = dict()
         for field in fields(self):
             if field.name != "pattern":
                 device_dict[field.name] = getattr(self, field.name)

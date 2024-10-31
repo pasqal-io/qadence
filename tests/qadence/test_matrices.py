@@ -66,9 +66,9 @@ from qadence.types import BasisSet, Interaction, ReuploadScaling
 
 
 def _calc_mat_vec_wavefunction(
-    block: AbstractBlock, n_qubits: int, init_state: torch.Tensor, values: dict = {}
+    block: AbstractBlock, n_qubits: int, init_state: torch.Tensor, values: dict | None = None
 ) -> torch.Tensor:
-    mat = block_to_tensor(block, values, tuple(range(n_qubits)))
+    mat = block_to_tensor(block, values or dict(), tuple(range(n_qubits)))
     return torch.einsum("bij,kj->bi", mat, init_state)
 
 
