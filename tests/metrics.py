@@ -23,7 +23,6 @@ ATOL_DICT = {
     BackendName.PYQTORCH: ATOL_32,
     BackendName.HORQRUX: ATOL_32,
     BackendName.PULSER: 1e-02,
-    BackendName.BRAKET: 1e-02,
 }
 MAX_COUNT_DIFF = 20
 SMALL_SPACING = 7.0

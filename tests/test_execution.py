@@ -18,13 +18,11 @@ from qadence.register import Register
 from qadence.states import equivalent_state
 from qadence.types import BackendName, DiffMode
 
-BACKENDS = [BackendName.PYQTORCH, BackendName.BRAKET]
 
-
-@pytest.mark.parametrize("backend", list(BACKENDS))
 @given(st.restricted_batched_circuits())
 @settings(deadline=None)
-def test_run(backend: BackendName, circ_and_vals: tuple[QuantumCircuit, dict[str, Tensor]]) -> None:
+def test_run(circ_and_vals: tuple[QuantumCircuit, dict[str, Tensor]]) -> None:
+    backend = BackendName.PYQTORCH
     circ, inputs = circ_and_vals
     reg = Register(circ.n_qubits)
     wf = run(circ, values=inputs, backend=backend)  # type: ignore[arg-type]
@@ -33,12 +31,10 @@ def test_run(backend: BackendName, circ_and_vals: tuple[QuantumCircuit, dict[str
     assert isinstance(wf, Tensor)
 
 
-@pytest.mark.parametrize("backend", list(BACKENDS))
 @given(st.restricted_batched_circuits())
 @settings(deadline=None)
-def test_sample(
-    backend: BackendName, circ_and_vals: tuple[QuantumCircuit, dict[str, Tensor]]
-) -> None:
+def test_sample(circ_and_vals: tuple[QuantumCircuit, dict[str, Tensor]]) -> None:
+    backend = BackendName.PYQTORCH
     circ, inputs = circ_and_vals
     reg = Register(circ.n_qubits)
     samples = sample(circ, values=inputs, backend=backend)
@@ -48,14 +44,13 @@ def test_sample(
 
 
 @pytest.mark.parametrize("diff_mode", list(DiffMode) + [None])
-@pytest.mark.parametrize("backend", list(BACKENDS))
 @given(st.restricted_batched_circuits())
 @settings(deadline=None)
 def test_expectation(
     diff_mode: DiffMode,
-    backend: BackendName,
     circ_and_vals: tuple[QuantumCircuit, dict[str, Tensor]],
 ) -> None:
+    backend = BackendName.PYQTORCH
     if diff_mode in ("ad", "adjoint") and backend != "pyqtorch":
         pytest.skip(f"Backend {backend} doesnt support diff_mode={diff_mode}.")
     circ, inputs = circ_and_vals
@@ -76,10 +71,8 @@ def test_expectation(
         assert x.size(0) == 1
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
-def test_single_qubit_block(
-    backend: BackendName, block: AbstractBlock = RX(2, rand(1).item())
-) -> None:
+def test_single_qubit_block(block: AbstractBlock = RX(2, rand(1).item())) -> None:
+    backend = BackendName.PYQTORCH
     run(block, values={}, backend=backend)  # type: ignore[arg-type]
     sample(block, values={}, backend=backend)  # type: ignore[arg-type]
     expectation(block, Z(0), values={}, backend=backend)  # type: ignore[arg-type]

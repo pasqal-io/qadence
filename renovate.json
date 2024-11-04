@@ -13,7 +13,5 @@
         "renovate"
     ],
     "ignoreDeps": [
-	"braket/amazon-braket-sdk",
-	"all/amazon-braket-sdk"
     ]
 }
