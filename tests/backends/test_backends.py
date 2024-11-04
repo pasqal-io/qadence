@@ -23,7 +23,7 @@ from qadence.constructors import total_magnetization
 from qadence.divergences import js_divergence
 from qadence.execution import run
 from qadence.ml_tools.utils import rand_featureparameters
-from qadence.operations import RX, RY, HamEvo, I, X, Y, Z
+from qadence.operations import RX, RY, H, HamEvo, I, X, Y, Z
 from qadence.parameters import FeatureParameter, Parameter
 from qadence.states import (
     equivalent_state,
@@ -310,6 +310,36 @@ def test_custom_transpilation_passes() -> None:
 
         assert conv.circuit.original == conv_no_transp.circuit.original
         assert conv.circuit.abstract != conv_no_transp.circuit.abstract
+
+
+@pytest.mark.parametrize(
+    "circ", [QuantumCircuit(2, chain(X(0), X(1))), QuantumCircuit(2, chain(H(0), H(1)))]
+)
+@pytest.mark.flaky(max_runs=5)
+def test_backend_sampling(circ: QuantumCircuit) -> None:
+    bknd_pyqtorch = backend_factory(BackendName.PYQTORCH)
+    bknd_horqrux = backend_factory(BackendName.HORQRUX)
+
+    (circ_pyqtorch, _, _, _) = bknd_pyqtorch.convert(circ)
+    (circ_horqrux, _, embed, params) = bknd_horqrux.convert(circ)
+
+    # braket doesn't support custom initial states, so we use state=None for the zero state
+    pyqtorch_samples = bknd_pyqtorch.sample(
+        circ_pyqtorch, embed(params, {}), state=None, n_shots=100
+    )
+    horqrux_samples = bknd_horqrux.sample(
+        circ_horqrux,
+        embed(params, {}),
+        state=None,
+        n_shots=100,
+    )
+
+    for pyqtorch_sample, braket_sample in zip(pyqtorch_samples, horqrux_samples):
+        assert js_divergence(pyqtorch_sample, braket_sample) < JS_ACCEPTANCE
+
+    wf_horqrux = jarr_to_tensor(bknd_horqrux.run(circ_horqrux))
+    wf_pyqtorch = bknd_pyqtorch.run(circ_pyqtorch)
+    assert equivalent_state(wf_horqrux, wf_pyqtorch)
 
 
 @pytest.mark.parametrize("backend_name", [BackendName.PYQTORCH, BackendName.HORQRUX])
