@@ -302,7 +302,7 @@ def test_overlap_exact_speed(n_qubits: int) -> None:
 
 
 @pytest.mark.parametrize("gate", [Z, S, T, H])
-def test_overlap_training(backend_name: BackendName, gate: PrimitiveBlock) -> None:
+def test_overlap_training(gate: PrimitiveBlock) -> None:
     backend_name = BackendName.PYQTORCH
     # define training parameters
     phi = VariationalParameter("phi")

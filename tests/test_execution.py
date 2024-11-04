@@ -71,9 +71,7 @@ def test_expectation(
         assert x.size(0) == 1
 
 
-def test_single_qubit_block(
-    backend: BackendName, block: AbstractBlock = RX(2, rand(1).item())
-) -> None:
+def test_single_qubit_block(block: AbstractBlock = RX(2, rand(1).item())) -> None:
     backend = BackendName.PYQTORCH
     run(block, values={}, backend=backend)  # type: ignore[arg-type]
     sample(block, values={}, backend=backend)  # type: ignore[arg-type]
