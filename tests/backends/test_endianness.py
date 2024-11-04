@@ -277,8 +277,8 @@ def test_sample_inversion_for_random_circuit(backend: str, circuit: QuantumCircu
 
 @given(st.restricted_circuits())
 @settings(deadline=None)
-@pytest.mark.parametrize("backend", [BackendName.PYQTORCH])
-def test_wf_inversion_for_random_circuit(backend: str, circuit: QuantumCircuit) -> None:
+def test_wf_inversion_for_random_circuit(circuit: QuantumCircuit) -> None:
+    backend = BackendName.PYQTORCH
     bknd = backend_factory(backend=backend)
     (circ, _, embed, params) = bknd.convert(circuit)
     inputs = rand_featureparameters(circuit, 1)

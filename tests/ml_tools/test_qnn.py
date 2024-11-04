@@ -347,8 +347,8 @@ def test_variational_transformed_module(
 
 
 @pytest.mark.parametrize("diff_mode", [DiffMode.GPSR, DiffMode.AD])
-@pytest.mark.parametrize("backend", [BackendName.PYQTORCH])
-def test_config_qnn(diff_mode: DiffMode, backend: BackendName) -> None:
+def test_config_qnn(diff_mode: DiffMode) -> None:
+    backend = BackendName.PYQTORCH
     fm_config = FeatureMapConfig(num_features=1)
     ansatz_config = AnsatzConfig()
     observable_config = ObservableConfig(detuning=Z)
