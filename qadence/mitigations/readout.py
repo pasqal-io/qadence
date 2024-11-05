@@ -10,9 +10,10 @@ from numpy.linalg import inv, matrix_rank, pinv
 from scipy.linalg import norm
 from scipy.optimize import LinearConstraint, minimize
 
+from qadence.backends.pyqtorch.convert_ops import convert_readout_noise
 from qadence.mitigations.protocols import Mitigations
 from qadence.noise.protocols import NoiseHandler
-from qadence.types import NoiseProtocol, ReadOutOptimization
+from qadence.types import ReadOutOptimization
 
 
 def corrected_probas(p_corr: npt.NDArray, T: npt.NDArray, p_raw: npt.NDArray) -> np.double:
@@ -88,13 +89,18 @@ def mitigation_minimization(
     Returns:
         Mitigated counts computed by the algorithm
     """
-    protocol, options = noise.protocol[-1], noise.options[-1]
-    if protocol != NoiseProtocol.READOUT:
-        raise ValueError("Specify a noise source of type NoiseProtocol.READOUT.")
-    noise_matrices = options.get("noise_matrix", options["confusion_matrices"])
-    optimization_type = mitigation.options.get("optimization_type", ReadOutOptimization.MLE)
+
     n_qubits = len(list(samples[0].keys())[0])
+    readout_noise = convert_readout_noise(n_qubits, noise)
+    if readout_noise is None:
+        raise ValueError("Specify a noise source of type NoiseProtocol.READOUT.")
     n_shots = sum(samples[0].values())
+    noise_matrices = readout_noise.confusion_matrices
+    if readout_noise.confusion_matrices.numel() == 0:
+        readout_noise.create_noise_matrix(n_shots)
+        noise_matrices = readout_noise.confusion_matrices
+    optimization_type = mitigation.options.get("optimization_type", ReadOutOptimization.MLE)
+
     corrected_counters: list[Counter] = []
 
     if optimization_type == ReadOutOptimization.CONSTRAINED:
