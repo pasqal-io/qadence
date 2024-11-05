@@ -92,16 +92,6 @@ print(f"noiseless = {noiseless_samples}") # markdown-exec: hide
 print(f"noisy = {noisy_samples}") # markdown-exec: hide
 ```
 
-Note we can apply directly the method `apply_readout_noise` to the noiseless samples as follows:
-
-```python exec="on" source="material-block" session="noise" result="json"
-from qadence.noise import apply_readout_noise
-altered_samples = apply_readout_noise(noise, noiseless_samples)
-
-print(f"noiseless = {noiseless_samples}") # markdown-exec: hide
-print(f"noisy = {noisy_samples}") # markdown-exec: hide
-```
-
 It is possible to pass options to the noise model. In the previous example, a noise matrix is implicitly computed from a
 uniform distribution. The `option` dictionary argument accepts the following options:
 
