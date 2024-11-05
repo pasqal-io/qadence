@@ -234,6 +234,7 @@ def convert_block(
                 generator=generator,
                 time=time_param,
                 cache_length=0,
+                duration=block.duration,  # type: ignore [attr-defined]
             )
         ]
 
