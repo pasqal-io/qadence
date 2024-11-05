@@ -23,7 +23,6 @@ from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.mitigations.protocols import Mitigations, apply_mitigation
 from qadence.noise import NoiseHandler
-from qadence.noise.protocols import apply_readout_noise
 from qadence.transpile import (
     chain_single_qubit_ops,
     flatten,
@@ -34,7 +33,7 @@ from qadence.transpile import (
 from qadence.types import BackendName, Endianness, Engine
 
 from .config import Configuration, default_passes
-from .convert_ops import convert_block
+from .convert_ops import convert_block, convert_readout_noise
 
 logger = getLogger(__name__)
 
@@ -65,7 +64,16 @@ class Backend(BackendInterface):
             circuit = transpile(*passes)(circuit)
 
         ops = convert_block(circuit.block, n_qubits=circuit.n_qubits, config=self.config)
-        native = pyq.QuantumCircuit(circuit.n_qubits, ops)
+        readout_noise = (
+            convert_readout_noise(circuit.n_qubits, self.config.noise)
+            if self.config.noise
+            else None
+        )
+        native = pyq.QuantumCircuit(
+            circuit.n_qubits,
+            ops,
+            readout_noise,
+        )
         return ConvertedCircuit(native=native, abstract=circuit, original=original_circ)
 
     def observable(self, observable: AbstractBlock, n_qubits: int) -> ConvertedObservable:
@@ -116,6 +124,9 @@ class Backend(BackendInterface):
         noise: NoiseHandler | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
+        if noise and circuit.readout_noise is None:
+            readout = convert_readout_noise(circuit.n_qubits, noise)
+            circuit.readout_noise = readout
         state = self.run(
             circuit,
             param_values=param_values,
@@ -152,6 +163,11 @@ class Backend(BackendInterface):
                 "Looping expectation does not make sense with batched initial state. "
                 "Define your initial state with `batch_size=1`"
             )
+
+        if noise and circuit.readout_noise is None:
+            readout = convert_readout_noise(circuit.n_qubits, noise)
+            circuit.readout_noise = readout
+
         list_expvals = []
         observables = observable if isinstance(observable, list) else [observable]
         for vals in to_list_of_dicts(param_values):
@@ -206,12 +222,13 @@ class Backend(BackendInterface):
         elif state is not None and pyqify_state:
             n_qubits = circuit.abstract.n_qubits
             state = pyqify(state, n_qubits) if pyqify_state else state
+        if noise and circuit.readout_noise is None:
+            readout = convert_readout_noise(circuit.n_qubits, noise)
+            circuit.readout_noise = readout
         samples: list[Counter] = circuit.native.sample(
             state=state, values=param_values, n_shots=n_shots
         )
         samples = invert_endianness(samples) if endianness != Endianness.BIG else samples
-        if noise is not None:
-            samples = apply_readout_noise(noise=noise, samples=samples)
         if mitigation is not None:
             logger.warning(
                 "Mitigation protocol is deprecated. Use qadence-protocols instead.",
