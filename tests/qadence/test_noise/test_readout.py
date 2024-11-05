@@ -88,8 +88,10 @@ def test_readout_error_backends(backend: BackendName) -> None:
     samples = qd.sample(feature_map, n_shots=1000, values=inputs, backend=backend, noise=None)
     # introduce noise
     options = {"error_probability": error_probability}
-    noise = NoiseHandler(protocol=NoiseProtocol.READOUT, options=options).get_noise_fn(-1)
-    noisy_samples = noise(counters=samples, n_qubits=n_qubits)
+    noise = NoiseHandler(protocol=NoiseProtocol.READOUT, options=options)
+    noisy_samples = qd.sample(
+        feature_map, n_shots=1000, values=inputs, backend=backend, noise=noise
+    )
     # compare that the results are with an error of 10% (the default error_probability)
     for sample, noisy_sample in zip(samples, noisy_samples):
         assert sum(sample.values()) == sum(noisy_sample.values())

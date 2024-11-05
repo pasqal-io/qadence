@@ -126,7 +126,7 @@ class Backend(BackendInterface):
     ) -> Tensor:
         if noise and circuit.readout_noise is None:
             readout = convert_readout_noise(circuit.n_qubits, noise)
-            circuit.readout_noise = readout
+            circuit.native.readout_noise = readout
         state = self.run(
             circuit,
             param_values=param_values,
@@ -166,7 +166,7 @@ class Backend(BackendInterface):
 
         if noise and circuit.readout_noise is None:
             readout = convert_readout_noise(circuit.n_qubits, noise)
-            circuit.readout_noise = readout
+            circuit.native.readout_noise = readout
 
         list_expvals = []
         observables = observable if isinstance(observable, list) else [observable]

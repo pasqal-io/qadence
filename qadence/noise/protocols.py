@@ -1,14 +1,9 @@
 from __future__ import annotations
 
-import importlib
 from itertools import compress
-from typing import Any, Callable, cast
+from typing import Any
 
 from qadence.types import NoiseEnum, NoiseProtocol
-
-PROTOCOL_TO_MODULE = {
-    "Readout": "qadence.noise.readout",
-}
 
 
 class NoiseHandler:
@@ -105,16 +100,6 @@ class NoiseHandler:
                 for protocol, option in zip(self.protocol, self.options)
             ]
         )
-
-    def get_noise_fn(self, index_protocol: int) -> Callable:
-        try:
-            module = importlib.import_module(PROTOCOL_TO_MODULE[self.protocol[index_protocol]])
-        except KeyError:
-            ImportError(
-                f"The module for the protocol {self.protocol[index_protocol]} is not found."
-            )
-        fn = getattr(module, "add_noise")
-        return cast(Callable, fn)
 
     def append(self, other: NoiseHandler | list[NoiseHandler]) -> None:
         """Append noises.
