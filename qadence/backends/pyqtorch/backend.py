@@ -124,8 +124,8 @@ class Backend(BackendInterface):
         noise: NoiseHandler | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
-        if noise and circuit.readout_noise is None:
-            readout = convert_readout_noise(circuit.n_qubits, noise)
+        if noise and circuit.native.readout_noise is None:
+            readout = convert_readout_noise(circuit.abstract.n_qubits, noise)
             circuit.native.readout_noise = readout
         state = self.run(
             circuit,
@@ -164,8 +164,8 @@ class Backend(BackendInterface):
                 "Define your initial state with `batch_size=1`"
             )
 
-        if noise and circuit.readout_noise is None:
-            readout = convert_readout_noise(circuit.n_qubits, noise)
+        if noise and circuit.native.readout_noise is None:
+            readout = convert_readout_noise(circuit.abstract.n_qubits, noise)
             circuit.native.readout_noise = readout
 
         list_expvals = []
@@ -222,9 +222,9 @@ class Backend(BackendInterface):
         elif state is not None and pyqify_state:
             n_qubits = circuit.abstract.n_qubits
             state = pyqify(state, n_qubits) if pyqify_state else state
-        if noise and circuit.readout_noise is None:
-            readout = convert_readout_noise(circuit.n_qubits, noise)
-            circuit.readout_noise = readout
+        if noise and circuit.native.readout_noise is None:
+            readout = convert_readout_noise(circuit.abstract.n_qubits, noise)
+            circuit.native.readout_noise = readout
         samples: list[Counter] = circuit.native.sample(
             state=state, values=param_values, n_shots=n_shots
         )
