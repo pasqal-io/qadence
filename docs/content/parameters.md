@@ -72,7 +72,7 @@ gate = RX(0, expr)
 # Or as scaling coefficients for Hermitian operators
 h_op = expr * (Z(0) @ Z(1))
 
-wf = run(gate * HamEvo(h_op, phi), values = {"phi": tensor(PI)})
+wf = run(gate * HamEvo(h_op, 1.0), values = {"phi": tensor(PI)})
 print(f"{wf = }") # markdown-exec: hide
 ```
 
