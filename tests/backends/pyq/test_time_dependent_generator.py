@@ -12,6 +12,7 @@ from pyqtorch.utils import SolverType
 from qadence import AbstractBlock, HamEvo, QuantumCircuit, QuantumModel, Register, run
 
 
+@pytest.mark.parametrize("duration", [0.5, 1.0, 2.0, 5.0])
 @pytest.mark.parametrize("ode_solver", [SolverType.DP5_SE, SolverType.KRYLOV_SE])
 def test_time_dependent_generator(
     qadence_generator: AbstractBlock,
@@ -20,11 +21,11 @@ def test_time_dependent_generator(
     feature_param_x: float,
     feature_param_y: float,
     ode_solver: SolverType,
+    duration: float,
 ) -> None:
-    duration = 1.0
     n_steps = 500
 
-    # simulate with qadence HamEvo usin QuantumModel
+    # simulate with qadence HamEvo using QuantumModel
     hamevo = HamEvo(qadence_generator, time_param, duration=duration)
     reg = Register(2)
     circ = QuantumCircuit(reg, hamevo)
