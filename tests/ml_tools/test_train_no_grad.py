@@ -10,7 +10,7 @@ import pytest
 import torch
 from torch.utils.data import DataLoader
 
-from qadence.ml_tools import TrainConfig, num_parameters, to_dataloader, train_gradient_free
+from qadence.ml_tools import TrainConfig, Trainer, num_parameters, to_dataloader
 
 # ensure reproducibility
 SEED = 42
@@ -47,8 +47,10 @@ def test_train_dataloader_default(tmp_path: Path, Basic: torch.nn.Module) -> Non
 
     optimizer = ng.optimizers.NGOpt(budget=config.max_iter, parametrization=num_parameters(model))
 
-    train_gradient_free(model, data, optimizer, config, loss_fn=loss_fn)
-    assert next(cnt) == n_epochs
+    trainer = Trainer(model, None, config=config, loss_fn=loss_fn, train_dataloader=data)
+    with trainer.disable_grad_opt(optimizer):
+        trainer.fit()
+    assert next(cnt) == n_epochs + 1
 
     x = torch.rand(5, 1)
     assert torch.allclose(torch.cos(x), model(x), rtol=1e-1, atol=1e-1)
