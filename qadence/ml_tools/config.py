@@ -123,7 +123,7 @@ class TrainConfig:
 
     If set to 0, validation is not performed.
     Note that metrics from validation are always written, regardless of the `write_every` setting.
-    Note that intial validation also happens at the start of training, for which metrics are
+    Note that initial validation also happens at the start of training, for which metrics are
     written.
     """
 

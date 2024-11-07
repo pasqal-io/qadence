@@ -1,7 +1,7 @@
 
 # Callbacks for Trainer
 
-Qadence ml_tools provides a powerful callback system for customizing various stages of the training process. With callbacks, you can monitor, log, save, and alter your training workflow efficiently. A `CallbackManager` is used with [`Trainer`][qadence.ml_tools.Trainer] to excute the training process with defined callbacks. The default callbacks already provided in the [`Trainer`][qadence.ml_tools.Trainer] are
+Qadence ml_tools provides a powerful callback system for customizing various stages of the training process. With callbacks, you can monitor, log, save, and alter your training workflow efficiently. A `CallbackManager` is used with [`Trainer`][qadence.ml_tools.Trainer] to execute the training process with defined callbacks. The default callbacks already provided in the [`Trainer`][qadence.ml_tools.Trainer].
 
 ### Default Callbacks
 Below is a list of the default callbacks already implemented in the `CallbackManager` used with [`Trainer`][qadence.ml_tools.Trainer]:
@@ -200,7 +200,7 @@ config = TrainConfig(
 
 ## 4. Using Callbacks with `Trainer`
 
-The `Trainer` class in `qadence.ml_tools` provides built-in support for executing callbacks at various stages in the training process, managed through a callback manager. By default, several callbacks are added to specific hooks to automate common tasks, such as checkpointing, metric logging, and model tracking.
+The `Trainer` class in `qadence.ml_tools` provides built-in support for executing callbacks at various stages in the training process, managed through a callback manager. By default, several callbacks are added to specific hooks to automate common tasks, such as check-pointing, metric logging, and model tracking.
 
 ### Default Callbacks
 Below is a list of the default callbacks and their assigned hooks:

@@ -56,7 +56,7 @@ class ConfigManager:
         config has three parameters
         - folder: The root folder for logging
         - subfolders: list of subfolders inside `folder` that are used for logging
-        - log_folder: folder currently used for loggin.
+        - log_folder: folder currently used for logging.
         """
         if self.config.folder:
             self.config._log_folder = self._create_log_folder(self.config.folder)

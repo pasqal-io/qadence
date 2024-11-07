@@ -43,9 +43,9 @@ data = next(iter(ddl))
 print(f"{data = }")
 ```
 
-## 2. Training Configration
+## 2. Training Configuration
 
-The [`TrainConfig`][qadence.ml_tools.config.TrainConfig] class provides a comprehensive configuration setup for training quantam machine learning models in Qadence. This configuration includes settings for batch size, logging, checkpointing, validation, and additional custom callbacks that control the training process's granularity and flexibility.
+The [`TrainConfig`][qadence.ml_tools.config.TrainConfig] class provides a comprehensive configuration setup for training quantam machine learning models in Qadence. This configuration includes settings for batch size, logging, check-pointing, validation, and additional custom callbacks that control the training process's granularity and flexibility.
 
 The [`TrainConfig`][qadence.ml_tools.config.TrainConfig] tells [`Trainer`][qadence.ml_tools.Trainer]  what batch_size should be used, how many epochs to train, in which intervals to print/log metrics and how often to store intermediate checkpoints.
 It is also possible to provide custom callback functions by instantiating a [`Callback`][qadence.ml_tools.callbacks.Callback]

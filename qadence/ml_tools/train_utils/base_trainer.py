@@ -25,8 +25,8 @@ logger = getLogger(__name__)
 class BaseTrainer:
     """Base class for training machine learning models using a given optimizer.
 
-    The base class implementes contextmanagers for gradient based/free optimization,
-    properties, property setters, input validations, callback decorator denerator,
+    The base class implements contextmanager for gradient based/free optimization,
+    properties, property setters, input validations, callback decorator generator,
     and empty hooks for different training steps.
 
     This class provides:
@@ -49,11 +49,11 @@ class BaseTrainer:
         loss_fn (Union[Callable, str, None]): loss function to use.
 
         num_training_batches (int): Number of training batches. In case of
-            InfiniteTensorDataset only 1 batch per eopch is used.
+            InfiniteTensorDataset only 1 batch per epoch is used.
         num_validation_batches (int): Number of validation batches. In case of
-            InfiniteTensorDataset only 1 batch per eopch is used.
+            InfiniteTensorDataset only 1 batch per epoch is used.
         num_test_batches (int): Number of test batches. In case of
-            InfiniteTensorDataset only 1 batch per eopch is used.
+            InfiniteTensorDataset only 1 batch per epoch is used.
 
         state (str): Current state in the training process
     """
@@ -84,7 +84,7 @@ class BaseTrainer:
                 str input to be specified to use a default loss function.
                 currently supported loss functions: 'mse', 'cross_entropy'
             train_dataloader (Optional[DataLoader]): DataLoader for training data.
-                If the model does not need data to evaluvate loss, no dataset
+                If the model does not need data to evaluate loss, no dataset
                 should be provided.
             val_dataloader (Optional[DataLoader]): DataLoader for validation data.
             test_dataloader (Optional[DataLoader]): DataLoader for testing data.
@@ -92,7 +92,7 @@ class BaseTrainer:
                 This is only valid in case of finite TensorDataset dataloaders.
                 if max_batches is not None, the maximum number of batches used will
                 be min(max_batches, len(dataloader.dataset))
-                In case of InfiniteTensorDataset only 1 batch per eopch is used.
+                In case of InfiniteTensorDataset only 1 batch per epoch is used.
         """
         self._model: nn.Module
         self._optimizer: Union[optim.Optimizer, NGOptimizer, None]
@@ -160,7 +160,7 @@ class BaseTrainer:
         """
         Sets the optimizer, checking compatibility with gradient use.
 
-        We also set up the budget/behaviour of different optimizers here.
+        We also set up the budget/behavior of different optimizers here.
 
         Args:
             optimizer (Union[optim.Optimizer, NGOptimizer]): The optimizer for training.
@@ -368,7 +368,7 @@ class BaseTrainer:
 
         Args:
             optimizer Optional(optim.Optimizer): The PyTorch optimizer to use.
-                If no optimizer is provided, default optimer for trainer
+                If no optimizer is provided, default optimizer for trainer
                 object will be used.
         """
         original_mode = self.use_grad
@@ -390,7 +390,7 @@ class BaseTrainer:
 
         Args:
             optimizer Optional(NGOptimizer): The Nevergrad optimizer to use.
-                If no optimizer is provided, default optimer for trainer
+                If no optimizer is provided, default optimizer for trainer
                 object will be used.
         """
         original_mode = self.use_grad

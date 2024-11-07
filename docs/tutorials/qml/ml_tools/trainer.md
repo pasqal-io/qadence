@@ -417,8 +417,8 @@ training loop based on the building blocks that are available in Qadence.
 A simplified version of Qadence's train loop is defined below. Feel free to copy it and modify at
 will.
 
-For logging we can use the `get_writer` from the `Writer Registery`. This will set up the default writer based on the experiment tracking tool.
-All writers from the `Writer Registery` offer `open`, `close`, `print_metrics`, `write_metrics`, `plot_metrics`, etc methods.
+For logging we can use the `get_writer` from the `Writer Registry`. This will set up the default writer based on the experiment tracking tool.
+All writers from the `Writer Registry` offer `open`, `close`, `print_metrics`, `write_metrics`, `plot_metrics`, etc methods.
 
 
 ```python
@@ -484,16 +484,6 @@ def train(
 
     return model, optimizer
 ```
-
-
-In this notebook, we solve a quadratic unconstrained binary optimization (QUBO) problem with
-Qadence. QUBOs are very popular combinatorial optimization problems with a wide range of
-applications. Here, we solve the problem using the QAOA [^1] variational algorithm by embedding
-the QUBO problem weights onto a register as standard for neutral atom quantum devices.
-
-Additional background information on QUBOs can be found
-[here](https://pulser.readthedocs.io/en/stable/tutorials/qubo.html),
-directly solved using the pulse-level interface Pulser.
 
 ### 6.5. Gradient-free optimization using `Trainer`
 

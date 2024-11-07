@@ -166,7 +166,7 @@ class TensorBoardWriter(BaseWriter):
         Args:
             result (OptimizeResult): The optimization results to log.
         """
-        # Not writing loss as loss is avalible in the metrics
+        # Not writing loss as loss is available in the metrics
         # if result.loss is not None:
         #     self.writer.add_scalar("loss", float(result.loss), result.iteration)
         if self.writer:
@@ -279,7 +279,7 @@ class MLFlowWriter(BaseWriter):
         Args:
             result (OptimizeResult): The optimization results to log.
         """
-        # Not writing loss as loss is avalible in the metrics
+        # Not writing loss as loss is available in the metrics
         # if result.loss is not None:
         #     self.mlflow.log_metric("loss", float(result.loss), step=result.iteration)
         if self.mlflow:

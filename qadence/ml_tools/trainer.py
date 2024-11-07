@@ -78,7 +78,7 @@ class Trainer(BaseTrainer):
         - In case of TensorDataset, number of batches are default.
         - Training is run for max_iter + 1 epochs. Epoch 0 logs untrained model.
         - Please look at the CallbackManager initialize_callbacks method to review the default
-            logging behaviour.
+            logging behavior.
 
     Examples:
 
@@ -260,7 +260,7 @@ class Trainer(BaseTrainer):
                 This is only valid in case of finite TensorDataset dataloaders.
                 if max_batches is not None, the maximum number of batches used will
                 be min(max_batches, len(dataloader.dataset))
-                In case of InfiniteTensorDataset only 1 batch per eopch is used.
+                In case of InfiniteTensorDataset only 1 batch per epoch is used.
         """
         super().__init__(
             model=model,
@@ -582,7 +582,7 @@ class Trainer(BaseTrainer):
                 yield None
         else:
             for batch in islice(dataloader, num_batches):
-                # batch is moved to device insdie optimize step
+                # batch is moved to device inside optimize step
                 # batch = data_to_device(batch, device=self.device, dtype=self.data_dtype)
                 yield batch
 
@@ -592,8 +592,8 @@ class Trainer(BaseTrainer):
         """
         Modifies the loss and metrics at the end of batch for proper logging.
 
-        All metrices are prefixed with the proper state of the training process
-         - "trian_" or "val_" or "test_"
+        All metrics are prefixed with the proper state of the training process
+         - "train_" or "val_" or "test_"
         A "{state}_loss" is added to metrics.
 
         Args:
