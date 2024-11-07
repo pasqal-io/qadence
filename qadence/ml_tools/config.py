@@ -1,19 +1,14 @@
 from __future__ import annotations
 
-import datetime
-import os
 from dataclasses import dataclass, field, fields
 from logging import getLogger
 from pathlib import Path
-from typing import Any, Callable, Type
-from uuid import uuid4
+from typing import Callable, Type
 
 from sympy import Basic
-from torch import Tensor
 
 from qadence.blocks.analog import AnalogBlock
 from qadence.blocks.primitive import ParametricBlock
-from qadence.ml_tools.data import OptimizeResult
 from qadence.operations import RX, AnalogRX
 from qadence.parameters import Parameter
 from qadence.types import (
@@ -28,150 +23,16 @@ from qadence.types import (
 
 logger = getLogger(__file__)
 
-CallbackFunction = Callable[[OptimizeResult], None]
-CallbackConditionFunction = Callable[[OptimizeResult], bool]
-
-
-class Callback:
-    """Callback functions are calling in train functions.
-
-    Each callback function should take at least as first input
-    an OptimizeResult instance.
-
-    Note: when setting call_after_opt to True, we skip
-    verifying iteration % called_every == 0.
-
-    Attributes:
-        callback (CallbackFunction): Callback function accepting an
-            OptimizeResult as first argument.
-        callback_condition (CallbackConditionFunction | None, optional): Function that
-            conditions the call to callback. Defaults to None.
-        modify_optimize_result (CallbackFunction | dict[str, Any] | None, optional):
-            Function that modify the OptimizeResult before callback.
-            For instance, one can change the `extra` (dict) argument to be used in callback.
-            If a dict is provided, the `extra` field of OptimizeResult is updated with the dict.
-        called_every (int, optional): Callback to be called each `called_every` epoch.
-            Defaults to 1.
-            If callback_condition is None, we set
-            callback_condition to returns True when iteration % called_every == 0.
-        call_before_opt (bool, optional): If true, callback is applied before training.
-            Defaults to False.
-        call_end_epoch (bool, optional): If true, callback is applied during training,
-            after an epoch is performed. Defaults to True.
-        call_after_opt (bool, optional): If true, callback is applied after training.
-            Defaults to False.
-        call_during_eval (bool, optional): If true, callback is applied during evaluation.
-            Defaults to False.
-    """
-
-    def __init__(
-        self,
-        callback: CallbackFunction,
-        callback_condition: CallbackConditionFunction | None = None,
-        modify_optimize_result: CallbackFunction | dict[str, Any] | None = None,
-        called_every: int = 1,
-        call_before_opt: bool = False,
-        call_end_epoch: bool = True,
-        call_after_opt: bool = False,
-        call_during_eval: bool = False,
-    ) -> None:
-        """Initialized Callback.
-
-        Args:
-            callback (CallbackFunction): Callback function accepting an
-                OptimizeResult as ifrst argument.
-            callback_condition (CallbackConditionFunction | None, optional): Function that
-                conditions the call to callback. Defaults to None.
-            modify_optimize_result (CallbackFunction | dict[str, Any] | None , optional):
-                Function that modify the OptimizeResult before callback. If a dict
-                is provided, this updates the `extra` field of OptimizeResult.
-            called_every (int, optional): Callback to be called each `called_every` epoch.
-                Defaults to 1.
-                If callback_condition is None, we set
-                callback_condition to returns True when iteration % called_every == 0.
-            call_before_opt (bool, optional): If true, callback is applied before training.
-                Defaults to False.
-            call_end_epoch (bool, optional): If true, callback is applied during training,
-                after an epoch is performed. Defaults to True.
-            call_after_opt (bool, optional): If true, callback is applied after training.
-                Defaults to False.
-            call_during_eval (bool, optional): If true, callback is applied during evaluation.
-                Defaults to False.
-        """
-        self.callback = callback
-        self.call_before_opt = call_before_opt
-        self.call_end_epoch = call_end_epoch
-        self.call_after_opt = call_after_opt
-        self.call_during_eval = call_during_eval
-
-        if called_every <= 0:
-            raise ValueError("Please provide a strictly positive `called_every` argument.")
-        self.called_every = called_every
-
-        if callback_condition is None:
-            self.callback_condition = lambda opt_result: True
-        else:
-            self.callback_condition = callback_condition
-
-        if modify_optimize_result is None:
-            self.modify_optimize_result = lambda opt_result: opt_result
-        elif isinstance(modify_optimize_result, dict):
-
-            def update_extra(opt_result: OptimizeResult) -> OptimizeResult:
-                opt_result.extra.update(modify_optimize_result)
-                return opt_result
-
-            self.modify_optimize_result = update_extra
-        else:
-            self.modify_optimize_result = modify_optimize_result
-
-    def __call__(self, opt_result: OptimizeResult, is_last_iteration: bool = False) -> Any:
-        """Apply callback if conditions are met.
-
-        Note that the current result may be modified by specifying a function
-        `modify_optimize_result` for instance to add inputs to the `extra` argument
-        of the current OptimizeResult.
-
-        Args:
-            opt_result (OptimizeResult): Current result.
-            is_last_iteration (bool, optional): When True,
-                avoid verifying modulo. Defaults to False.
-                Useful when call_after_opt is True.
-
-        Returns:
-            Any: The result of the callback.
-        """
-        opt_result = self.modify_optimize_result(opt_result)
-        if opt_result.iteration % self.called_every == 0 and self.callback_condition(opt_result):
-            return self.callback(opt_result)
-        if is_last_iteration and self.callback_condition(opt_result):
-            return self.callback(opt_result)
-
-
-def run_callbacks(
-    callback_iterable: list[Callback], opt_res: OptimizeResult, is_last_iteration: bool = False
-) -> None:
-    """Run a list of Callback given the current OptimizeResult.
-
-    Used in train functions.
-
-    Args:
-        callback_iterable (list[Callback]): Iterable of Callbacks
-        opt_res (OptimizeResult): Current optimization result,
-        is_last_iteration (bool, optional): Whether we reached the last iteration or not.
-            Defaults to False.
-    """
-    for callback in callback_iterable:
-        callback(opt_res, is_last_iteration)
-
 
 @dataclass
 class TrainConfig:
-    """Default config for the train function.
+    """Default configuration for the training process.
 
-    The default value of
-    each field can be customized with the constructor:
+    This class provides default settings for various aspects of the training loop,
+    such as logging, checkpointing, and validation. The default values for these
+    fields can be customized when an instance of `TrainConfig` is created.
 
+    Example:
     ```python exec="on" source="material-block" result="json"
     from qadence.ml_tools import TrainConfig
     c = TrainConfig(folder="/tmp/train")
@@ -180,154 +41,157 @@ class TrainConfig:
     """
 
     max_iter: int = 10000
-    """Number of training iterations."""
-    print_every: int = 1000
-    """Print loss/metrics.
+    """Number of training iterations (epochs) to perform.
 
-    Set to 0 to disable
-    """
-    write_every: int = 50
-    """Write loss and metrics with the tracking tool.
+    This defines the total number
+    of times the model will be updated.
 
-    Set to 0 to disable
+    In case of InfiniteTensorDataset, each epoch will have 1 batch.
+    In case of TensorDataset, each epoch will have len(dataloader) batches.
     """
-    checkpoint_every: int = 5000
-    """Write model/optimizer checkpoint.
 
-    Set to 0 to disable
-    """
-    plot_every: int = 5000
-    """Write figures.
+    print_every: int = 0
+    """Frequency (in epochs) for printing loss and metrics to the console during training.
 
-    Set to 0 to disable
+    Set to 0 to disable this output, meaning that metrics and loss will not be printed
+    during training.
     """
-    callbacks: list[Callback] = field(default_factory=lambda: list())
-    """List of callbacks."""
+
+    write_every: int = 0
+    """Frequency (in epochs) for writing loss and metrics using the tracking tool during training.
+
+    Set to 0 to disable this logging, which prevents metrics from being logged to the tracking tool.
+    Note that the metrics will always be written at the end of training regardless of this setting.
+    """
+
+    checkpoint_every: int = 0
+    """Frequency (in epochs) for saving model and optimizer checkpoints during training.
+
+    Set to 0 to disable checkpointing. This helps in resuming training or recovering
+    models.
+    Note that setting checkpoint_best_only = True will disable this and only best checkpoints will
+    be saved.
+    """
+
+    plot_every: int = 0
+    """Frequency (in epochs) for generating and saving figures during training.
+
+    Set to 0 to disable plotting.
+    """
+
+    callbacks: list = field(default_factory=lambda: list())
+    """List of callbacks to execute during training.
+
+    Callbacks can be used for
+    custom behaviors, such as early stopping, custom logging, or other actions
+    triggered at specific events.
+    """
+
     log_model: bool = False
-    """Logs a serialised version of the model."""
-    folder: Path | None = None
-    """Checkpoint/tensorboard logs folder."""
+    """Whether to log a serialized version of the model.
+
+    When set to `True`, the
+    model's state will be logged, useful for model versioning and reproducibility.
+    """
+
+    folder: Path = Path("./qml_logs")
+    """The root folder for saving checkpoints and tensorboard logs.
+
+    The default path is "./qml_logs"
+
+    This can be set to a specific directory where training artifacts are to be stored.
+    """
+
     create_subfolder_per_run: bool = False
-    """Checkpoint/tensorboard logs stored in subfolder with name `<timestamp>_<PID>`.
+    """Whether to create a subfolder for each run, named `<id>_<timestamp>_<PID>`.
 
-    Prevents continuing from previous checkpoint, useful for fast prototyping.
+    This ensures logs and checkpoints from different runs do not overwrite each other,
+    which is helpful for rapid prototyping. If `False`, training will resume from
+    the latest checkpoint if one exists in the specified log folder.
     """
+
     checkpoint_best_only: bool = False
-    """Write model/optimizer checkpoint only if a metric has improved."""
-    val_every: int | None = None
-    """Calculate validation metric.
+    """If `True`, checkpoints are only saved if there is an improvement in the.
 
-    If None, validation check is not performed.
+    validation metric. This conserves storage by only keeping the best models.
+
+    validation_criterion is required when this is set to True.
     """
+
+    val_every: int = 0
+    """Frequency (in epochs) for performing validation.
+
+    If set to 0, validation is not performed.
+    Note that metrics from validation are always written, regardless of the `write_every` setting.
+    Note that intial validation also happens at the start of training, for which metrics are
+    written.
+    """
+
     val_epsilon: float = 1e-5
-    """Safety margin to check if validation loss is smaller than the lowest.
+    """A small safety margin used to compare the current validation loss with the.
 
-    validation loss across previous iterations.
+    best previous validation loss. This is used to determine improvements in metrics.
     """
+
     validation_criterion: Callable | None = None
-    """A boolean function which evaluates a given validation metric is satisfied."""
+    """A function to evaluate whether a given validation metric meets a desired condition.
+
+    If `None`, no custom validation criterion is applied.
+    """
+
     trainstop_criterion: Callable | None = None
-    """A boolean function which evaluates a given training stopping metric is satisfied."""
+    """A function to determine if the training process should stop based on a.
+
+    specific stopping metric. If `None`, training continues until `max_iter` is reached.
+    """
+
     batch_size: int = 1
-    """The batch_size to use when passing a list/tuple of torch.Tensors."""
+    """The batch size to use when processing a list or tuple of torch.Tensors.
+
+    This specifies how many samples are processed in each training iteration.
+    """
+
     verbose: bool = True
-    """Whether or not to print out metrics values during training."""
+    """Whether to print metrics and status messages during training.
+
+    If `True`, detailed metrics and status updates will be displayed in the console.
+    """
+
     tracking_tool: ExperimentTrackingTool = ExperimentTrackingTool.TENSORBOARD
-    """The tracking tool of choice."""
+    """The tool used for tracking training progress and logging metrics.
+
+    Options include tools like TensorBoard, which help visualize and monitor
+    model training.
+    """
+
     hyperparams: dict = field(default_factory=dict)
-    """Hyperparameters to track."""
+    """A dictionary of hyperparameters to be tracked.
+
+    This can include learning rates,
+    regularization parameters, or any other training-related configurations.
+    """
+
     plotting_functions: tuple[LoggablePlotFunction, ...] = field(default_factory=tuple)  # type: ignore
-    """Functions for in-train plotting."""
+    """Functions used for in-training plotting.
 
-    # tensorboard only allows for certain types as hyperparameters
-    _tb_allowed_hyperparams_types: tuple = field(
-        default=(int, float, str, bool, Tensor), init=False, repr=False
-    )
-
-    def _filter_tb_hyperparams(self) -> None:
-        keys_to_remove = [
-            key
-            for key, value in self.hyperparams.items()
-            if not isinstance(value, TrainConfig._tb_allowed_hyperparams_types)
-        ]
-        if keys_to_remove:
-            logger.warning(
-                f"Tensorboard cannot log the following hyperparameters: {keys_to_remove}."
-            )
-            for key in keys_to_remove:
-                self.hyperparams.pop(key)
-
-    def __post_init__(self) -> None:
-        if self.folder:
-            if isinstance(self.folder, str):  # type: ignore [unreachable]
-                self.folder = Path(self.folder)  # type: ignore [unreachable]
-            if self.create_subfolder_per_run:
-                subfoldername = (
-                    datetime.datetime.now().strftime("%Y%m%dT%H%M%S") + "_" + hex(os.getpid())[2:]
-                )
-                self.folder = self.folder / subfoldername
-        if self.trainstop_criterion is None:
-            self.trainstop_criterion = lambda x: x <= self.max_iter
-        if self.validation_criterion is None:
-            self.validation_criterion = lambda *x: False
-        if self.hyperparams and self.tracking_tool == ExperimentTrackingTool.TENSORBOARD:
-            self._filter_tb_hyperparams()
-        if self.tracking_tool == ExperimentTrackingTool.MLFLOW:
-            self._mlflow_config = MLFlowConfig()
-        if self.plotting_functions and self.tracking_tool != ExperimentTrackingTool.MLFLOW:
-            logger.warning("In-training plots are only available with mlflow tracking.")
-        if not self.plotting_functions and self.tracking_tool == ExperimentTrackingTool.MLFLOW:
-            logger.warning("Tracking with mlflow, but no plotting functions provided.")
-
-    @property
-    def mlflow_config(self) -> MLFlowConfig:
-        if self.tracking_tool == ExperimentTrackingTool.MLFLOW:
-            return self._mlflow_config
-        else:
-            raise AttributeError(
-                "mlflow_config is available only for with the mlflow tracking tool."
-            )
-
-
-class MLFlowConfig:
-    """
-    Configuration for mlflow tracking.
-
-    Example:
-
-        export MLFLOW_TRACKING_URI=tracking_uri
-        export MLFLOW_EXPERIMENT=experiment_name
-        export MLFLOW_RUN_NAME=run_name
+    These are called to generate
+    plots that are logged or saved at specified intervals.
     """
 
-    def __init__(self) -> None:
-        import mlflow
+    _subfolders: list = field(default_factory=list)
+    """List of subfolders used for logging different runs using the same config inside the.
 
-        self.tracking_uri: str = os.getenv("MLFLOW_TRACKING_URI", "")
-        """The URI of the mlflow tracking server.
+    root folder.
 
-        An empty string, or a local file path, prefixed with file:/.
-        Data is stored locally at the provided file (or ./mlruns if empty).
-        """
+    Each subfolder is of structure `<id>_<timestamp>_<PID>`.
+    """
 
-        self.experiment_name: str = os.getenv("MLFLOW_EXPERIMENT", str(uuid4()))
-        """The name of the experiment.
+    _log_folder: Path = Path("./qml_logs")
+    """The current log folder in use.
 
-        If None or empty, a new experiment is created with a random UUID.
-        """
-
-        self.run_name: str = os.getenv("MLFLOW_RUN_NAME", str(uuid4()))
-        """The name of the run."""
-
-        mlflow.set_tracking_uri(self.tracking_uri)
-
-        # activate existing or create experiment
-        exp_filter_string = f"name = '{self.experiment_name}'"
-        if not mlflow.search_experiments(filter_string=exp_filter_string):
-            mlflow.create_experiment(name=self.experiment_name)
-
-        self.experiment = mlflow.set_experiment(self.experiment_name)
-        self.run = mlflow.start_run(run_name=self.run_name, nested=False)
+    This stores the path where all logs
+    and checkpoints are being saved for this training session.
+    """
 
 
 @dataclass
