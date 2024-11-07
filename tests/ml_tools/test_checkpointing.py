@@ -12,8 +12,8 @@ from torch.utils.data import DataLoader
 from qadence import QNN, QuantumModel
 from qadence.ml_tools import (
     TrainConfig,
+    Trainer,
     load_checkpoint,
-    train_with_grad,
 )
 from qadence.ml_tools.data import to_dataloader
 from qadence.ml_tools.parameters import get_parameters, set_parameters
@@ -64,12 +64,14 @@ def test_basic_save_load_ckpts(Basic: torch.nn.Module, tmp_path: Path) -> None:
         return loss, {}
 
     config = TrainConfig(folder=tmp_path, max_iter=1, checkpoint_every=1, write_every=1)
-    model, _ = train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
+    trainer = Trainer(model, optimizer, config, loss_fn, data)
+    with trainer.enable_grad_opt():
+        model, _ = trainer.fit()
     ps0 = get_parameters(model)
     set_parameters(model, torch.ones(len(get_parameters(model))))
     # write_checkpoint(tmp_path, model, optimizer, 1)
     # check that saved model has ones
-    model, _, _ = load_checkpoint(tmp_path, model, optimizer)
+    model, _, _ = load_checkpoint(trainer.config._log_folder, model, optimizer)
     ps1 = get_parameters(model)
     assert torch.allclose(ps0, ps1)
 
@@ -88,13 +90,15 @@ def test_random_basic_qm_save_load_ckpts(BasicQuantumModel: QuantumModel, tmp_pa
         return loss, {}
 
     config = TrainConfig(folder=tmp_path, max_iter=10, checkpoint_every=1, write_every=1)
-    model, optimizer = train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
+    trainer = Trainer(model, optimizer, config, loss_fn, data)
+    with trainer.enable_grad_opt():
+        model, optimizer = trainer.fit()
     ps0 = get_parameters(model)
     ev0 = model.expectation({})
     # Modify model's parameters
     set_parameters(model, torch.ones(len(ps0)))
 
-    model, optimizer, _ = load_checkpoint(tmp_path, model, optimizer)
+    model, optimizer, _ = load_checkpoint(trainer.config._log_folder, model, optimizer)
     ps1 = get_parameters(model)
     ev1 = model.expectation({})
 
@@ -103,7 +107,7 @@ def test_random_basic_qm_save_load_ckpts(BasicQuantumModel: QuantumModel, tmp_pa
     assert torch.allclose(ev0, ev1)
 
     loaded_model, optimizer, _ = load_checkpoint(
-        tmp_path,
+        trainer.config._log_folder,
         BasicQuantumModel,
         optimizer,
         "model_QuantumModel_ckpt_009_device_cpu.pt",
@@ -126,8 +130,13 @@ def test_check_ckpts_exist(BasicQuantumModel: QuantumModel, tmp_path: Path) -> N
         return loss, {}
 
     config = TrainConfig(folder=tmp_path, max_iter=10, checkpoint_every=1, write_every=1)
-    train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
-    ckpts = [tmp_path / Path(f"model_QuantumModel_ckpt_00{i}_device_cpu.pt") for i in range(1, 9)]
+    trainer = Trainer(model, optimizer, config, loss_fn, data)
+    with trainer.enable_grad_opt():
+        trainer.fit()
+    ckpts = [
+        trainer.config._log_folder / Path(f"model_QuantumModel_ckpt_00{i}_device_cpu.pt")
+        for i in range(1, 9)
+    ]
     assert all(os.path.isfile(ckpt) for ckpt in ckpts)
     for ckpt in ckpts:
         loaded_model, optimizer, _ = load_checkpoint(
@@ -151,14 +160,16 @@ def test_random_basic_qnn_save_load_ckpts(BasicQNN: QNN, tmp_path: Path) -> None
         return loss, {}
 
     config = TrainConfig(folder=tmp_path, max_iter=10, checkpoint_every=1, write_every=1)
-    train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
+    trainer = Trainer(model, optimizer, config, loss_fn, data)
+    with trainer.enable_grad_opt():
+        trainer.fit()
     ps0 = get_parameters(model)
     ev0 = model.expectation(inputs)
 
     # Modify model's parameters
     set_parameters(model, torch.ones(len(ps0)))
 
-    model, optimizer, _ = load_checkpoint(tmp_path, model, optimizer)
+    model, optimizer, _ = load_checkpoint(trainer.config._log_folder, model, optimizer)
     ps1 = get_parameters(model)
     ev1 = model.expectation(inputs)
 
@@ -191,8 +202,13 @@ def test_check_qnn_ckpts_exist(BasicQNN: QNN, tmp_path: Path) -> None:
         return loss, {}
 
     config = TrainConfig(folder=tmp_path, max_iter=10, checkpoint_every=1, write_every=1)
-    train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
-    ckpts = [tmp_path / Path(f"model_QNN_ckpt_00{i}_device_cpu.pt") for i in range(1, 9)]
+    trainer = Trainer(model, optimizer, config, loss_fn, data)
+    with trainer.enable_grad_opt():
+        trainer.fit()
+    ckpts = [
+        trainer.config._log_folder / Path(f"model_QNN_ckpt_00{i}_device_cpu.pt")
+        for i in range(1, 9)
+    ]
     assert all(os.path.isfile(ckpt) for ckpt in ckpts)
     for ckpt in ckpts:
         loaded_model, optimizer, _ = load_checkpoint(tmp_path, BasicQNN, optimizer, ckpt, "")
