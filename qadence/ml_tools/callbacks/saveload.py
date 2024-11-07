@@ -18,6 +18,7 @@ def get_latest_checkpoint_name(folder: Path, type: str, device: str | torch.devi
     file = Path("")
     files = [f for f in os.listdir(folder) if f.endswith(".pt") and type in f]
     if len(files) == 0:
+        pass
         logger.error(f"Directory {folder} does not contain any {type} checkpoints.")
     if len(files) == 1:
         file = Path(files[0])
@@ -66,7 +67,6 @@ def write_checkpoint(
     iteration: int | str,
 ) -> None:
     from qadence import QuantumModel
-
     from qadence.ml_tools.models import QNN
 
     device = None
@@ -135,7 +135,9 @@ def load_model(
         model_ckpt_name = get_latest_checkpoint_name(folder, "model", device)
 
     try:
-        iteration, model_dict = torch.load(folder / model_ckpt_name, *args, **kwargs)
+        iteration, model_dict = torch.load(
+            folder / model_ckpt_name, weights_only=False, *args, **kwargs
+        )
         if isinstance(model, (QuantumModel, QNN)):
             model.load_params_from_dict(model_dict)
         elif isinstance(model, Module):
