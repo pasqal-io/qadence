@@ -56,7 +56,7 @@ ensure the reproducibility of this tutorial.
 import torch
 from qadence import QuantumModel, QuantumCircuit, Register
 from qadence import RydbergDevice, AnalogRX, AnalogRZ, chain
-from qadence.ml_tools import train_gradient_free, TrainConfig, num_parameters
+from qadence.ml_tools import Trainer, TrainConfig, num_parameters
 import nevergrad as ng
 import matplotlib.pyplot as plt
 
@@ -132,11 +132,14 @@ ML facilities to run gradient-free optimizations using the
 [`nevergrad`](https://facebookresearch.github.io/nevergrad/) library.
 
 ```python exec="on" source="material-block" session="qubo"
+Trainer.set_use_grad(False)
+
 config = TrainConfig(max_iter=100)
 optimizer = ng.optimizers.NGOpt(
     budget=config.max_iter, parametrization=num_parameters(model)
 )
-train_gradient_free(model, None, optimizer, config, loss)
+trainer = Trainer(model, optimizer, config, loss)
+trainer.fit()
 
 optimal_counts = model.sample({}, n_shots=1000)[0]
 print(f"optimal_count = {optimal_counts}") # markdown-exec: hide
