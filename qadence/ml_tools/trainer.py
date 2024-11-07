@@ -42,8 +42,24 @@ class Trainer(BaseTrainer):
         data_dtype (Optional[torch_dtype]): Data type for data.
             Depends on the model's data type.
 
-        Plus all the attributes of the BaseTrainer (model, optimizer, config,
-        loss_fn, optimize_step, etc)
+    Inherited Attributes:
+        use_grad (bool): Indicates if gradients are used for optimization. Default is True.
+
+        _model (Optional[nn.Module]): The neural network model.
+        _optimizer (Optional[Union[optim.Optimizer, NGOptimizer]]): The optimizer for training.
+        _config (Optional[TrainConfig]): The configuration settings for training.
+        _train_dataloader (Optional[DataLoader]): DataLoader for training data.
+        _val_dataloader (Optional[DataLoader]): DataLoader for validation data.
+        _test_dataloader (Optional[DataLoader]): DataLoader for testing data.
+
+        optimize_step (Callable): Function for performing an optimization step.
+        loss_fn (Callable): loss function to use.
+
+        num_training_batches (int): Number of training batches.
+        num_validation_batches (int): Number of validation batches.
+        num_test_batches (int): Number of test batches.
+
+        state (str): Current state in the training process
 
     Default training routine
     ```
@@ -606,22 +622,20 @@ class Trainer(BaseTrainer):
         """
         Builds and stores the optimization result by calculating the average loss and metrics.
 
-        from the provided loss and metrics data.
+        Result (or loss_metrics) can have multiple formats:
+        - `None` Indicates no loss or metrics data is provided.
+        - `Tuple[torch.Tensor, Dict[str, Any]]` A single tuple containing the loss tensor
+            and metrics dictionary - at the end of batch.
+        - `List[Tuple[torch.Tensor, Dict[str, Any]]]` A list of tuples for
+            multiple batches.
+        - `List[List[Tuple[torch.Tensor, Dict[str, Any]]]]` A list of lists of tuples,
+        where each inner list represents metrics across multiple batches within an epoch.
 
         Args:
-            result Union[None,
-                      Tuple[torch.Tensor, Dict[Any, Any]],
-                      List[Tuple[torch.Tensor, Dict[Any, Any]]],
-                      List[List[Tuple[torch.Tensor, Dict[Any, Any]]]]
-                      ]:
-                The loss and metrics data, which can have multiple formats:
-                - `None`: Indicates no loss or metrics data is provided.
-                - `Tuple[torch.Tensor, Dict[str, Any]]`: A single tuple containing the loss tensor
-                    and metrics dictionary - at the end of batch.
-                - `List[Tuple[torch.Tensor, Dict[str, Any]]]`: A list of tuples for
-                    multiple batches.
-                - `List[List[Tuple[torch.Tensor, Dict[str, Any]]]]`: A list of lists of tuples,
-                where each inner list represents metrics across multiple batches within an epoch.
+            result: (Union[None, Tuple[torch.Tensor, Dict[str, Any]],
+                       List[Tuple[torch.Tensor, Dict[str, Any]]],
+                       List[List[Tuple[torch.Tensor, Dict[str, Any]]]]])
+                        The loss and metrics data, which can have multiple formats
 
         Returns:
             None: This method does not return anything. It sets `self.opt_result` with

@@ -38,19 +38,22 @@ class BaseTrainer:
     Attributes:
         use_grad (bool): Indicates if gradients are used for optimization. Default is True.
 
-        _model (Optional[nn.Module]): The neural network model.
-        _optimizer (Optional[Union[optim.Optimizer, NGOptimizer]]): The optimizer for training.
-        _config (Optional[TrainConfig]): The configuration settings for training.
+        _model (nn.Module): The neural network model.
+        _optimizer (Union[optim.Optimizer, NGOptimizer, None]]): The optimizer for training.
+        _config (TrainConfig): The configuration settings for training.
         _train_dataloader (Optional[DataLoader]): DataLoader for training data.
         _val_dataloader (Optional[DataLoader]): DataLoader for validation data.
         _test_dataloader (Optional[DataLoader]): DataLoader for testing data.
 
         optimize_step (Callable): Function for performing an optimization step.
-        loss_fn (Callable): loss function to use.
+        loss_fn (Union[Callable, str, None]): loss function to use.
 
-        num_training_batches (int): Number of training batches.
-        num_validation_batches (int): Number of validation batches.
-        num_test_batches (int): Number of test batches.
+        num_training_batches (int): Number of training batches. In case of
+            InfiniteTensorDataset only 1 batch per eopch is used.
+        num_validation_batches (int): Number of validation batches. In case of
+            InfiniteTensorDataset only 1 batch per eopch is used.
+        num_test_batches (int): Number of test batches. In case of
+            InfiniteTensorDataset only 1 batch per eopch is used.
 
         state (str): Current state in the training process
     """
@@ -73,10 +76,10 @@ class BaseTrainer:
         Initializes the BaseTrainer.
 
         Args:
-            model ([nn.Module]): The model to train.
-            optimizer (Optional[Union[optim.Optimizer, NGOptimizer, None]]): The optimizer
+            model (nn.Module): The model to train.
+            optimizer (Union[optim.Optimizer, NGOptimizer, None]): The optimizer
                 for training.
-            config ([TrainConfig]): The TrainConfig settings for training.
+            config (TrainConfig): The TrainConfig settings for training.
             loss_fn (Union[None, Callable, str]): The loss function to use.
                 str input to be specified to use a default loss function.
                 currently supported loss functions: 'mse', 'cross_entropy'
@@ -332,7 +335,7 @@ class BaseTrainer:
 
         Args:
             phase (str): The phase for which the callback is executed (e.g., "train",
-            "train_epoch", "train_batch").
+                "train_epoch", "train_batch").
 
         Returns:
             Callable: The decorated function.

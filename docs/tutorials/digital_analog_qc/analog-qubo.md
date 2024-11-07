@@ -80,12 +80,12 @@ Q = np.array(
     ]
 )
 
-def loss(model: QuantumModel, *args) -> tuple[float, dict]:
+def loss(model: QuantumModel, *args) -> tuple[torch.Tensor, dict]:
     to_arr_fn = lambda bitstring: np.array(list(bitstring), dtype=int)
     cost_fn = lambda arr: arr.T @ Q @ arr
     samples = model.sample({}, n_shots=1000)[0]  # extract samples
     cost_fn = sum(samples[key] * cost_fn(to_arr_fn(key)) for key in samples)
-    return cost_fn / sum(samples.values()), {}  # We return an optional metrics dict
+    return torch.tensor(cost_fn / sum(samples.values())), {}  # We return an optional metrics dict
 ```
 
 The QAOA algorithm needs a variational quantum circuit with optimizable parameters.
