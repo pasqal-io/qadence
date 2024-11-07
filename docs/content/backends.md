@@ -10,7 +10,7 @@ a backend is via the high-level API `QuantumModel`.
 
 [_**PyQTorch**_](https://github.com/pasqal-io/PyQ): An efficient, large-scale simulator designed for
 quantum machine learning, seamlessly integrated with the popular [PyTorch](https://pytorch.org/) deep learning framework for automatic differentiability.
-It also offers analog computing for time-independent pulses. See [`PyQTorchBackend`][qadence.backends.pyqtorch.backend.Backend].
+It also offers analog computing for time-(in)dependent pulses. See [`PyQTorchBackend`][qadence.backends.pyqtorch.backend.Backend].
 
 [_**Pulser**_](https://github.com/pasqal-io/Pulser): A Python library for pulse-level/analog control of
 neutral atom devices. Execution via [QuTiP](https://qutip.org/). See [`PulserBackend`][qadence.backends.pulser.backend.Backend].
@@ -79,9 +79,9 @@ Backends are purely functional objects which take as input the values for the ci
 parameters and return the desired output from a call to a method. In order to use a backend directly,
 *embedded* parameters must be supplied as they are returned by the backend specific embedding function.
 
-Here is a simple demonstration of the use of the Braket backend to execute a circuit in non-differentiable mode:
+Here is a simple demonstration of the use of the PyQTorch backend to execute a circuit in non-differentiable mode:
 
-```python exec="on" source="material-block" session="low-level-braket"
+```python exec="on" source="material-block" session="low-level-pyq"
 from qadence import QuantumCircuit, FeatureParameter, RX, RZ, CNOT, hea, chain
 
 # Construct a feature map.
@@ -93,14 +93,14 @@ fm = chain(RX(0, 3 * x), RZ(1, z), CNOT(0, 1))
 circuit = QuantumCircuit(3, fm, hea(3,1))
 ```
 
-The abstract `QuantumCircuit` can now be converted to its native representation via the Braket
+The abstract `QuantumCircuit` can now be converted to its native representation via the PyQTorch
 backend.
 
-```python exec="on" source="material-block" result="json" session="low-level-braket"
+```python exec="on" source="material-block" result="json" session="low-level-pyq"
 from qadence import backend_factory
 
-# Use only Braket in non-differentiable mode:
-backend = backend_factory("braket")
+# Use only PyQtorch in non-differentiable mode:
+backend = backend_factory("pyqtorch")
 
 # The `Converted` object
 # (contains a `ConvertedCircuit` with the original and native representation)
@@ -113,7 +113,7 @@ Additionally, `Converted` contains all fixed and variational parameters, as well
 function which accepts feature parameters to construct a dictionary of *circuit native parameters*.
 These are needed as each backend uses a different representation of the circuit parameters:
 
-```python exec="on" source="material-block" result="json" session="low-level-braket"
+```python exec="on" source="material-block" result="json" session="low-level-pyq"
 import torch
 
 # Contains fixed parameters and variational (from the HEA)
@@ -131,62 +131,34 @@ for k, v in embedded.items(): print(f"  {k}: {v}") # markdown-exec: hide
 print("}") # markdown-exec: hide
 ```
 
-Note that above the parameters keys have changed as they now address the keys on the
-Braket device. A more readable embedding is provided by the PyQTorch backend:
-
-```python exec="on" source="material-block" result="json" session="low-level-braket"
-from qadence import BackendName, DiffMode
-pyq_backend = backend_factory(backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD)
-
-# the `Converted` object
-# (contains a `ConvertedCircuit` wiht the original and native representation)
-pyq_conv = pyq_backend.convert(circuit)
-embedded = pyq_conv.embedding_fn(pyq_conv.params, inputs)
-print("embedded = {") # markdown-exec: hide
-for k, v in embedded.items(): print(f"  {k}: {v}") # markdown-exec: hide
-print("}") # markdown-exec: hide
-```
-
 With the embedded parameters, `QuantumModel` methods are accessible:
 
-```python exec="on" source="material-block" result="json" session="low-level-braket"
-embedded = conv.embedding_fn(conv.params, inputs)
-samples = backend.run(conv.circuit, embedded)
-print(f"{samples = }")
+```python exec="on" source="material-block" result="json" session="low-level-pyq"
+output = backend.run(conv.circuit, embedded)
+print(f"{output = }")
 ```
 
 ## Lower-level: the `Backend` representation
 
 If there is a requirement to work with a specific backend, it is possible to access _**directly the native circuit**_.
-For example, Braket noise features can be imported which are not exposed directly by Qadence.
+For example, should one wish to use PyQtorch noise features directly instead of using the `NoiseHandler` interface from Qadence:
 
-```python exec="on" source="material-block" session="low-level-braket"
-from braket.circuits import Noise
+```python exec="on" source="material-block" session="low-level-pyq"
+from pyqtorch.noise import Depolarizing
 
-# Get the native Braket circuit with the given parameters
 inputs = {"x": torch.rand(1), "y":torch.rand(1)}
 embedded = conv.embedding_fn(conv.params, inputs)
-native = backend.assign_parameters(conv.circuit, embedded)
 
-# Define a noise channel
-noise = Noise.Depolarizing(probability=0.1)
+# Define a noise channel on qubit 0
+noise = Depolarizing(0, error_probability=0.1)
 
-# Add noise to every gate in the circuit
-native.apply_gate_noise(noise)
+# Add noise to circuit
+conv.circuit.native.operations.append(noise)
 ```
 
-In order to run this noisy circuit, the density matrix simulator is needed in Braket:
+When running With noise, one can see that the output is a density matrix:
 
-```python exec="on" source="material-block" result="json" session="low-level-braket"
-from braket.devices import LocalSimulator
-
-device = LocalSimulator("braket_dm")
-result = device.run(native, shots=1000).result().measurement_counts
-print(result)
-```
-```python exec="on" source="material-block" result="json" session="low-level-braket"
-print(conv.circuit.native.diagram())
-```
-```python exec="on" source="material-block" result="json" session="low-level-braket"
-print(native.diagram())
+```python exec="on" source="material-block" result="json" session="low-level-pyq"
+density_result = backend.run(conv.circuit, embedded)
+print(density_result.shape)
 ```

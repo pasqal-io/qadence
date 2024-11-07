@@ -102,9 +102,6 @@ def _select_overlap_method(
             return overlap
 
     elif method == OverlapMethod.SWAP_TEST:
-        if backend == BackendName.BRAKET:
-            raise ValueError("SWAP test method is not supported by the Braket backend.")
-
         n_qubits = bra_circuit.n_qubits
 
         # shift qubit support of bra and ket circuit blocks
@@ -128,9 +125,6 @@ def _select_overlap_method(
             return overlap
 
     elif method == OverlapMethod.HADAMARD_TEST:
-        if backend == BackendName.BRAKET:
-            raise ValueError("Hadamard test method is not supported by the Braket backend.")
-
         n_qubits = bra_circuit.n_qubits
 
         # construct controlled bra and ket blocks

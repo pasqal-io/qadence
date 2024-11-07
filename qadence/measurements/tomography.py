@@ -10,7 +10,7 @@ from qadence.blocks.utils import unroll_block_with_scaling
 from qadence.circuit import QuantumCircuit
 from qadence.engines.differentiable_backend import DifferentiableBackend
 from qadence.measurements.utils import iterate_pauli_decomposition
-from qadence.noise import Noise
+from qadence.noise import NoiseHandler
 from qadence.utils import Endianness
 
 
@@ -21,7 +21,7 @@ def compute_expectation(
     options: dict,
     state: Tensor | None = None,
     backend: Backend | DifferentiableBackend = PyQBackend(),
-    noise: Noise | None = None,
+    noise: NoiseHandler | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
     """Basic tomography protocol with rotations.

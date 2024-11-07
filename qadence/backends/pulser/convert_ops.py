@@ -5,7 +5,7 @@ from typing import Sequence
 import torch
 from torch.nn import Module
 
-from qadence import Noise
+from qadence import NoiseHandler
 from qadence.blocks import (
     AbstractBlock,
 )
@@ -40,7 +40,7 @@ class PulserObservable(Module):
         state: torch.Tensor,
         values: dict[str, torch.Tensor] = dict(),
         qubit_support: tuple | None = None,
-        noise: Noise | None = None,
+        noise: NoiseHandler | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> torch.Tensor:
         if not self.block.is_parametric:

@@ -228,7 +228,7 @@ def sympy_to_numeric(expr: Basic) -> TNumber:
         return float(expr)
 
 
-def evaluate(expr: Expr, values: dict = {}, as_torch: bool = False) -> TNumber | Tensor:
+def evaluate(expr: Expr, values: dict | None = None, as_torch: bool = False) -> TNumber | Tensor:
     """
     Arguments:
 
@@ -260,7 +260,8 @@ def evaluate(expr: Expr, values: dict = {}, as_torch: bool = False) -> TNumber |
     """
     res: Basic
     res_value: TNumber | Tensor
-    query: dict[Parameter, TNumber | Tensor] = {}
+    query: dict[Parameter, TNumber | Tensor] = dict()
+    values = values or dict()
     if isinstance(expr, Array):
         return Tensor(expr.tolist())
     else:

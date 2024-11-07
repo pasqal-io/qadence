@@ -12,7 +12,7 @@ from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
-from qadence.noise import Noise
+from qadence.noise import NoiseHandler
 from qadence.qubit_support import QubitSupport
 from qadence.register import Register
 from qadence.types import BackendName, DiffMode, Endianness
@@ -35,7 +35,7 @@ def _n_qubits_block(block: AbstractBlock) -> int:
 def run(
     x: Union[QuantumCircuit, AbstractBlock, Register, int],
     *args: Any,
-    values: dict = {},
+    values: Union[dict, None] = None,
     state: Tensor = None,
     backend: BackendName = BackendName.PYQTORCH,
     endianness: Endianness = Endianness.BIG,
@@ -65,7 +65,7 @@ def run(
 @run.register
 def _(
     circuit: QuantumCircuit,
-    values: dict = {},
+    values: Union[dict, None] = None,
     state: Tensor = None,
     backend: BackendName = BackendName.PYQTORCH,
     endianness: Endianness = Endianness.BIG,
@@ -79,7 +79,7 @@ def _(
     with no_grad():
         return bknd.run(
             circuit=conv.circuit,
-            param_values=conv.embedding_fn(conv.params, values),
+            param_values=conv.embedding_fn(conv.params, values or dict()),
             state=state,
             endianness=endianness,
         )
@@ -113,12 +113,12 @@ def _(circs: list, **kwargs: Any) -> Tensor:  # type: ignore[misc]
 def sample(
     x: Union[QuantumCircuit, AbstractBlock, Register, int],
     *args: Any,
-    values: dict = {},
+    values: Union[dict, None] = None,
     state: Union[Tensor, None] = None,
     n_shots: int = 100,
     backend: BackendName = BackendName.PYQTORCH,
     endianness: Endianness = Endianness.BIG,
-    noise: Union[Noise, None] = None,
+    noise: Union[NoiseHandler, None] = None,
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> list[Counter]:
     """Convenience wrapper for the `QuantumModel.sample` method.
@@ -142,11 +142,11 @@ def sample(
 @sample.register
 def _(
     circuit: QuantumCircuit,
-    values: dict = {},
+    values: Union[dict, None] = None,
     state: Union[Tensor, None] = None,
     n_shots: int = 100,
     backend: BackendName = BackendName.PYQTORCH,
-    noise: Union[Noise, None] = None,
+    noise: Union[NoiseHandler, None] = None,
     endianness: Endianness = Endianness.BIG,
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> list[Counter]:
@@ -157,7 +157,7 @@ def _(
     conv = bknd.convert(circuit)
     return bknd.sample(
         circuit=conv.circuit,
-        param_values=conv.embedding_fn(conv.params, values),
+        param_values=conv.embedding_fn(conv.params, values or dict()),
         n_shots=n_shots,
         state=state,
         noise=noise,
@@ -185,11 +185,11 @@ def _(block: AbstractBlock, **kwargs: Any) -> Tensor:
 def expectation(
     x: Union[QuantumCircuit, AbstractBlock, Register, int],
     observable: Union[list[AbstractBlock], AbstractBlock],
-    values: dict = {},
+    values: Union[dict, None] = None,
     state: Tensor = None,
     backend: BackendName = BackendName.PYQTORCH,
     diff_mode: Union[DiffMode, str, None] = None,
-    noise: Union[Noise, None] = None,
+    noise: Union[NoiseHandler, None] = None,
     endianness: Endianness = Endianness.BIG,
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> Tensor:
@@ -237,12 +237,12 @@ def expectation(
 def _(
     circuit: QuantumCircuit,
     observable: Union[list[AbstractBlock], AbstractBlock],
-    values: dict = {},
+    values: Union[dict, None] = None,
     state: Tensor = None,
     backend: BackendName = BackendName.PYQTORCH,
     diff_mode: Union[DiffMode, str, None] = None,
     measurement: Measurements = None,
-    noise: Union[Noise, None] = None,
+    noise: Union[NoiseHandler, None] = None,
     mitigation: Mitigations = None,
     endianness: Endianness = Endianness.BIG,
     configuration: Union[BackendConfiguration, dict, None] = None,
@@ -257,7 +257,7 @@ def _(
         return bknd.expectation(
             circuit=conv.circuit,
             observable=conv.observable,  # type: ignore[arg-type]
-            param_values=conv.embedding_fn(conv.params, values),
+            param_values=conv.embedding_fn(conv.params, values or dict()),
             state=state,
             measurement=measurement,
             noise=noise,

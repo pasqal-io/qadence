@@ -26,7 +26,7 @@ authors = [
 ]
 requires-python = ">=3.9"
 license = { text = "Apache 2.0" }
-version = "1.7.8"
+version = "1.8.0"
 classifiers = [
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python",
@@ -50,7 +50,7 @@ dependencies = [
     "jsonschema",
     "nevergrad",
     "scipy",
-    "pyqtorch==1.4.9",
+    "pyqtorch==1.5.1",
     "pyyaml",
     "matplotlib",
     "Arpeggio==2.0.2",
@@ -62,11 +62,10 @@ allow-ambiguous-features = true
 
 [project.optional-dependencies]
 pulser = [
-    "pulser-core==0.20.1",
-    "pulser-simulation==0.20.1",
-    "pasqal-cloud==0.12.3",
+    "pulser-core==1.1.1",
+    "pulser-simulation==1.1.1",
+    "pasqal-cloud==0.12.4",
 ]
-braket = ["amazon-braket-sdk<1.71.2"]
 visualization = [
     "graphviz",
     # FIXME: will be needed once we support latex labels
@@ -86,7 +85,7 @@ protocols = ["qadence-protocols"]
 libs = ["qadence-libs"]
 dlprof = ["nvidia-pyindex", "nvidia-dlprof[pytorch]"]
 mlflow = ["mlflow"]
-all = ["pulser", "braket", "visualization", "protocols", "libs", "mlflow"]
+all = ["pulser", "visualization", "protocols", "libs", "mlflow"]
 
 
 [tool.hatch.envs.default]
@@ -105,7 +104,7 @@ dependencies = [
     "ruff",
     "pydocstringformatter",
 ]
-features = ["pulser", "braket", "visualization", "horqrux", "mlflow"]
+features = ["pulser", "visualization", "horqrux", "mlflow"]
 
 [tool.hatch.envs.default.scripts]
 test = "pytest -n auto --cov-report lcov --cov-config=pyproject.toml --cov=qadence --cov=tests --ignore=./tests/test_examples.py {args}"
@@ -143,7 +142,7 @@ dependencies = [
     "markdown-exec",
     "mike",
 ]
-features = ["pulser", "braket", "horqrux", "visualization", "mlflow"]
+features = ["pulser", "horqrux", "visualization", "mlflow"]
 
 [tool.hatch.envs.docs.scripts]
 build = "mkdocs build --clean --strict"

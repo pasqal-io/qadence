@@ -143,10 +143,8 @@ op = RX(1, PI/4)
 
 print("Same sampling order in big endian:\n") # markdown-exec: hide
 print(f"On PyQTorch = {sample(n_qubits, op, endianness=Endianness.BIG, backend=BackendName.PYQTORCH)}") # markdown-exec: hide
-print(f"On Braket = {sample(n_qubits, op, endianness=Endianness.BIG, backend=BackendName.BRAKET)}") # markdown-exec: hide
 print(f"On Pulser = {sample(n_qubits, op, endianness=Endianness.BIG, backend=BackendName.PULSER)}\n") # markdown-exec: hide
 print("Same wavefunction order:\n") # markdown-exec: hide
 print(f"On PyQTorch = {run(n_qubits, op, endianness=Endianness.BIG, backend=BackendName.PYQTORCH)}") # markdown-exec: hide
-print(f"On Braket = {run(n_qubits, op, endianness=Endianness.BIG, backend=BackendName.BRAKET)}") # markdown-exec: hide
 print(f"On Pulser = {run(n_qubits, op, endianness=Endianness.BIG, backend=BackendName.PULSER)}") # markdown-exec: hide
 ```

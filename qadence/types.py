@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+from dataclasses import dataclass
 from enum import Enum
 from typing import Callable, Iterable, Tuple, Union
 
@@ -8,6 +9,8 @@ import numpy as np
 import sympy
 from matplotlib.figure import Figure
 from numpy.typing import ArrayLike
+from pyqtorch.noise import NoiseType as DigitalNoise
+from pyqtorch.noise.readout import WhiteNoise
 from pyqtorch.utils import SolverType
 from torch import Tensor, pi
 from torch.nn import Module
@@ -25,6 +28,7 @@ TArray = Union[Iterable, Tensor, np.ndarray]
 
 TGenerator = Union[Tensor, sympy.Array, sympy.Basic]
 """Union of torch tensors and numpy arrays."""
+
 
 PI = pi
 
@@ -51,6 +55,8 @@ __all__ = [
     "SerializationFormat",
     "PI",
     "SolverType",
+    "NoiseProtocol",
+    "WhiteNoise",
 ]  # type: ignore
 
 
@@ -221,8 +227,6 @@ class _BackendName(StrEnum):
 
     PYQTORCH = "pyqtorch"
     """The Pyqtorch backend."""
-    BRAKET = "braket"
-    """The Braket backend."""
     PULSER = "pulser"
     """The Pulser backend."""
     HORQRUX = "horqrux"
@@ -457,3 +461,25 @@ class ExperimentTrackingTool(StrEnum):
 
 
 LoggablePlotFunction = Callable[[Module, int], tuple[str, Figure]]
+
+
+class AnalogNoise(StrEnum):
+    """Type of noise protocol."""
+
+    DEPOLARIZING = "Depolarizing"
+    DEPHASING = "Dephasing"
+
+
+@dataclass
+class NoiseProtocol:
+    """Type of noise protocol."""
+
+    ANALOG = AnalogNoise
+    """Noise applied in analog blocks."""
+    READOUT = "Readout"
+    """Noise applied on outputs of quantum programs."""
+    DIGITAL = DigitalNoise
+    """Noise applied to digital blocks."""
+
+
+NoiseEnum = Union[DigitalNoise, AnalogNoise, str]

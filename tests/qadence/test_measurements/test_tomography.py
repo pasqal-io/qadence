@@ -13,6 +13,7 @@ from qadence import QNN, QuantumModel
 from qadence.backends import backend_factory
 from qadence.blocks import (
     AbstractBlock,
+    PrimitiveBlock,
     add,
     chain,
     kron,
@@ -37,13 +38,13 @@ from qadence.measurements.utils import (
     rotate,
 )
 from qadence.ml_tools.utils import rand_featureparameters
-from qadence.operations import RX, RY, H, SDagger, X, Y, Z
+from qadence.operations import RX, RY, H, I, SDagger, X, Y, Z
 from qadence.parameters import Parameter
 from qadence.types import BackendName, BasisSet, DiffMode
 
 manual_seed(1)
 
-BACKENDS = ["pyqtorch", "braket"]
+BACKENDS = ["pyqtorch"]
 DIFF_MODE = ["ad", "gpsr"]
 
 
@@ -95,7 +96,7 @@ def test_get_qubit_indices_for_op(
             QuantumCircuit(2, kron(X(0), X(1))),
             kron(X(0), Z(2)) + 1.5 * kron(Y(1), Z(2)),
             [
-                QuantumCircuit(2, chain(kron(X(0), X(1)), Z(0) * H(0))),
+                QuantumCircuit(2, chain(kron(X(0), X(1)), I(0) * H(0))),
                 QuantumCircuit(2, chain(kron(X(0), X(1)), SDagger(1) * H(1))),
             ],
         ),
@@ -111,8 +112,8 @@ def test_get_qubit_indices_for_op(
                     4,
                     chain(
                         kron(X(0), X(1), X(2), X(3)),
-                        Z(0) * H(0),
-                        Z(2) * H(2),
+                        I(0) * H(0),
+                        I(2) * H(2),
                         SDagger(1) * H(1),
                         SDagger(3) * H(3),
                     ),
@@ -129,8 +130,8 @@ def test_get_qubit_indices_for_op(
                     4,
                     chain(
                         kron(X(0), X(1), X(2), X(3)),
-                        Z(1) * H(1),
-                        Z(3) * H(3),
+                        I(1) * H(1),
+                        I(3) * H(3),
                     ),
                 ),
             ],
@@ -426,10 +427,12 @@ values2 = {
         ),
     ],
 )
+@pytest.mark.parametrize("base_op", [X, Y, Z])
+@pytest.mark.parametrize("do_kron", [True, False])
 def test_basic_tomography_for_parametric_circuit_forward_pass(
-    circuit: QuantumCircuit, values: dict
+    circuit: QuantumCircuit, values: dict, base_op: PrimitiveBlock, do_kron: bool
 ) -> None:
-    observable = Z(0) ^ circuit.n_qubits
+    observable = base_op(0) ^ circuit.n_qubits if do_kron else base_op(1)  # type: ignore[operator]
     model = QuantumModel(
         circuit=circuit,
         observable=observable,

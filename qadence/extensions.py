@@ -138,7 +138,7 @@ def _set_backend_config(backend: Backend, diff_mode: DiffMode) -> None:
 
     _validate_diff_mode(backend, diff_mode)
 
-    # (1) When using PSR with any backend or (2) we use the backends Pulser or Braket,
+    # (1) When using PSR with any backend or (2) we use the backends Pulser,
     # we have to use gate-level parameters
 
     # We can use expression-level parameters for AD.

@@ -277,17 +277,12 @@ def test_sample_inversion_for_random_circuit(backend: str, circuit: QuantumCircu
 
 @given(st.restricted_circuits())
 @settings(deadline=None)
-@pytest.mark.parametrize("backend", [BackendName.PYQTORCH, BackendName.BRAKET])
-def test_wf_inversion_for_random_circuit(backend: str, circuit: QuantumCircuit) -> None:
+def test_wf_inversion_for_random_circuit(circuit: QuantumCircuit) -> None:
+    backend = BackendName.PYQTORCH
     bknd = backend_factory(backend=backend)
     (circ, _, embed, params) = bknd.convert(circuit)
     inputs = rand_featureparameters(circuit, 1)
-    if backend == BackendName.HORQRUX:
-        inputs = {k: tensor_to_jnp(v, dtype=jnp.float64) for k, v in inputs.items()}
     for endianness in Endianness:
         wf = bknd.run(circ, embed(params, inputs), endianness=endianness)
         double_inv_wf = invert_endianness(invert_endianness(wf))
-        if backend == BackendName.HORQRUX:
-            double_inv_wf = jarr_to_tensor(double_inv_wf)
-            wf = jarr_to_tensor(wf)
         assert equivalent_state(double_inv_wf, wf)

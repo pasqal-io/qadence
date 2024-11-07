@@ -32,7 +32,7 @@ In Qadence there are 4 main objects spread across 3 different levels of abstract
   specialized for each supported backend:
     * [`Backend`][qadence.backend.Backend]: An abstract class whose concrete implementation
       enables the execution of quantum circuit with a variety of quantum backends (normally non
-      automatically differentiable by default) such as PyQTorch, Pulser or Braket.
+      automatically differentiable by default) such as PyQTorch, or Pulser.
 
 
 ## Main components

@@ -52,10 +52,10 @@ def _generate_parameter_values() -> tuple[dict, dict]:
     return values_bra, values_ket
 
 
-@pytest.mark.parametrize("backend_name", [BackendName.PYQTORCH, BackendName.BRAKET])
 @pytest.mark.parametrize("n_qubits", [1, 2])
-def test_overlap_exact(backend_name: BackendName, n_qubits: int) -> None:
+def test_overlap_exact(n_qubits: int) -> None:
     # prepare circuits
+    backend_name = BackendName.PYQTORCH
     circuit_bra, circuit_ket = _create_test_circuits(n_qubits)
 
     # values for circuits
@@ -70,7 +70,7 @@ def test_overlap_exact(backend_name: BackendName, n_qubits: int) -> None:
         circuit_ket,
         backend=backend_name,
         method=OverlapMethod.EXACT,
-        diff_mode=DiffMode.AD if backend_name == BackendName.PYQTORCH else DiffMode.GPSR,
+        diff_mode=DiffMode.AD,
     )
     ovrlp_exact = ovrlp(values_bra, values_ket)
 
@@ -78,10 +78,10 @@ def test_overlap_exact(backend_name: BackendName, n_qubits: int) -> None:
 
 
 @pytest.mark.flaky(max_runs=5)
-@pytest.mark.parametrize("backend_name", [BackendName.PYQTORCH, BackendName.BRAKET])
 @pytest.mark.parametrize("n_qubits", [1, 2])
-def test_overlap_jensen_shannon(backend_name: BackendName, n_qubits: int) -> None:
+def test_overlap_jensen_shannon(n_qubits: int) -> None:
     # prepare circuits
+    backend_name = BackendName.PYQTORCH
     circuit_bra, circuit_ket = _create_test_circuits(n_qubits)
 
     # values for circuits
@@ -100,16 +100,16 @@ def test_overlap_jensen_shannon(backend_name: BackendName, n_qubits: int) -> Non
         circuit_ket,
         backend=backend_name,
         method=OverlapMethod.JENSEN_SHANNON,
-        diff_mode=DiffMode.AD if backend_name == BackendName.PYQTORCH else DiffMode.GPSR,
+        diff_mode=DiffMode.AD,
     )
     ovrlp_js = ovrlp(values_bra, values_ket, n_shots=10000)
 
     assert torch.all(torch.isclose(ovrlp_theor, ovrlp_js, atol=LOW_ACCEPTANCE))
 
 
-@pytest.mark.parametrize("backend_name", [BackendName.PYQTORCH, BackendName.BRAKET])
 @pytest.mark.parametrize("n_qubits", [1, 2])
-def test_overlap_comp_uncomp_exact(backend_name: BackendName, n_qubits: int) -> None:
+def test_overlap_comp_uncomp_exact(n_qubits: int) -> None:
+    backend_name = BackendName.PYQTORCH
     # prepare circuits
     circuit_bra, circuit_ket = _create_test_circuits(n_qubits)
 
@@ -125,7 +125,7 @@ def test_overlap_comp_uncomp_exact(backend_name: BackendName, n_qubits: int) -> 
         circuit_ket,
         backend=backend_name,
         method=OverlapMethod.COMPUTE_UNCOMPUTE,
-        diff_mode=DiffMode.AD if backend_name == BackendName.PYQTORCH else DiffMode.GPSR,
+        diff_mode=DiffMode.AD,
     )
     ovrlp_cu = ovrlp(values_bra, values_ket)
 
@@ -133,9 +133,9 @@ def test_overlap_comp_uncomp_exact(backend_name: BackendName, n_qubits: int) -> 
 
 
 @pytest.mark.flaky(max_runs=5)
-@pytest.mark.parametrize("backend_name", [BackendName.PYQTORCH, BackendName.BRAKET])
 @pytest.mark.parametrize("n_qubits", [1, 2])
-def test_overlap_comp_uncomp_shots(backend_name: BackendName, n_qubits: int) -> None:
+def test_overlap_comp_uncomp_shots(n_qubits: int) -> None:
+    backend_name = BackendName.PYQTORCH
     # prepare circuits
     circuit_bra, circuit_ket = _create_test_circuits(n_qubits)
 
@@ -151,16 +151,17 @@ def test_overlap_comp_uncomp_shots(backend_name: BackendName, n_qubits: int) -> 
         circuit_ket,
         backend=backend_name,
         method=OverlapMethod.COMPUTE_UNCOMPUTE,
-        diff_mode=DiffMode.AD if backend_name == BackendName.PYQTORCH else DiffMode.GPSR,
+        diff_mode=DiffMode.AD,
     )
     ovrlp_cu = ovrlp(values_bra, values_ket, n_shots=10000)
 
     assert torch.all(torch.isclose(ovrlp_theor, ovrlp_cu, atol=LOW_ACCEPTANCE))
 
 
-@pytest.mark.parametrize("backend_name", [BackendName.PYQTORCH])
 @pytest.mark.parametrize("n_qubits", [1, 2])
-def test_overlap_swap_test_exact(backend_name: BackendName, n_qubits: int) -> None:
+def test_overlap_swap_test_exact(n_qubits: int) -> None:
+    backend_name = BackendName.PYQTORCH
+
     # prepare circuits
     circuit_bra, circuit_ket = _create_test_circuits(n_qubits)
 
@@ -184,9 +185,9 @@ def test_overlap_swap_test_exact(backend_name: BackendName, n_qubits: int) -> No
 
 
 @pytest.mark.flaky(max_runs=5)
-@pytest.mark.parametrize("backend_name", [BackendName.PYQTORCH])
 @pytest.mark.parametrize("n_qubits", [1, 2])
-def test_overlap_swap_test_shots(backend_name: BackendName, n_qubits: int) -> None:
+def test_overlap_swap_test_shots(n_qubits: int) -> None:
+    backend_name = BackendName.PYQTORCH
     # prepare circuits
     circuit_bra, circuit_ket = _create_test_circuits(n_qubits)
 
@@ -209,9 +210,9 @@ def test_overlap_swap_test_shots(backend_name: BackendName, n_qubits: int) -> No
     assert torch.all(torch.isclose(ovrlp_theor, ovrlp_st, atol=LOW_ACCEPTANCE))
 
 
-@pytest.mark.parametrize("backend_name", [BackendName.PYQTORCH])
 @pytest.mark.parametrize("n_qubits", [1, 2])
-def test_overlap_hadamard_test_exact(backend_name: BackendName, n_qubits: int) -> None:
+def test_overlap_hadamard_test_exact(n_qubits: int) -> None:
+    backend_name = BackendName.PYQTORCH
     # prepare circuits
     circuit_bra, circuit_ket = _create_test_circuits(n_qubits)
 
@@ -235,9 +236,10 @@ def test_overlap_hadamard_test_exact(backend_name: BackendName, n_qubits: int) -
 
 
 @pytest.mark.flaky(max_runs=5)
-@pytest.mark.parametrize("backend_name", [BackendName.PYQTORCH])
 @pytest.mark.parametrize("n_qubits", [1, 2])
-def test_overlap_hadamard_test_shots(backend_name: BackendName, n_qubits: int) -> None:
+def test_overlap_hadamard_test_shots(n_qubits: int) -> None:
+    backend_name = BackendName.PYQTORCH
+
     # prepare circuits
     circuit_bra, circuit_ket = _create_test_circuits(n_qubits)
 
@@ -260,15 +262,15 @@ def test_overlap_hadamard_test_shots(backend_name: BackendName, n_qubits: int) -
     assert torch.all(torch.isclose(ovrlp_theor, ovrlp_ht, atol=LOW_ACCEPTANCE))
 
 
-# TODO: investigate why braket overlap.EXACT gives slower results that fails
 # TODO: move the test below in the future to https://gitlab.pasqal.com/pqs/benchmarks
 @pytest.mark.skip(
     reason="Test depending on timeit is very hardware dependent, was causing CI to fail."
 )
 @pytest.mark.flaky(max_runs=5)
-@pytest.mark.parametrize("backend_name", [BackendName.PYQTORCH, BackendName.BRAKET])
 @pytest.mark.parametrize("n_qubits", [1, 2, 4, 10, 12])
-def test_overlap_exact_speed(backend_name: BackendName, n_qubits: int) -> None:
+def test_overlap_exact_speed(n_qubits: int) -> None:
+    backend_name = BackendName.PYQTORCH
+
     # prepare circuit for bras
     param_bra = FeatureParameter("phi")
     block_bra = kron(*[RX(qubit, param_bra) for qubit in range(n_qubits)])
@@ -292,16 +294,16 @@ def test_overlap_exact_speed(backend_name: BackendName, n_qubits: int) -> None:
         circuit_bra,
         backend=backend_name,
         method=OverlapMethod.EXACT,
-        diff_mode=DiffMode.AD if backend_name == BackendName.PYQTORCH else DiffMode.GPSR,
+        diff_mode=DiffMode.AD,
     )
     t_ovrlp = timeit(lambda: ovrlp(values_bra, values_bra), number=100)
 
     assert np.round(t_ovrlp / t_exp, decimals=0) <= 2.0
 
 
-@pytest.mark.parametrize("backend_name", [BackendName.PYQTORCH])
 @pytest.mark.parametrize("gate", [Z, S, T, H])
-def test_overlap_training(backend_name: BackendName, gate: PrimitiveBlock) -> None:
+def test_overlap_training(gate: PrimitiveBlock) -> None:
+    backend_name = BackendName.PYQTORCH
     # define training parameters
     phi = VariationalParameter("phi")
     theta = VariationalParameter("theta")

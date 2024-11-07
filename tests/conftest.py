@@ -253,11 +253,15 @@ def feature_param_y() -> float:
 
 
 @fixture
-def qadence_generator(omega: float) -> AbstractBlock:
-    t = TimeParameter("t")
+def time_param() -> str:
+    return "t"
+
+
+@fixture
+def qadence_generator(omega: float, time_param: str, feature_param_y: float) -> AbstractBlock:
+    t = TimeParameter(time_param)
     x = Parameter("x", trainable=False)
-    y = Parameter("y", trainable=False)
-    generator_t = omega * (y * sympy.sin(t) * X(0) + x * (t**2) * Y(1))
+    generator_t = omega * (sympy.sin(feature_param_y * t) * X(0) + x * (t**2) * Y(1))
     return generator_t  # type: ignore [no-any-return]
 
 
@@ -265,7 +269,7 @@ def qadence_generator(omega: float) -> AbstractBlock:
 def qutip_generator(omega: float, feature_param_x: float, feature_param_y: float) -> Callable:
     def generator_t(t: float, args: Any) -> qutip.Qobj:
         return omega * (
-            feature_param_y * np.sin(t) * qutip.tensor(qutip.sigmax(), qutip.qeye(2))
+            np.sin(feature_param_y * t) * qutip.tensor(qutip.sigmax(), qutip.qeye(2))
             + feature_param_x * t**2 * qutip.tensor(qutip.qeye(2), qutip.sigmay())
         )
 

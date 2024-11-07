@@ -74,6 +74,7 @@ nav:
     - QuantumCircuit: api/quantumcircuit.md
     - Parameters: api/parameters.md
     - State preparation: api/states.md
+    - Noise: api/noise.md
     - Constructors: api/constructors.md
     - Transpilation: api/transpile.md
     - Execution: api/execution.md

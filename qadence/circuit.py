@@ -194,7 +194,7 @@ class QuantumCircuit:
     def _from_json(cls, path: str | Path) -> QuantumCircuit:
         import json
 
-        loaded_dict: dict = {}
+        loaded_dict: dict = dict()
         if isinstance(path, str):
             path = Path(path)
         try:

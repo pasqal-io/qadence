@@ -18,7 +18,7 @@ omega_param = Parameter("omega")
 generator_td = omega_param * (t * X(0) + t**2 * Y(1))
 
 # create parameterized HamEvo block
-hamevo = HamEvo(generator_td, 0.0, duration=duration)
+hamevo = HamEvo(generator_td, t, duration=duration)
 
 # run simulation
 out_state = run(hamevo,
@@ -29,4 +29,4 @@ out_state = run(hamevo,
 print(out_state)
 ```
 
-Note that when using `HamEvo` with a time-dependent generator, its second argument `parameter` is not used and an arbitrary value can be passed to it. However, in case of time-dependent generator a value for `duration` argument to `HamEvo` must be passed in order to define the duration of the simulation. The unit of passed duration value $\tau$ must be aligned with the units of other parameters in the time-dependent generator so that the integral of generator $\overset{\tau}{\underset{0}{\int}}\mathcal{\hat{H}}(t){\rm d}t$ is dimensionless.
+Note that when using `HamEvo` with a time-dependent generator, the actual time parameter that was used to construct the generator must be passed for the second argument `parameter`. In time-dependent case a value for `duration` argument to `HamEvo` must be passed in order to define the duration of the simulation. The unit of passed duration value $\tau$ must be aligned with the units of other parameters in the time-dependent generator so that the integral of generator $\overset{\tau}{\underset{0}{\int}}\mathcal{\hat{H}}(t){\rm d}t$ is dimensionless.
