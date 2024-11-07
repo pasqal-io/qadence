@@ -8,6 +8,7 @@ from pyqtorch.utils import SolverType
 
 from qadence.analog import add_background_hamiltonian
 from qadence.backend import BackendConfiguration
+from qadence.noise import NoiseHandler
 from qadence.transpile import (
     blockfn_to_circfn,
     chain_single_qubit_ops,
@@ -63,3 +64,6 @@ class Configuration(BackendConfiguration):
 
     Loop over the batch of parameters to only allocate a single wavefunction at any given time.
     """
+
+    noise: NoiseHandler | None = None
+    """NoiseHandler containing readout noise applied in backend."""

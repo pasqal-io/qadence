@@ -321,7 +321,16 @@ def convert_block(
         )
 
 
-def convert_digital_noise(noise: NoiseHandler) -> pyq.noise.NoiseProtocol:
+def convert_digital_noise(noise: NoiseHandler) -> pyq.noise.NoiseProtocol | None:
+    """Convert the digital noise into pyqtorch NoiseProtocol.
+
+    Args:
+        noise (NoiseHandler): Noise to convert.
+
+    Returns:
+        pyq.noise.NoiseProtocol | None: Pyqtorch native noise protocol
+            if there are any digital noise protocols.
+    """
     digital_part = noise.filter(NoiseProtocol.DIGITAL)
     if digital_part is None:
         return None
@@ -331,3 +340,20 @@ def convert_digital_noise(noise: NoiseHandler) -> pyq.noise.NoiseProtocol:
             for proto, option in zip(digital_part.protocol, digital_part.options)
         ]
     )
+
+
+def convert_readout_noise(n_qubits: int, noise: NoiseHandler) -> pyq.noise.ReadoutNoise | None:
+    """Convert the readout noise into pyqtorch ReadoutNoise.
+
+    Args:
+        n_qubits (int): Number of qubits
+        noise (NoiseHandler):  Noise to convert.
+
+    Returns:
+        pyq.noise.ReadoutNoise | None: Pyqtorch native ReadoutNoise instance
+            if readout is is noise.
+    """
+    readout_part = noise.filter(NoiseProtocol.READOUT)
+    if readout_part is None:
+        return None
+    return pyq.noise.ReadoutNoise(n_qubits, **readout_part.options[0])

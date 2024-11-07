@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .protocols import NoiseHandler, apply_readout_noise
+from .protocols import NoiseHandler
 
 # Modules to be automatically added to the qadence namespace
-__all__ = ["NoiseHandler", "apply_readout_noise"]
+__all__ = ["NoiseHandler"]

@@ -92,23 +92,12 @@ print(f"noiseless = {noiseless_samples}") # markdown-exec: hide
 print(f"noisy = {noisy_samples}") # markdown-exec: hide
 ```
 
-Note we can apply directly the method `apply_readout_noise` to the noiseless samples as follows:
-
-```python exec="on" source="material-block" session="noise" result="json"
-from qadence.noise import apply_readout_noise
-altered_samples = apply_readout_noise(noise, noiseless_samples)
-
-print(f"noiseless = {noiseless_samples}") # markdown-exec: hide
-print(f"noisy = {noisy_samples}") # markdown-exec: hide
-```
-
 It is possible to pass options to the noise model. In the previous example, a noise matrix is implicitly computed from a
 uniform distribution. The `option` dictionary argument accepts the following options:
 
 - `seed`: defaulted to `None`, for reproducibility purposes
 - `error_probability`: defaulted to 0.1, a bit flip probability
 - `noise_distribution`: defaulted to `WhiteNoise.UNIFORM`, for non-uniform noise distributions
-- `noise_matrix`: defaulted to `None`, if the noise matrix is known from third-party experiments, _i.e._ hardware calibration.
 
 Noisy simulations go hand-in-hand with measurement protocols discussed in the previous [section](measurements.md), to assess the impact of noise on expectation values. In this case, both measurement and noise protocols have to be defined appropriately. Please note that a noise protocol without a measurement protocol will be ignored for expectation values computations.
 
