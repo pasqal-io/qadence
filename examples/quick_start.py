@@ -8,7 +8,7 @@ from qadence import QuantumModel  # quantum model for execution
 from qadence.blocks import kron  # block system
 from qadence.circuit import QuantumCircuit  # circuit to assemble quantum operations
 from qadence.logger import get_script_logger  # Extend Qadence logging to your scripts
-from qadence.ml_tools import TrainConfig, train_with_grad  # tools for ML simulations
+from qadence.ml_tools import TrainConfig, Trainer  # tools for ML simulations
 from qadence.operations import RX, HamEvo, X, Y, Zero  # quantum operations
 from qadence.parameters import VariationalParameter  # trainable parameters
 
@@ -57,4 +57,5 @@ def loss_fn(model_: QuantumModel, _):
 
 optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
 config = TrainConfig(max_iter=100, checkpoint_every=10, print_every=10)
-train_with_grad(model, None, optimizer, config, loss_fn=loss_fn)
+trainer = Trainer(model, optimizer, config, loss_fn)
+model, optimizer = trainer.fit()
