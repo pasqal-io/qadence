@@ -4,7 +4,7 @@ import os
 import shutil
 from itertools import count
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Union
 from urllib.parse import urlparse
 
 import mlflow
@@ -18,7 +18,8 @@ from torch.nn import Module
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 
-from qadence.ml_tools import TrainConfig, train_with_grad
+from qadence.ml_tools import TrainConfig, Trainer
+from qadence.ml_tools.callbacks.writer_registry import BaseWriter
 from qadence.ml_tools.data import to_dataloader
 from qadence.ml_tools.models import QNN
 from qadence.ml_tools.utils import rand_featureparameters
@@ -47,8 +48,8 @@ def setup_model(model: Module) -> tuple[Callable, Optimizer]:
     return loss_fn, optimizer
 
 
-def load_mlflow_model(train_config: TrainConfig) -> None:
-    run_id = train_config.mlflow_config.run.info.run_id
+def load_mlflow_model(writer: BaseWriter) -> None:
+    run_id = writer.run.info.run_id
 
     mlflow.pytorch.load_model(model_uri=f"runs:/{run_id}/model")
 
@@ -59,8 +60,8 @@ def find_mlflow_artifacts_path(run: Run) -> Path:
     return Path(os.path.abspath(os.path.join(parsed_uri.netloc, parsed_uri.path)))
 
 
-def clean_mlflow_experiment(train_config: TrainConfig) -> None:
-    experiment_id = train_config.mlflow_config.run.info.experiment_id
+def clean_mlflow_experiment(writer: BaseWriter) -> None:
+    experiment_id = writer.run.info.experiment_id
     client = MlflowClient()
 
     runs = client.search_runs(experiment_id)
@@ -96,18 +97,20 @@ def test_hyperparams_logging_mlflow(BasicQuantumModel: QuantumModel, tmp_path: P
         tracking_tool=ExperimentTrackingTool.MLFLOW,
     )
 
-    train_with_grad(model, None, optimizer, config, loss_fn=loss_fn)
+    trainer = Trainer(model, optimizer, config, loss_fn, None)
+    with trainer.enable_grad_opt():
+        trainer.fit()
 
-    mlflow_config = config.mlflow_config
-    experiment_id = mlflow_config.run.info.experiment_id
-    run_id = mlflow_config.run.info.run_id
+    writer = trainer.callback_manager.writer
+    experiment_id = writer.run.info.experiment_id
+    run_id = writer.run.info.run_id
 
     experiment_dir = Path(f"mlruns/{experiment_id}")
     hyperparams_files = [experiment_dir / run_id / "params" / key for key in hyperparams.keys()]
 
     assert all([os.path.isfile(hf) for hf in hyperparams_files])
 
-    clean_mlflow_experiment(config)
+    clean_mlflow_experiment(trainer.callback_manager.writer)
 
 
 def test_hyperparams_logging_tensorboard(BasicQuantumModel: QuantumModel, tmp_path: Path) -> None:
@@ -126,7 +129,9 @@ def test_hyperparams_logging_tensorboard(BasicQuantumModel: QuantumModel, tmp_pa
         tracking_tool=ExperimentTrackingTool.TENSORBOARD,
     )
 
-    train_with_grad(model, None, optimizer, config, loss_fn=loss_fn)
+    trainer = Trainer(model, optimizer, config, loss_fn, None)
+    with trainer.enable_grad_opt():
+        trainer.fit()
 
 
 def test_model_logging_mlflow_basicQM(BasicQuantumModel: QuantumModel, tmp_path: Path) -> None:
@@ -142,11 +147,13 @@ def test_model_logging_mlflow_basicQM(BasicQuantumModel: QuantumModel, tmp_path:
         tracking_tool=ExperimentTrackingTool.MLFLOW,
     )
 
-    train_with_grad(model, None, optimizer, config, loss_fn=loss_fn)
+    trainer = Trainer(model, optimizer, config, loss_fn, None)
+    with trainer.enable_grad_opt():
+        trainer.fit()
 
-    load_mlflow_model(config)
+    load_mlflow_model(trainer.callback_manager.writer)
 
-    clean_mlflow_experiment(config)
+    clean_mlflow_experiment(trainer.callback_manager.writer)
 
 
 def test_model_logging_mlflow_basicQNN(BasicQNN: QNN, tmp_path: Path) -> None:
@@ -164,11 +171,13 @@ def test_model_logging_mlflow_basicQNN(BasicQNN: QNN, tmp_path: Path) -> None:
         tracking_tool=ExperimentTrackingTool.MLFLOW,
     )
 
-    train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
+    trainer = Trainer(model, optimizer, config, loss_fn, data)
+    with trainer.enable_grad_opt():
+        trainer.fit()
 
-    load_mlflow_model(config)
+    load_mlflow_model(trainer.callback_manager.writer)
 
-    clean_mlflow_experiment(config)
+    clean_mlflow_experiment(trainer.callback_manager.writer)
 
 
 def test_model_logging_mlflow_basicAdjQNN(BasicAdjointQNN: QNN, tmp_path: Path) -> None:
@@ -186,11 +195,13 @@ def test_model_logging_mlflow_basicAdjQNN(BasicAdjointQNN: QNN, tmp_path: Path) 
         tracking_tool=ExperimentTrackingTool.MLFLOW,
     )
 
-    train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
+    trainer = Trainer(model, optimizer, config, loss_fn, data)
+    with trainer.enable_grad_opt():
+        trainer.fit()
 
-    load_mlflow_model(config)
+    load_mlflow_model(trainer.callback_manager.writer)
 
-    clean_mlflow_experiment(config)
+    clean_mlflow_experiment(trainer.callback_manager.writer)
 
 
 def test_model_logging_tensorboard(
@@ -209,7 +220,9 @@ def test_model_logging_tensorboard(
         tracking_tool=ExperimentTrackingTool.TENSORBOARD,
     )
 
-    train_with_grad(model, None, optimizer, config, loss_fn=loss_fn)
+    trainer = Trainer(model, optimizer, config, loss_fn, None)
+    with trainer.enable_grad_opt():
+        trainer.fit()
 
     assert "Model logging is not supported by tensorboard. No model will be logged." in caplog.text
 
@@ -250,16 +263,18 @@ def test_plotting_mlflow(BasicQNN: QNN, tmp_path: Path) -> None:
         plotting_functions=(plot_model, plot_error),
     )
 
-    train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
+    trainer = Trainer(model, optimizer, config, loss_fn, data)
+    with trainer.enable_grad_opt():
+        trainer.fit()
 
     all_plot_names = [f"model_prediction_epoch_{i}.png" for i in range(0, max_iter, plot_every)]
     all_plot_names.extend([f"error_epoch_{i}.png" for i in range(0, max_iter, plot_every)])
 
-    artifact_path = find_mlflow_artifacts_path(config.mlflow_config.run)
+    artifact_path = find_mlflow_artifacts_path(trainer.callback_manager.writer.run)
 
     assert all([os.path.isfile(artifact_path / pn) for pn in all_plot_names])
 
-    clean_mlflow_experiment(config)
+    clean_mlflow_experiment(trainer.callback_manager.writer)
 
 
 def test_plotting_tensorboard(BasicQNN: QNN, tmp_path: Path) -> None:
@@ -295,4 +310,6 @@ def test_plotting_tensorboard(BasicQNN: QNN, tmp_path: Path) -> None:
         plotting_functions=(plot_model, plot_error),
     )
 
-    train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
+    trainer = Trainer(model, optimizer, config, loss_fn, data)
+    with trainer.enable_grad_opt():
+        trainer.fit()
