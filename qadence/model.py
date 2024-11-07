@@ -514,7 +514,7 @@ class QuantumModel(nn.Module):
         if isinstance(file_path, str):
             file_path = Path(file_path)
         if os.path.isdir(file_path):
-            from qadence.ml_tools.saveload import get_latest_checkpoint_name
+            from qadence.ml_tools.callbacks.saveload import get_latest_checkpoint_name
 
             file_path = file_path / get_latest_checkpoint_name(file_path, "model")
 
