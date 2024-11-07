@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from .callbackmanager import CallbacksManager
 from .callback import (
     Callback,
     LoadCheckpoint,
@@ -12,6 +11,7 @@ from .callback import (
     SaveCheckpoint,
     WriteMetrics,
 )
+from .callbackmanager import CallbacksManager
 from .writer_registry import get_writer
 
 # Modules to be automatically added to the qadence.ml_tools.callbacks namespace

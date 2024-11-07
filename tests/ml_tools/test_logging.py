@@ -4,7 +4,7 @@ import os
 import shutil
 from itertools import count
 from pathlib import Path
-from typing import Callable, Union
+from typing import Callable
 from urllib.parse import urlparse
 
 import mlflow

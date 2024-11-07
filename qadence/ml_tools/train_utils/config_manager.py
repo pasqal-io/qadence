@@ -1,30 +1,30 @@
 from __future__ import annotations
 
-import os
 import datetime
-import math
-from pathlib import Path
+import os
 from logging import getLogger
-from typing import Union, Any
-from dataclasses import field
+from pathlib import Path
+from typing import Union
 
 from torch import Tensor
 
-from qadence.types import ExperimentTrackingTool
 from qadence.ml_tools.config import TrainConfig
+from qadence.types import ExperimentTrackingTool
 
 logger = getLogger(__name__)
 
+
 class ConfigManager:
-    """A class to manage and initialize the configuration for a 
+    """A class to manage and initialize the configuration for a.
+
     machine learning training run using TrainConfig.
 
     Attributes:
-        config (TrainConfig): The training configuration object 
+        config (TrainConfig): The training configuration object
         containing parameters and settings.
     """
 
-    optimization_type: str = 'with_grad'
+    optimization_type: str = "with_grad"
 
     def __init__(self, config: TrainConfig):
         """
@@ -37,8 +37,9 @@ class ConfigManager:
 
     def initialize_config(self) -> None:
         """
-        Initialize the configuration by setting up the folder structure,
-        handling hyperparameters, deriving additional parameters, 
+        Initialize the configuration by setting up the folder structure,.
+
+        handling hyperparameters, deriving additional parameters,
         and logging warnings.
         """
         self._initialize_folder()
@@ -48,11 +49,13 @@ class ConfigManager:
 
     def _initialize_folder(self) -> None:
         """
-        Initialize the folder structure for logging. Creates a log folder
+        Initialize the folder structure for logging.
+
+        Creates a log folder
         if the folder path is specified in the configuration.
         config has three parameters
         - folder: The root folder for logging
-        - subfolders: list of subfolders inside `folder` that are used for logging 
+        - subfolders: list of subfolders inside `folder` that are used for logging
         - log_folder: folder currently used for loggin.
         """
         if self.config.folder:
@@ -85,6 +88,7 @@ class ConfigManager:
     def _add_subfolder(self) -> None:
         """
         Add a unique subfolder name to the configuration for logging.
+
         The subfolder name includes a run ID, timestamp, and process ID in hexadecimal format.
         """
         timestamp = datetime.datetime.now().strftime("%Y%m%dT%H%M%S")
@@ -96,16 +100,21 @@ class ConfigManager:
     def _handle_hyperparams(self) -> None:
         """
         Handle and filter hyperparameters based on the selected tracking tool.
-        Removes incompatible hyperparameters when using TensorBoard. 
+
+        Removes incompatible hyperparameters when using TensorBoard.
         """
         # tensorboard only allows for certain types as hyperparameters
-    
-        if self.config.hyperparams and self.config.tracking_tool == ExperimentTrackingTool.TENSORBOARD:
+
+        if (
+            self.config.hyperparams
+            and self.config.tracking_tool == ExperimentTrackingTool.TENSORBOARD
+        ):
             self._filter_tb_hyperparams()
 
     def _filter_tb_hyperparams(self) -> None:
         """
         Filter out hyperparameters that cannot be logged by TensorBoard.
+
         Logs a warning for the removed hyperparameters.
         """
 
@@ -117,13 +126,16 @@ class ConfigManager:
             if not isinstance(value, tb_allowed_hyperparams_types)
         ]
         if keys_to_remove:
-            logger.warning(f"Tensorboard cannot log the following hyperparameters: {keys_to_remove}.")
+            logger.warning(
+                f"Tensorboard cannot log the following hyperparameters: {keys_to_remove}."
+            )
             for key in keys_to_remove:
                 self.config.hyperparams.pop(key)
 
     def _derive_parameters(self) -> None:
         """
         Derive additional parameters for the training configuration.
+
         Sets the stopping criterion if it is not already defined.
         """
         if self.config.trainstop_criterion is None:
@@ -131,9 +143,17 @@ class ConfigManager:
 
     def _log_warnings(self) -> None:
         """
-        Log warnings for incompatible configurations related to tracking tools and plotting functions.
+        Log warnings for incompatible configurations related to tracking tools.
+
+        and plotting functions.
         """
-        if self.config.plotting_functions and self.config.tracking_tool != ExperimentTrackingTool.MLFLOW:
+        if (
+            self.config.plotting_functions
+            and self.config.tracking_tool != ExperimentTrackingTool.MLFLOW
+        ):
             logger.warning("In-training plots are only available with mlflow tracking.")
-        if not self.config.plotting_functions and self.config.tracking_tool == ExperimentTrackingTool.MLFLOW:
+        if (
+            not self.config.plotting_functions
+            and self.config.tracking_tool == ExperimentTrackingTool.MLFLOW
+        ):
             logger.warning("Tracking with mlflow, but no plotting functions provided.")

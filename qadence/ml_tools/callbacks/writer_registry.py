@@ -2,16 +2,16 @@ from __future__ import annotations
 
 import os
 from logging import getLogger
-from typing import Any, Callable, Union
 from types import ModuleType
+from typing import Any, Callable, Union
 from uuid import uuid4
 
 from matplotlib.figure import Figure
+from mlflow.entities import Run
 from torch import Tensor
 from torch.nn import Module
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-from mlflow.entities import Run
 
 from qadence.ml_tools.config import TrainConfig
 from qadence.ml_tools.data import DictDataLoader, OptimizeResult
@@ -29,15 +29,18 @@ class BaseWriter:
     Abstract base class for experiment tracking writers.
 
     Methods:
-        open(config, iteration=None): Opens the writer and sets up the logging environment.
+        open(config, iteration=None): Opens the writer and sets up the logging
+            environment.
         close(): Closes the writer and finalizes any ongoing logging processes.
         print_metrics(result): Prints metrics and loss in a formatted manner.
         write(result): Writes the optimization results to the tracking tool.
         log_hyperparams(hyperparams): Logs the hyperparameters to the tracking tool.
-        plot(model, iteration, plotting_functions): Logs model plots using provided plotting functions.
+        plot(model, iteration, plotting_functions): Logs model plots using provided
+            plotting functions.
         log_model(model, dataloader): Logs the model and any relevant information.
     """
-    run: Run # [attr-defined]
+
+    run: Run  # [attr-defined]
 
     def open(self, config: TrainConfig, iteration: int = None) -> Any:
         """
@@ -45,7 +48,8 @@ class BaseWriter:
 
         Args:
             config: Configuration object containing settings for logging.
-            iteration (int, optional): The iteration step to start logging from. Defaults to None.
+            iteration (int, optional): The iteration step to start logging from.
+                Defaults to None.
         """
         raise NotImplementedError("Writers must implement an open method.")
 
@@ -83,7 +87,8 @@ class BaseWriter:
         Args:
             model (Module): The model to plot.
             iteration (int): The current iteration number.
-            plotting_functions (tuple[PlottingFunction, ...]): Functions used to generate plots.
+            plotting_functions (tuple[PlottingFunction, ...]): Functions used to
+                generate plots.
         """
         raise NotImplementedError("Writers must implement a plot method.")
 
@@ -97,7 +102,8 @@ class BaseWriter:
 
         Args:
             model (Module): The model to log.
-            dataloader (DataLoader | DictDataLoader | None): DataLoader to use for model input.
+            dataloader (DataLoader | DictDataLoader | None): DataLoader to use
+                for model input.
         """
         raise NotImplementedError("Writers must implement a log_model method.")
 
@@ -135,7 +141,8 @@ class TensorBoardWriter(BaseWriter):
 
         Args:
             config: Configuration object containing settings for logging.
-            iteration (int, optional): The iteration step to start logging from. Defaults to None.
+            iteration (int, optional): The iteration step to start logging from.
+                Defaults to None.
 
         Returns:
             SummaryWriter: The initialized TensorBoard writer.
@@ -188,7 +195,8 @@ class TensorBoardWriter(BaseWriter):
         Args:
             model (Module): The model to plot.
             iteration (int): The current iteration number.
-            plotting_functions (tuple[PlottingFunction, ...]): Functions used to generate plots.
+            plotting_functions (tuple[PlottingFunction, ...]): Functions used
+                to generate plots.
         """
         if self.writer:
             for pf in plotting_functions:
@@ -207,7 +215,8 @@ class TensorBoardWriter(BaseWriter):
 
         Args:
             model (Module): The model to log.
-            dataloader (DataLoader | DictDataLoader | None): DataLoader to use for model input.
+            dataloader (DataLoader | DictDataLoader | None): DataLoader to use
+                for model input.
         """
         logger.warning("Model logging is not supported by tensorboard. No model will be logged.")
 
@@ -222,8 +231,8 @@ class MLFlowWriter(BaseWriter):
     """
 
     def __init__(self) -> None:
-        self.run : Run
-        self.mlflow : ModuleType
+        self.run: Run
+        self.mlflow: ModuleType
 
     def open(self, config: TrainConfig, iteration: int = None) -> ModuleType | None:
         """
@@ -231,7 +240,8 @@ class MLFlowWriter(BaseWriter):
 
         Args:
             config: Configuration object containing settings for logging.
-            iteration (int, optional): The iteration step to start logging from. Defaults to None.
+            iteration (int, optional): The iteration step to start logging from.
+                Defaults to None.
 
         Returns:
             mlflow: The MLflow module instance.
@@ -242,7 +252,7 @@ class MLFlowWriter(BaseWriter):
         tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "")
         experiment_name = os.getenv("MLFLOW_EXPERIMENT_NAME", str(uuid4()))
         run_name = os.getenv("MLFLOW_RUN_NAME", str(uuid4()))
-        
+
         if self.mlflow:
             self.mlflow.set_tracking_uri(tracking_uri)
 
@@ -297,7 +307,8 @@ class MLFlowWriter(BaseWriter):
         Args:
             model (Module): The model to plot.
             iteration (int): The current iteration number.
-            plotting_functions (tuple[PlottingFunction, ...]): Functions used to generate plots.
+            plotting_functions (tuple[PlottingFunction, ...]): Functions used
+                to generate plots.
         """
         if self.mlflow:
             for pf in plotting_functions:
@@ -314,7 +325,8 @@ class MLFlowWriter(BaseWriter):
 
         Args:
             model (Module): The model to log.
-            dataloader (DataLoader | DictDataLoader | None): DataLoader to use for model input.
+            dataloader (DataLoader | DictDataLoader | None): DataLoader to
+                use for model input.
         """
         if self.mlflow:
             signature = None
@@ -333,7 +345,9 @@ class MLFlowWriter(BaseWriter):
 
                     signature = infer_signature(xs, preds)
                 except ImportError:
-                    logger.warning("MLflow's infer_signature is not available. Please install mlflow.")
+                    logger.warning(
+                        "MLflow's infer_signature is not available. Please install mlflow."
+                    )
 
             self.mlflow.pytorch.log_model(model, artifact_path="model", signature=signature)
 

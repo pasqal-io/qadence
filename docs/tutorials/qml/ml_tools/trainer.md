@@ -1,8 +1,8 @@
 
 # Qadence Trainer Guide
 
-The [`Trainer`][qadence.ml_tools.Trainer] class in `qadence.ml_tools` is a versatile tool designed to streamline the training of quantum machine learning models. 
-It offers flexibility for both gradient-based and gradient-free optimization methods, supports custom loss functions, and integrates seamlessly with tracking tools like TensorBoard and MLflow. 
+The [`Trainer`][qadence.ml_tools.Trainer] class in `qadence.ml_tools` is a versatile tool designed to streamline the training of quantum machine learning models.
+It offers flexibility for both gradient-based and gradient-free optimization methods, supports custom loss functions, and integrates seamlessly with tracking tools like TensorBoard and MLflow.
 Additionally, it provides hooks for implementing custom behaviors during the training process.
 
 For training QML models, Qadence offers this out-of-the-box [`Trainer`][qadence.ml_tools.Trainer] for optimizing differentiable
@@ -13,7 +13,7 @@ models, _e.g._ `QNN`s and `QuantumModel`, containing either *trainable* and/or *
 
 ## 1. Overview
 
-The `Trainer` class simplifies the training workflow by managing the training loop, handling data loading, and facilitating model evaluation. 
+The `Trainer` class simplifies the training workflow by managing the training loop, handling data loading, and facilitating model evaluation.
 It is compatible with various optimization strategies and allows for extensive customization to meet specific training requirements.
 
 Example of initializing the `Trainer`:
@@ -33,11 +33,11 @@ trainer = Trainer(model=model, optimizer=optimizer, config=config)
 
 ## 2. Gradient-Based and Gradient-Free Optimization
 
-The `Trainer` supports both gradient-based and gradient-free optimization methods. 
+The `Trainer` supports both gradient-based and gradient-free optimization methods.
 Default is gradient-based optimization.
 
-- **Gradient-Based Optimization**: Utilizes optimizers from PyTorch's `torch.optim` module. 
-This is the default behaviour of the `Trainer`, thus setting this is not necessary. 
+- **Gradient-Based Optimization**: Utilizes optimizers from PyTorch's `torch.optim` module.
+This is the default behaviour of the `Trainer`, thus setting this is not necessary.
 However, it can be explicity mentioned as follows.
 Example of using gradient-based optimization:
 
@@ -48,7 +48,7 @@ from qadence.ml_tools import Trainer
 Trainer.set_use_grad(True)
 ```
 
-- **Gradient-Free Optimization**: Employs optimization algorithms from the [Nevergrad](https://facebookresearch.github.io/nevergrad/) library. 
+- **Gradient-Free Optimization**: Employs optimization algorithms from the [Nevergrad](https://facebookresearch.github.io/nevergrad/) library.
 
 
 Example of using gradient-free optimization with Nevergrad:
@@ -80,7 +80,7 @@ with trainer.disable_grad_opt(ng_optimizer):
 
 ## 3. Custom Loss Functions
 
-Users can define custom loss functions tailored to their specific tasks. 
+Users can define custom loss functions tailored to their specific tasks.
 The `Trainer` accepts a `loss_fn` parameter, which should be a callable that takes the model and data as inputs and returns a tuple containing the loss tensor and a dictionary of metrics.
 
 Example of using a custom loss function:
@@ -103,7 +103,7 @@ def loss_fn(model: torch.nn.Module, data: torch.Tensor) -> tuple[torch.Tensor, d
 
 ## 4. Hooks for Custom Behavior
 
-The `Trainer` class provides several hooks that enable users to inject custom behavior at different stages of the training process. 
+The `Trainer` class provides several hooks that enable users to inject custom behavior at different stages of the training process.
 These hooks are methods that can be overridden in a subclass to execute custom code.
 The available hooks include:
 
@@ -230,13 +230,13 @@ def loss_fn(model: QuantumModel, data: torch.Tensor) -> tuple[torch.Tensor, dict
 ```
 
 #### `TrainConfig` specifications
-Qadence offers different tracking options via `TrainConfig`. Here we use the `ExperimentTrackingTool` type to specify that we want to track the experiment with mlflow. Tracking with tensorboard is also possible. We can then indicate *what* and *how often* we want to track or log. 
+Qadence offers different tracking options via `TrainConfig`. Here we use the `ExperimentTrackingTool` type to specify that we want to track the experiment with mlflow. Tracking with tensorboard is also possible. We can then indicate *what* and *how often* we want to track or log.
 
 **For Training**
 `write_every` controls the number of epochs after which the loss values is logged. Thanks to the `plotting_functions` and `plot_every`arguments, we are also able to plot model-related quantities throughout training. Notice that arbitrary plotting functions can be passed, as long as the signature is the same as `plot_fn` below. Finally, the trained model can be logged by setting `log_model=True`. Here is an example of plotting function and training configuration
 
 **For Validation**
-`val_every` can be used to define how often we want to validate the model using the validation dataloader. 
+`val_every` can be used to define how often we want to validate the model using the validation dataloader.
 
 ```python
 def plot_fn(model: Module, iteration: int) -> tuple[str, Figure]:
@@ -344,7 +344,7 @@ train_dataloader = to_dataloader(x, y, batch_size=batch_size, infinite=True)
 val_dataloader =  to_dataloader(x, y, batch_size=batch_size, infinite=True)
 
 trainer = Trainer(model, optimizer, config, loss_fn=loss_fn,
-                    train_dataloader = train_dataloader, val_dataloader = val_dataloader, 
+                    train_dataloader = train_dataloader, val_dataloader = val_dataloader,
                     device=DEVICE, dtype=DTYPE)
 trainer.fit()
 
@@ -417,7 +417,7 @@ training loop based on the building blocks that are available in Qadence.
 A simplified version of Qadence's train loop is defined below. Feel free to copy it and modify at
 will.
 
-For logging we can use the `get_writer` from the [`Writer Registery`][qadence.ml_tools.callbacks.writer_registry]. This will set up the default writer based on the experiment tracking tool. 
+For logging we can use the `get_writer` from the [`Writer Registery`][qadence.ml_tools.callbacks.writer_registry]. This will set up the default writer based on the experiment tracking tool.
 All writers from the [`Writer Registery`][qadence.ml_tools.callbacks.writer_registry] offer `open`, `close`, `print_metrics`, `write_metrics`, `plot_metrics`, etc methods.
 
 

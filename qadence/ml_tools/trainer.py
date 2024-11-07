@@ -1,29 +1,31 @@
 from __future__ import annotations
 
-from logging import getLogger
-from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, TimeRemainingColumn
-from typing import Union, Callable, Optional, List, Tuple, Dict, Any, cast, Iterable
-from itertools import islice
 import copy
+from itertools import islice
+from logging import getLogger
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union, cast
 
 import torch
-from torch import nn, optim
-from torch.utils.data import DataLoader
-from torch import dtype as torch_dtype
-from torch import device as torch_device
-from torch import complex64, complex128, float32, float64
 from nevergrad.optimization.base import Optimizer as NGOptimizer
+from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, TimeRemainingColumn
+from torch import complex128, float32, float64, nn, optim
+from torch import device as torch_device
+from torch import dtype as torch_dtype
+from torch.utils.data import DataLoader
+
+from qadence.ml_tools.config import TrainConfig
+from qadence.ml_tools.data import OptimizeResult
+from qadence.ml_tools.optimize_step import optimize_step, update_ng_parameters
 
 from .train_utils.base_trainer import BaseTrainer
-from qadence.ml_tools.config import TrainConfig
-from qadence.ml_tools.data import OptimizeResult, data_to_device
-from qadence.ml_tools.optimize_step import optimize_step, update_ng_parameters
 
 logger = getLogger(__name__)
 
 
 class Trainer(BaseTrainer):
-    """Trainer class to manage and execute training, validation, and testing loops for a model (eg. QNN).
+    """Trainer class to manage and execute training, validation, and testing loops for a model (eg.
+
+    QNN).
 
     This class handles the overall training process, including:
     - Managing epochs and steps
@@ -37,26 +39,30 @@ class Trainer(BaseTrainer):
         log_device (str): Device for logging, default is "cpu".
         device (torch_device): Device used for computation.
         dtype (torch_dtype): Data type used for computation.
-        data_dtype (Optional[torch_dtype]): Data type for data. Depends on the model's data type.
+        data_dtype (Optional[torch_dtype]): Data type for data.
+            Depends on the model's data type.
 
-        Plus all the attributes of the BaseTrainer (model, optimizer, config, loss_fn, optimize_step, etc)
+        Plus all the attributes of the BaseTrainer (model, optimizer, config,
+        loss_fn, optimize_step, etc)
 
-    Default training routine 
+    Default training routine
     ```
     for epoch in max_iter + 1:
         # Training
         for batch in train_batches:
-            train model 
+            train model
         # Validation
         if val_every % epoch == 0:
             for batch in val_batches:
                 train model
-    ```    
-    
+    ```
+
     Notes:
-        - In case of InfiniteTensorDataset, number of batches = 1. In case of TensorDataset, number of batches are default.
-        - Training is run for max_iter + 1 epochs. Epoch 0 logs untrained model. 
-        - Please look at the CallbackManager initialize_callbacks method to review the default logging behaviour.
+        - In case of InfiniteTensorDataset, number of batches = 1.
+        - In case of TensorDataset, number of batches are default.
+        - Training is run for max_iter + 1 epochs. Epoch 0 logs untrained model.
+        - Please look at the CallbackManager initialize_callbacks method to review the default
+            logging behaviour.
 
     Examples:
 
@@ -111,7 +117,6 @@ class Trainer(BaseTrainer):
     y = torch.sin(x)
     train_loader = to_dataloader(x, y, batch_size=batch_size, infinite=True)
     val_loader = to_dataloader(x, y, batch_size=batch_size, infinite=False)
-    
 
     # Train the model
     model, optimizer = trainer.fit(train_loader, val_loader)
@@ -122,7 +127,8 @@ class Trainer(BaseTrainer):
 
     Notes:
 
-    - **set_use_grad()**: This method is used to set the global `use_grad` flag, controlling whether the trainer uses gradient-based optimization.
+    - **set_use_grad()**: This method is used to set the global `use_grad` flag, controlling
+        whether the trainer uses gradient-based optimization.
     ```python
     # gradient based
     Trainer.set_use_grad(True)
@@ -130,7 +136,10 @@ class Trainer(BaseTrainer):
     # gradient free
     Trainer.set_use_grad(False)
     ```
-    - **Context Managers**: `enable_grad_opt()` and `disable_grad_opt()` are context managers that temporarily switch the optimization mode for specific code blocks. This is useful when you want to mix gradient-based and gradient-free optimization in the same training process.
+    - **Context Managers**: `enable_grad_opt()` and `disable_grad_opt()` are context managers
+        that temporarily switch the optimization mode for specific code blocks.
+        This is useful when you want to mix gradient-based and gradient-free optimization
+        in the same training process.
     ```python
     # gradient based
     with trainer.enable_grad_opt(optimizer):
@@ -142,7 +151,7 @@ class Trainer(BaseTrainer):
     ```
 
     Examples
-    
+
     *Gradient based optimization example Usage*:
     ```python
     from torch import optim
@@ -157,8 +166,8 @@ class Trainer(BaseTrainer):
     )
     trainer.fit(train_loader, val_loader)
     ```
-    or 
-    ```python 
+    or
+    ```python
     trainer = Trainer(
         model=model,
         config=config,
@@ -172,8 +181,10 @@ class Trainer(BaseTrainer):
     ```python
     import nevergrad as ng
     from qadence.ml_tools.parameters import num_parameters
-    ng_optimizer = ng.optimizers.NGOpt(budget=config.max_iter, parametrization= num_parameters(model))
-    
+    ng_optimizer = ng.optimizers.NGOpt(
+                    budget=config.max_iter, parametrization= num_parameters(model)
+                    )
+
     Trainer.set_use_grad(False)
     trainer = Trainer(
         model=model,
@@ -183,11 +194,13 @@ class Trainer(BaseTrainer):
     )
     trainer.fit(train_loader, val_loader)
     ```
-    or 
-    ```python 
+    or
+    ```python
     import nevergrad as ng
     from qadence.ml_tools.parameters import num_parameters
-    ng_optimizer = ng.optimizers.NGOpt(budget=config.max_iter, parametrization= num_parameters(model))
+    ng_optimizer = ng.optimizers.NGOpt(
+            budget=config.max_iter, parametrization= num_parameters(model)
+            )
 
     trainer = Trainer(
         model=model,
@@ -197,7 +210,6 @@ class Trainer(BaseTrainer):
     with trainer.disable_grad_opt(ng_optimizer):
         trainer.fit(train_loader, val_loader)
     ```
-    
     """
 
     def __init__(
@@ -229,8 +241,8 @@ class Trainer(BaseTrainer):
             device (torch_device): Device to use for computation.
             dtype (torch_dtype): Data type for computation.
             max_batches (int): Maximum number of batches to process per epoch.
-                This is only valid in case of finite TensorDataset dataloaders. 
-                if max_batches is not None, the maximum number of batches used will 
+                This is only valid in case of finite TensorDataset dataloaders.
+                if max_batches is not None, the maximum number of batches used will
                 be min(max_batches, len(dataloader.dataset))
                 In case of InfiniteTensorDataset only 1 batch per eopch is used.
         """
@@ -239,7 +251,7 @@ class Trainer(BaseTrainer):
             optimizer=optimizer,
             config=config,
             loss_fn=loss_fn,
-            optimize_step = optimize_step,
+            optimize_step=optimize_step,
             train_dataloader=train_dataloader,
             val_dataloader=val_dataloader,
             test_dataloader=test_dataloader,
@@ -254,13 +266,14 @@ class Trainer(BaseTrainer):
         if self.dtype:
             self.data_dtype = float64 if (self.dtype == complex128) else float32
 
-    def fit(self, 
-            train_dataloader: DataLoader = None,
-            val_dataloader: DataLoader = None) -> Tuple[nn.Module, optim.Optimizer]:
+    def fit(
+        self, train_dataloader: DataLoader = None, val_dataloader: DataLoader = None
+    ) -> Tuple[nn.Module, optim.Optimizer]:
         """
         Fits the model using the specified training configuration.
+
         The dataloaders can be provided to train on new datasets, or the default dataloaders
-        provided in the trainer will be used. 
+        provided in the trainer will be used.
 
         Args:
             train_dataloader Optional(DataLoader): DataLoader for training data.
@@ -269,8 +282,10 @@ class Trainer(BaseTrainer):
         Returns:
             Tuple[nn.Module, optim.Optimizer]: The trained model and optimizer.
         """
-        if train_dataloader is not None: self.train_dataloader = train_dataloader
-        if val_dataloader is not None: self.val_dataloader = val_dataloader
+        if train_dataloader is not None:
+            self.train_dataloader = train_dataloader
+        if val_dataloader is not None:
+            self.val_dataloader = val_dataloader
 
         self._fit_setup()
         self._train()
@@ -279,10 +294,11 @@ class Trainer(BaseTrainer):
 
     def _fit_setup(self) -> None:
         """
-        Sets up the training environment, initializes configurations,
+        Sets up the training environment, initializes configurations,.
+
         and moves the model to the specified device and data type.
         The callback_manager.start_training takes care of loading checkpoint,
-        and setting up the writer. 
+        and setting up the writer.
         """
         self.config_manager.initialize_config()
         self.callback_manager.start_training(trainer=self)
@@ -300,9 +316,9 @@ class Trainer(BaseTrainer):
             TaskProgressColumn(),
             TimeRemainingColumn(elapsed_when_finished=True),
         )
-        
+
         # Quick Fix for build_optimize_step
-        # Please review run_train_batch for more details 
+        # Please review run_train_batch for more details
         self.model_old = copy.deepcopy(self.model)
         self.optimizer_old = copy.deepcopy(self.optimizer)
 
@@ -312,9 +328,7 @@ class Trainer(BaseTrainer):
             self.run_validation(self.val_dataloader)
 
     def _fit_end(self) -> None:
-        """
-        Finalizes the training and closes the writer.
-        """
+        """Finalizes the training and closes the writer."""
         self.callback_manager.end_training(trainer=self)
 
     @BaseTrainer.callback("train")
@@ -323,9 +337,9 @@ class Trainer(BaseTrainer):
         Runs the main training loop, iterating over epochs.
 
         Returns:
-            List[List[Tuple[torch.Tensor, Dict[str, Any]]]]: Training loss 
+            List[List[Tuple[torch.Tensor, Dict[str, Any]]]]: Training loss
             metrics for all epochs.
-                List    -> List                  -> Tuples 
+                List    -> List                  -> Tuples
                 Epochs  -> Training Batches      -> (loss, metrics)
         """
         self.on_train_start()
@@ -333,10 +347,17 @@ class Trainer(BaseTrainer):
         val_losses = []
 
         with self.progress:
-            train_task = self.progress.add_task("Training", total=self.config_manager.config.max_iter)
+            train_task = self.progress.add_task(
+                "Training", total=self.config_manager.config.max_iter
+            )
             if self.perform_val:
-                val_task = self.progress.add_task("Validation", total=(self.config_manager.config.max_iter + 1) / self.config.val_every)
-            for epoch in range(self.global_step, self.global_step + self.config_manager.config.max_iter + 1):
+                val_task = self.progress.add_task(
+                    "Validation",
+                    total=(self.config_manager.config.max_iter + 1) / self.config.val_every,
+                )
+            for epoch in range(
+                self.global_step, self.global_step + self.config_manager.config.max_iter + 1
+            ):
                 try:
                     self.current_epoch = epoch
                     self.on_train_epoch_start()
@@ -360,7 +381,7 @@ class Trainer(BaseTrainer):
         self.on_train_end(train_losses, val_losses)
         return train_losses
 
-    @BaseTrainer.callback('train_epoch')
+    @BaseTrainer.callback("train_epoch")
     def run_training(self, dataloader: DataLoader) -> List[Tuple[torch.Tensor, Dict[str, Any]]]:
         """
         Runs the training for a single epoch, iterating over multiple batches.
@@ -370,17 +391,17 @@ class Trainer(BaseTrainer):
 
         Returns:
             List[Tuple[torch.Tensor, Dict[str, Any]]]: Loss and metrics for each batch.
-                List                  -> Tuples 
+                List                  -> Tuples
                 Training Batches      -> (loss, metrics)
         """
         self.model.train()
         train_epoch_loss_metrics = []
         # Deep copy model and optimizer to maintain checkpoints
-        # We do this because optimize step provides loss, metrics 
+        # We do this because optimize step provides loss, metrics
         # before step of optimization
-        # To align them with model/optimizer correctly, we checkpoint 
+        # To align them with model/optimizer correctly, we checkpoint
         # the older copy of the model.
-        # TODO: review optimize_step to provide iteration aligned model and loss. 
+        # TODO: review optimize_step to provide iteration aligned model and loss.
         self.model_old = copy.deepcopy(self.model)
         self.optimizer_old = copy.deepcopy(self.optimizer)
 
@@ -392,14 +413,17 @@ class Trainer(BaseTrainer):
 
         return train_epoch_loss_metrics
 
-    @BaseTrainer.callback('train_batch')
-    def run_train_batch(self, batch: Tuple[torch.Tensor, ...]) -> Tuple[torch.Tensor, Dict[str, Any]]:
+    @BaseTrainer.callback("train_batch")
+    def run_train_batch(
+        self, batch: Tuple[torch.Tensor, ...]
+    ) -> Tuple[torch.Tensor, Dict[str, Any]]:
         """
         Runs a single training batch, performing optimization.
-        We use the step function to optimize the model based on use_grad. 
-            use_grad = True entails gradient based optimization, for which we use 
+
+        We use the step function to optimize the model based on use_grad.
+            use_grad = True entails gradient based optimization, for which we use
             optimize_step function.
-            use_grad = False entails gradient free optimization, for which we use 
+            use_grad = False entails gradient free optimization, for which we use
             update_ng_parameters function.
 
         Args:
@@ -427,14 +451,14 @@ class Trainer(BaseTrainer):
                 optimizer=self.optimizer,
                 loss_fn=self.loss_fn,
                 data=batch,
-                ng_params=self.ng_params  # type: ignore[arg-type]
+                ng_params=self.ng_params,  # type: ignore[arg-type]
             )
             self.ng_params = ng_params
             loss_metrics = loss, metrics
 
         return self.modify_batch_end_loss_metrics(loss_metrics)
 
-    @BaseTrainer.callback('val_epoch')
+    @BaseTrainer.callback("val_epoch")
     def run_validation(self, dataloader: DataLoader) -> List[Tuple[torch.Tensor, Dict[str, Any]]]:
         """
         Runs the validation loop for a single epoch, iterating over multiple batches.
@@ -444,7 +468,7 @@ class Trainer(BaseTrainer):
 
         Returns:
             List[Tuple[torch.Tensor, Dict[str, Any]]]: Loss and metrics for each batch.
-                List                  -> Tuples 
+                List                  -> Tuples
                 Validation Batches      -> (loss, metrics)
         """
         self.model.eval()
@@ -458,7 +482,7 @@ class Trainer(BaseTrainer):
 
         return val_epoch_loss_metrics
 
-    @BaseTrainer.callback('val_batch')
+    @BaseTrainer.callback("val_batch")
     def run_val_batch(self, batch: Tuple[torch.Tensor, ...]) -> Tuple[torch.Tensor, Dict[str, Any]]:
         """
         Runs a single validation batch.
@@ -473,27 +497,30 @@ class Trainer(BaseTrainer):
             loss_metrics = self.loss_fn(self.model, batch)
         return self.modify_batch_end_loss_metrics(loss_metrics)
 
-    def test(self, 
-            test_dataloader: DataLoader = None) -> Optional[List[Tuple[torch.Tensor, Dict[str, Any]]]]:
+    def test(
+        self, test_dataloader: DataLoader = None
+    ) -> Optional[List[Tuple[torch.Tensor, Dict[str, Any]]]]:
         """
         Runs the testing loop if a test DataLoader is provided.
-        if the test_dataloader is not provided, default test_dataloader defined 
-        in the Trainer class is used. 
-    
+
+        if the test_dataloader is not provided, default test_dataloader defined
+        in the Trainer class is used.
+
         Args:
             test_dataloader (DataLoader): DataLoader for test data.
 
         Returns:
             Optional[List[Tuple[torch.Tensor, Dict[str, Any]]]]: Loss and metrics for each batch.
-                List                    -> Tuples 
+                List                    -> Tuples
                 Test Batches            -> (loss, metrics)
         """
-        if test_dataloader is not None: self.test_dataloader = test_dataloader
+        if test_dataloader is not None:
+            self.test_dataloader = test_dataloader
 
         self.model.eval()
         test_loss_metrics = []
 
-        for batch in self.batch_iter(test_dataloader, self.num_training_batches):    
+        for batch in self.batch_iter(test_dataloader, self.num_training_batches):
             self.on_test_batch_start(batch)
             loss_metrics = self.run_test_batch(batch)
             test_loss_metrics.append(loss_metrics)
@@ -501,8 +528,10 @@ class Trainer(BaseTrainer):
 
         return test_loss_metrics
 
-    @BaseTrainer.callback('test_batch')
-    def run_test_batch(self, batch: Tuple[torch.Tensor, ...]) -> Tuple[torch.Tensor, Dict[str, Any]]:
+    @BaseTrainer.callback("test_batch")
+    def run_test_batch(
+        self, batch: Tuple[torch.Tensor, ...]
+    ) -> Tuple[torch.Tensor, Dict[str, Any]]:
         """
         Runs a single test batch.
 
@@ -515,12 +544,11 @@ class Trainer(BaseTrainer):
         with torch.no_grad():
             loss_metrics = self.loss_fn(self.model, batch)
         return self.modify_batch_end_loss_metrics(loss_metrics)
-    
 
     def batch_iter(
-        self, 
-        dataloader: DataLoader, 
-        num_batches: int, 
+        self,
+        dataloader: DataLoader,
+        num_batches: int,
     ) -> Iterable[Union[Tuple[torch.Tensor, ...], None]]:
         """
         Yields batches from the provided dataloader.
@@ -528,9 +556,10 @@ class Trainer(BaseTrainer):
         Args:
             dataloader ([DataLoader]): The dataloader to iterate over.
             num_batches (int): The maximum number of batches to yield.
-        
+
         Yields:
-            Union[Tuple[torch.Tensor, ...], None]: A batch from the dataloader moved to the specified device and dtype.
+            Union[Tuple[torch.Tensor, ...], None]: A batch from the dataloader moved to the
+                specified device and dtype.
         """
         if dataloader is None:
             for _ in range(num_batches):
@@ -540,12 +569,13 @@ class Trainer(BaseTrainer):
                 # batch is moved to device insdie optimize step
                 # batch = data_to_device(batch, device=self.device, dtype=self.data_dtype)
                 yield batch
-    
-    def modify_batch_end_loss_metrics(self, 
-                                      loss_metrics: Tuple[torch.Tensor, Dict[str, Any]]
-                                      )-> Tuple[torch.Tensor, Dict[str, Any]]:
+
+    def modify_batch_end_loss_metrics(
+        self, loss_metrics: Tuple[torch.Tensor, Dict[str, Any]]
+    ) -> Tuple[torch.Tensor, Dict[str, Any]]:
         """
-        Modifies the loss and metrics at the end of batch for proper logging. 
+        Modifies the loss and metrics at the end of batch for proper logging.
+
         All metrices are prefixed with the proper state of the training process
          - "trian_" or "val_" or "test_"
         A "{state}_loss" is added to metrics.
@@ -560,45 +590,47 @@ class Trainer(BaseTrainer):
             if phase in self.state:
                 loss, metrics = loss_metrics
                 updated_metrics = {f"{phase}_{key}": value for key, value in metrics.items()}
-                updated_metrics[f"{phase}_loss"] = loss 
+                updated_metrics[f"{phase}_loss"] = loss
                 return loss, updated_metrics
         return loss_metrics
 
     def build_optimize_result(
-        self, 
-        result: Union[None,
-                      Tuple[torch.Tensor, Dict[Any, Any]], 
-                      List[Tuple[torch.Tensor, Dict[Any, Any]]], 
-                      List[List[Tuple[torch.Tensor, Dict[Any, Any]]]]
-                      ]
-        ,
+        self,
+        result: Union[
+            None,
+            Tuple[torch.Tensor, Dict[Any, Any]],
+            List[Tuple[torch.Tensor, Dict[Any, Any]]],
+            List[List[Tuple[torch.Tensor, Dict[Any, Any]]]],
+        ],
     ) -> None:
         """
-        Builds and stores the optimization result by calculating the average loss and metrics
+        Builds and stores the optimization result by calculating the average loss and metrics.
+
         from the provided loss and metrics data.
 
         Args:
             result Union[None,
-                      Tuple[torch.Tensor, Dict[Any, Any]], 
-                      List[Tuple[torch.Tensor, Dict[Any, Any]]], 
+                      Tuple[torch.Tensor, Dict[Any, Any]],
+                      List[Tuple[torch.Tensor, Dict[Any, Any]]],
                       List[List[Tuple[torch.Tensor, Dict[Any, Any]]]]
-                      ]: 
+                      ]:
                 The loss and metrics data, which can have multiple formats:
                 - `None`: Indicates no loss or metrics data is provided.
-                - `Tuple[torch.Tensor, Dict[str, Any]]`: A single tuple containing the loss tensor 
+                - `Tuple[torch.Tensor, Dict[str, Any]]`: A single tuple containing the loss tensor
                     and metrics dictionary - at the end of batch.
-                - `List[Tuple[torch.Tensor, Dict[str, Any]]]`: A list of tuples for multiple batches.
-                - `List[List[Tuple[torch.Tensor, Dict[str, Any]]]]`: A list of lists of tuples, 
+                - `List[Tuple[torch.Tensor, Dict[str, Any]]]`: A list of tuples for
+                    multiple batches.
+                - `List[List[Tuple[torch.Tensor, Dict[str, Any]]]]`: A list of lists of tuples,
                 where each inner list represents metrics across multiple batches within an epoch.
 
         Returns:
-            None: This method does not return anything. It sets `self.opt_result` with 
+            None: This method does not return anything. It sets `self.opt_result` with
             the computed average loss and metrics.
         """
         loss_metrics = result
         if loss_metrics is None:
             loss = None
-            metrics : Dict[Any, Any] = {}
+            metrics: Dict[Any, Any] = {}
         elif isinstance(loss_metrics, tuple):
             # Single tuple case
             loss, metrics = loss_metrics
@@ -610,12 +642,15 @@ class Trainer(BaseTrainer):
                     last_epoch = cast(List[Tuple[torch.Tensor, Dict[Any, Any]]], loss_metrics)
                 # Check if it's a list of lists of tuples
                 elif all(isinstance(item, list) for item in loss_metrics):
-                    last_epoch = cast(List[Tuple[torch.Tensor, Dict[Any, Any]]], loss_metrics[-1] if loss_metrics else [])
+                    last_epoch = cast(
+                        List[Tuple[torch.Tensor, Dict[Any, Any]]],
+                        loss_metrics[-1] if loss_metrics else [],
+                    )
                 else:
                     raise ValueError(
-                        "Invalid format for result: Expected None, tuple, list of tuples, or list of lists of tuples."
+                        "Invalid format for result: Expected None, tuple, list of tuples,"
+                        " or list of lists of tuples."
                     )
-
 
             if not last_epoch:
                 loss, metrics = None, {}
@@ -626,7 +661,7 @@ class Trainer(BaseTrainer):
 
                 # Collect and average metrics for all batches
                 metric_keys = last_epoch[0][1].keys()
-                metrics_stacked : dict = {key: [] for key in metric_keys}
+                metrics_stacked: dict = {key: [] for key in metric_keys}
 
                 for _, metrics_batch in last_epoch:
                     for key in metric_keys:
@@ -638,4 +673,6 @@ class Trainer(BaseTrainer):
                 loss, metrics = avg_loss, avg_metrics
 
         # Store the optimization result
-        self.opt_result = OptimizeResult(self.current_epoch, self.model_old, self.optimizer_old, loss, metrics)
+        self.opt_result = OptimizeResult(
+            self.current_epoch, self.model_old, self.optimizer_old, loss, metrics
+        )

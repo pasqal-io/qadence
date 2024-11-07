@@ -1,31 +1,33 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 from logging import getLogger
-from typing import List, Tuple, Optional, Any
-from typing import Union, Callable, Optional, Iterator
+from typing import Any, Callable, Iterator, List, Optional, Tuple, Union
 
+import nevergrad as ng
 import torch
+from nevergrad.optimization.base import Optimizer as NGOptimizer
 from torch import nn, optim
 from torch.utils.data import DataLoader
-import nevergrad as ng
-from contextlib import contextmanager
 
-from .config_manager import ConfigManager
+from qadence.ml_tools.callbacks import CallbacksManager
 from qadence.ml_tools.config import TrainConfig
 from qadence.ml_tools.data import InfiniteTensorDataset
 from qadence.ml_tools.loss import get_loss_fn
-from qadence.ml_tools.callbacks import CallbacksManager
-from nevergrad.optimization.base import Optimizer as NGOptimizer
-from qadence.ml_tools.parameters import get_parameters
 from qadence.ml_tools.optimize_step import optimize_step
+from qadence.ml_tools.parameters import get_parameters
+
+from .config_manager import ConfigManager
 
 logger = getLogger(__name__)
 
+
 class BaseTrainer:
-    """Base class for training machine learning models using a given optimizer. 
-    The base class implementes contextmanagers for gradient based/free optimization, 
-    properties, property setters, input validations, callback decorator denerator, 
-    and empty hooks for different training steps. 
+    """Base class for training machine learning models using a given optimizer.
+
+    The base class implementes contextmanagers for gradient based/free optimization,
+    properties, property setters, input validations, callback decorator denerator,
+    and empty hooks for different training steps.
 
     This class provides:
     - Context managers for enabling/disabling gradient-based optimization
@@ -44,7 +46,7 @@ class BaseTrainer:
         _test_dataloader (Optional[DataLoader]): DataLoader for testing data.
 
         optimize_step (Callable): Function for performing an optimization step.
-        loss_fn (Callable): loss function to use. 
+        loss_fn (Callable): loss function to use.
 
         num_training_batches (int): Number of training batches.
         num_validation_batches (int): Number of validation batches.
@@ -72,17 +74,20 @@ class BaseTrainer:
 
         Args:
             model ([nn.Module]): The model to train.
-            optimizer (Optional[Union[optim.Optimizer, NGOptimizer, None]]): The optimizer for training.
+            optimizer (Optional[Union[optim.Optimizer, NGOptimizer, None]]): The optimizer
+                for training.
             config ([TrainConfig]): The TrainConfig settings for training.
-            loss_fn (Union[None, Callable, str]): The loss function to use. 
-                str input to be specified to use a default loss function. 
+            loss_fn (Union[None, Callable, str]): The loss function to use.
+                str input to be specified to use a default loss function.
                 currently supported loss functions: 'mse', 'cross_entropy'
-            train_dataloader (Optional[DataLoader]): DataLoader for training data. If the model does not need data to evaluvate loss, no dataset should be provided.
+            train_dataloader (Optional[DataLoader]): DataLoader for training data.
+                If the model does not need data to evaluvate loss, no dataset
+                should be provided.
             val_dataloader (Optional[DataLoader]): DataLoader for validation data.
             test_dataloader (Optional[DataLoader]): DataLoader for testing data.
             max_batches (Optional[int]): Maximum number of batches to process per epoch.
-                This is only valid in case of finite TensorDataset dataloaders. 
-                if max_batches is not None, the maximum number of batches used will 
+                This is only valid in case of finite TensorDataset dataloaders.
+                if max_batches is not None, the maximum number of batches used will
                 be min(max_batches, len(dataloader.dataset))
                 In case of InfiniteTensorDataset only 1 batch per eopch is used.
         """
@@ -151,7 +156,8 @@ class BaseTrainer:
     def optimizer(self, optimizer: Union[optim.Optimizer, NGOptimizer, None]) -> None:
         """
         Sets the optimizer, checking compatibility with gradient use.
-        We also set up the budget/behaviour of different optimizers here. 
+
+        We also set up the budget/behaviour of different optimizers here.
 
         Args:
             optimizer (Union[optim.Optimizer, NGOptimizer]): The optimizer for training.
@@ -278,7 +284,8 @@ class BaseTrainer:
         Computes the number of batches for the given DataLoader.
 
         Args:
-            dataloader (DataLoader): The DataLoader for which to compute the number of batches.
+            dataloader (DataLoader): The DataLoader for which to compute
+                the number of batches.
         """
         if dataloader is None:
             return 0
@@ -286,7 +293,11 @@ class BaseTrainer:
         if isinstance(dataset, InfiniteTensorDataset):
             return 1
         else:
-            return min(self.max_batches, len(dataloader)) if self.max_batches is not None else len(dataloader)
+            return (
+                min(self.max_batches, len(dataloader))
+                if self.max_batches is not None
+                else len(dataloader)
+            )
 
     def _validate_dataloader(self, dataloader: DataLoader, dataloader_type: str) -> None:
         """
@@ -299,48 +310,52 @@ class BaseTrainer:
         if dataloader is not None:
             if not isinstance(dataloader, DataLoader):
                 raise NotImplementedError(
-                    f"Unsupported dataloader type: {type(dataloader)}. The dataloader must be an instance of DataLoader."
+                    f"Unsupported dataloader type: {type(dataloader)}."
+                    "The dataloader must be an instance of DataLoader."
                 )
         if dataloader_type == "val" and self.config.val_every > 0:
             if not isinstance(dataloader, DataLoader):
                 raise ValueError(
-                    "If `config.val_every` is provided as an integer > 0, validation_dataloader must"
-                    "be an instance of `DataLoader`."
+                    "If `config.val_every` is provided as an integer > 0, validation_dataloader"
+                    "must be an instance of `DataLoader`."
                 )
-
 
     @staticmethod
     def callback(phase: str) -> Callable:
         """
         Decorator for executing callbacks before and after a phase.
-        Phase are different hooks during the training. List of valid 
+
+        Phase are different hooks during the training. List of valid
         phases is defined in Callbacks.
-        We also update the current state of the training process in 
+        We also update the current state of the training process in
         the callback decorator.
 
         Args:
-            phase (str): The phase for which the callback is executed (e.g., "train", 
+            phase (str): The phase for which the callback is executed (e.g., "train",
             "train_epoch", "train_batch").
-        
+
         Returns:
             Callable: The decorated function.
         """
+
         def decorator(method: Callable) -> Callable:
-            def wrapper(self : Any, *args : Any, **kwargs : Any) -> Any:
+            def wrapper(self: Any, *args: Any, **kwargs: Any) -> Any:
                 start_event = f"on_{phase}_start"
                 end_event = f"on_{phase}_end"
 
                 self.state = start_event
                 self.callback_manager.run_callbacks(trainer=self)
                 result = method(self, *args, **kwargs)
-                
+
                 self.state = end_event
                 # build_optimize_result method is defined in the trainer.
                 self.build_optimize_result(result)
                 self.callback_manager.run_callbacks(trainer=self)
 
                 return result
+
             return wrapper
+
         return decorator
 
     @contextmanager
@@ -349,7 +364,9 @@ class BaseTrainer:
         Context manager to temporarily enable gradient-based optimization.
 
         Args:
-            optimizer Optional(optim.Optimizer): The PyTorch optimizer to use. If no optimizer is provided, default optimer for trainer object will be used.
+            optimizer Optional(optim.Optimizer): The PyTorch optimizer to use.
+                If no optimizer is provided, default optimer for trainer
+                object will be used.
         """
         original_mode = self.use_grad
         original_optimizer = self._optimizer
@@ -369,7 +386,9 @@ class BaseTrainer:
         Context manager to temporarily disable gradient-based optimization.
 
         Args:
-            optimizer Optional(NGOptimizer): The Nevergrad optimizer to use.If no optimizer is provided, default optimer for trainer object will be used.
+            optimizer Optional(NGOptimizer): The Nevergrad optimizer to use.
+                If no optimizer is provided, default optimer for trainer
+                object will be used.
         """
         original_mode = self.use_grad
         original_optimizer = self._optimizer
@@ -384,33 +403,29 @@ class BaseTrainer:
             self.optimizer = original_optimizer
 
     def on_train_start(self) -> None:
-        """
-        Called at the start of training.
-        """
+        """Called at the start of training."""
         pass
 
     def on_train_end(
-        self, 
-        train_losses: List[List[Tuple[torch.Tensor, Any]]], 
-        val_losses: Optional[List[List[Tuple[torch.Tensor, Any]]]] = None
+        self,
+        train_losses: List[List[Tuple[torch.Tensor, Any]]],
+        val_losses: Optional[List[List[Tuple[torch.Tensor, Any]]]] = None,
     ) -> None:
         """
         Called at the end of training.
 
         Args:
-            train_losses: Metrics for the training losses. 
-                List    -> List                  -> Tuples 
+            train_losses: Metrics for the training losses.
+                List    -> List                  -> Tuples
                 Epochs  -> Training Batches      -> (loss, metrics)
-            val_losses: Metrics for the validation losses. 
-                List    -> List                  -> Tuples 
+            val_losses: Metrics for the validation losses.
+                List    -> List                  -> Tuples
                 Epochs  -> Validation Batches    -> (loss, metrics)
         """
         pass
 
     def on_train_epoch_start(self) -> None:
-        """
-        Called at the start of each training epoch.
-        """
+        """Called at the start of each training epoch."""
         pass
 
     def on_train_epoch_end(self, train_epoch_loss_metrics: List[Tuple[torch.Tensor, Any]]) -> None:
@@ -419,15 +434,13 @@ class BaseTrainer:
 
         Args:
             train_epoch_loss_metrics: Metrics for the training epoch losses.
-                List                  -> Tuples 
+                List                  -> Tuples
                 Training Batches      -> (loss, metrics)
         """
         pass
 
     def on_val_epoch_start(self) -> None:
-        """
-        Called at the start of each validation epoch.
-        """
+        """Called at the start of each validation epoch."""
         pass
 
     def on_val_epoch_end(self, val_epoch_loss_metrics: List[Tuple[torch.Tensor, Any]]) -> None:
@@ -436,7 +449,7 @@ class BaseTrainer:
 
         Args:
             val_epoch_loss_metrics: Metrics for the validation epoch loss.
-                List                    -> Tuples 
+                List                    -> Tuples
                 Validation Batches      -> (loss, metrics)
         """
         pass
@@ -446,8 +459,8 @@ class BaseTrainer:
         Called at the start of each training batch.
 
         Args:
-            batch: A batch of data from the DataLoader. Typically a tuple containing input tensors
-                and corresponding target tensors.
+            batch: A batch of data from the DataLoader. Typically a tuple containing
+                input tensors and corresponding target tensors.
         """
         pass
 
@@ -466,8 +479,8 @@ class BaseTrainer:
         Called at the start of each validation batch.
 
         Args:
-            batch: A batch of data from the DataLoader. Typically a tuple containing input tensors
-                and corresponding target tensors.
+            batch: A batch of data from the DataLoader. Typically a tuple containing
+                input tensors and corresponding target tensors.
         """
         pass
 
@@ -486,8 +499,8 @@ class BaseTrainer:
         Called at the start of each testing batch.
 
         Args:
-            batch: A batch of data from the DataLoader. Typically a tuple containing input tensors
-                and corresponding target tensors.
+            batch: A batch of data from the DataLoader. Typically a tuple containing
+                input tensors and corresponding target tensors.
         """
         pass
 

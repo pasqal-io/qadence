@@ -161,7 +161,7 @@ The criterion used to decide the "best" checkpoint can be customized by `validat
 See [Callbacks](/callbacks.md) for more details.
 
 - `callbacks` (**list[Callback]**): List of custom callbacks to execute during training.
-  
+
 Example:
 ```python
 from qadence.ml_tools.callbacks import Callback

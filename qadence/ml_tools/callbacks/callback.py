@@ -16,11 +16,17 @@ class Callback:
     """Base class for defining various training callbacks.
 
     Attributes:
-        on (str): The event on which to trigger the callback. Must be a valid on value from: ["on_train_start", "on_train_end","on_train_epoch_start", "on_train_epoch_end", "on_train_batch_start", "on_train_batch_end","on_val_epoch_start", "on_val_epoch_end", "on_val_batch_start", "on_val_batch_end", "on_test_batch_start", "on_test_batch_end"]
+        on (str): The event on which to trigger the callback.
+            Must be a valid on value from: ["on_train_start", "on_train_end",
+                "on_train_epoch_start", "on_train_epoch_end", "on_train_batch_start",
+                "on_train_batch_end","on_val_epoch_start", "on_val_epoch_end",
+                "on_val_batch_start", "on_val_batch_end", "on_test_batch_start",
+                "on_test_batch_end"]
         called_every (int): Frequency of callback calls in terms of iterations.
         callback (Optional[CallbackFunction]): The function to call if the condition is met.
         callback_condition (Optional[CallbackConditionFunction]): Condition to check before calling.
-        modify_optimize_result (Optional[Union[CallbackFunction, dict[str, Any]]]): Function to modify `OptimizeResult`.
+        modify_optimize_result (Optional[Union[CallbackFunction, dict[str, Any]]]):
+            Function to modify `OptimizeResult`.
 
     A callback can be defined in two ways:
 
@@ -95,7 +101,7 @@ class Callback:
         else:
             self.modify_optimize_result = modify_optimize_result or (lambda opt_res: opt_res)
 
-    def _should_call(self, when : str, opt_result : OptimizeResult) -> bool:
+    def _should_call(self, when: str, opt_result: OptimizeResult) -> bool:
         """Checks if the callback should be called.
 
         Args:
@@ -153,13 +159,13 @@ class Callback:
 
 class PrintMetrics(Callback):
     """Callback to print metrics using the writer.
-    
-    The `PrintMetrics` callback can be added to the `TrainConfig` callbacks as a custom user 
-    defined callback.
+
+    The `PrintMetrics` callback can be added to the `TrainConfig`
+    callbacks as a custom user defined callback.
 
     Example Usage in `TrainConfig`:
-    To use `PrintMetrics`, include it in the `callbacks` list when setting up your 
-    `TrainConfig`:
+    To use `PrintMetrics`, include it in the `callbacks` list when
+    setting up your `TrainConfig`:
     ```python exec="on" source="material-block" result="json"
     from qadence.ml_tools import TrainConfig
     from qadence.ml_tools.callbacks import PrintMetrics
@@ -169,15 +175,15 @@ class PrintMetrics(Callback):
 
     config = TrainConfig(
         max_iter=10000,
-        # Print metrics every 1000 training epochs                   
-        print_every=1000,           
-        # Add the custom callback that runs every 100 on_val_batch_end      
-        callbacks=[print_metrics_callback]  
+        # Print metrics every 1000 training epochs
+        print_every=1000,
+        # Add the custom callback that runs every 100 on_val_batch_end
+        callbacks=[print_metrics_callback]
     )
     ```
     """
 
-    def run_callback(self, trainer: Any, config: TrainConfig, writer: BaseWriter ) -> Any:
+    def run_callback(self, trainer: Any, config: TrainConfig, writer: BaseWriter) -> Any:
         """Prints metrics using the writer.
 
         Args:
@@ -192,11 +198,11 @@ class PrintMetrics(Callback):
 class WriteMetrics(Callback):
     """Callback to write metrics using the writer.
 
-    The `WriteMetrics` callback can be added to the `TrainConfig` callbacks as a custom user 
-    defined callback.
+    The `WriteMetrics` callback can be added to the `TrainConfig` callbacks as
+    a custom user defined callback.
 
     Example Usage in `TrainConfig`:
-    To use `WriteMetrics`, include it in the `callbacks` list when setting up your 
+    To use `WriteMetrics`, include it in the `callbacks` list when setting up your
     `TrainConfig`:
     ```python exec="on" source="material-block" result="json"
     from qadence.ml_tools import TrainConfig
@@ -207,15 +213,15 @@ class WriteMetrics(Callback):
 
     config = TrainConfig(
         max_iter=10000,
-        # Print metrics every 1000 training epochs                   
-        print_every=1000,           
-        # Add the custom callback that runs every 100 on_val_batch_end      
-        callbacks=[write_metrics_callback]  
+        # Print metrics every 1000 training epochs
+        print_every=1000,
+        # Add the custom callback that runs every 100 on_val_batch_end
+        callbacks=[write_metrics_callback]
     )
     ```
     """
 
-    def run_callback(self, trainer: Any, config: TrainConfig, writer: BaseWriter ) -> Any:
+    def run_callback(self, trainer: Any, config: TrainConfig, writer: BaseWriter) -> Any:
         """Writes metrics using the writer.
 
         Args:
@@ -229,12 +235,12 @@ class WriteMetrics(Callback):
 
 class PlotMetrics(Callback):
     """Callback to plot metrics using the writer.
-    
-    The `PlotMetrics` callback can be added to the `TrainConfig` callbacks as a custom user 
-    defined callback.
+
+    The `PlotMetrics` callback can be added to the `TrainConfig` callbacks as
+    a custom user defined callback.
 
     Example Usage in `TrainConfig`:
-    To use `PlotMetrics`, include it in the `callbacks` list when setting up your 
+    To use `PlotMetrics`, include it in the `callbacks` list when setting up your
     `TrainConfig`:
     ```python exec="on" source="material-block" result="json"
     from qadence.ml_tools import TrainConfig
@@ -245,15 +251,15 @@ class PlotMetrics(Callback):
 
     config = TrainConfig(
         max_iter=10000,
-        # Print metrics every 1000 training epochs                   
-        print_every=1000,           
-        # Add the custom callback that runs every 100 on_val_batch_end      
-        callbacks=[plot_metrics_callback]  
+        # Print metrics every 1000 training epochs
+        print_every=1000,
+        # Add the custom callback that runs every 100 on_val_batch_end
+        callbacks=[plot_metrics_callback]
     )
     ```
     """
 
-    def run_callback(self, trainer: Any, config: TrainConfig, writer: BaseWriter ) -> Any:
+    def run_callback(self, trainer: Any, config: TrainConfig, writer: BaseWriter) -> Any:
         """Plots metrics using the writer.
 
         Args:
@@ -269,11 +275,11 @@ class PlotMetrics(Callback):
 class LogHyperparameters(Callback):
     """Callback to log hyperparameters using the writer.
 
-    The `LogHyperparameters` callback can be added to the `TrainConfig` callbacks as a custom user 
-    defined callback.
+    The `LogHyperparameters` callback can be added to the `TrainConfig` callbacks
+    as a custom user defined callback.
 
     Example Usage in `TrainConfig`:
-    To use `LogHyperparameters`, include it in the `callbacks` list when setting up your 
+    To use `LogHyperparameters`, include it in the `callbacks` list when setting up your
     `TrainConfig`:
     ```python exec="on" source="material-block" result="json"
     from qadence.ml_tools import TrainConfig
@@ -284,15 +290,15 @@ class LogHyperparameters(Callback):
 
     config = TrainConfig(
         max_iter=10000,
-        # Print metrics every 1000 training epochs                   
-        print_every=1000,           
-        # Add the custom callback that runs every 100 on_val_batch_end      
-        callbacks=[log_hyper_callback]  
+        # Print metrics every 1000 training epochs
+        print_every=1000,
+        # Add the custom callback that runs every 100 on_val_batch_end
+        callbacks=[log_hyper_callback]
     )
     ```
     """
 
-    def run_callback(self, trainer: Any, config: TrainConfig, writer: BaseWriter ) -> Any:
+    def run_callback(self, trainer: Any, config: TrainConfig, writer: BaseWriter) -> Any:
         """Logs hyperparameters using the writer.
 
         Args:
@@ -306,12 +312,12 @@ class LogHyperparameters(Callback):
 
 class SaveCheckpoint(Callback):
     """Callback to save a model checkpoint.
-    
-    The `SaveCheckpoint` callback can be added to the `TrainConfig` callbacks as a custom user 
-    defined callback.
+
+    The `SaveCheckpoint` callback can be added to the `TrainConfig` callbacks
+    as a custom user defined callback.
 
     Example Usage in `TrainConfig`:
-    To use `SaveCheckpoint`, include it in the `callbacks` list when setting up your 
+    To use `SaveCheckpoint`, include it in the `callbacks` list when setting up your
     `TrainConfig`:
     ```python exec="on" source="material-block" result="json"
     from qadence.ml_tools import TrainConfig
@@ -322,15 +328,15 @@ class SaveCheckpoint(Callback):
 
     config = TrainConfig(
         max_iter=10000,
-        # Print metrics every 1000 training epochs                   
-        print_every=1000,           
-        # Add the custom callback that runs every 100 on_val_batch_end      
-        callbacks=[save_checkpoint_callback]  
+        # Print metrics every 1000 training epochs
+        print_every=1000,
+        # Add the custom callback that runs every 100 on_val_batch_end
+        callbacks=[save_checkpoint_callback]
     )
     ```
     """
 
-    def run_callback(self, trainer: Any, config: TrainConfig, writer: BaseWriter ) -> Any:
+    def run_callback(self, trainer: Any, config: TrainConfig, writer: BaseWriter) -> Any:
         """Saves a model checkpoint.
 
         Args:
@@ -358,7 +364,7 @@ class SaveBestCheckpoint(SaveCheckpoint):
         super().__init__(on=on, called_every=called_every)
         self.best_loss = float("inf")
 
-    def run_callback(self, trainer: Any, config: TrainConfig, writer: BaseWriter ) -> Any:
+    def run_callback(self, trainer: Any, config: TrainConfig, writer: BaseWriter) -> Any:
         """Saves the checkpoint if the current loss is better than the best loss.
 
         Args:
@@ -367,7 +373,9 @@ class SaveBestCheckpoint(SaveCheckpoint):
             writer (BaseWriter ): The writer object for logging.
         """
         opt_result = trainer.opt_result
-        if config.validation_criterion and config.validation_criterion(opt_result.loss, self.best_loss, config.val_epsilon):
+        if config.validation_criterion and config.validation_criterion(
+            opt_result.loss, self.best_loss, config.val_epsilon
+        ):
             self.best_loss = opt_result.loss
 
             folder = config._log_folder
@@ -380,7 +388,7 @@ class SaveBestCheckpoint(SaveCheckpoint):
 class LoadCheckpoint(Callback):
     """Callback to load a model checkpoint."""
 
-    def run_callback(self, trainer: Any, config: TrainConfig, writer: BaseWriter ) -> Any:
+    def run_callback(self, trainer: Any, config: TrainConfig, writer: BaseWriter) -> Any:
         """Loads a model checkpoint.
 
         Args:

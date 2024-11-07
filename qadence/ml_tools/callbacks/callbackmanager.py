@@ -16,7 +16,8 @@ from qadence.ml_tools.callbacks.callback import (
 )
 from qadence.ml_tools.config import TrainConfig
 from qadence.ml_tools.data import OptimizeResult
-from .writer_registry import MLFlowWriter, TensorBoardWriter, get_writer
+
+from .writer_registry import MLFlowWriter, get_writer
 
 logger = logging.getLogger(__name__)
 
@@ -163,7 +164,7 @@ class CallbacksManager:
             if callback.on == trainer.state
         ]
 
-    def start_training(self, trainer : Any) -> None:
+    def start_training(self, trainer: Any) -> None:
         """
         Initializes callbacks and starts the training process.
 
@@ -179,7 +180,9 @@ class CallbacksManager:
         # Load checkpoint if available
         load_checkpoint_callback = LoadCheckpoint(on="on_train_start", called_every=1)
         loaded_result = load_checkpoint_callback.run_callback(
-            trainer=trainer, config=self.config, writer=MLFlowWriter() # adding empty writer to avoid [arg-type] error
+            trainer=trainer,
+            config=self.config,
+            writer=MLFlowWriter(),  # adding empty writer to avoid [arg-type] error
         )
 
         if loaded_result:
@@ -187,8 +190,12 @@ class CallbacksManager:
             if isinstance(init_iter, (int, str)):
                 trainer.model = model
                 trainer.optimizer = optimizer
-                trainer.global_step = init_iter if isinstance(init_iter, int) else trainer.global_step
-                trainer.current_epoch = init_iter if isinstance(init_iter, int) else trainer.current_epoch
+                trainer.global_step = (
+                    init_iter if isinstance(init_iter, int) else trainer.global_step
+                )
+                trainer.current_epoch = (
+                    init_iter if isinstance(init_iter, int) else trainer.current_epoch
+                )
                 trainer.opt_result = OptimizeResult(trainer.current_epoch, model, optimizer)
                 logger.debug(f"Loaded model and optimizer from {self.config._log_folder}")
 
@@ -198,7 +205,7 @@ class CallbacksManager:
         writer.open(self.config, iteration=trainer.global_step)
         self.writer = writer
 
-    def end_training(self, trainer : Any) -> None:
+    def end_training(self, trainer: Any) -> None:
         """
         Cleans up and finalizes the training process.
 
