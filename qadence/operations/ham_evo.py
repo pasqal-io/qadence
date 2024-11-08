@@ -44,22 +44,42 @@ class HamEvo(TimeEvolutionBlock):
     numerical integration of the Schrodinger equation.
 
     Arguments:
-        generator: Either a AbstractBlock, torch.Tensor or numpy.ndarray.
-        parameter: A scalar or vector of numeric or torch.Tensor type.
-        qubit_support: The qubits on which the evolution will be performed on.
-        duration: duration of evolution in case of time-dependent generator
+        generator: Hamiltonian generator, either symbolic as an AbstractBlock,
+            or as a torch.Tensor or numpy.ndarray.
+        parameter: The time parameter for evolution operator. For the time-independent
+            case, it represents the actual value for which the evolution will be
+            evaluated. For the time-dependent case, it should be an instance of
+            TimeParameter to signal the solver the variable that will be integrated over.
+        qubit_support: The qubits on which the evolution will be performed on. Only
+            required for generators that are not a composition of blocks.
+        duration: (optional) duration of the evolution in case of time-dependent
+            generator. By default, a FeatureParameter with tag "duration" will
+            be initialized, and the value will then be required in the values dict.
 
     Examples:
 
     ```python exec="on" source="material-block" result="json"
-    from qadence import RX, HamEvo, run, PI
+    from qadence import X, HamEvo, PI, add, run
+    from qadence import FeatureParameter, TimeParameter
     import torch
-    hevo = HamEvo(generator=RX(0, PI), parameter=torch.rand(2))
-    print(run(hevo))
-    # Now lets use a torch.Tensor as a generator, Now we have to pass the support
-    gen = torch.rand(2,2, dtype=torch.complex128)
-    hevo = HamEvo(generator=gen, parameter=torch.rand(2), qubit_support=(0,))
-    print(run(hevo))
+
+    n_qubits = 3
+
+    # Hamiltonian as a block composition
+    hamiltonian = add(X(i) for i in range(n_qubits))
+    hevo = HamEvo(hamiltonian, parameter=torch.rand(2))
+    state = run(hevo)
+
+    # Hamiltonian as a random matrix
+    hamiltonian = torch.rand(2, 2, dtype=torch.complex128)
+    hevo = HamEvo(hamiltonian, parameter=torch.rand(2), qubit_support=(0,))
+    state = run(hevo)
+
+    # Time-dependent Hamiltonian
+    t = TimeParameter("t")
+    hamiltonian = t * add(X(i) for i in range(n_qubits))
+    hevo = HamEvo(hamiltonian, parameter=t)
+    state = run(hevo, values = {"duration": torch.tensor(1.0)})
     ```
     """
 
