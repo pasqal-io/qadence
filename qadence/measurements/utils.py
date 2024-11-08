@@ -15,7 +15,7 @@ from qadence.blocks import AbstractBlock, PrimitiveBlock, chain
 from qadence.circuit import QuantumCircuit
 from qadence.engines.differentiable_backend import DifferentiableBackend
 from qadence.noise import NoiseHandler
-from qadence.operations import H, SDagger, X, Y, Z
+from qadence.operations import H, I, SDagger, X, Y
 from qadence.parameters import evaluate
 from qadence.utils import Endianness
 
@@ -113,7 +113,7 @@ def rotate(circuit: QuantumCircuit, pauli_term: Tuple[AbstractBlock, Basic]) -> 
 
     rotations = []
 
-    for op, gate in [(X(0), Z), (Y(0), SDagger)]:
+    for op, gate in [(X(0), I), (Y(0), SDagger)]:
         qubit_indices = get_qubit_indices_for_op(pauli_term, op=op)
         for index in qubit_indices:
             rotations.append(gate(index) * H(index))

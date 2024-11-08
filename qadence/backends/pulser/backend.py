@@ -25,7 +25,6 @@ from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.mitigations.protocols import apply_mitigation
 from qadence.noise import NoiseHandler
-from qadence.noise.protocols import apply_readout_noise
 from qadence.overlap import overlap_exact
 from qadence.register import Register
 from qadence.transpile import transpile
@@ -311,8 +310,6 @@ class Backend(BackendInterface):
             from qadence.transpile import invert_endianness
 
             samples = invert_endianness(samples)
-        if noise is not None:
-            samples = apply_readout_noise(noise=noise, samples=samples)
         if mitigation is not None:
             logger.warning(
                 "Mitigation protocol is deprecated. Use qadence-protocols instead.",

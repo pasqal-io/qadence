@@ -1,14 +1,9 @@
 from __future__ import annotations
 
-import importlib
 from itertools import compress
-from typing import Any, Callable, Counter, cast
+from typing import Any
 
 from qadence.types import NoiseEnum, NoiseProtocol
-
-PROTOCOL_TO_MODULE = {
-    "Readout": "qadence.noise.readout",
-}
 
 
 class NoiseHandler:
@@ -106,16 +101,6 @@ class NoiseHandler:
             ]
         )
 
-    def get_noise_fn(self, index_protocol: int) -> Callable:
-        try:
-            module = importlib.import_module(PROTOCOL_TO_MODULE[self.protocol[index_protocol]])
-        except KeyError:
-            ImportError(
-                f"The module for the protocol {self.protocol[index_protocol]} is not found."
-            )
-        fn = getattr(module, "add_noise")
-        return cast(Callable, fn)
-
     def append(self, other: NoiseHandler | list[NoiseHandler]) -> None:
         """Append noises.
 
@@ -163,8 +148,8 @@ class NoiseHandler:
     def list(cls) -> list:
         return list(filter(lambda el: not el.startswith("__"), dir(cls)))
 
-    def filter(self, protocol: NoiseEnum) -> NoiseHandler | None:
-        is_protocol: list = [isinstance(p, protocol) for p in self.protocol]  # type: ignore[arg-type]
+    def filter(self, protocol: NoiseEnum | str) -> NoiseHandler | None:
+        is_protocol: list = [p == protocol or isinstance(p, protocol) for p in self.protocol]  # type: ignore[arg-type]
         return (
             NoiseHandler(
                 list(compress(self.protocol, is_protocol)),
@@ -215,27 +200,3 @@ class NoiseHandler:
     def readout(self, *args: Any, **kwargs: Any) -> NoiseHandler:
         self.append(NoiseHandler(NoiseProtocol.READOUT, *args, **kwargs))
         return self
-
-
-def apply_readout_noise(noise: NoiseHandler, samples: list[Counter]) -> list[Counter]:
-    """Apply readout noise to samples if provided.
-
-    Args:
-        noise (NoiseHandler): Noise to apply.
-        samples (list[Counter]): Samples to alter
-
-    Returns:
-        list[Counter]: Altered samples.
-    """
-    if noise.protocol[-1] == NoiseProtocol.READOUT:
-        error_fn = noise.get_noise_fn(-1)
-        # Get the number of qubits from the sample keys.
-        n_qubits = len(list(samples[0].keys())[0])
-        # Get the number of shots from the sample values.
-        n_shots = sum(samples[0].values())
-        noisy_samples: list = error_fn(
-            counters=samples, n_qubits=n_qubits, options=noise.options[-1], n_shots=n_shots
-        )
-        return noisy_samples
-    else:
-        return samples
