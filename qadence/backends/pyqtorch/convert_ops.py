@@ -208,8 +208,10 @@ def convert_block(
         return [pyq.Scale(pyq.Sequence(scaled_ops), param)]
 
     elif isinstance(block, TimeEvolutionBlock):
+        duration = block.duration  # type: ignore [attr-defined]
         if getattr(block.generator, "is_time_dependent", False):
             config._use_gate_params = False
+            duration = config.get_param_name(block)[1]
             generator = convert_block(block.generator, config=config)[0]  # type: ignore [arg-type]
         elif isinstance(block.generator, sympy.Basic):
             generator = config.get_param_name(block)[1]
@@ -234,7 +236,7 @@ def convert_block(
                 generator=generator,
                 time=time_param,
                 cache_length=0,
-                duration=block.duration,  # type: ignore [attr-defined]
+                duration=duration,
             )
         ]
 

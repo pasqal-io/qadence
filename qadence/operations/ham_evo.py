@@ -33,11 +33,15 @@ logger = getLogger(__name__)
 
 class HamEvo(TimeEvolutionBlock):
     """
-    A block implementing the Hamiltonian evolution operation H where:
+    The Hamiltonian evolution operator U(t).
 
-        H = exp(-iG, t)
-    where G represents a square generator and t represents the time parameter
-    which can be parametrized.
+    For time-dependent Hamiltonians
+
+        U(t) = exp(-iGt)
+
+    where G represents an Hermitian generator, or Hamiltonian and t represents the
+    time parameter. For time-dependent Hamiltonians, the solution is obtained by
+    numerical integration of the Schrodinger equation.
 
     Arguments:
         generator: Either a AbstractBlock, torch.Tensor or numpy.ndarray.
@@ -67,21 +71,27 @@ class HamEvo(TimeEvolutionBlock):
         generator: Union[TGenerator, AbstractBlock],
         parameter: TParameter,
         qubit_support: tuple[int, ...] = None,
-        duration: float | None = None,
+        duration: TParameter | None = None,
     ):
-        gen_exprs = {}
+        params = {}
         if qubit_support is None and not isinstance(generator, AbstractBlock):
             raise ValueError("You have to supply a qubit support for non-block generators.")
         super().__init__(qubit_support if qubit_support else generator.qubit_support)
         if isinstance(generator, AbstractBlock):
             qubit_support = generator.qubit_support
             if generator.is_parametric:
-                gen_exprs = {str(e): e for e in expressions(generator)}
-
-                if generator.is_time_dependent and duration is None:
-                    raise ValueError("For time-dependent generators, a duration must be specified.")
-
+                params = {str(e): e for e in expressions(generator)}
+            if generator.is_time_dependent and duration is None:
+                duration = Parameter("duration", trainable=False)
+            if not generator.is_time_dependent and duration is not None:
+                raise TypeError(
+                    "Duration argument is only supported for time-dependent generators."
+                )
         elif isinstance(generator, torch.Tensor):
+            if duration is not None:
+                raise TypeError(
+                    "Duration argument is only supported for time-dependent generators."
+                )
             msg = "Please provide a square generator."
             if len(generator.shape) == 2:
                 assert generator.shape[0] == generator.shape[1], msg
@@ -94,16 +104,22 @@ class HamEvo(TimeEvolutionBlock):
                                 In case of a 3D generator, the batch dim\
                                 is expected to be at dim 0."
                 )
-            gen_exprs = {str(generator.__hash__()): generator}
+            params = {str(generator.__hash__()): generator}
         elif isinstance(generator, (sympy.Basic, sympy.Array)):
-            gen_exprs = {str(generator): generator}
+            if duration is not None:
+                raise TypeError(
+                    "Duration argument is only supported for time-dependent generators."
+                )
+            params = {str(generator): generator}
         else:
             raise TypeError(
                 f"Generator of type {type(generator)} not supported.\
                             If you're using a numpy.ndarray, please cast it to a torch tensor."
             )
-        ps = {"parameter": Parameter(parameter), **gen_exprs}
-        self.parameters = ParamMap(**ps)
+        if duration is not None:
+            params = {"duration": Parameter(duration), **params}
+        params = {"parameter": Parameter(parameter), **params}
+        self.parameters = ParamMap(**params)
         self.time_param = parameter
         self.generator = generator
         self.duration = duration
