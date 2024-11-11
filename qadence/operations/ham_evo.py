@@ -35,7 +35,7 @@ class HamEvo(TimeEvolutionBlock):
     """
     The Hamiltonian evolution operator U(t).
 
-    For time-dependent Hamiltonians
+    For time-independent Hamiltonians the solution is exact:
 
         U(t) = exp(-iGt)
 
