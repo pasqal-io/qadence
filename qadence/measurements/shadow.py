@@ -125,7 +125,7 @@ def classical_shadow(
     unitary_ids = np.random.randint(0, 3, size=(shadow_size, circuit.n_qubits))
     all_unitaries = extract_unitaries(unitary_ids, circuit.n_qubits)
     shadow: list = list()
-    batchsize = state.shape[0] if state else 1
+    batchsize = state.shape[0] if state is not None else 1
     for i in range(shadow_size):
         random_unitary_block = all_unitaries[i]
         rotated_circuit = rotate(circuit, (random_unitary_block, 1.0))
