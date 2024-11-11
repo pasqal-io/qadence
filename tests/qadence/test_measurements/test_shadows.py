@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+import os
+
 import pytest
 import torch
 
@@ -9,13 +12,16 @@ from qadence.blocks.utils import add, chain, kron
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import ising_hamiltonian, total_magnetization
 from qadence.execution import expectation
+from qadence.measurements import Measurements
 from qadence.measurements.shadow import (
     _max_observable_weight,
     estimations,
     number_of_samples,
 )
+from qadence.model import QuantumModel
 from qadence.operations import RX, RY, H, I, X, Y, Z
 from qadence.parameters import Parameter
+from qadence.serialization import deserialize
 from qadence.types import BackendName, DiffMode
 
 
@@ -110,119 +116,119 @@ values2 = {
 }
 
 
-# @pytest.mark.flaky(max_runs=5)
-# @pytest.mark.parametrize(
-#     "circuit, values, diff_mode",
-#     [
-#         (QuantumCircuit(2, blocks), values, DiffMode.AD),
-#         (QuantumCircuit(2, blocks), values2, DiffMode.GPSR),
-#     ],
-# )
-# def test_estimations_comparison_tomo_forward_pass(
-#     circuit: QuantumCircuit, values: dict, diff_mode: DiffMode
-# ) -> None:
-#     observable = Z(0) ^ circuit.n_qubits
+@pytest.mark.flaky(max_runs=5)
+@pytest.mark.parametrize(
+    "circuit, values, diff_mode",
+    [
+        (QuantumCircuit(2, blocks), values, DiffMode.AD),
+        (QuantumCircuit(2, blocks), values2, DiffMode.GPSR),
+    ],
+)
+def test_estimations_comparison_tomo_forward_pass(
+    circuit: QuantumCircuit, values: dict, diff_mode: DiffMode
+) -> None:
+    observable = Z(0) ^ circuit.n_qubits
 
-#     pyq_backend = backend_factory(BackendName.PYQTORCH, diff_mode=diff_mode)
-#     (conv_circ, conv_obs, embed, params) = pyq_backend.convert(circuit, observable)
-#     pyq_exp_exact = pyq_backend.expectation(conv_circ, conv_obs, embed(params, values))
-#     model = QuantumModel(
-#         circuit=circuit,
-#         observable=observable,
-#         backend=BackendName.PYQTORCH,
-#         diff_mode=DiffMode.GPSR,
-#     )
-#     options = {"n_shots": 100000}
-#     estimated_exp_tomo = model.expectation(
-#         values=values,
-#         measurement=Measurements(protocol=Measurements.TOMOGRAPHY, options=options),
-#     )
-#     new_options = {"accuracy": 0.1, "confidence": 0.1}
-#     estimated_exp_shadow = model.expectation(
-#         values=values,
-#         measurement=Measurements(protocol=Measurements.SHADOW, options=new_options),
-#     )  # N = 54400.
-#     assert torch.allclose(estimated_exp_tomo, pyq_exp_exact, atol=1.0e-2)
-#     assert torch.allclose(estimated_exp_shadow, pyq_exp_exact, atol=0.1)
-#     assert torch.allclose(estimated_exp_shadow, pyq_exp_exact, atol=0.1)
-
-
-# @pytest.mark.flaky(max_runs=5)
-# def test_chemistry_hamiltonian_1() -> None:
-#     from qadence import load
-
-#     circuit = load("./tests/test_files/chem_circ.json")
-#     assert isinstance(circuit, QuantumCircuit)
-#     hamiltonian = load("./tests/test_files/chem_ham.json")
-#     assert isinstance(hamiltonian, AbstractBlock)
-#     # Restrict shadow size for faster tests.
-#     kwargs = {"accuracy": 0.1, "confidence": 0.1, "shadow_size": 1000}
-#     param_values = {"theta_0": torch.tensor([1.0])}
-
-#     model = QuantumModel(
-#         circuit=circuit,
-#         observable=hamiltonian,
-#         backend=BackendName.PYQTORCH,
-#         diff_mode=DiffMode.GPSR,
-#     )
-#     exact = model.expectation(values=param_values)
-#     estim = model.expectation(
-#         values=param_values,
-#         measurement=Measurements(protocol=Measurements.SHADOW, options=kwargs),
-#     )
-#     assert torch.allclose(estim, exact, atol=0.3)
+    pyq_backend = backend_factory(BackendName.PYQTORCH, diff_mode=diff_mode)
+    (conv_circ, conv_obs, embed, params) = pyq_backend.convert(circuit, observable)
+    pyq_exp_exact = pyq_backend.expectation(conv_circ, conv_obs, embed(params, values))
+    model = QuantumModel(
+        circuit=circuit,
+        observable=observable,
+        backend=BackendName.PYQTORCH,
+        diff_mode=DiffMode.GPSR,
+    )
+    options = {"n_shots": 100000}
+    estimated_exp_tomo = model.expectation(
+        values=values,
+        measurement=Measurements(protocol=Measurements.TOMOGRAPHY, options=options),
+    )
+    new_options = {"accuracy": 0.1, "confidence": 0.1}
+    estimated_exp_shadow = model.expectation(
+        values=values,
+        measurement=Measurements(protocol=Measurements.SHADOW, options=new_options),
+    )  # N = 54400.
+    assert torch.allclose(estimated_exp_tomo, pyq_exp_exact, atol=1.0e-2)
+    assert torch.allclose(estimated_exp_shadow, pyq_exp_exact, atol=0.1)
+    assert torch.allclose(estimated_exp_shadow, pyq_exp_exact, atol=0.1)
 
 
-# @pytest.mark.flaky(max_runs=5)
-# def test_chemistry_hamiltonian_2() -> None:
-#     from qadence import load
+@pytest.mark.flaky(max_runs=5)
+def test_chemistry_hamiltonian_1() -> None:
+    from qadence import load
 
-#     circuit = load("./tests/test_files/chem_circ.json")
-#     assert isinstance(circuit, QuantumCircuit)
-#     hamiltonian = ising_hamiltonian(2)
-#     assert isinstance(hamiltonian, AbstractBlock)
-#     # Restrict shadow size for faster tests.
-#     kwargs = {"accuracy": 0.1, "confidence": 0.1, "shadow_size": 1000}
-#     param_values = {"theta_0": torch.tensor([1.0])}
+    circuit = load("./tests/test_files/chem_circ.json")
+    assert isinstance(circuit, QuantumCircuit)
+    hamiltonian = load("./tests/test_files/chem_ham.json")
+    assert isinstance(hamiltonian, AbstractBlock)
+    # Restrict shadow size for faster tests.
+    kwargs = {"accuracy": 0.1, "confidence": 0.1, "shadow_size": 1000}
+    param_values = {"theta_0": torch.tensor([1.0])}
 
-#     model = QuantumModel(
-#         circuit=circuit,
-#         observable=hamiltonian,
-#         backend=BackendName.PYQTORCH,
-#         diff_mode=DiffMode.GPSR,
-#     )
-#     exact = model.expectation(values=param_values)
-#     estim = model.expectation(
-#         values=param_values,
-#         measurement=Measurements(protocol=Measurements.SHADOW, options=kwargs),
-#     )
-#     assert torch.allclose(estim, exact, atol=0.2)
-
-
-# def open_chem_obs() -> AbstractBlock:
-#     directory = os.getcwd()
-#     with open(os.path.join(directory, "tests/test_files/h4.json"), "r") as js:
-#         obs = json.loads(js.read())
-#     return deserialize(obs)  # type: ignore[return-value]
+    model = QuantumModel(
+        circuit=circuit,
+        observable=hamiltonian,
+        backend=BackendName.PYQTORCH,
+        diff_mode=DiffMode.GPSR,
+    )
+    exact = model.expectation(values=param_values)
+    estim = model.expectation(
+        values=param_values,
+        measurement=Measurements(protocol=Measurements.SHADOW, options=kwargs),
+    )
+    assert torch.allclose(estim, exact, atol=0.3)
 
 
-# @pytest.mark.flaky(max_runs=5)
-# def test_chemistry_hamiltonian_3() -> None:
-#     circuit = QuantumCircuit(4, kron(Z(0), H(1), Z(2), X(3)))
-#     hamiltonian = open_chem_obs()
-#     param_values: dict = dict()
+@pytest.mark.flaky(max_runs=5)
+def test_chemistry_hamiltonian_2() -> None:
+    from qadence import load
 
-#     kwargs = {"accuracy": 0.1, "confidence": 0.1, "shadow_size": 5000}
+    circuit = load("./tests/test_files/chem_circ.json")
+    assert isinstance(circuit, QuantumCircuit)
+    hamiltonian = ising_hamiltonian(2)
+    assert isinstance(hamiltonian, AbstractBlock)
+    # Restrict shadow size for faster tests.
+    kwargs = {"accuracy": 0.1, "confidence": 0.1, "shadow_size": 1000}
+    param_values = {"theta_0": torch.tensor([1.0])}
 
-#     model = QuantumModel(
-#         circuit=circuit,
-#         observable=hamiltonian,
-#         backend=BackendName.PYQTORCH,
-#         diff_mode=DiffMode.GPSR,
-#     )
-#     exact = model.expectation(values=param_values)
-#     estim = model.expectation(
-#         values=param_values,
-#         measurement=Measurements(protocol=Measurements.SHADOW, options=kwargs),
-#     )
-#     assert torch.allclose(estim, exact, atol=0.3)
+    model = QuantumModel(
+        circuit=circuit,
+        observable=hamiltonian,
+        backend=BackendName.PYQTORCH,
+        diff_mode=DiffMode.GPSR,
+    )
+    exact = model.expectation(values=param_values)
+    estim = model.expectation(
+        values=param_values,
+        measurement=Measurements(protocol=Measurements.SHADOW, options=kwargs),
+    )
+    assert torch.allclose(estim, exact, atol=0.2)
+
+
+def open_chem_obs() -> AbstractBlock:
+    directory = os.getcwd()
+    with open(os.path.join(directory, "tests/test_files/h4.json"), "r") as js:
+        obs = json.loads(js.read())
+    return deserialize(obs)  # type: ignore[return-value]
+
+
+@pytest.mark.flaky(max_runs=5)
+def test_chemistry_hamiltonian_3() -> None:
+    circuit = QuantumCircuit(4, kron(Z(0), H(1), Z(2), X(3)))
+    hamiltonian = open_chem_obs()
+    param_values: dict = dict()
+
+    kwargs = {"accuracy": 0.1, "confidence": 0.1, "shadow_size": 5000}
+
+    model = QuantumModel(
+        circuit=circuit,
+        observable=hamiltonian,
+        backend=BackendName.PYQTORCH,
+        diff_mode=DiffMode.GPSR,
+    )
+    exact = model.expectation(values=param_values)
+    estim = model.expectation(
+        values=param_values,
+        measurement=Measurements(protocol=Measurements.SHADOW, options=kwargs),
+    )
+    assert torch.allclose(estim, exact, atol=0.3)
