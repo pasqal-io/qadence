@@ -101,8 +101,11 @@ class HamEvo(TimeEvolutionBlock):
             qubit_support = generator.qubit_support
             if generator.is_parametric:
                 params = {str(e): e for e in expressions(generator)}
-            if generator.is_time_dependent and duration is None:
-                duration = Parameter("duration", trainable=False)
+            if generator.is_time_dependent:
+                if isinstance(duration, str):
+                    duration = Parameter(duration, trainable=False)
+                elif duration is None:
+                    duration = Parameter("duration", trainable=False)
             if not generator.is_time_dependent and duration is not None:
                 raise TypeError(
                     "Duration argument is only supported for time-dependent generators."
