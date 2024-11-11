@@ -109,7 +109,7 @@ def extract_unitaries(unitary_ids: np.ndarray, n_qubits: int) -> list:
     """
     unitaries = nested_operator_indexing(unitary_ids)
     if n_qubits > 1:
-        unitaries = [kron(*l) for l in unitaries]
+        unitaries = [kron(*list_unitaries) for list_unitaries in unitaries]
     return unitaries
 
 
