@@ -190,7 +190,7 @@ def convert_block(
         NotImplementedError: For non supported blocks.
 
     Returns:
-        Sequence[Module | Tensor | str | sympy.Expr]: Lis of native operations.
+        Sequence[Module | Tensor | str | sympy.Expr]: List of native operations.
     """
     if isinstance(block, (Tensor, str, sympy.Expr)):  # case for hamevo generators
         if isinstance(block, Tensor):
