@@ -178,8 +178,20 @@ def convert_block(
     block: AbstractBlock,
     n_qubits: int = None,
     config: Configuration = None,
-    apply_noise: bool = True,
 ) -> Sequence[Module | Tensor | str | sympy.Expr]:
+    """Convert block to native Pyqtorch representation.
+
+    Args:
+        block (AbstractBlock): Block to convert.
+        n_qubits (int, optional): Number of qubits. Defaults to None.
+        config (Configuration, optional): Backend configuration instance. Defaults to None.
+
+    Raises:
+        NotImplementedError: For non supported blocks.
+
+    Returns:
+        Sequence[Module | Tensor | str | sympy.Expr]: Lis of native operations.
+    """
     if isinstance(block, (Tensor, str, sympy.Expr)):  # case for hamevo generators
         if isinstance(block, Tensor):
             block = block.permute(1, 2, 0)  # put batch size in the back
@@ -192,7 +204,7 @@ def convert_block(
         config = Configuration()
 
     noise: NoiseHandler | None = None
-    if apply_noise and hasattr(block, "noise") and block.noise:
+    if hasattr(block, "noise") and block.noise:
         noise = convert_digital_noise(block.noise)
 
     if isinstance(block, ScaleBlock):

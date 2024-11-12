@@ -44,7 +44,8 @@ def converted_circuit_with_noise(
 ) -> ConvertedCircuit:
     """For backend functions, get a ConvertedCircuit with noise.
 
-    Note that if config.noise is not None, we try to append
+    Note that if config.noise is not None, we try to append to noise and
+    this may raise an error.
 
     Args:
         circuit (ConvertedCircuit): Original ConvertedCircuit.
@@ -62,13 +63,15 @@ def converted_circuit_with_noise(
             except ValueError as e:
                 raise ValueError(f"Cannot append provided noise with the config noise. Error: {e}")
         new_convcirc = ConvertedCircuit(circuit.native, circuit.abstract, circuit.original)
-        set_noise(new_convcirc.abstract, noise)
+        set_noise(new_convcirc.abstract, noise_combination)
+
+        # the config should not add the noise
         ops = convert_block(
             new_convcirc.abstract.block, n_qubits=new_convcirc.abstract.n_qubits, config=config
         )
-        readout = None
+        readout = new_convcirc.native.readout_noise
         if new_convcirc.native.readout_noise is None:
-            readout = convert_readout_noise(new_convcirc.abstract.n_qubits, noise)
+            readout = convert_readout_noise(new_convcirc.abstract.n_qubits, noise_combination)
         native = pyq.QuantumCircuit(
             new_convcirc.abstract.n_qubits,
             ops,
@@ -105,6 +108,8 @@ class Backend(BackendInterface):
         original_circ = circuit
         if len(passes) > 0:
             circuit = transpile(*passes)(circuit)
+        # setting noise on blocks
+        set_noise(circuit, self.config.noise)
 
         ops = convert_block(circuit.block, n_qubits=circuit.n_qubits, config=self.config)
         readout_noise = (
@@ -130,8 +135,8 @@ class Backend(BackendInterface):
             scale_primitive_blocks_only,
         ]
         block = transpile(*transpilations)(observable)  # type: ignore[call-overload]
-        # prevent setting noise on observable
-        operations = convert_block(block, n_qubits, self.config, False)
+        # we do not set noise on the observable blocks
+        operations = convert_block(block, n_qubits, self.config)
         native = pyq.Observable(operations=operations)
         return ConvertedObservable(native=native, abstract=block, original=observable)
 
