@@ -171,9 +171,7 @@ def estimators(
     observable: AbstractBlock,
 ) -> Tensor:
     """
-    Return estimators (aka traces calculated by matching the sampled unitaries to the.
-
-    observable and averaging the samples) for K equally-sized shadow partitions.
+    Return trace estimators from the samples for K equally-sized shadow partitions.
 
     See https://arxiv.org/pdf/2002.08953.pdf
     Algorithm 1.
