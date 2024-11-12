@@ -109,7 +109,8 @@ class Backend(BackendInterface):
         if len(passes) > 0:
             circuit = transpile(*passes)(circuit)
         # setting noise on blocks
-        set_noise(circuit, self.config.noise)
+        if self.config.noise:
+            set_noise(circuit, self.config.noise)
 
         ops = convert_block(circuit.block, n_qubits=circuit.n_qubits, config=self.config)
         readout_noise = (
