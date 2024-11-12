@@ -124,11 +124,13 @@ values2 = {
         (QuantumCircuit(2, blocks), values2, DiffMode.GPSR),
     ],
 )
+@pytest.mark.parametrize("observable", [Z(0) ^ 2, X(1)])
 def test_estimations_comparison_tomo_forward_pass(
-    circuit: QuantumCircuit, values: dict, diff_mode: DiffMode
+    circuit: QuantumCircuit,
+    values: dict,
+    diff_mode: DiffMode,
+    observable: AbstractBlock,
 ) -> None:
-    observable = Z(0) ^ circuit.n_qubits
-
     pyq_backend = backend_factory(BackendName.PYQTORCH, diff_mode=diff_mode)
     (conv_circ, conv_obs, embed, params) = pyq_backend.convert(circuit, observable)
     pyq_exp_exact = pyq_backend.expectation(conv_circ, conv_obs, embed(params, values))
