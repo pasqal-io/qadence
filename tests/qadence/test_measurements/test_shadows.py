@@ -2,27 +2,20 @@ from __future__ import annotations
 
 import json
 import os
-from collections import Counter
 
 import pytest
 import torch
-from torch import Tensor
 
 from qadence.backends.api import backend_factory
 from qadence.blocks.abstract import AbstractBlock
-from qadence.blocks.block_to_tensor import IMAT
 from qadence.blocks.utils import add, chain, kron
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import ising_hamiltonian, total_magnetization
 from qadence.execution import expectation
 from qadence.measurements import Measurements
 from qadence.measurements.shadow import (
-    UNITARY_TENSOR,
     _max_observable_weight,
-    classical_shadow,
     estimations,
-    estimators,
-    local_shadow,
     number_of_samples,
 )
 from qadence.model import QuantumModel
@@ -30,7 +23,6 @@ from qadence.operations import RX, RY, H, I, X, Y, Z
 from qadence.parameters import Parameter
 from qadence.serialization import deserialize
 from qadence.types import BackendName, DiffMode
-from qadence.utils import P0_MATRIX, P1_MATRIX
 
 
 @pytest.mark.parametrize(
@@ -61,84 +53,7 @@ def test_number_of_samples(
     assert K == exp_samples[1]
 
 
-@pytest.mark.parametrize(
-    "sample, unitary_ids, exp_shadow",
-    [
-        (
-            Counter({"10": 1}),
-            [0, 2],
-            torch.kron(
-                3 * (UNITARY_TENSOR[0].adjoint() @ P1_MATRIX @ UNITARY_TENSOR[0]) - IMAT,
-                3 * (UNITARY_TENSOR[2].adjoint() @ P0_MATRIX @ UNITARY_TENSOR[2]) - IMAT,
-            ),
-        ),
-        (
-            Counter({"0111": 1}),
-            [2, 0, 2, 2],
-            torch.kron(
-                torch.kron(
-                    3 * (UNITARY_TENSOR[2].adjoint() @ P0_MATRIX @ UNITARY_TENSOR[2]) - IMAT,
-                    3 * (UNITARY_TENSOR[0].adjoint() @ P1_MATRIX @ UNITARY_TENSOR[0]) - IMAT,
-                ),
-                torch.kron(
-                    3 * (UNITARY_TENSOR[2].adjoint() @ P1_MATRIX @ UNITARY_TENSOR[2]) - IMAT,
-                    3 * (UNITARY_TENSOR[2].adjoint() @ P1_MATRIX @ UNITARY_TENSOR[2]) - IMAT,
-                ),
-            ),
-        ),
-    ],
-)
-def test_local_shadow(sample: Counter, unitary_ids: list, exp_shadow: Tensor) -> None:
-    shadow = local_shadow(sample=sample, unitary_ids=unitary_ids)
-    assert torch.allclose(shadow, exp_shadow)
-
-
 theta = Parameter("theta")
-
-
-@pytest.mark.skip(reason="Can't fix the seed for deterministic outputs.")
-@pytest.mark.parametrize(
-    "layer, param_values, exp_shadows",
-    [
-        (X(0) @ X(2), {}, [])
-        # (kron(RX(0, theta), X(1)), {"theta": torch.tensor([0.5, 1.0, 1.5])}, [])
-    ],
-)
-def test_classical_shadow(layer: AbstractBlock, param_values: dict, exp_shadows: list) -> None:
-    circuit = QuantumCircuit(2, layer)
-    shadows = classical_shadow(
-        shadow_size=2,
-        circuit=circuit,
-        param_values=param_values,
-    )
-    for shadow, exp_shadow in zip(shadows, exp_shadows):
-        for batch, exp_batch in zip(shadow, exp_shadow):
-            assert torch.allclose(batch, exp_batch, atol=1.0e-2)
-
-
-@pytest.mark.parametrize(
-    "N, K, circuit, param_values, observable, exp_traces",
-    [
-        (2, 1, QuantumCircuit(2, kron(X(0), Z(1))), {}, X(1), torch.tensor([0.0])),
-    ],
-)
-def test_estimators(
-    N: int,
-    K: int,
-    circuit: QuantumCircuit,
-    param_values: dict,
-    observable: AbstractBlock,
-    exp_traces: Tensor,
-) -> None:
-    shadows = classical_shadow(shadow_size=N, circuit=circuit, param_values=param_values)
-    estimated_traces = estimators(
-        qubit_support=circuit.block.qubit_support,
-        N=N,
-        K=K,
-        shadow=shadows[0],
-        observable=observable,
-    )
-    assert torch.allclose(estimated_traces, exp_traces)
 
 
 @pytest.mark.flaky(max_runs=5)
@@ -209,11 +124,13 @@ values2 = {
         (QuantumCircuit(2, blocks), values2, DiffMode.GPSR),
     ],
 )
+@pytest.mark.parametrize("observable", [Z(0) ^ 2, X(1)])
 def test_estimations_comparison_tomo_forward_pass(
-    circuit: QuantumCircuit, values: dict, diff_mode: DiffMode
+    circuit: QuantumCircuit,
+    values: dict,
+    diff_mode: DiffMode,
+    observable: AbstractBlock,
 ) -> None:
-    observable = Z(0) ^ circuit.n_qubits
-
     pyq_backend = backend_factory(BackendName.PYQTORCH, diff_mode=diff_mode)
     (conv_circ, conv_obs, embed, params) = pyq_backend.convert(circuit, observable)
     pyq_exp_exact = pyq_backend.expectation(conv_circ, conv_obs, embed(params, values))
