@@ -52,7 +52,7 @@ def converted_circuit_with_noise(
         noise (NoiseHandler | None): Noise to add.
 
     Returns:
-        ConvertedCircuit: A new ConvertedCircuit with noise.
+        ConvertedCircuit: Noisy ConvertedCircuit.
     """
 
     if noise:
