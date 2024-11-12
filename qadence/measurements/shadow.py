@@ -6,20 +6,24 @@ from torch import Tensor
 
 from qadence.backend import Backend
 from qadence.backends.pyqtorch import Backend as PyQBackend
-from qadence.blocks import AbstractBlock, kron
+from qadence.blocks import AbstractBlock, KronBlock, chain, kron
 from qadence.blocks.block_to_tensor import HMAT, IMAT, SDAGMAT
 from qadence.blocks.composite import CompositeBlock
 from qadence.blocks.primitive import PrimitiveBlock
 from qadence.blocks.utils import get_pauli_blocks, unroll_block_with_scaling
 from qadence.circuit import QuantumCircuit
 from qadence.engines.differentiable_backend import DifferentiableBackend
-from qadence.measurements.utils import get_qubit_indices_for_op, rotate
+from qadence.measurements.utils import get_qubit_indices_for_op
 from qadence.noise import NoiseHandler
-from qadence.operations import I, X, Y, Z
+from qadence.operations import H, I, SDagger, X, Y, Z
 from qadence.types import Endianness
 
 pauli_gates = [X, Y, Z]
-
+pauli_rotations = [
+    lambda index: H(index),
+    lambda index: SDagger(index) * H(index),
+    lambda index: None,
+]
 
 UNITARY_TENSOR = [
     HMAT,
@@ -84,33 +88,37 @@ def number_of_samples(
 def nested_operator_indexing(
     idx_array: np.ndarray,
 ) -> list:
-    """Obtain the list of operators from indices.
+    """Obtain the list of rotation operators from indices.
 
     Args:
         idx_array (np.ndarray): Indices for obtaining the operators.
 
     Returns:
-        list: Map of pauli operators.
+        list: Map of rotations.
     """
     if idx_array.ndim == 1:
-        return [pauli_gates[int(ind_pauli)](i) for i, ind_pauli in enumerate(idx_array)]  # type: ignore[abstract]
+        return [pauli_rotations[int(ind_pauli)](i) for i, ind_pauli in enumerate(idx_array)]  # type: ignore[abstract]
     return [nested_operator_indexing(sub_array) for sub_array in idx_array]
 
 
-def extract_unitaries(unitary_ids: np.ndarray, n_qubits: int) -> list:
-    """Sample `shadow_size` pauli strings of `n_qubits`.
+def kron_if_non_empty(list_operations: list) -> KronBlock | None:
+    filtered_op: list = list(filter(None, list_operations))
+    return kron(*filtered_op) if len(filtered_op) > 0 else None
+
+
+def extract_operators(unitary_ids: np.ndarray, n_qubits: int) -> list:
+    """Sample `shadow_size` rotations of `n_qubits`.
 
     Args:
         unitary_ids (np.ndarray): Indices for obtaining the operators.
         n_qubits (int): Number of qubits
-
     Returns:
         list: Pauli strings.
     """
-    unitaries = nested_operator_indexing(unitary_ids)
+    operations = nested_operator_indexing(unitary_ids)
     if n_qubits > 1:
-        unitaries = [kron(*list_unitaries) for list_unitaries in unitaries]
-    return unitaries
+        operations = [kron_if_non_empty(ops) for ops in operations]
+    return operations
 
 
 def classical_shadow(
@@ -123,12 +131,16 @@ def classical_shadow(
     endianness: Endianness = Endianness.BIG,
 ) -> tuple[np.ndarray, list[Tensor]]:
     unitary_ids = np.random.randint(0, 3, size=(shadow_size, circuit.n_qubits))
-    all_unitaries = extract_unitaries(unitary_ids, circuit.n_qubits)
     shadow: list = list()
+    all_rotations = extract_operators(unitary_ids, circuit.n_qubits)
 
     for i in range(shadow_size):
-        random_unitary_block = all_unitaries[i]
-        rotated_circuit = rotate(circuit, (random_unitary_block, 1.0))
+        if all_rotations[i]:
+            rotated_circuit = QuantumCircuit(
+                circuit.register, chain(circuit.block, all_rotations[i])
+            )
+        else:
+            rotated_circuit = circuit
         # Reverse endianness to get sample bitstrings in ILO.
         conv_circ = backend.circuit(rotated_circuit)
         batch_samples = backend.sample(
