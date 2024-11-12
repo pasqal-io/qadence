@@ -154,14 +154,13 @@ class NoiseHandler:
             is_protocol = [p == protocol for p in self.protocol]
         else:
             is_protocol = [isinstance(p, protocol) for p in self.protocol]  # type: ignore[arg-type]
-        return (
-            NoiseHandler(
+        # if we have at least a match
+        if sum(is_protocol) > 0:
+            return NoiseHandler(
                 list(compress(self.protocol, is_protocol)),
                 list(compress(self.options, is_protocol)),
             )
-            if len(is_protocol) > 0 and sum(is_protocol) > 0
-            else None
-        )
+        return None
 
     def bitflip(self, *args: Any, **kwargs: Any) -> NoiseHandler:
         self.append(NoiseHandler(NoiseProtocol.DIGITAL.BITFLIP, *args, **kwargs))

@@ -137,6 +137,7 @@ class Backend(BackendInterface):
         ]
         block = transpile(*transpilations)(observable)  # type: ignore[call-overload]
         # we do not set noise on the observable blocks
+        # as this would not be correct when computing expectations
         operations = convert_block(block, n_qubits, self.config)
         native = pyq.Observable(operations=operations)
         return ConvertedObservable(native=native, abstract=block, original=observable)
