@@ -70,7 +70,7 @@ def converted_circuit_with_noise(
             new_convcirc.abstract.block, n_qubits=new_convcirc.abstract.n_qubits, config=config
         )
         readout = new_convcirc.native.readout_noise
-        if new_convcirc.native.readout_noise is None:
+        if readout is None:
             readout = convert_readout_noise(new_convcirc.abstract.n_qubits, noise_combination)
         native = pyq.QuantumCircuit(
             new_convcirc.abstract.n_qubits,
