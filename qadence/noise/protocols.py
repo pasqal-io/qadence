@@ -155,7 +155,7 @@ class NoiseHandler:
                 list(compress(self.protocol, is_protocol)),
                 list(compress(self.options, is_protocol)),
             )
-            if len(is_protocol) > 0
+            if len(is_protocol) > 0 and sum(is_protocol) > 0
             else None
         )
 

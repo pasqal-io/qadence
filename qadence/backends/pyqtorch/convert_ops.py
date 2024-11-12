@@ -175,7 +175,10 @@ def sympy_to_pyq(expr: sympy.Expr) -> ConcretizedCallable | Tensor:
 
 
 def convert_block(
-    block: AbstractBlock, n_qubits: int = None, config: Configuration = None
+    block: AbstractBlock,
+    n_qubits: int = None,
+    config: Configuration = None,
+    apply_noise: bool = True,
 ) -> Sequence[Module | Tensor | str | sympy.Expr]:
     if isinstance(block, (Tensor, str, sympy.Expr)):  # case for hamevo generators
         if isinstance(block, Tensor):
@@ -189,7 +192,7 @@ def convert_block(
         config = Configuration()
 
     noise: NoiseHandler | None = None
-    if hasattr(block, "noise") and block.noise:
+    if apply_noise and hasattr(block, "noise") and block.noise:
         noise = convert_digital_noise(block.noise)
 
     if isinstance(block, ScaleBlock):
