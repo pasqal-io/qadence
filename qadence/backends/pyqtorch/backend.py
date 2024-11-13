@@ -39,49 +39,43 @@ from .convert_ops import convert_block, convert_readout_noise
 logger = getLogger(__name__)
 
 
-def converted_circuit_with_noise(
-    circuit: ConvertedCircuit, noise: NoiseHandler | None, config: Configuration
-) -> ConvertedCircuit:
-    """For backend functions, get a ConvertedCircuit with noise.
-
-    Note that if config.noise is not None, we try to append to noise and
-    this may raise an error.
+def set_noise_abstract_to_native(circuit: ConvertedCircuit, config: Configuration) -> None:
+    """Set noise in native blocks from the abstract ones with noise.
 
     Args:
-        circuit (ConvertedCircuit): Input ConvertedCircuit (usually noiseless).
-        noise (NoiseHandler | None): Noise to add.
-
-    Returns:
-        ConvertedCircuit: Noisy ConvertedCircuit.
+        circuit (ConvertedCircuit): Input converted circuit.
     """
+    ops = convert_block(circuit.abstract.block, n_qubits=circuit.native.n_qubits, config=config)
+    circuit.native = pyq.QuantumCircuit(circuit.native.n_qubits, ops, circuit.native.readout_noise)
 
+
+def set_readout_noise(circuit: ConvertedCircuit, noise: NoiseHandler) -> None:
+    """Set readout noise in place in native.
+
+    Args:
+        circuit (ConvertedCircuit):  Input converted circuit.
+        noise (NoiseHandler | None): Noise.
+    """
+    readout = convert_readout_noise(circuit.abstract.n_qubits, noise)
+    circuit.native.readout_noise = readout
+
+
+def set_block_and_readout_noises(
+    circuit: ConvertedCircuit, noise: NoiseHandler | None, config: Configuration
+) -> None:
+    """Add noise on blocks and readout on circuit.
+
+    We first start by adding noise to the abstract blocks. Then we do a conversion to their
+    native representation. Finally, we add readout.
+
+    Args:
+        circuit (ConvertedCircuit): Input circuit.
+        noise (NoiseHandler | None): Noise to add.
+    """
     if noise:
-        noise_combination = noise
-        if config.noise:
-            try:
-                noise_combination.append(config.noise)
-            except ValueError as e:
-                raise ValueError(f"Cannot append provided noise with the config noise. Error: {e}")
-        new_convcirc = ConvertedCircuit(circuit.native, circuit.abstract, circuit.original)
-        set_noise(new_convcirc.abstract, noise_combination)
-
-        # the config should not add the noise
-        ops = convert_block(
-            new_convcirc.abstract.block, n_qubits=new_convcirc.abstract.n_qubits, config=config
-        )
-        readout = new_convcirc.native.readout_noise
-        if readout is None:
-            readout = convert_readout_noise(new_convcirc.abstract.n_qubits, noise_combination)
-        native = pyq.QuantumCircuit(
-            new_convcirc.abstract.n_qubits,
-            ops,
-            readout,
-        )
-        new_convcirc.native = native
-
-        return new_convcirc
-
-    return circuit
+        set_noise(circuit, noise)
+        set_noise_abstract_to_native(circuit, config)
+        set_readout_noise(circuit, noise)
 
 
 @dataclass(frozen=True, eq=True)
@@ -101,6 +95,17 @@ class Backend(BackendInterface):
     logger.debug("Initialised")
 
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:
+        """Return the converted circuit.
+
+        Note that to get a representation with noise, noise
+        should be passed within the config.
+
+        Args:
+            circuit (QuantumCircuit): Original circuit
+
+        Returns:
+            ConvertedCircuit: ConvertedCircuit instance for backend.
+        """
         passes = self.config.transpilation_passes
         if passes is None:
             passes = default_passes(self.config)
@@ -173,7 +178,7 @@ class Backend(BackendInterface):
         noise: NoiseHandler | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
-        circuit = converted_circuit_with_noise(circuit, noise, self.config)
+        set_block_and_readout_noises(circuit, noise, self.config)
         state = self.run(
             circuit,
             param_values=param_values,
@@ -211,7 +216,7 @@ class Backend(BackendInterface):
                 "Define your initial state with `batch_size=1`"
             )
 
-        circuit = converted_circuit_with_noise(circuit, noise, self.config)
+        set_block_and_readout_noises(circuit, noise, self.config)
 
         list_expvals = []
         observables = observable if isinstance(observable, list) else [observable]
@@ -267,7 +272,7 @@ class Backend(BackendInterface):
         elif state is not None and pyqify_state:
             n_qubits = circuit.abstract.n_qubits
             state = pyqify(state, n_qubits) if pyqify_state else state
-        circuit = converted_circuit_with_noise(circuit, noise, self.config)
+        set_block_and_readout_noises(circuit, noise, self.config)
         samples: list[Counter] = circuit.native.sample(
             state=state, values=param_values, n_shots=n_shots
         )
