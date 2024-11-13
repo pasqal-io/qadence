@@ -48,7 +48,7 @@ def converted_circuit_with_noise(
     this may raise an error.
 
     Args:
-        circuit (ConvertedCircuit): Original ConvertedCircuit.
+        circuit (ConvertedCircuit): Input ConvertedCircuit (usually noiseless).
         noise (NoiseHandler | None): Noise to add.
 
     Returns:
