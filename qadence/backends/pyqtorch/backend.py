@@ -108,7 +108,7 @@ class Backend(BackendInterface):
         original_circ = circuit
         if len(passes) > 0:
             circuit = transpile(*passes)(circuit)
-        # setting noise on blocks
+        # Setting noise in the circuit.
         if self.config.noise:
             set_noise(circuit, self.config.noise)
 
@@ -136,8 +136,6 @@ class Backend(BackendInterface):
             scale_primitive_blocks_only,
         ]
         block = transpile(*transpilations)(observable)  # type: ignore[call-overload]
-        # we do not set noise on the observable blocks
-        # as this would not be correct when computing expectations
         operations = convert_block(block, n_qubits, self.config)
         native = pyq.Observable(operations=operations)
         return ConvertedObservable(native=native, abstract=block, original=observable)
