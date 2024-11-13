@@ -57,7 +57,8 @@ def set_readout_noise(circuit: ConvertedCircuit, noise: NoiseHandler) -> None:
         noise (NoiseHandler | None): Noise.
     """
     readout = convert_readout_noise(circuit.abstract.n_qubits, noise)
-    circuit.native.readout_noise = readout
+    if readout:
+        circuit.native.readout_noise = readout
 
 
 def set_block_and_readout_noises(
