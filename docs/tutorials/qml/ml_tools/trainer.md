@@ -287,7 +287,7 @@ def plot_fn(model: Module, iteration: int) -> tuple[str, Figure]:
 
 
 config = TrainConfig(
-    folder="mlflow_demonstration",
+    root_folder="mlflow_demonstration",
     max_iter=10,
     checkpoint_every=1,
     plot_every=2,
@@ -427,7 +427,7 @@ cnt = count()
 tmp_path = Path("/tmp")
 
 config = TrainConfig(
-    folder=tmp_path,
+    root_folder=tmp_path,
     max_iter=n_epochs,
     checkpoint_every=100,
     write_every=100,
@@ -490,8 +490,8 @@ def train(
 
     # load available checkpoint
     init_iter = 0
-    if config.folder:
-        model, optimizer, init_iter = load_checkpoint(config.folder, model, optimizer)
+    if config.log_folder:
+        model, optimizer, init_iter = load_checkpoint(config.log_folder, model, optimizer)
 
     # Initialize writer based on the tracking tool specified in the configuration
     writer = get_writer(config.tracking_tool)  # Uses ExperimentTrackingTool to select writer
@@ -510,13 +510,13 @@ def train(
         if iteration % config.write_every == 0:
             writer.write(OptimizeResult(iteration, model, optimizer, loss, metrics))
 
-        if config.folder:
+        if config.log_folder:
             if iteration % config.checkpoint_every == 0:
-                write_checkpoint(config.folder, model, optimizer, iteration)
+                write_checkpoint(config.log_folder, model, optimizer, iteration)
 
     # Final writing and checkpointing
-    if config.folder:
-        write_checkpoint(config.folder, model, optimizer, iteration)
+    if config.log_folder:
+        write_checkpoint(config.log_folder, model, optimizer, iteration)
     writer.write(OptimizeResult(iteration, model, optimizer, loss, metrics))
     writer.close()
 
