@@ -372,7 +372,7 @@ class SaveCheckpoint(Callback):
             config (TrainConfig): The configuration object.
             writer (BaseWriter ): The writer object for logging.
         """
-        folder = config._log_folder
+        folder = config.log_folder
         model = trainer.model
         optimizer = trainer.optimizer
         opt_result = trainer.opt_result
@@ -406,7 +406,7 @@ class SaveBestCheckpoint(SaveCheckpoint):
         ):
             self.best_loss = opt_result.loss
 
-            folder = config._log_folder
+            folder = config.log_folder
             model = trainer.model
             optimizer = trainer.optimizer
             opt_result = trainer.opt_result
@@ -427,7 +427,7 @@ class LoadCheckpoint(Callback):
         Returns:
             Any: The result of loading the checkpoint.
         """
-        folder = config._log_folder
+        folder = config.log_folder
         model = trainer.model
         optimizer = trainer.optimizer
         device = trainer.log_device

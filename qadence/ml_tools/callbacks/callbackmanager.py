@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import logging
 from typing import Any
 
@@ -20,7 +21,7 @@ from qadence.ml_tools.stages import TrainingStage
 
 from .writer_registry import get_writer
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("ml_tools")
 
 
 class CallbacksManager:
@@ -56,7 +57,7 @@ class CallbacksManager:
             config (TrainConfig): The training configuration object.
         """
         self.config = config
-        self.callbacks: list[Callback] = config.callbacks
+        self.callbacks: list[Callback] = []
 
     @classmethod
     def set_use_grad(cls, use_grad: bool) -> None:
@@ -73,6 +74,7 @@ class CallbacksManager:
     def initialize_callbacks(self) -> None:
         """Initializes and adds the necessary callbacks based on the configuration."""
         # Train Start
+        self.callbacks = copy.deepcopy(self.config.callbacks)
         self.add_callback("PlotMetrics", "train_start")
         if self.config.val_every:
             self.add_callback("WriteMetrics", "train_start")
@@ -173,27 +175,28 @@ class CallbacksManager:
         trainer.opt_result = OptimizeResult(trainer.global_step, trainer.model, trainer.optimizer)
         trainer.is_last_iteration = False
 
-        # Load checkpoint if available
-        load_checkpoint_callback = LoadCheckpoint(on="train_start", called_every=1)
-        loaded_result = load_checkpoint_callback.run_callback(
-            trainer=trainer,
-            config=self.config,
-            writer=None,  # type: ignore[arg-type]
-        )
+        # Load checkpoint only if a new subfolder was NOT recently added
+        if not trainer.config_manager._added_new_subfolder:
+            load_checkpoint_callback = LoadCheckpoint(on="train_start", called_every=1)
+            loaded_result = load_checkpoint_callback.run_callback(
+                trainer=trainer,
+                config=self.config,
+                writer=None,  # type: ignore[arg-type]
+            )
 
-        if loaded_result:
-            model, optimizer, init_iter = loaded_result
-            if isinstance(init_iter, (int, str)):
-                trainer.model = model
-                trainer.optimizer = optimizer
-                trainer.global_step = (
-                    init_iter if isinstance(init_iter, int) else trainer.global_step
-                )
-                trainer.current_epoch = (
-                    init_iter if isinstance(init_iter, int) else trainer.current_epoch
-                )
-                trainer.opt_result = OptimizeResult(trainer.current_epoch, model, optimizer)
-                logger.debug(f"Loaded model and optimizer from {self.config._log_folder}")
+            if loaded_result:
+                model, optimizer, init_iter = loaded_result
+                if isinstance(init_iter, (int, str)):
+                    trainer.model = model
+                    trainer.optimizer = optimizer
+                    trainer.global_step = (
+                        init_iter if isinstance(init_iter, int) else trainer.global_step
+                    )
+                    trainer.current_epoch = (
+                        init_iter if isinstance(init_iter, int) else trainer.current_epoch
+                    )
+                    trainer.opt_result = OptimizeResult(trainer.current_epoch, model, optimizer)
+                    logger.debug(f"Loaded model and optimizer from {self.config.log_folder}")
 
         # Setup writer
         tracking_tool = self.config.tracking_tool
