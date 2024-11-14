@@ -4,7 +4,6 @@ import datetime
 import os
 from logging import getLogger
 from pathlib import Path
-from typing import Union
 
 from torch import Tensor
 
@@ -61,12 +60,12 @@ class ConfigManager:
         if self.config.folder:
             self.config._log_folder = self._create_log_folder(self.config.folder)
 
-    def _create_log_folder(self, root_folder: Union[str, Path]) -> Path:
+    def _create_log_folder(self, root_folder: str | Path) -> Path:
         """
         Create a log folder in the specified root folder, adding subfolders if required.
 
         Args:
-            root_folder (Union[str, Path]): The root folder where the log folder will be created.
+            root_folder (str | Path): The root folder where the log folder will be created.
 
         Returns:
             Path: The path to the created log folder.

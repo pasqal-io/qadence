@@ -46,7 +46,7 @@ class BaseWriter(ABC):
     run: Run  # [attr-defined]
 
     @abstractmethod
-    def open(self, config: TrainConfig, iteration: int = None) -> Any:
+    def open(self, config: TrainConfig, iteration: int | None = None) -> Any:
         """
         Opens the writer and prepares it for logging.
 
@@ -262,7 +262,7 @@ class MLFlowWriter(BaseWriter):
         self.run: Run
         self.mlflow: ModuleType
 
-    def open(self, config: TrainConfig, iteration: int = None) -> ModuleType | None:
+    def open(self, config: TrainConfig, iteration: int | None = None) -> ModuleType | None:
         """
         Opens the MLflow writer and initializes an MLflow run.
 

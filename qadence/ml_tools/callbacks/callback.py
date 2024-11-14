@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable
 
 from qadence.ml_tools.callbacks.saveload import load_checkpoint, write_checkpoint
 from qadence.ml_tools.callbacks.writer_registry import BaseWriter
@@ -24,9 +24,9 @@ class Callback:
                 "val_batch_start", "val_batch_end", "test_batch_start",
                 "test_batch_end"]
         called_every (int): Frequency of callback calls in terms of iterations.
-        callback (Optional[CallbackFunction]): The function to call if the condition is met.
-        callback_condition (Optional[CallbackConditionFunction]): Condition to check before calling.
-        modify_optimize_result (Optional[Union[CallbackFunction, dict[str, Any]]]):
+        callback (CallbackFunction | None): The function to call if the condition is met.
+        callback_condition (CallbackConditionFunction | None): Condition to check before calling.
+        modify_optimize_result (CallbackFunction | dict[str, Any] | None):
             Function to modify `OptimizeResult`.
 
     A callback can be defined in two ways:
@@ -81,14 +81,14 @@ class Callback:
         self,
         on: str | TrainingStage = "idle",
         called_every: int = 1,
-        callback: Union[CallbackFunction, None] = None,
-        callback_condition: Union[CallbackConditionFunction, None] = None,
-        modify_optimize_result: Optional[Union[CallbackFunction, dict[str, Any]]] = None,
+        callback: CallbackFunction | None = None,
+        callback_condition: CallbackConditionFunction | None = None,
+        modify_optimize_result: CallbackFunction | dict[str, Any] | None = None,
     ):
         if not isinstance(called_every, int):
             raise ValueError("called_every must be a positive integer or 0")
 
-        self.callback: Union[CallbackFunction, None] = callback
+        self.callback: CallbackFunction | None = callback
         self.on: str | TrainingStage = on
         self.called_every: int = called_every
         self.callback_condition = callback_condition or (lambda _: True)

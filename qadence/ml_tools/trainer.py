@@ -3,7 +3,7 @@ from __future__ import annotations
 import copy
 from itertools import islice
 from logging import getLogger
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union, cast
+from typing import Any, Callable, Iterable, cast
 
 import torch
 from nevergrad.optimization.base import Optimizer as NGOptimizer
@@ -39,19 +39,19 @@ class Trainer(BaseTrainer):
         global_step (int): The global step across all epochs.
         log_device (str): Device for logging, default is "cpu".
         device (torch_device): Device used for computation.
-        dtype (torch_dtype): Data type used for computation.
-        data_dtype (Optional[torch_dtype]): Data type for data.
+        dtype (torch_dtype | None): Data type used for computation.
+        data_dtype (torch_dtype | None): Data type for data.
             Depends on the model's data type.
 
     Inherited Attributes:
         use_grad (bool): Indicates if gradients are used for optimization. Default is True.
 
-        model (Optional[nn.Module]): The neural network model.
-        optimizer (Optional[Union[optim.Optimizer, NGOptimizer]]): The optimizer for training.
-        config (Optional[TrainConfig]): The configuration settings for training.
-        train_dataloader (Optional[DataLoader]): DataLoader for training data.
-        val_dataloader (Optional[DataLoader]): DataLoader for validation data.
-        test_dataloader (Optional[DataLoader]): DataLoader for testing data.
+        model (nn.Module): The neural network model.
+        optimizer (optim.Optimizer | NGOptimizer | None): The optimizer for training.
+        config (TrainConfig): The configuration settings for training.
+        train_dataloader (DataLoader | None): DataLoader for training data.
+        val_dataloader (DataLoader | None): DataLoader for validation data.
+        test_dataloader (DataLoader | None): DataLoader for testing data.
 
         optimize_step (Callable): Function for performing an optimization step.
         loss_fn (Callable): loss function to use.
@@ -232,32 +232,33 @@ class Trainer(BaseTrainer):
     def __init__(
         self,
         model: nn.Module,
-        optimizer: Union[optim.Optimizer, NGOptimizer, None],
+        optimizer: optim.Optimizer | NGOptimizer | None,
         config: TrainConfig,
-        loss_fn: Union[None, Callable, str],
-        train_dataloader: DataLoader = None,
-        val_dataloader: DataLoader = None,
-        test_dataloader: DataLoader = None,
+        loss_fn: str | Callable = "mse",
+        train_dataloader: DataLoader | None = None,
+        val_dataloader: DataLoader | None = None,
+        test_dataloader: DataLoader | None = None,
         optimize_step: Callable = optimize_step,
-        device: torch_device = None,
-        dtype: torch_dtype = None,
-        max_batches: int = None,
+        device: torch_device | None = None,
+        dtype: torch_dtype | None = None,
+        max_batches: int | None = None,
     ):
         """
         Initializes the Trainer class.
 
         Args:
             model (nn.Module): The PyTorch model to train.
-            optimizer (optim.Optimizer): The optimizer for training.
+            optimizer (optim.Optimizer | NGOptimizer | None): The optimizer for training.
             config (TrainConfig): Training configuration object.
-            loss_fn (Union[None, Callable, str]): Loss function used for training.
-            train_dataloader (DataLoader): DataLoader for training data.
-            val_dataloader (DataLoader): DataLoader for validation data.
-            test_dataloader (DataLoader): DataLoader for test data.
+            loss_fn (str | Callable ): Loss function used for training.
+                If not specified, default mse loss will be used.
+            train_dataloader (DataLoader | None): DataLoader for training data.
+            val_dataloader (DataLoader | None): DataLoader for validation data.
+            test_dataloader (DataLoader | None): DataLoader for test data.
             optimize_step (Callable): Function to execute an optimization step.
             device (torch_device): Device to use for computation.
             dtype (torch_dtype): Data type for computation.
-            max_batches (int): Maximum number of batches to process per epoch.
+            max_batches (int | None): Maximum number of batches to process per epoch.
                 This is only valid in case of finite TensorDataset dataloaders.
                 if max_batches is not None, the maximum number of batches used will
                 be min(max_batches, len(dataloader.dataset))
@@ -277,15 +278,15 @@ class Trainer(BaseTrainer):
         self.current_epoch: int = 0
         self.global_step: int = 0
         self.log_device: str = "cpu" if device is None else device
-        self.device: torch_device = device
-        self.dtype: torch_dtype = dtype
-        self.data_dtype: torch_dtype = None
+        self.device: torch_device | None = device
+        self.dtype: torch_dtype | None = dtype
+        self.data_dtype: torch_dtype | None = None
         if self.dtype:
             self.data_dtype = float64 if (self.dtype == complex128) else float32
 
     def fit(
-        self, train_dataloader: DataLoader = None, val_dataloader: DataLoader = None
-    ) -> Tuple[nn.Module, optim.Optimizer]:
+        self, train_dataloader: DataLoader | None = None, val_dataloader: DataLoader | None = None
+    ) -> tuple[nn.Module, optim.Optimizer]:
         """
         Fits the model using the specified training configuration.
 
@@ -293,11 +294,11 @@ class Trainer(BaseTrainer):
         provided in the trainer will be used.
 
         Args:
-            train_dataloader Optional(DataLoader): DataLoader for training data.
-            val_dataloader Optional(DataLoader): DataLoader for validation data.
+            train_dataloader (DataLoader | None): DataLoader for training data.
+            val_dataloader (DataLoader | None): DataLoader for validation data.
 
         Returns:
-            Tuple[nn.Module, optim.Optimizer]: The trained model and optimizer.
+            tuple[nn.Module, optim.Optimizer]: The trained model and optimizer.
         """
         if train_dataloader is not None:
             self.train_dataloader = train_dataloader
@@ -350,14 +351,14 @@ class Trainer(BaseTrainer):
         self.callback_manager.end_training(trainer=self)
 
     @BaseTrainer.callback("train")
-    def _train(self) -> List[List[Tuple[torch.Tensor, Dict[str, Any]]]]:
+    def _train(self) -> list[list[tuple[torch.Tensor, dict[str, Any]]]]:
         """
         Runs the main training loop, iterating over epochs.
 
         Returns:
-            List[List[Tuple[torch.Tensor, Dict[str, Any]]]]: Training loss
+            list[list[tuple[torch.Tensor, dict[str, Any]]]]: Training loss
             metrics for all epochs.
-                List    -> List                  -> Tuples
+                list    -> list                  -> tuples
                 Epochs  -> Training Batches      -> (loss, metrics)
         """
         self.on_train_start()
@@ -400,7 +401,7 @@ class Trainer(BaseTrainer):
         return train_losses
 
     @BaseTrainer.callback("train_epoch")
-    def run_training(self, dataloader: DataLoader) -> List[Tuple[torch.Tensor, Dict[str, Any]]]:
+    def run_training(self, dataloader: DataLoader) -> list[tuple[torch.Tensor, dict[str, Any]]]:
         """
         Runs the training for a single epoch, iterating over multiple batches.
 
@@ -408,8 +409,8 @@ class Trainer(BaseTrainer):
             dataloader (DataLoader): DataLoader for training data.
 
         Returns:
-            List[Tuple[torch.Tensor, Dict[str, Any]]]: Loss and metrics for each batch.
-                List                  -> Tuples
+            list[tuple[torch.Tensor, dict[str, Any]]]: Loss and metrics for each batch.
+                list                  -> tuples
                 Training Batches      -> (loss, metrics)
         """
         self.model.train()
@@ -433,8 +434,8 @@ class Trainer(BaseTrainer):
 
     @BaseTrainer.callback("train_batch")
     def run_train_batch(
-        self, batch: Tuple[torch.Tensor, ...]
-    ) -> Tuple[torch.Tensor, Dict[str, Any]]:
+        self, batch: tuple[torch.Tensor, ...]
+    ) -> tuple[torch.Tensor, dict[str, Any]]:
         """
         Runs a single training batch, performing optimization.
 
@@ -445,11 +446,11 @@ class Trainer(BaseTrainer):
             update_ng_parameters function.
 
         Args:
-            batch (Tuple[torch.Tensor, ...]): Batch of data from the DataLoader.
+            batch (tuple[torch.Tensor, ...]): Batch of data from the DataLoader.
 
         Returns:
-            Tuple[torch.Tensor, Dict[str, Any]]: Loss and metrics for the batch.
-                Tuple of (loss, metrics)
+            tuple[torch.Tensor, dict[str, Any]]: Loss and metrics for the batch.
+                tuple of (loss, metrics)
         """
 
         if self.use_grad:
@@ -477,7 +478,7 @@ class Trainer(BaseTrainer):
         return self.modify_batch_end_loss_metrics(loss_metrics)
 
     @BaseTrainer.callback("val_epoch")
-    def run_validation(self, dataloader: DataLoader) -> List[Tuple[torch.Tensor, Dict[str, Any]]]:
+    def run_validation(self, dataloader: DataLoader) -> list[tuple[torch.Tensor, dict[str, Any]]]:
         """
         Runs the validation loop for a single epoch, iterating over multiple batches.
 
@@ -485,8 +486,8 @@ class Trainer(BaseTrainer):
             dataloader (DataLoader): DataLoader for validation data.
 
         Returns:
-            List[Tuple[torch.Tensor, Dict[str, Any]]]: Loss and metrics for each batch.
-                List                  -> Tuples
+            list[tuple[torch.Tensor, dict[str, Any]]]: Loss and metrics for each batch.
+                list                  -> tuples
                 Validation Batches      -> (loss, metrics)
         """
         self.model.eval()
@@ -501,23 +502,21 @@ class Trainer(BaseTrainer):
         return val_epoch_loss_metrics
 
     @BaseTrainer.callback("val_batch")
-    def run_val_batch(self, batch: Tuple[torch.Tensor, ...]) -> Tuple[torch.Tensor, Dict[str, Any]]:
+    def run_val_batch(self, batch: tuple[torch.Tensor, ...]) -> tuple[torch.Tensor, dict[str, Any]]:
         """
         Runs a single validation batch.
 
         Args:
-            batch (Tuple[torch.Tensor, ...]): Batch of data from the DataLoader.
+            batch (tuple[torch.Tensor, ...]): Batch of data from the DataLoader.
 
         Returns:
-            Tuple[torch.Tensor, Dict[str, Any]]: Loss and metrics for the batch.
+            tuple[torch.Tensor, dict[str, Any]]: Loss and metrics for the batch.
         """
         with torch.no_grad():
             loss_metrics = self.loss_fn(self.model, batch)
         return self.modify_batch_end_loss_metrics(loss_metrics)
 
-    def test(
-        self, test_dataloader: DataLoader = None
-    ) -> Optional[List[Tuple[torch.Tensor, Dict[str, Any]]]]:
+    def test(self, test_dataloader: DataLoader = None) -> list[tuple[torch.Tensor, dict[str, Any]]]:
         """
         Runs the testing loop if a test DataLoader is provided.
 
@@ -528,8 +527,8 @@ class Trainer(BaseTrainer):
             test_dataloader (DataLoader): DataLoader for test data.
 
         Returns:
-            Optional[List[Tuple[torch.Tensor, Dict[str, Any]]]]: Loss and metrics for each batch.
-                List                    -> Tuples
+            list[tuple[torch.Tensor, dict[str, Any]]]: Loss and metrics for each batch.
+                list                    -> tuples
                 Test Batches            -> (loss, metrics)
         """
         if test_dataloader is not None:
@@ -548,16 +547,16 @@ class Trainer(BaseTrainer):
 
     @BaseTrainer.callback("test_batch")
     def run_test_batch(
-        self, batch: Tuple[torch.Tensor, ...]
-    ) -> Tuple[torch.Tensor, Dict[str, Any]]:
+        self, batch: tuple[torch.Tensor, ...]
+    ) -> tuple[torch.Tensor, dict[str, Any]]:
         """
         Runs a single test batch.
 
         Args:
-            batch (Tuple[torch.Tensor, ...]): Batch of data from the DataLoader.
+            batch (tuple[torch.Tensor, ...]): Batch of data from the DataLoader.
 
         Returns:
-            Tuple[torch.Tensor, Dict[str, Any]]: Loss and metrics for the batch.
+            tuple[torch.Tensor, dict[str, Any]]: Loss and metrics for the batch.
         """
         with torch.no_grad():
             loss_metrics = self.loss_fn(self.model, batch)
@@ -567,7 +566,7 @@ class Trainer(BaseTrainer):
         self,
         dataloader: DataLoader,
         num_batches: int,
-    ) -> Iterable[Union[Tuple[torch.Tensor, ...], None]]:
+    ) -> Iterable[tuple[torch.Tensor, ...] | None]:
         """
         Yields batches from the provided dataloader.
 
@@ -576,7 +575,7 @@ class Trainer(BaseTrainer):
             num_batches (int): The maximum number of batches to yield.
 
         Yields:
-            Union[Tuple[torch.Tensor, ...], None]: A batch from the dataloader moved to the
+            Iterable[tuple[torch.Tensor, ...] | None]: A batch from the dataloader moved to the
                 specified device and dtype.
         """
         if dataloader is None:
@@ -589,8 +588,8 @@ class Trainer(BaseTrainer):
                 yield batch
 
     def modify_batch_end_loss_metrics(
-        self, loss_metrics: Tuple[torch.Tensor, Dict[str, Any]]
-    ) -> Tuple[torch.Tensor, Dict[str, Any]]:
+        self, loss_metrics: tuple[torch.Tensor, dict[str, Any]]
+    ) -> tuple[torch.Tensor, dict[str, Any]]:
         """
         Modifies the loss and metrics at the end of batch for proper logging.
 
@@ -599,10 +598,10 @@ class Trainer(BaseTrainer):
         A "{state}_loss" is added to metrics.
 
         Args:
-            loss_metrics (Tuple[torch.Tensor, Dict[str, Any]]): Original loss and metrics.
+            loss_metrics (tuple[torch.Tensor, dict[str, Any]]): Original loss and metrics.
 
         Returns:
-            Tuple[None | torch.Tensor, Dict[str, Any]]: Modified loss and metrics.
+            tuple[None | torch.Tensor, dict[str, Any]]: Modified loss and metrics.
         """
         for phase in ["train", "val", "test"]:
             if phase in self.training_stage:
@@ -614,29 +613,28 @@ class Trainer(BaseTrainer):
 
     def build_optimize_result(
         self,
-        result: Union[
-            None,
-            Tuple[torch.Tensor, Dict[Any, Any]],
-            List[Tuple[torch.Tensor, Dict[Any, Any]]],
-            List[List[Tuple[torch.Tensor, Dict[Any, Any]]]],
-        ],
+        result: None
+        | tuple[torch.Tensor, dict[Any, Any]]
+        | list[tuple[torch.Tensor, dict[Any, Any]]]
+        | list[list[tuple[torch.Tensor, dict[Any, Any]]]],
     ) -> None:
         """
         Builds and stores the optimization result by calculating the average loss and metrics.
 
         Result (or loss_metrics) can have multiple formats:
         - `None` Indicates no loss or metrics data is provided.
-        - `Tuple[torch.Tensor, Dict[str, Any]]` A single tuple containing the loss tensor
+        - `tuple[torch.Tensor, dict[str, Any]]` A single tuple containing the loss tensor
             and metrics dictionary - at the end of batch.
-        - `List[Tuple[torch.Tensor, Dict[str, Any]]]` A list of tuples for
+        - `list[tuple[torch.Tensor, dict[str, Any]]]` A list of tuples for
             multiple batches.
-        - `List[List[Tuple[torch.Tensor, Dict[str, Any]]]]` A list of lists of tuples,
+        - `list[list[tuple[torch.Tensor, dict[str, Any]]]]` A list of lists of tuples,
         where each inner list represents metrics across multiple batches within an epoch.
 
         Args:
-            result: (Union[None, Tuple[torch.Tensor, Dict[str, Any]],
-                       List[Tuple[torch.Tensor, Dict[str, Any]]],
-                       List[List[Tuple[torch.Tensor, Dict[str, Any]]]]])
+            result: (None |
+                    tuple[torch.Tensor, dict[Any, Any]] |
+                    list[tuple[torch.Tensor, dict[Any, Any]]] |
+                    list[list[tuple[torch.Tensor, dict[Any, Any]]]])
                         The loss and metrics data, which can have multiple formats
 
         Returns:
@@ -646,20 +644,20 @@ class Trainer(BaseTrainer):
         loss_metrics = result
         if loss_metrics is None:
             loss = None
-            metrics: Dict[Any, Any] = {}
+            metrics: dict[Any, Any] = {}
         elif isinstance(loss_metrics, tuple):
             # Single tuple case
             loss, metrics = loss_metrics
         else:
-            last_epoch: List[Tuple[torch.Tensor, Dict[Any, Any]]] = []
+            last_epoch: list[tuple[torch.Tensor, dict[Any, Any]]] = []
             if isinstance(loss_metrics, list):
                 # Check if it's a list of tuples
                 if all(isinstance(item, tuple) for item in loss_metrics):
-                    last_epoch = cast(List[Tuple[torch.Tensor, Dict[Any, Any]]], loss_metrics)
+                    last_epoch = cast(list[tuple[torch.Tensor, dict[Any, Any]]], loss_metrics)
                 # Check if it's a list of lists of tuples
                 elif all(isinstance(item, list) for item in loss_metrics):
                     last_epoch = cast(
-                        List[Tuple[torch.Tensor, Dict[Any, Any]]],
+                        list[tuple[torch.Tensor, dict[Any, Any]]],
                         loss_metrics[-1] if loss_metrics else [],
                     )
                 else:

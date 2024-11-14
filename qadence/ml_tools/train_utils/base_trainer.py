@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from logging import getLogger
-from typing import Any, Callable, Iterator, Optional, Union
+from typing import Any, Callable, Iterator
 
 import nevergrad as ng
 import torch
@@ -39,15 +39,16 @@ class BaseTrainer:
     Attributes:
         use_grad (bool): Indicates if gradients are used for optimization. Default is True.
 
-        _model (nn.Module): The neural network model.
-        _optimizer (Union[optim.Optimizer, NGOptimizer, None]]): The optimizer for training.
-        _config (TrainConfig): The configuration settings for training.
-        _train_dataloader (Optional[DataLoader]): DataLoader for training data.
-        _val_dataloader (Optional[DataLoader]): DataLoader for validation data.
-        _test_dataloader (Optional[DataLoader]): DataLoader for testing data.
+        model (nn.Module): The neural network model.
+        optimizer (optim.Optimizer | NGOptimizer | None): The optimizer for training.
+        config (TrainConfig): The configuration settings for training.
+        train_dataloader (DataLoader | None): DataLoader for training data.
+        val_dataloader (DataLoader | None): DataLoader for validation data.
+        test_dataloader (DataLoader | None): DataLoader for testing data.
 
         optimize_step (Callable): Function for performing an optimization step.
-        loss_fn (Union[Callable, str, None]): loss function to use.
+        loss_fn (Callable | str ]): loss function to use. Default loss function
+            used is 'mse'
 
         num_training_batches (int): Number of training batches. In case of
             InfiniteTensorDataset only 1 batch per epoch is used.
@@ -64,43 +65,44 @@ class BaseTrainer:
     def __init__(
         self,
         model: nn.Module,
-        optimizer: Union[optim.Optimizer, NGOptimizer, None],
+        optimizer: optim.Optimizer | NGOptimizer | None,
         config: TrainConfig,
-        loss_fn: Union[None, Callable, str],
+        loss_fn: str | Callable = "mse",
         optimize_step: Callable = optimize_step,
-        train_dataloader: DataLoader = None,
-        val_dataloader: DataLoader = None,
-        test_dataloader: DataLoader = None,
-        max_batches: int = None,
+        train_dataloader: DataLoader | None = None,
+        val_dataloader: DataLoader | None = None,
+        test_dataloader: DataLoader | None = None,
+        max_batches: int | None = None,
     ):
         """
         Initializes the BaseTrainer.
 
         Args:
             model (nn.Module): The model to train.
-            optimizer (Union[optim.Optimizer, NGOptimizer, None]): The optimizer
+            optimizer (optim.Optimizer | NGOptimizer | None): The optimizer
                 for training.
             config (TrainConfig): The TrainConfig settings for training.
-            loss_fn (Union[None, Callable, str]): The loss function to use.
+            loss_fn (str | Callable): The loss function to use.
                 str input to be specified to use a default loss function.
-                currently supported loss functions: 'mse', 'cross_entropy'
-            train_dataloader (Optional[DataLoader]): DataLoader for training data.
+                currently supported loss functions: 'mse', 'cross_entropy'.
+                If not specified, default mse loss will be used.
+            train_dataloader (DataLoader | None): DataLoader for training data.
                 If the model does not need data to evaluate loss, no dataset
                 should be provided.
-            val_dataloader (Optional[DataLoader]): DataLoader for validation data.
-            test_dataloader (Optional[DataLoader]): DataLoader for testing data.
-            max_batches (Optional[int]): Maximum number of batches to process per epoch.
+            val_dataloader (DataLoader | None): DataLoader for validation data.
+            test_dataloader (DataLoader | None): DataLoader for testing data.
+            max_batches (int | None): Maximum number of batches to process per epoch.
                 This is only valid in case of finite TensorDataset dataloaders.
                 if max_batches is not None, the maximum number of batches used will
                 be min(max_batches, len(dataloader.dataset))
                 In case of InfiniteTensorDataset only 1 batch per epoch is used.
         """
         self._model: nn.Module
-        self._optimizer: Union[optim.Optimizer, NGOptimizer, None]
+        self._optimizer: optim.Optimizer | NGOptimizer | None
         self._config: TrainConfig
-        self._train_dataloader: Optional[DataLoader] = None
-        self._val_dataloader: Optional[DataLoader] = None
-        self._test_dataloader: Optional[DataLoader] = None
+        self._train_dataloader: DataLoader | None = None
+        self._val_dataloader: DataLoader | None = None
+        self._test_dataloader: DataLoader | None = None
 
         self.config = config
         self.model = model
@@ -138,33 +140,31 @@ class BaseTrainer:
         Sets the model, ensuring it is an instance of nn.Module.
 
         Args:
-            model (Optional[nn.Module]): The neural network model.
+            model (nn.Module): The neural network model.
         """
         if model is not None and not isinstance(model, nn.Module):
             raise TypeError("model must be an instance of nn.Module or None.")
         self._model = model
 
     @property
-    def optimizer(self) -> Union[optim.Optimizer, NGOptimizer, None]:
+    def optimizer(self) -> optim.Optimizer | NGOptimizer | None:
         """
         Returns the optimizer if set, otherwise raises an error.
 
         Returns:
-            Union[optim.Optimizer, NGOptimizer]: The optimizer.
+            optim.Optimizer | NGOptimizer | None: The optimizer.
         """
-        if self._optimizer is None:
-            raise ValueError("Optimizer has not been set.")
         return self._optimizer
 
     @optimizer.setter
-    def optimizer(self, optimizer: Union[optim.Optimizer, NGOptimizer, None]) -> None:
+    def optimizer(self, optimizer: optim.Optimizer | NGOptimizer | None) -> None:
         """
         Sets the optimizer, checking compatibility with gradient use.
 
         We also set up the budget/behavior of different optimizers here.
 
         Args:
-            optimizer (Union[optim.Optimizer, NGOptimizer]): The optimizer for training.
+            optimizer (optim.Optimizer | NGOptimizer | None): The optimizer for training.
         """
         if optimizer is not None:
             if self.use_grad:
@@ -263,7 +263,7 @@ class BaseTrainer:
         Sets the training configuration and initializes callback and config managers.
 
         Args:
-            value (Optional[TrainConfig]): The configuration object.
+            value (TrainConfig): The configuration object.
         """
         if value and not isinstance(value, TrainConfig):
             raise TypeError("config must be an instance of TrainConfig.")
@@ -363,12 +363,12 @@ class BaseTrainer:
         return decorator
 
     @contextmanager
-    def enable_grad_opt(self, optimizer: optim.Optimizer = None) -> Iterator[None]:
+    def enable_grad_opt(self, optimizer: optim.Optimizer | None = None) -> Iterator[None]:
         """
         Context manager to temporarily enable gradient-based optimization.
 
         Args:
-            optimizer Optional(optim.Optimizer): The PyTorch optimizer to use.
+            optimizer (optim.Optimizer): The PyTorch optimizer to use.
                 If no optimizer is provided, default optimizer for trainer
                 object will be used.
         """
@@ -385,12 +385,12 @@ class BaseTrainer:
             self.optimizer = original_optimizer
 
     @contextmanager
-    def disable_grad_opt(self, optimizer: NGOptimizer = None) -> Iterator[None]:
+    def disable_grad_opt(self, optimizer: NGOptimizer | None = None) -> Iterator[None]:
         """
         Context manager to temporarily disable gradient-based optimization.
 
         Args:
-            optimizer Optional(NGOptimizer): The Nevergrad optimizer to use.
+            optimizer (NGOptimizer): The Nevergrad optimizer to use.
                 If no optimizer is provided, default optimizer for trainer
                 object will be used.
         """
@@ -413,16 +413,18 @@ class BaseTrainer:
     def on_train_end(
         self,
         train_losses: list[list[tuple[torch.Tensor, Any]]],
-        val_losses: Optional[list[list[tuple[torch.Tensor, Any]]]] = None,
+        val_losses: list[list[tuple[torch.Tensor, Any]]] | None = None,
     ) -> None:
         """
         Called at the end of training.
 
         Args:
-            train_losses: Metrics for the training losses.
+            train_losses (list[list[tuple[torch.Tensor, Any]]]):
+                Metrics for the training losses.
                 list    -> list                  -> tuples
                 Epochs  -> Training Batches      -> (loss, metrics)
-            val_losses: Metrics for the validation losses.
+            val_losses (list[list[tuple[torch.Tensor, Any]]] | None):
+                Metrics for the validation losses.
                 list    -> list                  -> tuples
                 Epochs  -> Validation Batches    -> (loss, metrics)
         """

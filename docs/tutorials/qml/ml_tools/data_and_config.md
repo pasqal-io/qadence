@@ -86,7 +86,7 @@ n_epochs = 100
 print_parameters = lambda opt_res: print(opt_res.model.parameters())
 condition_print = lambda opt_res: opt_res.loss < 1.0e-03
 modify_extra_opt_res = {"n_epochs": n_epochs}
-custom_callback = Callback( on="on_train_end", callback = print_parameters, callback_condition=condition_print, modify_optimize_result=modify_extra_opt_res, called_every=10,)
+custom_callback = Callback(on="train_end", callback = print_parameters, callback_condition=condition_print, modify_optimize_result=modify_extra_opt_res, called_every=10,)
 
 config = TrainConfig(
     folder="some_path/",
@@ -170,7 +170,7 @@ def callback_fn(trainer, config, writer):
     if trainer.opt_res.loss < 0.001:
         print("Custom Callback: Loss threshold reached!")
 
-custom_callback = Callback(on = "on_train_epoch_end", called_every = 10, callback_function = callback_fn )
+custom_callback = Callback(on = "train_epoch_end", called_every = 10, callback_function = callback_fn )
 
 config = TrainConfig(callbacks=[custom_callback])
 ```

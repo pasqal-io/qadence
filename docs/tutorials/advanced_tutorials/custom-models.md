@@ -119,6 +119,7 @@ This model can then be trained with the standard Qadence helper functions.
 ```python exec="on" source="material-block" result="json" session="custom-model"
 from qadence import run
 from qadence.ml_tools import Trainer, TrainConfig
+Trainer.set_use_grad(True)
 
 criterion = torch.nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-1)

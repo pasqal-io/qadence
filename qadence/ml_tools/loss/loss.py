@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable, Dict, Union
+from typing import Callable
 
 import torch
 import torch.nn as nn
@@ -8,7 +8,7 @@ import torch.nn as nn
 
 def mse_loss(
     model: nn.Module, batch: tuple[torch.Tensor, torch.Tensor]
-) -> tuple[torch.Tensor, Dict[str, float]]:
+) -> tuple[torch.Tensor, dict[str, float]]:
     """Computes the Mean Squared Error (MSE) loss between model predictions and targets.
 
     Args:
@@ -18,9 +18,9 @@ def mse_loss(
             - targets (torch.Tensor): The ground truth labels.
 
     Returns:
-        Tuple[torch.Tensor, Dict[str, float]]:
+        Tuple[torch.Tensor, dict[str, float]]:
             - loss (torch.Tensor): The computed MSE loss value.
-            - metrics (Dict[str, float]): A dictionary with the MSE loss value.
+            - metrics (dict[str, float]): A dictionary with the MSE loss value.
     """
     criterion = nn.MSELoss()
     inputs, targets = batch
@@ -33,7 +33,7 @@ def mse_loss(
 
 def cross_entropy_loss(
     model: nn.Module, batch: tuple[torch.Tensor, torch.Tensor]
-) -> tuple[torch.Tensor, Dict[str, float]]:
+) -> tuple[torch.Tensor, dict[str, float]]:
     """Computes the Cross Entropy loss between model predictions and targets.
 
     Args:
@@ -43,9 +43,9 @@ def cross_entropy_loss(
             - targets (torch.Tensor): The ground truth labels.
 
     Returns:
-        Tuple[torch.Tensor, Dict[str, float]]:
+        Tuple[torch.Tensor, dict[str, float]]:
             - loss (torch.Tensor): The computed Cross Entropy loss value.
-            - metrics (Dict[str, float]): A dictionary with the Cross Entropy loss value.
+            - metrics (dict[str, float]): A dictionary with the Cross Entropy loss value.
     """
     criterion = nn.CrossEntropyLoss()
     inputs, targets = batch
@@ -56,12 +56,12 @@ def cross_entropy_loss(
     return loss, metrics
 
 
-def get_loss_fn(loss_fn: Union[None, Callable, str]) -> Callable:
+def get_loss_fn(loss_fn: str | Callable | None) -> Callable:
     """
     Returns the appropriate loss function based on the input argument.
 
     Args:
-        loss_fn (Union[None, Callable, str]): The loss function to use.
+        loss_fn (str | Callable | None): The loss function to use.
             - If `loss_fn` is a callable, it will be returned directly.
             - If `loss_fn` is a string, it should be one of:
                 - "mse": Returns the `mse_loss` function.

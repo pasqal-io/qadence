@@ -22,7 +22,7 @@ Qadence ml_tools offers several built-in callbacks for common tasks like saving 
 
 Prints metrics at specified intervals.
 
-```python
+```python exec="on" source="material-block" html="1"
 from qadence.ml_tools import TrainConfig
 from qadence.ml_tools.callbacks import PrintMetrics
 
@@ -38,7 +38,8 @@ config = TrainConfig(
 
 Writes metrics to a specified logging destination.
 
-```python
+```python exec="on" source="material-block" html="1"
+from qadence.ml_tools import TrainConfig
 from qadence.ml_tools.callbacks import WriteMetrics
 
 write_metrics_callback = WriteMetrics(on="train_epoch_end", called_every=50)
@@ -53,7 +54,8 @@ config = TrainConfig(
 
 Plots metrics based on user-defined plotting functions.
 
-```python
+```python exec="on" source="material-block" html="1"
+from qadence.ml_tools import TrainConfig
 from qadence.ml_tools.callbacks import PlotMetrics
 
 plot_metrics_callback = PlotMetrics(on="train_epoch_end", called_every=100)
@@ -68,7 +70,8 @@ config = TrainConfig(
 
 Logs hyperparameters to keep track of training settings.
 
-```python
+```python exec="on" source="material-block" html="1"
+from qadence.ml_tools import TrainConfig
 from qadence.ml_tools.callbacks import LogHyperparameters
 
 log_hyper_callback = LogHyperparameters(on="train_start", called_every=1)
@@ -83,7 +86,8 @@ config = TrainConfig(
 
 Saves model checkpoints at specified intervals.
 
-```python
+```python exec="on" source="material-block" html="1"
+from qadence.ml_tools import TrainConfig
 from qadence.ml_tools.callbacks import SaveCheckpoint
 
 save_checkpoint_callback = SaveCheckpoint(on="train_epoch_end", called_every=100)
@@ -98,7 +102,8 @@ config = TrainConfig(
 
 Saves the best model checkpoint based on a validation criterion.
 
-```python
+```python exec="on" source="material-block" html="1"
+from qadence.ml_tools import TrainConfig
 from qadence.ml_tools.callbacks import SaveBestCheckpoint
 
 save_best_checkpoint_callback = SaveBestCheckpoint(on="val_epoch_end", called_every=10)
@@ -113,7 +118,8 @@ config = TrainConfig(
 
 Loads a saved model checkpoint at the start of training.
 
-```python
+```python exec="on" source="material-block" html="1"
+from qadence.ml_tools import TrainConfig
 from qadence.ml_tools.callbacks import LoadCheckpoint
 
 load_checkpoint_callback = LoadCheckpoint(on="train_start")
@@ -128,7 +134,8 @@ config = TrainConfig(
 
 Logs the model structure and parameters.
 
-```python
+```python exec="on" source="material-block" html="1"
+from qadence.ml_tools import TrainConfig
 from qadence.ml_tools.callbacks import LogModelTracker
 
 log_model_callback = LogModelTracker(on="train_end")
@@ -152,7 +159,7 @@ There are two main ways to define a callback:
 
 #### Example 1: Providing a Callback Function Directly
 
-```python
+```python exec="on" source="material-block" html="1"
 from qadence.ml_tools.callbacks import Callback
 
 # Define a custom callback function
@@ -161,15 +168,14 @@ def custom_callback_function(trainer, config, writer):
 
 # Create the callback instance
 custom_callback = Callback(
-    on="on_train_end",
-    called_every=5,
+    on="train_end",
     callback=custom_callback_function
 )
 ```
 
 #### Example 2: Subclassing the Callback
 
-```python
+```python exec="on" source="material-block" html="1"
 from qadence.ml_tools.callbacks import Callback
 
 class CustomCallback(Callback):
@@ -177,7 +183,7 @@ class CustomCallback(Callback):
         print("Custom behavior in run_callback method.")
 
 # Create the subclassed callback instance
-custom_callback = CustomCallback(on="on_train_end", called_every=10)
+custom_callback = CustomCallback(on="train_batch_end", called_every=10)
 ```
 
 
@@ -185,15 +191,15 @@ custom_callback = CustomCallback(on="on_train_end", called_every=10)
 
 To use callbacks in `TrainConfig`, add them to the `callbacks` list when configuring the training process.
 
-```python
+```python exec="on" source="material-block" html="1"
 from qadence.ml_tools import TrainConfig
 from qadence.ml_tools.callbacks import SaveCheckpoint, PrintMetrics
 
 config = TrainConfig(
     max_iter=10000,
     callbacks=[
-        SaveCheckpoint(on="on_val_epoch_end", called_every=50),
-        PrintMetrics(on="on_train_epoch_end", called_every=100),
+        SaveCheckpoint(on="val_epoch_end", called_every=50),
+        PrintMetrics(on="train_epoch_end", called_every=100),
     ]
 )
 ```
@@ -217,9 +223,9 @@ These defaults handle common needs, but you can also add custom callbacks to any
 To create a custom `Trainer` that includes a `PrintMetrics` callback executed specifically at the end of each epoch, follow the steps below.
 
 
-```python
+```python exec="on" source="material-block" html="1"
 from qadence.ml_tools.trainer import Trainer
-from qadence.ml_tools.callback import PrintMetrics
+from qadence.ml_tools.callbacks import PrintMetrics
 
 class CustomTrainer(Trainer):
     def __init__(self, *args, **kwargs):
