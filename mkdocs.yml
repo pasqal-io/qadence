@@ -44,7 +44,7 @@ nav:
       - tutorials/qml/index.md
       - Training: tutorials/qml/ml_tools/trainer.md
       - Training Callbacks: tutorials/qml/ml_tools/callbacks.md
-      - Data and Configrations: tutorials/qml/ml_tools/data_and_config.md
+      - Data and Configurations: tutorials/qml/ml_tools/data_and_config.md
       - Configuring a QNN: tutorials/qml/config_qnn.md
       - Quantum circuit learning: tutorials/qml/qcl.md
       - Solving MaxCut with QAOA: tutorials/qml/qaoa.md

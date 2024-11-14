@@ -166,8 +166,8 @@ Example:
 ```python
 from qadence.ml_tools.callbacks import Callback
 
-def callback_fn(opt_res):
-    if opt_res.loss < 0.001:
+def callback_fn(trainer, config, writer):
+    if trainer.opt_res.loss < 0.001:
         print("Custom Callback: Loss threshold reached!")
 
 custom_callback = Callback(on = "on_train_epoch_end", called_every = 10, callback_function = callback_fn )

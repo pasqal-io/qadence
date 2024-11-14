@@ -99,6 +99,20 @@ def loss_fn(model: torch.nn.Module, data: torch.Tensor) -> tuple[torch.Tensor, d
     return loss, {}
 ```
 
+This custom loss function can be used in the trainer
+```python
+from qadence.ml_tools import Trainer, TrainConfig
+from torch.optim import Adam
+
+# Initialize model and optimizer
+model = ...  # Define or load a quantum model here
+optimizer = Adam(model.parameters(), lr=0.01)
+config = TrainConfig(max_iter=100, print_every=10)
+
+trainer = Trainer(model=model, optimizer=optimizer, config=config, loss_fn=loss_fn)
+```
+
+
 ---
 
 ## 4. Hooks for Custom Behavior
@@ -113,6 +127,33 @@ The available hooks include:
 - `on_train_epoch_end`: Called at the end of each training epoch.
 - `on_train_batch_start`: Called at the start of each training batch.
 - `on_train_batch_end`: Called at the end of each training batch.
+
+Each "start" and "end" hook receives data and loss metrics as arguments. The specific values provided for these arguments depend on the training stage associated with the hook. The context of the training stage (e.g., training, validation, or testing) determines which metrics are relevant and how they are populated. For details of inputs on each hook, please review the documentation of [`BaseTrainer`][qadence.ml_tools.train_utils.BaseTrainer].
+
+    - Example of what inputs are provided to training hooks.
+
+        ```
+        def on_train_batch_start(self, batch: Tuple[torch.Tensor, ...] | None) -> None:
+            """
+            Called at the start of each training batch.
+
+            Args:
+                batch: A batch of data from the DataLoader. Typically a tuple containing
+                    input tensors and corresponding target tensors.
+            """
+            pass
+        ```
+        ```
+        def on_train_batch_end(self, train_batch_loss_metrics: Tuple[torch.Tensor, Any]) -> None:
+            """
+            Called at the end of each training batch.
+
+            Args:
+                train_batch_loss_metrics: Metrics for the training batch loss.
+                    Tuple of (loss, metrics)
+            """
+            pass
+        ```
 
 Example of using a hook to log a message at the end of each epoch:
 
@@ -234,9 +275,6 @@ Qadence offers different tracking options via `TrainConfig`. Here we use the `Ex
 
 **For Training**
 `write_every` controls the number of epochs after which the loss values is logged. Thanks to the `plotting_functions` and `plot_every`arguments, we are also able to plot model-related quantities throughout training. Notice that arbitrary plotting functions can be passed, as long as the signature is the same as `plot_fn` below. Finally, the trained model can be logged by setting `log_model=True`. Here is an example of plotting function and training configuration
-
-**For Validation**
-`val_every` can be used to define how often we want to validate the model using the validation dataloader.
 
 ```python
 def plot_fn(model: Module, iteration: int) -> tuple[str, Figure]:

@@ -1,6 +1,7 @@
 ## ML Tools
 
-This module implements Trainer class for torch Modules and QuantumModel. It also implements the QNN class and callbacks that can be used with the trainer module.
+This module implements a `Trainer` class for torch `Modules` and `QuantumModel`. It also implements the `QNN` class and callbacks that can be used with the trainer module.
+
 
 ### ::: qadence.ml_tools.trainer
 
