@@ -230,7 +230,7 @@ def test_model_logging_tensorboard(
         log_model=True,
         tracking_tool=ExperimentTrackingTool.TENSORBOARD,
     )
-    
+
     trainer = Trainer(model, optimizer, config, loss_fn, None)
     with trainer.enable_grad_opt():
         trainer.fit()
