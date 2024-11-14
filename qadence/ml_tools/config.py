@@ -35,7 +35,7 @@ class TrainConfig:
     Example:
     ```python exec="on" source="material-block" result="json"
     from qadence.ml_tools import TrainConfig
-    c = TrainConfig(folder="/tmp/train")
+    c = TrainConfig(root_folder="/tmp/train")
     print(str(c)) # markdown-exec: hide
     ```
     """
@@ -94,12 +94,14 @@ class TrainConfig:
     model's state will be logged, useful for model versioning and reproducibility.
     """
 
-    folder: Path = Path("./qml_logs")
+    root_folder: Path = Path("./qml_logs")
     """The root folder for saving checkpoints and tensorboard logs.
 
     The default path is "./qml_logs"
 
     This can be set to a specific directory where training artifacts are to be stored.
+    Checkpoints will be saved inside a subfolder in this directory. Subfolders will be
+    created based on `create_subfolder_per_run` argument.
     """
 
     create_subfolder_per_run: bool = False
@@ -108,6 +110,16 @@ class TrainConfig:
     This ensures logs and checkpoints from different runs do not overwrite each other,
     which is helpful for rapid prototyping. If `False`, training will resume from
     the latest checkpoint if one exists in the specified log folder.
+    """
+
+    log_folder: Path = Path("./qml_logs")
+    """The log folder for saving checkpoints and tensorboard logs.
+
+    This stores the path where all logs and checkpoints are being saved
+    for this training session. `log_folder` takes precedence over `root_folder` and
+    `create_subfolder_per_run` arguments. If the user specifies a log_folder,
+    all checkpoints will be saved in this folder and `root_folder` argument
+    will not be used.
     """
 
     checkpoint_best_only: bool = False
@@ -123,8 +135,9 @@ class TrainConfig:
 
     If set to 0, validation is not performed.
     Note that metrics from validation are always written, regardless of the `write_every` setting.
-    Note that initial validation also happens at the start of training, for which metrics are
-    written.
+    Note that initial validation happens at the start of training (when val_every > 0)
+        For initial validation  - initial metrics are written.
+                                - checkpoint is saved (when checkpoint_best_only = False)
     """
 
     val_epsilon: float = 1e-5
@@ -184,13 +197,6 @@ class TrainConfig:
     root folder.
 
     Each subfolder is of structure `<id>_<timestamp>_<PID>`.
-    """
-
-    _log_folder: Path = Path("./qml_logs")
-    """The current log folder in use.
-
-    This stores the path where all logs
-    and checkpoints are being saved for this training session.
     """
 
 
