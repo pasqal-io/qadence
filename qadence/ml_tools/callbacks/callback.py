@@ -6,6 +6,7 @@ from qadence.ml_tools.callbacks.saveload import load_checkpoint, write_checkpoin
 from qadence.ml_tools.callbacks.writer_registry import BaseWriter
 from qadence.ml_tools.config import TrainConfig
 from qadence.ml_tools.data import OptimizeResult
+from qadence.ml_tools.stages import TrainingStage
 
 # Define callback types
 CallbackFunction = Callable[..., Any]
@@ -17,11 +18,11 @@ class Callback:
 
     Attributes:
         on (str): The event on which to trigger the callback.
-            Must be a valid on value from: ["on_train_start", "on_train_end",
-                "on_train_epoch_start", "on_train_epoch_end", "on_train_batch_start",
-                "on_train_batch_end","on_val_epoch_start", "on_val_epoch_end",
-                "on_val_batch_start", "on_val_batch_end", "on_test_batch_start",
-                "on_test_batch_end"]
+            Must be a valid on value from: ["train_start", "train_end",
+                "train_epoch_start", "train_epoch_end", "train_batch_start",
+                "train_batch_end","val_epoch_start", "val_epoch_end",
+                "val_batch_start", "val_batch_end", "test_batch_start",
+                "test_batch_end"]
         called_every (int): Frequency of callback calls in terms of iterations.
         callback (Optional[CallbackFunction]): The function to call if the condition is met.
         callback_condition (Optional[CallbackConditionFunction]): Condition to check before calling.
@@ -41,7 +42,7 @@ class Callback:
            print("Custom callback executed.")
 
        custom_callback = Callback(
-           on="on_train_end",
+           on="train_end",
            called_every=5,
            callback=custom_callback_function
        )
@@ -57,41 +58,39 @@ class Callback:
            def run_callback(self, trainer, config, writer):
                print("Custom behavior in the inherited run_callback method.")
 
-       custom_callback = CustomCallback(on="on_train_end", called_every=10)
+       custom_callback = CustomCallback(on="train_end", called_every=10)
        ```
     """
 
     VALID_ON_VALUES = [
-        "on_train_start",
-        "on_train_end",
-        "on_train_epoch_start",
-        "on_train_epoch_end",
-        "on_train_batch_start",
-        "on_train_batch_end",
-        "on_val_epoch_start",
-        "on_val_epoch_end",
-        "on_val_batch_start",
-        "on_val_batch_end",
-        "on_test_batch_start",
-        "on_test_batch_end",
+        "train_start",
+        "train_end",
+        "train_epoch_start",
+        "train_epoch_end",
+        "train_batch_start",
+        "train_batch_end",
+        "val_epoch_start",
+        "val_epoch_end",
+        "val_batch_start",
+        "val_batch_end",
+        "test_batch_start",
+        "test_batch_end",
     ]
 
     def __init__(
         self,
-        on: str = "on_train_end",
+        on: str | TrainingStage = "idle",
         called_every: int = 1,
-        callback: Optional[CallbackFunction] = None,
-        callback_condition: Optional[CallbackConditionFunction] = None,
+        callback: Union[CallbackFunction, None] = None,
+        callback_condition: Union[CallbackConditionFunction, None] = None,
         modify_optimize_result: Optional[Union[CallbackFunction, dict[str, Any]]] = None,
     ):
         if not isinstance(called_every, int):
             raise ValueError("called_every must be a positive integer or 0")
-        if on not in self.VALID_ON_VALUES:
-            raise ValueError(f"Invalid value for 'on'. Must be one of {self.VALID_ON_VALUES}.")
 
-        self.callback = callback
-        self.on = on
-        self.called_every = called_every
+        self.callback: Union[CallbackFunction, None] = callback
+        self.on: str | TrainingStage = on
+        self.called_every: int = called_every
         self.callback_condition = callback_condition or (lambda _: True)
 
         if isinstance(modify_optimize_result, dict):
@@ -100,6 +99,33 @@ class Callback:
             )
         else:
             self.modify_optimize_result = modify_optimize_result or (lambda opt_res: opt_res)
+
+    @property
+    def on(self) -> TrainingStage | str:
+        """
+        Returns the TrainingStage.
+
+        Returns:
+            TrainingStage: TrainingStage for the callback
+        """
+        return self._on
+
+    @on.setter
+    def on(self, on: str | TrainingStage) -> None:
+        """
+        Sets the training stage on for the callback.
+
+        Args:
+            on (str | TrainingStage): TrainingStage for the callback
+        """
+        if isinstance(on, str):
+            if on not in self.VALID_ON_VALUES:
+                raise ValueError(f"Invalid value for 'on'. Must be one of {self.VALID_ON_VALUES}.")
+            self._on = TrainingStage(on)
+        elif isinstance(on, TrainingStage):
+            self._on = on
+        else:
+            raise ValueError("Invalid value for 'on'. Must be `str` or `TrainingStage`.")
 
     def _should_call(self, when: str, opt_result: OptimizeResult) -> bool:
         """Checks if the callback should be called.
@@ -111,7 +137,7 @@ class Callback:
         Returns:
             bool: Whether the callback should be called.
         """
-        if when in ["on_train_start", "on_train_end"]:
+        if when in [TrainingStage("train_start"), TrainingStage("train_end")]:
             return True
         if self.called_every == 0 or opt_result.iteration == 0:
             return False
@@ -119,7 +145,9 @@ class Callback:
             return True
         return False
 
-    def __call__(self, when: str, trainer: Any, config: TrainConfig, writer: BaseWriter) -> Any:
+    def __call__(
+        self, when: TrainingStage, trainer: Any, config: TrainConfig, writer: BaseWriter
+    ) -> Any:
         """Executes the callback if conditions are met.
 
         Args:
@@ -171,13 +199,13 @@ class PrintMetrics(Callback):
     from qadence.ml_tools.callbacks import PrintMetrics
 
     # Create an instance of the PrintMetrics callback
-    print_metrics_callback = PrintMetrics(on = "on_val_batch_end", called_every = 100)
+    print_metrics_callback = PrintMetrics(on = "val_batch_end", called_every = 100)
 
     config = TrainConfig(
         max_iter=10000,
         # Print metrics every 1000 training epochs
         print_every=1000,
-        # Add the custom callback that runs every 100 on_val_batch_end
+        # Add the custom callback that runs every 100 val_batch_end
         callbacks=[print_metrics_callback]
     )
     ```
@@ -209,13 +237,13 @@ class WriteMetrics(Callback):
     from qadence.ml_tools.callbacks import WriteMetrics
 
     # Create an instance of the WriteMetrics callback
-    write_metrics_callback = WriteMetrics(on = "on_val_batch_end", called_every = 100)
+    write_metrics_callback = WriteMetrics(on = "val_batch_end", called_every = 100)
 
     config = TrainConfig(
         max_iter=10000,
         # Print metrics every 1000 training epochs
         print_every=1000,
-        # Add the custom callback that runs every 100 on_val_batch_end
+        # Add the custom callback that runs every 100 val_batch_end
         callbacks=[write_metrics_callback]
     )
     ```
@@ -247,13 +275,13 @@ class PlotMetrics(Callback):
     from qadence.ml_tools.callbacks import PlotMetrics
 
     # Create an instance of the PlotMetrics callback
-    plot_metrics_callback = PlotMetrics(on = "on_val_batch_end", called_every = 100)
+    plot_metrics_callback = PlotMetrics(on = "val_batch_end", called_every = 100)
 
     config = TrainConfig(
         max_iter=10000,
         # Print metrics every 1000 training epochs
         print_every=1000,
-        # Add the custom callback that runs every 100 on_val_batch_end
+        # Add the custom callback that runs every 100 val_batch_end
         callbacks=[plot_metrics_callback]
     )
     ```
@@ -286,13 +314,13 @@ class LogHyperparameters(Callback):
     from qadence.ml_tools.callbacks import LogHyperparameters
 
     # Create an instance of the LogHyperparameters callback
-    log_hyper_callback = LogHyperparameters(on = "on_val_batch_end", called_every = 100)
+    log_hyper_callback = LogHyperparameters(on = "val_batch_end", called_every = 100)
 
     config = TrainConfig(
         max_iter=10000,
         # Print metrics every 1000 training epochs
         print_every=1000,
-        # Add the custom callback that runs every 100 on_val_batch_end
+        # Add the custom callback that runs every 100 val_batch_end
         callbacks=[log_hyper_callback]
     )
     ```
@@ -324,13 +352,13 @@ class SaveCheckpoint(Callback):
     from qadence.ml_tools.callbacks import SaveCheckpoint
 
     # Create an instance of the SaveCheckpoint callback
-    save_checkpoint_callback = SaveCheckpoint(on = "on_val_batch_end", called_every = 100)
+    save_checkpoint_callback = SaveCheckpoint(on = "val_batch_end", called_every = 100)
 
     config = TrainConfig(
         max_iter=10000,
         # Print metrics every 1000 training epochs
         print_every=1000,
-        # Add the custom callback that runs every 100 on_val_batch_end
+        # Add the custom callback that runs every 100 val_batch_end
         callbacks=[save_checkpoint_callback]
     )
     ```
@@ -418,5 +446,6 @@ class LogModelTracker(Callback):
             writer (BaseWriter ): The writer object for logging.
         """
         model = trainer.model
-        dataloader = trainer.train_dataloader
-        writer.log_model(model, dataloader)
+        writer.log_model(
+            model, trainer.train_dataloader, trainer.val_dataloader, trainer.test_dataloader
+        )

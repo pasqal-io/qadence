@@ -18,8 +18,8 @@ def get_latest_checkpoint_name(folder: Path, type: str, device: str | torch.devi
     file = Path("")
     files = [f for f in os.listdir(folder) if f.endswith(".pt") and type in f]
     if len(files) == 0:
-        pass
         logger.error(f"Directory {folder} does not contain any {type} checkpoints.")
+        pass
     if len(files) == 1:
         file = Path(files[0])
     else:

@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from typing import Callable, Dict, Tuple, Union
+from typing import Callable, Dict, Union
 
 import torch
 import torch.nn as nn
 
 
 def mse_loss(
-    model: nn.Module, batch: Tuple[torch.Tensor, torch.Tensor]
-) -> Tuple[torch.Tensor, Dict[str, float]]:
+    model: nn.Module, batch: tuple[torch.Tensor, torch.Tensor]
+) -> tuple[torch.Tensor, Dict[str, float]]:
     """Computes the Mean Squared Error (MSE) loss between model predictions and targets.
 
     Args:
@@ -32,8 +32,8 @@ def mse_loss(
 
 
 def cross_entropy_loss(
-    model: nn.Module, batch: Tuple[torch.Tensor, torch.Tensor]
-) -> Tuple[torch.Tensor, Dict[str, float]]:
+    model: nn.Module, batch: tuple[torch.Tensor, torch.Tensor]
+) -> tuple[torch.Tensor, Dict[str, float]]:
     """Computes the Cross Entropy loss between model predictions and targets.
 
     Args:

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from logging import getLogger
-from typing import Any, Callable, Iterator, List, Optional, Tuple, Union
+from typing import Any, Callable, Iterator, Optional, Union
 
 import nevergrad as ng
 import torch
@@ -16,6 +16,7 @@ from qadence.ml_tools.data import InfiniteTensorDataset
 from qadence.ml_tools.loss import get_loss_fn
 from qadence.ml_tools.optimize_step import optimize_step
 from qadence.ml_tools.parameters import get_parameters
+from qadence.ml_tools.stages import TrainingStage
 
 from .config_manager import ConfigManager
 
@@ -30,10 +31,10 @@ class BaseTrainer:
     and empty hooks for different training steps.
 
     This class provides:
-    - Context managers for enabling/disabling gradient-based optimization
-    - Properties for managing models, optimizers, and dataloaders
-    - Input validations and a callback decorator generator
-    - Config and callback managers using the provided `TrainConfig`
+        - Context managers for enabling/disabling gradient-based optimization
+        - Properties for managing models, optimizers, and dataloaders
+        - Input validations and a callback decorator generator
+        - Config and callback managers using the provided `TrainConfig`
 
     Attributes:
         use_grad (bool): Indicates if gradients are used for optimization. Default is True.
@@ -110,14 +111,14 @@ class BaseTrainer:
         self.val_dataloader = val_dataloader
         self.test_dataloader = test_dataloader
 
-        self.num_training_batches = 1
-        self.num_validation_batches = 1
-        self.num_test_batches = 1
+        self.num_training_batches: int = 1
+        self.num_validation_batches: int = 1
+        self.num_test_batches: int = 1
 
-        self.loss_fn = get_loss_fn(loss_fn)
-        self.optimize_step = optimize_step
-
-        self.state = "idle"
+        self.loss_fn: Callable = get_loss_fn(loss_fn)
+        self.optimize_step: Callable = optimize_step
+        self.ng_params: ng.p.Array
+        self.training_stage: TrainingStage = TrainingStage("idle")
 
     @property
     def model(self) -> nn.Module:
@@ -328,7 +329,7 @@ class BaseTrainer:
         """
         Decorator for executing callbacks before and after a phase.
 
-        Phase are different hooks during the training. List of valid
+        Phase are different hooks during the training. list of valid
         phases is defined in Callbacks.
         We also update the current state of the training process in
         the callback decorator.
@@ -343,14 +344,14 @@ class BaseTrainer:
 
         def decorator(method: Callable) -> Callable:
             def wrapper(self: Any, *args: Any, **kwargs: Any) -> Any:
-                start_event = f"on_{phase}_start"
-                end_event = f"on_{phase}_end"
+                start_event = f"{phase}_start"
+                end_event = f"{phase}_end"
 
-                self.state = start_event
+                self.training_stage = TrainingStage(start_event)
                 self.callback_manager.run_callbacks(trainer=self)
                 result = method(self, *args, **kwargs)
 
-                self.state = end_event
+                self.training_stage = TrainingStage(end_event)
                 # build_optimize_result method is defined in the trainer.
                 self.build_optimize_result(result)
                 self.callback_manager.run_callbacks(trainer=self)
@@ -411,18 +412,18 @@ class BaseTrainer:
 
     def on_train_end(
         self,
-        train_losses: List[List[Tuple[torch.Tensor, Any]]],
-        val_losses: Optional[List[List[Tuple[torch.Tensor, Any]]]] = None,
+        train_losses: list[list[tuple[torch.Tensor, Any]]],
+        val_losses: Optional[list[list[tuple[torch.Tensor, Any]]]] = None,
     ) -> None:
         """
         Called at the end of training.
 
         Args:
             train_losses: Metrics for the training losses.
-                List    -> List                  -> Tuples
+                list    -> list                  -> tuples
                 Epochs  -> Training Batches      -> (loss, metrics)
             val_losses: Metrics for the validation losses.
-                List    -> List                  -> Tuples
+                list    -> list                  -> tuples
                 Epochs  -> Validation Batches    -> (loss, metrics)
         """
         pass
@@ -431,13 +432,13 @@ class BaseTrainer:
         """Called at the start of each training epoch."""
         pass
 
-    def on_train_epoch_end(self, train_epoch_loss_metrics: List[Tuple[torch.Tensor, Any]]) -> None:
+    def on_train_epoch_end(self, train_epoch_loss_metrics: list[tuple[torch.Tensor, Any]]) -> None:
         """
         Called at the end of each training epoch.
 
         Args:
             train_epoch_loss_metrics: Metrics for the training epoch losses.
-                List                  -> Tuples
+                list                  -> tuples
                 Training Batches      -> (loss, metrics)
         """
         pass
@@ -446,18 +447,18 @@ class BaseTrainer:
         """Called at the start of each validation epoch."""
         pass
 
-    def on_val_epoch_end(self, val_epoch_loss_metrics: List[Tuple[torch.Tensor, Any]]) -> None:
+    def on_val_epoch_end(self, val_epoch_loss_metrics: list[tuple[torch.Tensor, Any]]) -> None:
         """
         Called at the end of each validation epoch.
 
         Args:
             val_epoch_loss_metrics: Metrics for the validation epoch loss.
-                List                    -> Tuples
+                list                    -> tuples
                 Validation Batches      -> (loss, metrics)
         """
         pass
 
-    def on_train_batch_start(self, batch: Tuple[torch.Tensor, ...] | None) -> None:
+    def on_train_batch_start(self, batch: tuple[torch.Tensor, ...] | None) -> None:
         """
         Called at the start of each training batch.
 
@@ -467,17 +468,17 @@ class BaseTrainer:
         """
         pass
 
-    def on_train_batch_end(self, train_batch_loss_metrics: Tuple[torch.Tensor, Any]) -> None:
+    def on_train_batch_end(self, train_batch_loss_metrics: tuple[torch.Tensor, Any]) -> None:
         """
         Called at the end of each training batch.
 
         Args:
             train_batch_loss_metrics: Metrics for the training batch loss.
-                Tuple of (loss, metrics)
+                tuple of (loss, metrics)
         """
         pass
 
-    def on_val_batch_start(self, batch: Tuple[torch.Tensor, ...] | None) -> None:
+    def on_val_batch_start(self, batch: tuple[torch.Tensor, ...] | None) -> None:
         """
         Called at the start of each validation batch.
 
@@ -487,17 +488,17 @@ class BaseTrainer:
         """
         pass
 
-    def on_val_batch_end(self, val_batch_loss_metrics: Tuple[torch.Tensor, Any]) -> None:
+    def on_val_batch_end(self, val_batch_loss_metrics: tuple[torch.Tensor, Any]) -> None:
         """
         Called at the end of each validation batch.
 
         Args:
             val_batch_loss_metrics: Metrics for the validation batch loss.
-                Tuple of (loss, metrics)
+                tuple of (loss, metrics)
         """
         pass
 
-    def on_test_batch_start(self, batch: Tuple[torch.Tensor, ...] | None) -> None:
+    def on_test_batch_start(self, batch: tuple[torch.Tensor, ...] | None) -> None:
         """
         Called at the start of each testing batch.
 
@@ -507,12 +508,12 @@ class BaseTrainer:
         """
         pass
 
-    def on_test_batch_end(self, test_batch_loss_metrics: Tuple[torch.Tensor, Any]) -> None:
+    def on_test_batch_end(self, test_batch_loss_metrics: tuple[torch.Tensor, Any]) -> None:
         """
         Called at the end of each testing batch.
 
         Args:
             test_batch_loss_metrics: Metrics for the testing batch loss.
-                Tuple of (loss, metrics)
+                tuple of (loss, metrics)
         """
         pass

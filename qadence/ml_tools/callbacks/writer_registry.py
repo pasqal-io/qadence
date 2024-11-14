@@ -1,20 +1,23 @@
 from __future__ import annotations
 
 import os
+from abc import ABC, abstractmethod
 from logging import getLogger
 from types import ModuleType
 from typing import Any, Callable, Union
 from uuid import uuid4
 
+import mlflow
 from matplotlib.figure import Figure
 from mlflow.entities import Run
+from mlflow.models import infer_signature
 from torch import Tensor
 from torch.nn import Module
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 from qadence.ml_tools.config import TrainConfig
-from qadence.ml_tools.data import DictDataLoader, OptimizeResult
+from qadence.ml_tools.data import OptimizeResult
 from qadence.types import ExperimentTrackingTool
 
 logger = getLogger(__name__)
@@ -24,7 +27,7 @@ PlottingFunction = Callable[[Module, int], tuple[str, Figure]]
 InputData = Union[Tensor, dict[str, Tensor]]
 
 
-class BaseWriter:
+class BaseWriter(ABC):
     """
     Abstract base class for experiment tracking writers.
 
@@ -42,6 +45,7 @@ class BaseWriter:
 
     run: Run  # [attr-defined]
 
+    @abstractmethod
     def open(self, config: TrainConfig, iteration: int = None) -> Any:
         """
         Opens the writer and prepares it for logging.
@@ -53,10 +57,12 @@ class BaseWriter:
         """
         raise NotImplementedError("Writers must implement an open method.")
 
+    @abstractmethod
     def close(self) -> None:
         """Closes the writer and finalizes logging."""
         raise NotImplementedError("Writers must implement a close method.")
 
+    @abstractmethod
     def write(self, result: OptimizeResult) -> None:
         """
         Logs the results of the current iteration.
@@ -66,6 +72,7 @@ class BaseWriter:
         """
         raise NotImplementedError("Writers must implement a write method.")
 
+    @abstractmethod
     def log_hyperparams(self, hyperparams: dict) -> None:
         """
         Logs hyperparameters.
@@ -75,6 +82,7 @@ class BaseWriter:
         """
         raise NotImplementedError("Writers must implement a log_hyperparams method.")
 
+    @abstractmethod
     def plot(
         self,
         model: Module,
@@ -92,18 +100,22 @@ class BaseWriter:
         """
         raise NotImplementedError("Writers must implement a plot method.")
 
+    @abstractmethod
     def log_model(
         self,
         model: Module,
-        dataloader: Union[None, DataLoader, DictDataLoader],
+        train_dataloader: DataLoader | None = None,
+        val_dataloader: DataLoader | None = None,
+        test_dataloader: DataLoader | None = None,
     ) -> None:
         """
         Logs the model and associated data.
 
         Args:
             model (Module): The model to log.
-            dataloader (DataLoader | DictDataLoader | None): DataLoader to use
-                for model input.
+            train_dataloader (DataLoader | None): DataLoader for training data.
+            val_dataloader (DataLoader | None): DataLoader for validation data.
+            test_dataloader (DataLoader | None): DataLoader for testing data.
         """
         raise NotImplementedError("Writers must implement a log_model method.")
 
@@ -135,7 +147,7 @@ class TensorBoardWriter(BaseWriter):
     def __init__(self) -> None:
         self.writer = None
 
-    def open(self, config: TrainConfig, iteration: int = None) -> SummaryWriter:
+    def open(self, config: TrainConfig, iteration: int | None = None) -> SummaryWriter:
         """
         Opens the TensorBoard writer.
 
@@ -148,10 +160,8 @@ class TensorBoardWriter(BaseWriter):
             SummaryWriter: The initialized TensorBoard writer.
         """
         log_dir = str(config._log_folder)
-        if isinstance(iteration, int):
-            self.writer = SummaryWriter(log_dir=log_dir, purge_step=iteration)
-        else:
-            self.writer = SummaryWriter(log_dir=log_dir)
+        purge_step = iteration if isinstance(iteration, int) else None
+        self.writer = SummaryWriter(log_dir=log_dir, purge_step=purge_step)
         return self.writer
 
     def close(self) -> None:
@@ -172,6 +182,11 @@ class TensorBoardWriter(BaseWriter):
         if self.writer:
             for key, value in result.metrics.items():
                 self.writer.add_scalar(key, value, result.iteration)
+        else:
+            raise RuntimeError(
+                "The writer is not initialized."
+                "Please call the 'writer.open()' method before writing"
+            )
 
     def log_hyperparams(self, hyperparams: dict) -> None:
         """
@@ -182,6 +197,11 @@ class TensorBoardWriter(BaseWriter):
         """
         if self.writer:
             self.writer.add_hparams(hyperparams, {})
+        else:
+            raise RuntimeError(
+                "The writer is not initialized."
+                "Please call the 'writer.open()' method before writing"
+            )
 
     def plot(
         self,
@@ -202,11 +222,18 @@ class TensorBoardWriter(BaseWriter):
             for pf in plotting_functions:
                 descr, fig = pf(model, iteration)
                 self.writer.add_figure(descr, fig, global_step=iteration)
+        else:
+            raise RuntimeError(
+                "The writer is not initialized."
+                "Please call the 'writer.open()' method before writing"
+            )
 
     def log_model(
         self,
         model: Module,
-        dataloader: Union[None, DataLoader, DictDataLoader],
+        train_dataloader: DataLoader | None = None,
+        val_dataloader: DataLoader | None = None,
+        test_dataloader: DataLoader | None = None,
     ) -> None:
         """
         Logs the model.
@@ -215,8 +242,9 @@ class TensorBoardWriter(BaseWriter):
 
         Args:
             model (Module): The model to log.
-            dataloader (DataLoader | DictDataLoader | None): DataLoader to use
-                for model input.
+            train_dataloader (DataLoader | None): DataLoader for training data.
+            val_dataloader (DataLoader | None): DataLoader for validation data.
+            test_dataloader (DataLoader | None): DataLoader for testing data.
         """
         logger.warning("Model logging is not supported by tensorboard. No model will be logged.")
 
@@ -246,8 +274,6 @@ class MLFlowWriter(BaseWriter):
         Returns:
             mlflow: The MLflow module instance.
         """
-        import mlflow
-
         self.mlflow = mlflow
         tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "")
         experiment_name = os.getenv("MLFLOW_EXPERIMENT_NAME", str(uuid4()))
@@ -284,6 +310,11 @@ class MLFlowWriter(BaseWriter):
         #     self.mlflow.log_metric("loss", float(result.loss), step=result.iteration)
         if self.mlflow:
             self.mlflow.log_metrics(result.metrics, step=result.iteration)
+        else:
+            raise RuntimeError(
+                "The writer is not initialized."
+                "Please call the 'writer.open()' method before writing"
+            )
 
     def log_hyperparams(self, hyperparams: dict) -> None:
         """
@@ -294,6 +325,11 @@ class MLFlowWriter(BaseWriter):
         """
         if self.mlflow:
             self.mlflow.log_params(hyperparams)
+        else:
+            raise RuntimeError(
+                "The writer is not initialized."
+                "Please call the 'writer.open()' method before writing"
+            )
 
     def plot(
         self,
@@ -314,42 +350,61 @@ class MLFlowWriter(BaseWriter):
             for pf in plotting_functions:
                 descr, fig = pf(model, iteration)
                 self.mlflow.log_figure(fig, descr)
+        else:
+            raise RuntimeError(
+                "The writer is not initialized."
+                "Please call the 'writer.open()' method before writing"
+            )
+
+    def get_signature_from_dataloader(self, model: Module, dataloader: DataLoader | None) -> Any:
+        """
+        Infers the signature of the model based on the input data from the dataloader.
+
+        Args:
+            model (Module): The model to use for inference.
+            dataloader (DataLoader | None): DataLoader for model inputs.
+
+        Returns:
+            Optional[Any]: The inferred signature, if available.
+        """
+        if dataloader is None:
+            return None
+
+        xs: InputData
+        xs, *_ = next(iter(dataloader))
+        preds = model(xs)
+
+        if isinstance(xs, Tensor):
+            xs = xs.detach().cpu().numpy()
+            preds = preds.detach().cpu().numpy()
+            return infer_signature(xs, preds)
+
+        return None
 
     def log_model(
         self,
         model: Module,
-        dataloader: Union[None, DataLoader, DictDataLoader],
+        train_dataloader: DataLoader | None = None,
+        val_dataloader: DataLoader | None = None,
+        test_dataloader: DataLoader | None = None,
     ) -> None:
         """
-        Logs the model and its signature to MLflow.
+        Logs the model and its signature to MLflow using the provided data loaders.
 
         Args:
             model (Module): The model to log.
-            dataloader (DataLoader | DictDataLoader | None): DataLoader to
-                use for model input.
+            train_dataloader (DataLoader | None): DataLoader for training data.
+            val_dataloader (DataLoader | None): DataLoader for validation data.
+            test_dataloader (DataLoader | None): DataLoader for testing data.
         """
-        if self.mlflow:
-            signature = None
-            if dataloader is not None:
-                xs: InputData
-                xs, *_ = next(iter(dataloader))
-                preds = model(xs)
-                if isinstance(xs, Tensor):
-                    xs = xs.detach().cpu().numpy()
-                    preds = preds.detach().cpu().numpy()
-                elif isinstance(xs, dict):
-                    xs = {key: val.detach().cpu().numpy() for key, val in xs.items()}
-                    preds = {key: val.detach().cpu().numpy() for key, val in preds.items()}
-                try:
-                    from mlflow.models import infer_signature
+        if not self.mlflow:
+            raise RuntimeError(
+                "The writer is not initialized."
+                "Please call the 'writer.open()' method before writing"
+            )
 
-                    signature = infer_signature(xs, preds)
-                except ImportError:
-                    logger.warning(
-                        "MLflow's infer_signature is not available. Please install mlflow."
-                    )
-
-            self.mlflow.pytorch.log_model(model, artifact_path="model", signature=signature)
+        signatures = self.get_signature_from_dataloader(model, train_dataloader)
+        self.mlflow.pytorch.log_model(model, artifact_path="model", signature=signatures)
 
 
 # Writer registry

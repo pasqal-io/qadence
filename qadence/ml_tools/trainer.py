@@ -16,6 +16,7 @@ from torch.utils.data import DataLoader
 from qadence.ml_tools.config import TrainConfig
 from qadence.ml_tools.data import OptimizeResult
 from qadence.ml_tools.optimize_step import optimize_step, update_ng_parameters
+from qadence.ml_tools.stages import TrainingStage
 
 from .train_utils.base_trainer import BaseTrainer
 
@@ -45,12 +46,12 @@ class Trainer(BaseTrainer):
     Inherited Attributes:
         use_grad (bool): Indicates if gradients are used for optimization. Default is True.
 
-        _model (Optional[nn.Module]): The neural network model.
-        _optimizer (Optional[Union[optim.Optimizer, NGOptimizer]]): The optimizer for training.
-        _config (Optional[TrainConfig]): The configuration settings for training.
-        _train_dataloader (Optional[DataLoader]): DataLoader for training data.
-        _val_dataloader (Optional[DataLoader]): DataLoader for validation data.
-        _test_dataloader (Optional[DataLoader]): DataLoader for testing data.
+        model (Optional[nn.Module]): The neural network model.
+        optimizer (Optional[Union[optim.Optimizer, NGOptimizer]]): The optimizer for training.
+        config (Optional[TrainConfig]): The configuration settings for training.
+        train_dataloader (Optional[DataLoader]): DataLoader for training data.
+        val_dataloader (Optional[DataLoader]): DataLoader for validation data.
+        test_dataloader (Optional[DataLoader]): DataLoader for testing data.
 
         optimize_step (Callable): Function for performing an optimization step.
         loss_fn (Callable): loss function to use.
@@ -306,6 +307,7 @@ class Trainer(BaseTrainer):
         self._fit_setup()
         self._train()
         self._fit_end()
+        self.training_stage = TrainingStage("idle")
         return self.model, self.optimizer
 
     def _fit_setup(self) -> None:
@@ -603,7 +605,7 @@ class Trainer(BaseTrainer):
             Tuple[None | torch.Tensor, Dict[str, Any]]: Modified loss and metrics.
         """
         for phase in ["train", "val", "test"]:
-            if phase in self.state:
+            if phase in self.training_stage:
                 loss, metrics = loss_metrics
                 updated_metrics = {f"{phase}_{key}": value for key, value in metrics.items()}
                 updated_metrics[f"{phase}_loss"] = loss
