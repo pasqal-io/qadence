@@ -34,7 +34,7 @@ logger.setLevel(LOG_LEVEL)
 [
     h.setLevel(LOG_LEVEL)  # type: ignore[func-returns-value]
     for h in logger.handlers
-    if h.get_name() == "console"
+    if h.get_name() == "console" or h.get_name() == "richconsole"
 ]
 logger.debug(f"Qadence logger successfully setup with log level {LOG_LEVEL}")
 
