@@ -20,7 +20,7 @@ from qadence.ml_tools.stages import TrainingStage
 
 from .train_utils.base_trainer import BaseTrainer
 
-logger = getLogger(__name__)
+logger = getLogger("ml_tools")
 
 
 class Trainer(BaseTrainer):
@@ -390,9 +390,9 @@ class Trainer(BaseTrainer):
                         val_epoch_loss_metrics = self.run_validation(self.val_dataloader)
                         val_losses.append(val_epoch_loss_metrics)
                         self.on_val_epoch_end(val_epoch_loss_metrics)
-                        self.progress.advance(val_task)
+                        self.progress.update(val_task, advance=1)
 
-                    self.progress.advance(train_task)
+                    self.progress.update(train_task, advance=1)
                 except KeyboardInterrupt:
                     logger.info("Terminating training gracefully after the current iteration.")
                     break
