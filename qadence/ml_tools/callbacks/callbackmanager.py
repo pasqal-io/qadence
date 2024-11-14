@@ -56,7 +56,7 @@ class CallbacksManager:
             config (TrainConfig): The training configuration object.
         """
         self.config = config
-        self.callbacks: list[Callback] = []
+        self.callbacks: list[Callback] = config.callbacks
 
     @classmethod
     def set_use_grad(cls, use_grad: bool) -> None:
