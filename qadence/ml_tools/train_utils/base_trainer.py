@@ -20,7 +20,7 @@ from qadence.ml_tools.stages import TrainingStage
 
 from .config_manager import ConfigManager
 
-logger = getLogger(__name__)
+logger = getLogger("ml_tools")
 
 
 class BaseTrainer:
