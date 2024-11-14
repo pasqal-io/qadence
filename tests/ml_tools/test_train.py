@@ -40,7 +40,7 @@ def get_train_config_validation(
     tmp_path: Path, n_epochs: int, checkpoint_every: int, val_every: int
 ) -> TrainConfig:
     config = TrainConfig(
-        folder=tmp_path,
+        root_folder=tmp_path,
         max_iter=n_epochs,
         print_every=10,
         checkpoint_every=checkpoint_every,
@@ -77,7 +77,9 @@ def test_train_dataloader_default(tmp_path: Path, Basic: torch.nn.Module) -> Non
         return loss, {}
 
     n_epochs = 100
-    config = TrainConfig(folder=tmp_path, max_iter=n_epochs, checkpoint_every=100, write_every=100)
+    config = TrainConfig(
+        root_folder=tmp_path, max_iter=n_epochs, checkpoint_every=100, write_every=100
+    )
     trainer = Trainer(model, optimizer, config, loss_fn, data)
     with trainer.enable_grad_opt():
         trainer.fit()
@@ -103,7 +105,7 @@ def test_train_dataloader_no_data(tmp_path: Path, BasicNoInput: torch.nn.Module)
 
     n_epochs = 50
     config = TrainConfig(
-        folder=tmp_path,
+        root_folder=tmp_path,
         max_iter=n_epochs,
         print_every=5,
         checkpoint_every=100,
@@ -136,7 +138,11 @@ def test_train_val(tmp_path: Path, Basic: torch.nn.Module) -> None:
 
     n_epochs = 100
     config = TrainConfig(
-        folder=tmp_path, max_iter=n_epochs, print_every=10, checkpoint_every=100, write_every=100
+        root_folder=tmp_path,
+        max_iter=n_epochs,
+        print_every=10,
+        checkpoint_every=100,
+        write_every=100,
     )
     trainer = Trainer(
         model, optimizer, config, loss_fn, train_dataloader=train_data, val_dataloader=val_data
@@ -299,9 +305,7 @@ def test_train_val_checkpoint_best_only(tmp_path: Path, Basic: torch.nn.Module) 
         trainer.fit()
     assert next(cnt) == 2 + n_epochs + (n_epochs // val_every) + 1  # 1 for intial round 0 run
 
-    files = [
-        f for f in os.listdir(trainer.config._log_folder) if f.endswith(".pt") and "model" in f
-    ]
+    files = [f for f in os.listdir(trainer.config.log_folder) if f.endswith(".pt") and "model" in f]
     # Ideally it can be ensured if the (only) saved checkpoint is indeed the best,
     # but that is time-consuming since training must be run twice for comparison.
     # The below check may be plausible enough.

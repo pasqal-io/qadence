@@ -43,7 +43,9 @@ def test_train_dataloader_default(tmp_path: Path, Basic: torch.nn.Module) -> Non
         return loss, {}
 
     n_epochs = 500
-    config = TrainConfig(folder=tmp_path, max_iter=n_epochs, checkpoint_every=100, write_every=100)
+    config = TrainConfig(
+        root_folder=tmp_path, max_iter=n_epochs, checkpoint_every=100, write_every=100
+    )
 
     optimizer = ng.optimizers.NGOpt(budget=config.max_iter, parametrization=num_parameters(model))
 

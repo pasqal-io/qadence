@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import shutil
 from itertools import count
@@ -81,6 +82,15 @@ def clean_mlflow_experiment(writer: BaseWriter) -> None:
             shutil.rmtree(os.path.join(mlruns_base_dir, experiment_id))
 
 
+def setup_logger() -> logging.Logger:
+    logger = logging.getLogger("ml_tools")
+    # an additional streamhandler is needed in ml_tools as
+    # caplog does not record richhandler logs.
+    stream_handler = logging.StreamHandler()
+    logger.addHandler(stream_handler)
+    return logger
+
+
 def test_hyperparams_logging_mlflow(BasicQuantumModel: QuantumModel, tmp_path: Path) -> None:
     model = BasicQuantumModel
 
@@ -89,7 +99,7 @@ def test_hyperparams_logging_mlflow(BasicQuantumModel: QuantumModel, tmp_path: P
     hyperparams = {"max_iter": int(10), "lr": 0.1}
 
     config = TrainConfig(
-        folder=tmp_path,
+        root_folder=tmp_path,
         max_iter=hyperparams["max_iter"],  # type: ignore
         checkpoint_every=1,
         write_every=1,
@@ -121,7 +131,7 @@ def test_hyperparams_logging_tensorboard(BasicQuantumModel: QuantumModel, tmp_pa
     hyperparams = {"max_iter": int(10), "lr": 0.1}
 
     config = TrainConfig(
-        folder=tmp_path,
+        root_folder=tmp_path,
         max_iter=hyperparams["max_iter"],  # type: ignore
         checkpoint_every=1,
         write_every=1,
@@ -139,7 +149,7 @@ def test_model_logging_mlflow_basicQM(BasicQuantumModel: QuantumModel, tmp_path:
     loss_fn, optimizer = setup_model(model)
 
     config = TrainConfig(
-        folder=tmp_path,
+        root_folder=tmp_path,
         max_iter=10,  # type: ignore
         checkpoint_every=1,
         write_every=1,
@@ -163,7 +173,7 @@ def test_model_logging_mlflow_basicQNN(BasicQNN: QNN, tmp_path: Path) -> None:
     loss_fn, optimizer = setup_model(model)
 
     config = TrainConfig(
-        folder=tmp_path,
+        root_folder=tmp_path,
         max_iter=10,  # type: ignore
         checkpoint_every=1,
         write_every=1,
@@ -187,7 +197,7 @@ def test_model_logging_mlflow_basicAdjQNN(BasicAdjointQNN: QNN, tmp_path: Path) 
     loss_fn, optimizer = setup_model(model)
 
     config = TrainConfig(
-        folder=tmp_path,
+        root_folder=tmp_path,
         max_iter=10,  # type: ignore
         checkpoint_every=1,
         write_every=1,
@@ -205,26 +215,28 @@ def test_model_logging_mlflow_basicAdjQNN(BasicAdjointQNN: QNN, tmp_path: Path) 
 
 
 def test_model_logging_tensorboard(
-    BasicQuantumModel: QuantumModel, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    BasicQuantumModel: QuantumModel, tmp_path: Path, capsys: pytest.LogCaptureFixture
 ) -> None:
+    setup_logger()
     model = BasicQuantumModel
 
     loss_fn, optimizer = setup_model(model)
 
     config = TrainConfig(
-        folder=tmp_path,
+        root_folder=tmp_path,
         max_iter=10,  # type: ignore
         checkpoint_every=1,
         write_every=1,
         log_model=True,
         tracking_tool=ExperimentTrackingTool.TENSORBOARD,
     )
-
+    
     trainer = Trainer(model, optimizer, config, loss_fn, None)
     with trainer.enable_grad_opt():
         trainer.fit()
 
-    assert "Model logging is not supported by tensorboard. No model will be logged." in caplog.text
+    captured = capsys.readouterr()
+    assert "Model logging is not supported by tensorboard. No model will be logged." in captured.err
 
 
 def test_plotting_mlflow(BasicQNN: QNN, tmp_path: Path) -> None:
@@ -254,7 +266,7 @@ def test_plotting_mlflow(BasicQNN: QNN, tmp_path: Path) -> None:
     max_iter = 10
     plot_every = 2
     config = TrainConfig(
-        folder=tmp_path,
+        root_folder=tmp_path,
         max_iter=max_iter,
         checkpoint_every=1,
         write_every=1,
@@ -302,7 +314,7 @@ def test_plotting_tensorboard(BasicQNN: QNN, tmp_path: Path) -> None:
         return descr, fig
 
     config = TrainConfig(
-        folder=tmp_path,
+        root_folder=tmp_path,
         max_iter=10,
         checkpoint_every=1,
         write_every=1,
