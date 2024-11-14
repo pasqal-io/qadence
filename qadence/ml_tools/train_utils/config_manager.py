@@ -10,7 +10,7 @@ from torch import Tensor
 from qadence.ml_tools.config import TrainConfig
 from qadence.types import ExperimentTrackingTool
 
-logger = getLogger(__name__)
+logger = getLogger("ml_tools")
 
 
 class ConfigManager:
@@ -57,10 +57,9 @@ class ConfigManager:
         - subfolders: list of subfolders inside `folder` that are used for logging
         - log_folder: folder currently used for logging.
         """
-        if self.config.folder:
-            self.config._log_folder = self._create_log_folder(self.config.folder)
+        self.config.log_folder = self._createlog_folder(self.config.root_folder)
 
-    def _create_log_folder(self, root_folder: str | Path) -> Path:
+    def _createlog_folder(self, root_folder: str | Path) -> Path:
         """
         Create a log folder in the specified root folder, adding subfolders if required.
 
@@ -70,10 +69,13 @@ class ConfigManager:
         Returns:
             Path: The path to the created log folder.
         """
+        self._added_new_subfolder: bool = False
         root_folder_path = Path(root_folder)
         root_folder_path.mkdir(parents=True, exist_ok=True)
 
-        if self.config.create_subfolder_per_run:
+        if self.config.log_folder != Path("./qml_logs"):
+            log_folder = Path(self.config.log_folder)
+        elif self.config.create_subfolder_per_run:
             self._add_subfolder()
             log_folder = root_folder_path / self.config._subfolders[-1]
         else:
@@ -95,6 +97,7 @@ class ConfigManager:
         run_id = len(self.config._subfolders) + 1
         subfolder_name = f"{run_id}_{timestamp}_{pid_hex}"
         self.config._subfolders.append(str(subfolder_name))
+        self._added_new_subfolder = True
 
     def _handle_hyperparams(self) -> None:
         """
@@ -156,3 +159,20 @@ class ConfigManager:
             and self.config.tracking_tool == ExperimentTrackingTool.MLFLOW
         ):
             logger.warning("Tracking with mlflow, but no plotting functions provided.")
+        if self.config.plot_every and not self.config.plotting_functions:
+            logger.warning(
+                "`plot_every` is only available when `plotting_functions` are provided."
+                "No plots will be saved."
+            )
+        if self.config.checkpoint_best_only and not self.config.validation_criterion:
+            logger.warning(
+                "`Checkpoint_best_only` is only available when `validation_criterion` is provided."
+                "No checkpoints will be saved."
+            )
+        if self.config.log_folder != Path("./qml_logs") and self.config.root_folder != Path(
+            "./qml_logs"
+        ):
+            logger.info(
+                "Both `log_folder` and `root_folder` provided by the user. "
+                "Only `log_folder will be used."
+            )
