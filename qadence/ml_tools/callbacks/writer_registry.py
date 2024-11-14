@@ -20,7 +20,7 @@ from qadence.ml_tools.config import TrainConfig
 from qadence.ml_tools.data import OptimizeResult
 from qadence.types import ExperimentTrackingTool
 
-logger = getLogger(__name__)
+logger = getLogger("ml_tools")
 
 # Type aliases
 PlottingFunction = Callable[[Module, int], tuple[str, Figure]]
@@ -159,7 +159,7 @@ class TensorBoardWriter(BaseWriter):
         Returns:
             SummaryWriter: The initialized TensorBoard writer.
         """
-        log_dir = str(config._log_folder)
+        log_dir = str(config.log_folder)
         purge_step = iteration if isinstance(iteration, int) else None
         self.writer = SummaryWriter(log_dir=log_dir, purge_step=purge_step)
         return self.writer
