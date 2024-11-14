@@ -69,7 +69,8 @@ For example of how to use the TrainConfig with `Trainer`, please see [Examples i
 | `validation_criterion`   | `Callable`               | `None`                   | Function for validating metric improvement. |
 | `trainstop_criterion`    | `Callable`               | `None`                   | Function to stop training early. |
 | `callbacks`              | `list[Callback]`         | `[]`                     | List of custom callbacks. |
-| `folder`                 | `Path`                   | `"./qml_logs"`           | Root directory for saving logs and checkpoints. |
+| `root_folder`            | `Path`                   | `"./qml_logs"`           | Root directory for saving logs and checkpoints. |
+| `log_folder`             | `Path`                   | `"./qml_logs"`           | Logging directory for saving logs and checkpoints. |
 | `log_model`              | `bool`                   | `False`                  | Enables model logging. |
 | `verbose`                | `bool`                   | `True`                   | Enables detailed logging. |
 | `tracking_tool`          | `ExperimentTrackingTool` | `TENSORBOARD`            | Tool for tracking training metrics. |
@@ -89,7 +90,7 @@ modify_extra_opt_res = {"n_epochs": n_epochs}
 custom_callback = Callback(on="train_end", callback = print_parameters, callback_condition=condition_print, modify_optimize_result=modify_extra_opt_res, called_every=10,)
 
 config = TrainConfig(
-    folder="some_path/",
+    root_folder="some_path/",
     max_iter=n_epochs,
     checkpoint_every=100,
     write_every=100,
@@ -124,14 +125,21 @@ Example:
 config = TrainConfig(print_every=100, write_every=50, checkpoint_every=50)
 ```
 
-- `folder` (**Path**): The root directory for saving checkpoints and logs. All training logs will be saved inside a subfolder in this root directory. (The path to these subfolders can be accessed using config._subfolders, and the current logging folder is config._log_folder)
+The user can provide either the `root_folder` or the `log_folder` for saving checkpoints and logging. When neither are provided, the default `root_folder` "./qml_logs" is used.
+
+- `root_folder` (**Path**): The root directory for saving checkpoints and logs. All training logs will be saved inside a subfolder in this root directory. (The path to these subfolders can be accessed using config._subfolders, and the current logging folder is config.log_folder)
 - `create_subfolder_per_run` (**bool**): Creates a unique subfolder for each training run within the specified folder.
 - `tracking_tool` (**ExperimentTrackingTool**): Specifies the tracking tool to log metrics, e.g., TensorBoard or MLflow.
 - `log_model` (**bool**): Enables logging of a serialized version of the model, which is useful for model versioning. Thi happens at the end of training.
 
+Note
+    -  `log_folder` (**Path**): The log folder used for saving checkpoints and logs. When `log_folder` is provided
+        `root_folder` and `create_subfolder_per_run` will not be used. All the checkpoints will be saved in the
+        `log_folder`
+
 Example:
 ```python
-config = TrainConfig( folder="path/to/checkpoints", tracking_tool=ExperimentTrackingTool.MLFLOW, checkpoint_best_only=True)
+config = TrainConfig(root_folder="path/to/checkpoints", tracking_tool=ExperimentTrackingTool.MLFLOW, checkpoint_best_only=True)
 ```
 
 #### Validation Parameters
