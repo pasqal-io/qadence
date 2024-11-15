@@ -351,27 +351,14 @@ class Backend(BackendInterface):
                     noise=noise,
                 )
                 support = sorted(list(circuit.abstract.register.support))
-                # TODO: There should be a better check for batched density matrices.
-                if dms.size()[0] > 1:
-                    res_list = [
-                        [
-                            obs.native(
-                                dm.squeeze(), param_values, qubit_support=support, noise=noise
-                            )
-                            for dm in dms
-                        ]
-                        for obs in observable
+                res_list = [
+                    [
+                        obs.native(dm.squeeze(), param_values, qubit_support=support, noise=noise)
+                        for dm in dms
                     ]
-                    res = torch.stack(
-                        [torch.transpose(torch.stack(res), 0, -1) for res in res_list]
-                    )
-
-                else:
-                    res_list = [
-                        obs.native(dms, param_values, qubit_support=support) for obs in observable
-                    ]
-                    res = torch.transpose(torch.stack(res_list), 0, 1)
-                res = res if len(res.shape) > 0 else res.reshape(1)
+                    for obs in observable
+                ]
+                res = torch.stack([torch.transpose(torch.stack(res), 0, -1) for res in res_list])
                 return res.real
         elif mitigation is not None:
             logger.warning(

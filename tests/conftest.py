@@ -33,7 +33,7 @@ def batched_noisy_pulser_sim() -> Tensor:
 
 @fixture
 def noisy_pulser_sim() -> Tensor:
-    return tensor([[[0.3043, 0.0000, 0.0000, -0.0038]]])
+    return tensor([[0.3597]])
 
 
 @fixture
