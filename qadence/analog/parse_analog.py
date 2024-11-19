@@ -78,9 +78,8 @@ def _build_rot_ham_evo(
     if block.add_pattern and h_addr is not None:
         h_block += h_addr
     duration = block.parameters.duration
-    h_norm = block.parameters.h_norm
     h_block += h_drive
-    return HamEvo(h_block / h_norm, duration * h_norm / 1000)
+    return HamEvo(h_block, duration / 1000)
 
 
 def _analog_to_hevo(

@@ -79,7 +79,7 @@ def test_pulser_gpsr(block_id: int) -> None:
     pulser_backend = PulserBackend()  # type: ignore[arg-type]
     conv = pulser_backend.convert(circ, obs)
     pulser_circ, pulser_obs, embedding_fn, params = conv
-    diff_backend = DifferentiableBackend(pulser_backend, diff_mode=DiffMode.GPSR, shift_prefac=0.2)
+    diff_backend = DifferentiableBackend(pulser_backend, diff_mode=DiffMode.GPSR, shift_prefac=1.0)
     expval_pulser = diff_backend.expectation(pulser_circ, pulser_obs, embedding_fn(params, values))
     dexpval_x_pulser = torch.autograd.grad(
         expval_pulser, values["x"], torch.ones_like(expval_pulser), create_graph=True
