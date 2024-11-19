@@ -116,6 +116,72 @@ def test_random_basic_qm_save_load_ckpts(BasicQuantumModel: QuantumModel, tmp_pa
     assert not torch.all(torch.isnan(loaded_model.expectation({})))
 
 
+def test_create_subfolders_perrun(BasicQuantumModel: QuantumModel, tmp_path: Path) -> None:
+    data = dataloader()
+    model = BasicQuantumModel
+    cnt = count()
+    criterion = torch.nn.MSELoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
+
+    def loss_fn(model: QuantumModel, data: torch.Tensor) -> tuple[torch.Tensor, dict]:
+        next(cnt)
+        out = model.expectation({}).squeeze(dim=0)
+        loss = criterion(out, torch.rand(1))
+        return loss, {}
+
+    config = TrainConfig(root_folder=tmp_path, max_iter=10, create_subfolder_per_run=False)
+    trainer = Trainer(model, optimizer, config, loss_fn, data)
+    with trainer.enable_grad_opt():
+        trainer.fit()
+    with trainer.enable_grad_opt():
+        trainer.fit()
+
+    assert os.path.isdir(tmp_path)
+    assert len(os.listdir(tmp_path)) == 1
+
+    config = TrainConfig(root_folder=tmp_path, max_iter=10, create_subfolder_per_run=True)
+    trainer = Trainer(model, optimizer, config, loss_fn, data)
+    with trainer.enable_grad_opt():
+        trainer.fit()
+    with trainer.enable_grad_opt():
+        trainer.fit()
+
+    assert os.path.isdir(tmp_path)
+    assert len(os.listdir(tmp_path)) == 3
+
+
+def test_log_folder_logging(BasicQuantumModel: QuantumModel, tmp_path: Path) -> None:
+    data = dataloader()
+    model = BasicQuantumModel
+    cnt = count()
+    criterion = torch.nn.MSELoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
+
+    def loss_fn(model: QuantumModel, data: torch.Tensor) -> tuple[torch.Tensor, dict]:
+        next(cnt)
+        out = model.expectation({}).squeeze(dim=0)
+        loss = criterion(out, torch.rand(1))
+        return loss, {}
+
+    config = TrainConfig(log_folder=tmp_path, max_iter=10, checkpoint_every=1)
+    trainer = Trainer(model, optimizer, config, loss_fn, data)
+    with trainer.enable_grad_opt():
+        trainer.fit()
+
+    assert os.path.isdir(tmp_path)
+
+    ckpts = [
+        trainer.config.log_folder / Path(f"model_QuantumModel_ckpt_00{i}_device_cpu.pt")
+        for i in range(1, 9)
+    ]
+    assert all(os.path.isfile(ckpt) for ckpt in ckpts)
+    for ckpt in ckpts:
+        loaded_model, optimizer, _ = load_checkpoint(
+            tmp_path, BasicQuantumModel, optimizer, ckpt, ""
+        )
+        assert torch.allclose(loaded_model.expectation({}), model.expectation({}))
+
+
 def test_check_ckpts_exist(BasicQuantumModel: QuantumModel, tmp_path: Path) -> None:
     data = dataloader()
     model = BasicQuantumModel
