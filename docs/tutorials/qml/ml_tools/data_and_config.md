@@ -133,9 +133,8 @@ The user can provide either the `root_folder` or the `log_folder` for saving che
 - `log_model` (**bool**): Enables logging of a serialized version of the model, which is useful for model versioning. Thi happens at the end of training.
 
 Note
-    -  `log_folder` (**Path**): The log folder used for saving checkpoints and logs. When `log_folder` is provided
-        `root_folder` and `create_subfolder_per_run` will not be used. All the checkpoints will be saved in the
-        `log_folder`
+    - The user can also provide `log_folder` argument - which will only be used when `create_subfolder_per_run` = False.
+    -  `log_folder` (**Path**): The log folder used for saving checkpoints and logs.
 
 Example:
 ```python

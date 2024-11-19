@@ -165,6 +165,16 @@ class CustomTrainer(Trainer):
         print(f"End of epoch - Loss and Metrics: {train_epoch_loss_metrics}")
 ```
 
+> Notes:
+> Trainer offers inbuilt callbacks as well. Callbacks are mainly for logging/tracking purposes, but the above mentioned hooks are generic. The workflow for every train batch looks like:
+> 1. perform on_train_batch_start callbacks,
+> 2. call the on_train_batch_start hook,
+> 3. do the batch training,
+> 4. call the on_train_batch_end hook, and
+> 5. perform on_train_batch_end callbacks.
+>
+> The use of `on_`*{phase}*`_start` and `on_`*{phase}*`_end` hooks is not specifically to add extra callbacks, but for any other generic pre/post processing. For example, reshaping input batch in case of RNNs/LSTMs, post processing loss and adding an extra metric. They could also be used to add more callbacks (which is not recommended - as we provide methods to add extra callbacks in the TrainCofig)
+
 ---
 
 ## 5. Experiment Tracking with TensorBoard and MLflow
