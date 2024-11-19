@@ -43,7 +43,7 @@ class ConfigManager:
         """
         self._initialize_folder()
         self._handle_hyperparams()
-        self._derive_parameters()
+        self._setup_additional_configuration()
         self._log_warnings()
 
     def _initialize_folder(self) -> None:
@@ -73,15 +73,21 @@ class ConfigManager:
         root_folder_path = Path(root_folder)
         root_folder_path.mkdir(parents=True, exist_ok=True)
 
-        if self.config.log_folder != Path("./qml_logs"):
-            log_folder = Path(self.config.log_folder)
-        elif self.config.create_subfolder_per_run:
+        if self.config.create_subfolder_per_run:
             self._add_subfolder()
             log_folder = root_folder_path / self.config._subfolders[-1]
         else:
-            if len(self.config._subfolders) == 0:
-                self._add_subfolder()
-            log_folder = root_folder_path / self.config._subfolders[-1]
+            if self.config._subfolders:
+                if self.config.log_folder == root_folder_path / self.config._subfolders[-1]:
+                    log_folder = root_folder_path / self.config._subfolders[-1]
+                else:
+                    log_folder = Path(self.config.log_folder)
+            else:
+                if self.config.log_folder == Path("./"):
+                    self._add_subfolder()
+                    log_folder = root_folder_path / self.config._subfolders[-1]
+                else:
+                    log_folder = Path(self.config.log_folder)
 
         log_folder.mkdir(parents=True, exist_ok=True)
         return Path(log_folder)
@@ -134,7 +140,7 @@ class ConfigManager:
             for key in keys_to_remove:
                 self.config.hyperparams.pop(key)
 
-    def _derive_parameters(self) -> None:
+    def _setup_additional_configuration(self) -> None:
         """
         Derive additional parameters for the training configuration.
 
@@ -169,10 +175,10 @@ class ConfigManager:
                 "`Checkpoint_best_only` is only available when `validation_criterion` is provided."
                 "No checkpoints will be saved."
             )
-        if self.config.log_folder != Path("./qml_logs") and self.config.root_folder != Path(
-            "./qml_logs"
-        ):
-            logger.info(
-                "Both `log_folder` and `root_folder` provided by the user. "
-                "Only `log_folder will be used."
+        if self.config.log_folder != Path("./") and self.config.root_folder != Path("./qml_logs"):
+            logger.warning("Both `log_folder` and `root_folder` provided by the user.")
+        if self.config.log_folder != Path("./") and self.config.create_subfolder_per_run:
+            logger.warning(
+                "`log_folder` is invalid when `create_subfolder_per_run` = True."
+                "`root_folder` (default qml_logs) will be used to save logs."
             )
