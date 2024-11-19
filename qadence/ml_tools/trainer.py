@@ -144,8 +144,8 @@ class Trainer(BaseTrainer):
 
     Notes:
 
-    - **set_use_grad()**: This method is used to set the global `use_grad` flag, controlling
-        whether the trainer uses gradient-based optimization.
+    - **set_use_grad()** (*class level*):This method is used to set the global `use_grad` flag,
+        controlling whether the trainer uses gradient-based optimization.
     ```python
     # gradient based
     Trainer.set_use_grad(True)
@@ -153,8 +153,8 @@ class Trainer(BaseTrainer):
     # gradient free
     Trainer.set_use_grad(False)
     ```
-    - **Context Managers**: `enable_grad_opt()` and `disable_grad_opt()` are context managers
-        that temporarily switch the optimization mode for specific code blocks.
+    - **Context Managers** (*instance level*):  `enable_grad_opt()` and `disable_grad_opt()` are
+        context managers that temporarily switch the optimization mode for specific code blocks.
         This is useful when you want to mix gradient-based and gradient-free optimization
         in the same training process.
     ```python

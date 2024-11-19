@@ -112,7 +112,7 @@ class TrainConfig:
     the latest checkpoint if one exists in the specified log folder.
     """
 
-    log_folder: Path = Path("./qml_logs")
+    log_folder: Path = Path("./")
     """The log folder for saving checkpoints and tensorboard logs.
 
     This stores the path where all logs and checkpoints are being saved

@@ -60,7 +60,7 @@ class BaseTrainer:
         state (str): Current state in the training process
     """
 
-    use_grad: bool = True
+    _use_grad: bool = True
 
     def __init__(
         self,
@@ -121,6 +121,46 @@ class BaseTrainer:
         self.optimize_step: Callable = optimize_step
         self.ng_params: ng.p.Array
         self.training_stage: TrainingStage = TrainingStage("idle")
+
+    @property
+    def use_grad(self) -> bool:
+        """
+        Returns the optimization framework for the trainer.
+
+        use_grad = True : Gradient based optimization
+        use_grad = False : Gradient free optimization
+
+        Returns:
+            bool: Bool value for using gradient.
+        """
+        return self._use_grad
+
+    @use_grad.setter
+    def use_grad(self, use_grad: bool) -> None:
+        """
+        Returns the optimization framework for the trainer.
+
+        use_grad = True : Gradient based optimization
+        use_grad = False : Gradient free optimization
+
+        Returns:
+            bool: Bool value for using gradient.
+        """
+        if not isinstance(use_grad, bool):
+            raise TypeError("use_grad must be an True or False.")
+        self._use_grad = use_grad
+
+    @classmethod
+    def set_use_grad(cls, value: bool) -> None:
+        """
+        Sets the global use_grad flag.
+
+        Args:
+            value (bool): Whether to use gradient-based optimization.
+        """
+        if not isinstance(value, bool):
+            raise TypeError("use_grad must be a boolean value.")
+        cls._use_grad = value
 
     @property
     def model(self) -> nn.Module:
@@ -270,18 +310,6 @@ class BaseTrainer:
         self._config = value
         self.callback_manager = CallbacksManager(value)
         self.config_manager = ConfigManager(value)
-
-    @classmethod
-    def set_use_grad(cls, value: bool) -> None:
-        """
-        Sets the global use_grad flag.
-
-        Args:
-            value (bool): Whether to use gradient-based optimization.
-        """
-        if not isinstance(value, bool):
-            raise TypeError("use_grad must be a boolean value.")
-        cls.use_grad = value
 
     def _compute_num_batches(self, dataloader: DataLoader) -> int:
         """
