@@ -248,8 +248,6 @@ def _(
     configuration: Union[BackendConfiguration, dict, None] = None,
 ) -> Tensor:
     observable = observable if isinstance(observable, list) else [observable]
-    if backend == BackendName.PYQTORCH:
-        diff_mode = DiffMode.AD
     bknd = backend_factory(backend, diff_mode=diff_mode, configuration=configuration)
     conv = bknd.convert(circuit, observable)
 
