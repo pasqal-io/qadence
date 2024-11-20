@@ -57,6 +57,8 @@ class CallbacksManager:
             config (TrainConfig): The training configuration object.
         """
         self.config = config
+        tracking_tool = self.config.tracking_tool
+        self.writer = get_writer(tracking_tool)
         self.callbacks: list[Callback] = []
 
     @classmethod
@@ -199,10 +201,7 @@ class CallbacksManager:
                     logger.debug(f"Loaded model and optimizer from {self.config.log_folder}")
 
         # Setup writer
-        tracking_tool = self.config.tracking_tool
-        writer = get_writer(tracking_tool)
-        writer.open(self.config, iteration=trainer.global_step)
-        self.writer = writer
+        self.writer.open(self.config, iteration=trainer.global_step)
 
     def end_training(self, trainer: Any) -> None:
         """
