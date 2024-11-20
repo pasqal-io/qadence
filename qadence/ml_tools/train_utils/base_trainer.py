@@ -109,13 +109,13 @@ class BaseTrainer:
         self.optimizer = optimizer
         self.max_batches = max_batches
 
+        self.num_training_batches: int
+        self.num_validation_batches: int
+        self.num_test_batches: int
+
         self.train_dataloader = train_dataloader
         self.val_dataloader = val_dataloader
         self.test_dataloader = test_dataloader
-
-        self.num_training_batches: int = 1
-        self.num_validation_batches: int = 1
-        self.num_test_batches: int = 1
 
         self.loss_fn: Callable = get_loss_fn(loss_fn)
         self.optimize_step: Callable = optimize_step
@@ -320,16 +320,15 @@ class BaseTrainer:
                 the number of batches.
         """
         if dataloader is None:
-            return 0
+            return 1
         dataset = dataloader.dataset
         if isinstance(dataset, InfiniteTensorDataset):
             return 1
         else:
-            return (
-                min(self.max_batches, len(dataloader))
-                if self.max_batches is not None
-                else len(dataloader)
+            n_batches = int(
+                (dataset.tensors[0].size(0) + dataloader.batch_size - 1) // dataloader.batch_size
             )
+            return min(self.max_batches, n_batches) if self.max_batches is not None else n_batches
 
     def _validate_dataloader(self, dataloader: DataLoader, dataloader_type: str) -> None:
         """
