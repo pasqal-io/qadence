@@ -155,12 +155,16 @@ config = TrainConfig(val_every=200, checkpoint_best_only = True, validation_crit
 
 If it is desired to only the save the "best" checkpoint, the following must be ensured:
 
-(a) `checkpoint_best_only = True` is used while creating the configuration through `TrainConfig`,
-(b) `val_every` is set to a valid integer value (for example, `val_every = 10`) which controls the no. of iterations after which the validation data should be used to evaluate the model during training, which can also be set through `TrainConfig`,
-(c) a validation criterion is provided through the `validation_criterion`, set through `TrainConfig` to quantify the definition of "best", and
-(d) the validation dataloader passed to `Trainer` is of type `DataLoader`. In this case, it is expected that a validation dataloader is also provided along with the train dataloader since the validation data will be used to decide the "best" checkpoint.
+    (a) `checkpoint_best_only = True` is used while creating the configuration through `TrainConfig`,
+    (b) `val_every` is set to a valid integer value (for example, `val_every = 10`) which controls the no. of iterations after which the validation data should be used to evaluate the model during training, which can also be set through `TrainConfig`,
+    (c) a validation criterion is provided through the `validation_criterion`, set through `TrainConfig` to quantify the definition of "best", and
+    (d) the validation dataloader passed to `Trainer` is of type `DataLoader`. In this case, it is expected that a validation dataloader is also provided along with the train dataloader since the validation data will be used to decide the "best" checkpoint.
 
-The criterion used to decide the "best" checkpoint can be customized by `validation_criterion`, which should be a function that can take any number of arguments and return a boolean value (True or False) indicating whether some validation metric is satisfied or not. Typical choices are to return True when the validation loss (accuracy) has decreased (increased) compared to smallest (largest) value from previous iterations at which a validation check was performed.
+The criterion used to decide the "best" checkpoint can be customized by `validation_criterion`, which should be a function that can take val_loss, best_loss, and val_epsilon arguments and return a boolean value (True or False) indicating whether some validation metric is satisfied or not. An example of a simple `validation_criterion` is:
+```python
+def validation_criterion(val_loss: float, best_val_loss: float, val_epsilon: float) -> bool:
+    return val_loss < (best_val_loss - val_epsilon)
+```
 
 #### Custom Callbacks
 

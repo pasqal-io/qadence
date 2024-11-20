@@ -149,6 +149,10 @@ class TrainConfig:
     validation_criterion: Callable | None = None
     """A function to evaluate whether a given validation metric meets a desired condition.
 
+    The validation_criterion has the following format:
+    def validation_criterion(val_loss: float, best_val_loss: float, val_epsilon: float) -> bool:
+        # process
+
     If `None`, no custom validation criterion is applied.
     """
 
