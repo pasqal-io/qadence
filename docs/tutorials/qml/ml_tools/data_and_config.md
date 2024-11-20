@@ -43,6 +43,9 @@ data = next(iter(ddl))
 print(f"{data = }")
 ```
 
+Note:
+    In case of `infinite`=True, the dataloader iterator will provide a random sample from the dataset.
+
 ## 2. Training Configuration
 
 The [`TrainConfig`][qadence.ml_tools.config.TrainConfig] class provides a comprehensive configuration setup for training quantam machine learning models in Qadence. This configuration includes settings for batch size, logging, check-pointing, validation, and additional custom callbacks that control the training process's granularity and flexibility.

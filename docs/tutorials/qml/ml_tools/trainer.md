@@ -31,6 +31,19 @@ config = TrainConfig(max_iter=100, print_every=10)
 trainer = Trainer(model=model, optimizer=optimizer, config=config)
 ```
 
+> Notes:
+> `qadence` versions prior to 1.9.0 provided `train_with_grad` and `train_no_grad` functions, which are being replaced with `Trainer`. The user can transition as following.
+> ```python
+> from qadence.ml_tools import train_with_grad
+> train_with_grad(model=model, optimizer=optimizer, config=config, data = data)
+> ```
+> to
+> ```python
+> from qadence.ml_tools import Trainer
+> trainer = Trainer(model=model, optimizer=optimizer, config=config)
+> trainer.fit(train_dataloader = data)
+> ```
+
 ## 2. Gradient-Based and Gradient-Free Optimization
 
 The `Trainer` supports both gradient-based and gradient-free optimization methods.
