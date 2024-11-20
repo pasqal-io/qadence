@@ -95,10 +95,10 @@ def mitigation_minimization(
     if readout_noise is None:
         raise ValueError("Specify a noise source of type NoiseProtocol.READOUT.")
     n_shots = sum(samples[0].values())
-    noise_matrices = readout_noise.confusion_matrices
-    if readout_noise.confusion_matrices.numel() == 0:
+    noise_matrices = readout_noise.confusion_matrix
+    if noise_matrices.numel() == 0:
         readout_noise.create_noise_matrix(n_shots)
-        noise_matrices = readout_noise.confusion_matrices
+        noise_matrices = readout_noise.confusion_matrix
     optimization_type = mitigation.options.get("optimization_type", ReadOutOptimization.MLE)
 
     corrected_counters: list[Counter] = []
