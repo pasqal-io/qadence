@@ -99,10 +99,16 @@ def test_readout_error_quantum_model(
         protocol=NoiseProtocol.READOUT.CORRELATEDREADOUT,
         options={"confusion_matrix": rand_confusion},
     )
+    # assert difference with noiseless samples
     corr_noisy_samples: list[Counter] = model.sample(noise=corr_noise_protocol, n_shots=n_shots)
     for noiseless, noisy in zip(noiseless_samples, corr_noisy_samples):
         assert sum(noiseless.values()) == sum(noisy.values()) == n_shots
         assert js_divergence(noiseless, noisy) > 0.0
+
+    # assert difference noisy samples
+    for noisy, corr_noisy in zip(noisy_samples, corr_noisy_samples):
+        assert sum(noisy.values()) == sum(corr_noisy.values()) == n_shots
+        assert js_divergence(noisy, corr_noisy) > 0.0
 
 
 @pytest.mark.parametrize("backend", [BackendName.PYQTORCH, BackendName.PULSER])
