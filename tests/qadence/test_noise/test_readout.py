@@ -8,6 +8,7 @@ from sympy import acos
 
 import qadence as qd
 from qadence import BackendName, QuantumModel
+from qadence.backends.pyqtorch.convert_ops import convert_readout_noise
 from qadence.blocks import (
     AbstractBlock,
     add,
@@ -63,9 +64,13 @@ def test_readout_error_quantum_model(
         QuantumCircuit(block.n_qubits, block), backend=backend, diff_mode=diff_mode
     ).sample(n_shots=n_shots)
 
+    noise_protocol: NoiseHandler = NoiseHandler(
+        protocol=NoiseProtocol.READOUT.INDEPENDENTREADOUT,
+        options={"error_probability": error_probability},
+    )
     noisy_samples: list[Counter] = QuantumModel(
         QuantumCircuit(block.n_qubits, block), backend=backend, diff_mode=diff_mode
-    ).sample(noise=NoiseHandler(protocol=NoiseProtocol.READOUT.INDEPENDENTREADOUT), n_shots=n_shots)
+    ).sample(noise=noise_protocol, n_shots=n_shots)
 
     for noiseless, noisy in zip(noiseless_samples, noisy_samples):
         assert sum(noiseless.values()) == sum(noisy.values()) == n_shots
@@ -75,6 +80,28 @@ def test_readout_error_quantum_model(
             torch.ones(1) - error_probability,
             atol=1e-1,
         )
+
+    if backend == BackendName.PYQTORCH:
+        pyqnoise = convert_readout_noise(block.n_qubits, noise_protocol)
+        if pyqnoise is not None:
+            if pyqnoise.confusion_matrix is None:
+                pyqnoise.create_noise_matrix(n_shots)
+            confusion_mat = pyqnoise.confusion_matrix
+            correlated_noise_protocol: NoiseHandler = NoiseHandler(
+                protocol=NoiseProtocol.READOUT.CORRELATEDREADOUT,
+                options={"confusion_matrix": confusion_mat},
+            )
+            corr_noisy_samples: list[Counter] = QuantumModel(
+                QuantumCircuit(block.n_qubits, block), backend=backend, diff_mode=diff_mode
+            ).sample(noise=correlated_noise_protocol, n_shots=n_shots)
+            for noiseless, noisy in zip(noiseless_samples, corr_noisy_samples):
+                assert sum(noiseless.values()) == sum(noisy.values()) == n_shots
+                assert js_divergence(noiseless, noisy) > 0.0
+                assert torch.allclose(
+                    torch.tensor(1.0 - js_divergence(noiseless, noisy)),
+                    torch.ones(1) - error_probability,
+                    atol=1e-1,
+                )
 
 
 @pytest.mark.parametrize("backend", [BackendName.PYQTORCH, BackendName.PULSER])
@@ -166,3 +193,6 @@ def test_append(noise_config: NoiseProtocol | list[NoiseProtocol]) -> None:
         noise.append(NoiseHandler(noise_config, options))
     with pytest.raises(ValueError):
         noise.independentreadout(options)
+
+    with pytest.raises(ValueError):
+        noise.correlated_readout({"confusion_matrix": torch.rand(4, 4)})
