@@ -86,10 +86,10 @@ class NoiseHandler:
             if types.count(NoiseProtocol.ANALOG) > 1:
                 raise ValueError("Multiple Analog Noises are not supported yet.")
 
-        if NoiseProtocol.READOUT in self.protocol:
+        if NoiseProtocol.READOUT in unique_types:
             if (
-                self.protocol[-1] != NoiseProtocol.READOUT
-                or self.protocol.count(NoiseProtocol.READOUT) > 1
+                not isinstance(self.protocol[-1], NoiseProtocol.READOUT)
+                or types.count(NoiseProtocol.READOUT) > 1
             ):
                 raise ValueError("Only define a NoiseHandler with one READOUT as the last Noise.")
 
