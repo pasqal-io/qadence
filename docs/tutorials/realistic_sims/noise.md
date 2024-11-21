@@ -49,7 +49,7 @@ Finally, one can add directly a few pre-defined types using several `NoiseHandle
 from qadence import NoiseHandler
 from qadence.types import NoiseProtocol
 noise_combination = NoiseHandler(protocol=NoiseProtocol.DIGITAL.BITFLIP, options={"error_probability": 0.1})
-noise_combination.digital_depolarizing({"error_probability": 0.1}).readout({"error_probability": 0.1, "seed": 0})
+noise_combination.digital_depolarizing({"error_probability": 0.1}).independent_readout({"error_probability": 0.1, "seed": 0})
 print(noise_combination)
 ```
 

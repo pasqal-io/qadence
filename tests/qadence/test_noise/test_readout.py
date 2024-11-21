@@ -207,7 +207,7 @@ def test_append(
     with pytest.raises(ValueError):
         initial_noise.append(NoiseHandler(noise_config, options))
     with pytest.raises(ValueError):
-        initial_noise.independentreadout(options)
+        initial_noise.independent_readout(options)
 
     with pytest.raises(ValueError):
         initial_noise.correlated_readout({"confusion_matrix": torch.rand(4, 4)})

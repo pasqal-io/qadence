@@ -197,7 +197,7 @@ class NoiseHandler:
         self.append(NoiseHandler(NoiseProtocol.ANALOG.DEPHASING, *args, **kwargs))
         return self
 
-    def independentreadout(self, *args: Any, **kwargs: Any) -> NoiseHandler:
+    def independent_readout(self, *args: Any, **kwargs: Any) -> NoiseHandler:
         self.append(NoiseHandler(NoiseProtocol.READOUT.INDEPENDENTREADOUT, *args, **kwargs))
         return self
 
