@@ -53,7 +53,7 @@ class NoiseHandler:
         self.verify_all_protocols()
 
     def _verify_single_protocol(self, protocol: NoiseEnum, option: dict) -> None:
-        if protocol != NoiseProtocol.READOUT:
+        if not isinstance(protocol, NoiseProtocol.READOUT):  # type: ignore[arg-type]
             name_mandatory_option = (
                 "noise_probs" if isinstance(protocol, NoiseProtocol.ANALOG) else "error_probability"
             )
