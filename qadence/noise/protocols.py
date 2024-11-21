@@ -149,17 +149,12 @@ class NoiseHandler:
         return list(filter(lambda el: not el.startswith("__"), dir(cls)))
 
     def filter(self, protocol: NoiseEnum | str) -> NoiseHandler | None:
+        protocol_matches: list = list()
         if protocol == NoiseProtocol.READOUT:
-
-            def filter_fn(p: NoiseEnum | str) -> bool:
-                return p == protocol
-
+            protocol_matches = [p == protocol for p in self.protocol]
         else:
+            protocol_matches = [isinstance(p, protocol) for p in self.protocol]  # type: ignore[arg-type]
 
-            def filter_fn(p: NoiseEnum | str) -> bool:
-                return isinstance(p, protocol)  # type: ignore[arg-type]
-
-        protocol_matches: list = list(filter(filter_fn, self.protocol))
         # if we have at least a match
         if True in protocol_matches:
             return NoiseHandler(
