@@ -103,7 +103,7 @@ For `NoiseProtocol.READOUT.INDEPENDENTREADOUT`, the `option` dictionary argument
 
 - `seed`: defaulted to `None`, for reproducibility purposes
 - `error_probability`: If float, the same probability is applied to every bit. By default, this is 0.1.
-    If a 1D tensor with the number of elements equal to the number of qubits, a different probability can be set for each qubit. If a tensor of shape (n_qubits, 2, 2) is passed, that is a confusion matrix, we extract the error_probability.
+    If a 1D tensor with the number of elements equal to the number of qubits, a different probability can be set for each qubit. If a tensor of shape (n_qubits, 2, 2) is passed, that is a confusion matrix obtained from experiments, we extract the error_probability.
     and do not compute internally the confusion matrix as in the other cases.
 - `noise_distribution`: defaulted to `WhiteNoise.UNIFORM`, for non-uniform noise distributions
 

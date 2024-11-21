@@ -141,6 +141,15 @@ def test_serialization() -> None:
     serialized_noise = NoiseHandler._from_dict(noise._to_dict())
     assert noise == serialized_noise
 
+    rand_confusion = torch.rand(4, 4)
+    rand_confusion = rand_confusion / rand_confusion.sum(dim=1, keepdim=True)
+    noise = NoiseHandler(
+        protocol=NoiseProtocol.READOUT.CORRELATEDREADOUT,
+        options={"seed": 0, "confusion_matrix": rand_confusion},
+    )
+    serialized_noise = NoiseHandler._from_dict(noise._to_dict())
+    assert noise == serialized_noise
+
 
 @pytest.mark.parametrize(
     "noise_config",
