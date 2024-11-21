@@ -65,7 +65,7 @@ def test_readout_error_quantum_model(
 
     noisy_samples: list[Counter] = QuantumModel(
         QuantumCircuit(block.n_qubits, block), backend=backend, diff_mode=diff_mode
-    ).sample(noise=NoiseHandler(protocol=NoiseProtocol.READOUT), n_shots=n_shots)
+    ).sample(noise=NoiseHandler(protocol=NoiseProtocol.READOUT.INDEPENDENTREADOUT), n_shots=n_shots)
 
     for noiseless, noisy in zip(noiseless_samples, noisy_samples):
         assert sum(noiseless.values()) == sum(noisy.values()) == n_shots
@@ -88,7 +88,7 @@ def test_readout_error_backends(backend: BackendName) -> None:
     samples = qd.sample(feature_map, n_shots=1000, values=inputs, backend=backend, noise=None)
     # introduce noise
     options = {"error_probability": error_probability}
-    noise = NoiseHandler(protocol=NoiseProtocol.READOUT, options=options)
+    noise = NoiseHandler(protocol=NoiseProtocol.READOUT.INDEPENDENTREADOUT, options=options)
     noisy_samples = qd.sample(
         feature_map, n_shots=1000, values=inputs, backend=backend, noise=noise
     )
@@ -120,7 +120,7 @@ def test_readout_error_with_measurements(
     observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
 
     model = QuantumModel(circuit=circuit, observable=observable, diff_mode=DiffMode.GPSR)
-    noise = NoiseHandler(protocol=NoiseProtocol.READOUT)
+    noise = NoiseHandler(protocol=NoiseProtocol.READOUT.INDEPENDENTREADOUT)
     measurement = Measurements(protocol=str(measurement_proto), options=options)
 
     noisy = model.expectation(values=inputs, measurement=measurement, noise=noise)
@@ -137,7 +137,7 @@ def test_readout_error_with_measurements(
 
 
 def test_serialization() -> None:
-    noise = NoiseHandler(protocol=NoiseProtocol.READOUT)
+    noise = NoiseHandler(protocol=NoiseProtocol.READOUT.INDEPENDENTREADOUT)
     serialized_noise = NoiseHandler._from_dict(noise._to_dict())
     assert noise == serialized_noise
 
@@ -151,9 +151,9 @@ def test_serialization() -> None:
     ],
 )
 def test_append(noise_config: NoiseProtocol | list[NoiseProtocol]) -> None:
-    noise = NoiseHandler(protocol=NoiseProtocol.READOUT)
+    noise = NoiseHandler(protocol=NoiseProtocol.READOUT.INDEPENDENTREADOUT)
     options = {"error_probability": 0.1}
     with pytest.raises(ValueError):
         noise.append(NoiseHandler(noise_config, options))
     with pytest.raises(ValueError):
-        noise.readout(options)
+        noise.independentreadout(options)

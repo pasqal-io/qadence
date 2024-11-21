@@ -148,12 +148,8 @@ class NoiseHandler:
     def list(cls) -> list:
         return list(filter(lambda el: not el.startswith("__"), dir(cls)))
 
-    def filter(self, protocol: NoiseEnum | str) -> NoiseHandler | None:
-        protocol_matches: list = list()
-        if protocol == NoiseProtocol.READOUT:
-            protocol_matches = [p == protocol for p in self.protocol]
-        else:
-            protocol_matches = [isinstance(p, protocol) for p in self.protocol]  # type: ignore[arg-type]
+    def filter(self, protocol: NoiseEnum) -> NoiseHandler | None:
+        protocol_matches: list = [isinstance(p, protocol) for p in self.protocol]  # type: ignore[arg-type]
 
         # if we have at least a match
         if True in protocol_matches:
@@ -201,6 +197,10 @@ class NoiseHandler:
         self.append(NoiseHandler(NoiseProtocol.ANALOG.DEPHASING, *args, **kwargs))
         return self
 
-    def readout(self, *args: Any, **kwargs: Any) -> NoiseHandler:
-        self.append(NoiseHandler(NoiseProtocol.READOUT, *args, **kwargs))
+    def independentreadout(self, *args: Any, **kwargs: Any) -> NoiseHandler:
+        self.append(NoiseHandler(NoiseProtocol.READOUT.INDEPENDENTREADOUT, *args, **kwargs))
+        return self
+
+    def correlated_readout(self, *args: Any, **kwargs: Any) -> NoiseHandler:
+        self.append(NoiseHandler(NoiseProtocol.READOUT.CORRELATEDREADOUT, *args, **kwargs))
         return self
