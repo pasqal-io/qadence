@@ -36,7 +36,11 @@ def general_psr(spectrum: Tensor, n_eqs: int | None = None, shift_prefac: float 
     sorted_unique_spectral_gaps = torch.tensor(list(sorted_unique_spectral_gaps)[:n_eqs])
 
     if n_eqs == 1:
-        return single_gap_psr
+        return partial(
+            single_gap_psr,
+            spectral_gap=sorted_unique_spectral_gaps,
+            shift=shift_prefac * torch.tensor([PI / 2], dtype=torch.get_default_dtype()),
+        )
     else:
         return partial(
             multi_gap_psr,
@@ -110,7 +114,9 @@ def multi_gap_psr(
     batch_size = max(t.size(0) for t in param_dict.values())
 
     # get shift values
-    shifts = shift_prefac * torch.linspace(PI / 2 - PI / 5, PI / 2 + PI / 5, n_eqs)
+    shifts = shift_prefac * torch.linspace(
+        PI / 2 - PI / 4, PI / 2 + PI / 5, n_eqs
+    )  # breaking the symmetry of sampling range around PI/2
     device = torch.device("cpu")
     try:
         device = [v.device for v in param_dict.values()][0]
