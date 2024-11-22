@@ -40,8 +40,9 @@ def set_noise(
         noise: the NoiseHandler protocol to change to, or `None` to remove the noise.
         target_class: optional class to selectively add noise to.
     """
+    input_block: AbstractBlock
     if isinstance(circuit, ConvertedCircuit):
-        input_block: AbstractBlock = circuit.abstract.block
+        input_block = circuit.abstract.block
     elif isinstance(circuit, QuantumCircuit):
         input_block = circuit.block
     else:
