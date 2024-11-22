@@ -50,7 +50,7 @@ dependencies = [
     "jsonschema",
     "nevergrad",
     "scipy",
-    "pyqtorch==1.5.1",
+    "pyqtorch==1.6.0",
     "pyyaml",
     "matplotlib",
     "Arpeggio==2.0.2",
@@ -64,7 +64,7 @@ allow-ambiguous-features = true
 pulser = [
     "pulser-core==1.1.1",
     "pulser-simulation==1.1.1",
-    "pasqal-cloud==0.12.4",
+    "pasqal-cloud==0.12.5",
 ]
 visualization = [
     "graphviz",
