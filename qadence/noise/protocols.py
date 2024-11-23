@@ -148,16 +148,20 @@ class NoiseHandler:
     def list(cls) -> list:
         return list(filter(lambda el: not el.startswith("__"), dir(cls)))
 
-    def filter(self, protocol: NoiseEnum | str) -> NoiseHandler | None:
-        is_protocol: list = [p == protocol or isinstance(p, protocol) for p in self.protocol]  # type: ignore[arg-type]
-        return (
-            NoiseHandler(
-                list(compress(self.protocol, is_protocol)),
-                list(compress(self.options, is_protocol)),
+    def filter(self, protocol: NoiseEnum) -> NoiseHandler | None:
+        protocol_matches: list = list()
+        if protocol == NoiseProtocol.READOUT:
+            protocol_matches = [p == protocol for p in self.protocol]
+        else:
+            protocol_matches = [isinstance(p, protocol) for p in self.protocol]  # type: ignore[arg-type]
+
+        # if we have at least a match
+        if True in protocol_matches:
+            return NoiseHandler(
+                list(compress(self.protocol, protocol_matches)),
+                list(compress(self.options, protocol_matches)),
             )
-            if len(is_protocol) > 0
-            else None
-        )
+        return None
 
     def bitflip(self, *args: Any, **kwargs: Any) -> NoiseHandler:
         self.append(NoiseHandler(NoiseProtocol.DIGITAL.BITFLIP, *args, **kwargs))

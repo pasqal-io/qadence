@@ -175,8 +175,23 @@ def sympy_to_pyq(expr: sympy.Expr) -> ConcretizedCallable | Tensor:
 
 
 def convert_block(
-    block: AbstractBlock, n_qubits: int = None, config: Configuration = None
+    block: AbstractBlock,
+    n_qubits: int = None,
+    config: Configuration = None,
 ) -> Sequence[Module | Tensor | str | sympy.Expr]:
+    """Convert block to native Pyqtorch representation.
+
+    Args:
+        block (AbstractBlock): Block to convert.
+        n_qubits (int, optional): Number of qubits. Defaults to None.
+        config (Configuration, optional): Backend configuration instance. Defaults to None.
+
+    Raises:
+        NotImplementedError: For non supported blocks.
+
+    Returns:
+        Sequence[Module | Tensor | str | sympy.Expr]: List of native operations.
+    """
     if isinstance(block, (Tensor, str, sympy.Expr)):  # case for hamevo generators
         if isinstance(block, Tensor):
             block = block.permute(1, 2, 0)  # put batch size in the back

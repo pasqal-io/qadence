@@ -93,6 +93,42 @@ def test_run_digital(noisy_config: NoiseProtocol | list[NoiseProtocol]) -> None:
 
 
 @pytest.mark.parametrize(
+    "noisy_config",
+    [
+        NoiseProtocol.DIGITAL.BITFLIP,
+        [NoiseProtocol.DIGITAL.BITFLIP, NoiseProtocol.DIGITAL.PHASEFLIP],
+    ],
+)
+def test_expectation_digital_noise(noisy_config: NoiseProtocol | list[NoiseProtocol]) -> None:
+    block = kron(H(0), Z(1))
+    circuit = QuantumCircuit(2, block)
+    observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
+    noise = NoiseHandler(noisy_config, {"error_probability": 0.1})
+    backend = backend_factory(backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD)
+
+    # Construct a quantum model.
+    model = QuantumModel(circuit=circuit, observable=observable)
+    noiseless_expectation = model.expectation(values={})
+
+    (pyqtorch_circ, pyqtorch_obs, embed, params) = backend.convert(circuit, observable)
+    native_noisy_expectation = backend.expectation(
+        pyqtorch_circ, pyqtorch_obs, embed(params, {}), noise=noise
+    )
+    assert not torch.allclose(noiseless_expectation, native_noisy_expectation)
+
+    noisy_model = QuantumModel(circuit=circuit, observable=observable, noise=noise)
+    noisy_model_expectation = noisy_model.expectation(values={})
+    assert torch.allclose(noisy_model_expectation, native_noisy_expectation)
+
+    (pyqtorch_circ, pyqtorch_obs, embed, params) = backend.convert(circuit, observable)
+    noisy_converted_model_expectation = backend.expectation(
+        pyqtorch_circ, pyqtorch_obs, embed(params, {})
+    )
+
+    assert torch.allclose(noisy_converted_model_expectation, native_noisy_expectation)
+
+
+@pytest.mark.parametrize(
     "noise_config",
     [
         NoiseProtocol.READOUT,
