@@ -16,10 +16,10 @@ t = TimeParameter("t")
 omega_param = FeatureParameter("omega")
 
 # Arbitrarily compose a time-dependent generator
-generator_td = omega_param * (t * X(0) + t**2 * Y(1))
+td_generator = omega_param * (t * X(0) + t**2 * Y(1))
 
 # Create parameterized HamEvo block
-hamevo = HamEvo(generator_td, t)
+hamevo = HamEvo(td_generator, t)
 ```
 
 Note that when using `HamEvo` with a time-dependent generator, the actual time parameter that was used to construct the generator must be passed for the second argument `parameter`.
@@ -48,7 +48,7 @@ Note that Qadence makes no assumption on units. The unit of passed duration valu
 
 # Noisy time-dependent Hamiltonian evolution
 
-For performing noisy time-dependent Hamiltonian evolution, one needs to specify the `noise_operators` corresponding to the jump operators used within the time-dependent Schrodinger equation solver method `SolverType.DP5_ME`:
+To perform noisy time-dependent Hamiltonian evolution, one needs to pass a list of noise operators to the `noise_operators` argument in `HamEvo`. They correspond to the jump operators used within the time-dependent Schrodinger equation solver method `SolverType.DP5_ME`:
 
 ```python exec="on" source="material-block" session="getting_started"
 from qadence import X, Y, HamEvo, TimeParameter, FeatureParameter, run
@@ -64,11 +64,11 @@ t = TimeParameter("t")
 omega_param = FeatureParameter("omega")
 
 # Arbitrarily compose a time-dependent generator
-generator_td = omega_param * (t * X(0) + t**2 * Y(1))
+td_generator = omega_param * (t * X(0) + t**2 * Y(1))
 
 # Create parameterized HamEvo block
 noise_operators = [torch.eye(4, dtype=torch.complex128)]
-hamevo = HamEvo(generator_td, t, noise_operators = noise_operators)
+hamevo = HamEvo(td_generator, t, noise_operators = noise_operators)
 
 values = {"omega": torch.tensor(10.0), "duration": torch.tensor(1.0)}
 

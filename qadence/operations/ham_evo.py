@@ -153,6 +153,14 @@ class HamEvo(TimeEvolutionBlock):
         self.time_param = parameter
         self.generator = generator
         self.duration = duration
+        if len(noise_operators) > 0 and not all(
+            [
+                len(op.size()) == 2 and op.size(0) == op.size(1) == 2 ** len(self.qubit_support)
+                for op in noise_operators
+            ]
+        ):
+            correct_shape = (2 ** len(self.qubit_support),) * 2
+            raise ValueError(f"Noise operators should be square tensors of size {correct_shape}")
         self.noise_operators = noise_operators
 
     @classmethod
