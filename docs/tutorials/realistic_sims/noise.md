@@ -13,7 +13,7 @@ from qadence.types import NoiseProtocol
 
 analog_noise = NoiseHandler(protocol=NoiseProtocol.ANALOG.DEPOLARIZING, options={"noise_probs": 0.1})
 digital_noise = NoiseHandler(protocol=NoiseProtocol.DIGITAL.DEPOLARIZING, options={"error_probability": 0.1})
-readout_noise = NoiseHandler(protocol=NoiseProtocol.READOUT, options={"error_probability": 0.1, "seed": 0})
+readout_noise = NoiseHandler(protocol=NoiseProtocol.READOUT.INDEPENDENT, options={"error_probability": 0.1, "seed": 0})
 ```
 
 One can also define a `NoiseHandler` passing a list of protocols and a list of options (careful with the order):
@@ -36,7 +36,7 @@ from qadence import NoiseHandler
 from qadence.types import NoiseProtocol
 
 depo_noise = NoiseHandler(protocol=NoiseProtocol.DIGITAL.DEPOLARIZING, options={"error_probability": 0.1})
-readout_noise = NoiseHandler(protocol=NoiseProtocol.READOUT, options={"error_probability": 0.1, "seed": 0})
+readout_noise = NoiseHandler(protocol=NoiseProtocol.READOUT.INDEPENDENT, options={"error_probability": 0.1, "seed": 0})
 
 noise_combination = NoiseHandler(protocol=NoiseProtocol.DIGITAL.BITFLIP, options={"error_probability": 0.1})
 noise_combination.append([depo_noise, readout_noise])
@@ -49,7 +49,7 @@ Finally, one can add directly a few pre-defined types using several `NoiseHandle
 from qadence import NoiseHandler
 from qadence.types import NoiseProtocol
 noise_combination = NoiseHandler(protocol=NoiseProtocol.DIGITAL.BITFLIP, options={"error_probability": 0.1})
-noise_combination.digital_depolarizing({"error_probability": 0.1}).readout({"error_probability": 0.1, "seed": 0})
+noise_combination.digital_depolarizing({"error_probability": 0.1}).readout_independent({"error_probability": 0.1, "seed": 0})
 print(noise_combination)
 ```
 
@@ -65,6 +65,10 @@ $$
 T(x|x')=\delta_{xx'}
 $$
 
+Two types of readout protocols are available:
+- `NoiseProtocol.READOUT.INDEPENDENT` where each bit can be corrupted independently of each other.
+- `NoiseProtocol.READOUT.CORRELATED` where we can define of confusion matrix of corruption between each
+possible bitstrings.
 
 Qadence offers to simulate readout errors with the `NoiseHandler` to corrupt the output
 samples of a simulation, through execution via a `QuantumModel`:
@@ -82,7 +86,7 @@ observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
 model = QuantumModel(circuit=circuit, observable=observable)
 
 # Define a noise model to use.
-noise = NoiseHandler(protocol=NoiseProtocol.READOUT)
+noise = NoiseHandler(protocol=NoiseProtocol.READOUT.INDEPENDENT)
 
 # Run noiseless and noisy simulations.
 noiseless_samples = model.sample(n_shots=100)
@@ -93,11 +97,20 @@ print(f"noisy = {noisy_samples}") # markdown-exec: hide
 ```
 
 It is possible to pass options to the noise model. In the previous example, a noise matrix is implicitly computed from a
-uniform distribution. The `option` dictionary argument accepts the following options:
+uniform distribution.
+
+For `NoiseProtocol.READOUT.INDEPENDENT`, the `option` dictionary argument accepts the following options:
 
 - `seed`: defaulted to `None`, for reproducibility purposes
-- `error_probability`: defaulted to 0.1, a bit flip probability
+- `error_probability`: If float, the same probability is applied to every bit. By default, this is 0.1.
+    If a 1D tensor with the number of elements equal to the number of qubits, a different probability can be set for each qubit. If a tensor of shape (n_qubits, 2, 2) is passed, that is a confusion matrix obtained from experiments, we extract the error_probability.
+    and do not compute internally the confusion matrix as in the other cases.
 - `noise_distribution`: defaulted to `WhiteNoise.UNIFORM`, for non-uniform noise distributions
+
+For `NoiseProtocol.READOUT.CORRELATED`, the `option` dictionary argument accepts the following options:
+- `confusion_matrix`: The square matrix representing $T(x|x')$ for each possible bitstring of length `n` qubits. Should be of size (2**n, 2**n).
+- `seed`: defaulted to `None`, for reproducibility purposes
+
 
 Noisy simulations go hand-in-hand with measurement protocols discussed in the previous [section](measurements.md), to assess the impact of noise on expectation values. In this case, both measurement and noise protocols have to be defined appropriately. Please note that a noise protocol without a measurement protocol will be ignored for expectation values computations.
 
@@ -107,7 +120,7 @@ from qadence.measurements import Measurements
 
 # Define a noise model with options.
 options = {"error_probability": 0.01}
-noise = NoiseHandler(protocol=NoiseProtocol.READOUT, options=options)
+noise = NoiseHandler(protocol=NoiseProtocol.READOUT.INDEPENDENT, options=options)
 
 # Define a tomographical measurement protocol with options.
 options = {"n_shots": 10000}

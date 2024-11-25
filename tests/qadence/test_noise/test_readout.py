@@ -32,40 +32,57 @@ from qadence.types import DiffMode, NoiseProtocol
 
 @pytest.mark.flaky(max_runs=5)
 @pytest.mark.parametrize(
-    "error_probability, n_shots, block, backend",
+    "error_probability, n_shots, block",
     [
-        (0.1, 100, kron(X(0), X(1)), BackendName.PYQTORCH),
-        (0.1, 200, kron(Z(0), Z(1), Z(2)) + kron(X(0), Y(1), Z(2)), BackendName.PYQTORCH),
-        (0.01, 1000, add(Z(0), Z(1), Z(2)), BackendName.PYQTORCH),
+        (
+            0.1,
+            100,
+            kron(X(0), X(1)),
+        ),
+        (
+            0.1,
+            200,
+            kron(Z(0), Z(1), Z(2)) + kron(X(0), Y(1), Z(2)),
+        ),
+        (
+            0.01,
+            1000,
+            add(Z(0), Z(1), Z(2)),
+        ),
         (
             0.1,
             2000,
             HamEvo(
                 generator=kron(X(0), X(1)) + kron(Z(0), Z(1)) + kron(X(2), X(3)), parameter=0.005
             ),
-            BackendName.PYQTORCH,
         ),
-        (0.1, 500, add(Z(0), Z(1), kron(X(2), X(3))) + add(X(2), X(3)), BackendName.PYQTORCH),
-        (0.05, 10000, add(kron(Z(0), Z(1)), kron(X(2), X(3))), BackendName.PYQTORCH),
-        (0.2, 1000, hamiltonian_factory(4, detuning=Z), BackendName.PYQTORCH),
-        (0.1, 500, kron(Z(0), Z(1)) + CNOT(0, 1), BackendName.PYQTORCH),
+        (
+            0.1,
+            500,
+            add(Z(0), Z(1), kron(X(2), X(3))) + add(X(2), X(3)),
+        ),
+        (0.05, 10000, add(kron(Z(0), Z(1)), kron(X(2), X(3)))),
+        (0.2, 1000, hamiltonian_factory(4, detuning=Z)),
+        (0.1, 500, kron(Z(0), Z(1)) + CNOT(0, 1)),
     ],
 )
 def test_readout_error_quantum_model(
     error_probability: float,
     n_shots: int,
     block: AbstractBlock,
-    backend: BackendName,
 ) -> None:
-    diff_mode = "ad" if backend == BackendName.PYQTORCH else "gpsr"
-
-    noiseless_samples: list[Counter] = QuantumModel(
+    backend = BackendName.PYQTORCH
+    diff_mode = "ad"
+    model = QuantumModel(
         QuantumCircuit(block.n_qubits, block), backend=backend, diff_mode=diff_mode
-    ).sample(n_shots=n_shots)
+    )
+    noiseless_samples: list[Counter] = model.sample(n_shots=n_shots)
 
-    noisy_samples: list[Counter] = QuantumModel(
-        QuantumCircuit(block.n_qubits, block), backend=backend, diff_mode=diff_mode
-    ).sample(noise=NoiseHandler(protocol=NoiseProtocol.READOUT), n_shots=n_shots)
+    noise_protocol: NoiseHandler = NoiseHandler(
+        protocol=NoiseProtocol.READOUT.INDEPENDENT,
+        options={"error_probability": error_probability},
+    )
+    noisy_samples: list[Counter] = model.sample(noise=noise_protocol, n_shots=n_shots)
 
     for noiseless, noisy in zip(noiseless_samples, noisy_samples):
         assert sum(noiseless.values()) == sum(noisy.values()) == n_shots
@@ -75,6 +92,23 @@ def test_readout_error_quantum_model(
             torch.ones(1) - error_probability,
             atol=1e-1,
         )
+
+    rand_confusion = torch.rand(2**block.n_qubits, 2**block.n_qubits)
+    rand_confusion = rand_confusion / rand_confusion.sum(dim=1, keepdim=True)
+    corr_noise_protocol: NoiseHandler = NoiseHandler(
+        protocol=NoiseProtocol.READOUT.CORRELATED,
+        options={"confusion_matrix": rand_confusion},
+    )
+    # assert difference with noiseless samples
+    corr_noisy_samples: list[Counter] = model.sample(noise=corr_noise_protocol, n_shots=n_shots)
+    for noiseless, noisy in zip(noiseless_samples, corr_noisy_samples):
+        assert sum(noiseless.values()) == sum(noisy.values()) == n_shots
+        assert js_divergence(noiseless, noisy) > 0.0
+
+    # assert difference noisy samples
+    for noisy, corr_noisy in zip(noisy_samples, corr_noisy_samples):
+        assert sum(noisy.values()) == sum(corr_noisy.values()) == n_shots
+        assert js_divergence(noisy, corr_noisy) > 0.0
 
 
 @pytest.mark.parametrize("backend", [BackendName.PYQTORCH, BackendName.PULSER])
@@ -88,7 +122,7 @@ def test_readout_error_backends(backend: BackendName) -> None:
     samples = qd.sample(feature_map, n_shots=1000, values=inputs, backend=backend, noise=None)
     # introduce noise
     options = {"error_probability": error_probability}
-    noise = NoiseHandler(protocol=NoiseProtocol.READOUT, options=options)
+    noise = NoiseHandler(protocol=NoiseProtocol.READOUT.INDEPENDENT, options=options)
     noisy_samples = qd.sample(
         feature_map, n_shots=1000, values=inputs, backend=backend, noise=noise
     )
@@ -120,7 +154,7 @@ def test_readout_error_with_measurements(
     observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
 
     model = QuantumModel(circuit=circuit, observable=observable, diff_mode=DiffMode.GPSR)
-    noise = NoiseHandler(protocol=NoiseProtocol.READOUT)
+    noise = NoiseHandler(protocol=NoiseProtocol.READOUT.INDEPENDENT)
     measurement = Measurements(protocol=str(measurement_proto), options=options)
 
     noisy = model.expectation(values=inputs, measurement=measurement, noise=noise)
@@ -137,7 +171,16 @@ def test_readout_error_with_measurements(
 
 
 def test_serialization() -> None:
-    noise = NoiseHandler(protocol=NoiseProtocol.READOUT)
+    noise = NoiseHandler(protocol=NoiseProtocol.READOUT.INDEPENDENT)
+    serialized_noise = NoiseHandler._from_dict(noise._to_dict())
+    assert noise == serialized_noise
+
+    rand_confusion = torch.rand(4, 4)
+    rand_confusion = rand_confusion / rand_confusion.sum(dim=1, keepdim=True)
+    noise = NoiseHandler(
+        protocol=NoiseProtocol.READOUT.CORRELATED,
+        options={"seed": 0, "confusion_matrix": rand_confusion},
+    )
     serialized_noise = NoiseHandler._from_dict(noise._to_dict())
     assert noise == serialized_noise
 
@@ -150,10 +193,21 @@ def test_serialization() -> None:
         [NoiseProtocol.DIGITAL.BITFLIP, NoiseProtocol.DIGITAL.PHASEFLIP],
     ],
 )
-def test_append(noise_config: NoiseProtocol | list[NoiseProtocol]) -> None:
-    noise = NoiseHandler(protocol=NoiseProtocol.READOUT)
+@pytest.mark.parametrize(
+    "initial_noise",
+    [
+        NoiseHandler(protocol=NoiseProtocol.READOUT.INDEPENDENT),
+        NoiseHandler(protocol=NoiseProtocol.READOUT.CORRELATED, options=torch.rand((4, 4))),
+    ],
+)
+def test_append(
+    initial_noise: NoiseHandler, noise_config: NoiseProtocol | list[NoiseProtocol]
+) -> None:
     options = {"error_probability": 0.1}
     with pytest.raises(ValueError):
-        noise.append(NoiseHandler(noise_config, options))
+        initial_noise.append(NoiseHandler(noise_config, options))
     with pytest.raises(ValueError):
-        noise.readout(options)
+        initial_noise.readout_independent(options)
+
+    with pytest.raises(ValueError):
+        initial_noise.readout_correlated({"confusion_matrix": torch.rand(4, 4)})

@@ -53,7 +53,7 @@ class NoiseHandler:
         self.verify_all_protocols()
 
     def _verify_single_protocol(self, protocol: NoiseEnum, option: dict) -> None:
-        if protocol != NoiseProtocol.READOUT:
+        if not isinstance(protocol, NoiseProtocol.READOUT):  # type: ignore[arg-type]
             name_mandatory_option = (
                 "noise_probs" if isinstance(protocol, NoiseProtocol.ANALOG) else "error_probability"
             )
@@ -86,10 +86,10 @@ class NoiseHandler:
             if types.count(NoiseProtocol.ANALOG) > 1:
                 raise ValueError("Multiple Analog Noises are not supported yet.")
 
-        if NoiseProtocol.READOUT in self.protocol:
+        if NoiseProtocol.READOUT in unique_types:
             if (
-                self.protocol[-1] != NoiseProtocol.READOUT
-                or self.protocol.count(NoiseProtocol.READOUT) > 1
+                not isinstance(self.protocol[-1], NoiseProtocol.READOUT)
+                or types.count(NoiseProtocol.READOUT) > 1
             ):
                 raise ValueError("Only define a NoiseHandler with one READOUT as the last Noise.")
 
@@ -149,11 +149,7 @@ class NoiseHandler:
         return list(filter(lambda el: not el.startswith("__"), dir(cls)))
 
     def filter(self, protocol: NoiseEnum) -> NoiseHandler | None:
-        protocol_matches: list = list()
-        if protocol == NoiseProtocol.READOUT:
-            protocol_matches = [p == protocol for p in self.protocol]
-        else:
-            protocol_matches = [isinstance(p, protocol) for p in self.protocol]  # type: ignore[arg-type]
+        protocol_matches: list = [isinstance(p, protocol) for p in self.protocol]  # type: ignore[arg-type]
 
         # if we have at least a match
         if True in protocol_matches:
@@ -201,6 +197,10 @@ class NoiseHandler:
         self.append(NoiseHandler(NoiseProtocol.ANALOG.DEPHASING, *args, **kwargs))
         return self
 
-    def readout(self, *args: Any, **kwargs: Any) -> NoiseHandler:
-        self.append(NoiseHandler(NoiseProtocol.READOUT, *args, **kwargs))
+    def readout_independent(self, *args: Any, **kwargs: Any) -> NoiseHandler:
+        self.append(NoiseHandler(NoiseProtocol.READOUT.INDEPENDENT, *args, **kwargs))
+        return self
+
+    def readout_correlated(self, *args: Any, **kwargs: Any) -> NoiseHandler:
+        self.append(NoiseHandler(NoiseProtocol.READOUT.CORRELATED, *args, **kwargs))
         return self

@@ -470,16 +470,25 @@ class AnalogNoise(StrEnum):
     DEPHASING = "Dephasing"
 
 
+class ReadoutNoise(StrEnum):
+    """Type of readout protocol."""
+
+    INDEPENDENT = "Independent Readout"
+    """Simple readout protocols where each qubit is corrupted independently."""
+    CORRELATED = "Correlated Readout"
+    """Using a confusion matrix (2**n, 2**n) for corrupting bitstrings values."""
+
+
 @dataclass
 class NoiseProtocol:
     """Type of noise protocol."""
 
     ANALOG = AnalogNoise
     """Noise applied in analog blocks."""
-    READOUT = "Readout"
+    READOUT = ReadoutNoise
     """Noise applied on outputs of quantum programs."""
     DIGITAL = DigitalNoise
     """Noise applied to digital blocks."""
 
 
-NoiseEnum = Union[DigitalNoise, AnalogNoise, str]
+NoiseEnum = Union[DigitalNoise, AnalogNoise, ReadoutNoise]

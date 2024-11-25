@@ -45,7 +45,7 @@ observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
 model = QuantumModel(circuit=circuit, observable=observable)
 
 # Define a noise model to use:
-noise = NoiseHandler(NoiseProtocol.READOUT)
+noise = NoiseHandler(NoiseProtocol.READOUT.INDEPENDENT)
 # Define the mitigation method solving the minimization problem:
 options={"optimization_type": ReadOutOptimization.CONSTRAINED}  # ReadOutOptimization.MLE for the alternative method.
 mitigation = Mitigations(protocol=Mitigations.READOUT, options=options)

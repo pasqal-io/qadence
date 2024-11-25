@@ -373,4 +373,8 @@ def convert_readout_noise(n_qubits: int, noise: NoiseHandler) -> pyq.noise.Reado
     readout_part = noise.filter(NoiseProtocol.READOUT)
     if readout_part is None:
         return None
-    return pyq.noise.ReadoutNoise(n_qubits, **readout_part.options[0])
+
+    if readout_part.protocol[0] == NoiseProtocol.READOUT.INDEPENDENT:
+        return pyq.noise.ReadoutNoise(n_qubits, **readout_part.options[0])
+    else:
+        return pyq.noise.CorrelatedReadoutNoise(**readout_part.options[0])
