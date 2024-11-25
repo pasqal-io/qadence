@@ -253,6 +253,7 @@ def convert_block(
                 cache_length=0,
                 duration=duration,
                 solver=config.ode_solver,
+                steps=config.n_steps_hevo,
                 noise_operators=block.noise_operators,
             )
         ]
