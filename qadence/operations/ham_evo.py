@@ -64,7 +64,6 @@ class HamEvo(TimeEvolutionBlock):
     from qadence import X, HamEvo, PI, add, run
     from qadence import FeatureParameter, TimeParameter
     import torch
-    from pyqtorch.utils import SolverType
 
     n_qubits = 3
 
@@ -87,8 +86,6 @@ class HamEvo(TimeEvolutionBlock):
     # Adding noise operators
     noise_ops = [torch.eye(2**n_qubits, dtype=torch.complex128)]
     hevo = HamEvo(hamiltonian, parameter=t, noise_operators=noise_ops)
-    config = {"ode_solver": SolverType.DP5_ME, "n_steps_hevo": 100}
-    densitymat = run(hevo, values = {"duration": torch.tensor(1.0)})
     ```
     """
 
