@@ -1,4 +1,6 @@
-For use cases when the Hamiltonian of the system is time-dependent, Qadence provides a special parameter `TimePrameter("t")` that denotes the explicit time dependence. Using this time parameter one can define a parameterized block acting as the generator passed to `HamEvo` that encapsulates the required time dependence function.
+For use cases when the Hamiltonian of the system is time-dependent, Qadence provides a special parameter `TimeParameter("t")` that denotes the explicit time dependence. Using this time parameter, one can define a parameterized block acting as the generator passed to `HamEvo` that encapsulates the required time dependence function.
+
+# Noiseless time-dependent Hamiltonian evolution
 
 ```python exec="on" source="material-block" session="getting_started"
 from qadence import X, Y, HamEvo, TimeParameter, FeatureParameter, run
@@ -43,3 +45,36 @@ print(out_state)
 ```
 
 Note that Qadence makes no assumption on units. The unit of passed duration value $\tau$ must be aligned with the units of other parameters in the time-dependent generator so that the integral of generator $\overset{\tau}{\underset{0}{\int}}\mathcal{\hat{H}}(t){\rm d}t$ is dimensionless.
+
+# Noisy time-dependent Hamiltonian evolution
+
+For performing noisy time-dependent Hamiltonian evolution, one needs to specify the `noise_operators` corresponding to the jump operators used within the time-dependent Schrodinger equation solver method `SolverType.DP5_ME`:
+
+```python exec="on" source="material-block" session="getting_started"
+from qadence import X, Y, HamEvo, TimeParameter, FeatureParameter, run
+from pyqtorch.utils import SolverType
+import torch
+
+# Simulation parameters
+ode_solver = SolverType.DP5_ME  # time-dependent Schrodinger equation solver method
+n_steps_hevo = 500  # integration time steps used by solver
+
+# Define block parameters
+t = TimeParameter("t")
+omega_param = FeatureParameter("omega")
+
+# Arbitrarily compose a time-dependent generator
+generator_td = omega_param * (t * X(0) + t**2 * Y(1))
+
+# Create parameterized HamEvo block
+noise_operators = [torch.eye(4, dtype=torch.complex128)]
+hamevo = HamEvo(generator_td, t, noise_operators = noise_operators)
+
+values = {"omega": torch.tensor(10.0), "duration": torch.tensor(1.0)}
+
+config = {"ode_solver": ode_solver, "n_steps_hevo": n_steps_hevo}
+
+out_state = run(hamevo, values = values, configuration = config)
+
+print(out_state)
+```
