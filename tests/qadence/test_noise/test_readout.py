@@ -79,7 +79,7 @@ def test_readout_error_quantum_model(
     noiseless_samples: list[Counter] = model.sample(n_shots=n_shots)
 
     noise_protocol: NoiseHandler = NoiseHandler(
-        protocol=NoiseProtocol.READOUT.INDEPENDENTREADOUT,
+        protocol=NoiseProtocol.READOUT.INDEPENDENT,
         options={"error_probability": error_probability},
     )
     noisy_samples: list[Counter] = model.sample(noise=noise_protocol, n_shots=n_shots)
@@ -96,7 +96,7 @@ def test_readout_error_quantum_model(
     rand_confusion = torch.rand(2**block.n_qubits, 2**block.n_qubits)
     rand_confusion = rand_confusion / rand_confusion.sum(dim=1, keepdim=True)
     corr_noise_protocol: NoiseHandler = NoiseHandler(
-        protocol=NoiseProtocol.READOUT.CORRELATEDREADOUT,
+        protocol=NoiseProtocol.READOUT.CORRELATED,
         options={"confusion_matrix": rand_confusion},
     )
     # assert difference with noiseless samples
@@ -122,7 +122,7 @@ def test_readout_error_backends(backend: BackendName) -> None:
     samples = qd.sample(feature_map, n_shots=1000, values=inputs, backend=backend, noise=None)
     # introduce noise
     options = {"error_probability": error_probability}
-    noise = NoiseHandler(protocol=NoiseProtocol.READOUT.INDEPENDENTREADOUT, options=options)
+    noise = NoiseHandler(protocol=NoiseProtocol.READOUT.INDEPENDENT, options=options)
     noisy_samples = qd.sample(
         feature_map, n_shots=1000, values=inputs, backend=backend, noise=noise
     )
@@ -154,7 +154,7 @@ def test_readout_error_with_measurements(
     observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
 
     model = QuantumModel(circuit=circuit, observable=observable, diff_mode=DiffMode.GPSR)
-    noise = NoiseHandler(protocol=NoiseProtocol.READOUT.INDEPENDENTREADOUT)
+    noise = NoiseHandler(protocol=NoiseProtocol.READOUT.INDEPENDENT)
     measurement = Measurements(protocol=str(measurement_proto), options=options)
 
     noisy = model.expectation(values=inputs, measurement=measurement, noise=noise)
@@ -171,14 +171,14 @@ def test_readout_error_with_measurements(
 
 
 def test_serialization() -> None:
-    noise = NoiseHandler(protocol=NoiseProtocol.READOUT.INDEPENDENTREADOUT)
+    noise = NoiseHandler(protocol=NoiseProtocol.READOUT.INDEPENDENT)
     serialized_noise = NoiseHandler._from_dict(noise._to_dict())
     assert noise == serialized_noise
 
     rand_confusion = torch.rand(4, 4)
     rand_confusion = rand_confusion / rand_confusion.sum(dim=1, keepdim=True)
     noise = NoiseHandler(
-        protocol=NoiseProtocol.READOUT.CORRELATEDREADOUT,
+        protocol=NoiseProtocol.READOUT.CORRELATED,
         options={"seed": 0, "confusion_matrix": rand_confusion},
     )
     serialized_noise = NoiseHandler._from_dict(noise._to_dict())
@@ -196,8 +196,8 @@ def test_serialization() -> None:
 @pytest.mark.parametrize(
     "initial_noise",
     [
-        NoiseHandler(protocol=NoiseProtocol.READOUT.INDEPENDENTREADOUT),
-        NoiseHandler(protocol=NoiseProtocol.READOUT.CORRELATEDREADOUT, options=torch.rand((4, 4))),
+        NoiseHandler(protocol=NoiseProtocol.READOUT.INDEPENDENT),
+        NoiseHandler(protocol=NoiseProtocol.READOUT.CORRELATED, options=torch.rand((4, 4))),
     ],
 )
 def test_append(
@@ -207,7 +207,7 @@ def test_append(
     with pytest.raises(ValueError):
         initial_noise.append(NoiseHandler(noise_config, options))
     with pytest.raises(ValueError):
-        initial_noise.independent_readout(options)
+        initial_noise.readout_independent(options)
 
     with pytest.raises(ValueError):
-        initial_noise.correlated_readout({"confusion_matrix": torch.rand(4, 4)})
+        initial_noise.readout_correlated({"confusion_matrix": torch.rand(4, 4)})

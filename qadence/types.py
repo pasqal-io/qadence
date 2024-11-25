@@ -473,9 +473,9 @@ class AnalogNoise(StrEnum):
 class ReadoutNoise(StrEnum):
     """Type of readout protocol."""
 
-    INDEPENDENTREADOUT = "IndependentReadout"
+    INDEPENDENT = "Independent Readout"
     """Simple readout protocols where each qubit is corrupted independently."""
-    CORRELATEDREADOUT = "CorrelatedReadout"
+    CORRELATED = "Correlated Readout"
     """Using a confusion matrix (2**n, 2**n) for corrupting bitstrings values."""
 
 
