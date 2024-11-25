@@ -49,6 +49,7 @@ def test_time_dependent_generator(
     t_points = np.linspace(0, duration, n_steps)
 
     result = qutip.sesolve(qutip_generator, psi_0, t_points)
+
     state_qutip = torch.tensor(result.states[-1].full().T)
 
     assert torch.allclose(state_qadence0, state_qutip, atol=MIDDLE_ACCEPTANCE)
@@ -94,10 +95,9 @@ def test_noisy_time_dependent_generator(
 
     # simulate with qutip
     t_points = np.linspace(0, duration, n_steps)
-
-    # psi_0 = psi_0 * psi_0.dag()
     list_ops_qutip = [qutip.qeye(4)]
     result = qutip.mesolve(qutip_generator, psi_0, t_points, list_ops_qutip)
-    state_qutip = torch.tensor(result.states[-1].full().T).unsqueeze(0)
+
+    state_qutip = torch.tensor(result.states[-1].full()).unsqueeze(0)
     assert torch.allclose(state_qadence0, state_qutip, atol=MIDDLE_ACCEPTANCE)
     assert torch.allclose(state_qadence1, state_qutip, atol=MIDDLE_ACCEPTANCE)

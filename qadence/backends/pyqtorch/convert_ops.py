@@ -244,7 +244,6 @@ def convert_block(
         else:
             generator = convert_block(block.generator, n_qubits, config)[0]  # type: ignore[arg-type]
         time_param = config.get_param_name(block)[0]
-
         return [
             pyq.HamiltonianEvolution(
                 qubit_support=qubit_support,

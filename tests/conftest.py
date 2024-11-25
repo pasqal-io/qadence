@@ -272,7 +272,7 @@ def qutip_generator(omega: float, feature_param_x: float, feature_param_y: float
             omega
             * (
                 np.sin(feature_param_y * t) * qutip.tensor(qutip.sigmax(), qutip.qeye(2))
-                + feature_param_x * t**2 * qutip.tensor(qutip.qeye(2), qutip.sigmay())
+                + feature_param_x * (t**2) * qutip.tensor(qutip.qeye(2), qutip.sigmay())
             ).full()
         )
 
