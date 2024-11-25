@@ -252,6 +252,8 @@ def convert_block(
                 time=time_param,
                 cache_length=0,
                 duration=duration,
+                solver=config.ode_solver,
+                noise_operators=block.noise_operators,
             )
         ]
 

@@ -356,6 +356,7 @@ class TimeEvolutionBlock(ParametricBlock):
     """
 
     name = "TimeEvolutionBlock"
+    noise_operators: list = list()
 
     @property
     def has_parametrized_generator(self) -> bool:

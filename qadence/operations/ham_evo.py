@@ -55,6 +55,8 @@ class HamEvo(TimeEvolutionBlock):
         duration: (optional) duration of the evolution in case of time-dependent
             generator. By default, a FeatureParameter with tag "duration" will
             be initialized, and the value will then be required in the values dict.
+        noise_operators: (optional) the list of jump operators to use when using
+            a shrodinger solver, allowing to perform noisy simulations.
 
     Examples:
 
@@ -92,6 +94,7 @@ class HamEvo(TimeEvolutionBlock):
         parameter: TParameter,
         qubit_support: tuple[int, ...] = None,
         duration: TParameter | None = None,
+        noise_operators: list[Tensor] = list(),
     ):
         params = {}
         if qubit_support is None and not isinstance(generator, AbstractBlock):
@@ -146,6 +149,7 @@ class HamEvo(TimeEvolutionBlock):
         self.time_param = parameter
         self.generator = generator
         self.duration = duration
+        self.noise_operators = noise_operators
 
     @classmethod
     def num_parameters(cls) -> int:
