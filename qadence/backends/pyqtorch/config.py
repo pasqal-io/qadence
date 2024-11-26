@@ -4,8 +4,6 @@ from dataclasses import dataclass
 from logging import getLogger
 from typing import Callable
 
-from pyqtorch.utils import SolverType
-
 from qadence.analog import add_background_hamiltonian
 from qadence.backend import BackendConfiguration
 from qadence.noise import NoiseHandler
@@ -15,7 +13,7 @@ from qadence.transpile import (
     flatten,
     scale_primitive_blocks_only,
 )
-from qadence.types import AlgoHEvo
+from qadence.types import AlgoHEvo, DropoutMode, SolverType
 
 logger = getLogger(__name__)
 
@@ -67,3 +65,8 @@ class Configuration(BackendConfiguration):
 
     noise: NoiseHandler | None = None
     """NoiseHandler containing readout noise applied in backend."""
+
+    dropout_probability: float = 0.0
+    """Quantum dropout probability (0 means no dropout)."""
+    dropout_mode: DropoutMode = DropoutMode.ROTATIONAL
+    """Type of quantum dropout to perform."""

@@ -124,11 +124,20 @@ class Backend(BackendInterface):
             if self.config.noise
             else None
         )
-        native = pyq.QuantumCircuit(
-            circuit.n_qubits,
-            ops,
-            readout_noise,
-        )
+        if self.config.dropout_probability == 0:
+            native = pyq.QuantumCircuit(
+                circuit.n_qubits,
+                ops,
+                readout_noise,
+            )
+        else:
+            native = pyq.DropoutQuantumCircuit(
+                circuit.n_qubits,
+                ops,
+                readout_noise,
+                dropout_prob=self.config.dropout_probability,
+                dropout_mode=self.config.dropout_mode,
+            )
         return ConvertedCircuit(native=native, abstract=circuit, original=original_circ)
 
     def observable(self, observable: AbstractBlock, n_qubits: int) -> ConvertedObservable:

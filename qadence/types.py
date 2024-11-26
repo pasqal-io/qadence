@@ -11,7 +11,7 @@ from matplotlib.figure import Figure
 from numpy.typing import ArrayLike
 from pyqtorch.noise import NoiseType as DigitalNoise
 from pyqtorch.noise.readout import WhiteNoise
-from pyqtorch.utils import SolverType
+from pyqtorch.utils import DropoutMode, SolverType
 from torch import Tensor, pi
 from torch.nn import Module
 
@@ -55,6 +55,7 @@ __all__ = [
     "SerializationFormat",
     "PI",
     "SolverType",
+    "DropoutMode",
     "NoiseProtocol",
     "WhiteNoise",
 ]  # type: ignore
