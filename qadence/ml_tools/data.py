@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import random
 from dataclasses import dataclass, field
 from functools import singledispatch
-from itertools import cycle
 from typing import Any, Iterator
 
 from nevergrad.optimization.base import Optimizer as NGOptimizer
@@ -72,13 +72,17 @@ class InfiniteTensorDataset(IterableDataset):
         ```
         """
         self.tensors = tensors
+        self.indices = list(range(self.tensors[0].size(0)))
 
     def __iter__(self) -> Iterator:
         if len(set([t.size(0) for t in self.tensors])) != 1:
             raise ValueError("Size of first dimension must be the same for all tensors.")
 
-        for idx in cycle(range(self.tensors[0].size(0))):
-            yield tuple(t[idx] for t in self.tensors)
+        # Shuffle the indices for every full pass
+        random.shuffle(self.indices)
+        while True:
+            for idx in self.indices:
+                yield tuple(t[idx] for t in self.tensors)
 
 
 def to_dataloader(*tensors: Tensor, batch_size: int = 1, infinite: bool = False) -> DataLoader:

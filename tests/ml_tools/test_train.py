@@ -10,7 +10,7 @@ import pytest
 import torch
 from torch.utils.data import DataLoader
 
-from qadence.ml_tools import QNN, DictDataLoader, TrainConfig, to_dataloader, train_with_grad
+from qadence.ml_tools import QNN, DictDataLoader, TrainConfig, Trainer, to_dataloader
 
 torch.manual_seed(42)
 np.random.seed(42)
@@ -22,14 +22,12 @@ def dataloader(batch_size: int = 25) -> DataLoader:
     return to_dataloader(x, y, batch_size=batch_size, infinite=True)
 
 
-def dictdataloader(batch_size: int = 25, val: bool = False) -> DictDataLoader:
+def train_val_dataloaders(batch_size: int = 25) -> tuple:
     x = torch.rand(batch_size, 1)
     y = torch.sin(x)
-    dls = {
-        "train" if val else "y1": to_dataloader(x, y, batch_size=batch_size, infinite=True),
-        "val" if val else "y2": to_dataloader(x, y, batch_size=batch_size, infinite=True),
-    }
-    return DictDataLoader(dls)
+    train_dataloader = to_dataloader(x, y, batch_size=batch_size, infinite=True)
+    val_dataloader = to_dataloader(x, y, batch_size=batch_size, infinite=True)
+    return train_dataloader, val_dataloader
 
 
 def validation_criterion(
@@ -42,7 +40,7 @@ def get_train_config_validation(
     tmp_path: Path, n_epochs: int, checkpoint_every: int, val_every: int
 ) -> TrainConfig:
     config = TrainConfig(
-        folder=tmp_path,
+        root_folder=tmp_path,
         max_iter=n_epochs,
         print_every=10,
         checkpoint_every=checkpoint_every,
@@ -73,14 +71,18 @@ def test_train_dataloader_default(tmp_path: Path, Basic: torch.nn.Module) -> Non
 
     def loss_fn(model: torch.nn.Module, data: torch.Tensor) -> tuple[torch.Tensor, dict]:
         next(cnt)
-        x, y = data[0], data[1]
+        x, y = data
         out = model(x)
         loss = criterion(out, y)
         return loss, {}
 
     n_epochs = 100
-    config = TrainConfig(folder=tmp_path, max_iter=n_epochs, checkpoint_every=100, write_every=100)
-    train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
+    config = TrainConfig(
+        root_folder=tmp_path, max_iter=n_epochs, checkpoint_every=100, write_every=100
+    )
+    trainer = Trainer(model, optimizer, config, loss_fn, data)
+    with trainer.enable_grad_opt():
+        trainer.fit()
     assert next(cnt) == (n_epochs + 1)
 
     x = torch.rand(5, 1)
@@ -103,13 +105,15 @@ def test_train_dataloader_no_data(tmp_path: Path, BasicNoInput: torch.nn.Module)
 
     n_epochs = 50
     config = TrainConfig(
-        folder=tmp_path,
+        root_folder=tmp_path,
         max_iter=n_epochs,
         print_every=5,
         checkpoint_every=100,
         write_every=100,
     )
-    train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
+    trainer = Trainer(model, optimizer, config, loss_fn, data)
+    with trainer.enable_grad_opt():
+        trainer.fit()
     assert next(cnt) == (n_epochs + 1)
 
     out = model()
@@ -117,9 +121,9 @@ def test_train_dataloader_no_data(tmp_path: Path, BasicNoInput: torch.nn.Module)
 
 
 @pytest.mark.flaky(max_runs=10)
-def test_train_dictdataloader(tmp_path: Path, Basic: torch.nn.Module) -> None:
+def test_train_val(tmp_path: Path, Basic: torch.nn.Module) -> None:
     batch_size = 25
-    data = dictdataloader(batch_size=batch_size)
+    train_data, val_data = train_val_dataloaders(batch_size=batch_size)
     model = Basic
 
     cnt = count()
@@ -128,17 +132,23 @@ def test_train_dictdataloader(tmp_path: Path, Basic: torch.nn.Module) -> None:
 
     def loss_fn(model: torch.nn.Module, data: torch.Tensor) -> tuple[torch.Tensor, dict]:
         next(cnt)
-        x1, y1 = data["y1"][0], data["y1"][1]
-        x2, y2 = data["y2"][0], data["y2"][1]
+        x1, y1 = data
         l1 = criterion(model(x1), y1)
-        l2 = criterion(model(x2), y2)
-        return l1 + l2, {}
+        return l1, {}
 
     n_epochs = 100
     config = TrainConfig(
-        folder=tmp_path, max_iter=n_epochs, print_every=10, checkpoint_every=100, write_every=100
+        root_folder=tmp_path,
+        max_iter=n_epochs,
+        print_every=10,
+        checkpoint_every=100,
+        write_every=100,
     )
-    train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
+    trainer = Trainer(
+        model, optimizer, config, loss_fn, train_dataloader=train_data, val_dataloader=val_data
+    )
+    with trainer.enable_grad_opt():
+        trainer.fit()
     assert next(cnt) == (n_epochs + 1)
 
     x = torch.rand(5, 1)
@@ -152,6 +162,9 @@ def test_train_tensor_tuple(Basic: torch.nn.Module, BasicQNN: QNN) -> None:
         batch_size = 25
         x = torch.linspace(0, 1, batch_size).reshape(-1, 1)
         y = torch.sin(x)
+        model = model.to(
+            torch.float32
+        )  # BasicQNN might have float64, and Adam behaves weirdly with mixed precision
 
         cnt = count()
         criterion = torch.nn.MSELoss()
@@ -159,7 +172,7 @@ def test_train_tensor_tuple(Basic: torch.nn.Module, BasicQNN: QNN) -> None:
 
         def loss_fn(model: torch.nn.Module, data: torch.Tensor) -> tuple[torch.Tensor, dict]:
             next(cnt)
-            x, y = data[0], data[1]
+            x, y = data
             out = model(x)
             loss = criterion(out, y)
             return loss, {}
@@ -172,7 +185,9 @@ def test_train_tensor_tuple(Basic: torch.nn.Module, BasicQNN: QNN) -> None:
             batch_size=batch_size,
         )
         data = to_dataloader(x, y, batch_size=batch_size, infinite=True)
-        model, _ = train_with_grad(model, data, optimizer, config, loss_fn=loss_fn, dtype=dtype)
+        trainer = Trainer(model, optimizer, config, loss_fn, data, dtype=dtype)
+        with trainer.enable_grad_opt():
+            model, _ = trainer.fit()
         assert next(cnt) == (n_epochs + 1)
 
         x = torch.rand(5, 1, dtype=torch.float32)
@@ -212,7 +227,7 @@ def test_train_dataloader_val_check_and_non_dict_dataloader(
 
     def loss_fn(model: torch.nn.Module, data: torch.Tensor) -> tuple[torch.Tensor, dict]:
         next(cnt)
-        x1, y1 = data["y1"][0], data["y1"][1]
+        x1, y1 = data
         loss = criterion(model(x1), y1)
         return loss, {}
 
@@ -222,16 +237,18 @@ def test_train_dataloader_val_check_and_non_dict_dataloader(
 
     config = get_train_config_validation(tmp_path, n_epochs, checkpoint_every, val_every)
     with pytest.raises(ValueError) as exc_info:
-        train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
+        trainer = Trainer(model, optimizer, config, loss_fn, data)
+        with trainer.enable_grad_opt():
+            trainer.fit()
     assert (
-        "If `config.val_every` is provided as an integer, dataloader must"
-        "be an instance of `DictDataLoader`" in exc_info.exconly()
+        "If `config.val_every` is provided as an integer > 0, validation_dataloader"
+        "must be an instance of `DataLoader`." in exc_info.exconly()
     )
 
 
 def test_train_dataloader_val_check_incorrect_keys(tmp_path: Path, Basic: torch.nn.Module) -> None:
     batch_size = 25
-    data = dictdataloader(batch_size=batch_size, val=False)  # Passing val=False to raise an error.
+    train_data, _ = train_val_dataloaders(batch_size=batch_size)
     model = Basic
 
     cnt = count()
@@ -240,7 +257,7 @@ def test_train_dataloader_val_check_incorrect_keys(tmp_path: Path, Basic: torch.
 
     def loss_fn(model: torch.nn.Module, data: torch.Tensor) -> tuple[torch.Tensor, dict]:
         next(cnt)
-        x1, y1 = data[0], data[1]
+        x1, y1 = data
         loss = criterion(model(x1), y1)
         return loss, {}
 
@@ -250,17 +267,20 @@ def test_train_dataloader_val_check_incorrect_keys(tmp_path: Path, Basic: torch.
 
     config = get_train_config_validation(tmp_path, n_epochs, checkpoint_every, val_every)
     with pytest.raises(ValueError) as exc_info:
-        train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
+        trainer = Trainer(
+            model, optimizer, config, loss_fn, train_dataloader=train_data, val_dataloader=None
+        )
+        with trainer.enable_grad_opt():
+            trainer.fit()
     assert (
-        "If `config.val_every` is provided as an integer, the dictdataloader"
-        "must have `train` and `val` keys to access the respective dataloaders."
-        in exc_info.exconly()
+        "If `config.val_every` is provided as an integer > 0, validation_dataloader"
+        "must be an instance of `DataLoader`." in exc_info.exconly()
     )
 
 
-def test_train_dictdataloader_checkpoint_best_only(tmp_path: Path, Basic: torch.nn.Module) -> None:
+def test_train_val_checkpoint_best_only(tmp_path: Path, Basic: torch.nn.Module) -> None:
     batch_size = 25
-    data = dictdataloader(batch_size=batch_size, val=True)
+    train_data, val_data = train_val_dataloaders(batch_size=batch_size)
     model = Basic
 
     cnt = count()
@@ -269,7 +289,7 @@ def test_train_dictdataloader_checkpoint_best_only(tmp_path: Path, Basic: torch.
 
     def loss_fn(model: torch.nn.Module, data: torch.Tensor) -> tuple[torch.Tensor, dict]:
         next(cnt)
-        x1, y1 = data[0], data[1]
+        x1, y1 = data
         loss = criterion(model(x1), y1)
         return loss, {}
 
@@ -278,10 +298,14 @@ def test_train_dictdataloader_checkpoint_best_only(tmp_path: Path, Basic: torch.
     val_every = 10
 
     config = get_train_config_validation(tmp_path, n_epochs, checkpoint_every, val_every)
-    train_with_grad(model, data, optimizer, config, loss_fn=loss_fn)
-    assert next(cnt) == 2 + n_epochs + n_epochs // val_every
+    trainer = Trainer(
+        model, optimizer, config, loss_fn, train_dataloader=train_data, val_dataloader=val_data
+    )
+    with trainer.enable_grad_opt():
+        trainer.fit()
+    assert next(cnt) == 2 + n_epochs + (n_epochs // val_every) + 1  # 1 for intial round 0 run
 
-    files = [f for f in os.listdir(tmp_path) if f.endswith(".pt") and "model" in f]
+    files = [f for f in os.listdir(trainer.config.log_folder) if f.endswith(".pt") and "model" in f]
     # Ideally it can be ensured if the (only) saved checkpoint is indeed the best,
     # but that is time-consuming since training must be run twice for comparison.
     # The below check may be plausible enough.

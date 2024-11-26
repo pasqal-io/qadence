@@ -118,7 +118,8 @@ This model can then be trained with the standard Qadence helper functions.
 
 ```python exec="on" source="material-block" result="json" session="custom-model"
 from qadence import run
-from qadence.ml_tools import train_with_grad, TrainConfig
+from qadence.ml_tools import Trainer, TrainConfig
+Trainer.set_use_grad(True)
 
 criterion = torch.nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-1)
@@ -128,9 +129,10 @@ def loss_fn(model: LearnHadamard, _unused) -> tuple[torch.Tensor, dict]:
     return loss, {}
 
 config = TrainConfig(max_iter=2500)
-model, optimizer = train_with_grad(
-    model, None, optimizer, config, loss_fn=loss_fn
+trainer = Trainer(
+    model, optimizer, config, loss_fn
 )
+model, optimizer = trainer.fit()
 
 wf_target = run(target_circuit)
 assert torch.allclose(wf_target, model.wavefunction(), atol=1e-2)

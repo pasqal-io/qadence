@@ -195,7 +195,7 @@ for i in range(n_epochs):
 ```
 
 Qadence offers some convenience functions to implement this training loop with advanced
-logging and metrics track features. You can refer to [this tutorial](ml_tools.md) for more details.
+logging and metrics track features. You can refer to [this tutorial](ml_tools/trainer.md) for more details.
 
 
 ## Results
