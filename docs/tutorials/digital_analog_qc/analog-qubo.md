@@ -56,7 +56,7 @@ ensure the reproducibility of this tutorial.
 import torch
 from qadence import QuantumModel, QuantumCircuit, Register
 from qadence import RydbergDevice, AnalogRX, AnalogRZ, chain
-from qadence.ml_tools import train_gradient_free, TrainConfig, num_parameters
+from qadence.ml_tools import Trainer, TrainConfig, num_parameters
 import nevergrad as ng
 import matplotlib.pyplot as plt
 
@@ -80,12 +80,12 @@ Q = np.array(
     ]
 )
 
-def loss(model: QuantumModel, *args) -> tuple[float, dict]:
+def loss(model: QuantumModel, *args) -> tuple[torch.Tensor, dict]:
     to_arr_fn = lambda bitstring: np.array(list(bitstring), dtype=int)
     cost_fn = lambda arr: arr.T @ Q @ arr
     samples = model.sample({}, n_shots=1000)[0]  # extract samples
     cost_fn = sum(samples[key] * cost_fn(to_arr_fn(key)) for key in samples)
-    return cost_fn / sum(samples.values()), {}  # We return an optional metrics dict
+    return torch.tensor(cost_fn / sum(samples.values())), {}  # We return an optional metrics dict
 ```
 
 The QAOA algorithm needs a variational quantum circuit with optimizable parameters.
@@ -132,11 +132,14 @@ ML facilities to run gradient-free optimizations using the
 [`nevergrad`](https://facebookresearch.github.io/nevergrad/) library.
 
 ```python exec="on" source="material-block" session="qubo"
+Trainer.set_use_grad(False)
+
 config = TrainConfig(max_iter=100)
 optimizer = ng.optimizers.NGOpt(
     budget=config.max_iter, parametrization=num_parameters(model)
 )
-train_gradient_free(model, None, optimizer, config, loss)
+trainer = Trainer(model, optimizer, config, loss)
+trainer.fit()
 
 optimal_counts = model.sample({}, n_shots=1000)[0]
 print(f"optimal_count = {optimal_counts}") # markdown-exec: hide

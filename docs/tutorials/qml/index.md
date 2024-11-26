@@ -6,7 +6,7 @@ differentiation via integration with [PyTorch](https://pytorch.org/) deep learni
 Furthermore, Qadence offers a wide range of utilities for helping building and researching quantum machine learning algorithms, including:
 
 * [a set of constructors](../../content/qml_constructors.md) for circuits commonly used in quantum machine learning such as feature maps and ansatze
-* [a set of tools](ml_tools.md) for training and optimizing quantum neural networks and loading classical data into a QML algorithm
+* [a set of tools](ml_tools/trainer.md) for training and optimizing quantum neural networks and loading classical data into a QML algorithm
 
 ## Some simple examples
 

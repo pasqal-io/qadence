@@ -112,7 +112,7 @@ print(html_string(circuit)) # markdown-exec: hide
 
 ## Training the model
 
-Now that the model is defined we can proceed with the training. the `QNN` class can be used like any other `torch.nn.Module`. Here we write a simple training loop, but you can also look at the [ml tools tutorial](ml_tools.md) to use the convenience training functions that Qadence provides.
+Now that the model is defined we can proceed with the training. the `QNN` class can be used like any other `torch.nn.Module`. Here we write a simple training loop, but you can also look at the [ml tools tutorial](ml_tools/trainer.md) to use the convenience training functions that Qadence provides.
 
 To train the model, we will select a random set of collocation points uniformly distributed within $-1.0< x <1.0$ and compute the loss function for those points.
 

@@ -11,7 +11,7 @@ from nevergrad.optimization.base import Optimizer as NGOptimizer
 from torch.nn import Module
 from torch.optim import Optimizer
 
-logger = getLogger(__name__)
+logger = getLogger("ml_tools")
 
 
 def get_latest_checkpoint_name(folder: Path, type: str, device: str | torch.device = "cpu") -> Path:
@@ -19,6 +19,7 @@ def get_latest_checkpoint_name(folder: Path, type: str, device: str | torch.devi
     files = [f for f in os.listdir(folder) if f.endswith(".pt") and type in f]
     if len(files) == 0:
         logger.error(f"Directory {folder} does not contain any {type} checkpoints.")
+        pass
     if len(files) == 1:
         file = Path(files[0])
     else:
@@ -66,8 +67,7 @@ def write_checkpoint(
     iteration: int | str,
 ) -> None:
     from qadence import QuantumModel
-
-    from .models import QNN
+    from qadence.ml_tools.models import QNN
 
     device = None
     try:
@@ -79,10 +79,8 @@ def write_checkpoint(
         )
         device = str(device).split(":")[0]  # in case of using several CUDA devices
     except Exception as e:
-        msg = (
-            f"Unable to identify in which device the QuantumModel is stored due to {e}."
-            "Setting device to None"
-        )
+        msg = f"""Unable to identify in which device the QuantumModel is stored due to {e}.
+                            Setting device to None"""
         logger.warning(msg)
 
     iteration_substring = f"{iteration:03n}" if isinstance(iteration, int) else iteration
@@ -135,7 +133,9 @@ def load_model(
         model_ckpt_name = get_latest_checkpoint_name(folder, "model", device)
 
     try:
-        iteration, model_dict = torch.load(folder / model_ckpt_name, *args, **kwargs)
+        iteration, model_dict = torch.load(
+            folder / model_ckpt_name, weights_only=False, *args, **kwargs
+        )
         if isinstance(model, (QuantumModel, QNN)):
             model.load_params_from_dict(model_dict)
         elif isinstance(model, Module):
@@ -146,8 +146,8 @@ def load_model(
             model.to(device)
 
     except Exception as e:
-        msg = f"Unable to load state dict due to {e}.\
-               No corresponding pre-trained model found. Returning the un-trained model."
+        msg = f"""Unable to load state dict due to {e}.
+                            No corresponding pre-trained model found."""
         logger.warning(msg)
     return model, iteration
 
@@ -162,7 +162,7 @@ def load_optimizer(
         opt_ckpt_name = get_latest_checkpoint_name(folder, "opt", device)
     if os.path.isfile(folder / opt_ckpt_name):
         if isinstance(optimizer, Optimizer):
-            (_, OptType, optimizer_state) = torch.load(folder / opt_ckpt_name)
+            (_, OptType, optimizer_state) = torch.load(folder / opt_ckpt_name, weights_only=False)
             if isinstance(optimizer, OptType):
                 optimizer.load_state_dict(optimizer_state)
 
