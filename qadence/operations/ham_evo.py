@@ -84,7 +84,7 @@ class HamEvo(TimeEvolutionBlock):
     state = run(hevo, values = {"duration": torch.tensor(1.0)})
 
     # Adding noise operators
-    noise_ops = [torch.eye(2**n_qubits, dtype=torch.complex128)]
+    noise_ops = [X(0)]
     hevo = HamEvo(hamiltonian, parameter=t, noise_operators=noise_ops)
     ```
     """
