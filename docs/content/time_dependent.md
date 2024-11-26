@@ -80,4 +80,4 @@ print(out_state)
 ```
 
 !!! warning "Noise operators definition"
-    Note it is not possible to define `noise_operators` with parametric operators, and `noise_operators` should have the same or a subset of the qubit support of the `HamEvo` instance.
+    Note it is not possible to define `noise_operators` with parametric operators. If you want to do so, we recommend obtaining the tensors via run and set `noise_operators` using `MatrixBlock`. Also, `noise_operators` should have the same or a subset of the qubit support of the `HamEvo` instance.

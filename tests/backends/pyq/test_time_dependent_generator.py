@@ -18,6 +18,7 @@ from qadence import (
     block_to_tensor,
     run,
 )
+from qadence.blocks import MatrixBlock
 from qadence.operations import RZ, I, X
 
 
@@ -65,7 +66,17 @@ def test_time_dependent_generator(
 
 
 @pytest.mark.parametrize("duration", [0.5, 1.0])
-@pytest.mark.parametrize("noise_op", [I(0) * I(1), X(0)])
+@pytest.mark.parametrize(
+    "noise_op",
+    [
+        I(0) * I(1),
+        X(0),
+        MatrixBlock(
+            block_to_tensor(X(0), qubit_support=tuple(range(2)), use_full_support=True),
+            qubit_support=tuple(range(2)),
+        ),
+    ],
+)
 def test_noisy_time_dependent_generator(
     qadence_generator: AbstractBlock,
     qutip_generator: Callable,
