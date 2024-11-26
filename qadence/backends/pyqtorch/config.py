@@ -4,8 +4,6 @@ from dataclasses import dataclass
 from logging import getLogger
 from typing import Callable
 
-from pyqtorch.utils import DropoutMode, SolverType
-
 from qadence.analog import add_background_hamiltonian
 from qadence.backend import BackendConfiguration
 from qadence.noise import NoiseHandler
@@ -15,7 +13,7 @@ from qadence.transpile import (
     flatten,
     scale_primitive_blocks_only,
 )
-from qadence.types import AlgoHEvo
+from qadence.types import AlgoHEvo, DropoutMode, SolverType
 
 logger = getLogger(__name__)
 
