@@ -245,6 +245,16 @@ def convert_block(
             generator = convert_block(block.generator, n_qubits, config)[0]  # type: ignore[arg-type]
         time_param = config.get_param_name(block)[0]
 
+        # convert noise operators here
+        noise_operators: list = [
+            convert_block(noise_block, config=config)[0] for noise_block in block.noise_operators
+        ]
+        if len(noise_operators) > 0:
+            # squeeze batch size for noise operators
+            noise_operators = [
+                pyq_op.tensor(full_support=qubit_support).squeeze(-1) for pyq_op in noise_operators
+            ]
+
         return [
             pyq.HamiltonianEvolution(
                 qubit_support=qubit_support,
@@ -252,6 +262,9 @@ def convert_block(
                 time=time_param,
                 cache_length=0,
                 duration=duration,
+                solver=config.ode_solver,
+                steps=config.n_steps_hevo,
+                noise_operators=noise_operators,
             )
         ]
 

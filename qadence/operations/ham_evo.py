@@ -55,6 +55,8 @@ class HamEvo(TimeEvolutionBlock):
         duration: (optional) duration of the evolution in case of time-dependent
             generator. By default, a FeatureParameter with tag "duration" will
             be initialized, and the value will then be required in the values dict.
+        noise_operators: (optional) the list of jump operators to use when using
+            a shrodinger solver, allowing to perform noisy simulations.
 
     Examples:
 
@@ -80,6 +82,10 @@ class HamEvo(TimeEvolutionBlock):
     hamiltonian = t * add(X(i) for i in range(n_qubits))
     hevo = HamEvo(hamiltonian, parameter=t)
     state = run(hevo, values = {"duration": torch.tensor(1.0)})
+
+    # Adding noise operators
+    noise_ops = [X(0)]
+    hevo = HamEvo(hamiltonian, parameter=t, noise_operators=noise_ops)
     ```
     """
 
@@ -92,6 +98,7 @@ class HamEvo(TimeEvolutionBlock):
         parameter: TParameter,
         qubit_support: tuple[int, ...] = None,
         duration: TParameter | None = None,
+        noise_operators: list[AbstractBlock] = list(),
     ):
         params = {}
         if qubit_support is None and not isinstance(generator, AbstractBlock):
@@ -146,6 +153,21 @@ class HamEvo(TimeEvolutionBlock):
         self.time_param = parameter
         self.generator = generator
         self.duration = duration
+
+        if len(noise_operators) > 0:
+            if not all(
+                [
+                    len(set(op.qubit_support + self.qubit_support) - set(self.qubit_support)) == 0
+                    for op in noise_operators
+                ]
+            ):
+                raise ValueError(
+                    "Noise operators should be defined"
+                    " over the same or a subset of the qubit support"
+                )
+            if True in [op.is_parametric for op in noise_operators]:
+                raise ValueError("Parametric operators are not supported")
+        self.noise_operators = noise_operators
 
     @classmethod
     def num_parameters(cls) -> int:
