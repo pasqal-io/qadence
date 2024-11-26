@@ -67,7 +67,7 @@ omega_param = FeatureParameter("omega")
 td_generator = omega_param * (t * X(0) + t**2 * Y(1))
 
 # Create parameterized HamEvo block
-noise_operators = [X(0) + Y(0)]
+noise_operators = [X(i) for i in td_generator.qubit_support]
 hamevo = HamEvo(td_generator, t, noise_operators = noise_operators)
 
 values = {"omega": torch.tensor(10.0), "duration": torch.tensor(1.0)}
