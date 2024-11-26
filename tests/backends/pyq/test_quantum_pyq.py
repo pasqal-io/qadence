@@ -12,6 +12,7 @@ import torch
 from hypothesis import given, settings
 from pyqtorch import U as pyqU
 from pyqtorch import zero_state as pyq_zero_state
+from pyqtorch.circuit import DropoutQuantumCircuit as PyQDropoutQuantumCircuit
 from pyqtorch.circuit import QuantumCircuit as PyQQuantumCircuit
 from sympy import acos
 from torch import Tensor
@@ -842,3 +843,15 @@ def test_move_to_dtype(
     assert wf.dtype == dtype
     expval = qm.expectation(inputs, state=state)
     assert expval.dtype == torch.float64 if dtype == torch.cdouble else torch.float32
+
+
+@given(st.batched_digital_circuits())
+@settings(deadline=None)
+def test_dropout_qc(circuit_and_inputs: tuple[QuantumCircuit, dict[str, torch.Tensor]]) -> None:
+    circuit, inputs = circuit_and_inputs
+    config = PyqConfig(dropout_probability=0.1)
+    bknd_pyqtorch = backend_factory(
+        backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD, configuration=config
+    )
+    (circ_pyqtorch, _, _, _) = bknd_pyqtorch.convert(circuit)
+    assert isinstance(circ_pyqtorch.native, PyQDropoutQuantumCircuit)

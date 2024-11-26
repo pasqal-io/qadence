@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from logging import getLogger
 from typing import Callable
 
-from pyqtorch.utils import SolverType
+from pyqtorch.utils import DropoutMode, SolverType
 
 from qadence.analog import add_background_hamiltonian
 from qadence.backend import BackendConfiguration
@@ -67,3 +67,8 @@ class Configuration(BackendConfiguration):
 
     noise: NoiseHandler | None = None
     """NoiseHandler containing readout noise applied in backend."""
+
+    dropout_probability: float = 0.0
+    """Quantum dropout probability (0 means no dropout)."""
+    dropout_mode: DropoutMode = DropoutMode.ROTATIONAL
+    """Type of quantum dropout to perform."""
