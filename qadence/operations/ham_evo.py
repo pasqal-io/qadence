@@ -98,7 +98,7 @@ class HamEvo(TimeEvolutionBlock):
         parameter: TParameter,
         qubit_support: tuple[int, ...] = None,
         duration: TParameter | None = None,
-        noise_operators: list[Tensor] = list(),
+        noise_operators: list[AbstractBlock] = list(),
     ):
         params = {}
         if qubit_support is None and not isinstance(generator, AbstractBlock):
@@ -153,14 +153,20 @@ class HamEvo(TimeEvolutionBlock):
         self.time_param = parameter
         self.generator = generator
         self.duration = duration
-        if len(noise_operators) > 0 and not all(
-            [
-                len(op.size()) == 2 and op.size(0) == op.size(1) == 2 ** len(self.qubit_support)
-                for op in noise_operators
-            ]
-        ):
-            correct_shape = (2 ** len(self.qubit_support),) * 2
-            raise ValueError(f"Noise operators should be square tensors of size {correct_shape}")
+
+        if len(noise_operators) > 0:
+            if not all(
+                [
+                    len(set(op.qubit_support + self.qubit_support) - set(self.qubit_support)) == 0
+                    for op in noise_operators
+                ]
+            ):
+                raise ValueError(
+                    "Noise operators should be defined"
+                    " over the same or a subset of the qubit support"
+                )
+            if True in [op.is_parametric for op in noise_operators]:
+                raise ValueError("Parametric operators are not supported")
         self.noise_operators = noise_operators
 
     @classmethod

@@ -67,7 +67,7 @@ omega_param = FeatureParameter("omega")
 td_generator = omega_param * (t * X(0) + t**2 * Y(1))
 
 # Create parameterized HamEvo block
-noise_operators = [torch.eye(4, dtype=torch.complex128)]
+noise_operators = [X(0) + Y(0)]
 hamevo = HamEvo(td_generator, t, noise_operators = noise_operators)
 
 values = {"omega": torch.tensor(10.0), "duration": torch.tensor(1.0)}
@@ -78,3 +78,6 @@ out_state = run(hamevo, values = values, configuration = config)
 
 print(out_state)
 ```
+
+!!! warning "Noise operators definition"
+    Note it is not possible to define `noise_operators` with parametric operators, and `noise_operators` should have the same or a subset of the qubit support of the `HamEvo` instance.

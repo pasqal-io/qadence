@@ -9,7 +9,16 @@ import torch
 from metrics import MIDDLE_ACCEPTANCE
 from pyqtorch.utils import SolverType
 
-from qadence import AbstractBlock, HamEvo, QuantumCircuit, QuantumModel, Register, run
+from qadence import (
+    AbstractBlock,
+    HamEvo,
+    QuantumCircuit,
+    QuantumModel,
+    Register,
+    block_to_tensor,
+    run,
+)
+from qadence.operations import RZ, I, X
 
 
 @pytest.mark.parametrize("duration", [0.5, 1.0])
@@ -56,6 +65,7 @@ def test_time_dependent_generator(
 
 
 @pytest.mark.parametrize("duration", [0.5, 1.0])
+@pytest.mark.parametrize("noise_op", [I(0) * I(1), X(0)])
 def test_noisy_time_dependent_generator(
     qadence_generator: AbstractBlock,
     qutip_generator: Callable,
@@ -63,15 +73,14 @@ def test_noisy_time_dependent_generator(
     feature_param_x: float,
     feature_param_y: float,
     duration: float,
+    noise_op: AbstractBlock,
 ) -> None:
     n_steps = 500
     ode_solver = SolverType.DP5_ME
     n_qubits = 2
-    n_qubits_pow2 = 2**n_qubits
 
     # Define jump operators
-    # Note that we squeeze to remove the batch dimension
-    list_ops = [torch.eye(n_qubits_pow2, dtype=torch.complex128)]
+    list_ops = [noise_op]
 
     # simulate with qadence HamEvo using QuantumModel
     hamevo = HamEvo(qadence_generator, time_param, noise_operators=list_ops)
@@ -94,9 +103,24 @@ def test_noisy_time_dependent_generator(
 
     # simulate with qutip
     t_points = np.linspace(0, duration, n_steps)
-    list_ops_qutip = [qutip.qeye(n_qubits_pow2)]
-    result = qutip.mesolve(qutip_generator, qutip.basis(n_qubits_pow2, 0), t_points, list_ops_qutip)
+    noise_tensor = (
+        block_to_tensor(noise_op, qubit_support=tuple(range(n_qubits)), use_full_support=True)
+        .squeeze(0)
+        .numpy()
+    )
+    list_ops_qutip = [qutip.Qobj(noise_tensor)]
+    result = qutip.mesolve(qutip_generator, qutip.basis(2**n_qubits, 0), t_points, list_ops_qutip)
 
     state_qutip = torch.tensor(result.states[-1].full()).unsqueeze(0)
     assert torch.allclose(state_qadence0, state_qutip, atol=MIDDLE_ACCEPTANCE)
     assert torch.allclose(state_qadence1, state_qutip, atol=MIDDLE_ACCEPTANCE)
+
+
+@pytest.mark.parametrize("noise_op", [I(0) * I(1) * I(3), X(3), RZ(0, "theta")])
+def test_error_noise_operators_hamevo(
+    qadence_generator: AbstractBlock,
+    time_param: str,
+    noise_op: AbstractBlock,
+) -> None:
+    with pytest.raises(ValueError):
+        hamevo = HamEvo(qadence_generator, time_param, noise_operators=[noise_op])
