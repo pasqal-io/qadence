@@ -39,6 +39,9 @@ def alt(
             - Digital: 2-qubit entangling operation. Supports CNOT, CZ,
             CRX, CRY, CRZ, CPHASE. Controlled rotations will have variational
             parameters on the rotation angles.
+
+    Returns:
+        The Alternating Block Ansatz (ALT) circuit.
     """
 
     if support is None:
@@ -80,7 +83,18 @@ def _rotations_digital(
     support: tuple[int, ...] | None = None,
     operations: list[Type[AbstractBlock]] = [RX, RY, RX],
 ) -> list[AbstractBlock]:
-    """Creates the layers of single qubit rotations in an HEA."""
+    """Creates the layers of single qubit rotations in an Alternating Block Ansatz.
+
+    Args:
+        n_qubits: The number of qubits in the Alternating Block Ansatz.
+        depth: The number of layers of rotations.
+        param_prefix: The prefix for the parameter names.
+        support: The qubits to apply the rotations to.
+        operations: The operations to apply the rotations with.
+
+    Returns:
+        A list of digital rotation layers for the Alternating Block Ansatz.
+    """
     if support is None:
         support = tuple(range(n_qubits))
     iterator = itertools.count()
@@ -103,6 +117,18 @@ def _entangler(
     param_str: str,
     op: Type[DigitalEntanglers] = CNOT,
 ) -> AbstractBlock:
+    """
+    Creates the entangler for a single qubit in an Alternating Block Ansatz.
+
+    Args:
+        control: The control qubit.
+        target: The target qubit.
+        param_str: The parameter string.
+        op: The entangler to use.
+
+    Returns:
+        The 2-qubit digital entangler for the Alternating Block Ansatz.
+    """
     if op in [CNOT, CZ]:
         return op(control, target)  # type: ignore
     elif op in [CRZ, CRY, CRX, CPHASE]:
@@ -119,6 +145,20 @@ def _entanglers_alt_block_digital(
     support: tuple[int, ...] | None = None,
     entangler: Type[DigitalEntanglers] = CNOT,
 ) -> list[AbstractBlock]:
+    """
+    Creates the entanglers for an Alternating Block Ansatz.
+
+    Args:
+        n_qubits: The number of qubits in the Alternating Block Ansatz.
+        m_block_qubits: The number of qubits in each block.
+        depth: The number of layers of entanglers.
+        param_prefix: The prefix for the parameter names.
+        support (tuple): qubit indexes where the HEA is applied.
+        entangler: The entangler to use.
+
+    Returns:
+        The entanglers for the Alternating Block Ansatz.
+    """
     if support is None:
         support = tuple(range(n_qubits))
     iterator = itertools.count()
@@ -168,6 +208,9 @@ def alt_digital(
         entangler (AbstractBlock): 2-qubit entangling operation.
             Supports CNOT, CZ, CRX, CRY, CRZ. Controlld rotations
             will have variational parameters on the rotation angles.
+
+    Returns:
+        The digital Alternating Block Ansatz (ALT) circuit.
     """
 
     try:

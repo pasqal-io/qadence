@@ -45,6 +45,9 @@ def hea(
             analog entangling layer. Defaults to global ZZ Hamiltonian.
             Time parameter is considered variational.
 
+    Returns:
+        The Hardware Efficient Ansatz (HEA) circuit.
+
     Examples:
     ```python exec="on" source="material-block" result="json"
     from qadence import RZ, RX
@@ -99,7 +102,18 @@ def _rotations_digital(
     support: tuple[int, ...] | None = None,
     operations: list[Type[AbstractBlock]] = [RX, RY, RX],
 ) -> list[AbstractBlock]:
-    """Creates the layers of single qubit rotations in an HEA."""
+    """Creates the layers of single qubit rotations in an HEA.
+
+    Args:
+        n_qubits: The number of qubits in the HEA.
+        depth: The number of layers of rotations.
+        param_prefix: The prefix for the parameter names.
+        support: The qubits to apply the rotations to.
+        operations: The operations to apply the rotations with.
+
+    Returns:
+        A list of digital rotation layers in the HEA.
+    """
     if support is None:
         support = tuple(range(n_qubits))
     iterator = itertools.count()
@@ -132,7 +146,7 @@ def _entangler(
         op (Type[DigitalEntanglers]): 2-qubit operation (CNOT, CZ, CRX, CRY, CRZ or CPHASE)
 
     Returns:
-        A 2-qubit operation block
+        The 2-qubit digital entangler for the HEA.
     """
     if op in [CNOT, CZ]:
         return op(control, target)  # type: ignore
@@ -162,6 +176,9 @@ def _entanglers_digital(
         entangler (AbstractBlock): 2-qubit entangling operation.
             Supports CNOT, CZ, CRX, CRY, CRZ. Controlld rotations
             will have variational parameters on the rotation angles.
+
+    Returns:
+        The entanglers for the digital Hardware Efficient Ansatz (HEA).
     """
     if support is None:
         support = tuple(range(n_qubits))
@@ -222,6 +239,9 @@ def hea_digital(
         entangler (AbstractBlock): 2-qubit entangling operation.
             Supports CNOT, CZ, CRX, CRY, CRZ. Controlld rotations
             will have variational parameters on the rotation angles.
+
+    Returns:
+        The digital Hardware Efficient Ansatz (HEA) circuit.
     """
     try:
         if entangler not in [CNOT, CZ, CRX, CRY, CRZ, CPHASE]:
@@ -265,6 +285,17 @@ def _entanglers_analog(
     param_prefix: str = "theta",
     entangler: AbstractBlock | None = None,
 ) -> list[AbstractBlock]:
+    """
+    Creates the entanglers for the sDAQC.
+
+    Args:
+        depth: The number of layers of entanglers.
+        param_prefix: The prefix for the parameter names.
+        entangler: The entangler to use.
+
+    Returns:
+        A list of analog entanglers for sDAQC HEA.
+    """
     return [HamEvo(entangler, param_prefix + f"_t_{d}") for d in range(depth)]  # type: ignore
 
 
@@ -291,6 +322,9 @@ def hea_sDAQC(
         entangler (AbstractBlock): Hamiltonian generator for the
             analog entangling layer. Defaults to global ZZ Hamiltonian.
             Time parameter is considered variational.
+
+    Returns:
+        The step-wise digital-analog Hardware Efficient Ansatz (sDA HEA) circuit.
     """
 
     # TODO: Add qubit support
