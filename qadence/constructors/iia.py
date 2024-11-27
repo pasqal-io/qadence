@@ -32,6 +32,16 @@ def _entangler_analog(
     param_str: str,
     generator: AbstractBlock | None = None,
 ) -> AbstractBlock:
+    """
+    Creates the analog entangler for identity initialized ansatz.
+
+    Args:
+        param_str: The parameter string.
+        generator: The Hamiltonian generator for the analog entangler.
+
+    Returns:
+        The analog entangler for the identity initialized ansatz.
+    """
     param = Parameter(name=param_str, value=0.0, trainable=True)
     return HamEvo(generator=generator, parameter=param)
 
@@ -44,6 +54,21 @@ def _rotations(
     values: list[float | torch.Tensor],
     ops: list[type[AbstractBlock]] = [RX, RY],
 ) -> list[KronBlock]:
+    """
+    Creates the digital rotation layers for the identity initialized ansatz.
+
+    Args:
+        n_qubits: The number of qubits in the identity initialized ansatz.
+        layer: The layer number.
+        side: The side of the a single layer the rotations are applied to.
+            Either 'left' or 'right'.
+        param_str: The parameter string.
+        values: The values of the rotation angles.
+        ops: The operations to apply the rotations with.
+
+    Returns:
+        The digital rotation layers for the identity initialized ansatz.
+    """
     if side == "left":
         idx = lambda x: x  # noqa: E731
     elif side == "right":
@@ -106,6 +131,9 @@ def identity_initialized_ansatz(
                 Time parameter is considered variational.
                 Defaults to a global NN Hamiltonain.
         periodic (bool): if the qubits should be linked periodically. Valid only for digital.
+
+    Returns:
+        The identity initialized ansatz circuit.
     """
     initialized_layers = []
     for layer in range(depth):
