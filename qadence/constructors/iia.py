@@ -240,3 +240,6 @@ def identity_initialized_ansatz(
         initialized_layers.append(tag(chain(*krons), tag=f"BPMA-{layer}"))
 
     return chain(*initialized_layers)
+
+
+iia = identity_initialized_ansatz

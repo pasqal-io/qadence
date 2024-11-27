@@ -13,7 +13,7 @@ from qadence.constructors import (
     analog_feature_map,
     feature_map,
     hamiltonian_factory,
-    identity_initialized_ansatz,
+    iia,
     rydberg_feature_map,
     rydberg_hea,
     rydberg_tower_feature_map,
@@ -414,7 +414,7 @@ def _create_iia_digital(
     entangler = config.strategy_args.get("entangler", CNOT)
     periodic = config.strategy_args.get("periodic", False)
 
-    return identity_initialized_ansatz(
+    return iia(
         n_qubits=num_qubits,
         depth=config.depth,
         param_prefix=config.param_prefix,
@@ -443,7 +443,7 @@ def _create_iia_sdaqc(
     entangler = config.strategy_args.get("entangler", CNOT)
     periodic = config.strategy_args.get("periodic", False)
 
-    return identity_initialized_ansatz(
+    return iia(
         n_qubits=num_qubits,
         depth=config.depth,
         param_prefix=config.param_prefix,
