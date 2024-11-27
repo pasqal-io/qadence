@@ -23,11 +23,11 @@ def hea(
     Factory function for the Hardware Efficient Ansatz (HEA).
 
     Args:
-        n_qubits: number of qubits in the block
+        n_qubits: number of qubits in the circuit
         depth: number of layers of the HEA
         param_prefix: the base name of the variational parameters
-        support: qubit indexes where the HEA is applied
-        strategy: Strategy.Digital or Strategy.DigitalAnalog
+        support: qubit indices where the HEA is applied
+        strategy: Strategy for the ansatz. One of the Strategy variants.
         **strategy_args: see below
 
     Keyword Arguments:
@@ -41,7 +41,7 @@ def hea(
             - Digital: 2-qubit entangling operation. Supports CNOT, CZ,
             CRX, CRY, CRZ, CPHASE. Controlled rotations will have variational
             parameters on the rotation angles.
-            - DigitaAnalog | Analog: Hamiltonian generator for the
+            - SDAQC | Analog: Hamiltonian generator for the
             analog entangling layer. Defaults to global ZZ Hamiltonian.
             Time parameter is considered variational.
 
@@ -170,7 +170,7 @@ def _entanglers_digital(
         n_qubits (int): number of qubits in the block.
         depth (int): number of layers of the HEA.
         param_prefix (str): the base name of the variational parameters
-        support (tuple): qubit indexes where the HEA is applied.
+        support (tuple): qubit indices where the HEA is applied.
         periodic (bool): if the qubits should be linked periodically.
             periodic=False is not supported in emu-c.
         entangler (AbstractBlock): 2-qubit entangling operation.
@@ -219,23 +219,23 @@ def hea_digital(
     n_qubits: int,
     depth: int = 1,
     param_prefix: str = "theta",
+    support: tuple[int, ...] | None = None,
     periodic: bool = False,
     operations: list[type[AbstractBlock]] = [RX, RY, RX],
-    support: tuple[int, ...] | None = None,
     entangler: Type[DigitalEntanglers] = CNOT,
 ) -> AbstractBlock:
     """
     Construct the Digital Hardware Efficient Ansatz (HEA).
 
     Args:
-        n_qubits (int): number of qubits in the block.
+        n_qubits (int): number of qubits in the cricuit.
         depth (int): number of layers of the HEA.
         param_prefix (str): the base name of the variational parameters
+        support (tuple): qubit indices where the HEA is applied.
         periodic (bool): if the qubits should be linked periodically.
             periodic=False is not supported in emu-c.
         operations (list): list of operations to cycle through in the
             digital single-qubit rotations of each layer.
-        support (tuple): qubit indexes where the HEA is applied.
         entangler (AbstractBlock): 2-qubit entangling operation.
             Supports CNOT, CZ, CRX, CRY, CRZ. Controlld rotations
             will have variational parameters on the rotation angles.
@@ -303,8 +303,8 @@ def hea_sDAQC(
     n_qubits: int,
     depth: int = 1,
     param_prefix: str = "theta",
-    operations: list[type[AbstractBlock]] = [RX, RY, RX],
     support: tuple[int, ...] | None = None,
+    operations: list[type[AbstractBlock]] = [RX, RY, RX],
     entangler: AbstractBlock | None = None,
 ) -> AbstractBlock:
     """
@@ -313,12 +313,12 @@ def hea_sDAQC(
     It uses step-wise digital-analog computation.
 
     Args:
-        n_qubits (int): number of qubits in the block.
+        n_qubits (int): number of qubits in the circuit.
         depth (int): number of layers of the HEA.
         param_prefix (str): the base name of the variational parameters
+        support (tuple): qubit indices where the HEA is applied.
         operations (list): list of operations to cycle through in the
             digital single-qubit rotations of each layer.
-        support (tuple): qubit indexes where the HEA is applied.
         entangler (AbstractBlock): Hamiltonian generator for the
             analog entangling layer. Defaults to global ZZ Hamiltonian.
             Time parameter is considered variational.

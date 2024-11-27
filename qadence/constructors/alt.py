@@ -23,12 +23,12 @@ def alt(
     Factory function for the alternating layer ansatz (alt).
 
     Args:
-        n_qubits: number of qubits in the block
+        n_qubits: number of qubits in the circuit
         m_block_qubits: number of qubits in the local entangling block
-        depth: number of layers of the alt
+        depth: number of layers of the alternating layer ansatz
         param_prefix: the base name of the variational parameters
-        support: qubit indexes where the alt is applied
-        strategy: Strategy.Digital or Strategy.DigitalAnalog
+        support: qubit indices where the alt is applied
+        strategy: Strategy for the ansatz. One of the Strategy variants.
         **strategy_args: see below
 
     Keyword Arguments:
@@ -39,6 +39,9 @@ def alt(
             - Digital: 2-qubit entangling operation. Supports CNOT, CZ,
             CRX, CRY, CRZ, CPHASE. Controlled rotations will have variational
             parameters on the rotation angles.
+            - SDAQC | BDAQC: Hamiltonian generator for the analog entangling
+                layer. Must be an m-qubit operator where m is the size of the
+                local entangling block. Defaults to a ZZ interaction.
 
     Returns:
         The Alternating Layer Ansatz (ALT) circuit.
@@ -153,7 +156,7 @@ def _entanglers_alt_block_digital(
         m_block_qubits: The number of qubits in each block.
         depth: The number of layers of entanglers.
         param_prefix: The prefix for the parameter names.
-        support (tuple): qubit indexes where the HEA is applied.
+        support (tuple): qubit indices where the HEA is applied.
         entangler: The entangler to use.
 
     Returns:
@@ -189,8 +192,8 @@ def alt_digital(
     n_qubits: int,
     m_block_qubits: int,
     depth: int = 1,
-    support: tuple[int, ...] | None = None,
     param_prefix: str = "theta",
+    support: tuple[int, ...] | None = None,
     operations: list[type[AbstractBlock]] = [RX, RY],
     entangler: Type[DigitalEntanglers] = CNOT,
 ) -> AbstractBlock:
@@ -198,13 +201,13 @@ def alt_digital(
     Construct the digital alternating layer ansatz (ALT).
 
     Args:
-        n_qubits (int): number of qubits in the ansatz.
+        n_qubits (int): number of qubits in the circuit.
         m_block_qubits (int): number of qubits in the local entangling block.
         depth (int): number of layers of the ALT.
         param_prefix (str): the base name of the variational parameters
+        support (tuple): qubit indices where the ALT is applied.
         operations (list): list of operations to cycle through in the
             digital single-qubit rotations of each layer.
-        support (tuple): qubit indexes where the ALT is applied.
         entangler (AbstractBlock): 2-qubit entangling operation.
             Supports CNOT, CZ, CRX, CRY, CRZ. Controlld rotations
             will have variational parameters on the rotation angles.
