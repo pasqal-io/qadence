@@ -41,7 +41,7 @@ def alt(
             parameters on the rotation angles.
 
     Returns:
-        The Alternating Block Ansatz (ALT) circuit.
+        The Alternating Layer Ansatz (ALT) circuit.
     """
 
     if support is None:
@@ -83,17 +83,17 @@ def _rotations_digital(
     support: tuple[int, ...] | None = None,
     operations: list[Type[AbstractBlock]] = [RX, RY, RX],
 ) -> list[AbstractBlock]:
-    """Creates the layers of single qubit rotations in an Alternating Block Ansatz.
+    """Creates the layers of single qubit rotations in an Alternating Layer Ansatz.
 
     Args:
-        n_qubits: The number of qubits in the Alternating Block Ansatz.
+        n_qubits: The number of qubits in the Alternating Layer Ansatz.
         depth: The number of layers of rotations.
         param_prefix: The prefix for the parameter names.
         support: The qubits to apply the rotations to.
         operations: The operations to apply the rotations with.
 
     Returns:
-        A list of digital rotation layers for the Alternating Block Ansatz.
+        A list of digital rotation layers for the Alternating Layer Ansatz.
     """
     if support is None:
         support = tuple(range(n_qubits))
@@ -118,7 +118,7 @@ def _entangler(
     op: Type[DigitalEntanglers] = CNOT,
 ) -> AbstractBlock:
     """
-    Creates the entangler for a single qubit in an Alternating Block Ansatz.
+    Creates the entangler for a single qubit in an Alternating Layer Ansatz.
 
     Args:
         control: The control qubit.
@@ -127,14 +127,14 @@ def _entangler(
         op: The entangler to use.
 
     Returns:
-        The 2-qubit digital entangler for the Alternating Block Ansatz.
+        The 2-qubit digital entangler for the Alternating Layer Ansatz.
     """
     if op in [CNOT, CZ]:
         return op(control, target)  # type: ignore
     elif op in [CRZ, CRY, CRX, CPHASE]:
         return op(control, target, param_str)  # type: ignore
     else:
-        raise ValueError("Provided entangler not accepted for digital alternating block ansatz")
+        raise ValueError("Provided entangler not accepted for digital alternating layer ansatz")
 
 
 def _entanglers_alt_block_digital(
@@ -146,10 +146,10 @@ def _entanglers_alt_block_digital(
     entangler: Type[DigitalEntanglers] = CNOT,
 ) -> list[AbstractBlock]:
     """
-    Creates the entanglers for an Alternating Block Ansatz.
+    Creates the entanglers for an Alternating Layer Ansatz.
 
     Args:
-        n_qubits: The number of qubits in the Alternating Block Ansatz.
+        n_qubits: The number of qubits in the Alternating Layer Ansatz.
         m_block_qubits: The number of qubits in each block.
         depth: The number of layers of entanglers.
         param_prefix: The prefix for the parameter names.
@@ -157,7 +157,7 @@ def _entanglers_alt_block_digital(
         entangler: The entangler to use.
 
     Returns:
-        The entanglers for the Alternating Block Ansatz.
+        The entanglers for the Alternating Layer Ansatz.
     """
     if support is None:
         support = tuple(range(n_qubits))
@@ -210,7 +210,7 @@ def alt_digital(
             will have variational parameters on the rotation angles.
 
     Returns:
-        The digital Alternating Block Ansatz (ALT) circuit.
+        The digital Alternating Layer Ansatz (ALT) circuit.
     """
 
     try:
