@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import itertools
-from typing import Any, Type
+from typing import Any, Type, Union
 
 from qadence.blocks import AbstractBlock, chain, kron, tag
 from qadence.operations import CNOT, CPHASE, CRX, CRY, CRZ, CZ, RX, RY
 from qadence.types import Strategy
 
-from .ansatze import DigitalEntanglers, _entangler, _rotations_digital
+DigitalEntanglers = Union[CNOT, CZ, CRZ, CRY, CRX]
 
 
 def alt(
@@ -73,7 +73,45 @@ def alt(
 #################
 
 
-def _entanglers_block_digital(
+def _rotations_digital(
+    n_qubits: int,
+    depth: int,
+    param_prefix: str = "theta",
+    support: tuple[int, ...] | None = None,
+    operations: list[Type[AbstractBlock]] = [RX, RY, RX],
+) -> list[AbstractBlock]:
+    """Creates the layers of single qubit rotations in an HEA."""
+    if support is None:
+        support = tuple(range(n_qubits))
+    iterator = itertools.count()
+    rot_list: list[AbstractBlock] = []
+    for d in range(depth):
+        rots = [
+            kron(
+                gate(support[n], param_prefix + f"_{next(iterator)}")  # type: ignore [arg-type]
+                for n in range(n_qubits)
+            )
+            for gate in operations
+        ]
+        rot_list.append(chain(*rots))
+    return rot_list
+
+
+def _entangler(
+    control: int,
+    target: int,
+    param_str: str,
+    op: Type[DigitalEntanglers] = CNOT,
+) -> AbstractBlock:
+    if op in [CNOT, CZ]:
+        return op(control, target)  # type: ignore
+    elif op in [CRZ, CRY, CRX, CPHASE]:
+        return op(control, target, param_str)  # type: ignore
+    else:
+        raise ValueError("Provided entangler not accepted for digital alternating block ansatz")
+
+
+def _entanglers_alt_block_digital(
     n_qubits: int,
     m_block_qubits: int,
     depth: int,
@@ -148,7 +186,7 @@ def alt_digital(
         operations=operations,
     )
 
-    ent_list = _entanglers_block_digital(
+    ent_list = _entanglers_alt_block_digital(
         n_qubits,
         m_block_qubits,
         param_prefix=param_prefix + "_ent",
