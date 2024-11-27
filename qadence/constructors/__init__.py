@@ -7,8 +7,7 @@ from .feature_maps import (
 
 from .hea import hea
 from .alt import alt
-
-from .iia import identity_initialized_ansatz
+from .iia import identity_initialized_ansatz, iia
 
 from .daqc import daqc_transform
 
@@ -32,6 +31,7 @@ __all__ = [
     "hea",
     "alt",
     "identity_initialized_ansatz",
+    "iia",
     "hamiltonian_factory",
     "ising_hamiltonian",
     "ObservableConfig",
