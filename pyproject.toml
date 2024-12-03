@@ -90,6 +90,7 @@ all = ["pulser", "visualization", "protocols", "libs", "mlflow"]
 
 [tool.hatch.envs.default]
 dependencies = [
+    "coverage-badge",
     "flaky",
     "hypothesis",
     "pytest",
