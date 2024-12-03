@@ -1,3 +1,9 @@
+## Requirements
+
+Qadence is fully tested on Linux/MacOS operating systems. For Widows users, we recommend using [WSL2](https://learn.microsoft.com/en-us/windows/wsl/about) to install a Linux distribution of choice.
+
+## Installation
+
 Qadence can be installed from PyPI with `pip` as follows:
 
 ```bash
