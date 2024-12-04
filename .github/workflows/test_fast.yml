@@ -34,6 +34,9 @@ jobs:
       run: |
         pip install hatch
         pip install coverage-badge
+    - name: Remove existing coverage.svg if it exists
+      run: |
+        if [ -f coverage.svg ]; then rm coverage.svg; fi
     - name: Run fast tests and generate coverage badge
       run: |
         hatch -v run test -m "not slow"
