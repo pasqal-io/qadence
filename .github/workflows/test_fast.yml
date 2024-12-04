@@ -46,7 +46,7 @@ jobs:
         # git checkout ${{ github.ref_name }}
         git add coverage.svg
         git commit -m "Update coverage badge"
-        git push
+        git push origin HEAD:converage
 
   publish:
     name: Publish to PyPI
