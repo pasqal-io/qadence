@@ -17,7 +17,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 from qadence.ml_tools.config import TrainConfig
-from qadence.ml_tools.data import OptimizeResult
+from qadence.ml_tools.data import DictDataLoader, OptimizeResult
 from qadence.types import ExperimentTrackingTool
 
 logger = getLogger("ml_tools")
@@ -104,18 +104,18 @@ class BaseWriter(ABC):
     def log_model(
         self,
         model: Module,
-        train_dataloader: DataLoader | None = None,
-        val_dataloader: DataLoader | None = None,
-        test_dataloader: DataLoader | None = None,
+        train_dataloader: DataLoader | DictDataLoader | None = None,
+        val_dataloader: DataLoader | DictDataLoader | None = None,
+        test_dataloader: DataLoader | DictDataLoader | None = None,
     ) -> None:
         """
         Logs the model and associated data.
 
         Args:
             model (Module): The model to log.
-            train_dataloader (DataLoader | None): DataLoader for training data.
-            val_dataloader (DataLoader | None): DataLoader for validation data.
-            test_dataloader (DataLoader | None): DataLoader for testing data.
+            train_dataloader (DataLoader | DictDataLoader |  None): DataLoader for training data.
+            val_dataloader (DataLoader | DictDataLoader |  None): DataLoader for validation data.
+            test_dataloader (DataLoader | DictDataLoader |  None): DataLoader for testing data.
         """
         raise NotImplementedError("Writers must implement a log_model method.")
 
@@ -231,9 +231,9 @@ class TensorBoardWriter(BaseWriter):
     def log_model(
         self,
         model: Module,
-        train_dataloader: DataLoader | None = None,
-        val_dataloader: DataLoader | None = None,
-        test_dataloader: DataLoader | None = None,
+        train_dataloader: DataLoader | DictDataLoader | None = None,
+        val_dataloader: DataLoader | DictDataLoader | None = None,
+        test_dataloader: DataLoader | DictDataLoader | None = None,
     ) -> None:
         """
         Logs the model.
@@ -242,9 +242,9 @@ class TensorBoardWriter(BaseWriter):
 
         Args:
             model (Module): The model to log.
-            train_dataloader (DataLoader | None): DataLoader for training data.
-            val_dataloader (DataLoader | None): DataLoader for validation data.
-            test_dataloader (DataLoader | None): DataLoader for testing data.
+            train_dataloader (DataLoader | DictDataLoader |  None): DataLoader for training data.
+            val_dataloader (DataLoader | DictDataLoader |  None): DataLoader for validation data.
+            test_dataloader (DataLoader | DictDataLoader |  None): DataLoader for testing data.
         """
         logger.warning("Model logging is not supported by tensorboard. No model will be logged.")
 
@@ -356,13 +356,15 @@ class MLFlowWriter(BaseWriter):
                 "Please call the 'writer.open()' method before writing"
             )
 
-    def get_signature_from_dataloader(self, model: Module, dataloader: DataLoader | None) -> Any:
+    def get_signature_from_dataloader(
+        self, model: Module, dataloader: DataLoader | DictDataLoader | None
+    ) -> Any:
         """
         Infers the signature of the model based on the input data from the dataloader.
 
         Args:
             model (Module): The model to use for inference.
-            dataloader (DataLoader | None): DataLoader for model inputs.
+            dataloader (DataLoader | DictDataLoader |  None): DataLoader for model inputs.
 
         Returns:
             Optional[Any]: The inferred signature, if available.
@@ -384,18 +386,18 @@ class MLFlowWriter(BaseWriter):
     def log_model(
         self,
         model: Module,
-        train_dataloader: DataLoader | None = None,
-        val_dataloader: DataLoader | None = None,
-        test_dataloader: DataLoader | None = None,
+        train_dataloader: DataLoader | DictDataLoader | None = None,
+        val_dataloader: DataLoader | DictDataLoader | None = None,
+        test_dataloader: DataLoader | DictDataLoader | None = None,
     ) -> None:
         """
         Logs the model and its signature to MLflow using the provided data loaders.
 
         Args:
             model (Module): The model to log.
-            train_dataloader (DataLoader | None): DataLoader for training data.
-            val_dataloader (DataLoader | None): DataLoader for validation data.
-            test_dataloader (DataLoader | None): DataLoader for testing data.
+            train_dataloader (DataLoader | DictDataLoader |  None): DataLoader for training data.
+            val_dataloader (DataLoader | DictDataLoader |  None): DataLoader for validation data.
+            test_dataloader (DataLoader | DictDataLoader |  None): DataLoader for testing data.
         """
         if not self.mlflow:
             raise RuntimeError(

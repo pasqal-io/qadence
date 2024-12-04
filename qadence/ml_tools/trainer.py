@@ -14,7 +14,7 @@ from torch import dtype as torch_dtype
 from torch.utils.data import DataLoader
 
 from qadence.ml_tools.config import TrainConfig
-from qadence.ml_tools.data import OptimizeResult
+from qadence.ml_tools.data import DictDataLoader, OptimizeResult
 from qadence.ml_tools.optimize_step import optimize_step, update_ng_parameters
 from qadence.ml_tools.stages import TrainingStage
 
@@ -49,9 +49,9 @@ class Trainer(BaseTrainer):
         model (nn.Module): The neural network model.
         optimizer (optim.Optimizer | NGOptimizer | None): The optimizer for training.
         config (TrainConfig): The configuration settings for training.
-        train_dataloader (DataLoader | None): DataLoader for training data.
-        val_dataloader (DataLoader | None): DataLoader for validation data.
-        test_dataloader (DataLoader | None): DataLoader for testing data.
+        train_dataloader (DataLoader | DictDataLoader |  None): DataLoader for training data.
+        val_dataloader (DataLoader | DictDataLoader |  None): DataLoader for validation data.
+        test_dataloader (DataLoader | DictDataLoader |  None): DataLoader for testing data.
 
         optimize_step (Callable): Function for performing an optimization step.
         loss_fn (Callable): loss function to use.
@@ -235,9 +235,9 @@ class Trainer(BaseTrainer):
         optimizer: optim.Optimizer | NGOptimizer | None,
         config: TrainConfig,
         loss_fn: str | Callable = "mse",
-        train_dataloader: DataLoader | None = None,
-        val_dataloader: DataLoader | None = None,
-        test_dataloader: DataLoader | None = None,
+        train_dataloader: DataLoader | DictDataLoader | None = None,
+        val_dataloader: DataLoader | DictDataLoader | None = None,
+        test_dataloader: DataLoader | DictDataLoader | None = None,
         optimize_step: Callable = optimize_step,
         device: torch_device | None = None,
         dtype: torch_dtype | None = None,
@@ -252,9 +252,9 @@ class Trainer(BaseTrainer):
             config (TrainConfig): Training configuration object.
             loss_fn (str | Callable ): Loss function used for training.
                 If not specified, default mse loss will be used.
-            train_dataloader (DataLoader | None): DataLoader for training data.
-            val_dataloader (DataLoader | None): DataLoader for validation data.
-            test_dataloader (DataLoader | None): DataLoader for test data.
+            train_dataloader (DataLoader | DictDataLoader |  None): DataLoader for training data.
+            val_dataloader (DataLoader | DictDataLoader |  None): DataLoader for validation data.
+            test_dataloader (DataLoader | DictDataLoader |  None): DataLoader for test data.
             optimize_step (Callable): Function to execute an optimization step.
             device (torch_device): Device to use for computation.
             dtype (torch_dtype): Data type for computation.
@@ -285,7 +285,9 @@ class Trainer(BaseTrainer):
             self.data_dtype = float64 if (self.dtype == complex128) else float32
 
     def fit(
-        self, train_dataloader: DataLoader | None = None, val_dataloader: DataLoader | None = None
+        self,
+        train_dataloader: DataLoader | DictDataLoader | None = None,
+        val_dataloader: DataLoader | DictDataLoader | None = None,
     ) -> tuple[nn.Module, optim.Optimizer]:
         """
         Fits the model using the specified training configuration.
@@ -294,8 +296,8 @@ class Trainer(BaseTrainer):
         provided in the trainer will be used.
 
         Args:
-            train_dataloader (DataLoader | None): DataLoader for training data.
-            val_dataloader (DataLoader | None): DataLoader for validation data.
+            train_dataloader (DataLoader | DictDataLoader |  None): DataLoader for training data.
+            val_dataloader (DataLoader | DictDataLoader |  None): DataLoader for validation data.
 
         Returns:
             tuple[nn.Module, optim.Optimizer]: The trained model and optimizer.
