@@ -43,10 +43,12 @@ jobs:
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
         git fetch origin coverage
+        git checkout coverage
         # git checkout ${{ github.ref_name }}
+        git pull origin coverage --rebase
         git add coverage.svg
         git commit -m "Update coverage badge"
-        git push origin HEAD:coverage
+        git push origin coverage
 
   publish:
     name: Publish to PyPI
