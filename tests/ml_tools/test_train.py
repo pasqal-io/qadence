@@ -242,7 +242,7 @@ def test_train_dataloader_val_check_and_non_dict_dataloader(
             trainer.fit()
     assert (
         "If `config.val_every` is provided as an integer > 0, validation_dataloader"
-        "must be an instance of `DataLoader`." in exc_info.exconly()
+        "must be an instance of `DataLoader` or `DictDataLoader`." in exc_info.exconly()
     )
 
 
@@ -274,7 +274,7 @@ def test_train_dataloader_val_check_incorrect_keys(tmp_path: Path, Basic: torch.
             trainer.fit()
     assert (
         "If `config.val_every` is provided as an integer > 0, validation_dataloader"
-        "must be an instance of `DataLoader`." in exc_info.exconly()
+        "must be an instance of `DataLoader` or `DictDataLoader`." in exc_info.exconly()
     )
 
 
