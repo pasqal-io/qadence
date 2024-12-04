@@ -42,7 +42,7 @@ jobs:
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
-        # git fetch coverage
+        git fetch origin coverage
         # git checkout ${{ github.ref_name }}
         git add coverage.svg
         git commit -m "Update coverage badge"
