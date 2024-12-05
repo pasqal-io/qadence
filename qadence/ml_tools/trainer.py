@@ -338,10 +338,8 @@ class Trainer(BaseTrainer):
             TimeRemainingColumn(elapsed_when_finished=True),
         )
 
-        # Quick Fix for build_optimize_step
-        # Please review run_train_batch for more details
-        self.model_old = copy.deepcopy(self.model)
-        self.optimizer_old = copy.deepcopy(self.optimizer)
+        # Quick Fix for iteration 0
+        self._reset_model_and_opt()
 
         # Run validation at the start if specified in the configuration
         self.perform_val = self.config.val_every > 0
@@ -417,16 +415,10 @@ class Trainer(BaseTrainer):
         """
         self.model.train()
         train_epoch_loss_metrics = []
-        # Deep copy model and optimizer to maintain checkpoints
-        # We do this because optimize step provides loss, metrics
-        # before step of optimization
-        # To align them with model/optimizer correctly, we checkpoint
-        # the older copy of the model.
-        # TODO: review optimize_step to provide iteration aligned model and loss.
-        self.model_old = copy.deepcopy(self.model)
-        self.optimizer_old = copy.deepcopy(self.optimizer)
+        # Quick Fix for iteration 0
+        self._reset_model_and_opt()
 
-        for batch in self.batch_iter(dataloader, self.num_training_batches):
+        for batch in self._batch_iter(dataloader, self.num_training_batches):
             self.on_train_batch_start(batch)
             train_batch_loss_metrics = self.run_train_batch(batch)
             train_epoch_loss_metrics.append(train_batch_loss_metrics)
@@ -477,7 +469,7 @@ class Trainer(BaseTrainer):
             self.ng_params = ng_params
             loss_metrics = loss, metrics
 
-        return self.modify_batch_end_loss_metrics(loss_metrics)
+        return self._modify_batch_end_loss_metrics(loss_metrics)
 
     @BaseTrainer.callback("val_epoch")
     def run_validation(self, dataloader: DataLoader) -> list[tuple[torch.Tensor, dict[str, Any]]]:
@@ -495,7 +487,7 @@ class Trainer(BaseTrainer):
         self.model.eval()
         val_epoch_loss_metrics = []
 
-        for batch in self.batch_iter(dataloader, self.num_validation_batches):
+        for batch in self._batch_iter(dataloader, self.num_validation_batches):
             self.on_val_batch_start(batch)
             val_batch_loss_metrics = self.run_val_batch(batch)
             val_epoch_loss_metrics.append(val_batch_loss_metrics)
@@ -516,7 +508,7 @@ class Trainer(BaseTrainer):
         """
         with torch.no_grad():
             loss_metrics = self.loss_fn(self.model, batch)
-        return self.modify_batch_end_loss_metrics(loss_metrics)
+        return self._modify_batch_end_loss_metrics(loss_metrics)
 
     def test(self, test_dataloader: DataLoader = None) -> list[tuple[torch.Tensor, dict[str, Any]]]:
         """
@@ -539,7 +531,7 @@ class Trainer(BaseTrainer):
         self.model.eval()
         test_loss_metrics = []
 
-        for batch in self.batch_iter(test_dataloader, self.num_training_batches):
+        for batch in self._batch_iter(test_dataloader, self.num_training_batches):
             self.on_test_batch_start(batch)
             loss_metrics = self.run_test_batch(batch)
             test_loss_metrics.append(loss_metrics)
@@ -562,11 +554,11 @@ class Trainer(BaseTrainer):
         """
         with torch.no_grad():
             loss_metrics = self.loss_fn(self.model, batch)
-        return self.modify_batch_end_loss_metrics(loss_metrics)
+        return self._modify_batch_end_loss_metrics(loss_metrics)
 
-    def batch_iter(
+    def _batch_iter(
         self,
-        dataloader: DataLoader,
+        dataloader: DataLoader | DictDataLoader,
         num_batches: int,
     ) -> Iterable[tuple[torch.Tensor, ...] | None]:
         """
@@ -589,7 +581,7 @@ class Trainer(BaseTrainer):
                 # batch = data_to_device(batch, device=self.device, dtype=self.data_dtype)
                 yield batch
 
-    def modify_batch_end_loss_metrics(
+    def _modify_batch_end_loss_metrics(
         self, loss_metrics: tuple[torch.Tensor, dict[str, Any]]
     ) -> tuple[torch.Tensor, dict[str, Any]]:
         """
@@ -612,6 +604,26 @@ class Trainer(BaseTrainer):
                 updated_metrics[f"{phase}_loss"] = loss
                 return loss, updated_metrics
         return loss_metrics
+    
+    def _reset_model_and_opt(self):
+        """
+        Save model_old and optimizer_old for epoch 0. This allows us to create a copy of model
+        and optimizer before running the optimization.
+
+        We do this because optimize step provides loss, metrics
+        before step of optimization
+        To align them with model/optimizer correctly, we checkpoint
+        the older copy of the model.
+        """
+
+        # TODO: review optimize_step to provide iteration aligned model and loss.
+        try:
+            # Deep copy model and optimizer to maintain checkpoints
+            self.model_old = copy.deepcopy(self.model)
+            self.optimizer_old = copy.deepcopy(self.optimizer)
+        except:
+            self.model_old = self.model
+            self.optimizer_old = self.optimizer
 
     def build_optimize_result(
         self,

@@ -8,11 +8,11 @@ import nevergrad as ng
 import torch
 from nevergrad.optimization.base import Optimizer as NGOptimizer
 from torch import nn, optim
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, TensorDataset
 
 from qadence.ml_tools.callbacks import CallbacksManager
 from qadence.ml_tools.config import TrainConfig
-from qadence.ml_tools.data import DictDataLoader, InfiniteTensorDataset
+from qadence.ml_tools.data import DictDataLoader
 from qadence.ml_tools.loss import get_loss_fn
 from qadence.ml_tools.optimize_step import optimize_step
 from qadence.ml_tools.parameters import get_parameters
@@ -311,7 +311,7 @@ class BaseTrainer:
         self.callback_manager = CallbacksManager(value)
         self.config_manager = ConfigManager(value)
 
-    def _compute_num_batches(self, dataloader: DataLoader) -> int:
+    def _compute_num_batches(self, dataloader: DataLoader | DictDataLoader) -> int:
         """
         Computes the number of batches for the given DataLoader.
 
@@ -321,14 +321,19 @@ class BaseTrainer:
         """
         if dataloader is None:
             return 1
-        dataset = dataloader.dataset
-        if isinstance(dataset, InfiniteTensorDataset):
-            return 1
+        if isinstance(dataloader, DictDataLoader):
+            dataloader_name, dataloader_value = list(dataloader.dataloaders.items())[0]
+            dataset = dataloader_value.dataset
+            batch_size = dataloader_value.batch_size
         else:
-            n_batches = int(
-                (dataset.tensors[0].size(0) + dataloader.batch_size - 1) // dataloader.batch_size
-            )
+            dataset = dataloader.dataset
+            batch_size = dataloader.batch_size
+
+        if isinstance(dataset, TensorDataset):
+            n_batches = int((dataset.tensors[0].size(0) + batch_size - 1) // batch_size)
             return min(self.max_batches, n_batches) if self.max_batches is not None else n_batches
+        else:
+            return 1
 
     def _validate_dataloader(
         self, dataloader: DataLoader | DictDataLoader, dataloader_type: str
@@ -341,13 +346,13 @@ class BaseTrainer:
             dataloader_type (str): The type of DataLoader ("train", "val", or "test").
         """
         if dataloader is not None:
-            if not (isinstance(dataloader, DataLoader) or isinstance(dataloader, DictDataLoader)):
+            if not isinstance(dataloader, (DataLoader, DictDataLoader)):
                 raise NotImplementedError(
                     f"Unsupported dataloader type: {type(dataloader)}."
                     "The dataloader must be an instance of DataLoader."
                 )
         if dataloader_type == "val" and self.config.val_every > 0:
-            if not (isinstance(dataloader, DataLoader) or isinstance(dataloader, DictDataLoader)):
+            if not isinstance(dataloader, (DataLoader, DictDataLoader)):
                 raise ValueError(
                     "If `config.val_every` is provided as an integer > 0, validation_dataloader"
                     "must be an instance of `DataLoader` or `DictDataLoader`."
