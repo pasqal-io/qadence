@@ -21,6 +21,7 @@ def dataloader(batch_size: int = 25) -> DataLoader:
     y = torch.sin(x)
     return to_dataloader(x, y, batch_size=batch_size, infinite=True)
 
+
 def dictdataloader(data_configs: dict[str, dict[str, int]]) -> DictDataLoader:
     dls = {}
     for name, config in data_configs.items():
@@ -30,6 +31,7 @@ def dictdataloader(data_configs: dict[str, dict[str, int]]) -> DictDataLoader:
         y = torch.sin(x)
         dls[name] = to_dataloader(x, y, batch_size=batch_size, infinite=True)
     return DictDataLoader(dls)
+
 
 def train_val_dataloaders(batch_size: int = 25) -> tuple:
     x = torch.rand(batch_size, 1)
@@ -320,6 +322,7 @@ def test_train_val_checkpoint_best_only(tmp_path: Path, Basic: torch.nn.Module) 
     # The below check may be plausible enough.
     assert len(files) == 1  # Since only the best checkpoint must be stored.
 
+
 def test_dict_dataloader_with_trainer(tmp_path: Path, Basic: torch.nn.Module) -> None:
     data_configs = {
         "dataset1": {"data_size": 30, "batch_size": 5},
@@ -332,7 +335,7 @@ def test_dict_dataloader_with_trainer(tmp_path: Path, Basic: torch.nn.Module) ->
     criterion = torch.nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 
-    def loss_fn(model : torch.nn.Module, data : dict) -> tuple[torch.Tensor, dict]:
+    def loss_fn(model: torch.nn.Module, data: dict) -> tuple[torch.Tensor, dict]:
         losses = []
         for key, (x, y) in data.items():
             out = model(x)
@@ -357,6 +360,7 @@ def test_dict_dataloader_with_trainer(tmp_path: Path, Basic: torch.nn.Module) ->
         y_pred = model(x)
         assert y_pred.shape == (5, 1)
 
+
 def test_dict_dataloader() -> None:
     data_configs = {
         "dataset1": {"data_size": 20, "batch_size": 5},
@@ -366,7 +370,7 @@ def test_dict_dataloader() -> None:
     assert set(ddl.dataloaders.keys()) == {"dataset1", "dataset2"}
 
     batch = next(iter(ddl))
-    assert batch["dataset1"][0].shape == (5, 1)  
-    assert batch["dataset2"][0].shape == (10, 1)  
+    assert batch["dataset1"][0].shape == (5, 1)
+    assert batch["dataset2"][0].shape == (10, 1)
     for key, (x, y) in batch.items():
-        assert x.shape == y.shape 
+        assert x.shape == y.shape

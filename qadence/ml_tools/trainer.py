@@ -604,10 +604,12 @@ class Trainer(BaseTrainer):
                 updated_metrics[f"{phase}_loss"] = loss
                 return loss, updated_metrics
         return loss_metrics
-    
-    def _reset_model_and_opt(self):
+
+    def _reset_model_and_opt(self) -> None:
         """
-        Save model_old and optimizer_old for epoch 0. This allows us to create a copy of model
+        Save model_old and optimizer_old for epoch 0.
+
+        This allows us to create a copy of model
         and optimizer before running the optimization.
 
         We do this because optimize step provides loss, metrics
@@ -621,7 +623,7 @@ class Trainer(BaseTrainer):
             # Deep copy model and optimizer to maintain checkpoints
             self.model_old = copy.deepcopy(self.model)
             self.optimizer_old = copy.deepcopy(self.optimizer)
-        except:
+        except Exception:
             self.model_old = self.model
             self.optimizer_old = self.optimizer
 
