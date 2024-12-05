@@ -33,25 +33,20 @@ jobs:
     - name: Install Hatch & Coverage-Badge
       run: |
         pip install hatch
-        pip install coverage-badge
-    - name: Remove existing coverage.svg if it exists
-      run: |
-        if [ -f coverage.svg ]; then rm coverage.svg; fi
-    - name: Run fast tests and generate coverage badge
+    - name: Run fast tests
       run: |
         hatch -v run test -m "not slow"
-        coverage-badge -o coverage.svg
-    - name: Commit and push coverage badge
+    - name: Commit and push coverage JSON to GitHub pages
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
-        git fetch origin coverage
-        git checkout coverage
+        git fetch origin gh-pages
+        git checkout -B gh-pages origin/gh-pages
         # git checkout ${{ github.ref_name }}
-        git pull origin coverage --rebase
-        git add coverage.svg
+        # git pull origin coverage --rebase
+        git add coverage.json
         git commit -m "Update coverage badge"
-        git push origin coverage
+        git push origin gh-pages
 
   publish:
     name: Publish to PyPI
