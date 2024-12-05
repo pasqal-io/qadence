@@ -36,12 +36,6 @@ jobs:
     - name: Run fast tests
       run: |
         hatch -v run test -m "not slow"
-    - name: Upload coverage data
-      uses: actions/upload-artifact@v4
-      with:
-        name: "coverage-data"
-        path: .coverage.*
-        if-no-files-found: ignore
 
   publish:
     name: Publish to PyPI
