@@ -8,11 +8,11 @@ import nevergrad as ng
 import torch
 from nevergrad.optimization.base import Optimizer as NGOptimizer
 from torch import nn, optim
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, TensorDataset
 
 from qadence.ml_tools.callbacks import CallbacksManager
 from qadence.ml_tools.config import TrainConfig
-from qadence.ml_tools.data import InfiniteTensorDataset
+from qadence.ml_tools.data import DictDataLoader
 from qadence.ml_tools.loss import get_loss_fn
 from qadence.ml_tools.optimize_step import optimize_step
 from qadence.ml_tools.parameters import get_parameters
@@ -42,9 +42,9 @@ class BaseTrainer:
         model (nn.Module): The neural network model.
         optimizer (optim.Optimizer | NGOptimizer | None): The optimizer for training.
         config (TrainConfig): The configuration settings for training.
-        train_dataloader (DataLoader | None): DataLoader for training data.
-        val_dataloader (DataLoader | None): DataLoader for validation data.
-        test_dataloader (DataLoader | None): DataLoader for testing data.
+        train_dataloader (Dataloader | DictDataLoader | None): DataLoader for training data.
+        val_dataloader (Dataloader | DictDataLoader | None): DataLoader for validation data.
+        test_dataloader (Dataloader | DictDataLoader | None): DataLoader for testing data.
 
         optimize_step (Callable): Function for performing an optimization step.
         loss_fn (Callable | str ]): loss function to use. Default loss function
@@ -69,9 +69,9 @@ class BaseTrainer:
         config: TrainConfig,
         loss_fn: str | Callable = "mse",
         optimize_step: Callable = optimize_step,
-        train_dataloader: DataLoader | None = None,
-        val_dataloader: DataLoader | None = None,
-        test_dataloader: DataLoader | None = None,
+        train_dataloader: DataLoader | DictDataLoader | None = None,
+        val_dataloader: DataLoader | DictDataLoader | None = None,
+        test_dataloader: DataLoader | DictDataLoader | None = None,
         max_batches: int | None = None,
     ):
         """
@@ -86,11 +86,11 @@ class BaseTrainer:
                 str input to be specified to use a default loss function.
                 currently supported loss functions: 'mse', 'cross_entropy'.
                 If not specified, default mse loss will be used.
-            train_dataloader (DataLoader | None): DataLoader for training data.
+            train_dataloader (Dataloader | DictDataLoader | None): DataLoader for training data.
                 If the model does not need data to evaluate loss, no dataset
                 should be provided.
-            val_dataloader (DataLoader | None): DataLoader for validation data.
-            test_dataloader (DataLoader | None): DataLoader for testing data.
+            val_dataloader (Dataloader | DictDataLoader | None): DataLoader for validation data.
+            test_dataloader (Dataloader | DictDataLoader | None): DataLoader for testing data.
             max_batches (int | None): Maximum number of batches to process per epoch.
                 This is only valid in case of finite TensorDataset dataloaders.
                 if max_batches is not None, the maximum number of batches used will
@@ -100,9 +100,9 @@ class BaseTrainer:
         self._model: nn.Module
         self._optimizer: optim.Optimizer | NGOptimizer | None
         self._config: TrainConfig
-        self._train_dataloader: DataLoader | None = None
-        self._val_dataloader: DataLoader | None = None
-        self._test_dataloader: DataLoader | None = None
+        self._train_dataloader: DataLoader | DictDataLoader | None = None
+        self._val_dataloader: DataLoader | DictDataLoader | None = None
+        self._test_dataloader: DataLoader | DictDataLoader | None = None
 
         self.config = config
         self.model = model
@@ -311,7 +311,7 @@ class BaseTrainer:
         self.callback_manager = CallbacksManager(value)
         self.config_manager = ConfigManager(value)
 
-    def _compute_num_batches(self, dataloader: DataLoader) -> int:
+    def _compute_num_batches(self, dataloader: DataLoader | DictDataLoader) -> int:
         """
         Computes the number of batches for the given DataLoader.
 
@@ -321,34 +321,41 @@ class BaseTrainer:
         """
         if dataloader is None:
             return 1
-        dataset = dataloader.dataset
-        if isinstance(dataset, InfiniteTensorDataset):
-            return 1
+        if isinstance(dataloader, DictDataLoader):
+            dataloader_name, dataloader_value = list(dataloader.dataloaders.items())[0]
+            dataset = dataloader_value.dataset
+            batch_size = dataloader_value.batch_size
         else:
-            n_batches = int(
-                (dataset.tensors[0].size(0) + dataloader.batch_size - 1) // dataloader.batch_size
-            )
-            return min(self.max_batches, n_batches) if self.max_batches is not None else n_batches
+            dataset = dataloader.dataset
+            batch_size = dataloader.batch_size
 
-    def _validate_dataloader(self, dataloader: DataLoader, dataloader_type: str) -> None:
+        if isinstance(dataset, TensorDataset):
+            n_batches = int((dataset.tensors[0].size(0) + batch_size - 1) // batch_size)
+            return min(self.max_batches, n_batches) if self.max_batches is not None else n_batches
+        else:
+            return 1
+
+    def _validate_dataloader(
+        self, dataloader: DataLoader | DictDataLoader, dataloader_type: str
+    ) -> None:
         """
         Validates the type of the DataLoader and raises errors for unsupported types.
 
         Args:
-            dataloader (DataLoader): The DataLoader to validate.
+            dataloader (DataLoader | DictDataLoader): The DataLoader to validate.
             dataloader_type (str): The type of DataLoader ("train", "val", or "test").
         """
         if dataloader is not None:
-            if not isinstance(dataloader, DataLoader):
+            if not isinstance(dataloader, (DataLoader, DictDataLoader)):
                 raise NotImplementedError(
                     f"Unsupported dataloader type: {type(dataloader)}."
                     "The dataloader must be an instance of DataLoader."
                 )
         if dataloader_type == "val" and self.config.val_every > 0:
-            if not isinstance(dataloader, DataLoader):
+            if not isinstance(dataloader, (DataLoader, DictDataLoader)):
                 raise ValueError(
                     "If `config.val_every` is provided as an integer > 0, validation_dataloader"
-                    "must be an instance of `DataLoader`."
+                    "must be an instance of `DataLoader` or `DictDataLoader`."
                 )
 
     @staticmethod
