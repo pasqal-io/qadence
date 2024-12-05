@@ -42,7 +42,7 @@ jobs:
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
         git fetch origin gh-pages
-        git checkout -Bf gh-pages origin/gh-pages
+        git checkout -f gh-pages origin/gh-pages
         # git checkout ${{ github.ref_name }}
         # git pull origin coverage --rebase
         git add coverage.json
