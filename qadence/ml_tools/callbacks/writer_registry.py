@@ -256,7 +256,13 @@ class MLFlowWriter(BaseWriter):
     """
 
     def __init__(self) -> None:
-        from mlflow.entities import Run
+        try:
+            from mlflow.entities import Run
+        except ImportError:
+            raise ImportError(
+                "mlflow is not installed. Please install qadence with the mlflow feature: "
+                "`pip install qadence[mlflow]`."
+            )
 
         self.run: Run
         self.mlflow: ModuleType
