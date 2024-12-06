@@ -107,7 +107,7 @@ dependencies = [
 features = ["pulser", "visualization", "horqrux", "mlflow"]
 
 [tool.hatch.envs.default.scripts]
-test = "pytest -n auto --cov-report=json --cov-config=pyproject.toml --cov=qadence --cov=tests --ignore=./tests/test_examples.py {args}"
+test = "pytest -n auto --cov-report=xml --cov-config=pyproject.toml --cov=qadence --cov=tests --ignore=./tests/test_examples.py {args}"
 test-examples = "pytest ./tests/test_examples.py {args}"
 no-cov = "cov --no-cov {args}"
 test-docs = "mkdocs build --clean --strict"

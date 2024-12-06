@@ -18,7 +18,7 @@ programs** with tunable qubit interactions and arbitrary register topologies rea
 [![Documentation](https://github.com/pasqal-io/qadence/actions/workflows/build_docs.yml/badge.svg)](https://pasqal-io.github.io/qadence/latest)
 [![Pypi](https://badge.fury.io/py/qadence.svg)](https://pypi.org/project/qadence/)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-![Coverage](https://img.shields.io/endpoint?url=https://pasqal-io.github.io/qadence/coverage.json)
+![Coverage](https://img.shields.io/codecov/c/github/pasqal-io/qadence?style=flat-square)
 
 
 ## Feature highlights

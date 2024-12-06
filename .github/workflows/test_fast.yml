@@ -36,6 +36,10 @@ jobs:
     - name: Run fast tests
       run: |
         hatch -v run test -m "not slow"
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
 
   publish:
     name: Publish to PyPI
