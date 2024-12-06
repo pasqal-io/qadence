@@ -2,7 +2,11 @@
 
 ### ::: qadence.constructors.feature_maps
 
-### ::: qadence.constructors.ansatze
+### ::: qadence.constructors.hea
+
+### ::: qadence.constructors.iia
+
+### ::: qadence.constructors.alt
 
 ### ::: qadence.constructors.hamiltonians
 
