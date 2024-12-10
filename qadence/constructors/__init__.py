@@ -5,9 +5,9 @@ from .feature_maps import (
     exp_fourier_feature_map,
 )
 
-from .ansatze import hea, alt
-
-from .iia import identity_initialized_ansatz
+from .hea import hea
+from .alt import alt
+from .iia import identity_initialized_ansatz, iia
 
 from .daqc import daqc_transform
 
@@ -31,6 +31,7 @@ __all__ = [
     "hea",
     "alt",
     "identity_initialized_ansatz",
+    "iia",
     "hamiltonian_factory",
     "ising_hamiltonian",
     "ObservableConfig",
