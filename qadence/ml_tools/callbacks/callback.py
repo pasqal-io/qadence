@@ -449,3 +449,60 @@ class LogModelTracker(Callback):
         writer.log_model(
             model, trainer.train_dataloader, trainer.val_dataloader, trainer.test_dataloader
         )
+
+class LRSchedulerExponentialDecay(Callback):
+    """
+    Applies exponential decay to the learning rate during training.
+
+    This callback adjusts the learning rate at regular intervals by multiplying
+    it with a decay factor. The learning rate is updated as:
+        lr = lr * gamma
+
+    Example Usage in `TrainConfig`:
+    To use `LRSchedulerExponentialDecay`, include it in the `callbacks` list
+    when setting up your `TrainConfig`:
+    ```python exec="on" source="material-block" result="json"
+    from qadence.ml_tools import TrainConfig
+    from qadence.ml_tools.callbacks import LRSchedulerExponentialDecay
+
+    # Create an instance of the LRSchedulerExponentialDecay callback
+    lr_exponential_decay = LRSchedulerExponentialDecay(on = "train_epoch_end",
+                                                        called_every = 100,
+                                                        gamma = 0.9)
+
+    config = TrainConfig(
+        max_iter=10000,
+        # Print metrics every 1000 training epochs
+        print_every=1000,
+        # Add the custom callback that runs every 100 val_batch_end
+        callbacks=[lr_exponential_decay]
+    )
+    ```
+    """
+
+    def __init__(self, on: str, called_every: int, gamma: float = 0.9):
+        """Initializes the LRSchedulerExponentialDecay callback.
+
+        Args:
+            on (str): The event to trigger the callback.
+            called_every (int): Frequency of callback calls in terms of iterations.
+            gamma (float, optional): The decay factor applied to the learning rate.
+                                  A value < 1 reduces the learning rate over time.
+                                  Default is 0.9.
+        """
+        super().__init__(on=on, called_every=called_every)
+        if gamma > 1:
+            raise ValueError(f"Gamma must be less than or equal to 1, but got {gamma}.")
+        self.gamma = gamma
+
+    def run_callback(self, trainer: Any, config: TrainConfig, writer: BaseWriter) -> None:
+        """
+        Runs the callback to apply exponential decay to the learning rate.
+
+        Args:
+            trainer (Any): The training object.
+            config (TrainConfig): The configuration object.
+            writer (BaseWriter): The writer object for logging.
+        """
+        for param_group in trainer.optimizer.param_groups:
+            param_group["lr"] *= self.gamma
