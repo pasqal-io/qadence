@@ -96,6 +96,7 @@ dependencies = [
     "pytest-cov",
     "pytest-mypy",
     "pytest-xdist",
+    "pytest-mock",
     "types-PyYAML",
     "ipykernel",
     "pre-commit",
