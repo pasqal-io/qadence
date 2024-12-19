@@ -175,7 +175,7 @@ exclude_lines = ["no cov", "if __name__ == .__main__.:", "if TYPE_CHECKING:"]
 
 [tool.ruff]
 select = ["E", "F", "I", "Q"]
-extend-ignore = ["F841", "F403"]
+extend-ignore = ["F841", "F403", "E731", "E741"]
 line-length = 100
 
 [tool.ruff.isort]
