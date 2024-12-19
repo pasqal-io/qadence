@@ -32,7 +32,7 @@ directly solved using the pulse-level interface Pulser.
             distances are conserved"""
             Q, shape = args
             new_coords = np.reshape(new_coords, shape)
-            interaction_coeff = device.rydberg_level
+            interaction_coeff = device.coeff_ising
             new_Q = squareform(interaction_coeff / pdist(new_coords) ** 6)
             return np.linalg.norm(new_Q - Q)
 
@@ -49,26 +49,18 @@ directly solved using the pulse-level interface Pulser.
         )
         return [(x, y) for (x, y) in np.reshape(res.x, (len(Q), 2))]
     ```
-With the embedding routine under our belt, let's start by adding the required imports and
-ensure the reproducibility of this tutorial.
+
+With the embedding routine define above, we can translate a matrix defining a QUBO problem to a set of atom coordinates for the register. The QUBO problem is initially defined by a graph of weighted edges and a cost function to be optimized. The weighted edges are represented by a
+real-valued symmetric matrix `Q` which is used throughout the tutorial.
 
 ```python exec="on" source="material-block" session="qubo"
 import torch
-from qadence import QuantumModel, QuantumCircuit, Register
-from qadence import RydbergDevice, AnalogRX, AnalogRZ, chain
-from qadence.ml_tools import Trainer, TrainConfig, num_parameters
-import nevergrad as ng
-import matplotlib.pyplot as plt
+from qadence import QuantumModel
 
 seed = 0
 np.random.seed(seed)
 torch.manual_seed(seed)
-```
 
-The QUBO problem is initially defined by a graph of weighted edges and a cost function to be optimized. The weighted edges are represented by a
-real-valued symmetric matrix `Q` which is used throughout the tutorial.
-
-```python exec="on" source="material-block" session="qubo"
 # QUBO problem weights (real-value symmetric matrix)
 Q = np.array(
     [
@@ -80,12 +72,13 @@ Q = np.array(
     ]
 )
 
+# Loss function to guide the optimization routine
 def loss(model: QuantumModel, *args) -> tuple[torch.Tensor, dict]:
     to_arr_fn = lambda bitstring: np.array(list(bitstring), dtype=int)
     cost_fn = lambda arr: arr.T @ Q @ arr
-    samples = model.sample({}, n_shots=1000)[0]  # extract samples
+    samples = model.sample({}, n_shots=1000)[0]
     cost_fn = sum(samples[key] * cost_fn(to_arr_fn(key)) for key in samples)
-    return torch.tensor(cost_fn / sum(samples.values())), {}  # We return an optional metrics dict
+    return torch.tensor(cost_fn / sum(samples.values())), {}
 ```
 
 The QAOA algorithm needs a variational quantum circuit with optimizable parameters.
@@ -93,16 +86,20 @@ For that purpose, we use a fully analog circuit composed of two global rotations
 different axes of the Bloch sphere.
 The first rotation corresponds to the mixing Hamiltonian and the second one to the
 embedding Hamiltonian [^1]. In this setting, the embedding is realized
-by the appropriate register coordinates and the resulting qubit interaction.
+by the appropriate register coordinates and the resulting qubit interaction. Details on the analog
+blocks used here can be found in the [analog basics tutorial](analog-basics.md).
 
 ??? note "Rydberg level"
-    The Rydberg level is set to *70*. We
+    The Rydberg level is set to 70. We
     initialize the weighted register graph from the QUBO definition
     similarly to what is done in the
     [original tutorial](https://pulser.readthedocs.io/en/stable/tutorials/qubo.html),
     and set the device specifications with the updated Rydberg level.
 
-```python exec="on" source="material-block" result="json" session="qubo"
+```python exec="on" source="material-block" session="qubo"
+from qadence import QuantumCircuit, Register, RydbergDevice
+from qadence import chain, AnalogRX, AnalogRZ
+
 # Device specification and atomic register
 device = RydbergDevice(rydberg_level=70)
 
@@ -116,8 +113,7 @@ block = chain(*[AnalogRX(f"t{i}") * AnalogRZ(f"s{i}") for i in range(layers)])
 circuit = QuantumCircuit(reg, block)
 ```
 
-By feeding the circuit to a `QuantumModel` we can check the initial
-counts where no clear solution can be found:
+By initializing the `QuantumModel` with this circuit we can check the initial counts where no clear solution can be found.
 
 ```python exec="on" source="material-block" result="json" session="qubo"
 model = QuantumModel(circuit)
@@ -132,34 +128,39 @@ ML facilities to run gradient-free optimizations using the
 [`nevergrad`](https://facebookresearch.github.io/nevergrad/) library.
 
 ```python exec="on" source="material-block" session="qubo"
+from qadence.ml_tools import Trainer, TrainConfig, num_parameters
+import nevergrad as ng
+
 Trainer.set_use_grad(False)
 
 config = TrainConfig(max_iter=100)
+
 optimizer = ng.optimizers.NGOpt(
     budget=config.max_iter, parametrization=num_parameters(model)
 )
+
 trainer = Trainer(model, optimizer, config, loss)
+
 trainer.fit()
 
 optimal_counts = model.sample({}, n_shots=1000)[0]
-print(f"optimal_count = {optimal_counts}") # markdown-exec: hide
 ```
 
 Finally, let's plot the solution. The expected bitstrings are marked in red.
 
 ```python exec="on" source="material-block" html="1" session="qubo"
+import matplotlib.pyplot as plt
 
 # Known solutions to the QUBO problem.
 solution_bitstrings = ["01011", "00111"]
 
 def plot_distribution(C, ax, title):
     C = dict(sorted(C.items(), key=lambda item: item[1], reverse=True))
-    indexes = solution_bitstrings # QUBO solutions
-    color_dict = {key: "r" if key in indexes else "g" for key in C}
+    color_dict = {key: "r" if key in solution_bitstrings else "b" for key in C}
     ax.set_xlabel("bitstrings")
     ax.set_ylabel("counts")
     ax.set_xticks([i for i in range(len(C.keys()))], C.keys(), rotation=90)
-    ax.bar(list(C.keys())[:20], list(C.values())[:20])
+    ax.bar(C.keys(), C.values(), color=color_dict.values())
     ax.set_title(title)
 
 plt.tight_layout() # markdown-exec: hide

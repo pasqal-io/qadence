@@ -5,6 +5,8 @@ from dataclasses import dataclass, fields
 from qadence.analog import AddressingPattern
 from qadence.types import PI, DeviceType, Interaction
 
+from .constants import C6_DICT
+
 
 @dataclass(frozen=True, eq=True)
 class RydbergDevice:
@@ -40,6 +42,11 @@ class RydbergDevice:
 
     type: DeviceType = DeviceType.IDEALIZED
     """DeviceType.IDEALIZED or REALISTIC to convert to the Pulser backend."""
+
+    @property
+    def coeff_ising(self) -> float:
+        """Value of C_6."""
+        return C6_DICT[self.rydberg_level]
 
     def __post_init__(self) -> None:
         # FIXME: Currently not supporting custom interaction functions.
