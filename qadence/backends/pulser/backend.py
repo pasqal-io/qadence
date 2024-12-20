@@ -259,7 +259,7 @@ class Backend(BackendInterface):
             for i, param_values_el in enumerate(vals):
                 sequence = self.assign_parameters(circuit, param_values_el)
                 sim_result: CoherentResults = simulate_sequence(sequence, self.config, state)
-                final_state = sim_result.get_final_state().data.toarray()
+                final_state = sim_result.get_final_state().data.to_array()
                 batched_dm[i] = np.flip(final_state)
             return torch.from_numpy(batched_dm)
 
