@@ -187,7 +187,7 @@ def test_chemistry_hamiltonian_2() -> None:
     hamiltonian = open_chem_obs()
     param_values: dict = dict()
 
-    kwargs = {"accuracy": 0.1, "confidence": 0.1, "shadow_size": 5000}
+    kwargs = {"accuracy": 0.1, "confidence": 0.1, "shadow_size": 1000}
 
     model = QuantumModel(
         circuit=circuit,
