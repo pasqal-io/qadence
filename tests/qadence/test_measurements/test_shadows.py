@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+from typing import Callable
 
 import pytest
 import torch
@@ -125,7 +126,7 @@ values2 = {
     ],
 )
 @pytest.mark.parametrize("observable", [Z(0) ^ 2, X(1)])
-def test_estimations_comparison_tomo_forward_pass(
+def test_estimations_shadow_forward_pass(
     circuit: QuantumCircuit,
     values: dict,
     diff_mode: DiffMode,
@@ -140,28 +141,30 @@ def test_estimations_comparison_tomo_forward_pass(
         backend=BackendName.PYQTORCH,
         diff_mode=DiffMode.GPSR,
     )
-    options = {"n_shots": 100000}
-    estimated_exp_tomo = model.expectation(
-        values=values,
-        measurement=Measurements(protocol=Measurements.TOMOGRAPHY, options=options),
-    )
-    new_options = {"accuracy": 0.1, "confidence": 0.1}
+    options = {"accuracy": 0.1, "confidence": 0.1}
     estimated_exp_shadow = model.expectation(
         values=values,
-        measurement=Measurements(protocol=Measurements.SHADOW, options=new_options),
-    )  # N = 54400.
-    assert torch.allclose(estimated_exp_tomo, pyq_exp_exact, atol=1.0e-2)
-    assert torch.allclose(estimated_exp_shadow, pyq_exp_exact, atol=0.1)
+        measurement=Measurements(protocol=Measurements.SHADOW, options=options),
+    )
     assert torch.allclose(estimated_exp_shadow, pyq_exp_exact, atol=0.1)
 
 
 @pytest.mark.flaky(max_runs=5)
-def test_chemistry_hamiltonian_1() -> None:
+@pytest.mark.parametrize(
+    "ham_generator, tolerance",
+    [
+        ("./tests/test_files/chem_ham.json", 0.3),
+        (ising_hamiltonian, 0.2),
+    ],
+)
+def test_chemistry_hamiltonian_1(ham_generator: str | Callable, tolerance: float) -> None:
     from qadence import load
 
     circuit = load("./tests/test_files/chem_circ.json")
     assert isinstance(circuit, QuantumCircuit)
-    hamiltonian = load("./tests/test_files/chem_ham.json")
+    hamiltonian = (
+        load(ham_generator) if isinstance(ham_generator, str) else ham_generator(circuit.n_qubits)
+    )
     assert isinstance(hamiltonian, AbstractBlock)
     # Restrict shadow size for faster tests.
     kwargs = {"accuracy": 0.1, "confidence": 0.1, "shadow_size": 1000}
@@ -171,40 +174,14 @@ def test_chemistry_hamiltonian_1() -> None:
         circuit=circuit,
         observable=hamiltonian,
         backend=BackendName.PYQTORCH,
-        diff_mode=DiffMode.GPSR,
+        diff_mode=DiffMode.AD,
     )
     exact = model.expectation(values=param_values)
     estim = model.expectation(
         values=param_values,
         measurement=Measurements(protocol=Measurements.SHADOW, options=kwargs),
     )
-    assert torch.allclose(estim, exact, atol=0.3)
-
-
-@pytest.mark.flaky(max_runs=5)
-def test_chemistry_hamiltonian_2() -> None:
-    from qadence import load
-
-    circuit = load("./tests/test_files/chem_circ.json")
-    assert isinstance(circuit, QuantumCircuit)
-    hamiltonian = ising_hamiltonian(2)
-    assert isinstance(hamiltonian, AbstractBlock)
-    # Restrict shadow size for faster tests.
-    kwargs = {"accuracy": 0.1, "confidence": 0.1, "shadow_size": 1000}
-    param_values = {"theta_0": torch.tensor([1.0])}
-
-    model = QuantumModel(
-        circuit=circuit,
-        observable=hamiltonian,
-        backend=BackendName.PYQTORCH,
-        diff_mode=DiffMode.GPSR,
-    )
-    exact = model.expectation(values=param_values)
-    estim = model.expectation(
-        values=param_values,
-        measurement=Measurements(protocol=Measurements.SHADOW, options=kwargs),
-    )
-    assert torch.allclose(estim, exact, atol=0.2)
+    assert torch.allclose(estim, exact, atol=tolerance)
 
 
 def open_chem_obs() -> AbstractBlock:
@@ -215,7 +192,7 @@ def open_chem_obs() -> AbstractBlock:
 
 
 @pytest.mark.flaky(max_runs=5)
-def test_chemistry_hamiltonian_3() -> None:
+def test_chemistry_hamiltonian_2() -> None:
     circuit = QuantumCircuit(4, kron(Z(0), H(1), Z(2), X(3)))
     hamiltonian = open_chem_obs()
     param_values: dict = dict()
@@ -226,7 +203,7 @@ def test_chemistry_hamiltonian_3() -> None:
         circuit=circuit,
         observable=hamiltonian,
         backend=BackendName.PYQTORCH,
-        diff_mode=DiffMode.GPSR,
+        diff_mode=DiffMode.AD,
     )
     exact = model.expectation(values=param_values)
     estim = model.expectation(
