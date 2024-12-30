@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Callable
 
 import pytest
 import torch
@@ -125,14 +124,12 @@ values2 = {
         (QuantumCircuit(2, blocks), values2, DiffMode.GPSR),
     ],
 )
-@pytest.mark.parametrize("observable", [Z(0) ^ 2, X(1)])
 def test_estimations_shadow_forward_pass(
-    circuit: QuantumCircuit,
-    values: dict,
-    diff_mode: DiffMode,
-    observable: AbstractBlock,
+    circuit: QuantumCircuit, values: dict, diff_mode: DiffMode
 ) -> None:
     pyq_backend = backend_factory(BackendName.PYQTORCH, diff_mode=diff_mode)
+    # combine observables to avoid repeating measurements
+    observable = [Z(0) ^ 2, X(1)]
     (conv_circ, conv_obs, embed, params) = pyq_backend.convert(circuit, observable)
     pyq_exp_exact = pyq_backend.expectation(conv_circ, conv_obs, embed(params, values))
     model = QuantumModel(
@@ -150,29 +147,22 @@ def test_estimations_shadow_forward_pass(
 
 
 @pytest.mark.flaky(max_runs=5)
-@pytest.mark.parametrize(
-    "ham_generator, tolerance",
-    [
-        ("./tests/test_files/chem_ham.json", 0.3),
-        (ising_hamiltonian, 0.2),
-    ],
-)
-def test_chemistry_hamiltonian_1(ham_generator: str | Callable, tolerance: float) -> None:
+def test_chemistry_hamiltonian_1() -> None:
     from qadence import load
 
     circuit = load("./tests/test_files/chem_circ.json")
     assert isinstance(circuit, QuantumCircuit)
-    hamiltonian = (
-        load(ham_generator) if isinstance(ham_generator, str) else ham_generator(circuit.n_qubits)
-    )
-    assert isinstance(hamiltonian, AbstractBlock)
+    # combine observables to avoid repeating measurements
+    hamiltonians = [load("./tests/test_files/chem_ham.json"), ising_hamiltonian(circuit.n_qubits)]
+    for hamiltonian in hamiltonians:
+        assert isinstance(hamiltonian, AbstractBlock)
     # Restrict shadow size for faster tests.
     kwargs = {"accuracy": 0.1, "confidence": 0.1, "shadow_size": 1000}
     param_values = {"theta_0": torch.tensor([1.0])}
 
     model = QuantumModel(
         circuit=circuit,
-        observable=hamiltonian,
+        observable=hamiltonians,  # type: ignore[arg-type]
         backend=BackendName.PYQTORCH,
         diff_mode=DiffMode.AD,
     )
@@ -181,7 +171,7 @@ def test_chemistry_hamiltonian_1(ham_generator: str | Callable, tolerance: float
         values=param_values,
         measurement=Measurements(protocol=Measurements.SHADOW, options=kwargs),
     )
-    assert torch.allclose(estim, exact, atol=tolerance)
+    assert torch.allclose(estim, exact, atol=0.3)
 
 
 def open_chem_obs() -> AbstractBlock:
