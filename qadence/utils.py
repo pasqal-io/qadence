@@ -9,7 +9,8 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 import sympy
 from numpy.typing import ArrayLike
-from torch import Tensor, stack, vmap
+from pyqtorch.utils import DensityMatrix
+from torch import Tensor, einsum, stack, vmap
 from torch import complex as make_complex
 from torch.linalg import eigvals
 
@@ -292,3 +293,18 @@ P0 = partial(one_qubit_projector, "0")
 P1 = partial(one_qubit_projector, "1")
 P0_MATRIX = one_qubit_projector_matrix("0")
 P1_MATRIX = one_qubit_projector_matrix("1")
+
+
+def density_mat(state: Tensor) -> DensityMatrix:
+    """
+    Computes the density matrix from a pure state vector.
+
+    Arguments:
+        state: The pure state vector :math:`|\\psi\\rangle`.
+
+    Returns:
+        Tensor: The density matrix :math:`\\rho = |\psi \\rangle \\langle\\psi|`.
+    """
+    if isinstance(state, DensityMatrix):
+        return state
+    return DensityMatrix(einsum("bi,bj->bij", (state, state.conj())))

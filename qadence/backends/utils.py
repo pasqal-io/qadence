@@ -110,9 +110,23 @@ def to_list_of_dicts(param_values: ParamDictType) -> list[ParamDictType]:
 
 
 def pyqify(state: Tensor, n_qubits: int = None) -> ArrayLike:
-    """Convert a state of shape (batch_size, 2**n_qubits) to [2] * n_qubits + [batch_size]."""
+    """Convert a state of shape (batch_size, 2**n_qubits) to [2] * n_qubits + [batch_size].
+
+    Or set the batch_size of a density matrix as the last dimension for PyQTorch.
+    """
     if n_qubits is None:
         n_qubits = int(log2(state.shape[1]))
+    if isinstance(state, DensityMatrix):
+        if (
+            len(state.shape) != 3
+            or (state.shape[1] != 2**n_qubits)
+            or (state.shape[1] != state.shape[2])
+        ):
+            raise ValueError(
+                "The initial state must be composed of tensors/arrays of size "
+                f"(batch_size, 2**n_qubits, 2**n_qubits). Found: {state.shape = }."
+            )
+        return torch.einsum("kij->ijk", state)
     if len(state.shape) != 2 or (state.shape[1] != 2**n_qubits):
         raise ValueError(
             "The initial state must be composed of tensors/arrays of size "

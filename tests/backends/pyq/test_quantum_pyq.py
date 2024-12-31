@@ -40,6 +40,7 @@ from qadence.operations import (
     CRX,
     CRY,
     CRZ,
+    CZ,
     RX,
     RY,
     RZ,
@@ -59,7 +60,7 @@ from qadence.parameters import FeatureParameter, Parameter
 from qadence.states import random_state, uniform_state, zero_state
 from qadence.transpile import set_trainable
 from qadence.types import PI, BackendName, DiffMode
-from qadence.utils import P0, P1
+from qadence.utils import P0, P1, DensityMatrix, density_mat
 
 
 def custom_obs() -> AbstractBlock:
@@ -168,6 +169,14 @@ def test_raise_error_for_ill_dimensioned_initial_state() -> None:
         backend.run(backend.circuit(circuit), state=initial_state)
 
 
+def test_raise_error_for_ill_dimensioned_density_matrix() -> None:
+    circuit = QuantumCircuit(2, X(0) @ X(1))
+    backend = Backend()
+    initial_state = DensityMatrix(torch.tensor([[1.0, 0.0], [0.0, 1.0]], dtype=torch.complex128))
+    with pytest.raises(ValueError):
+        backend.run(backend.circuit(circuit), state=initial_state)
+
+
 @pytest.mark.parametrize(
     "gate, state",
     [
@@ -191,6 +200,13 @@ def test_run_with_nonparametric_single_qubit_gates(
     initial_state = torch.tensor([[1.0, 0.0]], dtype=torch.complex128)
     wf = backend.run(pyqtorch_circ, state=initial_state)
     assert torch.allclose(wf, state)
+
+    # test with density matrix
+    initial_state = density_mat(initial_state)
+    dm = backend.run(pyqtorch_circ, state=initial_state)
+    assert isinstance(dm, DensityMatrix)
+    expected_dm = density_mat(state.unsqueeze(0) if len(state.shape) == 1 else state)
+    assert torch.allclose(dm, expected_dm)
 
 
 @pytest.mark.parametrize(
@@ -245,9 +261,19 @@ def test_run_with_nonparametric_single_qubit_gates_and_random_initial_state(
     theta2 = random.uniform(0.0, 2.0 * PI)
     complex2 = complex(np.cos(theta2), np.sin(theta2))
     initial_state = torch.tensor([[complex1, complex2]], dtype=torch.complex128)
-    wf = backend.run(backend.circuit(circuit), state=initial_state)
+    pyqtorch_circ = backend.circuit(circuit)
+    wf = backend.run(pyqtorch_circ, state=initial_state)
     expected_state = torch.matmul(matrix, initial_state[0])
     assert torch.allclose(wf, expected_state)
+
+    # test with density matrix
+    initial_state = density_mat(initial_state)
+    dm = backend.run(pyqtorch_circ, state=initial_state)
+    assert isinstance(dm, DensityMatrix)
+    expected_dm = density_mat(
+        expected_state.unsqueeze(0) if len(expected_state.shape) == 1 else expected_state
+    )
+    assert torch.allclose(dm, expected_dm)
 
 
 @pytest.mark.parametrize(
@@ -355,6 +381,15 @@ def test_run_with_parametric_single_qubit_gates_and_random_initial_state(
     expected_state = torch.matmul(matrix, initial_state[0])
     assert torch.allclose(wf, expected_state)
 
+    # test with density matrix
+    initial_state = density_mat(initial_state)
+    dm = backend.run(pyqtorch_circ, embed(params, {}), state=initial_state)
+    assert isinstance(dm, DensityMatrix)
+    expected_dm = density_mat(
+        expected_state.unsqueeze(0) if len(expected_state.shape) == 1 else expected_state
+    )
+    assert torch.allclose(dm, expected_dm)
+
 
 @pytest.mark.parametrize(
     "parametric_gate, state",
@@ -394,6 +429,13 @@ def test_run_with_parametric_two_qubit_gates(
     )
     wf = backend.run(pyqtorch_circ, embed(params, {}), state=initial_state)
     assert torch.allclose(wf, state)
+
+    # test with density matrix
+    initial_state = density_mat(initial_state)
+    dm = backend.run(pyqtorch_circ, embed(params, {}), state=initial_state)
+    assert isinstance(dm, DensityMatrix)
+    expected_dm = density_mat(state.unsqueeze(0) if len(state.shape) == 1 else state)
+    assert torch.allclose(dm, expected_dm)
 
 
 @pytest.mark.parametrize(
@@ -462,6 +504,15 @@ def test_run_with_parametric_two_qubit_gates_and_random_state(
     wf = backend.run(pyqtorch_circ, embed(params, {}), state=initial_state)
     expected_state = torch.matmul(matrix, initial_state[0])
     assert torch.allclose(wf, expected_state)
+
+    # test with density matrix
+    initial_state = density_mat(initial_state)
+    dm = backend.run(pyqtorch_circ, embed(params, {}), state=initial_state)
+    assert isinstance(dm, DensityMatrix)
+    expected_dm = density_mat(
+        expected_state.unsqueeze(0) if len(expected_state.shape) == 1 else expected_state
+    )
+    assert torch.allclose(dm, expected_dm)
 
 
 @pytest.mark.parametrize(
@@ -539,6 +590,10 @@ def test_expectation_with_pauli_gates_and_random_state(
     expectation_value = backend.expectation(
         pyqtorch_circ, pyqtorch_obs, embed(params, {}), state=initial_state
     )
+    expectation_value_init_dm = backend.expectation(
+        pyqtorch_circ, pyqtorch_obs, embed(params, {}), state=density_mat(initial_state)
+    )
+
     Z_matrix = torch.tensor(
         [[1.0 + 0.0j, 0.0 + 0.0j], [0.0 + 0.0j, -1.0 + 0.0j]], dtype=torch.complex128
     )
@@ -546,6 +601,7 @@ def test_expectation_with_pauli_gates_and_random_state(
     probas = torch.square(torch.abs(final_state))
     expected_value = probas[0] - probas[1]
     assert torch.allclose(expectation_value, expected_value)
+    assert torch.allclose(expectation_value, expectation_value_init_dm)
 
 
 @pytest.mark.flaky(max_runs=5)
@@ -594,7 +650,7 @@ def test_controlled_rotation_gates_with_heterogeneous_parameters() -> None:
     [
         X(0),
         RZ(1, 0.5),
-        # CRY(0,1,0.2) write proper test for this
+        CRY(0, 1, 0.2),
     ],
 )
 def test_scaled_operation(block: AbstractBlock) -> None:
@@ -631,10 +687,10 @@ def test_scaled_featureparam_batching(batch_size: int) -> None:
         X(0),
         Y(0),
         Z(0),
-        # S(0), # TODO implement SDagger in PyQ
+        S(0),
         # T(0), # TODO implement TDagger in PyQ
         CNOT(0, 1),
-        # CZ(0, 1), # TODO implement CZ in PyQ?
+        CZ(0, 1),
         SWAP(0, 1),
         H(0),
         I(0),
