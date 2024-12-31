@@ -8,6 +8,7 @@ import torch
 from torch import Tensor
 
 from qadence.backends.jax_utils import jarr_to_tensor
+from qadence.backends.utils import pyqify
 from qadence.execution import run
 from qadence.states import (
     DensityMatrix,
@@ -85,3 +86,12 @@ def test_density_mat() -> None:
     state_dm2 = density_mat(state_dm)
     assert isinstance(state_dm2, DensityMatrix)
     assert torch.allclose(state_dm2, state_dm)
+
+    with pytest.raises(ValueError):
+        pyqify(state_dm2.unsqueeze(0))
+
+    with pytest.raises(ValueError):
+        pyqify(state_dm2.view((1, 2, 8)))
+
+    with pytest.raises(ValueError):
+        pyqify(state_dm2.view((2, 4, 2)))
