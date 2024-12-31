@@ -122,6 +122,22 @@ final_state = run(CNOT(0, 1), state=init_state)
 print(f"Final state = {final_state}") # markdown-exec: hide
 ```
 
+## Density matrices conversion
+
+It is also possible to obtain density matrices from statevectors. They can be passed as inputs to quantum programs performing density matrix based operations such as noisy simulations, when the backend allows such as PyQTorch.
+
+```python exec="on" source="material-block" result="json" session="states"
+from qadence import product_state, density_mat
+
+init_state = product_state("10")
+init_density_matrix = density_mat(init_state)
+print(f"Initial = {init_density_matrix}") # markdown-exec: hide
+
+final_density_matrix = run(CNOT(0, 1), state=init_density_matrix)
+print(f"Final = {final_density_matrix}") # markdown-exec: hide
+
+```
+
 ## Block initialization
 
 Not all backends support custom statevector initialization, however previous utility functions have their counterparts to initialize the respective blocks:
