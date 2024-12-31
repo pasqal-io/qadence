@@ -57,10 +57,10 @@ from qadence.operations import (
     Z,
 )
 from qadence.parameters import FeatureParameter, Parameter
-from qadence.states import random_state, uniform_state, zero_state
+from qadence.states import DensityMatrix, density_mat, random_state, uniform_state, zero_state
 from qadence.transpile import set_trainable
 from qadence.types import PI, BackendName, DiffMode
-from qadence.utils import P0, P1, DensityMatrix, density_mat
+from qadence.utils import P0, P1
 
 
 def custom_obs() -> AbstractBlock:
