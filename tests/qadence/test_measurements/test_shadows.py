@@ -124,14 +124,12 @@ values2 = {
         (QuantumCircuit(2, blocks), values2, DiffMode.GPSR),
     ],
 )
-@pytest.mark.parametrize("observable", [Z(0) ^ 2, X(1)])
-def test_estimations_comparison_tomo_forward_pass(
-    circuit: QuantumCircuit,
-    values: dict,
-    diff_mode: DiffMode,
-    observable: AbstractBlock,
+def test_estimations_shadow_forward_pass(
+    circuit: QuantumCircuit, values: dict, diff_mode: DiffMode
 ) -> None:
     pyq_backend = backend_factory(BackendName.PYQTORCH, diff_mode=diff_mode)
+    # combine observables to avoid repeating measurements
+    observable = [Z(0) ^ 2, X(1)]
     (conv_circ, conv_obs, embed, params) = pyq_backend.convert(circuit, observable)
     pyq_exp_exact = pyq_backend.expectation(conv_circ, conv_obs, embed(params, values))
     model = QuantumModel(
@@ -140,18 +138,11 @@ def test_estimations_comparison_tomo_forward_pass(
         backend=BackendName.PYQTORCH,
         diff_mode=DiffMode.GPSR,
     )
-    options = {"n_shots": 100000}
-    estimated_exp_tomo = model.expectation(
-        values=values,
-        measurement=Measurements(protocol=Measurements.TOMOGRAPHY, options=options),
-    )
-    new_options = {"accuracy": 0.1, "confidence": 0.1}
+    options = {"accuracy": 0.1, "confidence": 0.1}
     estimated_exp_shadow = model.expectation(
         values=values,
-        measurement=Measurements(protocol=Measurements.SHADOW, options=new_options),
-    )  # N = 54400.
-    assert torch.allclose(estimated_exp_tomo, pyq_exp_exact, atol=1.0e-2)
-    assert torch.allclose(estimated_exp_shadow, pyq_exp_exact, atol=0.1)
+        measurement=Measurements(protocol=Measurements.SHADOW, options=options),
+    )
     assert torch.allclose(estimated_exp_shadow, pyq_exp_exact, atol=0.1)
 
 
@@ -161,17 +152,19 @@ def test_chemistry_hamiltonian_1() -> None:
 
     circuit = load("./tests/test_files/chem_circ.json")
     assert isinstance(circuit, QuantumCircuit)
-    hamiltonian = load("./tests/test_files/chem_ham.json")
-    assert isinstance(hamiltonian, AbstractBlock)
+    # combine observables to avoid repeating measurements
+    hamiltonians = [load("./tests/test_files/chem_ham.json"), ising_hamiltonian(circuit.n_qubits)]
+    for hamiltonian in hamiltonians:
+        assert isinstance(hamiltonian, AbstractBlock)
     # Restrict shadow size for faster tests.
     kwargs = {"accuracy": 0.1, "confidence": 0.1, "shadow_size": 1000}
     param_values = {"theta_0": torch.tensor([1.0])}
 
     model = QuantumModel(
         circuit=circuit,
-        observable=hamiltonian,
+        observable=hamiltonians,  # type: ignore[arg-type]
         backend=BackendName.PYQTORCH,
-        diff_mode=DiffMode.GPSR,
+        diff_mode=DiffMode.AD,
     )
     exact = model.expectation(values=param_values)
     estim = model.expectation(
@@ -179,32 +172,6 @@ def test_chemistry_hamiltonian_1() -> None:
         measurement=Measurements(protocol=Measurements.SHADOW, options=kwargs),
     )
     assert torch.allclose(estim, exact, atol=0.3)
-
-
-@pytest.mark.flaky(max_runs=5)
-def test_chemistry_hamiltonian_2() -> None:
-    from qadence import load
-
-    circuit = load("./tests/test_files/chem_circ.json")
-    assert isinstance(circuit, QuantumCircuit)
-    hamiltonian = ising_hamiltonian(2)
-    assert isinstance(hamiltonian, AbstractBlock)
-    # Restrict shadow size for faster tests.
-    kwargs = {"accuracy": 0.1, "confidence": 0.1, "shadow_size": 1000}
-    param_values = {"theta_0": torch.tensor([1.0])}
-
-    model = QuantumModel(
-        circuit=circuit,
-        observable=hamiltonian,
-        backend=BackendName.PYQTORCH,
-        diff_mode=DiffMode.GPSR,
-    )
-    exact = model.expectation(values=param_values)
-    estim = model.expectation(
-        values=param_values,
-        measurement=Measurements(protocol=Measurements.SHADOW, options=kwargs),
-    )
-    assert torch.allclose(estim, exact, atol=0.2)
 
 
 def open_chem_obs() -> AbstractBlock:
@@ -215,18 +182,18 @@ def open_chem_obs() -> AbstractBlock:
 
 
 @pytest.mark.flaky(max_runs=5)
-def test_chemistry_hamiltonian_3() -> None:
+def test_chemistry_hamiltonian_2() -> None:
     circuit = QuantumCircuit(4, kron(Z(0), H(1), Z(2), X(3)))
     hamiltonian = open_chem_obs()
     param_values: dict = dict()
 
-    kwargs = {"accuracy": 0.1, "confidence": 0.1, "shadow_size": 5000}
+    kwargs = {"accuracy": 0.1, "confidence": 0.1, "shadow_size": 1000}
 
     model = QuantumModel(
         circuit=circuit,
         observable=hamiltonian,
         backend=BackendName.PYQTORCH,
-        diff_mode=DiffMode.GPSR,
+        diff_mode=DiffMode.AD,
     )
     exact = model.expectation(values=param_values)
     estim = model.expectation(

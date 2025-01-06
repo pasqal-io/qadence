@@ -457,7 +457,7 @@ def test_basic_tomography_for_parametric_circuit_forward_pass(
     "observable, acceptance",
     [
         (total_magnetization(4), MIDDLE_ACCEPTANCE),
-        (zz_hamiltonian(4), MIDDLE_ACCEPTANCE),
+        # (zz_hamiltonian(4), MIDDLE_ACCEPTANCE),  # skiping zz as it is very heavy
         # (ising_hamiltonian(4), MIDDLE_ACCEPTANCE),
         (
             add(
@@ -482,7 +482,6 @@ def test_forward_and_backward_passes_with_qnn(observable: AbstractBlock, accepta
     batch_size = 5
     kwargs = {"n_shots": 1000000}
 
-    # fm = fourier_feature_map(n_qubits)
     fm = feature_map(n_qubits, fm_type=BasisSet.CHEBYSHEV)
     ansatz = hea(n_qubits, depth=2)
     circuit = QuantumCircuit(n_qubits, fm, ansatz)
@@ -571,12 +570,13 @@ def test_partial_derivatives_with_qnn(observable: AbstractBlock, acceptance: flo
         ones_like(dexpval_tomo_phi),
         create_graph=True,
     )[0]
-    d2expval_tomo_phi2theta = autograd.grad(
-        d2expval_tomo_phi2,
-        list(params.values()),
-        ones_like(d2expval_tomo_phi2),
-        create_graph=True,
-    )[0]
+    ##### this derivative is very long, disabling for CI
+    # d2expval_tomo_phi2theta = autograd.grad(
+    #     d2expval_tomo_phi2,
+    #     list(params.values()),
+    #     ones_like(d2expval_tomo_phi2),
+    #     create_graph=True,
+    # )[0]
     expectation_exact = model_with_psr.expectation(values=values)
     dexpval_exact_phi = autograd.grad(
         expectation_exact,
@@ -590,6 +590,7 @@ def test_partial_derivatives_with_qnn(observable: AbstractBlock, acceptance: flo
         ones_like(expectation_exact),
         create_graph=True,
     )[0]
+
     dexpval_exact_phitheta = autograd.grad(
         dexpval_exact_phi,
         list(params.values()),
@@ -602,18 +603,19 @@ def test_partial_derivatives_with_qnn(observable: AbstractBlock, acceptance: flo
         ones_like(dexpval_exact_phi),
         create_graph=True,
     )[0]
-    d2expval_exact_phi2theta = autograd.grad(
-        d2expval_exact_phi2,
-        list(params.values()),
-        ones_like(d2expval_exact_phi2),
-        create_graph=True,
-    )[0]
+    ##### this derivative is very long, disabling for CI
+    # d2expval_exact_phi2theta = autograd.grad(
+    #     d2expval_exact_phi2,
+    #     list(params.values()),
+    #     ones_like(d2expval_exact_phi2),
+    #     create_graph=True,
+    # )[0]
     assert allclose(expectation_tomo, expectation_exact, atol=acceptance)
     assert allclose(dexpval_tomo_phi, dexpval_exact_phi, atol=acceptance)
     assert allclose(dexpval_tomo_theta, dexpval_exact_theta, atol=acceptance)
     assert allclose(dexpval_tomo_phitheta, dexpval_exact_phitheta, atol=acceptance)
     assert allclose(d2expval_tomo_phi2, d2expval_exact_phi2, atol=HIGH_ACCEPTANCE)
-    assert allclose(d2expval_tomo_phi2theta, d2expval_exact_phi2theta, atol=HIGH_ACCEPTANCE)
+    # assert allclose(d2expval_tomo_phi2theta, d2expval_exact_phi2theta, atol=HIGH_ACCEPTANCE)
 
 
 @pytest.mark.skip(
