@@ -457,7 +457,7 @@ def test_basic_tomography_for_parametric_circuit_forward_pass(
     "observable, acceptance",
     [
         (total_magnetization(4), MIDDLE_ACCEPTANCE),
-        # (zz_hamiltonian(4), MIDDLE_ACCEPTANCE), # skiping zz as it is very heavy
+        (zz_hamiltonian(4), MIDDLE_ACCEPTANCE), # skiping zz as it is very heavy
         # (ising_hamiltonian(4), MIDDLE_ACCEPTANCE),
         (
             add(
