@@ -49,7 +49,9 @@ class PSRExpectation(Function):
             if isinstance(expectation_values[0], list):
                 exp_vals: list = []
                 for expectation_value in expectation_values:
-                    res = list(map(lambda x: x.get_final_state().data.toarray(), expectation_value))
+                    res = list(
+                        map(lambda x: x.get_final_state().data.to_array(), expectation_value)
+                    )
                     exp_vals.append(torch.tensor(res))
                 expectation_values = exp_vals
             return torch.stack(expectation_values)
