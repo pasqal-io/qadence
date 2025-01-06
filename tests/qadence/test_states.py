@@ -4,11 +4,15 @@ from typing import Callable
 
 import numpy as np
 import pytest
+import torch
 from torch import Tensor
 
 from qadence.backends.jax_utils import jarr_to_tensor
+from qadence.backends.utils import pyqify
 from qadence.execution import run
 from qadence.states import (
+    DensityMatrix,
+    density_mat,
     equivalent_state,
     ghz_block,
     ghz_state,
@@ -69,3 +73,25 @@ def test_product_state(n_qubits: int, backend: str) -> None:
     assert is_normalized(state_direct)
     assert is_normalized(state_block)
     assert equivalent_state(state_direct, state_block)
+
+
+def test_density_mat() -> None:
+    state_direct = product_state("00")
+    state_dm = density_mat(state_direct)
+    assert len(state_dm.shape) == 3
+    assert isinstance(state_dm, DensityMatrix)
+    assert state_dm.shape[0] == 1
+    assert state_dm.shape[1] == state_dm.shape[2] == 4
+
+    state_dm2 = density_mat(state_dm)
+    assert isinstance(state_dm2, DensityMatrix)
+    assert torch.allclose(state_dm2, state_dm)
+
+    with pytest.raises(ValueError):
+        pyqify(state_dm2.unsqueeze(0))
+
+    with pytest.raises(ValueError):
+        pyqify(state_dm2.view((1, 2, 8)))
+
+    with pytest.raises(ValueError):
+        pyqify(state_dm2.view((2, 4, 2)))

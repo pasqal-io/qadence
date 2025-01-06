@@ -6,6 +6,7 @@ from typing import List
 
 import torch
 from numpy.typing import ArrayLike
+from pyqtorch.utils import DensityMatrix
 from torch import Tensor, concat
 from torch.distributions import Categorical, Distribution
 
@@ -37,6 +38,8 @@ __all__ = [
     "is_normalized",
     "rand_bitstring",
     "equivalent_state",
+    "DensityMatrix",
+    "density_mat",
 ]
 
 ATOL_64 = 1e-14  # 64 bit precision
@@ -317,6 +320,24 @@ def random_state(
         state = run(_abstract_random_state(n_qubits, batch_size))  # type: ignore
     assert all(list(map(is_normalized, state)))
     return state
+
+
+# DENSITY MATRIX
+
+
+def density_mat(state: Tensor) -> DensityMatrix:
+    """
+    Computes the density matrix from a pure state vector.
+
+    Arguments:
+        state: The pure state vector :math:`|\\psi\\rangle`.
+
+    Returns:
+        Tensor: The density matrix :math:`\\rho = |\psi \\rangle \\langle\\psi|`.
+    """
+    if isinstance(state, DensityMatrix):
+        return state
+    return DensityMatrix(torch.einsum("bi,bj->bij", (state, state.conj())))
 
 
 # BLOCKS
