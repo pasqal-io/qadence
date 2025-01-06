@@ -71,6 +71,14 @@ def test_noisy_simulations(noiseless_pulser_sim: Tensor, noisy_pulser_sim: Tenso
     assert torch.allclose(noiseless_expectation, noiseless_pulser_sim, atol=1.0e-3)
     assert torch.allclose(noisy_expectation, noisy_pulser_sim, atol=1.0e-3)
 
+    # test backend itself
+    backend = backend_factory(backend=BackendName.PULSER, diff_mode=DiffMode.GPSR)
+    (pulser_circ, pulser_obs, embed, params) = backend.convert(circuit, observable)
+    native_noisy_expectation = backend.expectation(
+        pulser_circ, pulser_obs, embed(params, {}), noise=noise
+    )
+    assert torch.allclose(native_noisy_expectation, noisy_expectation, atol=1.0e-3)
+
 
 def test_batched_noisy_simulations(
     noiseless_pulser_sim: Tensor, batched_noisy_pulser_sim: Tensor
@@ -95,3 +103,11 @@ def test_batched_noisy_simulations(
     batched_noisy_expectation = model_noisy.expectation()
     assert torch.allclose(noiseless_expectation, noiseless_pulser_sim, atol=1.0e-3)
     assert torch.allclose(batched_noisy_expectation, batched_noisy_pulser_sim, atol=1.0e-3)
+
+    # test backend itself
+    backend = backend_factory(backend=BackendName.PULSER, diff_mode=DiffMode.GPSR)
+    (pulser_circ, pulser_obs, embed, params) = backend.convert(circuit, observable)
+    batched_native_expectation = backend.expectation(
+        pulser_circ, pulser_obs, embed(params, {}), noise=noise
+    )
+    assert torch.allclose(batched_native_expectation, batched_noisy_pulser_sim, atol=1.0e-3)
