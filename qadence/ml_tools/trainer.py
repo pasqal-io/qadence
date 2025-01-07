@@ -281,6 +281,7 @@ class Trainer(BaseTrainer):
         self.device: torch_device | None = device
         self.dtype: torch_dtype | None = dtype
         self.data_dtype: torch_dtype | None = None
+        self.stop_training: bool = False
         if self.dtype:
             self.data_dtype = float64 if (self.dtype == complex128) else float32
 
@@ -321,6 +322,7 @@ class Trainer(BaseTrainer):
         The callback_manager.start_training takes care of loading checkpoint,
         and setting up the writer.
         """
+        self.stop_training = False
         self.config_manager.initialize_config()
         self.callback_manager.start_training(trainer=self)
 
@@ -377,25 +379,26 @@ class Trainer(BaseTrainer):
             for epoch in range(
                 self.global_step, self.global_step + self.config_manager.config.max_iter + 1
             ):
-                try:
-                    self.current_epoch = epoch
-                    self.on_train_epoch_start()
-                    train_epoch_loss_metrics = self.run_training(self.train_dataloader)
-                    train_losses.append(train_epoch_loss_metrics)
-                    self.on_train_epoch_end(train_epoch_loss_metrics)
+                if not self.stop_training:
+                    try:
+                        self.current_epoch = epoch
+                        self.on_train_epoch_start()
+                        train_epoch_loss_metrics = self.run_training(self.train_dataloader)
+                        train_losses.append(train_epoch_loss_metrics)
+                        self.on_train_epoch_end(train_epoch_loss_metrics)
 
-                    # Run validation periodically if specified
-                    if self.perform_val and self.current_epoch % self.config.val_every == 0:
-                        self.on_val_epoch_start()
-                        val_epoch_loss_metrics = self.run_validation(self.val_dataloader)
-                        val_losses.append(val_epoch_loss_metrics)
-                        self.on_val_epoch_end(val_epoch_loss_metrics)
-                        self.progress.update(val_task, advance=1)
+                        # Run validation periodically if specified
+                        if self.perform_val and self.current_epoch % self.config.val_every == 0:
+                            self.on_val_epoch_start()
+                            val_epoch_loss_metrics = self.run_validation(self.val_dataloader)
+                            val_losses.append(val_epoch_loss_metrics)
+                            self.on_val_epoch_end(val_epoch_loss_metrics)
+                            self.progress.update(val_task, advance=1)
 
-                    self.progress.update(train_task, advance=1)
-                except KeyboardInterrupt:
-                    logger.info("Terminating training gracefully after the current iteration.")
-                    break
+                        self.progress.update(train_task, advance=1)
+                    except KeyboardInterrupt:
+                        logger.info("Terminating training gracefully after the current iteration.")
+                        break
 
         self.on_train_end(train_losses, val_losses)
         return train_losses
