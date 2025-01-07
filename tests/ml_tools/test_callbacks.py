@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -9,9 +10,14 @@ from torch.utils.data import DataLoader
 
 from qadence.ml_tools import TrainConfig, Trainer
 from qadence.ml_tools.callbacks import (
+    EarlyStopping,
+    GradientMonitoring,
     LoadCheckpoint,
     LogHyperparameters,
     LogModelTracker,
+    LRSchedulerCosineAnnealing,
+    LRSchedulerCyclic,
+    LRSchedulerStepDecay,
     PlotMetrics,
     PrintMetrics,
     SaveBestCheckpoint,
@@ -94,7 +100,7 @@ def test_write_metrics(trainer: Trainer) -> None:
     stage = trainer.training_stage
     callback = WriteMetrics(on=stage, called_every=1)
     callback(stage, trainer, trainer.config, writer)
-    writer.write.assert_called_once_with(trainer.opt_result)
+    writer.write.assert_called_once_with(trainer.opt_result.iteration, trainer.opt_result.metrics)
 
 
 def test_plot_metrics(trainer: Trainer) -> None:
@@ -143,3 +149,92 @@ def test_log_model_tracker(trainer: Trainer) -> None:
         trainer.val_dataloader,
         trainer.test_dataloader,
     )
+
+
+def test_lr_scheduler_step_decay(trainer: Trainer) -> None:
+    writer = trainer.callback_manager.writer = Mock()
+    stage = trainer.training_stage
+    initial_lr = trainer.optimizer.param_groups[0]["lr"]  # type: ignore
+    decay_factor = 0.5
+    callback = LRSchedulerStepDecay(on=stage, called_every=1, gamma=decay_factor)
+    callback(stage, trainer, trainer.config, writer)
+
+    new_lr = trainer.optimizer.param_groups[0]["lr"]  # type: ignore
+    assert new_lr == initial_lr * decay_factor
+
+
+def test_lr_scheduler_cyclic(trainer: Trainer) -> None:
+    writer = trainer.callback_manager.writer = Mock()
+    stage = trainer.training_stage
+    base_lr = 0.001
+    max_lr = 0.01
+    step_size = 2000
+    callback = LRSchedulerCyclic(
+        on=stage, called_every=1, base_lr=base_lr, max_lr=max_lr, step_size=step_size
+    )
+
+    # Set trainer's iteration to simulate training progress
+    trainer.opt_result.iteration = step_size // 2  # Middle of the cycle
+    callback(stage, trainer, trainer.config, writer)
+    expected_lr = base_lr + (max_lr - base_lr) * 0.5
+    new_lr = trainer.optimizer.param_groups[0]["lr"]  # type: ignore
+    assert math.isclose(new_lr, expected_lr, rel_tol=1e-6)
+
+
+def test_lr_scheduler_cosine_annealing(trainer: Trainer) -> None:
+    writer = trainer.callback_manager.writer = Mock()
+    stage = trainer.training_stage
+    min_lr = 1e-6
+    t_max = 5000
+    initial_lr = trainer.optimizer.param_groups[0]["lr"]  # type: ignore
+    callback = LRSchedulerCosineAnnealing(on=stage, called_every=1, t_max=t_max, min_lr=min_lr)
+
+    trainer.opt_result.iteration = t_max // 2  # Halfway through the cycle
+    callback(stage, trainer, trainer.config, writer)
+
+    expected_lr = min_lr + (initial_lr - min_lr) * (1 + math.cos(math.pi * 0.5)) / 2
+    new_lr = trainer.optimizer.param_groups[0]["lr"]  # type: ignore
+    assert math.isclose(new_lr, expected_lr, rel_tol=1e-6)
+
+
+def test_early_stopping(trainer: Trainer) -> None:
+    writer = trainer.callback_manager.writer = Mock()
+    stage = trainer.training_stage
+    patience = 2
+    monitor_metric = "val_loss"
+    mode = "min"
+    callback = EarlyStopping(
+        on=stage, called_every=1, monitor=monitor_metric, patience=patience, mode=mode
+    )
+
+    # Simulate metric values
+    trainer.opt_result.metrics = {monitor_metric: 0.5}
+    callback(stage, trainer, trainer.config, writer)
+    assert trainer.stop_training is False
+
+    trainer.opt_result.metrics[monitor_metric] = 0.6
+    callback(stage, trainer, trainer.config, writer)
+    assert trainer.stop_training is False
+
+    trainer.opt_result.metrics[monitor_metric] = 0.7
+    callback(stage, trainer, trainer.config, writer)
+    assert trainer.stop_training is True  # Should stop training after patience exceeded
+
+
+def test_gradient_monitoring(trainer: Trainer) -> None:
+    writer = trainer.callback_manager.writer = Mock()
+    stage = trainer.training_stage
+    callback = GradientMonitoring(on=stage, called_every=1)
+
+    for param in trainer.model.parameters():
+        param.grad = torch.ones_like(param) * 0.1
+
+    callback(stage, trainer, trainer.config, writer)
+    expected_keys = {
+        f"{name}_{stat}"
+        for name, param in trainer.model.named_parameters()
+        for stat in ["mean", "std", "max", "min"]
+    }
+
+    written_keys = writer.write.call_args[0][1].keys()
+    assert set(written_keys) == expected_keys
