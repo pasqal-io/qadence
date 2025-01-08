@@ -60,12 +60,14 @@ class BaseWriter(ABC):
         raise NotImplementedError("Writers must implement a close method.")
 
     @abstractmethod
-    def write(self, result: OptimizeResult) -> None:
+    def write(self, iteration: int, metrics: dict) -> None:
         """
         Logs the results of the current iteration.
 
         Args:
-            result (OptimizeResult): The optimization results to log.
+            iteration (int): The current training iteration.
+            metrics (dict): A dictionary of metrics to log, where keys are metric names
+                            and values are the corresponding metric values.
         """
         raise NotImplementedError("Writers must implement a write method.")
 
@@ -166,23 +168,22 @@ class TensorBoardWriter(BaseWriter):
         if self.writer:
             self.writer.close()
 
-    def write(self, result: OptimizeResult) -> None:
+    def write(self, iteration: int, metrics: dict) -> None:
         """
         Logs the results of the current iteration to TensorBoard.
 
         Args:
-            result (OptimizeResult): The optimization results to log.
+            iteration (int): The current training iteration.
+            metrics (dict): A dictionary of metrics to log, where keys are metric names
+                            and values are the corresponding metric values.
         """
-        # Not writing loss as loss is available in the metrics
-        # if result.loss is not None:
-        #     self.writer.add_scalar("loss", float(result.loss), result.iteration)
         if self.writer:
-            for key, value in result.metrics.items():
-                self.writer.add_scalar(key, value, result.iteration)
+            for key, value in metrics.items():
+                self.writer.add_scalar(key, value, iteration)
         else:
             raise RuntimeError(
                 "The writer is not initialized."
-                "Please call the 'writer.open()' method before writing"
+                "Please call the 'writer.open()' method before writing."
             )
 
     def log_hyperparams(self, hyperparams: dict) -> None:
@@ -305,22 +306,21 @@ class MLFlowWriter(BaseWriter):
         if self.run:
             self.mlflow.end_run()
 
-    def write(self, result: OptimizeResult) -> None:
+    def write(self, iteration: int, metrics: dict) -> None:
         """
         Logs the results of the current iteration to MLflow.
 
         Args:
-            result (OptimizeResult): The optimization results to log.
+            iteration (int): The current training iteration.
+            metrics (dict): A dictionary of metrics to log, where keys are metric names
+                            and values are the corresponding metric values.
         """
-        # Not writing loss as loss is available in the metrics
-        # if result.loss is not None:
-        #     self.mlflow.log_metric("loss", float(result.loss), step=result.iteration)
         if self.mlflow:
-            self.mlflow.log_metrics(result.metrics, step=result.iteration)
+            self.mlflow.log_metrics(metrics, step=iteration)
         else:
             raise RuntimeError(
                 "The writer is not initialized."
-                "Please call the 'writer.open()' method before writing"
+                "Please call the 'writer.open()' method before writing."
             )
 
     def log_hyperparams(self, hyperparams: dict) -> None:

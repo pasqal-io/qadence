@@ -2,9 +2,14 @@ from __future__ import annotations
 
 from .callback import (
     Callback,
+    EarlyStopping,
+    GradientMonitoring,
     LoadCheckpoint,
     LogHyperparameters,
     LogModelTracker,
+    LRSchedulerCosineAnnealing,
+    LRSchedulerCyclic,
+    LRSchedulerStepDecay,
     PlotMetrics,
     PrintMetrics,
     SaveBestCheckpoint,
@@ -26,5 +31,10 @@ __all__ = [
     "SaveBestCheckpoint",
     "SaveCheckpoint",
     "WriteMetrics",
+    "GradientMonitoring",
+    "LRSchedulerStepDecay",
+    "LRSchedulerCyclic",
+    "LRSchedulerCosineAnnealing",
+    "EarlyStopping",
     "get_writer",
 ]

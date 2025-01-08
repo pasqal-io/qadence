@@ -531,7 +531,7 @@ def train(
             writer.print_metrics(OptimizeResult(iteration, model, optimizer, loss, metrics))
 
         if iteration % config.write_every == 0:
-            writer.write(OptimizeResult(iteration, model, optimizer, loss, metrics))
+            writer.write(iteration, metrics)
 
         if config.log_folder:
             if iteration % config.checkpoint_every == 0:
@@ -540,7 +540,7 @@ def train(
     # Final writing and checkpointing
     if config.log_folder:
         write_checkpoint(config.log_folder, model, optimizer, iteration)
-    writer.write(OptimizeResult(iteration, model, optimizer, loss, metrics))
+    writer.write(iteration,metrics)
     writer.close()
 
     return model, optimizer

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import math
+from logging import getLogger
 from typing import Any, Callable
 
 from qadence.ml_tools.callbacks.saveload import load_checkpoint, write_checkpoint
@@ -11,6 +13,8 @@ from qadence.ml_tools.stages import TrainingStage
 # Define callback types
 CallbackFunction = Callable[..., Any]
 CallbackConditionFunction = Callable[..., bool]
+
+logger = getLogger("ml_tools")
 
 
 class Callback:
@@ -258,7 +262,7 @@ class WriteMetrics(Callback):
             writer (BaseWriter ): The writer object for logging.
         """
         opt_result = trainer.opt_result
-        writer.write(opt_result)
+        writer.write(opt_result.iteration, opt_result.metrics)
 
 
 class PlotMetrics(Callback):
@@ -449,3 +453,323 @@ class LogModelTracker(Callback):
         writer.log_model(
             model, trainer.train_dataloader, trainer.val_dataloader, trainer.test_dataloader
         )
+
+
+class LRSchedulerStepDecay(Callback):
+    """
+    Reduces the learning rate by a factor at regular intervals.
+
+    This callback adjusts the learning rate by multiplying it with a decay factor
+    after a specified number of iterations. The learning rate is updated as:
+        lr = lr * gamma
+
+    Example Usage in `TrainConfig`:
+    To use `LRSchedulerStepDecay`, include it in the `callbacks` list when setting
+    up your `TrainConfig`:
+    ```python exec="on" source="material-block" result="json"
+    from qadence.ml_tools import TrainConfig
+    from qadence.ml_tools.callbacks import LRSchedulerStepDecay
+
+    # Create an instance of the LRSchedulerStepDecay callback
+    lr_step_decay = LRSchedulerStepDecay(on="train_epoch_end",
+                                         called_every=100,
+                                         gamma=0.5)
+
+    config = TrainConfig(
+        max_iter=10000,
+        # Print metrics every 1000 training epochs
+        print_every=1000,
+        # Add the custom callback
+        callbacks=[lr_step_decay]
+    )
+    ```
+    """
+
+    def __init__(self, on: str, called_every: int, gamma: float = 0.5):
+        """Initializes the LRSchedulerStepDecay callback.
+
+        Args:
+            on (str): The event to trigger the callback.
+            called_every (int): Frequency of callback calls in terms of iterations.
+            gamma (float, optional): The decay factor applied to the learning rate.
+                A value < 1 reduces the learning rate over time. Default is 0.5.
+        """
+        super().__init__(on=on, called_every=called_every)
+        self.gamma = gamma
+
+    def run_callback(self, trainer: Any, config: TrainConfig, writer: BaseWriter) -> None:
+        """
+        Runs the callback to apply step decay to the learning rate.
+
+        Args:
+            trainer (Any): The training object.
+            config (TrainConfig): The configuration object.
+            writer (BaseWriter): The writer object for logging.
+        """
+        for param_group in trainer.optimizer.param_groups:
+            param_group["lr"] *= self.gamma
+
+
+class LRSchedulerCyclic(Callback):
+    """
+    Applies a cyclic learning rate schedule during training.
+
+    This callback oscillates the learning rate between a minimum (base_lr)
+    and a maximum (max_lr) over a defined cycle length (step_size). The learning
+    rate follows a triangular wave pattern.
+
+    Example Usage in `TrainConfig`:
+    To use `LRSchedulerCyclic`, include it in the `callbacks` list when setting
+    up your `TrainConfig`:
+    ```python exec="on" source="material-block" result="json"
+    from qadence.ml_tools import TrainConfig
+    from qadence.ml_tools.callbacks import LRSchedulerCyclic
+
+    # Create an instance of the LRSchedulerCyclic callback
+    lr_cyclic = LRSchedulerCyclic(on="train_batch_end",
+                                  called_every=1,
+                                  base_lr=0.001,
+                                  max_lr=0.01,
+                                  step_size=2000)
+
+    config = TrainConfig(
+        max_iter=10000,
+        # Print metrics every 1000 training epochs
+        print_every=1000,
+        # Add the custom callback
+        callbacks=[lr_cyclic]
+    )
+    ```
+    """
+
+    def __init__(self, on: str, called_every: int, base_lr: float, max_lr: float, step_size: int):
+        """Initializes the LRSchedulerCyclic callback.
+
+        Args:
+            on (str): The event to trigger the callback.
+            called_every (int): Frequency of callback calls in terms of iterations.
+            base_lr (float): The minimum learning rate.
+            max_lr (float): The maximum learning rate.
+            step_size (int): Number of iterations for half a cycle.
+        """
+        super().__init__(on=on, called_every=called_every)
+        self.base_lr = base_lr
+        self.max_lr = max_lr
+        self.step_size = step_size
+
+    def run_callback(self, trainer: Any, config: TrainConfig, writer: BaseWriter) -> None:
+        """
+        Adjusts the learning rate cyclically.
+
+        Args:
+            trainer (Any): The training object.
+            config (TrainConfig): The configuration object.
+            writer (BaseWriter): The writer object for logging.
+        """
+        cycle = trainer.opt_result.iteration // (2 * self.step_size)
+        x = abs(trainer.opt_result.iteration / self.step_size - 2 * cycle - 1)
+        scale = max(0, (1 - x))
+        new_lr = self.base_lr + (self.max_lr - self.base_lr) * scale
+        for param_group in trainer.optimizer.param_groups:
+            param_group["lr"] = new_lr
+
+
+class LRSchedulerCosineAnnealing(Callback):
+    """
+    Applies cosine annealing to the learning rate during training.
+
+    This callback decreases the learning rate following a cosine curve,
+    starting from the initial learning rate and annealing to a minimum (min_lr).
+
+    Example Usage in `TrainConfig`:
+    To use `LRSchedulerCosineAnnealing`, include it in the `callbacks` list
+    when setting up your `TrainConfig`:
+    ```python exec="on" source="material-block" result="json"
+    from qadence.ml_tools import TrainConfig
+    from qadence.ml_tools.callbacks import LRSchedulerCosineAnnealing
+
+    # Create an instance of the LRSchedulerCosineAnnealing callback
+    lr_cosine = LRSchedulerCosineAnnealing(on="train_batch_end",
+                                           called_every=1,
+                                           t_max=5000,
+                                           min_lr=1e-6)
+
+    config = TrainConfig(
+        max_iter=10000,
+        # Print metrics every 1000 training epochs
+        print_every=1000,
+        # Add the custom callback
+        callbacks=[lr_cosine]
+    )
+    ```
+    """
+
+    def __init__(self, on: str, called_every: int, t_max: int, min_lr: float = 0.0):
+        """Initializes the LRSchedulerCosineAnnealing callback.
+
+        Args:
+            on (str): The event to trigger the callback.
+            called_every (int): Frequency of callback calls in terms of iterations.
+            t_max (int): The total number of iterations for one annealing cycle.
+            min_lr (float, optional): The minimum learning rate. Default is 0.0.
+        """
+        super().__init__(on=on, called_every=called_every)
+        self.t_max = t_max
+        self.min_lr = min_lr
+
+    def run_callback(self, trainer: Any, config: TrainConfig, writer: BaseWriter) -> None:
+        """
+        Adjusts the learning rate using cosine annealing.
+
+        Args:
+            trainer (Any): The training object.
+            config (TrainConfig): The configuration object.
+            writer (BaseWriter): The writer object for logging.
+        """
+        for param_group in trainer.optimizer.param_groups:
+            max_lr = param_group["lr"]
+            new_lr = (
+                self.min_lr
+                + (max_lr - self.min_lr)
+                * (1 + math.cos(math.pi * trainer.opt_result.iteration / self.t_max))
+                / 2
+            )
+            param_group["lr"] = new_lr
+
+
+class EarlyStopping(Callback):
+    """
+    Stops training when a monitored metric has not improved for a specified number of epochs.
+
+    This callback monitors a specified metric (e.g., validation loss or accuracy). If the metric
+    does not improve for a given patience period, training is stopped.
+
+    Example Usage in `TrainConfig`:
+    To use `EarlyStopping`, include it in the `callbacks` list when setting up your `TrainConfig`:
+    ```python exec="on" source="material-block" result="json"
+    from qadence.ml_tools import TrainConfig
+    from qadence.ml_tools.callbacks import EarlyStopping
+
+    # Create an instance of the EarlyStopping callback
+    early_stopping = EarlyStopping(on="val_epoch_end",
+                                   called_every=1,
+                                   monitor="val_loss",
+                                   patience=5,
+                                   mode="min")
+
+    config = TrainConfig(
+        max_iter=10000,
+        print_every=1000,
+        callbacks=[early_stopping]
+    )
+    ```
+    """
+
+    def __init__(
+        self, on: str, called_every: int, monitor: str, patience: int = 5, mode: str = "min"
+    ):
+        """Initializes the EarlyStopping callback.
+
+        Args:
+            on (str): The event to trigger the callback (e.g., "val_epoch_end").
+            called_every (int): Frequency of callback calls in terms of iterations.
+            monitor (str): The metric to monitor (e.g., "val_loss" or "train_loss").
+                All metrics returned by optimize step are available to monitor.
+                Please add "val_" and "train_" strings at the start of the metric name.
+            patience (int, optional): Number of iterations to wait for improvement. Default is 5.
+            mode (str, optional): Whether to minimize ("min") or maximize ("max") the metric.
+                Default is "min".
+        """
+        super().__init__(on=on, called_every=called_every)
+        self.monitor = monitor
+        self.patience = patience
+        self.mode = mode
+        self.best_value = float("inf") if mode == "min" else -float("inf")
+        self.counter = 0
+
+    def run_callback(self, trainer: Any, config: TrainConfig, writer: BaseWriter) -> None:
+        """
+        Monitors the metric and stops training if no improvement is observed.
+
+        Args:
+            trainer (Any): The training object.
+            config (TrainConfig): The configuration object.
+            writer (BaseWriter): The writer object for logging.
+        """
+        current_value = trainer.opt_result.metrics.get(self.monitor)
+        if current_value is None:
+            raise ValueError(f"Metric '{self.monitor}' is not available in the trainer's metrics.")
+
+        if (self.mode == "min" and current_value < self.best_value) or (
+            self.mode == "max" and current_value > self.best_value
+        ):
+            self.best_value = current_value
+            self.counter = 0
+        else:
+            self.counter += 1
+
+        if self.counter >= self.patience:
+            logger.info(
+                f"EarlyStopping: No improvement in '{self.monitor}' for {self.patience} epochs. "
+                "Stopping training."
+            )
+            trainer.stop_training = True
+
+
+class GradientMonitoring(Callback):
+    """
+    Logs gradient statistics (e.g., mean, standard deviation, max) during training.
+
+    This callback monitors and logs statistics about the gradients of the model parameters
+    to help debug or optimize the training process.
+
+    Example Usage in `TrainConfig`:
+    To use `GradientMonitoring`, include it in the `callbacks` list when
+    setting up your `TrainConfig`:
+    ```python exec="on" source="material-block" result="json"
+    from qadence.ml_tools import TrainConfig
+    from qadence.ml_tools.callbacks import GradientMonitoring
+
+    # Create an instance of the GradientMonitoring callback
+    gradient_monitoring = GradientMonitoring(on="train_batch_end", called_every=10)
+
+    config = TrainConfig(
+        max_iter=10000,
+        print_every=1000,
+        callbacks=[gradient_monitoring]
+    )
+    ```
+    """
+
+    def __init__(self, on: str, called_every: int = 1):
+        """Initializes the GradientMonitoring callback.
+
+        Args:
+            on (str): The event to trigger the callback (e.g., "train_batch_end").
+            called_every (int): Frequency of callback calls in terms of iterations.
+        """
+        super().__init__(on=on, called_every=called_every)
+
+    def run_callback(self, trainer: Any, config: TrainConfig, writer: BaseWriter) -> None:
+        """
+        Logs gradient statistics.
+
+        Args:
+            trainer (Any): The training object.
+            config (TrainConfig): The configuration object.
+            writer (BaseWriter): The writer object for logging.
+        """
+        gradient_stats = {}
+        for name, param in trainer.model.named_parameters():
+            if param.grad is not None:
+                grad = param.grad
+                gradient_stats.update(
+                    {
+                        name + "_mean": grad.mean().item(),
+                        name + "_std": grad.std().item(),
+                        name + "_max": grad.max().item(),
+                        name + "_min": grad.min().item(),
+                    }
+                )
+
+        writer.write(trainer.opt_result.iteration, gradient_stats)

@@ -146,6 +146,85 @@ config = TrainConfig(
 )
 ```
 
+### 1.9. `LRSchedulerStepDecay`
+
+Reduces the learning rate by a factor at regular intervals.
+
+```python exec="on" source="material-block" html="1"
+from qadence.ml_tools import TrainConfig
+from qadence.ml_tools.callbacks import LRSchedulerStepDecay
+
+lr_step_decay = LRSchedulerStepDecay(on="train_epoch_end", called_every=100, gamma=0.5)
+
+config = TrainConfig(
+    max_iter=10000,
+    callbacks=[lr_step_decay]
+)
+```
+
+### 1.10. `LRSchedulerCyclic`
+
+Applies a cyclic learning rate schedule during training.
+
+```python exec="on" source="material-block" html="1"
+from qadence.ml_tools import TrainConfig
+from qadence.ml_tools.callbacks import LRSchedulerCyclic
+
+lr_cyclic = LRSchedulerCyclic(on="train_batch_end", called_every=1, base_lr=0.001, max_lr=0.01, step_size=2000)
+
+config = TrainConfig(
+    max_iter=10000,
+    callbacks=[lr_cyclic]
+)
+```
+
+### 1.11. `LRSchedulerCosineAnnealing`
+
+Applies cosine annealing to the learning rate during training.
+
+```python exec="on" source="material-block" html="1"
+from qadence.ml_tools import TrainConfig
+from qadence.ml_tools.callbacks import LRSchedulerCosineAnnealing
+
+lr_cosine = LRSchedulerCosineAnnealing(on="train_batch_end", called_every=1, t_max=5000, min_lr=1e-6)
+
+config = TrainConfig(
+    max_iter=10000,
+    callbacks=[lr_cosine]
+)
+```
+
+### 1.12. `EarlyStopping`
+
+Stops training when a monitored metric has not improved for a specified number of epochs.
+
+```python exec="on" source="material-block" html="1"
+from qadence.ml_tools import TrainConfig
+from qadence.ml_tools.callbacks import EarlyStopping
+
+early_stopping = EarlyStopping(on="val_epoch_end", called_every=1, monitor="val_loss", patience=5, mode="min")
+
+config = TrainConfig(
+    max_iter=10000,
+    callbacks=[early_stopping]
+)
+```
+
+### 1.13. `GradientMonitoring`
+
+Logs gradient statistics (e.g., mean, standard deviation, max) during training.
+
+```python exec="on" source="material-block" html="1"
+from qadence.ml_tools import TrainConfig
+from qadence.ml_tools.callbacks import GradientMonitoring
+
+gradient_monitoring = GradientMonitoring(on="train_batch_end", called_every=10)
+
+config = TrainConfig(
+    max_iter=10000,
+    callbacks=[gradient_monitoring]
+)
+```
 
 ## 2. Custom Callbacks
 
