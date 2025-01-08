@@ -264,7 +264,7 @@ def convert_block(
                 duration=duration,
                 solver=config.ode_solver,
                 steps=config.n_steps_hevo,
-                noise_operators=noise_operators,
+                noise=noise_operators if len(noise_operators) > 0 else None,
             )
         ]
 
@@ -351,22 +351,22 @@ def convert_block(
         )
 
 
-def convert_digital_noise(noise: NoiseHandler) -> pyq.noise.NoiseProtocol | None:
+def convert_digital_noise(noise: NoiseHandler) -> pyq.noise.DigitalNoiseProtocol | None:
     """Convert the digital noise into pyqtorch NoiseProtocol.
 
     Args:
         noise (NoiseHandler): Noise to convert.
 
     Returns:
-        pyq.noise.NoiseProtocol | None: Pyqtorch native noise protocol
+        pyq.noise.DigitalNoiseProtocol | None: Pyqtorch native noise protocol
             if there are any digital noise protocols.
     """
     digital_part = noise.filter(NoiseProtocol.DIGITAL)
     if digital_part is None:
         return None
-    return pyq.noise.NoiseProtocol(
+    return pyq.noise.DigitalNoiseProtocol(
         [
-            pyq.noise.NoiseProtocol(proto, option.get("error_probability"))
+            pyq.noise.DigitalNoiseProtocol(proto, option.get("error_probability"))
             for proto, option in zip(digital_part.protocol, digital_part.options)
         ]
     )
