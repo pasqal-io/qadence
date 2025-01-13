@@ -22,21 +22,16 @@ class WorkloadSpec:
     result_types: list[ResultType]
 
 
-class WorkloadType(Enum):
-    # TODO Add other workload types supported by Qadence (Pulser, Emulator)
-    QADENCE_CIRCUIT = "qadence_circuit"
-
-
 @dataclass(frozen=True)
 class WorkloadSpecJSON:
-    workload_type: WorkloadType
     backend_type: BackendName
     config: str
+    workload_type = "qadence"
 
 
 def workload_spec_to_json(workload: WorkloadSpec) -> WorkloadSpecJSON:
     # TODO Implement this function correctly
-    return WorkloadSpecJSON(WorkloadType.QADENCE_CIRCUIT, BackendName.PYQTORCH, "hello world!")
+    return WorkloadSpecJSON(BackendName.PYQTORCH, "hello world!")
 
 
 def upload_workload(connection: SDK, workload: WorkloadSpec) -> str:
