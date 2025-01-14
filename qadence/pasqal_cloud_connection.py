@@ -26,7 +26,7 @@ class WorkloadSpec:
 class WorkloadSpecJSON:
     backend_type: BackendName
     config: str
-    workload_type = "qadence"
+    workload_type = "qadence_circuit"
 
 
 def workload_spec_to_json(workload: WorkloadSpec) -> WorkloadSpecJSON:
