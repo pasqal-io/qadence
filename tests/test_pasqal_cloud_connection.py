@@ -4,28 +4,74 @@ from typing import Any, Callable
 from unittest.mock import Mock
 
 import pytest
+from torch import tensor
 
+from qadence import BackendName, I, QuantumCircuit
 from qadence.pasqal_cloud_connection import (
-    QuantumModel,
     ResultType,
     WorkloadNotDoneError,
     WorkloadSpec,
     WorkloadStoppedError,
+    _parameter_values_to_json,
     check_status,
     get_result,
     upload_workload,
+    workload_spec_to_json,
 )
 
 
-def test_upload_workload(mocker: Any, BasicQuantumModel: QuantumModel) -> None:
+def test_parameter_values_to_json() -> None:
+    parameter_values = {"parameter1": tensor([0, 2]), "parameter2": tensor(2)}
+    result = _parameter_values_to_json(parameter_values)
+    expected = '{"parameter1": [0, 2], "parameter2": 2}'
+    assert result == expected
+
+
+def test_workload_spec_to_json() -> None:
+    circuit = QuantumCircuit(1, I(0))
+    result_types = [
+        ResultType.SAMPLE,
+    ]
+    workload = WorkloadSpec(
+        circuit,
+        BackendName.PYQTORCH,
+        result_types,
+        {"parameter": tensor([0, 1])},
+        [
+            I(0),
+        ],
+    )
+    result = workload_spec_to_json(workload)
+    expected_config = ""
+    assert result.workload_type == "qadence_circuit"
+    assert result.backend_type == "pyqtorch"
+    assert (
+        result.config["circuit"]
+        == '{"block": {"type": "I", "qubit_support": [0], "tag": null, "noise": null}, "register": '
+        '{"graph": {"directed": false, "multigraph": false, "graph": {}, "nodes": [{"pos": [0.0, 0.'
+        '0], "id": 0}], "links": []}, "device_specs": {"interaction": "NN", "rydberg_level": 60, "c'
+        'oeff_xy": 3700.0, "max_detuning": 25.132741228718345, "max_amp": 18.84955592153876, "patte'
+        'rn": {}, "type": "IdealDevice"}}}'
+    )
+    assert result.config["result_types"] == '["sample"]'
+    assert result.config["c_values"] == '{"parameter": [0, 1]}'
+    assert (
+        result.config["observable"]
+        == '[{"type": "I", "qubit_support": [0], "tag": null, "noise": null}]'
+    )
+
+
+def test_upload_workload(mocker: Any, BasicQuantumCircuit: QuantumCircuit) -> None:
     expected_workload_id = "my-workload"
     mock_connection_return = mocker.Mock()
     mock_connection_return.id = expected_workload_id
     mock_connection = mocker.Mock()
     mock_connection.create_workload.return_value = mock_connection_return
-    model = BasicQuantumModel
+    circuit = BasicQuantumCircuit
     result_types = [ResultType.RUN, ResultType.SAMPLE]
-    workload = WorkloadSpec(model, result_types)
+    workload = WorkloadSpec(
+        circuit, BackendName.PYQTORCH, result_types, {"my-parameter": tensor(3)}, [I(0) * I(1)]
+    )
     result = upload_workload(mock_connection, workload)
     assert result == expected_workload_id
 

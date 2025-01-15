@@ -1,13 +1,15 @@
 from __future__ import annotations
 
+import json
 import time
 from dataclasses import dataclass
 from enum import Enum
 
 from pasqal_cloud import SDK
 from pasqal_cloud import Workload as WorkloadResult
+from torch import Tensor
 
-from qadence import BackendName, QuantumModel
+from qadence import AbstractBlock, BackendName, QuantumCircuit, serialize
 
 
 class ResultType(Enum):
@@ -18,20 +20,51 @@ class ResultType(Enum):
 
 @dataclass(frozen=True)
 class WorkloadSpec:
-    model: QuantumModel
+    circuit: QuantumCircuit
+    backend: BackendName
     result_types: list[ResultType]
+    # TODO Should the ones below be optional?
+    parameter_values: dict[str, Tensor]
+    observable: list[AbstractBlock]
 
 
 @dataclass(frozen=True)
 class WorkloadSpecJSON:
-    backend_type: BackendName
-    config: str
+    backend_type: str
+    config: dict[str, str]
     workload_type = "qadence_circuit"
 
 
+def _parameter_values_to_json(parameter_values: dict[str, Tensor]) -> str:
+    result: dict[str, str] = dict()
+    for key, value in parameter_values.items():
+        result[key] = value.tolist()
+    return json.dumps(result)
+
+
 def workload_spec_to_json(workload: WorkloadSpec) -> WorkloadSpecJSON:
-    # TODO Implement this function correctly
-    return WorkloadSpecJSON(BackendName.PYQTORCH, "hello world!")
+    """Serializes a `WorkloadSpec` into JSON format.
+
+    Args:
+        workload: A `WorkloadSpec` object, defining the specification of the workload that needs to
+        be uploaded.
+
+    Returns:
+        Workload specification in JSON format.
+    """
+    circuit_json = json.dumps(serialize(workload.circuit))
+    result_types_json = json.dumps([item.value for item in workload.result_types])
+    parameter_values_json = _parameter_values_to_json(workload.parameter_values)
+    observable_json = json.dumps([serialize(observable) for observable in workload.observable])
+
+    config: dict[str, str] = {
+        "circuit": circuit_json,
+        "result_types": result_types_json,
+        "c_values": parameter_values_json,
+        "observable": observable_json,
+    }
+
+    return WorkloadSpecJSON(str(workload.backend), config)
 
 
 def upload_workload(connection: SDK, workload: WorkloadSpec) -> str:
