@@ -21,6 +21,24 @@ class ResultType(Enum):
 
 @dataclass(frozen=True)
 class WorkloadSpec:
+    """Specification of a workload to be executed on Pasqal Cloud.
+
+    This data class defines a single workload specification that is to be executed on Pasqal's
+    cloud platform.
+
+    Args:
+        circuit: The quantum circuit to be executed.
+        backend: The backend to execute the workload on.
+        result_types: The result types to execute. The workload will be run for all result types
+            specified here one by one.
+        parameter_values: If the quantum circuit has feature parameters, values for those need to
+            be provided. In the case there are only variational parameters, this field is
+            optional. In the case there are no parameters, this field needs to be `None`.
+        observable: Observable that is used when `result_types` contains `ResultType.EXPECTATION`.
+            If this is not the case this field will be ignored. This is an optional field in all
+            cases.
+    """
+
     circuit: QuantumCircuit
     backend: BackendName
     result_types: list[ResultType]
@@ -49,7 +67,7 @@ def get_spec_from_model(
         model: The quantum model that defines the circuit and backend for the workload spec.
         result_types: A list of result types that is requested in this workload.
         parameter_values: The parameter values that should be used during execution of the
-        workload.
+            workload.
         observable: The observable to be used when the `ResultType.EXPECTATION` is requested.
 
     Returns:
