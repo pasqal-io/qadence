@@ -27,7 +27,7 @@ def test_parameter_values_to_json() -> None:
     assert result == expected
 
 
-def test_workload_spec_to_json() -> None:
+def test_workload_spec_to_json_all_fields() -> None:
     circuit = QuantumCircuit(1, I(0))
     result_types = [
         ResultType.SAMPLE,
@@ -59,6 +59,19 @@ def test_workload_spec_to_json() -> None:
         result.config["observable"]
         == '[{"type": "I", "qubit_support": [0], "tag": null, "noise": null}]'
     )
+
+
+def test_workload_spec_to_json_no_optionals() -> None:
+    workload = WorkloadSpec(
+        QuantumCircuit(1, I(0)),
+        BackendName.PYQTORCH,
+        result_types=[
+            ResultType.EXPECTATION,
+        ],
+    )
+    result = workload_spec_to_json(workload)
+    assert "observable" not in result.config.keys()
+    assert "c_values" not in result.config.keys()
 
 
 def test_upload_workload(mocker: Any, BasicQuantumCircuit: QuantumCircuit) -> None:
