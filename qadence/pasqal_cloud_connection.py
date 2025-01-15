@@ -56,7 +56,7 @@ def get_spec_from_model(
         A `WorkloadSpec` instance based on the quantum model passed to this function.
     """
     circuit = model._circuit.original
-    backend = model.backend
+    backend = model._backend_name
     return WorkloadSpec(circuit, backend, result_types, parameter_values, observable)
 
 

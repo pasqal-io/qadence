@@ -6,7 +6,7 @@ from unittest.mock import Mock
 import pytest
 from torch import tensor
 
-from qadence import BackendName, I, QuantumCircuit
+from qadence import BackendName, I, QuantumCircuit, QuantumModel
 from qadence.pasqal_cloud_connection import (
     ResultType,
     WorkloadNotDoneError,
@@ -15,6 +15,7 @@ from qadence.pasqal_cloud_connection import (
     _parameter_values_to_json,
     check_status,
     get_result,
+    get_spec_from_model,
     upload_workload,
     workload_spec_to_json,
 )
@@ -72,6 +73,14 @@ def test_workload_spec_to_json_no_optionals() -> None:
     result = workload_spec_to_json(workload)
     assert "observable" not in result.config.keys()
     assert "c_values" not in result.config.keys()
+
+
+def test_get_spec_from_model(
+    BasicQuantumModel: QuantumModel, BasicQuantumCircuit: QuantumCircuit
+) -> None:
+    workload = get_spec_from_model(BasicQuantumModel, [ResultType.EXPECTATION])
+    assert workload.circuit == BasicQuantumCircuit
+    assert workload.backend == BackendName.PYQTORCH
 
 
 def test_upload_workload(mocker: Any, BasicQuantumCircuit: QuantumCircuit) -> None:
