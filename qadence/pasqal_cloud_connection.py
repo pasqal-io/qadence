@@ -4,6 +4,7 @@ import json
 import time
 from dataclasses import dataclass
 from enum import Enum
+from typing import Optional
 
 from pasqal_cloud import SDK
 from pasqal_cloud import Workload as WorkloadResult
@@ -23,9 +24,8 @@ class WorkloadSpec:
     circuit: QuantumCircuit
     backend: BackendName
     result_types: list[ResultType]
-    # TODO Should the ones below be optional?
-    parameter_values: dict[str, Tensor]
-    observable: list[AbstractBlock]
+    parameter_values: Optional[dict[str, Tensor]] = None
+    observable: Optional[list[AbstractBlock]] = None
 
 
 @dataclass(frozen=True)
@@ -54,15 +54,17 @@ def workload_spec_to_json(workload: WorkloadSpec) -> WorkloadSpecJSON:
     """
     circuit_json = json.dumps(serialize(workload.circuit))
     result_types_json = json.dumps([item.value for item in workload.result_types])
-    parameter_values_json = _parameter_values_to_json(workload.parameter_values)
-    observable_json = json.dumps([serialize(observable) for observable in workload.observable])
-
     config: dict[str, str] = {
         "circuit": circuit_json,
         "result_types": result_types_json,
-        "c_values": parameter_values_json,
-        "observable": observable_json,
     }
+
+    if workload.parameter_values is not None:
+        config["c_values"] = _parameter_values_to_json(workload.parameter_values)
+    if workload.observable is not None:
+        config["observable"] = json.dumps(
+            [serialize(observable) for observable in workload.observable]
+        )
 
     return WorkloadSpecJSON(str(workload.backend), config)
 
