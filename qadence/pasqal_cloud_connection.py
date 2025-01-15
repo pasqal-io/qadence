@@ -10,7 +10,7 @@ from pasqal_cloud import SDK
 from pasqal_cloud import Workload as WorkloadResult
 from torch import Tensor
 
-from qadence import AbstractBlock, BackendName, QuantumCircuit, serialize
+from qadence import AbstractBlock, BackendName, QuantumCircuit, QuantumModel, serialize
 
 
 class ResultType(Enum):
@@ -26,6 +26,38 @@ class WorkloadSpec:
     result_types: list[ResultType]
     parameter_values: Optional[dict[str, Tensor]] = None
     observable: Optional[list[AbstractBlock]] = None
+
+
+def get_spec_from_model(
+    model: QuantumModel,
+    result_types: list[ResultType],
+    parameter_values: Optional[dict[str, Tensor]] = None,
+    observable: Optional[list[AbstractBlock]] = None,
+) -> WorkloadSpec:
+    """Creates a `WorkloadSpec` from a quantum model.
+
+    This function creates a `WorkloadSpec` from a `QuantumModel` and the other arguments provided.
+    The circuit, that is extracted from the model, is the original circuit that was used to
+    initialize the model, not the backend converted circuit in `model.circuit`. The backend set in
+    the model will be used in the workload specification.
+
+    It is important to note that in case there is an observable defined in the model, it is ignored
+    in the workload specification. To provide an observable to the workload specification, it is
+    only possible to set it in the observable argument of this function.
+
+    Args:
+        model: The quantum model that defines the circuit and backend for the workload spec.
+        result_types: A list of result types that is requested in this workload.
+        parameter_values: The parameter values that should be used during execution of the
+        workload.
+        observable: The observable to be used when the `ResultType.EXPECTATION` is requested.
+
+    Returns:
+        A `WorkloadSpec` instance based on the quantum model passed to this function.
+    """
+    circuit = model._circuit.original
+    backend = model.backend
+    return WorkloadSpec(circuit, backend, result_types, parameter_values, observable)
 
 
 @dataclass(frozen=True)
