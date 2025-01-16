@@ -24,7 +24,7 @@ def test_loss_fn(model: nn.Module, x: torch.Tensor) -> tuple[torch.Tensor, torch
 
 
 @pytest.fixture
-def setup_landscape() -> InformationContent:
+def setup_ic() -> InformationContent:
     model = SimpleModel()
     xs = torch.randn(10, 2)  # 10 samples, 2 features each
     epsilons = torch.logspace(-4, 4, 10)
