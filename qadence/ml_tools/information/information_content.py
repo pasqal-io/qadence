@@ -104,7 +104,6 @@ class InformationContent:
             The first value that the `loss_fn` returns is the loss value that is being optimsed.
             The function is also expected to return other value(s), often the metrics that are
             used to calculate the loss. These values are ignored for the purpose of this class.
-
         """
         self.model = model
         self.loss_fn = loss_fn
@@ -159,6 +158,7 @@ class InformationContent:
     def randomized_finite_der(self) -> torch.Tensor:
         """
         Calculate normalized finite difference of loss on doing random walk in the parameter space.
+
         This serves as a proxy for the derivative of the loss with respect to parameters.
 
         Returns:
@@ -252,7 +252,7 @@ class InformationContent:
 
     def sensitivity_IC(self, eta: float) -> float:
         """
-        Find the minimum value of epsilon such that the information content is less than eta
+        Find the minimum value of epsilon such that the information content is less than eta.
 
         Args:
             eta: Threshold value, the sensitivity IC.
