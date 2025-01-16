@@ -632,10 +632,12 @@ class Trainer(BaseTrainer):
 
     def build_optimize_result(
         self,
-        result: None
-        | tuple[torch.Tensor, dict[Any, Any]]
-        | list[tuple[torch.Tensor, dict[Any, Any]]]
-        | list[list[tuple[torch.Tensor, dict[Any, Any]]]],
+        result: (
+            None
+            | tuple[torch.Tensor, dict[Any, Any]]
+            | list[tuple[torch.Tensor, dict[Any, Any]]]
+            | list[list[tuple[torch.Tensor, dict[Any, Any]]]]
+        ),
     ) -> None:
         """
         Builds and stores the optimization result by calculating the average loss and metrics.

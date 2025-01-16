@@ -12,15 +12,13 @@ BlockOrCirc = TypeVar("BlockOrCirc", AbstractBlock, QuantumCircuit)
 @overload
 def transpile(
     *fs: Callable[[AbstractBlock], AbstractBlock]
-) -> Callable[[AbstractBlock], AbstractBlock]:
-    ...
+) -> Callable[[AbstractBlock], AbstractBlock]: ...
 
 
 @overload
 def transpile(
     *fs: Callable[[QuantumCircuit], QuantumCircuit]
-) -> Callable[[QuantumCircuit], QuantumCircuit]:
-    ...
+) -> Callable[[QuantumCircuit], QuantumCircuit]: ...
 
 
 def transpile(*fs: Callable) -> Callable:

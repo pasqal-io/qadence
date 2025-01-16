@@ -42,9 +42,9 @@ def backend_factory(
 
         # Instantiate the backend
         backend_inst = BackendCls(  # type: ignore[operator]
-            config=configuration
-            if configuration is not None
-            else BackendCls.default_configuration()
+            config=(
+                configuration if configuration is not None else BackendCls.default_configuration()
+            )
         )
         set_backend_config(backend_inst, diff_mode)
         # Wrap the quantum Backend in a DifferentiableBackend if a diff_mode is passed.

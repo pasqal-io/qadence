@@ -136,7 +136,7 @@ def convert_block(
     elif isinstance(block, (MCRX, MCRY, MCRZ, MCZ)):
         block_name = block.name[2:] if block.name.startswith("M") else block.name
         native_op_fn = ops_map[block_name]
-        control = block.qubit_support[:-1]
+        control = block.qubit_support[:-1]  # type: ignore
         target = block.qubit_support[-1]
 
         if isinstance(block, ParametricBlock):

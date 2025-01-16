@@ -11,13 +11,13 @@ from qadence.types import LTSOrder
 
 
 @overload
-def digitalize(circuit: QuantumCircuit, approximation: LTSOrder = LTSOrder.BASIC) -> QuantumCircuit:
-    ...
+def digitalize(
+    circuit: QuantumCircuit, approximation: LTSOrder = LTSOrder.BASIC
+) -> QuantumCircuit: ...
 
 
 @overload
-def digitalize(block: AbstractBlock, approximation: LTSOrder = LTSOrder.BASIC) -> AbstractBlock:
-    ...
+def digitalize(block: AbstractBlock, approximation: LTSOrder = LTSOrder.BASIC) -> AbstractBlock: ...
 
 
 @singledispatch
