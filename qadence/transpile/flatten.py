@@ -51,13 +51,13 @@ def _flat_blocks(block: AbstractBlock, T: Type) -> Generator:
 @overload
 def flatten(
     circuit: QuantumCircuit, types: list = [ChainBlock, KronBlock, AddBlock]
-) -> QuantumCircuit:
-    ...
+) -> QuantumCircuit: ...
 
 
 @overload
-def flatten(block: AbstractBlock, types: list = [ChainBlock, KronBlock, AddBlock]) -> AbstractBlock:
-    ...
+def flatten(
+    block: AbstractBlock, types: list = [ChainBlock, KronBlock, AddBlock]
+) -> AbstractBlock: ...
 
 
 @singledispatch

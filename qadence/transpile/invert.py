@@ -49,33 +49,27 @@ def reassign(block: AbstractBlock, qubit_map: dict[int, int]) -> AbstractBlock:
 
 
 @overload
-def invert_endianness(wf: Tensor) -> Tensor:
-    ...
+def invert_endianness(wf: Tensor) -> Tensor: ...
 
 
 @overload
-def invert_endianness(arr: np.ndarray) -> np.ndarray:
-    ...
+def invert_endianness(arr: np.ndarray) -> np.ndarray: ...
 
 
 @overload
-def invert_endianness(cntr: Counter) -> Counter:
-    ...
+def invert_endianness(cntr: Counter) -> Counter: ...
 
 
 @overload
-def invert_endianness(cntrs: list) -> list:
-    ...
+def invert_endianness(cntrs: list) -> list: ...
 
 
 @overload
-def invert_endianness(circuit: QuantumCircuit, n_qubits: int) -> QuantumCircuit:
-    ...
+def invert_endianness(circuit: QuantumCircuit, n_qubits: int) -> QuantumCircuit: ...
 
 
 @overload
-def invert_endianness(block: AbstractBlock, n_qubits: int, in_place: bool) -> AbstractBlock:
-    ...
+def invert_endianness(block: AbstractBlock, n_qubits: int, in_place: bool) -> AbstractBlock: ...
 
 
 @singledispatch

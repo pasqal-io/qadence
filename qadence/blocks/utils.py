@@ -305,9 +305,11 @@ def uuid_to_eigen(
                     else:
                         result[uuid] = (
                             b.eigenvalues_generator * 2.0,
-                            1.0 / (b.eigenvalues_generator.item() * 2.0)
-                            if len(b.eigenvalues_generator) == 1
-                            else 1.0,
+                            (
+                                1.0 / (b.eigenvalues_generator.item() * 2.0)
+                                if len(b.eigenvalues_generator) == 1
+                                else 1.0
+                            ),
                         )
                 else:
                     result[uuid] = (b.eigenvalues_generator, 1.0)
