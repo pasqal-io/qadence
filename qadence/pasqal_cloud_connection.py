@@ -4,7 +4,7 @@ import json
 import time
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
+from typing import Any, Optional
 
 from pasqal_cloud import SDK
 from pasqal_cloud import Workload as WorkloadResult
@@ -28,29 +28,39 @@ class WorkloadSpec:
 
     Args:
         circuit: The quantum circuit to be executed.
-        backend: The backend to execute the workload on.
+        backend: The backend to execute the workload on. Not all backends are available on the
+            cloud platform. Currently the supported backends are `BackendName.PYQTORCH` and
+            `"emu_c".
         result_types: The result types to execute. The workload will be run for all result types
             specified here one by one.
         parameter_values: If the quantum circuit has feature parameters, values for those need to
             be provided. In the case there are only variational parameters, this field is
             optional. In the case there are no parameters, this field needs to be `None`.
         observable: Observable that is used when `result_types` contains `ResultType.EXPECTATION`.
-            If this is not the case this field will be ignored. This is an optional field in all
-            cases.
+            The observable field is mandatory in this case. If not, the value of this field will
+            be ignored. Only a single observable can be passed for cloud submission; providing a
+            list of observables is not supported.
     """
 
     circuit: QuantumCircuit
-    backend: BackendName
+    backend: BackendName | str
     result_types: list[ResultType]
     parameter_values: Optional[dict[str, Tensor]] = None
-    observable: Optional[list[AbstractBlock]] = None
+    observable: Optional[AbstractBlock] = None
+
+    def __post_init__(self) -> None:
+        if ResultType.EXPECTATION in self.result_types and self.observable is None:
+            raise ValueError(
+                "When an expectation result is requested, the observable field is mandatory"
+            )
+        # TODO validate that parameter values dimensions match
 
 
 def get_spec_from_model(
     model: QuantumModel,
     result_types: list[ResultType],
     parameter_values: Optional[dict[str, Tensor]] = None,
-    observable: Optional[list[AbstractBlock]] = None,
+    observable: Optional[AbstractBlock] = None,
 ) -> WorkloadSpec:
     """Creates a `WorkloadSpec` from a quantum model.
 
@@ -68,7 +78,10 @@ def get_spec_from_model(
         result_types: A list of result types that is requested in this workload.
         parameter_values: The parameter values that should be used during execution of the
             workload.
-        observable: The observable to be used when the `ResultType.EXPECTATION` is requested.
+        observable: Observable that is used when `result_types` contains `ResultType.EXPECTATION`.
+            The observable field is mandatory in this case. If not, the value of this field will
+            be ignored. Only a single observable can be passed for cloud submission; providing a
+            list of observables is not supported.
 
     Returns:
         A `WorkloadSpec` instance based on the quantum model passed to this function.
@@ -81,15 +94,16 @@ def get_spec_from_model(
 @dataclass(frozen=True)
 class WorkloadSpecJSON:
     backend_type: str
-    config: dict[str, str]
+    config: dict[str, Any]
     workload_type = "qadence_circuit"
 
 
-def _parameter_values_to_json(parameter_values: dict[str, Tensor]) -> str:
-    result: dict[str, str] = dict()
-    for key, value in parameter_values.items():
-        result[key] = value.tolist()
-    return json.dumps(result)
+def _parameter_values_to_json(parameter_values: Optional[dict[str, Tensor]]) -> str:
+    parameter_values_dict: dict[str, str] = dict()
+    if parameter_values is not None:
+        for key, value in parameter_values.items():
+            parameter_values_dict[key] = value.tolist()
+    return json.dumps(parameter_values_dict)
 
 
 def workload_spec_to_json(workload: WorkloadSpec) -> WorkloadSpecJSON:
@@ -103,18 +117,15 @@ def workload_spec_to_json(workload: WorkloadSpec) -> WorkloadSpecJSON:
         Workload specification in JSON format.
     """
     circuit_json = json.dumps(serialize(workload.circuit))
-    result_types_json = json.dumps([item.value for item in workload.result_types])
-    config: dict[str, str] = {
+    result_types_json = [item.value for item in workload.result_types]
+    config = {
         "circuit": circuit_json,
         "result_types": result_types_json,
+        "c_values": _parameter_values_to_json(workload.parameter_values),
     }
 
-    if workload.parameter_values is not None:
-        config["c_values"] = _parameter_values_to_json(workload.parameter_values)
     if workload.observable is not None:
-        config["observable"] = json.dumps(
-            [serialize(observable) for observable in workload.observable]
-        )
+        config["observable"] = json.dumps(serialize(workload.observable))
 
     return WorkloadSpecJSON(str(workload.backend), config)
 

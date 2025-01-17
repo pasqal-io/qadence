@@ -21,6 +21,15 @@ from qadence.pasqal_cloud_connection import (
 )
 
 
+def test_workload_spec_observable_validation(BasicQuantumCircuit: QuantumCircuit) -> None:
+    with pytest.raises(ValueError):
+        WorkloadSpec(BasicQuantumCircuit, BackendName.PYQTORCH, [ResultType.EXPECTATION])
+    spec = WorkloadSpec(
+        BasicQuantumCircuit, BackendName.PYQTORCH, [ResultType.EXPECTATION], observable=I(0)
+    )
+    assert spec.observable == I(0)
+
+
 def test_parameter_values_to_json() -> None:
     parameter_values = {"parameter1": tensor([0, 2]), "parameter2": tensor(2)}
     result = _parameter_values_to_json(parameter_values)
@@ -30,20 +39,15 @@ def test_parameter_values_to_json() -> None:
 
 def test_workload_spec_to_json_all_fields() -> None:
     circuit = QuantumCircuit(1, I(0))
-    result_types = [
-        ResultType.SAMPLE,
-    ]
+    result_types = [ResultType.SAMPLE, ResultType.RUN, ResultType.EXPECTATION]
     workload = WorkloadSpec(
         circuit,
         BackendName.PYQTORCH,
         result_types,
         {"parameter": tensor([0, 1])},
-        [
-            I(0),
-        ],
+        I(0),
     )
     result = workload_spec_to_json(workload)
-    expected_config = ""
     assert result.workload_type == "qadence_circuit"
     assert result.backend_type == "pyqtorch"
     assert (
@@ -54,11 +58,11 @@ def test_workload_spec_to_json_all_fields() -> None:
         'oeff_xy": 3700.0, "max_detuning": 25.132741228718345, "max_amp": 18.84955592153876, "patte'
         'rn": {}, "type": "IdealDevice"}}}'
     )
-    assert result.config["result_types"] == '["sample"]'
+    assert result.config["result_types"] == ["sample", "run", "expectation"]
     assert result.config["c_values"] == '{"parameter": [0, 1]}'
     assert (
         result.config["observable"]
-        == '[{"type": "I", "qubit_support": [0], "tag": null, "noise": null}]'
+        == '{"type": "I", "qubit_support": [0], "tag": null, "noise": null}'
     )
 
 
@@ -67,18 +71,18 @@ def test_workload_spec_to_json_no_optionals() -> None:
         QuantumCircuit(1, I(0)),
         BackendName.PYQTORCH,
         result_types=[
-            ResultType.EXPECTATION,
+            ResultType.SAMPLE,
         ],
     )
     result = workload_spec_to_json(workload)
     assert "observable" not in result.config.keys()
-    assert "c_values" not in result.config.keys()
+    assert result.config["c_values"] == "{}"
 
 
 def test_get_spec_from_model(
     BasicQuantumModel: QuantumModel, BasicQuantumCircuit: QuantumCircuit
 ) -> None:
-    workload = get_spec_from_model(BasicQuantumModel, [ResultType.EXPECTATION])
+    workload = get_spec_from_model(BasicQuantumModel, [ResultType.SAMPLE])
     assert workload.circuit == BasicQuantumCircuit
     assert workload.backend == BackendName.PYQTORCH
 
@@ -92,7 +96,7 @@ def test_upload_workload(mocker: Any, BasicQuantumCircuit: QuantumCircuit) -> No
     circuit = BasicQuantumCircuit
     result_types = [ResultType.RUN, ResultType.SAMPLE]
     workload = WorkloadSpec(
-        circuit, BackendName.PYQTORCH, result_types, {"my-parameter": tensor(3)}, [I(0) * I(1)]
+        circuit, BackendName.PYQTORCH, result_types, {"my-parameter": tensor(3)}, I(0) * I(1)
     )
     result = upload_workload(mock_connection, workload)
     assert result == expected_workload_id
