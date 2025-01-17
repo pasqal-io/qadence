@@ -35,7 +35,10 @@ class WorkloadSpec:
             specified here one by one.
         parameter_values: If the quantum circuit has feature parameters, values for those need to
             be provided. In the case there are only variational parameters, this field is
-            optional. In the case there are no parameters, this field needs to be `None`.
+            optional. In the case there are no parameters, this field needs to be `None`. The
+            parameter values can be either a tensor of dimension 0 or 1, which can differ per
+            parameter. For parameters that are an array, i.e. dimension 1, all array lengths should
+            be equal.
         observable: Observable that is used when `result_types` contains `ResultType.EXPECTATION`.
             The observable field is mandatory in this case. If not, the value of this field will
             be ignored. Only a single observable can be passed for cloud submission; providing a
@@ -53,7 +56,17 @@ class WorkloadSpec:
             raise ValueError(
                 "When an expectation result is requested, the observable field is mandatory"
             )
-        # TODO validate that parameter values dimensions match
+        self._validate_parameter_values()
+
+    def _validate_parameter_values(self) -> None:
+        if self.parameter_values is None:
+            return
+        parameter_sizes = [value.size() for value in list(self.parameter_values.values())]
+        if all(len(size) > 1 for size in parameter_sizes):
+            raise ValueError("The dimension of the parameters in parameter_values must be 0 or 1")
+        parameter_lengths = [size[0] for size in parameter_sizes if len(size) == 1]
+        if not all(item == parameter_lengths[0] for item in parameter_lengths):
+            raise ValueError("All parameter values that are arrays, should have the same length")
 
 
 def get_spec_from_model(

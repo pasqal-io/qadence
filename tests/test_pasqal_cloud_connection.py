@@ -30,6 +30,29 @@ def test_workload_spec_observable_validation(BasicQuantumCircuit: QuantumCircuit
     assert spec.observable == I(0)
 
 
+def test_workload_spec_parameter_values_validation(BasicQuantumCircuit: QuantumCircuit) -> None:
+    with pytest.raises(ValueError):
+        WorkloadSpec(
+            BasicQuantumCircuit,
+            BackendName.PYQTORCH,
+            [ResultType.RUN],
+            {"x": tensor([0, 2]), "y": tensor([0, 1, 2])},
+        )
+    with pytest.raises(ValueError):
+        WorkloadSpec(
+            BasicQuantumCircuit,
+            BackendName.PYQTORCH,
+            [ResultType.RUN],
+            {"x": tensor([[0, 1], [2, 3]])},
+        )
+    WorkloadSpec(
+        BasicQuantumCircuit,
+        BackendName.PYQTORCH,
+        [ResultType.RUN],
+        {"x": tensor(0), "y": tensor([0, 1, 2])},
+    )
+
+
 def test_parameter_values_to_json() -> None:
     parameter_values = {"parameter1": tensor([0, 2]), "parameter2": tensor(2)}
     result = _parameter_values_to_json(parameter_values)
