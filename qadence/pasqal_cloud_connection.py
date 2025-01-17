@@ -124,7 +124,7 @@ def workload_spec_to_json(workload: WorkloadSpec) -> WorkloadSpecJSON:
 
     Args:
         workload: A `WorkloadSpec` object, defining the specification of the workload that needs to
-        be uploaded.
+            be uploaded.
 
     Returns:
         Workload specification in JSON format.
@@ -149,7 +149,7 @@ def upload_workload(connection: SDK, workload: WorkloadSpec) -> str:
     Args:
         connection: A `pasqal_cloud.SDK` instance which is used to connect to the cloud.
         workload: A `WorkloadSpec` object, defining the specification of the workload that needs to
-        be uploaded.
+            be uploaded.
 
     Returns:
         A workload id as a `str`.
@@ -183,9 +183,9 @@ def check_status(connection: SDK, workload_id: str) -> WorkloadResult:
 
     Raises:
         WorkloadNotDoneError: Is raised when the workload status is "PENDING", "RUNNING" or
-        "PAUSED".
+            "PAUSED".
         WorkloadStoppedError: Is raise when the workload status is "CANCELED", "TIMED_OUT" or
-        "ERROR".
+            "ERROR".
         ValueError: Is raised when the workload status has an unsupported value.
 
     Returns:
@@ -219,7 +219,7 @@ def get_result(
         workload_id: the id `str` that is associated with the workload.
         timeout: Time in seconds after which the function times out. Defaults to 60.0.
         refresh_time: Time in seconds after which the remote is requested to update the status
-        again, when the workload is not finished yet. Defaults to 1.0.
+            again, when the workload is not finished yet. Defaults to 1.0.
 
     Raises:
         TimeoutError: _description_
