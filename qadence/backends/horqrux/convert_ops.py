@@ -12,7 +12,7 @@ from horqrux.apply import apply_gate
 from horqrux.parametric import RX, RY, RZ
 from horqrux.primitive import NOT, SWAP, H, I, X, Y, Z
 from horqrux.primitive import Primitive as Gate
-from horqrux.utils import inner
+from horqrux.utils import ControlQubits, TargetQubits, inner
 from jax import Array
 from jax.scipy.linalg import expm
 from jax.tree_util import register_pytree_node_class
@@ -102,6 +102,8 @@ def convert_observable(
 def convert_block(
     block: AbstractBlock, n_qubits: int = None, config: Configuration = Configuration()
 ) -> list:
+    control: ControlQubits
+    target: TargetQubits
     if n_qubits is None:
         n_qubits = max(block.qubit_support) + 1
     ops = []
@@ -136,7 +138,7 @@ def convert_block(
     elif isinstance(block, (MCRX, MCRY, MCRZ, MCZ)):
         block_name = block.name[2:] if block.name.startswith("M") else block.name
         native_op_fn = ops_map[block_name]
-        control = block.qubit_support[:-1]  # type: ignore[assignment]
+        control = block.qubit_support[:-1]
         target = block.qubit_support[-1]
 
         if isinstance(block, ParametricBlock):
