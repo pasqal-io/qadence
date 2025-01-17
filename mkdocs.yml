@@ -83,6 +83,7 @@ nav:
     - Serialization: api/serialization.md
     - Types: api/types.md
     - Drawing: api/draw.md
+    - Pasqal Cloud Connection: api/pasqal_cloud_connection.md
 
     - Backends:
       - Abstract backend: api/backends/backend.md
