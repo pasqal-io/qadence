@@ -4,10 +4,8 @@ import itertools
 from typing import Any, Type, Union
 
 from qadence.blocks import AbstractBlock, chain, kron, tag
-from qadence.blocks.utils import block_is_qubit_hamiltonian
-from qadence.constructors.hamiltonians import hamiltonian_factory
 from qadence.operations import CNOT, CPHASE, CRX, CRY, CRZ, CZ, RX, RY
-from qadence.types import Interaction, Strategy
+from qadence.types import Strategy
 
 DigitalEntanglers = Union[CNOT, CZ, CRZ, CRY, CRX]
 
@@ -254,99 +252,8 @@ def alt_digital(
 #################
 ## sdaqc ALT ##
 #################
-
-
-def _entanglers_alt_block_analog(
-    n_qubits: int,
-    m_block_qubits: int,
-    depth: int,
-    param_prefix: str,
-    support: tuple[int, ...],
-    entangler: AbstractBlock,
-) -> list[AbstractBlock]:
-    ent_list: list[AbstractBlock] = []
-    iterator = itertools.count()
-
-    for d in range(depth):
-        start_i = 0 if not d%2 else m_block_qubits // 2
-
-
-
-    return ent_list
-
-
-def alt_sDAQC(
-    n_qubits: int,
-    m_block_qubits: int,
-    depth: int = 1,
-    param_prefix: str = "theta",
-    support: tuple[int, ...] | None = None,
-    operations: list[type[AbstractBlock]] = [RX, RY],
-    entangler: AbstractBlock | None = None,
-) -> AbstractBlock:
-    """
-    Construct the Alternating layer ansatz in the step wise digital-analog paradigm.
-
-    Args:
-        n_qubits (int): number of qubits in the circuit.
-        m_block_qubits (int): number of qubits in each block.
-        param_prefix (str): prefix for the parameters.
-        support (tuple[int, ...]): qubit indices where the ansatz is applied.
-        operations (list): list of operations to cycle through in the
-            digital single-qubit rotations of each layer.
-        entangler (AbstractBlock): Hamiltonian generator for the
-            analog entangling layer. Defaults to NN Hamiltonian.
-            Time parameter is considered variational.
-
-    Returns:
-        The step-wise digital-analog Alternat Layer Ansatz (sDA ALT) circuit.
-    """
-    if support is None:
-        support = tuple(range(n_qubits))
-
-    assert len(support) % m_block_qubits == 0,
-    "For sDA Alternating layer ansatz, the block size must equally divide the number of qubits."
-
-    if entangler is None:
-        entangler = hamiltonian_factory(m_block_qubits, interaction=Interaction.NN)
-    try:
-        if not block_is_qubit_hamiltonian(entangler):
-            raise ValueError(
-                "Please provide a valid Pauli Hamiltonian generator for digital-analog ALT."
-            )
-        if not entangler.n_supports == m_block_qubits:
-            raise ValueError(
-                "The given analog entangling block must have support size equal to the specified\
-                block size"
-            )
-    except NotImplementedError:
-            raise ValueError(
-                "Please provide a valid Pauli Hamiltonian generator for digital-analog ALT."
-            )
-
-    rot_list = _rotations_digital(
-        n_qubits=n_qubits,
-        depth=depth,
-        support=support,
-        param_prefix=param_prefix,
-        operations=operations,
-    )
-
-    ent_list = _entanglers_alt_block_analog(
-        n_qubits,
-        m_block_qubits,
-        param_prefix=param_prefix + "_ent",
-        depth=depth,
-        support=support,
-        entangler=entangler,
-    )
-
-    layers = []
-    for d in range(depth):
-        layers.append(rot_list[d])
-        layers.append(ent_list[d])
-
-    return tag(chain(*layers), "ALT-sDA")
+def alt_sDAQC(*args: Any, **kwargs: Any) -> Any:
+    raise NotImplementedError
 
 
 #################
