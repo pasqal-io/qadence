@@ -6,7 +6,7 @@
 
 ### ::: qadence.constructors.iia
 
-### ::: qadence.constructors.alt
+### ::: qadence.constructors.ala
 
 ### ::: qadence.constructors.hamiltonians
 

@@ -6,7 +6,7 @@ from .feature_maps import (
 )
 
 from .hea import hea
-from .alt import alt
+from .ala import ala
 from .iia import identity_initialized_ansatz, iia
 
 from .daqc import daqc_transform
@@ -29,7 +29,7 @@ __all__ = [
     "feature_map",
     "exp_fourier_feature_map",
     "hea",
-    "alt",
+    "ala",
     "identity_initialized_ansatz",
     "iia",
     "hamiltonian_factory",

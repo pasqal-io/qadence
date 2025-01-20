@@ -10,7 +10,7 @@ from qadence.types import Strategy
 DigitalEntanglers = Union[CNOT, CZ, CRZ, CRY, CRX]
 
 
-def alt(
+def ala(
     n_qubits: int,
     m_block_qubits: int,
     depth: int = 1,
@@ -20,14 +20,14 @@ def alt(
     **strategy_args: Any,
 ) -> AbstractBlock:
     """
-    Factory function for the alternating layer ansatz (alt).
+    Factory function for the alternating layer ansatz (ala).
 
     Args:
         n_qubits: number of qubits in the circuit
         m_block_qubits: number of qubits in the local entangling block
         depth: number of layers of the alternating layer ansatz
         param_prefix: the base name of the variational parameters
-        support: qubit indices where the alt is applied
+        support: qubit indices where the ala is applied
         strategy: Strategy for the ansatz. One of the Strategy variants.
         **strategy_args: see below
 
@@ -44,25 +44,25 @@ def alt(
                 local entangling block. Defaults to a ZZ interaction.
 
     Returns:
-        The Alternating Layer Ansatz (ALT) circuit.
+        The Alternating Layer Ansatz (ALA) circuit.
     """
 
     if support is None:
         support = tuple(range(n_qubits))
 
-    alt_func_dict = {
-        Strategy.DIGITAL: alt_digital,
-        Strategy.SDAQC: alt_sDAQC,
-        Strategy.BDAQC: alt_bDAQC,
-        Strategy.ANALOG: alt_analog,
+    ala_func_dict = {
+        Strategy.DIGITAL: ala_digital,
+        Strategy.SDAQC: ala_sDAQC,
+        Strategy.BDAQC: ala_bDAQC,
+        Strategy.ANALOG: ala_analog,
     }
 
     try:
-        alt_func = alt_func_dict[strategy]
+        ala_func = ala_func_dict[strategy]
     except KeyError:
         raise KeyError(f"Strategy {strategy} not recognized.")
 
-    alt_block: AbstractBlock = alt_func(
+    ala_block: AbstractBlock = ala_func(
         n_qubits=n_qubits,
         m_block_qubits=m_block_qubits,
         depth=depth,
@@ -71,11 +71,11 @@ def alt(
         **strategy_args,
     )  # type: ignore
 
-    return alt_block
+    return ala_block
 
 
 #################
-## DIGITAL ALT ##
+## DIGITAL ALA ##
 #################
 
 
@@ -140,7 +140,7 @@ def _entangler(
         raise ValueError("Provided entangler not accepted for digital alternating layer ansatz")
 
 
-def _entanglers_alt_block_digital(
+def _entanglers_ala_block_digital(
     n_qubits: int,
     m_block_qubits: int,
     depth: int,
@@ -188,7 +188,7 @@ def _entanglers_alt_block_digital(
     return ent_list
 
 
-def alt_digital(
+def ala_digital(
     n_qubits: int,
     m_block_qubits: int,
     depth: int = 1,
@@ -198,14 +198,14 @@ def alt_digital(
     entangler: Type[DigitalEntanglers] = CNOT,
 ) -> AbstractBlock:
     """
-    Construct the digital alternating layer ansatz (ALT).
+    Construct the digital alternating layer ansatz (ALA).
 
     Args:
         n_qubits (int): number of qubits in the circuit.
         m_block_qubits (int): number of qubits in the local entangling block.
-        depth (int): number of layers of the ALT.
+        depth (int): number of layers of the ALA.
         param_prefix (str): the base name of the variational parameters
-        support (tuple): qubit indices where the ALT is applied.
+        support (tuple): qubit indices where the ALA is applied.
         operations (list): list of operations to cycle through in the
             digital single-qubit rotations of each layer.
         entangler (AbstractBlock): 2-qubit entangling operation.
@@ -213,16 +213,16 @@ def alt_digital(
             will have variational parameters on the rotation angles.
 
     Returns:
-        The digital Alternating Layer Ansatz (ALT) circuit.
+        The digital Alternating Layer Ansatz (ALA) circuit.
     """
 
     try:
         if entangler not in [CNOT, CZ, CRX, CRY, CRZ, CPHASE]:
             raise ValueError(
-                "Please provide a valid two-qubit entangler operation for digital ALT."
+                "Please provide a valid two-qubit entangler operation for digital ALA."
             )
     except TypeError:
-        raise ValueError("Please provide a valid two-qubit entangler operation for digital ALT.")
+        raise ValueError("Please provide a valid two-qubit entangler operation for digital ALA.")
 
     rot_list = _rotations_digital(
         n_qubits=n_qubits,
@@ -232,7 +232,7 @@ def alt_digital(
         operations=operations,
     )
 
-    ent_list = _entanglers_alt_block_digital(
+    ent_list = _entanglers_ala_block_digital(
         n_qubits,
         m_block_qubits,
         param_prefix=param_prefix + "_ent",
@@ -246,25 +246,25 @@ def alt_digital(
         layers.append(rot_list[d])
         layers.append(ent_list[d])
 
-    return tag(chain(*layers), "ALT")
+    return tag(chain(*layers), "ALA")
 
 
 #################
-## sdaqc ALT ##
+## sdaqc ALA ##
 #################
-def alt_sDAQC(*args: Any, **kwargs: Any) -> Any:
+def ala_sDAQC(*args: Any, **kwargs: Any) -> Any:
     raise NotImplementedError
 
 
 #################
-## bdaqc ALT ##
+## bdaqc ALA ##
 #################
-def alt_bDAQC(*args: Any, **kwargs: Any) -> Any:
+def ala_bDAQC(*args: Any, **kwargs: Any) -> Any:
     raise NotImplementedError
 
 
 #################
-## analog ALT ##
+## analog ALA ##
 #################
-def alt_analog(*args: Any, **kwargs: Any) -> Any:
+def ala_analog(*args: Any, **kwargs: Any) -> Any:
     raise NotImplementedError
