@@ -41,7 +41,10 @@ def unique(x: Iterable) -> List:
 
 def embedding(
     block: AbstractBlock, to_gate_params: bool = False, engine: Engine = Engine.TORCH
-) -> tuple[ParamDictType, Callable[[ParamDictType, ParamDictType], ParamDictType],]:
+) -> tuple[
+    ParamDictType,
+    Callable[[ParamDictType, ParamDictType], ParamDictType],
+]:
     """Construct embedding function which maps user-facing parameters to either *expression-level*.
 
     parameters or *gate-level* parameters. The constructed embedding function has the signature:
@@ -147,11 +150,9 @@ def embedding(
                 if k not in embedded_params:
                     embedded_params[k] = v
             out = {
-                stringify(k)
-                if not isinstance(k, str)
-                else k: as_tensor(v)[None]
-                if as_tensor(v).ndim == 0
-                else v
+                stringify(k) if not isinstance(k, str) else k: (
+                    as_tensor(v)[None] if as_tensor(v).ndim == 0 else v
+                )
                 for k, v in embedded_params.items()
             }
             return out

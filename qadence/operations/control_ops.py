@@ -119,9 +119,7 @@ class MCRX(ParametricControlBlock):
 
     @property
     def eigenvalues_generator(self) -> Tensor:
-        return torch.cat(
-            (torch.zeros(2**self.n_qubits - 2), torch.tensor([1, -1], dtype=cdouble))
-        )
+        return torch.cat((torch.zeros(2**self.n_qubits - 2), torch.tensor([1, -1], dtype=cdouble)))
 
     @property
     def eigenvalues(self) -> Tensor:
@@ -164,9 +162,7 @@ class MCRY(ParametricControlBlock):
 
     @property
     def eigenvalues_generator(self) -> Tensor:
-        return torch.cat(
-            (torch.zeros(2**self.n_qubits - 2), torch.tensor([1, -1], dtype=cdouble))
-        )
+        return torch.cat((torch.zeros(2**self.n_qubits - 2), torch.tensor([1, -1], dtype=cdouble)))
 
     @property
     def eigenvalues(self) -> Tensor:
@@ -205,9 +201,7 @@ class MCRZ(ParametricControlBlock):
 
     @property
     def eigenvalues_generator(self) -> Tensor:
-        return torch.cat(
-            (torch.zeros(2**self.n_qubits - 2), torch.tensor([1, -1], dtype=cdouble))
-        )
+        return torch.cat((torch.zeros(2**self.n_qubits - 2), torch.tensor([1, -1], dtype=cdouble)))
 
     @property
     def eigenvalues(self) -> Tensor:

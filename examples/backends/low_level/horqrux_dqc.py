@@ -73,11 +73,7 @@ params, opt_state = jax.lax.fori_loop(0, 1000, train_step, (params, opt_state))
 sample_points = jnp.linspace(-1.0, 1.0, 100)
 # analytical solution
 analytic_sol = (
-    sample_points**4
-    + (1 / 3) * sample_points**3
-    - sample_points**2
-    - (1 / 2) * sample_points
-    + 1
+    sample_points**4 + (1 / 3) * sample_points**3 - sample_points**2 - (1 / 2) * sample_points + 1
 )
 # DQC solution
 dqc_sol = exp_fn(params, {"x": sample_points})
