@@ -13,13 +13,13 @@ from qadence.constructors import (
     analog_feature_map,
     feature_map,
     hamiltonian_factory,
-    identity_initialized_ansatz,
+    iia,
     rydberg_feature_map,
     rydberg_hea,
     rydberg_tower_feature_map,
 )
-from qadence.constructors.ansatze import hea_digital, hea_sDAQC
 from qadence.constructors.hamiltonians import ObservableConfig, TDetuning
+from qadence.constructors.hea import hea_digital, hea_sDAQC
 from qadence.measurements import Measurements
 from qadence.noise import NoiseHandler
 from qadence.operations import CNOT, RX, RY, I, N, Z
@@ -107,7 +107,8 @@ def _encode_features_series_digital(
     )
 
     support_arrays = {
-        key: support for key, support in zip(config.inputs, support_arrays_list)  # type: ignore[union-attr, arg-type]
+        key: support
+        for key, support in zip(config.inputs, support_arrays_list)  # type: ignore[union-attr, arg-type]
     }
 
     num_uploads = {key: value + 1 for key, value in config.num_repeats.items()}  # type: ignore[union-attr]
@@ -163,7 +164,8 @@ def _encode_features_parallel_digital(
     )
 
     support_arrays = {
-        key: support for key, support in zip(config.inputs, support_arrays_list)  # type: ignore[union-attr, arg-type]
+        key: support
+        for key, support in zip(config.inputs, support_arrays_list)  # type: ignore[union-attr, arg-type]
     }
 
     num_uploads = {key: value + 1 for key, value in config.num_repeats.items()}  # type: ignore[union-attr]
@@ -412,7 +414,7 @@ def _create_iia_digital(
     entangler = config.strategy_args.get("entangler", CNOT)
     periodic = config.strategy_args.get("periodic", False)
 
-    return identity_initialized_ansatz(
+    return iia(
         n_qubits=num_qubits,
         depth=config.depth,
         param_prefix=config.param_prefix,
@@ -441,7 +443,7 @@ def _create_iia_sdaqc(
     entangler = config.strategy_args.get("entangler", CNOT)
     periodic = config.strategy_args.get("periodic", False)
 
-    return identity_initialized_ansatz(
+    return iia(
         n_qubits=num_qubits,
         depth=config.depth,
         param_prefix=config.param_prefix,
