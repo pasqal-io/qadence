@@ -118,32 +118,32 @@ values2 = {
 
 @pytest.mark.flaky(max_runs=5)
 @pytest.mark.parametrize(
-    "circuit, values, diff_mode",
+    "circuit, values, diff_mode, backend_name",
     [
-        (QuantumCircuit(2, blocks), values, DiffMode.AD),
-        (QuantumCircuit(2, blocks), values2, DiffMode.GPSR),
+        (QuantumCircuit(2, blocks), values, DiffMode.AD, BackendName.PYQTORCH),
+        (QuantumCircuit(2, blocks), values2, DiffMode.GPSR, BackendName.PYQTORCH),
     ],
 )
 def test_estimations_shadow_forward_pass(
-    circuit: QuantumCircuit, values: dict, diff_mode: DiffMode
+    circuit: QuantumCircuit, values: dict, diff_mode: DiffMode, backend_name: BackendName
 ) -> None:
-    pyq_backend = backend_factory(BackendName.PYQTORCH, diff_mode=diff_mode)
+    backend = backend_factory(backend_name, diff_mode=diff_mode)
     # combine observables to avoid repeating measurements
     observable = [Z(0) ^ 2, X(1)]
-    (conv_circ, conv_obs, embed, params) = pyq_backend.convert(circuit, observable)
-    pyq_exp_exact = pyq_backend.expectation(conv_circ, conv_obs, embed(params, values))
+    (conv_circ, conv_obs, embed, params) = backend.convert(circuit, observable)
+    exact_expectation = backend.expectation(conv_circ, conv_obs, embed(params, values))
     model = QuantumModel(
         circuit=circuit,
         observable=observable,
         backend=BackendName.PYQTORCH,
-        diff_mode=DiffMode.GPSR,
+        diff_mode=diff_mode,
     )
     options = {"accuracy": 0.1, "confidence": 0.1}
     estimated_exp_shadow = model.expectation(
         values=values,
         measurement=Measurements(protocol=Measurements.SHADOW, options=options),
     )
-    assert torch.allclose(estimated_exp_shadow, pyq_exp_exact, atol=0.1)
+    assert torch.allclose(estimated_exp_shadow, exact_expectation, atol=0.1)
 
 
 @pytest.mark.flaky(max_runs=5)
