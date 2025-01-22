@@ -31,6 +31,7 @@ connection = SDK("john.doe@email.com", "my-password", project_id="proj1")
 ```
 ## Defining workload specification
 
+A workload is a quantum calculation to execute on a Pasqal cloud backend.
 To create a workload specification, we need some extra information on top the circuit itself.
 We need to specify the backend, chosen here to be PyQTorch.
 The cloud platform currently only supports PyQTorch.
