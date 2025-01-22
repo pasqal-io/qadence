@@ -35,7 +35,7 @@ We need to specify the backend, chosen here to be PyQTorch.
 The cloud platform currently only supports PyQTorch.
 Moreover, the requested result type needs to be defined.
 Based on the workload specification, the appropriate run methods (`run`, `sample` or `expectation`) will be called by the `QuantumModel` by passing them through the enum value `ResultTypes` argument.
-We need to define the result types that we want.
+Moreover, the requested result type needs to be defined.
 These are provided in a list, so that multiple result types can be requested in a single submission.
 
 ```python
@@ -71,8 +71,7 @@ workload = WorkloadSpec(circuit, BackendName.PYQTORCH, [ResultTypes.EXPECTATION]
 In the case of a parametric circuit, _i.e._ a circuit that contains feature parameters or variational parameters, values for these parameters need to be provided.
 The parameter values are defined in a dictionary, where keys are the parameter name and values are parameter value passed as torch tensors.
 If no values are set for a variational parameter, one will be assigned randomly.
-The parameter values are defined in a dictionary, where the keys are equal to the parameter name and the values are equal to the parameter value.
-The parameter values should be passed as torch tensors.
+The parameter values are defined in a dictionary, where keys are the parameter name and values are parameter value passed as torch tensors.
 It is possible to set multiple values by using a 1-D tensor, to the parameters, in that case the computation is executed for each value in the tensor.
 A mix of 0-D and 1-D tensors can be provided to keep some parameters constant and others changed during this process.
 However, all 1-D tensors need to have the same length.
