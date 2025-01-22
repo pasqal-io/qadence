@@ -30,8 +30,8 @@ class WorkloadSpec:
         circuit: The quantum circuit to be executed.
         backend: The backend to execute the workload on. Not all backends are available on the
             cloud platform. Currently the supported backend is `BackendName.PYQTORCH`.
-        result_types: The result types to execute. The workload will be run for all result types
-            specified here one by one.
+        result_types: The types of result to compute for this workload. The circuit will be run for
+            all result types specified here one by one.
         parameter_values: If the quantum circuit has feature parameters, values for those need to
             be provided. In the case there are only variational parameters, this field is
             optional. In the case there are no parameters, this field needs to be `None`. The
