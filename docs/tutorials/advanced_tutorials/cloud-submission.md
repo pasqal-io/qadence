@@ -1,6 +1,7 @@
 # Submission of Qadence Jobs to Pasqal Cloud
 
 It is possible to submit quantum computational jobs to execute remotely on Pasqal's [cloud platform](https://portal.pasqal.cloud) from Qadence.
+This feature can only be used if you have an account on the cloud platform, which has access to the Qadence workload.
 The qadence module `qadence.pasqal_cloud_connection` offers functionality to specify the computation easily, upload the specification and retrieve the result when the computation has finished execution on the cloud platform.
 In this tutorial, a simple quantum circuit will be defined as an example to showcase the submission process for remote computations.
 The same process can be applied to run more complex quantum circuits on the cloud platform.
