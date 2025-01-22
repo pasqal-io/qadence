@@ -93,10 +93,10 @@ from qadence.pasqal_cloud_connection import submit_workload
 workload_id = submit_workload(connection, workload)
 ```
 
-## Retrieval of Results
-The next step is to retrieve the results from the cloud platform.
-This can however only be done once the job is finished with it's execution on the platform.
+## Check Workload Status
+
 The `check_status` function can be used to see if the workload is finished already.
+The status of a workload can be: done, pending, running, paused, canceled, timed out or error.
 If so, the results of the computation will be provided in a `WorkloadResult` object.
 The result of the computation itself can be found in the `result` attribute of this object.
 If the workload has not finished yet, or resulted in an error, `check_status` will raise an exception, either a `WorkloadStoppedError` or `WorkloadNotDoneError`.
@@ -108,7 +108,9 @@ workload_result = check_status(connection, workload_id)
 print(workload_result.result)
 ```
 
-A more convenient way of interacting retrieving the result, especially if the execution the cloud is not expected to take long, is to use the `get_result` function.
+## Retrieval of Results
+
+If you wish to wait for the workload to be finished, before moving further with your code, you can use the `get_result` function.
 This function checks in set intervals the status of the workload until the workload is finished or the function has timed out.
 The polling rate as well as the time out duration can be set optionally.
 
