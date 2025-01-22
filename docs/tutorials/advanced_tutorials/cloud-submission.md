@@ -70,7 +70,6 @@ workload = WorkloadSpec(circuit, BackendName.PYQTORCH, [ResultTypes.EXPECTATION]
 
 In the case of a parametric circuit, _i.e._ a circuit that contains feature parameters or variational parameters, values for these parameters need to be provided.
 The parameter values are defined in a dictionary, where keys are the parameter name and values are parameter value passed as torch tensors.
-If no values are set for a variational parameter, one will be assigned randomly.
 The parameter values are defined in a dictionary, where keys are the parameter name and values are parameter value passed as torch tensors.
 It is possible to set multiple values by using a 1-D tensor, to the parameters, in that case the computation is executed for each value in the tensor.
 A mix of 0-D and 1-D tensors can be provided to keep some parameters constant and others changed during this process.
