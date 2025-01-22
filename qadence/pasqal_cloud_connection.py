@@ -111,11 +111,9 @@ class WorkloadSpecJSON:
 
 
 def _parameter_values_to_json(parameter_values: dict[str, Tensor] | None) -> str:
-    parameter_values_dict: dict[str, str] = dict()
-    if parameter_values is not None:
-        for key, value in parameter_values.items():
-            parameter_values_dict[key] = value.tolist()
-    return json.dumps(parameter_values_dict)
+    if parameter_values is None:
+        return json.dumps(dict())
+    return json.dumps({key: value.tolist() for key, value in parameter_values.items()})
 
 
 def workload_spec_to_json(workload: WorkloadSpec) -> WorkloadSpecJSON:
