@@ -36,7 +36,6 @@ The cloud platform currently only supports PyQTorch.
 Moreover, the requested result type needs to be defined.
 Based on the workload specification, the appropriate run methods (`run`, `sample` or `expectation`) will be called by the `QuantumModel` by passing them through the enum value `ResultTypes` argument.
 We need to define the result types that we want.
-We can choose them through the enum value `ResultTypes`.
 These are provided in a list, so that multiple result types can be requested in a single submission.
 
 ```python
