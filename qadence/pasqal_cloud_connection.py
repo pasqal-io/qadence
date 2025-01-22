@@ -116,7 +116,7 @@ def _parameter_values_to_json(parameter_values: dict[str, Tensor] | None) -> str
     return json.dumps({key: value.tolist() for key, value in parameter_values.items()})
 
 
-def workload_spec_to_json(workload: WorkloadSpec) -> WorkloadSpecJSON:
+def _workload_spec_to_json(workload: WorkloadSpec) -> WorkloadSpecJSON:
     """Serializes a `WorkloadSpec` into JSON format.
 
     Args:
@@ -151,7 +151,7 @@ def submit_workload(connection: SDK, workload: WorkloadSpec) -> str:
     Returns:
         A workload id as a `str`.
     """
-    workload_json = workload_spec_to_json(workload)
+    workload_json = _workload_spec_to_json(workload)
     remote_workload = connection.create_workload(
         workload_json.workload_type, workload_json.backend_type, workload_json.config
     )

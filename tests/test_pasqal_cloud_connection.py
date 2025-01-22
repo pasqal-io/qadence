@@ -17,7 +17,7 @@ from qadence.pasqal_cloud_connection import (
     get_result,
     get_spec_from_model,
     submit_workload,
-    workload_spec_to_json,
+    _workload_spec_to_json,
 )
 
 
@@ -70,7 +70,7 @@ def test_workload_spec_to_json_all_fields() -> None:
         {"parameter": tensor([0, 1])},
         I(0),
     )
-    result = workload_spec_to_json(workload)
+    result = _workload_spec_to_json(workload)
     assert result.workload_type == "qadence_circuit"
     assert result.backend_type == "pyqtorch"
     assert (
@@ -97,7 +97,7 @@ def test_workload_spec_to_json_no_optionals() -> None:
             ResultType.SAMPLE,
         ],
     )
-    result = workload_spec_to_json(workload)
+    result = _workload_spec_to_json(workload)
     assert "observable" not in result.config.keys()
     assert result.config["c_values"] == "{}"
 
