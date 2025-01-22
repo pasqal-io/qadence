@@ -140,7 +140,7 @@ def workload_spec_to_json(workload: WorkloadSpec) -> WorkloadSpecJSON:
     return WorkloadSpecJSON(str(workload.backend), config)
 
 
-def upload_workload(connection: SDK, workload: WorkloadSpec) -> str:
+def submit_workload(connection: SDK, workload: WorkloadSpec) -> str:
     """Uploads a workload to Pasqal's Cloud and returns the created workload ID.
 
     Args:

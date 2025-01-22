@@ -16,7 +16,7 @@ from qadence.pasqal_cloud_connection import (
     check_status,
     get_result,
     get_spec_from_model,
-    upload_workload,
+    submit_workload,
     workload_spec_to_json,
 )
 
@@ -110,7 +110,7 @@ def test_get_spec_from_model(
     assert workload.backend == BackendName.PYQTORCH
 
 
-def test_upload_workload(mocker: Any, BasicQuantumCircuit: QuantumCircuit) -> None:
+def test_submit_workload(mocker: Any, BasicQuantumCircuit: QuantumCircuit) -> None:
     expected_workload_id = "my-workload"
     mock_connection_return = mocker.Mock()
     mock_connection_return.id = expected_workload_id
@@ -121,7 +121,7 @@ def test_upload_workload(mocker: Any, BasicQuantumCircuit: QuantumCircuit) -> No
     workload = WorkloadSpec(
         circuit, BackendName.PYQTORCH, result_types, {"my-parameter": tensor(3)}, I(0) * I(1)
     )
-    result = upload_workload(mock_connection, workload)
+    result = submit_workload(mock_connection, workload)
     assert result == expected_workload_id
 
 

@@ -83,14 +83,14 @@ workload = WorkloadSpec(parametric_circuit, BackendName.PYQTORCH, [ResultTypes.E
 ```
 
 ## Submission
-Submission to the cloud platform is done very easily using the `upload_workload` function.
+Submission to the cloud platform is done very easily using the `submit_workload` function.
 The workload id will be provided by executing the function.
 This id is needed later, to request the status of the given workload.
 
 ```python
-from qadence.pasqal_cloud_connection import upload_workload
+from qadence.pasqal_cloud_connection import submit_workload
 
-workload_id = upload_workload(connection, workload)
+workload_id = submit_workload(connection, workload)
 ```
 
 ## Retrieval of Results
