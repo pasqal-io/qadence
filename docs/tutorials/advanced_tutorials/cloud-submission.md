@@ -1,8 +1,8 @@
 # Submission of Qadence Jobs to Pasqal Cloud
 
-It is possible to submit quantum computational jobs to execute remotely on Pasqal's [cloud platform](https://portal.pasqal.cloud).
-The qadence module `qadence.pasqal_cloud_connection` offers functionality to easily specify the computation, upload the specification and retrieve the result when the computation has finished execution on the cloud platform.
-In this tutorial a simple quantum circuit will be defined as an example to show how the submission process for remote computations.
+It is possible to submit quantum computational jobs to execute remotely on Pasqal's [cloud platform](https://portal.pasqal.cloud) from Qadence.
+The qadence module `qadence.pasqal_cloud_connection` offers functionality to specify the computation easily, upload the specification and retrieve the result when the computation has finished execution on the cloud platform.
+In this tutorial, a simple quantum circuit will be defined as an example to showcase the submission process for remote computations.
 The same process can be applied to run more complex quantum circuits on the cloud platform.
 
 Let's first define a very simple quantum circuit that creates a Bell state.
@@ -14,12 +14,13 @@ circuit = QuantumCircuit(2, H(0), CNOT(0, 1))
 ```
 
 If we want to upload this circuit to the cloud platform we need to follow 4 steps:
-- Authentication and making connection to cloud
+- Authentication and connection to cloud
 - Defining workload specification
 - Submission
 - Retrieval of results
 
 ## Authentication and connection
+
 To setup a connection the cloud platform, use the `SDK` object present in `qadence.pasqal_cloud_connection`. The email and password are the ones used to login to the webportal. The project-id can be found in the webportal under "Projects".
 
 ```python
@@ -27,13 +28,14 @@ from qadence.pasqal_cloud_connection import SDK
 
 connection = SDK("john.doe@email.com", "my-password", project_id="proj1")
 ```
-
 ## Defining workload specification
-To define quantum computation we create a `WorkloadSpec` object that contains all information that is needed to execute the computation.
-To create a workload specification we need some extra information on top the circuit itself.
-We need to specify the backend, which here we will choose for PyQTorch. The cloud platform only supports PyQTorch and EMU-C.
+
+To create a workload specification, we need some extra information on top the circuit itself.
+We need to specify the backend, chosen here to be PyQTorch.
+The cloud platform currently only supports PyQTorch.
+Moreover, the requested result type needs to be defined.
+Based on the workload specification, the appropriate run methods (`run`, `sample` or `expectation`) will be called by the `QuantumModel` by passing them through the enum value `ResultTypes` argument.
 We need to define the result types that we want.
-These define the run method (`run`, `sample` or `expectation`) that is used on the `QuantumModel` that will be build on the basis of this workload specification.
 We can choose them through the enum value `ResultTypes`.
 These are provided in a list, so that multiple result types can be requested in a single submission.
 
@@ -44,10 +46,10 @@ from qadence.pasqal_cloud_connection import WorkloadSpec, ResultTypes
 workload = WorkloadSpec(circuit, BackendName.PYQTORCH, [ResultTypes.SAMPLE, ResultTypes.RUN])
 ```
 
+### Using a Quantum Model
+
 If you already have your quantum computation defined as a `QuantumModel`, it is possible to create a workload specification directly from the model using `get_spec_from_model`.
 Then, the circuit and backend specifications will be extracted from the model, the other values need to be provided as extra arguments.
-
-### Using a Quantum Model
 
 ```python
 from qadence.pasqal_cloud_connection import get_spec_from_model
@@ -59,15 +61,16 @@ workload = get_spec_from_model(model, [ResultType.SAMPLE])
 ### Observable Expectation Value
 
 For the result type `ResultType.EXPECTATION` it is mandatory to provide an observable to the workload specification.
-In the example below we use the trivial identity observable `I(0) * I(1)`.
+In the example below we use the trivial identity observable `I(0) @ I(1)`.
 
 ```python
 workload = WorkloadSpec(circuit, BackendName.PYQTORCH, [ResultTypes.EXPECTATION], observable=I(0)*I(1))
 ```
 
 ### Parametric Circuits
-In the case of a parametric circuit, i.e. a circuit that contains feature parameters or variational parameters, values for these parameters need to be provided.
-For feature parameters is it is mandatory to set a value in the workload specification, for variational parameters it is optional.
+
+In the case of a parametric circuit, _i.e._ a circuit that contains feature parameters or variational parameters, values for these parameters need to be provided.
+The parameter values are defined in a dictionary, where keys are the parameter name and values are parameter value passed as torch tensors.
 If no values are set for a variational parameter, one will be assigned randomly.
 The parameter values are defined in a dictionary, where the keys are equal to the parameter name and the values are equal to the parameter value.
 The parameter values should be passed as torch tensors.

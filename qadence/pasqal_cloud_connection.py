@@ -4,7 +4,7 @@ import json
 import time
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from pasqal_cloud import SDK
 from pasqal_cloud import Workload as WorkloadResult
@@ -29,8 +29,7 @@ class WorkloadSpec:
     Args:
         circuit: The quantum circuit to be executed.
         backend: The backend to execute the workload on. Not all backends are available on the
-            cloud platform. Currently the supported backends are `BackendName.PYQTORCH` and
-            `"emu_c"`.
+            cloud platform. Currently the supported backend is `BackendName.PYQTORCH`.
         result_types: The result types to execute. The workload will be run for all result types
             specified here one by one.
         parameter_values: If the quantum circuit has feature parameters, values for those need to
@@ -48,8 +47,8 @@ class WorkloadSpec:
     circuit: QuantumCircuit
     backend: BackendName | str
     result_types: list[ResultType]
-    parameter_values: Optional[dict[str, Tensor]] = None
-    observable: Optional[AbstractBlock] = None
+    parameter_values: dict[str, Tensor] | None = None
+    observable: AbstractBlock | None = None
 
     def __post_init__(self) -> None:
         if ResultType.EXPECTATION in self.result_types and self.observable is None:
@@ -72,8 +71,8 @@ class WorkloadSpec:
 def get_spec_from_model(
     model: QuantumModel,
     result_types: list[ResultType],
-    parameter_values: Optional[dict[str, Tensor]] = None,
-    observable: Optional[AbstractBlock] = None,
+    parameter_values: dict[str, Tensor] | None = None,
+    observable: AbstractBlock | None = None,
 ) -> WorkloadSpec:
     """Creates a `WorkloadSpec` from a quantum model.
 
@@ -111,7 +110,7 @@ class WorkloadSpecJSON:
     workload_type = "qadence_circuit"
 
 
-def _parameter_values_to_json(parameter_values: Optional[dict[str, Tensor]]) -> str:
+def _parameter_values_to_json(parameter_values: dict[str, Tensor] | None) -> str:
     parameter_values_dict: dict[str, str] = dict()
     if parameter_values is not None:
         for key, value in parameter_values.items():
