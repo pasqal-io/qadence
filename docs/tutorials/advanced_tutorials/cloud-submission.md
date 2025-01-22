@@ -97,8 +97,8 @@ workload_id = submit_workload(connection, workload)
 
 ## Check Workload Status
 
-The `check_status` function can be used to see if the workload is finished already.
 The status of a workload can be: done, pending, running, paused, canceled, timed out or error.
+The `check_status` function can be used to see if the workload is finished already.
 If so, the results of the computation will be provided in a `WorkloadResult` object.
 The result of the computation itself can be found in the `result` attribute of this object.
 If the workload has not finished yet, or resulted in an error, `check_status` will raise an exception, either a `WorkloadStoppedError` or `WorkloadNotDoneError`.
