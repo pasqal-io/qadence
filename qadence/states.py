@@ -40,6 +40,7 @@ __all__ = [
     "equivalent_state",
     "DensityMatrix",
     "density_mat",
+    "overlap",
 ]
 
 ATOL_64 = 1e-14  # 64 bit precision
@@ -559,11 +560,32 @@ def rand_bitstring(N: int) -> str:
     return "".join(str(random.randint(0, 1)) for _ in range(N))
 
 
+def overlap(s0: torch.Tensor, s1: torch.Tensor) -> torch.Tensor:
+    """
+    Computes the exact overlap between two statevectors.
+
+    Arguments:
+        s0 (torch.Tensor): A statevector or batch of statevectors.
+        s1 (torch.Tensor): A statevector or batch of statevectors.
+
+    Returns:
+        A torch.Tensor with the result.
+
+    Examples:
+    ```python exec="on" source="material-block" result="json"
+    from qadence.states import rand_bitstring
+
+    print(rand_bitstring(N=8))
+    ```
+    """
+    from qadence.overlap import overlap_exact
+
+    return overlap_exact(s0, s1)
+
+
 def equivalent_state(
     s0: torch.Tensor, s1: torch.Tensor, rtol: float = 0.0, atol: float = NORMALIZATION_ATOL
 ) -> bool:
-    from qadence.overlap import fidelity
-
-    fid = fidelity(s0, s1)
+    fid = overlap(s0, s1)
     expected = torch.ones_like(fid)
     return torch.allclose(fid, expected, rtol=rtol, atol=atol)  # type: ignore[no-any-return]
