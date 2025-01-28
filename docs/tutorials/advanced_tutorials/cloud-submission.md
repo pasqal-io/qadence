@@ -8,7 +8,7 @@ The same process can be applied to run more complex quantum circuits on the clou
 
 Let's first define a very simple quantum circuit that creates a Bell state.
 
-```python
+```python exec="on" source="material-block" session="cloud-submission"
 from qadence import CNOT, H, QuantumCircuit
 
 circuit = QuantumCircuit(2, H(0), CNOT(0, 1))
@@ -40,23 +40,24 @@ Based on the workload specification, the appropriate run methods (`run`, `sample
 Moreover, the requested result type needs to be defined.
 These are provided in a list, so that multiple result types can be requested in a single submission.
 
-```python
+```python exec="on" source="material-block" session="cloud-submission"
 from qadence import BackendName
-from qadence.pasqal_cloud_connection import WorkloadSpec, ResultTypes
+from qadence.pasqal_cloud_connection import WorkloadSpec, ResultType
 
-workload = WorkloadSpec(circuit, BackendName.PYQTORCH, [ResultTypes.SAMPLE, ResultTypes.RUN])
+workload = WorkloadSpec(circuit, BackendName.PYQTORCH, [ResultType.SAMPLE, ResultType.RUN])
 ```
 
 ### Using a Quantum Model
 
-If you already have your quantum computation defined as a `QuantumModel`, it is possible to create a workload specification directly from the model using `get_spec_from_model`.
+If you already have your quantum computation defined as a `QuantumModel`, it is possible to create a workload specification directly from the model using `get_workload_spec`.
 Then, the circuit and backend specifications will be extracted from the model, the other values need to be provided as extra arguments.
 
-```python
-from qadence.pasqal_cloud_connection import get_spec_from_model
+```python exec="on" source="material-block" session="cloud-submission"
+from qadence import QuantumModel
+from qadence.pasqal_cloud_connection import get_workload_spec
 
-model = QuantumModel(...)
-workload = get_spec_from_model(model, [ResultType.SAMPLE])
+model = QuantumModel(circuit)
+workload = get_workload_spec(model, [ResultType.SAMPLE])
 ```
 
 ### Observable Expectation Value
@@ -64,8 +65,10 @@ workload = get_spec_from_model(model, [ResultType.SAMPLE])
 For the result type `ResultType.EXPECTATION` it is mandatory to provide an observable to the workload specification.
 In the example below we use the trivial identity observable `I(0) @ I(1)`.
 
-```python
-workload = WorkloadSpec(circuit, BackendName.PYQTORCH, [ResultTypes.EXPECTATION], observable=I(0)*I(1))
+```python exec="on" source="material-block" session="cloud-submission"
+from qadence import I
+
+workload = WorkloadSpec(circuit, BackendName.PYQTORCH, [ResultType.EXPECTATION], observable=I(0)*I(1))
 ```
 
 ### Parametric Circuits
@@ -76,12 +79,15 @@ The parameter values are defined in a dictionary, where keys are the parameter n
 It is possible to set multiple values by using a 1-D tensor, to the parameters, in that case the computation is executed for each value in the tensor.
 A mix of 0-D and 1-D tensors can be provided to keep some parameters constant and others changed during this process.
 However, all 1-D tensors need to have the same length.
+An exception will be raised if the dimensions and lengths are invalid.
 
 
-```python
+```python exec="on" source="material-block" session="cloud-submission"
+from torch import tensor
+
 parametric_circuit = ...
 parameter_values = {"param1": tensor(0), "param2": tensor([0, 1, 2]), "param3": tensor([5, 6, 7])}
-workload = WorkloadSpec(parametric_circuit, BackendName.PYQTORCH, [ResultTypes.EXPECTATION], parameter_values=parameter_values)
+workload = WorkloadSpec(parametric_circuit, BackendName.PYQTORCH, [ResultType.SAMPLE], parameter_values=parameter_values)
 ```
 
 ## Submission
@@ -117,7 +123,7 @@ This function checks in set intervals the status of the workload until the workl
 The polling rate as well as the time out duration can be set optionally.
 
 ```python
-from qadence.pasqal.cloud_connection import get_result
+from qadence.pasqal_cloud_connection import get_result
 
 workload_result = get_result(connection, workload_id, timeout=60, refresh_time=1)
 print(workload_result.result)

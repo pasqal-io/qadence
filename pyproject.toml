@@ -23,6 +23,7 @@ authors = [
     { name = "Charles Moussa", email = "charles.moussa@pasqal.com" },
     { name = "Giorgio Tosti Balducci", email = "giorgio.tosti-balducci@pasqal.com" },
     { name = "Daniele Cucurachi", email = "daniele.cucurachi@pasqal.com" },
+    { name = "Pim Venderbosch", email = "pim.venderbosch@pasqal.com" }
 ]
 requires-python = ">=3.9"
 license = { text = "Apache 2.0" }
@@ -54,6 +55,7 @@ dependencies = [
     "pyyaml",
     "matplotlib",
     "Arpeggio==2.0.2",
+    "pasqal_cloud",
 ]
 
 [tool.hatch.metadata]
