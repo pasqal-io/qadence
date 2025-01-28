@@ -18,7 +18,7 @@ class SimpleModel(nn.Module):
         return self.layer(x)
 
 
-def test_loss_fn(model: nn.Module, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+def loss_fn(model: nn.Module, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
     output = model(x)
     return torch.mean(output**2), output
 
@@ -29,7 +29,7 @@ def setup_ic() -> InformationContent:
     xs = torch.randn(10, 2)  # 10 samples, 2 features each
     epsilons = torch.logspace(-4, 4, 10)
     landscape = InformationContent(
-        model=model, loss_fn=test_loss_fn, xs=xs, epsilons=epsilons, variation_multiple=5
+        model=model, loss_fn=loss_fn, xs=xs, epsilons=epsilons, variation_multiple=5
     )
     return landscape
 
