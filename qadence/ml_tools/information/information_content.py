@@ -230,13 +230,9 @@ class InformationContent:
         probs = self.calculate_transition_probabilities_batch()
 
         mask = probs > 1e-4
-        ic_values = torch.zeros(len(self.epsilons), device=self.device)
-        valid_probs = probs[mask]
 
-        if len(valid_probs) > 0:
-            ic_values = -(probs * torch.log(probs + 1e-10)).sum(dim=1) / torch.log(
-                torch.tensor(6.0)
-            )
+        ic_terms = torch.where(mask, -probs * torch.log(probs), torch.zeros_like(probs))
+        ic_values = ic_terms.sum(dim=1) / torch.log(torch.tensor(6.0))
 
         return ic_values
 
