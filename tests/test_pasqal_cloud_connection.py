@@ -15,7 +15,7 @@ from qadence.pasqal_cloud_connection import (
     _parameter_values_to_json,
     check_status,
     get_result,
-    get_spec_from_model,
+    get_workload_spec,
     submit_workload,
     _workload_spec_to_json,
 )
@@ -102,10 +102,10 @@ def test_workload_spec_to_json_no_optionals() -> None:
     assert result.config["c_values"] == "{}"
 
 
-def test_get_spec_from_model(
+def test_get_workload_spec(
     BasicQuantumModel: QuantumModel, BasicQuantumCircuit: QuantumCircuit
 ) -> None:
-    workload = get_spec_from_model(BasicQuantumModel, [ResultType.SAMPLE])
+    workload = get_workload_spec(BasicQuantumModel, [ResultType.SAMPLE])
     assert workload.circuit == BasicQuantumCircuit
     assert workload.backend == BackendName.PYQTORCH
 

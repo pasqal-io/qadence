@@ -49,15 +49,15 @@ workload = WorkloadSpec(circuit, BackendName.PYQTORCH, [ResultType.SAMPLE, Resul
 
 ### Using a Quantum Model
 
-If you already have your quantum computation defined as a `QuantumModel`, it is possible to create a workload specification directly from the model using `get_spec_from_model`.
+If you already have your quantum computation defined as a `QuantumModel`, it is possible to create a workload specification directly from the model using `get_workload_spec`.
 Then, the circuit and backend specifications will be extracted from the model, the other values need to be provided as extra arguments.
 
 ```python exec="on" source="material-block" session="cloud-submission"
 from qadence import QuantumModel
-from qadence.pasqal_cloud_connection import get_spec_from_model
+from qadence.pasqal_cloud_connection import get_workload_spec
 
 model = QuantumModel(circuit)
-workload = get_spec_from_model(model, [ResultType.SAMPLE])
+workload = get_workload_spec(model, [ResultType.SAMPLE])
 ```
 
 ### Observable Expectation Value
