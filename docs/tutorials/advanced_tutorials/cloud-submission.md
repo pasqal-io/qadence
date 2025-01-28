@@ -79,6 +79,7 @@ The parameter values are defined in a dictionary, where keys are the parameter n
 It is possible to set multiple values by using a 1-D tensor, to the parameters, in that case the computation is executed for each value in the tensor.
 A mix of 0-D and 1-D tensors can be provided to keep some parameters constant and others changed during this process.
 However, all 1-D tensors need to have the same length.
+An exception will be raised if the dimensions and lengths are invalid.
 
 
 ```python exec="on" source="material-block" session="cloud-submission"
