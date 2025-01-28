@@ -290,7 +290,6 @@ class InformationContent:
         H = -4 * x * torch.log(x) / torch.log(torch.tensor(6)) - 2 * (0.5 - 2 * x) * torch.log(
             0.5 - 2 * x
         ) / torch.log(torch.tensor(6))
-        H = torch.zeros(1000)
         err = torch.abs(H - H_value)
         idx = torch.argmin(err)
 
