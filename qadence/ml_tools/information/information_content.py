@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import functools
+from logging import getLogger
 from math import log, sqrt
 from statistics import NormalDist
 from typing import Any, Callable
@@ -8,6 +9,8 @@ from typing import Any, Callable
 import torch
 from torch import nn
 from torch.func import functional_call  # type: ignore
+
+logger = getLogger("ml_tools")
 
 
 class InformationContent:
@@ -311,7 +314,7 @@ class InformationContent:
         )
 
         if max_IC < log(2, 6):
-            print(
+            logger.warning(
                 "Warning: The maximum IC is less than the required value. The bounds may be"
                 + " inaccurate."
             )
