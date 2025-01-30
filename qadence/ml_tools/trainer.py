@@ -14,7 +14,8 @@ from torch import dtype as torch_dtype
 from torch.utils.data import DataLoader
 
 from qadence.ml_tools.config import TrainConfig
-from qadence.ml_tools.data import DictDataLoader, OptimizeResult
+from qadence.ml_tools.data import DictDataLoader, OptimizeResult, data_to_device
+from qadence.ml_tools.information import InformationContent
 from qadence.ml_tools.optimize_step import optimize_step, update_ng_parameters
 from qadence.ml_tools.stages import TrainingStage
 
@@ -711,3 +712,45 @@ class Trainer(BaseTrainer):
         self.opt_result = OptimizeResult(
             self.current_epoch, self.model_old, self.optimizer_old, loss, metrics
         )
+
+    def calculate_grad_norm_bounds_ic(
+        self,
+        eta: float,
+        epsilons: torch.Tensor,
+        variation_multiple: int = 20,
+        dataloader: DataLoader | DictDataLoader | None = None,
+    ) -> tuple[float, float, float]:
+        """
+        Calculate the bounds on the gradient norm of using Information Content.
+
+        Args:
+            eta (float): The sensitivity IC.
+            epsilons: The thresholds to use for discretization of the finite derivatives.
+            variaton_multiple: The number of sets of variational parameters to generate per each
+                variational parameter. The number of variational parameters required for the
+                statisctiacal analysis scales linearly with the amount of them present in the
+                model. This is that linear factor.
+            dataloader (DataLoader | DictDataLoader | None): The dataloader for training data.
+
+        Returns:
+            tuple[float, float, float]: The max IC lower bound, max IC upper bound, and sensitivity
+                IC upper bound.
+        """
+        if not self._use_grad:
+            logger.warning(
+                "Gradient norm bounds are only relevant when using a gradient based optimizer. \
+                    Currently the trainer is set to use a gradient-free optimizer."
+            )
+
+        dataloader = dataloader if dataloader is not None else self.train_dataloader
+
+        batch = next(iter(self._batch_iter(dataloader, num_batches=1)))
+
+        xs = data_to_device(batch, device=self.device, dtype=self.data_dtype)
+
+        ic = InformationContent(self.model, self.loss_fn, xs, epsilons)
+
+        max_ic_bounds_lower, max_ic_bounds_upper = ic.get_grad_norm_bounds_max_IC()
+        sensitivity_ic_bound = ic.get_grad_norm_bounds_sensitivity_IC(eta)
+
+        return max_ic_bounds_lower, max_ic_bounds_upper, sensitivity_ic_bound

@@ -325,6 +325,9 @@ class InformationContent:
         """
         Compute the bounds on the average norm of the gradient.
 
+        Args:
+            eta (float): The sensitivity IC.
+
         Returns:
             Tensor: The lower bound.
         """
