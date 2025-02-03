@@ -532,10 +532,10 @@ max_ic_lower_bound, max_ic_upper_bound, sensitivity_ic_upper_bound = (
 )
 
 print(
-    f"Using maximum IC, the gradients are bound between {max_ic_lower_bound} and {max_ic_upper_bound}"
+    f"Using maximum IC, the gradients are bound between {max_ic_lower_bound:.3f} and {max_ic_upper_bound:.3f}\n"
 )
 print(
-    f"Using sensitivity IC, the gradients are bounded above by {sensitivity_ic_upper_bound}"
+    f"Using sensitivity IC, the gradients are bounded above by {sensitivity_ic_upper_bound:.3f}"
 )
 
 # Resume training as usual...
