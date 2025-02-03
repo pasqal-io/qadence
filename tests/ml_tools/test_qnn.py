@@ -367,10 +367,10 @@ def test_config_qnn(diff_mode: DiffMode) -> None:
     assert qnn._diff_mode == diff_mode
     assert qnn._backend_name == backend
 
-    ansatz_config = AnsatzConfig(ansatz_type=AnsatzType.ALA)
+    ansatz_config = AnsatzConfig(ansatz_type=AnsatzType.ALA, m_block_qubits=2)
 
     qnn = QNN.from_configs(
-        register=2,
+        register=4,
         obs_config=observable_config,
         fm_config=fm_config,
         ansatz_config=ansatz_config,
@@ -388,18 +388,21 @@ def test_faulty_ansatz_configs() -> None:
         ansatz_config = AnsatzConfig(
             ansatz_type=AnsatzType.ALA,
             ansatz_strategy=Strategy.ANALOG,
+            m_block_qubits=2,
         )
 
     with pytest.raises(AssertionError):
         ansatz_config = AnsatzConfig(
             ansatz_type=AnsatzType.ALA,
             ansatz_strategy=Strategy.RYDBERG,
+            m_block_qubits=2,
         )
 
     with pytest.raises(AssertionError):
         ansatz_config = AnsatzConfig(
             ansatz_type=AnsatzType.IIA,
             ansatz_strategy=Strategy.RYDBERG,
+            m_block_qubits=2,
         )
 
 
