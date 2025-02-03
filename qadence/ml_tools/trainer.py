@@ -725,9 +725,10 @@ class Trainer(BaseTrainer):
 
         Args:
             eta (float): The sensitivity IC.
-            epsilons: The thresholds to use for discretization of the finite derivatives.
-            variaton_multiple: The number of sets of variational parameters to generate per each
-                variational parameter. The number of variational parameters required for the
+            epsilons (torch.Tensor): The epsilons to use for thresholds to for discretization of the
+                finite derivatives.
+            variation_multiple (int): The number of sets of variational parameters to generate per
+                each variational parameter. The number of variational parameters required for the
                 statisctiacal analysis scales linearly with the amount of them present in the
                 model. This is that linear factor.
             dataloader (DataLoader | DictDataLoader | None): The dataloader for training data. A
