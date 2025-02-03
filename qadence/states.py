@@ -586,6 +586,6 @@ def overlap(s0: torch.Tensor, s1: torch.Tensor) -> torch.Tensor:
 def equivalent_state(
     s0: torch.Tensor, s1: torch.Tensor, rtol: float = 0.0, atol: float = NORMALIZATION_ATOL
 ) -> bool:
-    fid = overlap(s0, s1)
-    expected = torch.ones_like(fid)
-    return torch.allclose(fid, expected, rtol=rtol, atol=atol)  # type: ignore[no-any-return]
+    fidelity = overlap(s0, s1)
+    expected = torch.ones_like(fidelity)
+    return torch.allclose(fidelity, expected, rtol=rtol, atol=atol)  # type: ignore[no-any-return]
