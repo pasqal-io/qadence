@@ -54,7 +54,7 @@ The [`TrainConfig`][qadence.ml_tools.config.TrainConfig] tells [`Trainer`][qaden
 It is also possible to provide custom callback functions by instantiating a [`Callback`][qadence.ml_tools.callbacks.Callback]
 with a function `callback`.
 
-For example of how to use the TrainConfig with `Trainer`, please see [Examples in Trainer](/trainer.md)
+For example of how to use the TrainConfig with `Trainer`, please see [Examples in Trainer](../trainer)
 
 
 ### 2.1 Explanation of `TrainConfig` Attributes
@@ -172,7 +172,7 @@ def validation_criterion(val_loss: float, best_val_loss: float, val_epsilon: flo
 #### Custom Callbacks
 
 `TrainConfig` supports custom callbacks that can be triggered at specific stages of training. The `callbacks` attribute accepts a list of callback instances, which allow for custom behaviors like early stopping or additional logging.
-See [Callbacks](/callbacks.md) for more details.
+See [Callbacks](../callbacks) for more details.
 
 - `callbacks` (**list[Callback]**): List of custom callbacks to execute during training.
 
