@@ -750,7 +750,7 @@ class Trainer(BaseTrainer):
 
         ic = InformationContent(self.model, self.loss_fn, xs, epsilons)
 
-        max_ic_bounds_lower, max_ic_bounds_upper = ic.get_grad_norm_bounds_max_IC()
-        sensitivity_ic_bound = ic.get_grad_norm_bounds_sensitivity_IC(eta)
+        max_ic_lower_bound, max_ic_upper_bound = ic.get_grad_norm_bounds_max_IC()
+        sensitivity_ic_upper_bound = ic.get_grad_norm_bounds_sensitivity_IC(eta)
 
-        return max_ic_bounds_lower, max_ic_bounds_upper, sensitivity_ic_bound
+        return max_ic_lower_bound, max_ic_upper_bound, sensitivity_ic_upper_bound
