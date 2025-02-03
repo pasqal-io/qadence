@@ -23,10 +23,11 @@ authors = [
     { name = "Charles Moussa", email = "charles.moussa@pasqal.com" },
     { name = "Giorgio Tosti Balducci", email = "giorgio.tosti-balducci@pasqal.com" },
     { name = "Daniele Cucurachi", email = "daniele.cucurachi@pasqal.com" },
+    { name = "Pim Venderbosch", email = "pim.venderbosch@pasqal.com" }
 ]
 requires-python = ">=3.9"
 license = { text = "Apache 2.0" }
-version = "1.10.0"
+version = "1.10.1"
 classifiers = [
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python",
@@ -54,6 +55,7 @@ dependencies = [
     "pyyaml",
     "matplotlib",
     "Arpeggio==2.0.2",
+    "pasqal_cloud",
 ]
 
 [tool.hatch.metadata]
@@ -62,8 +64,8 @@ allow-ambiguous-features = true
 
 [project.optional-dependencies]
 pulser = [
-    "pulser-core==1.2.0",
-    "pulser-simulation==1.2.0",
+    "pulser-core==1.2.1",
+    "pulser-simulation==1.2.1",
     "pasqal-cloud==0.12.7",
 ]
 visualization = [
