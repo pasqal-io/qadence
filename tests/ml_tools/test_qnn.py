@@ -22,7 +22,7 @@ from qadence.ml_tools.constructors import (
 from qadence.operations import RX, RY, Z
 from qadence.parameters import FeatureParameter, Parameter
 from qadence.states import uniform_state
-from qadence.types import PI, BackendName, DiffMode, ObservableTransform
+from qadence.types import PI, AnsatzType, BackendName, DiffMode, ObservableTransform, Strategy
 
 
 def build_circuit(n_qubits_per_feature: int, n_features: int, depth: int = 2) -> QuantumCircuit:
@@ -181,7 +181,7 @@ def test_multiparam_qnn_training(diff_mode: str) -> None:
         assert not torch.any(torch.isnan(loss))
         loss.backward()
         optimizer.step()
-        print(f"Epoch {i+1} modeling training - Loss: {loss.item()}")
+        print(f"Epoch {i + 1} modeling training - Loss: {loss.item()}")
 
 
 def test_qnn_input_order() -> None:
@@ -265,7 +265,8 @@ def get_qnn(
     trainable_transform: bool | None = None,
 ) -> QNN:
     observable = observable_from_config(
-        n_qubits, ObservableConfig(Z, scale, shift, "scale", trainable_transform)  # type: ignore[arg-type]
+        n_qubits,
+        ObservableConfig(Z, scale, shift, "scale", trainable_transform),  # type: ignore[arg-type]
     )
     circuit = SmallCircuit
     model = QNN(
@@ -366,6 +367,41 @@ def test_config_qnn(diff_mode: DiffMode) -> None:
     assert qnn._diff_mode == diff_mode
     assert qnn._backend_name == backend
 
+    ansatz_config = AnsatzConfig(ansatz_type=AnsatzType.ALA)
+
+    qnn = QNN.from_configs(
+        register=2,
+        obs_config=observable_config,
+        fm_config=fm_config,
+        ansatz_config=ansatz_config,
+        diff_mode=diff_mode,
+        backend=backend,
+    )
+
+    assert isinstance(qnn, QNN)
+    assert qnn._diff_mode == diff_mode
+    assert qnn._backend_name == backend
+
+
+def test_faulty_ansatz_configs() -> None:
+    with pytest.raises(AssertionError):
+        ansatz_config = AnsatzConfig(
+            ansatz_type=AnsatzType.ALA,
+            ansatz_strategy=Strategy.ANALOG,
+        )
+
+    with pytest.raises(AssertionError):
+        ansatz_config = AnsatzConfig(
+            ansatz_type=AnsatzType.ALA,
+            ansatz_strategy=Strategy.RYDBERG,
+        )
+
+    with pytest.raises(AssertionError):
+        ansatz_config = AnsatzConfig(
+            ansatz_type=AnsatzType.IIA,
+            ansatz_strategy=Strategy.RYDBERG,
+        )
+
 
 def test_config_qnn_input_transform() -> None:
     fm_config = FeatureMapConfig(num_features=1)
@@ -418,7 +454,10 @@ def test_config_qnn_output_transform() -> None:
     assert torch.allclose(2.0 * qnn(input_values) + 1, transformed_qnn(input_values) + 0.0)
 
     observable_config = ObservableConfig(
-        detuning=Z, scale=-1.0, shift=1.0, transformation_type="range"  # type: ignore[arg-type]
+        detuning=Z,
+        scale=-1.0,
+        shift=1.0,
+        transformation_type="range",  # type: ignore[arg-type]
     )
     transformed_observable_config = ObservableConfig(
         detuning=Z,
