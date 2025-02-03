@@ -469,7 +469,85 @@ for i in range(n_epochs):
 
 
 
-### 6.4. Custom `train` loop
+### 6.4. Performing pre-training Exploratory Landscape Analysis (ELA) with Information Content (IC)
+
+Before one embarks on training a model, one may wish to analyze the loss landscape to judge the trainability and catch vanishing gradient issues early.
+One way of doing this is made possible via calculating the [Information Content of the loss landscape](https://www.nature.com/articles/s41534-024-00819-8).
+This is done by discretizing the gradient in the loss landscapes and then calculating the information content therein.
+This serves as a measure of flatness or ruggedness of the loss landscape.
+Quantitatively, the information content allows us to get bounds on the average norm of the gradient in the loss landscape.
+
+The `Trainer` class provides a method to calculate these gradient norms.
+
+```python exec="on" source="material-block" html="1"
+import torch
+from torch.optim.adam import Adam
+
+from qadence.constructors import ObservableConfig
+from qadence.ml_tools.config import AnsatzConfig, FeatureMapConfig, TrainConfig
+from qadence.ml_tools.data import to_dataloader
+from qadence.ml_tools.models import QNN
+from qadence.ml_tools.optimize_step import optimize_step
+from qadence.ml_tools.trainer import Trainer
+from qadence.operations.primitive import Z
+
+fm_config = FeatureMapConfig(num_features=1)
+ansatz_config = AnsatzConfig(depth=4)
+obs_config = ObservableConfig(detuning=Z)
+
+qnn = QNN.from_configs(
+    register=4,
+    obs_config=obs_config,
+    fm_config=fm_config,
+    ansatz_config=ansatz_config,
+)
+
+optimizer = Adam(qnn.parameters(), lr=0.001)
+
+batch_size = 25
+x = torch.linspace(0, 1, 32).reshape(-1, 1)
+y = torch.sin(x)
+train_loader = to_dataloader(x, y, batch_size=batch_size, infinite=True)
+
+train_config = TrainConfig(max_iter=100)
+
+trainer = Trainer(
+    model=qnn,
+    optimizer=optimizer,
+    config=train_config,
+    loss_fn="mse",
+    train_dataloader=train_loader,
+    optimize_step=optimize_step,
+)
+
+# Perform exploratory landscape analysis with Information Content
+ic_sensitivirty_threshold = 1e-4
+epsilons = torch.logspace(-2, 2, 10)
+
+max_ic_lower_bound, max_ic_upper_bound, sensitivity_ic_upper_bound = (
+    trainer.calculate_grad_norm_bounds_ic(
+        eta=ic_sensitivirty_threshold,
+        epsilons=epsilons,
+    )
+)
+
+print(
+    f"Using maximum IC, the gradients are bound between {max_ic_lower_bound} and {max_ic_upper_bound}"
+)
+print(
+    f"Using sensitivity IC, the gradients are bounded above by {sensitivity_ic_upper_bound}"
+)
+
+# Resume training as usual...
+
+trainer.fit(train_loader)
+```
+
+The sensitivity IC bound is guaranteed to appear, while the usually much tighter bounds that we get via the maximum IC case is only meaningful in the case of the maximum achieved information content $H(\epsilon)_{max} \geq log_6(2)$.
+
+
+
+### 6.5. Custom `train` loop
 
 If you need custom training functionality that goes beyond what is available in
 `qadence.ml_tools.Trainer` you can write your own
@@ -546,6 +624,6 @@ def train(
     return model, optimizer
 ```
 
-### 6.5. Gradient-free optimization using `Trainer`
+### 6.6. Gradient-free optimization using `Trainer`
 
 We can achieve gradient free optimization with `Trainer.set_use_grad(False)` or `trainer.disable_grad_opt(ng_optimizer)`. An example solving a QUBO using gradient free optimization based on `Nevergrad` optimizers and `Trainer` is shown in the [analog QUBO Tutorial](../../digital_analog_qc/analog-qubo.md).
