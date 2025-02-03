@@ -286,14 +286,13 @@ class InformationContent:
             float: The q value
         """
 
-        x = torch.linspace(0.001, 0.2499, 10000)
+        x = torch.linspace(0.001, 0.16667, 10000)
 
         H = -4 * x * torch.log(x) / torch.log(torch.tensor(6)) - 2 * (0.5 - 2 * x) * torch.log(
             0.5 - 2 * x
         ) / torch.log(torch.tensor(6))
         err = torch.abs(H - H_value)
         idx = torch.argmin(err)
-
         return float(x[idx].item())
 
     def get_grad_norm_bounds_max_IC(self) -> tuple[float, float]:
