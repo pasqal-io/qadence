@@ -730,11 +730,72 @@ class Trainer(BaseTrainer):
                 variational parameter. The number of variational parameters required for the
                 statisctiacal analysis scales linearly with the amount of them present in the
                 model. This is that linear factor.
-            dataloader (DataLoader | DictDataLoader | None): The dataloader for training data.
+            dataloader (DataLoader | DictDataLoader | None): The dataloader for training data. A
+                new dataloader can be provided, or the dataloader provided in the trinaer will be
+                used. In case no dataloaders are provided at either places, it assumes that the
+                model does not require any input data.
 
         Returns:
             tuple[float, float, float]: The max IC lower bound, max IC upper bound, and sensitivity
                 IC upper bound.
+
+        Examples:
+            ```python
+            import torch
+            from torch.optim.adam import Adam
+
+            from qadence.constructors import ObservableConfig
+            from qadence.ml_tools.config import AnsatzConfig, FeatureMapConfig, TrainConfig
+            from qadence.ml_tools.data import to_dataloader
+            from qadence.ml_tools.models import QNN
+            from qadence.ml_tools.optimize_step import optimize_step
+            from qadence.ml_tools.trainer import Trainer
+            from qadence.operations.primitive import Z
+
+            fm_config = FeatureMapConfig(num_features=1)
+            ansatz_config = AnsatzConfig(depth=4)
+            obs_config = ObservableConfig(detuning=Z)
+
+            qnn = QNN.from_configs(
+                register=4,
+                obs_config=obs_config,
+                fm_config=fm_config,
+                ansatz_config=ansatz_config,
+            )
+
+            optimizer = Adam(qnn.parameters(), lr=0.001)
+
+            batch_size = 25
+            x = torch.linspace(0, 1, 32).reshape(-1, 1)
+            y = torch.sin(x)
+            train_loader = to_dataloader(x, y, batch_size=batch_size, infinite=True)
+
+            train_config = TrainConfig(max_iter=100)
+
+            trainer = Trainer(
+                model=qnn,
+                optimizer=optimizer,
+                config=train_config,
+                loss_fn="mse",
+                train_dataloader=train_loader,
+                optimize_step=optimize_step,
+            )
+
+            # Perform exploratory landscape analysis with Information Content
+            ic_sensitivirty_threshold = 1e-4
+            epsilons = torch.logspace(-2, 2, 10)
+
+            max_ic_lower_bound, max_ic_upper_bound, sensitivity_ic_upper_bound = (
+                trainer.calculate_grad_norm_bounds_ic(
+                    eta=ic_sensitivirty_threshold,
+                    epsilons=epsilons,
+                )
+            )
+
+            # Resume training as usual...
+
+            trainer.fit(train_loader)
+            ```
         """
         if not self._use_grad:
             logger.warning(
