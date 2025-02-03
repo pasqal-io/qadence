@@ -67,7 +67,8 @@ class InformationContent:
                 ```
                 In this example, the model is a linear classifier, and the `xs` include both the
                 inputs and the target lables. The logic for calculation of the loss from this lies
-                entirely within the `loss_fn` function.
+                entirely within the `loss_fn` function. This can then further be used to obtain the
+                bounds on the average norm of the gradient of the loss function.
 
             Example: A Physics Informed Neural Network
                 ```python
@@ -102,7 +103,8 @@ class InformationContent:
                 are the inputs to the different residual components of the model. The logic
                 for calculation of the residuals lies within the PhysicsInformedNN class, and
                 the loss function is defined to calculate the loss that is to be optimised
-                from these residuals.
+                from these residuals. This can then further be used to obtain the
+                bounds on the average norm of the gradient of the loss function.
 
             The first value that the `loss_fn` returns is the loss value that is being optimsed.
             The function is also expected to return other value(s), often the metrics that are
