@@ -367,14 +367,19 @@ def test_config_qnn(diff_mode: DiffMode) -> None:
     assert qnn._diff_mode == diff_mode
     assert qnn._backend_name == backend
 
+
+@pytest.mark.parametrize("diff_mode", [DiffMode.GPSR, DiffMode.AD])
+def test_ala_ansatz_config(diff_mode: DiffMode) -> None:
+    backend = BackendName.PYQTORCH
+    fm_config = FeatureMapConfig(num_features=1)
     ansatz_config = AnsatzConfig(ansatz_type=AnsatzType.ALA, m_block_qubits=2)
+    observable_config = ObservableConfig(detuning=Z)
 
     qnn = QNN.from_configs(
         register=4,
         obs_config=observable_config,
         fm_config=fm_config,
         ansatz_config=ansatz_config,
-        diff_mode=diff_mode,
         backend=backend,
     )
 
