@@ -380,6 +380,7 @@ def test_ala_ansatz_config(diff_mode: DiffMode) -> None:
         obs_config=observable_config,
         fm_config=fm_config,
         ansatz_config=ansatz_config,
+        diff_mode=diff_mode,
         backend=backend,
     )
 
