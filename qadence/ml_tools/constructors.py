@@ -601,6 +601,16 @@ def _create_ala_digital(
     num_qubits: int,
     config: AnsatzConfig,
 ) -> AbstractBlock:
+    """
+    Create the Digital Alternating Layer Ansatz based on the configuration.
+
+    Args:
+        num_qubits (int): The number of qubits.
+        config (AnsatzConfig): The configuration for the ansatz.
+
+    Returns:
+        AbstractBlock: The Digital Alternating Layer Ansatz.
+    """
     operations = config.strategy_args.get("operation", [RX, RY, RX])
     entangler = config.strategy_args.get("entangler", CNOT)
 
@@ -617,6 +627,19 @@ def _create_ala(
     num_qubits: int,
     config: AnsatzConfig,
 ) -> AbstractBlock:
+    """
+    Create the Alternating Layer Ansatz based on the configuration.
+
+    Args:
+        num_qubits (int): The number of qubits.
+        config (AnsatzConfig): The configuration for the ansatz.
+
+    Returns:
+        AbstractBlock: The Alternating Layer Ansatz.
+
+    Raises:
+        ValueError: If the ansatz strategy is not `Strategy.DIGITAL`.
+    """
     if config.ansatz_strategy == Strategy.DIGITAL:
         return _create_ala_digital(num_qubits=num_qubits, config=config)
     else:
