@@ -275,4 +275,3 @@ print(noise_combination)
 
 !!! warning "NoiseHandler scope"
     Note it is not possible to define a `NoiseHandler` instances with both digital and analog noises, both readout and analog noises, several analog noises, several readout noises, or a readout noise that is not the last defined protocol within `NoiseHandler`.
-
