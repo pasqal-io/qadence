@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from .callbacks.saveload import load_checkpoint, load_model, write_checkpoint
 from .config import AnsatzConfig, FeatureMapConfig, TrainConfig
-from .constructors import create_ansatz, create_fm_blocks, observable_from_config
+from .constructors import create_ansatz, create_fm_blocks, create_observable
 from .data import DictDataLoader, InfiniteTensorDataset, OptimizeResult, to_dataloader
 from .models import QNN
 from .optimize_step import optimize_step as default_optimize_step
@@ -18,7 +18,7 @@ __all__ = [
     "DictDataLoader",
     "FeatureMapConfig",
     "load_checkpoint",
-    "observable_from_config",
+    "create_observable",
     "QNN",
     "TrainConfig",
     "OptimizeResult",

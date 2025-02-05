@@ -239,30 +239,62 @@ def is_numeric(x: Any) -> bool:
 
 @dataclass
 class ObservableConfig:
-    detuning: TDetuning
+    """ObservableConfig is a configuration class for defining the parameters of an observable Hamiltonian."""
+
+    interaction: Interaction | Callable | None = None
+    """
+    The type of interaction.
+
+    Available options from the Interaction enum are:
+            - Interaction.ZZ
+            - Interaction.NN
+            - Interaction.XY
+            - Interaction.XYZ
+            Alternatively, a custom interaction function can be defined.
+            Example:
+
+                def custom_int(i: int, j: int):
+                    return X(i) @ X(j) + Y(i) @ Y(j)
+
+                n_qubits = 2
+
+                hamilt = hamiltonian_factory(n_qubits, interaction=custom_int)
+    """
+    detuning: TDetuning | None = None
     """
     Single qubit detuning of the observable Hamiltonian.
 
     Accepts single-qubit operator N, X, Y, or Z.
     """
-    scale: TParameter = 1.0
-    """The scale by which to multiply the output of the observable."""
-    shift: TParameter = 0.0
-    """The shift to add to the output of the observable."""
-    transformation_type: ObservableTransform = ObservableTransform.NONE  # type: ignore[assignment]
-    """The type of transformation."""
-    trainable_transform: bool | None = None
+    interaction_strength: TArray | str | None = None
     """
-    Whether to have a trainable transformation on the output of the observable.
+    List of values to be used as the interaction strength for each pair of qubits.
 
-    If None, the scale and shift are numbers.
-    If True, the scale and shift are VariationalParameter.
-    If False, the scale and shift are FeatureParameter.
+    Should be ordered following the order of `Register(n_qubits).edges`.
+
+    Alternatively, some string "x" can be passed, which will create a parameterized
+    interactions for each pair of qubits, each labelled as `"x_ij"`.
+    """
+    detuning_strength: TArray | str | None = None
+    """
+    List of values to be used as the detuning strength for each qubit.
+
+    Alternatively, some string "x" can be passed, which will create a parameterized
+    detuning for each qubit, each labelled as `"x_i"`.
+    """
+    shift: TParameter | None = None
+    """The shift to add to the output of the observable."""
+
+    random_strength: bool = False
+    """If True: Set random interaction and detuning strengths between -1 and 1."""
+    use_all_node_pairs: bool = False
+    """
+    Computes an interaction term for every pair of nodes in the graph,.
+
+    independent of the edge topology in the register. Useful for defining Hamiltonians
+    where the interaction strength decays with the distance.
     """
 
     def __post_init__(self) -> None:
-        if is_numeric(self.scale) and is_numeric(self.shift):
-            assert (
-                self.trainable_transform is None
-            ), f"If scale and shift are numbers, trainable_transform must be None. \
-            But got: {self.trainable_transform}"
+        if self.interaction is None and self.detuning is None:
+            raise ValueError("Please provide an interaction and/or detuning for the Hamiltonian.")
