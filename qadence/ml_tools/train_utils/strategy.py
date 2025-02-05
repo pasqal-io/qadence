@@ -12,7 +12,8 @@ logger = getLogger("ml_tools")
 
 class DistributionStrategy:
     """
-    A class to handle the configuration and initialization of the PyTorch distributed 
+    A class to handle the configuration and initialization of the PyTorch distributed.
+
     process group based on the launch environment (e.g., torchrun, SLURM, or none).
 
     This class auto-detects the launch strategy by examining environment variables.
@@ -84,9 +85,12 @@ class DistributionStrategy:
                 nodelist: str | None = os.environ.get("SLURM_NODELIST")
                 if nodelist:
                     try:
-                        master_addr = subprocess.check_output(
-                            ["scontrol", "show", "hostnames", nodelist]
-                        ).splitlines()[0].decode("utf-8").strip()
+                        master_addr = (
+                            subprocess.check_output(["scontrol", "show", "hostnames", nodelist])
+                            .splitlines()[0]
+                            .decode("utf-8")
+                            .strip()
+                        )
                     except Exception:
                         master_addr = "localhost"
                 else:
@@ -106,6 +110,7 @@ class DistributionStrategy:
     def set_attributes(self) -> Tuple[int, int, int]:
         """
         Set the distributed attributes (rank, world_size, local_rank) from environment variables.
+
         This method does not initialize the process group.
 
         Returns:
@@ -145,20 +150,20 @@ class DistributionStrategy:
     def start(self) -> None:
         """
         Initializes the PyTorch distributed process group using the stored attributes.
+
         This function should be called after set_attributes().
         """
         if self.world_size is not None and self.world_size > 1:
             # Initialize the process group with the backend, rank, and world size.
-            dist.init_process_group(backend=self.backend, rank=self.rank, world_size=self.world_size)
+            dist.init_process_group(
+                backend=self.backend, rank=self.rank, world_size=self.world_size
+            )
             logger.info("Initialized process group with backend '%s'", self.backend)
         else:
             logger.info("Process group initialization skipped (world_size <= 1)")
 
     def cleanup(self) -> None:
-        """
-        Cleans up the distributed process group by destroying it if it is initialized.
-        """
+        """Cleans up the distributed process group by destroying it if it is initialized."""
         if dist.is_initialized():
             dist.destroy_process_group()
             logger.info("Destroyed distributed process group.")
-

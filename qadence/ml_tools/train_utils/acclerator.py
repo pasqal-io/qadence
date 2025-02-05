@@ -36,7 +36,9 @@ class Accelerator:
         device (str): The device string (e.g., "cuda:0") for the current process.
     """
 
-    def __init__(self, backend: str = "nccl", world_size: int | None = 1, spawn: bool = False) -> None:
+    def __init__(
+        self, backend: str = "nccl", world_size: int | None = 1, spawn: bool = False
+    ) -> None:
         """
         Initialize the Accelerator.
 
@@ -48,23 +50,29 @@ class Accelerator:
         """
         self.backend: str = backend
         self.spawn: bool = spawn
-        self.world_size: int | None 
+        self.world_size: int | None
         # Create a DistributionStrategy instance to set up the distributed environment.
         self.dist = DistributionStrategy(backend)
         rank, env_world_size, local_rank = self.dist.set_attributes()
         if world_size and str(world_size) != str(env_world_size):
             logger.warning(
                 "Provided world size (%d) does not match environment world size (%d). Using provided world size.",
-                world_size, env_world_size
+                world_size,
+                env_world_size,
             )
             self.dist.world_size = self.world_size = world_size
         else:
             self.dist.world_size = self.world_size = env_world_size
-        self.dist.init_process_group()
+        self.dist.start()
 
         self.device: str = f"cuda:{self.dist.local_rank}" if torch.cuda.is_available() else "cpu"
-        logger.info("Accelerator initialized: Rank %d, World Size: %d, Local Rank: %d, Device %s",
-                    self.dist.rank, self.dist.world_size, self.dist.local_rank, self.device)
+        logger.info(
+            "Accelerator initialized: Rank %d, World Size: %d, Local Rank: %d, Device %s",
+            self.dist.rank,
+            self.dist.world_size,
+            self.dist.local_rank,
+            self.device,
+        )
 
     def prepare(self, *args: Any) -> Tuple[Any, ...]:
         """
@@ -92,16 +100,14 @@ class Accelerator:
             elif isinstance(obj, DataLoader):
                 if self.dist.world_size and self.dist.world_size > 1:
                     sampler = DistributedSampler(
-                        obj.dataset,
-                        num_replicas=self.dist.world_size,
-                        rank=self.dist.rank
+                        obj.dataset, num_replicas=self.dist.world_size, rank=self.dist.rank
                     )
                     obj = DataLoader(
                         obj.dataset,
                         batch_size=obj.batch_size,
                         sampler=sampler,
                         num_workers=getattr(obj, "num_workers", 0),
-                        pin_memory=getattr(obj, "pin_memory", False)
+                        pin_memory=getattr(obj, "pin_memory", False),
                     )
                 prepared.append(obj)
             else:
@@ -110,9 +116,7 @@ class Accelerator:
         return tuple(prepared)
 
     def finalize(self) -> None:
-        """
-        Finalizes the distributed training by cleaning up the process group.
-        """
+        """Finalizes the distributed training by cleaning up the process group."""
         self.dist.cleanup()
         logger.info("Finalized distributed training and cleaned up process group.")
 
@@ -127,6 +131,7 @@ class Accelerator:
             trainer_instance (Any): An instance that implements _prepare() and _fit() methods.
         """
         if self.spawn:
+
             def _worker(rank: int) -> None:
                 os.environ["RANK"] = str(rank)
                 os.environ["WORLD_SIZE"] = str(self.world_size)
@@ -134,9 +139,12 @@ class Accelerator:
                 logger.info("Worker process %d starting", rank)
                 trainer_instance._prepare()
                 trainer_instance._fit()
+
             mp.spawn(_worker, nprocs=self.world_size)
         else:
-            logger.info("Running training in the current process without spawning additional processes.")
+            logger.info(
+                "Running training in the current process without spawning additional processes."
+            )
             trainer_instance._prepare()
             trainer_instance._fit()
 

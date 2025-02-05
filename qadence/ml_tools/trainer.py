@@ -25,10 +25,10 @@ from qadence.ml_tools.information import InformationContent
 from qadence.ml_tools.optimize_step import optimize_step, update_ng_parameters
 from qadence.ml_tools.stages import TrainingStage
 
-from qadence.ml_tools.train_utils.base_trainer import BaseTrainer
+from .train_utils.base_trainer import BaseTrainer
 
 # Integration: Import Accelerator which wraps DistributionStrategy.
-from qadence.ml_tools.train_utils.accelerator import Accelerator
+from .train_utils.acclerator import Accelerator
 
 logger = getLogger("ml_tools")
 
