@@ -203,6 +203,11 @@ class TrainConfig:
     Each subfolder is of structure `<id>_<timestamp>_<PID>`.
     """
 
+    world_size: int | None = None
+    aggregate_metrics: bool = False
+    spawn: bool = False
+    backend: str = "nccl"
+
 
 @dataclass
 class FeatureMapConfig:
