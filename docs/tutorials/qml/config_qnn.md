@@ -13,7 +13,7 @@ One convenient way to construct these three parts of the model is to use the con
 
 The model output is the expectation value of the defined observable(s). We use the `ObservableConfig` class to specify the observable.
 
-We can specify any Hamiltonian supported by [hamiltonian_factory](qadence.constructors.hamiltonians.hamiltonian_factory) that we want to measure at the end of the circuit. Let us say we want to measure the $Z$ operator.
+We can specify any Hamiltonian supported by [hamiltonian_factory](qadence.constructors.hamiltonians.hamiltonian_factory) that we want to measure at the end of the circuit. For example, suppose we want to measure the Z operator
 
 ```python exec="on" source="material-block" session="config" html="1"
 from qadence import create_observable, ObservableConfig, Z
@@ -21,6 +21,7 @@ from qadence import create_observable, ObservableConfig, Z
 observable_config = ObservableConfig(
     detuning=Z,
     interaction = None,
+    detuning_strength=[2.0, 2.0, 2.0, 2.0]
     shift=-1.0,
 )
 
@@ -29,7 +30,7 @@ from qadence.draw import html_string # markdown-exec: hide
 print(html_string(observable)) # markdown-exec: hide
 ```
 
-We have specified the observable Hamiltonian to be one with $Z$-detuning. The result is linearly scaled by 3.0 and shifted by -1.0. The shift can optionally also be a [VariationalParameter][qadence.parameters.VariationalParameter]
+We have specified the observable Hamiltonian to be one with $Z$-detuning. The result is linearly scaled by 2.0 and shifted by -1.0. The shift or the scale can optionally also be a [VariationalParameter][qadence.parameters.VariationalParameter]
 
 One can also specify the observable as a list of observables, in which case the QNN will output a list of values.
 

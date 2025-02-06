@@ -274,18 +274,22 @@ class ObservableConfig:
 
     Should be ordered following the order of `Register(n_qubits).edges`.
 
-    Alternatively, some string "x" can be passed, which will create a parameterized
+    Alternatively, a string "x" can be passed, which will create a variational parameterized
     interactions for each pair of qubits, each labelled as `"x_ij"`.
     """
     detuning_strength: TArray | str | None = None
     """
     List of values to be used as the detuning strength for each qubit.
 
-    Alternatively, some string "x" can be passed, which will create a parameterized
+    Alternatively, a string "x" can be passed, which will create a variational parameterized
     detuning for each qubit, each labelled as `"x_i"`.
     """
     shift: TParameter | None = None
-    """The shift to add to the output of the observable."""
+    """The shift to add to the output of the observable.
+
+    It can be a float, int, or a string. If the shift is a string,
+    it will be treated as a VariationalParameter.
+    """
 
     random_strength: bool = False
     """If True: Set random interaction and detuning strengths between -1 and 1."""
