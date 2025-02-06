@@ -434,15 +434,17 @@ class AnsatzConfig:
     """What type of ansatz.
 
     `AnsatzType.HEA` for Hardware Efficient Ansatz.
-    `AnsatzType.IIA` for Identity intialized Ansatz.
+    `AnsatzType.IIA` for Identity Intialized Ansatz.
+    `AnsatzType.ALA` for Alternating Layer Ansatz.
     """
 
     ansatz_strategy: Strategy = Strategy.DIGITAL
     """Ansatz strategy.
 
-    `Strategy.DIGITAL` for fully digital ansatz. Required if `ansatz_type` is `AnsatzType.IIA`.
-    `Strategy.SDAQC` for analog entangling block.
-    `Strategy.RYDBERG` for fully rydberg hea ansatz.
+    `Strategy.DIGITAL` for fully digital ansatz. Required if `ansatz_type` is `AnsatzType.ALA`.
+    `Strategy.SDAQC` for analog entangling block. Only available for `AnsatzType.HEA` or
+    `AnsatzType.ALA`.
+    `Strategy.RYDBERG` for fully rydberg hea ansatz. Only available for `AnsatzType.HEA`.
     """
 
     strategy_args: dict = field(default_factory=dict)
@@ -484,6 +486,13 @@ class AnsatzConfig:
     """
     # The default for a dataclass can not be a mutable object without using this default_factory.
 
+    m_block_qubits: int | None = None
+    """
+    The number of qubits in the local entangling block of an Alternating Layer Ansatz (ALA).
+
+    Only used when `ansatz_type` is `AnsatzType.ALA`.
+    """
+
     param_prefix: str = "theta"
     """The base bame of the variational parameter."""
 
@@ -499,3 +508,13 @@ class AnsatzConfig:
             assert (
                 self.ansatz_strategy != Strategy.RYDBERG
             ), "Rydberg strategy not allowed for Identity-initialized ansatz."
+
+        if self.ansatz_type == AnsatzType.ALA:
+            assert (
+                self.ansatz_strategy == Strategy.DIGITAL
+            ), f"{self.ansatz_strategy} not allowed for Alternating Layer Ansatz.\
+            Only `Strategy.DIGITAL` allowed."
+
+            assert (
+                self.m_block_qubits is not None
+            ), "m_block_qubits must be specified for Alternating Layer Ansatz."

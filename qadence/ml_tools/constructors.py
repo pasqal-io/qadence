@@ -14,13 +14,14 @@ from qadence.constructors import (
     analog_feature_map,
     feature_map,
     hamiltonian_factory,
-    iia,
     rydberg_feature_map,
     rydberg_hea,
     rydberg_tower_feature_map,
 )
+from qadence.constructors.ala import ala_digital
 from qadence.constructors.hamiltonians import ObservableConfig, TDetuning
 from qadence.constructors.hea import hea_digital, hea_sDAQC
+from qadence.constructors.iia import iia
 from qadence.measurements import Measurements
 from qadence.noise import NoiseHandler
 from qadence.operations import CNOT, RX, RY, I, N, Z
@@ -597,6 +598,58 @@ def _create_hea(
         )
 
 
+def _create_ala_digital(
+    num_qubits: int,
+    config: AnsatzConfig,
+) -> AbstractBlock:
+    """
+    Create the Digital Alternating Layer Ansatz based on the configuration.
+
+    Args:
+        num_qubits (int): The number of qubits.
+        config (AnsatzConfig): The configuration for the ansatz.
+
+    Returns:
+        AbstractBlock: The Digital Alternating Layer Ansatz.
+    """
+    operations = config.strategy_args.get("operation", [RX, RY, RX])
+    entangler = config.strategy_args.get("entangler", CNOT)
+
+    return ala_digital(
+        n_qubits=num_qubits,
+        m_block_qubits=config.m_block_qubits,  # type: ignore[arg-type]
+        param_prefix=config.param_prefix,
+        operations=operations,
+        entangler=entangler,
+    )
+
+
+def _create_ala(
+    num_qubits: int,
+    config: AnsatzConfig,
+) -> AbstractBlock:
+    """
+    Create the Alternating Layer Ansatz based on the configuration.
+
+    Args:
+        num_qubits (int): The number of qubits.
+        config (AnsatzConfig): The configuration for the ansatz.
+
+    Returns:
+        AbstractBlock: The Alternating Layer Ansatz.
+
+    Raises:
+        ValueError: If the ansatz strategy is not `Strategy.DIGITAL`.
+    """
+    if config.ansatz_strategy == Strategy.DIGITAL:
+        return _create_ala_digital(num_qubits=num_qubits, config=config)
+    else:
+        raise ValueError(
+            f"Invalid ansatz strategy {config.ansatz_strategy} provided. Only `Strategy.DIGITAL` \
+                allowed"
+        )
+
+
 def create_ansatz(
     register: int | Register,
     config: AnsatzConfig,
@@ -620,6 +673,8 @@ def create_ansatz(
         return _create_iia(num_qubits=num_qubits, config=config)
     elif config.ansatz_type == AnsatzType.HEA:
         return _create_hea(register=register, config=config)
+    elif config.ansatz_type == AnsatzType.ALA:
+        return _create_ala(num_qubits=num_qubits, config=config)
     else:
         raise NotImplementedError(
             f"Ansatz of type {config.ansatz_type} not implemented yet. Only `AnsatzType.HEA` and\

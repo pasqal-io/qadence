@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import strategies as st  # type: ignore
 import torch
+import pytest
 from hypothesis import given, settings
+
 
 from qadence.blocks import (
     AbstractBlock,
@@ -12,7 +14,7 @@ from qadence.blocks import (
     kron,
 )
 from qadence.blocks.block_to_tensor import block_to_tensor
-from qadence.constructors import total_magnetization
+from qadence.constructors import total_magnetization, ObservableConfig
 from qadence.operations import X, Y, Z
 from qadence.parameters import VariationalParameter
 from qadence.serialization import deserialize
@@ -92,3 +94,14 @@ def test_observable_strategy(block: AbstractBlock) -> None:
     assert isinstance(block, (ScaleBlock))
     for block in block.block.blocks:  # type: ignore[attr-defined]
         assert isinstance(block, (ScaleBlock, AddBlock))
+
+def test_observable_config_no_interaction_no_detuning()->None:
+    with pytest.raises(ValueError):
+        transformed_observable_config = ObservableConfig(detuning_strength=[2.0,2.0], shift=1.0)
+
+def test_observable_config_wrong_shift_type()->None:
+    with pytest.raises(ValueError):
+        transformed_observable_config = ObservableConfig(detuning=Z, shift=[])
+
+
+

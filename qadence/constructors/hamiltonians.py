@@ -310,4 +310,4 @@ class ObservableConfig:
         elif isinstance(self.shift, (float, int)):
             self.shift = Parameter(self.shift, trainable=False)
         else:
-            ValueError("Shift must be a float, int, string.")
+            raise ValueError("Shift must be a float, int, string.")

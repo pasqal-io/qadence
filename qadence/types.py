@@ -176,6 +176,8 @@ class AnsatzType(StrEnum):
     """Hardware-efficient ansatz."""
     IIA = "iia"
     """Identity-Initialised Ansatz."""
+    ALA = "ala"
+    """Alternating Layer Ansatz."""
 
 
 class _DiffMode(StrEnum):
