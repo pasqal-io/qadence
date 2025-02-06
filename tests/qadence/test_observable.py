@@ -95,13 +95,12 @@ def test_observable_strategy(block: AbstractBlock) -> None:
     for block in block.block.blocks:  # type: ignore[attr-defined]
         assert isinstance(block, (ScaleBlock, AddBlock))
 
-def test_observable_config_no_interaction_no_detuning()->None:
-    with pytest.raises(ValueError):
-        transformed_observable_config = ObservableConfig(detuning_strength=[2.0,2.0], shift=1.0)
 
-def test_observable_config_wrong_shift_type()->None:
+def test_observable_config_no_interaction_no_detuning() -> None:
+    with pytest.raises(ValueError):
+        transformed_observable_config = ObservableConfig(detuning_strength=[2.0, 2.0], shift=1.0)
+
+
+def test_observable_config_wrong_shift_type() -> None:
     with pytest.raises(ValueError):
         transformed_observable_config = ObservableConfig(detuning=Z, shift=[])
-
-
-

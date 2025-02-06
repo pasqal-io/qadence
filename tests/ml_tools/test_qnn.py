@@ -426,7 +426,9 @@ def test_config_qnn_output_transform() -> None:
     fm_config = FeatureMapConfig(num_features=1)
     ansatz_config = AnsatzConfig()
     observable_config = ObservableConfig(detuning=Z)
-    transformed_observable_config = ObservableConfig(detuning=Z,detuning_strength=[2.0,2.0], shift=1.0)
+    transformed_observable_config = ObservableConfig(
+        detuning=Z, detuning_strength=[2.0, 2.0], shift=1.0
+    )
 
     qnn = QNN.from_configs(
         register=2,
