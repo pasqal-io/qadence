@@ -24,7 +24,7 @@ class InformationContent:
     ) -> None:
         """Information Landscape class.
 
-        This class handles the study of loss landscape from information theoric
+        This class handles the study of loss landscape from information theoretic
         perspective and provides methods to get bounds on the norm of the
         gradient from the Information Content of the loss landscape.
 
@@ -33,9 +33,9 @@ class InformationContent:
             loss_fn: Loss function that takes model output and calculates loss
             xs: Input data to evaluate the model on
             epsilons: The thresholds to use for discretization of the finite derivatives
-            variaton_multiple: The number of sets of variational parameters to generate per each
+            variation_multiple: The number of sets of variational parameters to generate per each
                 variational parameter. The number of variational parameters required for the
-                statisctiacal analysis scales linearly with the amount of them present in the
+                statistical analysis scales linearly with the amount of them present in the
                 model. This is that linear factor.
 
         Notes:
@@ -66,14 +66,14 @@ class InformationContent:
                 info_landscape = InfoLandscape(model, loss_fn, xs)
                 ```
                 In this example, the model is a linear classifier, and the `xs` include both the
-                inputs and the target lables. The logic for calculation of the loss from this lies
+                inputs and the target labels. The logic for calculation of the loss from this lies
                 entirely within the `loss_fn` function. This can then further be used to obtain the
                 bounds on the average norm of the gradient of the loss function.
 
             Example: A Physics Informed Neural Network
                 ```python
                 class PhysicsInformedNN(nn.Module):
-                    // <Initialisation Logic>
+                    // <Initialization Logic>
 
                     def forward(self, xs: dict[str, torch.Tensor]):
                         return {
@@ -102,11 +102,11 @@ class InformationContent:
                 In this example, the model is a Physics Informed Neural Network, and the `xs`
                 are the inputs to the different residual components of the model. The logic
                 for calculation of the residuals lies within the PhysicsInformedNN class, and
-                the loss function is defined to calculate the loss that is to be optimised
+                the loss function is defined to calculate the loss that is to be optimized
                 from these residuals. This can then further be used to obtain the
                 bounds on the average norm of the gradient of the loss function.
 
-            The first value that the `loss_fn` returns is the loss value that is being optimsed.
+            The first value that the `loss_fn` returns is the loss value that is being optimized.
             The function is also expected to return other value(s), often the metrics that are
             used to calculate the loss. These values are ignored for the purpose of this class.
         """

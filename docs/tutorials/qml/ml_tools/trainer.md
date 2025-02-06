@@ -521,12 +521,12 @@ trainer = Trainer(
 )
 
 # Perform exploratory landscape analysis with Information Content
-ic_sensitivirty_threshold = 1e-4
+ic_sensitivity_threshold = 1e-4
 epsilons = torch.logspace(-2, 2, 10)
 
 max_ic_lower_bound, max_ic_upper_bound, sensitivity_ic_upper_bound = (
     trainer.calculate_grad_norm_bounds_ic(
-        eta=ic_sensitivirty_threshold,
+        eta=ic_sensitivity_threshold,
         epsilons=epsilons,
     )
 )
