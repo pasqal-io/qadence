@@ -721,7 +721,7 @@ class Trainer(BaseTrainer):
         dataloader: DataLoader | DictDataLoader | None = None,
     ) -> tuple[float, float, float]:
         """
-        Calculate the bounds on the gradient norm of using Information Content.
+        Calculate the bounds on the gradient norm of the loss using Information Content.
 
         Args:
             eta (float): The sensitivity IC.
