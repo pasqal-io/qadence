@@ -24,7 +24,6 @@ from qadence.constructors.hea import hea_digital, hea_sDAQC
 from qadence.measurements import Measurements
 from qadence.noise import NoiseHandler
 from qadence.operations import CNOT, RX, RY, I, N, Z
-from qadence.parameters import Parameter
 from qadence.register import Register
 from qadence.types import (
     AnsatzType,
@@ -682,11 +681,6 @@ def create_observable(
     Returns:
         AbstractBlock: The observable block.
     """
-    # check the shift
-    if config.shift is None:
-        config.shift = 0.0
-    elif config.shift is str or config.shift is Basic:
-        config.shift = Parameter(name=config.shift, trainable=True)
 
     shifting_term: AbstractBlock = config.shift * _global_identity(register)  # type: ignore[operator]
     detuning_hamiltonian: AbstractBlock = hamiltonian_factory(  # type: ignore[operator]

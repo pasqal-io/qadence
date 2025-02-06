@@ -7,6 +7,7 @@ from typing import Callable, List, Type, Union
 import numpy as np
 from torch import Tensor, double, ones, rand
 from typing_extensions import Any
+from qadence.parameters import Parameter
 
 from qadence.blocks import AbstractBlock, add, block_is_qubit_hamiltonian
 from qadence.operations import N, X, Y, Z
@@ -250,7 +251,8 @@ class ObservableConfig:
             - Interaction.NN
             - Interaction.XY
             - Interaction.XYZ
-            Alternatively, a custom interaction function can be defined.
+
+    Alternatively, a custom interaction function can be defined.
             Example:
 
                 def custom_int(i: int, j: int):
@@ -298,3 +300,14 @@ class ObservableConfig:
     def __post_init__(self) -> None:
         if self.interaction is None and self.detuning is None:
             raise ValueError("Please provide an interaction and/or detuning for the Hamiltonian.")
+
+        if self.shift is None:
+            self.shift = Parameter(0.0)
+
+        elif isinstance(self.shift, str):
+            self.shift = Parameter(name=self.shift, trainable=True)
+
+        elif isinstance(self.shift, (float, int)):
+            self.shift = Parameter(self.shift, trainable=False)
+        else:
+            ValueError("Shift must be a float, int, string.")

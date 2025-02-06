@@ -260,10 +260,10 @@ def get_qnn(
     n_qubits: int,
     depth: int,
     inputs: list = None,
-    shift: float = 0.0,
+    shift: str | float = 0.0,
 ) -> QNN:
     observable = create_observable(
-        n_qubits, ObservableConfig(detuning=Z, shift= shift)  # type: ignore[arg-type]
+        n_qubits, ObservableConfig(detuning=Z, shift=shift)  # type: ignore[arg-type]
     )
     circuit = SmallCircuit
     model = QNN(
@@ -275,6 +275,60 @@ def get_qnn(
     )
     return model
 
+
+@pytest.mark.parametrize("shift", [0.1])
+def test_constant_transformed_module(SmallCircuit: QuantumCircuit, shift: float | int) -> None:
+    batch_size = 1
+    n_qubits = 2
+    depth = 1
+    fparam = "phi"
+    inputs = [fparam]
+    input_values = {fparam: torch.rand(batch_size, requires_grad=True)}
+
+    model = get_qnn(SmallCircuit, n_qubits, depth, inputs=[fparam])
+    tm = get_qnn(
+        SmallCircuit,
+        n_qubits,
+        depth,
+        inputs=inputs,
+        shift=shift,
+    )
+
+    tm.reset_vparams(list(model.vparams.values()))
+    pred = model(input_values)
+    tm_pred = tm(input_values)
+
+    assert torch.allclose(tm_pred, pred + shift)
+
+
+@pytest.mark.parametrize("shift", [("shift", 0.1)])
+def test_variational_transformed_module(
+    SmallCircuit: QuantumCircuit, shift: tuple[str, float | int]
+) -> None:
+    batch_size = 1
+    n_qubits = 2
+    depth = 1
+    shift_term, shift_value = shift
+    fparam = "phi"
+    inputs = [fparam]
+    input_values = {fparam: torch.rand(batch_size, requires_grad=True)}
+    model = get_qnn(
+        SmallCircuit,
+        n_qubits,
+        depth,
+        inputs=[fparam],
+    )
+    tm = get_qnn(
+        SmallCircuit,
+        n_qubits,
+        depth,
+        inputs=inputs,
+        shift=shift_term,
+    )
+    tm.reset_vparams([shift_value] + list(model.vparams.values()))
+    pred = model({**input_values})
+    tm_pred = tm(input_values)
+    assert torch.allclose(tm_pred, pred + shift_value)
 
 
 @pytest.mark.parametrize("diff_mode", [DiffMode.GPSR, DiffMode.AD])
