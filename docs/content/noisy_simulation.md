@@ -168,9 +168,8 @@ plt.xticks(range(len(items)), items)
 plt.title("Probability of state occurrence")
 plt.xlabel('Possible States')
 plt.ylabel('Probability')
-# plt.tight_layout() # markdown-exec: hide
 from docs import docsutils # markdown-exec: hide
-print(docsutils.fig_to_html(fig)) # markdown-exec: hide
+print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
 ```
 
 There is an extra optional argument to specify the type of block we want to apply noise to. _E.g._, let's say we want to apply noise only to `X` gates, a `target_class` argument can be passed with the corresponding block:
