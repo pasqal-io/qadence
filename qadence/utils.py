@@ -290,5 +290,3 @@ def one_qubit_projector_matrix(state: str) -> Tensor:
 
 P0 = partial(one_qubit_projector, "0")
 P1 = partial(one_qubit_projector, "1")
-P0_MATRIX = one_qubit_projector_matrix("0")
-P1_MATRIX = one_qubit_projector_matrix("1")
