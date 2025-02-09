@@ -1,106 +1,133 @@
 from __future__ import annotations
 from logging import getLogger
-from typing import Any, Tuple
+from typing import Any
 
 import os
 import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
+from torch import (
+    complex128,
+    float32,
+    float64,
+    dtype as torch_dtype,
+)
 from torch import nn, optim
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 from torch.nn.parallel import DistributedDataParallel as DDP
 
 from qadence.ml_tools.train_utils.strategy import DistributionStrategy
+from qadence.ml_tools.data import data_to_device
 
 logger = getLogger("ml_tools")
 
 
-class Accelerator:
+class Accelerator(DistributionStrategy):
     """
-    A Accelerator class to prepare objects for distributed training and to run the training loop.
+    A class for handling distributed training with PyTorch.
 
-    This class leverages a DistributionStrategy instance (accessed as `self.dist`)
-    to configure the distributed environment. It moves models to the appropriate device
-    and wraps them with DistributedDataParallel (if needed), and optionally spawns multiple
-    processes using torch.multiprocessing.
-
-    The global distributed attributes (rank, local_rank, world_size, master_addr, master_port)
-    are maintained solely by the DistributionStrategy instance.
+    This class extends `DistributionStrategy` to manage distributed training using PyTorch's
+    `torch.distributed` API. It supports spawning multiple processes and wrapping models with
+    `DistributedDataParallel` (DDP) when required.
 
     Attributes:
-        backend (str): The distributed backend used (e.g., "nccl" or "gloo").
-        world_size (int): The total number of processes intended to run (provided by the user).
-        spawn (bool): Whether to spawn processes using torch.multiprocessing.
-        dist (DistributionStrategy): The distribution strategy instance containing global attributes.
-        device (str): The device string (e.g., "cuda:0") for the current process.
+        backend (str): The backend used for distributed communication (e.g., "nccl", "gloo").
+        spawn (bool): Whether to use multiprocessing spawn mode for process initialization.
+        compute_setup (str): Configuration for computing resources. Default is "auto".
+        nprocs (int): Number of processes to launch for distributed training.
+        dtype (torch.dtype): Data type for controlling numerical precision (e.g., torch.float32, torch.float16).
     """
 
     def __init__(
-        self, backend: str = "nccl", world_size: int | None = 1, spawn: bool = False
+        self,
+        backend: str = "nccl",
+        spawn: bool = False,
+        compute_setup: str = "auto",
+        nprocs: int | None = 1,
+        dtype: torch_dtype | None = torch.float32,
     ) -> None:
         """
-        Initialize the Accelerator.
+        Initializes the Accelerator class.
 
         Args:
-            backend (str): The distributed backend to use ("nccl" or "gloo").
-            world_size (int): The total number of processes for distributed training.
-                              This value will override the world size detected from the environment.
-            spawn (bool): Whether to spawn processes using torch.multiprocessing.
+            backend (str): The backend for distributed communication. Default is "nccl".
+            spawn (bool): Whether to use the `spawn` method for multiprocessing. Default is False.
+            compute_setup (str): Specifies the compute environment setup. Default is "auto".
+            nprocs (int): Number of processes to launch. Default is 1.
+            dtype (torch.dtype): Data type for controlling numerical precision. Default is torch.float32.
         """
-        self.backend: str = backend
-        self.spawn: bool = spawn
-        self.world_size: int | None
-        # Create a DistributionStrategy instance to set up the distributed environment.
-        self.dist = DistributionStrategy(backend)
-        rank, env_world_size, local_rank = self.dist.set_attributes()
-        if world_size and str(world_size) != str(env_world_size):
-            logger.warning(
-                "Provided world size (%d) does not match environment world size (%d). Using provided world size.",
-                world_size,
-                env_world_size,
-            )
-            self.dist.world_size = self.world_size = world_size
-        else:
-            self.dist.world_size = self.world_size = env_world_size
-        self.dist.start()
+        super().__init__(backend, compute_setup)
+        self.spawn = spawn
+        self.nprocs = nprocs
+        self.dtype: torch_dtype | None = dtype
+        self.data_dtype: torch_dtype | None = None
+        if self.dtype:
+            self.data_dtype = float64 if (self.dtype == complex128) else float32
 
-        self.device: str = f"cuda:{self.dist.local_rank}" if torch.cuda.is_available() else "cpu"
-        logger.info(
-            "Accelerator initialized: Rank %d, World Size: %d, Local Rank: %d, Device %s",
-            self.dist.rank,
-            self.dist.world_size,
-            self.dist.local_rank,
-            self.device,
-        )
-
-    def prepare(self, *args: Any) -> Tuple[Any, ...]:
+    def setup(self, process_rank: int | None) -> None:
         """
-        Prepares and returns a tuple of objects (e.g., model, optimizer, dataloaders) for distributed training.
+        Sets up the distributed training environment for a given process.
 
-        For nn.Module objects, moves them to the appropriate device and wraps them with DistributedDataParallel.
-        For DataLoader objects, if distributed training is active, wraps the dataset with a DistributedSampler.
+        This method initializes the distributed process group and logs relevant details.
 
         Args:
-            *args (Any): A variable number of objects to be prepared.
+            process_rank (int): The rank of the process in the distributed setting.
+        """
+        self.setup_process(process_rank, self.nprocs)
+
+        logger.info("Initializing Accelerator")
+        logger.info("=============================")
+        logger.info("  Node             : %s", self.node_name)
+        logger.info("  Rank             : %d", self.rank)
+        logger.info("  Local Rank       : %d", self.local_rank)
+        logger.info("  World Size       : %d", self.world_size)
+        logger.info("  Device           : %s", self.device)
+        logger.info("  Master Address   : %s", self.master_addr)
+        logger.info("  Master Port      : %s", self.master_port)
+
+        self.start_process_group()
+
+    def finalize(self) -> None:
+        """Cleans up the distributed process group, ensuring proper shutdown of distributed communication."""
+        self.cleanup_process_group()
+
+    def prepare(self, *args: Any) -> tuple[Any, ...]:
+        """
+        Prepares models, optimizers, and dataloaders for distributed training.
+
+        Moves models to the appropriate device and casts them to the specified precision (`dtype`),
+        and wraps them in `DistributedDataParallel` (DDP) if applicable. Adjusts DataLoaders to use
+        `DistributedSampler` when running in a distributed setting, and moves data to the correct device
+        with the proper precision.
+        IMP: We only move the model and optimizer to the device and specified dtypes in the prepare
+        For dataloader, we only create a proper sampler, the batch od data should be moved to device
+        and dtype seperately.
+
+        Args:
+            *args (Any): Objects to be prepared, including models, optimizers, and DataLoaders.
 
         Returns:
-            Tuple[Any, ...]: A tuple containing the prepared objects.
+            tuple[Any, ...]: A tuple of prepared objects with necessary modifications for distributed training.
         """
         prepared = []
         for obj in args:
             if isinstance(obj, nn.Module):
-                obj = obj.to(self.device)
-                if self.dist.world_size and self.dist.world_size > 1:
-                    gpu_id = int(self.device.split(":")[-1])
-                    obj = DDP(obj, device_ids=[gpu_id] if torch.cuda.is_available() else None)
+                # Move the model to the correct device and cast its parameters to the specified dtype.
+                obj = obj.to(device=self.device, dtype=self.dtype)
+                if self.world_size and self.world_size > 1:
+                    if self.device.startswith("cuda"):  # type: ignore[union-attr]
+                        # Wrap the model with DistributedDataParallel for multi-GPU training.
+                        obj = DDP(obj, device_ids=[self.local_rank])
+                    else:
+                        logger.info("Using CPU for training; skipping DDP wrapping.")
                 prepared.append(obj)
             elif isinstance(obj, optim.Optimizer):
                 prepared.append(obj)
             elif isinstance(obj, DataLoader):
-                if self.dist.world_size and self.dist.world_size > 1:
+                if self.world_size and self.world_size > 1:
                     sampler = DistributedSampler(
-                        obj.dataset, num_replicas=self.dist.world_size, rank=self.dist.rank
+                        obj.dataset, num_replicas=self.world_size, rank=self.local_rank
                     )
                     obj = DataLoader(
                         obj.dataset,
@@ -112,59 +139,24 @@ class Accelerator:
                 prepared.append(obj)
             else:
                 prepared.append(obj)
-        logger.info("Prepared %d objects for distributed training", len(prepared))
         return tuple(prepared)
-
-    def finalize(self) -> None:
-        """Finalizes the distributed training by cleaning up the process group."""
-        self.dist.cleanup()
-        logger.info("Finalized distributed training and cleaned up process group.")
-
-    def run(self, trainer_instance: Any) -> None:
-        """
-        Runs the training process using the provided trainer instance.
-
-        If self.spawn is True, multiple processes are spawned using torch.multiprocessing.
-        Otherwise, the trainer_instance's _prepare() and _fit() methods are called directly.
-
-        Args:
-            trainer_instance (Any): An instance that implements _prepare() and _fit() methods.
-        """
-        if self.spawn:
-
-            def _worker(rank: int) -> None:
-                os.environ["RANK"] = str(rank)
-                os.environ["WORLD_SIZE"] = str(self.world_size)
-                os.environ["LOCAL_RANK"] = str(rank)
-                logger.info("Worker process %d starting", rank)
-                trainer_instance._prepare()
-                trainer_instance._fit()
-
-            mp.spawn(_worker, nprocs=self.world_size)
-        else:
-            logger.info(
-                "Running training in the current process without spawning additional processes."
-            )
-            trainer_instance._prepare()
-            trainer_instance._fit()
 
     def all_reduce_dict(self, d: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
         """
-        Applies an all-reduce operation to a dictionary of tensors, averaging the values across all processes.
+        Performs an all-reduce operation on a dictionary of tensors, averaging values across all processes.
 
         Args:
-            d (dict[str, torch.Tensor]): A dictionary where each value is a tensor.
+            d (dict[str, torch.Tensor]): A dictionary where values are tensors to be reduced across processes.
 
         Returns:
-            dict[str, torch.Tensor]: A dictionary with the same keys where each tensor is averaged over all processes.
+            dict[str, torch.Tensor]: A dictionary with the reduced tensors, averaged over the world size.
         """
         if dist.is_initialized():
             world_size = dist.get_world_size()
-            reduced = {}
+            reduced: dict[str, torch.Tensor] = {}
             for key, tensor in d.items():
-                # Convert to tensor if not already
                 if not isinstance(tensor, torch.Tensor):
-                    tensor = torch.tensor(tensor, device=self.device, dtype=torch.float32)
+                    tensor = torch.tensor(tensor, device=self.device, dtype=self.dtype)
                 tensor = tensor.detach().clone()
                 dist.all_reduce(tensor, op=dist.ReduceOp.SUM)
                 tensor /= world_size
