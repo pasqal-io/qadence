@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import copy
+import os
+from functools import wraps
+import torch.multiprocessing as mp
 from itertools import islice
 from logging import getLogger
 from typing import Any, Callable, Iterable, Tuple, cast
@@ -20,7 +23,7 @@ from torch.utils.data import DataLoader
 from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, TimeRemainingColumn
 
 from qadence.ml_tools.config import TrainConfig
-from qadence.ml_tools.data import DictDataLoader, OptimizeResult
+from qadence.ml_tools.data import DictDataLoader, OptimizeResult, data_to_device
 from qadence.ml_tools.optimize_step import optimize_step, update_ng_parameters
 from qadence.ml_tools.stages import TrainingStage
 
@@ -248,8 +251,6 @@ class Trainer(BaseTrainer):
         val_dataloader: DataLoader | DictDataLoader | None = None,
         test_dataloader: DataLoader | DictDataLoader | None = None,
         optimize_step: Callable = optimize_step,
-        device: torch_device | None = None,
-        dtype: torch_dtype | None = None,
         max_batches: int | None = None,
     ):
         """
@@ -286,19 +287,15 @@ class Trainer(BaseTrainer):
         )
         self.current_epoch: int = 0
         self.global_step: int = 0
-        self.log_device: str = "cpu" if device is None else device
-        self.device: torch_device | None = device
-        self.dtype: torch_dtype | None = dtype
-        self.data_dtype: torch_dtype | None = None
         self.stop_training: bool = False
-        if self.dtype:
-            self.data_dtype = float64 if (self.dtype == complex128) else float32
 
         # Integration with Accelerator:
         self.accelerator = Accelerator(
             backend=config.backend,
-            world_size=config.world_size,
             spawn=config.spawn,
+            nprocs=config.nprocs,
+            compute_setup=config.compute_setup,
+            dtype=config.dtype,
         )
 
     def fit(
@@ -324,11 +321,33 @@ class Trainer(BaseTrainer):
         if val_dataloader is not None:
             self.val_dataloader = val_dataloader
 
+        if self.accelerator.spawn:
+            mp.spawn(self._fit_worker, args=(), nprocs=self.accelerator.nprocs, join=True)
+        else:
+            self._fit_worker()
+        return self.model, self.optimizer
+
+    def _fit_worker(self, rank: int | None = None) -> None:
+        """
+        Executes the training workflow for a specific worker in a distributed or single-node setting.
+
+        This method is responsible for setting up the accelerator, initializing the training process,
+        executing the training loop, and finalizing the fit procedure. It is typically used in
+        distributed training scenarios where multiple workers handle training tasks in parallel.
+
+        Args:
+            rank (int | None, optional): The rank of the worker in a distributed setup.
+                - If `None`, the method assumes a single-worker execution.
+                - In a distributed training setup, each worker is assigned a unique rank.
+        Note:
+            - This method is typically used internally within the training framework.
+            - In a distributed setup, each worker runs this method independently.
+        """
+        self.accelerator.setup(rank)
         self._fit_setup()
         self._train()
         self._fit_end()
         self.training_stage = TrainingStage("idle")
-        return self.model, self.optimizer
 
     def _fit_setup(self) -> None:
         """
@@ -350,7 +369,7 @@ class Trainer(BaseTrainer):
         )
 
         # Optionally restrict progress reporting and heavy logging to rank 0.
-        if self.accelerator.dist.rank != 0:
+        if self.accelerator.rank != 0:
             self.progress = None
         else:
             self.progress = Progress(
@@ -369,6 +388,7 @@ class Trainer(BaseTrainer):
 
     def _fit_end(self) -> None:
         """Finalizes the training and closes the writer."""
+        self.accelerator.finalize()
         self.callback_manager.end_training(trainer=self)
 
     @BaseTrainer.callback("train")
@@ -483,8 +503,8 @@ class Trainer(BaseTrainer):
                 optimizer=self.optimizer,
                 loss_fn=self.loss_fn,
                 xs=batch,
-                device=self.device,
-                dtype=self.data_dtype,
+                device=self.accelerator.device,
+                dtype=self.accelerator.data_dtype,
             )
         else:
             # Perform optimization using Nevergrad
@@ -607,10 +627,15 @@ class Trainer(BaseTrainer):
             for _ in range(num_batches):
                 yield None
         else:
-            for batch in islice(dataloader, num_batches):
+            for x, y in islice(dataloader, num_batches):
                 # batch is moved to device inside optimize step
-                # batch = data_to_device(batch, device=self.device, dtype=self.data_dtype)
-                yield batch
+                x = data_to_device(
+                    x, device=self.accelerator.device, dtype=self.accelerator.data_dtype
+                )
+                y = data_to_device(
+                    y, device=self.accelerator.device, dtype=self.accelerator.data_dtype
+                )
+                yield x, y
 
     def _modify_batch_end_loss_metrics(
         self, loss_metrics: tuple[torch.Tensor, dict[str, Any]]
