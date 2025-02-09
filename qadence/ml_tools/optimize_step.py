@@ -40,7 +40,6 @@ def optimize_step(
     """
 
     loss, metrics = None, {}
-    xs_to_device = data_to_device(xs, device=device, dtype=dtype)
 
     def closure() -> Any:
         # NOTE: We need the nonlocal as we can't return a metric dict and
@@ -48,7 +47,7 @@ def optimize_step(
         # reason the returned loss is always the first one...
         nonlocal metrics, loss
         optimizer.zero_grad()
-        loss, metrics = loss_fn(model, xs_to_device)
+        loss, metrics = loss_fn(model, xs)
         loss.backward(retain_graph=True)
         return loss.item()
 
