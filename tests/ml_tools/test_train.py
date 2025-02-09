@@ -194,9 +194,10 @@ def test_train_tensor_tuple(Basic: torch.nn.Module, BasicQNN: QNN) -> None:
             checkpoint_every=100,
             write_every=100,
             batch_size=batch_size,
+            dtype=dtype,
         )
         data = to_dataloader(x, y, batch_size=batch_size, infinite=True)
-        trainer = Trainer(model, optimizer, config, loss_fn, data, dtype=dtype)
+        trainer = Trainer(model, optimizer, config, loss_fn, data)
         with trainer.enable_grad_opt():
             model, _ = trainer.fit()
         assert next(cnt) == (n_epochs + 1)
