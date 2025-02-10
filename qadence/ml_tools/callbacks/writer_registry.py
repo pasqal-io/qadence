@@ -127,11 +127,12 @@ class BaseWriter(ABC):
 
         # Find the key in result.metrics that contains "loss" (case-insensitive)
         loss_key = next((k for k in result.metrics if "loss" in k.lower()), None)
+        initial = f"P {result.rank: >2}|{result.device: <7}| Iteration {result.iteration: >7}| "
         if loss_key:
             loss_value = result.metrics[loss_key]
-            msg = f"Iteration {result.iteration: >7} | {loss_key.title()}: {loss_value:.7f} -"
+            msg = initial + f"{loss_key.title()}: {loss_value:.7f} -"
         else:
-            msg = f"Iteration {result.iteration: >7} | Loss: None -"
+            msg = initial + f"Loss: None -"
         msg += " ".join([f"{k}: {v:.7f}" for k, v in result.metrics.items() if k != loss_key])
         print(msg)
 

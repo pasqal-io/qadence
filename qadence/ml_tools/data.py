@@ -34,6 +34,10 @@ class OptimizeResult:
     """Metrics that can be saved during training."""
     extra: dict = field(default_factory=lambda: dict())
     """Extra dict for saving anything else to be used in callbacks."""
+    rank: int | None = 0
+    """Rank of the process for which this result was generated."""
+    device: str | None = "cpu"
+    """Device on which this result for calculated."""
 
 
 @dataclass
