@@ -68,6 +68,7 @@ class DistributionStrategy:
         self.local_rank: int | None
         self.master_addr: str
         self.master_port: str
+        self.compute: str
         self.device: str
         self.log_device: str
         self.spawn: bool
@@ -76,11 +77,7 @@ class DistributionStrategy:
         self.data_dtype: torch.dtype | None = None
         if self.dtype:
             self.data_dtype = torch.float64 if (self.dtype == torch.complex128) else torch.float32
-        # currently we only do this for GPUs
-        # TODO: extend support to TPUs, CPUs, etc.
-        self.cores_per_node: int = (
-            int(torch.cuda.device_count()) if torch.cuda.is_available() else 1
-        )
+        self._set_cluster_variables()
 
     def detect_strategy(self) -> str:
         """
@@ -100,12 +97,15 @@ class DistributionStrategy:
         else:
             return "none"
 
-    def _set_node_variables(self) -> None:
+    def _set_cluster_variables(self) -> None:
         self.job_id = int(os.environ.get("SLURM_JOB_ID", 93345))
         self.num_nodes = int(os.environ.get("SLURM_JOB_NUM_NODES", 1))
-        self.node_rank = int(os.environ.get("SLURM_NODEID", 0))
-        self.node_name = os.environ.get("SLURMD_NODENAME", "Unknown")
         self.node_list = os.environ.get("SLURM_JOB_NODELIST", "Unknown")
+        # currently we only do this for GPUs
+        # TODO: extend support to TPUs, CPUs, etc.
+        self.cores_per_node: int = (
+            int(torch.cuda.device_count()) if torch.cuda.is_available() else 1
+        )
 
     def setup_environment(self, process_rank: int) -> Tuple[int, int, int | None]:
         """
@@ -119,11 +119,15 @@ class DistributionStrategy:
         Returns:
             Tuple[int, int, int]: A tuple containing the global rank, world size, and local rank.
         """
-        self._set_node_variables()
-        self._set_device()
+        # set the process based variables
+        self.node_rank = int(os.environ.get("SLURM_NODEID", 0))
+        self.node_name = os.environ.get("SLURMD_NODENAME", "Unknown")
+
+        self._set_compute()
         self.local_rank = self._get_local_rank(process_rank)
         self.world_size = self._get_world_size(process_rank)
         self.rank = self._get_rank(process_rank)
+        self._set_device()
         # Set environment variables for distributed training
         os.environ["RANK"] = str(self.rank)
         os.environ["WORLD_SIZE"] = str(self.world_size)
@@ -189,7 +193,7 @@ class DistributionStrategy:
                  Priority is given to the "RANK" environment variable; if not found, in a SLURM environment,
                  the "SLURM_PROCID" is used. Defaults to 0.
         """
-        if self.device == "cpu":
+        if self.compute == "cpu":
             return int(process_rank)
         if "RANK" in os.environ:
             return int(os.environ["RANK"])
@@ -224,7 +228,7 @@ class DistributionStrategy:
                  Uses the "LOCAL_RANK" environment variable if set, or "SLURM_LOCALID" in a SLURM environment.
                  Defaults to 0.
         """
-        if self.device == "cpu":
+        if self.compute == "cpu":
             # No local rank in case of CPUs for true parallelism
             return None
         if "LOCAL_RANK" in os.environ:
@@ -233,29 +237,34 @@ class DistributionStrategy:
             return int(process_rank)
         return 0
 
-    def _set_device(self) -> None:
+    def _set_compute(self) -> None: 
         """
-        Set the computation device (GPU or CPU) for the current process based on the compute setup.
-
+        Set the compute (cpu or gpu) for the current process based on the compute setup.
         The method checks for CUDA availability and selects the appropriate device.
         If compute_setup is set to "gpu" but CUDA is unavailable, a RuntimeError is raised.
 
         Raises:
             RuntimeError: If compute_setup is "gpu" but no CUDA devices are available.
+        
         """
-        d_setup = "cpu"
+        compute = "cpu"
         if self.compute_setup == "gpu":
             if not torch.cuda.is_available():
                 raise RuntimeError(
                     f"Device set to {self.device} but no CUDA devices are available."
                 )
             else:
-                d_setup = "gpu"
+                compute = "gpu"
         if self.compute_setup == "auto":
             if torch.cuda.is_available():
-                d_setup = "gpu"
+                compute = "gpu"
+        self.compute = compute
 
-        if d_setup == "gpu":
+    def _set_device(self) -> None:
+        """
+        Set the computation device (cpu or cuda:<n>) for the current process based on the compute setup.
+        """
+        if self.compute == "gpu":
             self.device = f"cuda:{self.local_rank}"
             torch.cuda.set_device(self.local_rank)
         else:

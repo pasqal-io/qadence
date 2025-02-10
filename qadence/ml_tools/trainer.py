@@ -324,10 +324,14 @@ class Trainer(BaseTrainer):
             self.val_dataloader = val_dataloader
 
         if self.accelerator.spawn:
+            if self.accelerator.num_nodes > 1:
+                nprocs = max(1, int(self.accelerator.nprocs / self.accelerator.num_nodes))
+            else:
+                nprocs = min(self.accelerator.cores_per_node, self.accelerator.nprocs)
             mp.spawn(
                 self._fit_worker,
                 args=(),
-                nprocs=int(self.accelerator.nprocs / self.accelerator.cores_per_node),
+                nprocs=int(nprocs),
                 join=True,
             )
         else:
