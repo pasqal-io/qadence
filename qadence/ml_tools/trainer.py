@@ -299,6 +299,9 @@ class Trainer(BaseTrainer):
             dtype=config.dtype,
             log_setup=config.log_setup,
         )
+        # IMPORTANT: Decorate the *unbound* method from the class, then bind it to self.
+        # If you decorated self.fit (a bound method) directly, self would be passed twice.
+        self.fit = self.accelerator.distribute(Trainer.fit).__get__(self, Trainer)
 
     def fit(
         self,
@@ -310,6 +313,10 @@ class Trainer(BaseTrainer):
 
         The dataloaders can be provided to train on new datasets, or the default dataloaders
         provided in the trainer will be used.
+
+        Executes the training workflow for a specific worker in a distributed or single-node setting.
+        This method is responsible for setting up the accelerator, initializing the training process,
+        executing the training loop, and finalizing the fit procedure.
 
         Args:
             train_dataloader (DataLoader | DictDataLoader |  None): DataLoader for training data.
@@ -323,42 +330,11 @@ class Trainer(BaseTrainer):
         if val_dataloader is not None:
             self.val_dataloader = val_dataloader
 
-        if self.accelerator.spawn:
-            nprocs = self.accelerator.nprocs
-            if self.accelerator.num_nodes > 1:
-                nprocs //= self.accelerator.num_nodes
-
-            mp.spawn(
-                self._fit_worker,
-                args=(),
-                nprocs=int(nprocs),
-                join=True,
-            )
-        else:
-            self._fit_worker(0)
-        return self.model, self.optimizer
-
-    def _fit_worker(self, rank: int) -> None:
-        """
-        Executes the training workflow for a specific worker in a distributed or single-node setting.
-
-        This method is responsible for setting up the accelerator, initializing the training process,
-        executing the training loop, and finalizing the fit procedure. It is typically used in
-        distributed training scenarios where multiple workers handle training tasks in parallel.
-
-        Args:
-            rank (int | None, optional): The rank of the worker in a distributed setup.
-                - If `None`, the method assumes a single-worker execution.
-                - In a distributed training setup, each worker is assigned a unique rank.
-        Note:
-            - This method is typically used internally within the training framework.
-            - In a distributed setup, each worker runs this method independently.
-        """
-        self.accelerator.setup(rank)
         self._fit_setup()
         self._train()
         self._fit_end()
         self.training_stage = TrainingStage("idle")
+        return self.model, self.optimizer
 
     def _fit_setup(self) -> None:
         """

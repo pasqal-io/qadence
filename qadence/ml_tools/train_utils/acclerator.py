@@ -1,6 +1,7 @@
 from __future__ import annotations
 from logging import getLogger
 from typing import Any
+import functools
 
 import os
 import torch
@@ -185,3 +186,79 @@ class Accelerator(DistributionStrategy):
                 )
                 logger.warning("Setting spawn=False")
                 self.spawn = False
+
+    def worker(self, rank: int, instance : Any, method_name : str, args: tuple, kwargs: dict) -> None:
+        """
+        Worker function to be executed in each spawned process.
+
+        This function is called in every subprocess created by torch.multiprocessing (via mp.spawn).
+        It performs the following tasks:
+          1. Sets up the accelerator for the given process rank. This typically involves configuring
+             the GPU or other hardware resources for distributed training.
+          2. Retrieves the method specified by `method_name` from the provided `instance`.
+          3. If the retrieved method has been decorated (i.e. it has a '__wrapped__' attribute),
+             the original, unwrapped function is invoked with the given arguments. Otherwise,
+             the method is called directly.
+
+        Args:
+            rank (int): The rank (or identifier) of the spawned process.
+            instance (object): The object (Trainer) that contains the method to execute.
+                               This object is expected to have an `accelerator` attribute with a `setup(rank)` method.
+            method_name (str): The name of the method on the instance to be executed.
+            args (tuple): Positional arguments to pass to the target method.
+            kwargs (dict): Keyword arguments to pass to the target method.
+        """
+        # Setup the accelerator for the given process rank (e.g., configuring GPU)
+        instance.accelerator.setup(rank)
+        method = getattr(instance, method_name)
+        
+        # If the method is wrapped by a decorator, retrieve the original function.
+        if hasattr(method, '__wrapped__'):
+            # Explicitly call the original (unbound) method, passing in the instance.
+            # We need to call the original method in case so that MP spawn does not 
+            # create multiple processes.
+            original_method = method.__wrapped__
+            original_method(instance, *args, **kwargs)
+        else:
+            # Otherwise, simply call the method.
+            method(*args, **kwargs)
+
+    def distribute(self, fun: callable):
+        """
+        Decorator to distribute the fit function across multiple processes. This function is 
+        generic and can work with other methods as well. Weather it is bound or unbound.
+
+        When applied to a function (typically a fit function), this decorator
+        will execute the function in a distributed fashion using torch.multiprocessing if
+        `self.spawn` is True. The number of processes used is determined by `self.nprocs`,
+        and if multiple nodes are involved (`self.num_nodes > 1`), the process count is
+        adjusted accordingly. In single process mode (`self.spawn` is False), the function
+        is executed directly in the current process.
+
+        After execution, the decorator returns the model stored in `instance.model`.
+
+        Parameters:
+            fun (callable): The function to be decorated. This function usually implements
+                            a model fitting or training routine.
+
+        Returns:
+            callable: The wrapped function. When called, it will execute in distributed mode
+                      (if configured) and return the value of `instance.model`.
+        """
+        @functools.wraps(fun)
+        def wrapper(instance, *args, **kwargs):
+            if self.spawn:
+                # Spawn multiple processes that will run the worker function.
+                nprocs = self.nprocs
+                if self.num_nodes > 1:
+                    nprocs //= self.num_nodes
+                mp.spawn(self.worker,
+                         args=(instance, fun.__name__, args, kwargs),
+                         nprocs=int(nprocs),
+                         join=True)
+            else:
+                # In single process mode, call the worker with rank 0.
+                self.worker(0, instance, fun.__name__, args, kwargs)
+
+            return
+        return wrapper
