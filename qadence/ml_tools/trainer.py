@@ -324,7 +324,7 @@ class Trainer(BaseTrainer):
             self.val_dataloader = val_dataloader
 
         if self.accelerator.spawn:
-            mp.spawn(self._fit_worker, args=(), nprocs=self.accelerator.nprocs, join=True)
+            mp.spawn(self._fit_worker, args=(), nprocs=int(self.accelerator.nprocs/self.accelerator.cores_per_node), join=True)
         else:
             self._fit_worker()
         return self.model, self.optimizer
