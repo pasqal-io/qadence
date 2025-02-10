@@ -88,6 +88,7 @@ readout_noise = NoiseHandler(protocol=NoiseProtocol.READOUT.INDEPENDENT, options
 ### Using NoiseHandlers in batch
 
 `NoiseHandler` can be used in a more compact way to represent noise in batches.
+
 - A `NoiseHandler` can be initiated with a list of protocols and a list of options (careful with the order)
 - A `NoiseHandler` can be appended to other `NoiseHandler` instances
 
