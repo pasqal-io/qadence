@@ -34,7 +34,7 @@ class Accelerator(DistributionStrategy):
     def __init__(
         self,
         spawn: bool = False,
-        nprocs: int | None = 1,
+        nprocs: int = 1,
         compute_setup: str = "auto",
         log_setup: str = "cpu",
         dtype: torch_dtype | None = torch.float32,
@@ -62,7 +62,7 @@ class Accelerator(DistributionStrategy):
         self.strategy = self.detect_strategy()
         self._log_warnings()
 
-    def setup(self, process_rank: int | None) -> None:
+    def setup(self, process_rank: int) -> None:
         """
         Sets up the distributed training environment for a given process.
 
@@ -85,10 +85,10 @@ class Accelerator(DistributionStrategy):
 
         logger.info("Initializing Accelerator")
         logger.info("=============================")
-        logger.info("  Node             : %s", self.node_name)
-        logger.info("  Rank             : %d", self.rank)
-        logger.info("  Local Rank       : %d", self.local_rank)
-        logger.info("  World Size       : %d", self.world_size)
+        logger.info("  Node             : %s", str(self.node_name))
+        logger.info("  Rank             : %s", str(self.rank))
+        logger.info("  Local Rank       : %s", str(self.local_rank))
+        logger.info("  World Size       : %s", str(self.world_size))
         logger.info("  Device           : %s", self.device)
         logger.info("  Master Address   : %s", self.master_addr)
         logger.info("  Master Port      : %s", self.master_port)
@@ -127,8 +127,8 @@ class Accelerator(DistributionStrategy):
                         # Wrap the model with DistributedDataParallel for multi-GPU training.
                         obj = DDP(obj, device_ids=[self.local_rank])
                     else:
-                        if not self.rank:
-                            logger.info("Using CPU for training; skipping DDP wrapping.")
+                        if not self.local_rank:
+                            obj = DDP(obj)
                 prepared.append(obj)
             elif isinstance(obj, optim.Optimizer):
                 prepared.append(obj)

@@ -203,7 +203,7 @@ class TrainConfig:
     Each subfolder is of structure `<id>_<timestamp>_<PID>`.
     """
     spawn: bool = False
-    nprocs: int | None = 1
+    nprocs: int = 1
     compute_setup: str = "cpu"
     """Auto, cpu, and gpu.
 

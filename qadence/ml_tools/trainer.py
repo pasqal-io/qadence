@@ -324,12 +324,17 @@ class Trainer(BaseTrainer):
             self.val_dataloader = val_dataloader
 
         if self.accelerator.spawn:
-            mp.spawn(self._fit_worker, args=(), nprocs=int(self.accelerator.nprocs/self.accelerator.cores_per_node), join=True)
+            mp.spawn(
+                self._fit_worker,
+                args=(),
+                nprocs=int(self.accelerator.nprocs / self.accelerator.cores_per_node),
+                join=True,
+            )
         else:
-            self._fit_worker()
+            self._fit_worker(0)
         return self.model, self.optimizer
 
-    def _fit_worker(self, rank: int | None = None) -> None:
+    def _fit_worker(self, rank: int) -> None:
         """
         Executes the training workflow for a specific worker in a distributed or single-node setting.
 

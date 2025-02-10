@@ -189,8 +189,10 @@ class ConfigManager:
                 )
 
             if self.config.spawn:
-                logger.info(f"Process spawning is enabled (spawn={self.config.spawn})."
-                            "Initiating process spawning.")
+                logger.info(
+                    f"Process spawning is enabled (spawn={self.config.spawn})."
+                    "Initiating process spawning."
+                )
                 if not self.config.nprocs:
                     logger.warning(
                         f"Invalid process count (nprocs={self.config.nprocs}) while spawning is enabled (spawn={self.config.spawn}). "
