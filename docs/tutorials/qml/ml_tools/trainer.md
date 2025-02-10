@@ -477,7 +477,7 @@ This is done by discretizing the gradient in the loss landscapes and then calcul
 This serves as a measure of flatness or ruggedness of the loss landscape.
 Quantitatively, the information content allows us to get bounds on the average norm of the gradient in the loss landscape.
 
-Using the information conetnt technique, we can get two types of bounds on the average of the norm of the gradient.
+Using the information content technique, we can get two types of bounds on the average of the norm of the gradient.
 1. The bounds as achieved in the maximum Information Content regime: Gives us a lower and upper bound on the average norm of the gradient in case high Information Content is achieved.
 2. The bounds as achieved in the sensitivity regime: Gives us an upper bound on the average norm of the gradient corresponding to the sensitivity IC achieved.
 
@@ -549,7 +549,7 @@ print(
 trainer.fit(train_loader)
 ```
 
-The `get_ic_grad_bounds` functoin returns a tuple containing a tuple containing the lower bound as achieved in maximum IC case, upper bound as achieved in maximum IC case, and the upper bound for the sensitivity IC case.
+The `get_ic_grad_bounds` function returns a tuple containing a tuple containing the lower bound as achieved in maximum IC case, upper bound as achieved in maximum IC case, and the upper bound for the sensitivity IC case.
 
 The sensitivity IC bound is guaranteed to appear, while the usually much tighter bounds that we get via the maximum IC case is only meaningful in the case of the maximum achieved information content $H(\epsilon)_{max} \geq log_6(2)$.
 
