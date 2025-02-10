@@ -178,8 +178,10 @@ class Accelerator(DistributionStrategy):
 
     def _log_warnings(self) -> None:
         if self.spawn:
-            if os.getenv("TORCHELASTIC_RUN_ID"):
-                raise ValueError(
+            if self.strategy == "torchrun":
+                logger.warning(
                     f"Spawn mode is enabled (spawn={self.spawn}), but the process was launched using `torchrun`, "
                     "which is incompatible with spawning new processes."
                 )
+                logger.warning("Setting spawn=False")
+                self.spawn = False
