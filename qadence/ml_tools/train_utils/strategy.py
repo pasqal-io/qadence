@@ -63,22 +63,24 @@ class DistributionStrategy:
         self.compute_setup: str = compute_setup
         self.log_setup: str = log_setup
         self.strategy: str
-        self.rank: int | None = None
-        self.world_size: int | None = None
-        self.local_rank: int | None = None
-        self.master_addr: str | None = None
-        self.master_port: str | None = None
-        self.device: str | None = None
-        self.log_device: str | None = None
+        self.rank: int
+        self.world_size: int
+        self.local_rank: int | None
+        self.master_addr: str
+        self.master_port: str
+        self.device: str
+        self.log_device: str
         self.spawn: bool
-        self.nprocs: int | None
+        self.nprocs: int
         self.dtype: torch.dtype | None = dtype
         self.data_dtype: torch.dtype | None = None
         if self.dtype:
             self.data_dtype = torch.float64 if (self.dtype == torch.complex128) else torch.float32
         # currently we only do this for GPUs
         # TODO: extend support to TPUs, CPUs, etc.
-        self.cores_per_node = int(torch.cuda.device_count()) if torch.cuda.is_available() else 1
+        self.cores_per_node: int = (
+            int(torch.cuda.device_count()) if torch.cuda.is_available() else 1
+        )
 
     def detect_strategy(self) -> str:
         """
@@ -98,14 +100,14 @@ class DistributionStrategy:
         else:
             return "none"
 
-    def _set_node_variables(self):
+    def _set_node_variables(self) -> None:
         self.job_id = int(os.environ.get("SLURM_JOB_ID", 93345))
         self.num_nodes = int(os.environ.get("SLURM_JOB_NUM_NODES", 1))
         self.node_rank = int(os.environ.get("SLURM_NODEID", 0))
         self.node_name = os.environ.get("SLURMD_NODENAME", "Unknown")
         self.node_list = os.environ.get("SLURM_JOB_NODELIST", "Unknown")
 
-    def setup_environment(self, process_rank) -> Tuple[int, int, int]:
+    def setup_environment(self, process_rank: int) -> Tuple[int, int, int | None]:
         """
         Set up environment variables and the computation device for distributed processing.
 
@@ -118,19 +120,16 @@ class DistributionStrategy:
             Tuple[int, int, int]: A tuple containing the global rank, world size, and local rank.
         """
         self._set_node_variables()
+        self._set_device()
         self.local_rank = self._get_local_rank(process_rank)
         self.world_size = self._get_world_size(process_rank)
-        self.rank = self._get_rank(process_rank)        
+        self.rank = self._get_rank(process_rank)
         # Set environment variables for distributed training
         os.environ["RANK"] = str(self.rank)
         os.environ["WORLD_SIZE"] = str(self.world_size)
         os.environ["LOCAL_RANK"] = str(self.local_rank)
-        if self.world_size > 1:
-            # Set master address and port for distributed communication
-            os.environ["MASTER_ADDR"] = self.master_addr = self._get_master_addr()
-            os.environ["MASTER_PORT"] = self.master_port = self._get_master_port()
-
-        self._set_device()
+        os.environ["MASTER_ADDR"] = self.master_addr = self._get_master_addr()
+        os.environ["MASTER_PORT"] = self.master_port = self._get_master_port()
 
         return self.rank, self.world_size, self.local_rank
 
@@ -181,7 +180,7 @@ class DistributionStrategy:
         else:
             return "12364"
 
-    def _get_rank(self, process_rank) -> int:
+    def _get_rank(self, process_rank: int) -> int:
         """
         Retrieve the global rank of the current process.
 
@@ -190,14 +189,18 @@ class DistributionStrategy:
                  Priority is given to the "RANK" environment variable; if not found, in a SLURM environment,
                  the "SLURM_PROCID" is used. Defaults to 0.
         """
+        if self.device == "cpu":
+            return int(process_rank)
         if "RANK" in os.environ:
             return int(os.environ["RANK"])
         if self.strategy == "default":
-            rank = self.node_rank * self.cores_per_node + self.local_rank 
+            rank = self.node_rank * self.cores_per_node
+            if self.local_rank:
+                rank += self.local_rank
             return int(rank)
         return 0
 
-    def _get_world_size(self,process_rank) -> int:
+    def _get_world_size(self, process_rank: int) -> int:
         """
         Retrieve the total number of processes in the distributed training job.
 
@@ -212,7 +215,7 @@ class DistributionStrategy:
             return int(self.nprocs)
         return 1
 
-    def _get_local_rank(self, process_rank) -> int:
+    def _get_local_rank(self, process_rank: int) -> int | None:
         """
         Retrieve the local rank of the current process (its index on the local node).
 
@@ -221,6 +224,9 @@ class DistributionStrategy:
                  Uses the "LOCAL_RANK" environment variable if set, or "SLURM_LOCALID" in a SLURM environment.
                  Defaults to 0.
         """
+        if self.device == "cpu":
+            # No local rank in case of CPUs for true parallelism
+            return None
         if "LOCAL_RANK" in os.environ:
             return int(os.environ["LOCAL_RANK"])
         if self.strategy == "default":
@@ -265,7 +271,7 @@ class DistributionStrategy:
             )
 
     def setup_process(
-        self, process_rank: int | None = None, nprocs: int | None = None
+        self, process_rank: int, nprocs: int
     ) -> Tuple[int | None, int | None, int | None, str | None]:
         """
         Set up the process for distributed training, especially useful when processes are spawned.
