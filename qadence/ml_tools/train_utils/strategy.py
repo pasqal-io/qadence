@@ -23,8 +23,9 @@ class DistributionStrategy:
     It also provides methods to start and clean up the PyTorch distributed process group.
 
     Attributes:
-        backend (str): Communication backend for distributed processing.
+        backend (str): The backend used for distributed communication (e.g., "nccl", "gloo").
         compute_setup (str): Desired computation device setup.
+        log_setup (str): Desired logging device setup.
         strategy (str): Detected strategy for process launch ("torchrun", "slurm", or "default").
         rank (int | None): Global rank of the process (to be set during environment setup).
         world_size (int | None): Total number of processes (to be set during environment setup).
@@ -32,29 +33,49 @@ class DistributionStrategy:
         master_addr (str | None): Master node address (to be set during environment setup).
         master_port (str | None): Master node port (to be set during environment setup).
         device (str | None): Computation device, e.g., "cpu" or "cuda:<local_rank>".
+        log_device (str | None): Logging device, e.g., "cpu" or "cuda:<local_rank>".
+        dtype (torch.dtype): Data type for controlling numerical precision (e.g., torch.float32).
+        data_dtype (torch.dtype): Data type for controlling datasets precision (e.g., torch.float16).
     """
 
-    def __init__(self, backend: str = "nccl", compute_setup: str = "auto") -> None:
+    def __init__(
+        self,
+        compute_setup: str = "auto",
+        log_setup: str = "cpu",
+        dtype: torch.dtype | None = torch.float32,
+        backend: str = "nccl",
+    ) -> None:
         """
         Initialize the DistributionStrategy.
 
         Args:
-            backend (str): Backend to use for distributed communication (default: "nccl").
-            compute_setup (str): Compute device setup; options are "auto" (default) or "gpu".
+            compute_setup (str): Compute device setup; options are "auto" (default), "gpu", or "cpu".
                 - "auto": Uses GPU if available, otherwise CPU.
                 - "gpu": Forces GPU usage, raising an error if no CUDA device is available.
+                - "cpu": Forces CPU usage.
+            log_setup (str): Logging device setup; options are "auto", "cpu" (default).
+                - "auto": Uses same device to log as used for computation.
+                - "cpu": Forces CPU logging.
+            dtype (torch.dtype): Data type for controlling numerical precision. Default is torch.float32.
+            backend (str): Backend to use for distributed communication (default: "nccl").
         """
         self.backend: str = backend
         self.compute_setup: str = compute_setup
-        self.strategy: str = self.detect_strategy()
+        self.log_setup: str = log_setup
+        self.strategy: str
         self.rank: int | None = None
         self.world_size: int | None = None
         self.local_rank: int | None = None
         self.master_addr: str | None = None
         self.master_port: str | None = None
         self.device: str | None = None
-        self.spawn: bool = False
+        self.log_device: str | None = None
+        self.spawn: bool
         self.nprocs: int | None
+        self.dtype: torch.dtype | None = dtype
+        self.data_dtype: torch.dtype | None = None
+        if self.dtype:
+            self.data_dtype = torch.float64 if (self.dtype == torch.complex128) else torch.float32
 
     def detect_strategy(self) -> str:
         """
@@ -62,18 +83,19 @@ class DistributionStrategy:
 
         Returns:
             str: The detected launch strategy. Possible values are:
-                - "torchrun": If the "LOCAL_RANK" environment variable is set.
+                - "Default": If the "LOCAL_RANK" environment variable is set.
+                    Possibly by torchrun or my spawned processes.
                 - "slurm": If the "SLURM_PROCID" environment variable is set.
-                - "default": Otherwise.
+                - "none": Otherwise.
         """
-        if "LOCAL_RANK" in os.environ:
-            return "torchrun"
+        if ("LOCAL_RANK" in os.environ) or self.spawn:
+            return "default"
         elif "SLURM_PROCID" in os.environ:
             if int(os.environ["SLURM_PROCID"]) == 0:
                 logger.info("Using SLURM launch strategy.")
             return "slurm"
         else:
-            return "default"
+            return "none"
 
     def setup_environment(self) -> Tuple[int, int, int]:
         """
@@ -224,6 +246,15 @@ class DistributionStrategy:
             torch.cuda.set_device(self.local_rank)
         else:
             self.device = "cpu"
+
+        if self.log_setup == "auto":
+            self.log_device = self.device
+        elif self.log_setup == "cpu":
+            self.log_device = "cpu"
+        else:
+            raise ValueError(
+                f"log_setup {self.log_setup} not supported. Choose between `auto` and `cpu`"
+            )
 
     def setup_process(
         self, process_rank: int | None = None, nprocs: int | None = None

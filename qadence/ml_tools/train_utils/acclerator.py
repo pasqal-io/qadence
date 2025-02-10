@@ -6,19 +6,14 @@ import os
 import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
-from torch import (
-    complex128,
-    float32,
-    float64,
-    dtype as torch_dtype,
-)
+from torch import complex128, float32, float64, dtype as torch_dtype, device as torch_device
 from torch import nn, optim
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 from torch.nn.parallel import DistributedDataParallel as DDP
 
 from qadence.ml_tools.train_utils.strategy import DistributionStrategy
-from qadence.ml_tools.data import data_to_device
+from qadence.ml_tools.data import data_to_device, InfiniteTensorDataset
 
 logger = getLogger("ml_tools")
 
@@ -32,42 +27,53 @@ class Accelerator(DistributionStrategy):
     `DistributedDataParallel` (DDP) when required.
 
     Attributes:
-        backend (str): The backend used for distributed communication (e.g., "nccl", "gloo").
         spawn (bool): Whether to use multiprocessing spawn mode for process initialization.
-        compute_setup (str): Configuration for computing resources. Default is "auto".
         nprocs (int): Number of processes to launch for distributed training.
-        dtype (torch.dtype): Data type for controlling numerical precision (e.g., torch.float32, torch.float16).
     """
 
     def __init__(
         self,
-        backend: str = "nccl",
         spawn: bool = False,
-        compute_setup: str = "auto",
         nprocs: int | None = 1,
+        compute_setup: str = "auto",
+        log_setup: str = "cpu",
         dtype: torch_dtype | None = torch.float32,
+        backend: str = "nccl",
     ) -> None:
         """
         Initializes the Accelerator class.
 
         Args:
-            backend (str): The backend for distributed communication. Default is "nccl".
             spawn (bool): Whether to use the `spawn` method for multiprocessing. Default is False.
-            compute_setup (str): Specifies the compute environment setup. Default is "auto".
             nprocs (int): Number of processes to launch. Default is 1.
+            compute_setup (str): Compute device setup; options are "auto" (default), "gpu", or "cpu".
+                - "auto": Uses GPU if available, otherwise CPU.
+                - "gpu": Forces GPU usage, raising an error if no CUDA device is available.
+                - "cpu": Forces CPU usage.
+            log_setup (str): Logging device setup; options are "auto", "cpu" (default).
+                - "auto": Uses same device to log as used for computation.
+                - "cpu": Forces CPU logging.
             dtype (torch.dtype): Data type for controlling numerical precision. Default is torch.float32.
+            backend (str): The backend for distributed communication. Default is "nccl".
         """
-        super().__init__(backend, compute_setup)
+        super().__init__(compute_setup, log_setup, dtype, backend)
         self.spawn = spawn
         self.nprocs = nprocs
-        self.dtype: torch_dtype | None = dtype
-        self.data_dtype: torch_dtype | None = None
-        if self.dtype:
-            self.data_dtype = float64 if (self.dtype == complex128) else float32
+        self.strategy = self.detect_strategy()
 
     def setup(self, process_rank: int | None) -> None:
         """
         Sets up the distributed training environment for a given process.
+
+        Each process sets up a rank, local_rank, and world size. If there are multiple processes
+        (based on the world size) a master_add and master port are also assigned.
+        Setting up process also sets up the device for the process. These are selected based on 'compute_setup'
+        argument in TrainConfig. For compute_setup = "auto" - gpus are selected if available.
+        The selected devices could be
+            - "cpu": in case of cpu based computation
+            - "cuda:n": GPU based on the distributed setup. Note that n is the local_rank of the gpu.
+        This also sets up the logging device for each process. In case the log_setup is "auto",
+        log_device is the same as device - otherwise its "cpu".
 
         This method initializes the distributed process group and logs relevant details.
 
@@ -120,15 +126,19 @@ class Accelerator(DistributionStrategy):
                         # Wrap the model with DistributedDataParallel for multi-GPU training.
                         obj = DDP(obj, device_ids=[self.local_rank])
                     else:
-                        logger.info("Using CPU for training; skipping DDP wrapping.")
+                        if not self.rank:
+                            logger.info("Using CPU for training; skipping DDP wrapping.")
                 prepared.append(obj)
             elif isinstance(obj, optim.Optimizer):
                 prepared.append(obj)
             elif isinstance(obj, DataLoader):
                 if self.world_size and self.world_size > 1:
-                    sampler = DistributedSampler(
-                        obj.dataset, num_replicas=self.world_size, rank=self.local_rank
-                    )
+                    if not isinstance(obj.dataset, InfiniteTensorDataset):
+                        sampler = DistributedSampler(
+                            obj.dataset, num_replicas=self.world_size, rank=self.local_rank
+                        )
+                    else:
+                        sampler = None
                     obj = DataLoader(
                         obj.dataset,
                         batch_size=obj.batch_size,

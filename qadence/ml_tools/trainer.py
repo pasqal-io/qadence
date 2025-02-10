@@ -297,6 +297,7 @@ class Trainer(BaseTrainer):
             nprocs=config.nprocs,
             compute_setup=config.compute_setup,
             dtype=config.dtype,
+            log_setup=config.log_setup,
         )
 
     def fit(
@@ -359,7 +360,7 @@ class Trainer(BaseTrainer):
         and setting up the writer.
         """
         self.stop_training = False
-        self.config_manager.initialize_config()
+        self.config_manager.initialize_config(rank=self.accelerator.rank)
         self.callback_manager.start_training(trainer=self)
 
         # Integration with Accelerator: prepare the model, optimizer, and dataloaders.
@@ -785,7 +786,13 @@ class Trainer(BaseTrainer):
 
         # Store the optimization result
         self.opt_result = OptimizeResult(
-            self.current_epoch, self.model_old, self.optimizer_old, loss, metrics
+            self.current_epoch,
+            self.model_old,
+            self.optimizer_old,
+            loss,
+            metrics,
+            rank=self.accelerator.rank,
+            device=self.accelerator.device,
         )
 
     def get_ic_grad_bounds(

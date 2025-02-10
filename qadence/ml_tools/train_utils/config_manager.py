@@ -34,12 +34,14 @@ class ConfigManager:
         """
         self.config: TrainConfig = config
 
-    def initialize_config(self) -> None:
+    def initialize_config(self, rank: int | None = 0) -> None:
         """
         Initialize the configuration by setting up the folder structure,.
 
         handling hyperparameters, deriving additional parameters,
         and logging warnings.
+        Args:
+            rank (int): Rank of the current process
         """
         self._log_warnings()
         self._initialize_folder()
@@ -155,30 +157,33 @@ class ConfigManager:
 
         and plotting functions.
         """
-        if (
-            self.config.plotting_functions
-            and self.config.tracking_tool != ExperimentTrackingTool.MLFLOW
-        ):
-            logger.warning("In-training plots are only available with mlflow tracking.")
-        if (
-            not self.config.plotting_functions
-            and self.config.tracking_tool == ExperimentTrackingTool.MLFLOW
-        ):
-            logger.warning("Tracking with mlflow, but no plotting functions provided.")
-        if self.config.plot_every and not self.config.plotting_functions:
-            logger.warning(
-                "`plot_every` is only available when `plotting_functions` are provided."
-                "No plots will be saved."
-            )
-        if self.config.checkpoint_best_only and not self.config.validation_criterion:
-            logger.warning(
-                "`Checkpoint_best_only` is only available when `validation_criterion` is provided."
-                "No checkpoints will be saved."
-            )
-        if self.config.log_folder != Path("./") and self.config.root_folder != Path("./qml_logs"):
-            logger.warning("Both `log_folder` and `root_folder` provided by the user.")
-        if self.config.log_folder != Path("./") and self.config.create_subfolder_per_run:
-            logger.warning(
-                "`log_folder` is invalid when `create_subfolder_per_run` = True."
-                "`root_folder` (default qml_logs) will be used to save logs."
-            )
+        if not self.rank:
+            if (
+                self.config.plotting_functions
+                and self.config.tracking_tool != ExperimentTrackingTool.MLFLOW
+            ):
+                logger.warning("In-training plots are only available with mlflow tracking.")
+            if (
+                not self.config.plotting_functions
+                and self.config.tracking_tool == ExperimentTrackingTool.MLFLOW
+            ):
+                logger.warning("Tracking with mlflow, but no plotting functions provided.")
+            if self.config.plot_every and not self.config.plotting_functions:
+                logger.warning(
+                    "`plot_every` is only available when `plotting_functions` are provided."
+                    "No plots will be saved."
+                )
+            if self.config.checkpoint_best_only and not self.config.validation_criterion:
+                logger.warning(
+                    "`Checkpoint_best_only` is only available when `validation_criterion` is provided."
+                    "No checkpoints will be saved."
+                )
+            if self.config.log_folder != Path("./") and self.config.root_folder != Path(
+                "./qml_logs"
+            ):
+                logger.warning("Both `log_folder` and `root_folder` provided by the user.")
+            if self.config.log_folder != Path("./") and self.config.create_subfolder_per_run:
+                logger.warning(
+                    "`log_folder` is invalid when `create_subfolder_per_run` = True."
+                    "`root_folder` (default qml_logs) will be used to save logs."
+                )

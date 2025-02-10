@@ -202,12 +202,26 @@ class TrainConfig:
 
     Each subfolder is of structure `<id>_<timestamp>_<PID>`.
     """
-    aggregate_metrics: bool = False
     spawn: bool = False
-    backend: str = "nccl"
-    compute_setup: str = "cpu"
     nprocs: int | None = 1
+    compute_setup: str = "cpu"
+    """Auto, cpu, and gpu.
+
+    compute_setup (str): Compute device setup; options are "auto" (default), "gpu", or "cpu".
+                - "auto": Uses GPU if available, otherwise CPU.
+                - "gpu": Forces GPU usage, raising an error if no CUDA device is available.
+                - "cpu": Forces CPU usage.
+    """
+    log_setup: str = "auto"
+    """Only auto and cpu.
+
+    log_setup (str): Logging device setup; options are "auto", "cpu" (default).
+                - "auto": Uses same device to log as used for computation.
+                - "cpu": Forces CPU logging.
+    """
+    backend: str = "nccl"
     dtype: torch.dtype | None = None
+    aggregate_metrics: bool = False
 
 
 @dataclass
