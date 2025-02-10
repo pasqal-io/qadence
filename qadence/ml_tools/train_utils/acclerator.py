@@ -60,6 +60,7 @@ class Accelerator(DistributionStrategy):
         self.spawn = spawn
         self.nprocs = nprocs
         self.strategy = self.detect_strategy()
+        self._log_warnings()
 
     def setup(self, process_rank: int | None) -> None:
         """
@@ -174,3 +175,11 @@ class Accelerator(DistributionStrategy):
             return reduced
         else:
             return d
+
+    def _log_warnings(self) -> None:
+        if self.spawn:
+            if os.getenv("TORCHELASTIC_RUN_ID"):
+                raise ValueError(
+                    f"Spawn mode is enabled (spawn={self.spawn}), but the process was launched using `torchrun`, "
+                    "which is incompatible with spawning new processes."
+                )
