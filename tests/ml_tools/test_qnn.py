@@ -14,6 +14,7 @@ from qadence.blocks import (
 )
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import hea, ising_hamiltonian, total_magnetization
+from qadence.constructors.hamiltonians import Interaction
 from qadence.ml_tools.config import AnsatzConfig, FeatureMapConfig
 from qadence.ml_tools.constructors import (
     ObservableConfig,
@@ -260,10 +261,13 @@ def get_qnn(
     n_qubits: int,
     depth: int,
     inputs: list = None,
-    shift: str | float = 0.0,
+    scale: float = 1.0,
+    shift: float = 0.0,
+    trainable_transform: bool | None = None,
 ) -> QNN:
     observable = create_observable(
-        n_qubits, ObservableConfig(detuning=Z, shift=shift)  # type: ignore[arg-type]
+        n_qubits,
+        ObservableConfig(detuning=Z, interaction=Interaction.ZZ, scale=scale, shift=shift, trainable_transform=trainable_transform),  # type: ignore[arg-type]
     )
     circuit = SmallCircuit
     model = QNN(
@@ -276,39 +280,47 @@ def get_qnn(
     return model
 
 
-@pytest.mark.parametrize("shift", [0.1])
-def test_constant_transformed_module(SmallCircuit: QuantumCircuit, shift: float | int) -> None:
+@pytest.mark.parametrize("output_range", [(1.0, 0.1, False), (2.0, 0.0, None), (3.0, 1.0, False)])
+def test_constant_and_feature_transformed_module(
+    SmallCircuit: QuantumCircuit, output_range: tuple[float, float, bool]
+) -> None:
     batch_size = 1
     n_qubits = 2
+    scale, shift, trainable = output_range
     depth = 1
     fparam = "phi"
     inputs = [fparam]
     input_values = {fparam: torch.rand(batch_size, requires_grad=True)}
-
+    if trainable is False:
+        inputs += ["scale", "shift"]
+        scale, shift = "scale", "shift"  # type: ignore[assignment]
+        input_values["scale"] = torch.tensor([output_range[0]])
+        input_values["shift"] = torch.tensor([output_range[1]])
     model = get_qnn(SmallCircuit, n_qubits, depth, inputs=[fparam])
     tm = get_qnn(
         SmallCircuit,
         n_qubits,
         depth,
         inputs=inputs,
+        scale=scale,
         shift=shift,
+        trainable_transform=trainable,
     )
-
     tm.reset_vparams(list(model.vparams.values()))
     pred = model(input_values)
     tm_pred = tm(input_values)
 
-    assert torch.allclose(tm_pred, pred + shift)
+    assert torch.allclose(tm_pred, (output_range[0] * pred) + output_range[1])
 
 
-@pytest.mark.parametrize("shift", [("shift", 0.1)])
+@pytest.mark.parametrize("output_range", [(1.0, 0.0, True), (2.0, 0.0, True), (3.0, 1.0, True)])
 def test_variational_transformed_module(
-    SmallCircuit: QuantumCircuit, shift: tuple[str, float | int]
+    SmallCircuit: QuantumCircuit, output_range: tuple[float, float, bool]
 ) -> None:
     batch_size = 1
     n_qubits = 2
+    scale, shift, trainable = output_range
     depth = 1
-    shift_term, shift_value = shift
     fparam = "phi"
     inputs = [fparam]
     input_values = {fparam: torch.rand(batch_size, requires_grad=True)}
@@ -317,18 +329,23 @@ def test_variational_transformed_module(
         n_qubits,
         depth,
         inputs=[fparam],
+        scale=1.0,
+        shift=0.0,
+        trainable_transform=None,
     )
     tm = get_qnn(
         SmallCircuit,
         n_qubits,
         depth,
         inputs=inputs,
-        shift=shift_term,
+        scale="scale",  # type: ignore[arg-type]
+        shift="shift",  # type: ignore[arg-type]
+        trainable_transform=trainable,
     )
-    tm.reset_vparams([shift_value] + list(model.vparams.values()))
+    tm.reset_vparams([scale, shift] + list(model.vparams.values()))
     pred = model({**input_values})
     tm_pred = tm(input_values)
-    assert torch.allclose(tm_pred, pred + shift_value)
+    assert torch.allclose(tm_pred, (output_range[0] * pred) + output_range[1])
 
 
 @pytest.mark.parametrize("diff_mode", [DiffMode.GPSR, DiffMode.AD])
@@ -336,7 +353,7 @@ def test_config_qnn(diff_mode: DiffMode) -> None:
     backend = BackendName.PYQTORCH
     fm_config = FeatureMapConfig(num_features=1)
     ansatz_config = AnsatzConfig()
-    observable_config = ObservableConfig(detuning=Z)
+    observable_config = ObservableConfig(detuning=Z, interaction=Interaction.ZZ)
 
     qnn = QNN.from_configs(
         register=2,
@@ -357,7 +374,7 @@ def test_ala_ansatz_config(diff_mode: DiffMode) -> None:
     backend = BackendName.PYQTORCH
     fm_config = FeatureMapConfig(num_features=1)
     ansatz_config = AnsatzConfig(ansatz_type=AnsatzType.ALA, m_block_qubits=2)
-    observable_config = ObservableConfig(detuning=Z)
+    observable_config = ObservableConfig(detuning=Z, interaction=Interaction.ZZ)
 
     qnn = QNN.from_configs(
         register=4,
@@ -400,7 +417,7 @@ def test_config_qnn_input_transform() -> None:
     fm_config = FeatureMapConfig(num_features=1)
     transformed_fm_config = FeatureMapConfig(num_features=1, feature_range=(0.0, 1.0))
     ansatz_config = AnsatzConfig()
-    observable_config = ObservableConfig(detuning=Z)
+    observable_config = ObservableConfig(detuning=Z, interaction=Interaction.ZZ)
 
     qnn = QNN.from_configs(
         register=2,
@@ -425,9 +442,9 @@ def test_config_qnn_input_transform() -> None:
 def test_config_qnn_output_transform() -> None:
     fm_config = FeatureMapConfig(num_features=1)
     ansatz_config = AnsatzConfig()
-    observable_config = ObservableConfig(detuning=Z)
+    observable_config = ObservableConfig(detuning=Z, interaction=Interaction.ZZ)
     transformed_observable_config = ObservableConfig(
-        detuning=Z, detuning_strength=[2.0, 2.0], shift=1.0
+        detuning=Z, interaction=Interaction.ZZ, scale=2.0, shift=1.0
     )
 
     qnn = QNN.from_configs(
@@ -447,3 +464,36 @@ def test_config_qnn_output_transform() -> None:
 
     input_values = torch.rand(10, requires_grad=True)
     assert torch.allclose(2.0 * qnn(input_values) + 1, transformed_qnn(input_values) + 0.0)
+
+    observable_config = ObservableConfig(
+        detuning=Z,
+        interaction=Interaction.ZZ,
+        scale=-1.0,
+        shift=1.0,
+        transformation_type="range",  # type: ignore[arg-type]
+    )
+    transformed_observable_config = ObservableConfig(
+        detuning=Z,
+        interaction=Interaction.ZZ,
+        scale=-10.0,
+        shift=10.0,
+        transformation_type=ObservableTransform.RANGE,  # type: ignore[arg-type]
+    )
+
+    qnn = QNN.from_configs(
+        register=2,
+        obs_config=observable_config,
+        fm_config=fm_config,
+        ansatz_config=ansatz_config,
+    )
+    transformed_qnn = QNN.from_configs(
+        register=2,
+        obs_config=transformed_observable_config,
+        fm_config=fm_config,
+        ansatz_config=ansatz_config,
+    )
+
+    transformed_qnn.reset_vparams(list(qnn.vparams.values()))
+
+    input_values = torch.rand(10, requires_grad=True)
+    assert torch.allclose(10.0 * qnn(input_values), transformed_qnn(input_values))

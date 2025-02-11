@@ -268,50 +268,96 @@ class ObservableConfig:
 
     Accepts single-qubit operator N, X, Y, or Z.
     """
-    interaction_strength: TArray | str | None = None
+    scale: TParameter = 1.0
+    """The scale by which to multiply the output of the observable."""
+    shift: TParameter = 0.0
+    """The shift to add to the output of the observable."""
+    transformation_type: ObservableTransform = ObservableTransform.NONE  # type: ignore[assignment]
     """
-    List of values to be used as the interaction strength for each pair of qubits.
+    If ObservableTransform.RANGE, the observable eigenvalues are fixed to the range [shift, scale].
 
-    Should be ordered following the order of `Register(n_qubits).edges`.
-
-    Alternatively, a string "x" can be passed, which will create a variational parameterized
-    interactions for each pair of qubits, each labelled as `"x_ij"`.
+    If ObservableTransform.SCALE or ObservableTransform.NONE, shift and scale are used as the output
+    shift and output multiplier, respectively.
     """
-    detuning_strength: TArray | str | None = None
+    trainable_transform: bool | None = None
     """
-    List of values to be used as the detuning strength for each qubit.
+    Whether to have a trainable transformation on the output of the observable.
 
-    Alternatively, a string "x" can be passed, which will create a variational parameterized
-    detuning for each qubit, each labelled as `"x_i"`.
-    """
-    shift: TParameter | None = None
-    """The shift to add to the output of the observable.
-
-    It can be a float, int, or a string. If the shift is a string,
-    it will be treated as a VariationalParameter.
-    """
-
-    random_strength: bool = False
-    """If True: Set random interaction and detuning strengths between -1 and 1."""
-    use_all_node_pairs: bool = False
-    """
-    Computes an interaction term for every pair of nodes in the graph,.
-
-    independent of the edge topology in the register. Useful for defining Hamiltonians
-    where the interaction strength decays with the distance.
+    If None, the scale and shift are numbers.
+    If True, the scale and shift are VariationalParameter.
+    If False, the scale and shift are FeatureParameter.
     """
 
     def __post_init__(self) -> None:
         if self.interaction is None and self.detuning is None:
             raise ValueError("Please provide an interaction and/or detuning for the Hamiltonian.")
 
-        if self.shift is None:
-            self.shift = Parameter(0.0)
+        if is_numeric(self.scale) and is_numeric(self.shift):
+            assert self.trainable_transform is None, (
+                "If scale and shift are numbers, trainable_transform must be None."
+                f"But got: {self.trainable_transform}"
+            )
 
-        elif isinstance(self.shift, str):
-            self.shift = Parameter(name=self.shift, trainable=True)
-
-        elif isinstance(self.shift, (float, int)):
-            self.shift = Parameter(self.shift, trainable=False)
+        # trasfor the scale and shift into parameters
+        if self.trainable_transform is not None:
+            self.shift = Parameter(name=self.shift, trainable=self.trainable_transform)
+            self.scale = Parameter(name=self.scale, trainable=self.trainable_transform)
         else:
-            raise ValueError("Shift must be a float, int, string.")
+            self.shift = Parameter(self.shift)
+            self.scale = Parameter(self.scale)
+
+
+def total_magnetization_config(
+    scale: TParameter = 1.0,
+    shift: TParameter = 0.0,
+    transformation_type: ObservableTransform = ObservableTransform.NONE,  # type: ignore[assignment]
+    trainable_transform: bool | None = None,
+) -> ObservableConfig:
+    return ObservableConfig(
+        detuning=Z,
+        scale=scale,
+        shift=shift,
+        transformation_type=transformation_type,
+        trainable_transform=trainable_transform,
+    )
+
+
+def zz_hamiltonian_config(
+    scale: TParameter = 1.0,
+    shift: TParameter = 0.0,
+    transformation_type: ObservableTransform = ObservableTransform.NONE,  # type: ignore[assignment]
+    trainable_transform: bool | None = None,
+) -> ObservableConfig:
+    return ObservableConfig(
+        interaction=Interaction.ZZ,
+        detuning=Z,
+        scale=scale,
+        shift=shift,
+        transformation_type=transformation_type,
+        trainable_transform=trainable_transform,
+    )
+
+
+def ising_hamiltonian_config(
+    x_scale: TParameter = 1.0,
+    x_shift: TParameter = 0.0,
+    x_transformation_type: ObservableTransform = ObservableTransform.NONE,  # type: ignore[assignment]
+    zz_scale: TParameter = 1.0,
+    zz_shift: TParameter = 0.0,
+    zz_transformation_type: ObservableTransform = ObservableTransform.NONE,  # type: ignore[assignment]
+    trainable_transform: bool | None = None,
+) -> List[ObservableConfig]:
+    zz_ham = zz_hamiltonian_config(
+        scale=zz_scale,
+        shift=zz_shift,
+        transformation_type=zz_transformation_type,
+        trainable_transform=trainable_transform,
+    )
+    x_ham = ObservableConfig(
+        detuning=X,
+        scale=x_scale,
+        shift=x_shift,
+        transformation_type=x_transformation_type,
+        trainable_transform=trainable_transform,
+    )
+    return [zz_ham, x_ham]

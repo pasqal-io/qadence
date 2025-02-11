@@ -736,16 +736,14 @@ def create_observable(
     Returns:
         AbstractBlock: The observable block.
     """
+    if config.transformation_type == ObservableTransform.RANGE:
+        config.scale, config.shift = ObservableTransformMap[config.transformation_type](config.detuning, config.scale, config.shift)  # type: ignore[index]
 
     shifting_term: AbstractBlock = config.shift * _global_identity(register)  # type: ignore[operator]
-    detuning_hamiltonian: AbstractBlock = hamiltonian_factory(  # type: ignore[operator]
+    detuning_hamiltonian: AbstractBlock = config.scale * hamiltonian_factory(  # type: ignore[operator]
         register=register,
         interaction=config.interaction,
         detuning=config.detuning,
-        interaction_strength=config.interaction_strength,
-        detuning_strength=config.detuning_strength,
-        random_strength=config.random_strength,
-        use_all_node_pairs=config.use_all_node_pairs,
     )
     return add(shifting_term, detuning_hamiltonian)
 

@@ -11,11 +11,11 @@ One convenient way to construct these three parts of the model is to use the con
 
 ## Defining the Observable
 
-The model output is the expectation value of the defined observable(s). We use the `ObservableConfig` class to specify the observable. 
+The model output is the expectation value of the defined observable(s). We use the `ObservableConfig` class to specify the observable.
 
-It can be used to create Hamiltonians with 2-qubit interactions and single-qubit detunings, both with arbitrary strength or parameterized. Any Hamiltonian supported by [hamiltonian_factory](qadence.constructors.hamiltonians.hamiltonian_factory) can be specified for measurement at the end of the circuit.
+It can be used to create Hamiltonians with 2-qubit interactions and single-qubit detunings. Any Hamiltonian supported by [hamiltonian_factory](qadence.constructors.hamiltonians.hamiltonian_factory) can be specified for measurement at the end of the circuit.
 
-For example, suppose we want to measure the Z operator
+For example, suppose we want to measure the Z operator:
 
 ```python exec="on" source="material-block" session="config" html="1"
 from qadence import create_observable, ObservableConfig, Z
@@ -34,7 +34,22 @@ print(html_string(observable)) # markdown-exec: hide
 
 We have specified the observable Hamiltonian to be one with $Z$-detuning. The result is linearly scaled by 2.0 and shifted by -1.0. The shift or the scale can optionally also be a [VariationalParameter][qadence.parameters.VariationalParameter]
 
-One can also specify the observable as a list of observables, in which case the QNN will output a list of values.
+It is also possible to import some common Hamiltonians, such as `total_magnetization_config`, `ising_hamiltonian_config`, and `zz_hamiltonian_config`.
+
+For example, the total magnetization configuration:
+
+```python exec="on" source="material-block" session="config" html="1"
+from qadence import create_observable
+from qadence.constructors import total_magnetization_config
+
+
+
+observable_total_magnetization  = create_observable(register=4, config=total_magnetization_config())
+from qadence.draw import html_string # markdown-exec: hide
+print(html_string(observable_total_magnetization)) # markdown-exec: hide
+```
+
+Alternatively, you can define the observable as a list of observables, in which case the QNN will output a list of values.
 
 For full details on the `ObservableConfig` class, see the [API documentation][qadence.constructors.hamiltonians.ObservableConfig].
 

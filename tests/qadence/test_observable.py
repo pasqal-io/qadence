@@ -5,7 +5,6 @@ import torch
 import pytest
 from hypothesis import given, settings
 
-
 from qadence.blocks import (
     AbstractBlock,
     AddBlock,
@@ -96,11 +95,13 @@ def test_observable_strategy(block: AbstractBlock) -> None:
         assert isinstance(block, (ScaleBlock, AddBlock))
 
 
-def test_observable_config_no_interaction_no_detuning() -> None:
-    with pytest.raises(ValueError):
-        transformed_observable_config = ObservableConfig(detuning_strength=[2.0, 2.0], shift=1.0)
+def test_error_observable_config_no_interaction_no_detuning() -> None:
+    with pytest.raises(ValueError, match="Please provide an interaction"):
+        transformed_observable_config = ObservableConfig(shift=1.0)
 
 
-def test_observable_config_wrong_shift_type() -> None:
-    with pytest.raises(ValueError):
-        transformed_observable_config = ObservableConfig(detuning=Z, shift=[])
+def test_error_observable_config_numeric_parameters_with_tue_trainable() -> None:
+    with pytest.raises(AssertionError, match="trainable_transform must be None"):
+        transformed_observable_config = ObservableConfig(
+            detuning=Z, shift=1.0, scale=1.0, trainable_transform=True
+        )
