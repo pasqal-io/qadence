@@ -32,7 +32,6 @@ from qadence.constructors import (
     ising_hamiltonian,
     total_magnetization,
     zz_hamiltonian,
-    ising_hamiltonian_config,
     zz_hamiltonian_config,
     total_magnetization_config,
 )
@@ -70,12 +69,6 @@ def test_block_is_qubit_ham_constructors() -> None:
     assert block_is_qubit_hamiltonian(
         create_observable(register=n_qubits, config=zz_hamiltonian_config())
     )
-    assert block_is_qubit_hamiltonian(
-        create_observable(register=n_qubits, config=ising_hamiltonian_config()[0])
-    )  # zz_ham component of ising_hamiltonian_config()
-    assert block_is_qubit_hamiltonian(
-        create_observable(register=n_qubits, config=ising_hamiltonian_config()[1])
-    )  # x_ham component of ising_hamiltonian_config()
 
 
 def test_chain_block_only() -> None:

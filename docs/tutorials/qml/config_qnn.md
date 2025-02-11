@@ -34,7 +34,7 @@ print(html_string(observable)) # markdown-exec: hide
 
 We have specified the observable Hamiltonian to be one with $Z$-detuning. The result is linearly scaled by 2.0 and shifted by -1.0. The shift or the scale can optionally also be a [VariationalParameter][qadence.parameters.VariationalParameter]
 
-It is also possible to import some common Hamiltonians, such as `total_magnetization_config`, `ising_hamiltonian_config`, and `zz_hamiltonian_config`.
+It is also possible to import some common Hamiltonians, such as `total_magnetization_config` and `zz_hamiltonian_config`.
 
 For example, the total magnetization configuration:
 

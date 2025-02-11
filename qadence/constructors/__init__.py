@@ -17,7 +17,6 @@ from .hamiltonians import (
     ObservableConfig,
     total_magnetization,
     zz_hamiltonian,
-    ising_hamiltonian_config,
     total_magnetization_config,
     zz_hamiltonian_config,
 )
@@ -40,7 +39,6 @@ __all__ = [
     "total_magnetization",
     "zz_hamiltonian",
     "ObservableConfig",
-    "ising_hamiltonian_config",
     "total_magnetization_config",
     "zz_hamiltonian_config",
     "qft",

@@ -10,7 +10,7 @@ from typing_extensions import Any
 from qadence.parameters import Parameter
 
 from qadence.blocks import AbstractBlock, add, block_is_qubit_hamiltonian
-from qadence.operations import N, X, Y, Z
+from qadence.operations import N, X, Y, Z, H
 from qadence.register import Register
 from qadence.types import Interaction, ObservableTransform, TArray, TParameter
 
@@ -260,7 +260,8 @@ class ObservableConfig:
 
                 n_qubits = 2
 
-                hamilt = hamiltonian_factory(n_qubits, interaction=custom_int)
+                observable_config = ObservableConfig(interaction=custom_int, scale = 1.0, shift = 0.0)
+                observable = create_observable(register=4, config=observable_config)
     """
     detuning: TDetuning | None = None
     """
@@ -274,10 +275,13 @@ class ObservableConfig:
     """The shift to add to the output of the observable."""
     transformation_type: ObservableTransform = ObservableTransform.NONE  # type: ignore[assignment]
     """
-    If ObservableTransform.RANGE, the observable eigenvalues are fixed to the range [shift, scale].
+    If ObservableTransform.SCALE or ObservableTransform.NONE then shift and scale are assumed to be.
 
-    If ObservableTransform.SCALE or ObservableTransform.NONE, shift and scale are used as the output
-    shift and output multiplier, respectively.
+    the shift and scale parameter respectively for linear transformation.
+
+    if ObservableTransform.RANGE then shift and scale are assumed to form the range of the expected
+    output. The QNN output is linearly transformed accordingly to have the output be bounded in
+    range [shift, scale].
     """
     trainable_transform: bool | None = None
     """
@@ -290,7 +294,9 @@ class ObservableConfig:
 
     def __post_init__(self) -> None:
         if self.interaction is None and self.detuning is None:
-            raise ValueError("Please provide an interaction and/or detuning for the Hamiltonian.")
+            raise ValueError(
+                "Please provide an interaction and/or detuning for the Observable Hamiltonian."
+            )
 
         if is_numeric(self.scale) and is_numeric(self.shift):
             assert self.trainable_transform is None, (
@@ -298,7 +304,7 @@ class ObservableConfig:
                 f"But got: {self.trainable_transform}"
             )
 
-        # trasfor the scale and shift into parameters
+        # trasform the scale and shift into parameters
         if self.trainable_transform is not None:
             self.shift = Parameter(name=self.shift, trainable=self.trainable_transform)
             self.scale = Parameter(name=self.scale, trainable=self.trainable_transform)
@@ -336,28 +342,3 @@ def zz_hamiltonian_config(
         transformation_type=transformation_type,
         trainable_transform=trainable_transform,
     )
-
-
-def ising_hamiltonian_config(
-    x_scale: TParameter = 1.0,
-    x_shift: TParameter = 0.0,
-    x_transformation_type: ObservableTransform = ObservableTransform.NONE,  # type: ignore[assignment]
-    zz_scale: TParameter = 1.0,
-    zz_shift: TParameter = 0.0,
-    zz_transformation_type: ObservableTransform = ObservableTransform.NONE,  # type: ignore[assignment]
-    trainable_transform: bool | None = None,
-) -> List[ObservableConfig]:
-    zz_ham = zz_hamiltonian_config(
-        scale=zz_scale,
-        shift=zz_shift,
-        transformation_type=zz_transformation_type,
-        trainable_transform=trainable_transform,
-    )
-    x_ham = ObservableConfig(
-        detuning=X,
-        scale=x_scale,
-        shift=x_shift,
-        transformation_type=x_transformation_type,
-        trainable_transform=trainable_transform,
-    )
-    return [zz_ham, x_ham]
