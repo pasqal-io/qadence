@@ -19,7 +19,7 @@ Each noise protocol can be specified using `NoiseProtocol` and requires specific
 Digital noise refer to unintended changes occurring with reference to the application of a noiseless digital gate operation. The following are the protocols of supported digital noise, along with brief descriptions. For digital noise, the `error_probability` is necessary for the noise initialization at the `options` parameter.
 
 When dealing with programs involving digital operations, `Qadence` has interface to noise models implemented in `PyQTorch`.
-Detailed equation for these protocols are available from [PyQTorch](https://pasqal-io.github.io/pyqtorch/latest/noise/).
+Detailed equations for these protocols are available from [PyQTorch](https://pasqal-io.github.io/pyqtorch/latest/noise/).
 
 - BITFLIP: flips between |0⟩ and |1⟩ with `error_probability`
 - PHASEFLIP: flips the phase of a qubit by applying a Z gate with `error_probability`
@@ -61,7 +61,7 @@ Readout errors are linked to the incorrect measurement outcomes from the system.
 Currently, two readout protocols are available via [PyQTorch](https://pasqal-io.github.io/pyqtorch/latest/noise/).
 
 - Independent: all bits are corrupted independently with each other.
-- Correlated: apply `confusion_matrix` of corruption between each possible bitstrings
+- Correlated: apply a `confusion_matrix` of corruption between each possible bitstrings
 
 ```python exec="on" source="material-block" session="output"
 from qadence import NoiseProtocol
@@ -112,7 +112,7 @@ print(noise_combination)  # markdown-exec: hide
 
 ## Executing Noisy Simulation
 
-Noise simulation can be structured by applying a `NoiseHandler` to the desired `gate`, `block`, `QuantumCircuit`, or `QuantumModel`.
+Noisy simulation can be set by applying a `NoiseHandler` to the desired `gate`, `block`, `QuantumCircuit`, or `QuantumModel`.
 
 ```python exec="on" source="material-block" session="noise" result="json"
 from qadence import NoiseProtocol, RX, run, NoiseHandler
@@ -126,7 +126,7 @@ run(circuit)
 print(f"Noisy density matrix = {run(circuit)}")  # markdown-exec: hide
 ```
 
-We can also apply noise with `set_noise` function that apply given noise to the whole object.
+We can also apply noise with the `set_noise` function that apply a given noise configuration to the whole object.
 
 ```python exec="on" source="material-block" session="noise" result="json"
 from qadence import DiffMode, NoiseHandler, QuantumModel
@@ -148,12 +148,12 @@ model = QuantumModel(
     diff_mode=DiffMode.GPSR,
 )
 
-noise_less_expectation = model.expectation()
+noiseless_expectation = model.expectation()
 
-model_noisy = set_noise(model, noise)
-noisy_expectation = model_noisy.expectation()
-print(f"noise_less_expectation = {noise_less_expectation}") # markdown-exec: hide
-print(f"noisy_expectation = {noisy_expectation}") # markdown-exec: hide
+noisy_model = set_noise(model, noise)
+noisy_expectation = noisy_model.expectation()
+print(f"Noiseless expectation = {noiseless_expectation}") # markdown-exec: hide
+print(f"Noisy expectation = {noisy_expectation}") # markdown-exec: hide
 ```
 
 Let's say we want to apply noise only to specific type of gates, a `target_class` argument can be passed with the corresponding block in `set_noise`.
