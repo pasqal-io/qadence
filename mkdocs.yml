@@ -93,6 +93,8 @@ nav:
       - Pulser: api/backends/pulser.md
       - DifferentiableBackend: api/backends/differentiable.md
 
+  - Contact: https://github.com/pasqal-io/qadence/discussions
+
 edit_uri: edit/main/docs/
 
 theme:

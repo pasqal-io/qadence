@@ -22,6 +22,8 @@ The noise protocols applicable in `Qadence` are classified into three types: dig
 
 When dealing with programs involving digital operations(including readout errors), `Qadence` has interface to noise models implemented in `PyQTorch`. The following is a list of the supported types of noise. Detailed equation of noise options are available from [PyQTorch](https://pasqal-io.github.io/pyqtorch/latest/noise/). In terms of analog noise, both `PyQTorch` and `Pulser` backends are supporting the noisy simulation operation. For `Pulser` noise implementation, you can refer to [Pulser](https://pulser.readthedocs.io/en/stable/tutorials/noisy_sim.html).
 
+Each noise protocol requires specific `options` parameter for its usage which can be found [here](https://github.com/pasqal-io/qadence/blob/main/qadence/noise/protocols.py).
+
 ### Digital noise protocol
 
 The following are the protocols of supported digital noise, along with brief descriptions. For digital noise, the `error_probability` is necessary for the noise initialization at the `options` parameter.
@@ -49,13 +51,9 @@ protocol = NoiseProtocol.DIGITAL.DEPOLARIZING
 options = {"error_probability": 0.1}
 ```
 
-<!-- check with pauli and generalized with the input parameters -->
-
 ### Analog noise protocol
 
-Currently, only DEPOLARIZING protocol is available for analog noise protocol. The `noise_probs` is necessary for the noise initialization at the `options` parameter.
-
-<!-- check if we can connect more analog noises to the qadence. complete this subsection with only deploarizing if nothing is possible. -->
+Qadence is in the process of fully supporting all the noise protocols in the backend(especially `Pulser`). However, we are in transition, and currently, only DEPOLARIZING is available for analog noise protocol. The `noise_probs` is necessary for the noise initialization at the `options` parameter.
 
 - Depolarizing: evolves to the maximally mixed state with `noise_probs`
 
@@ -66,12 +64,19 @@ protocol = NoiseProtocol.ANALOG.DEPOLARIZING
 options = {"noise_probs": 0.1}
 ```
 
-### Readout errors protocol
+### Readout error protocol
 
-<!-- deal with noise errors too after finishing other document parts. -->
+Readout errors are linked to the incorrect identification of the final state of the qubits. This is computed with the density matrix of the state through `sample` execution. We have a `seed` parameter in `options` for reproducible purposes.
 
 - Independent: all bits are corrupted with an equal `error_probability`
 - Correlated: apply `confusion_matrix` on error probabilities
+
+```python exec="on" source="material-block" session="noise" result="json"
+from qadence import NoiseProtocol
+
+protocol=NoiseProtocol.READOUT.INDEPENDENT
+options = {"error_probability": 0.01, "seed": 0}
+```
 
 ## NoiseHandler
 
@@ -191,13 +196,32 @@ The result of this figure would be a 100% `11` state without noise. However, wit
 
 ### Digital noisy simulation
 
-To use the digital noise option, one needs to state the `protocol` and `error_probability` in `NoiseHandler`. All noise types require a single float for the error_probability, while the `PauliChannel` and `GeneralizedAmplitudeDamping` require a tuple of error probabilities.
+To use the digital noise option, one needs to state the `protocol` and `error_probability` in `NoiseHandler`. All noise types require at least a single float for the error_probability.
 
+```python exec="on" source="material-block" session="noise" result="json"
+from qadence import H, QuantumCircuit, QuantumModel, NoiseProtocol, NoiseHandler, PI, BackendName, expectation
+
+digital_block = H(0)
+circuit = QuantumCircuit(1, digital_block)
+
+options = {"error_probability": 0.3}
+noise = NoiseHandler(protocol=NoiseProtocol.DIGITAL.AMPLITUDE_DAMPING, options=options)
+
+model_digital_noisy = QuantumModel(
+    circuit=circuit,
+    backend=BackendName.PYQTORCH,
+    noise=noise,
+)
+
+noisy_sample = model_digital_noisy.sample()
+print(f"noisy_sample = {noisy_sample}") # markdown-exec: hide
+```
+
+Without the noise, sample results should have a near 50% probability of both states. In the presence of AMPLITUDE_DAMPING noise, state 0 has a higher probability than state 1.
 
 ### Analog noisy simulation
 
-Analog noise models need to declare a `protocol` and a `noise_probs` at the `NoiseHandler` level.
-At the moment, analog noisy simulations are only compatible with the Pulser backend.
+Analog noise simulations must declare a `protocol` and a `noise_probs` at the `NoiseHandler` level.
 
 ```python exec="on" source="material-block" session="noise" result="json"
 from qadence import DiffMode, NoiseHandler, QuantumModel
@@ -220,10 +244,12 @@ model_noisy = QuantumModel(
     noise=noise,
 )
 noisy_expectation = model_noisy.expectation()
-print(f"noisy = {noisy_expectation}") # markdown-exec: hide
+print(f"noisy_expectation = {noisy_expectation}") # markdown-exec: hide
 ```
 
-### Readout errors
+At the moment, analog noisy simulations are only compatible with the Pulser backend, but we are in the process of supporting the PyQTorch backend with more noise protocols.
+
+### Readout error simulation
 
 State Preparation and Measurement (SPAM) in the hardware is a major source of noise in the execution of quantum programs. They are typically described using confusion matrices of the form:
 
@@ -268,7 +294,7 @@ For `NoiseProtocol.READOUT.INDEPENDENT`, the `option` dictionary argument accept
 - `noise_distribution`: defaulted to `WhiteNoise.UNIFORM`, for non-uniform noise distributions
 
 For `NoiseProtocol.READOUT.CORRELATED`, the `option` dictionary argument accepts the following options:
-- `confusion_matrix`: The square matrix representing $T(x|x')$ for each possible bitstring of length `n` qubits. Should be of size (2**n, 2**n).
+- `confusion_matrix`: The square matrix representing $T(x|x')$ for each possible bitstring of length `n` qubits. Should be of size ($2^n, 2^n$).
 - `seed`: defaulted to `None`, for reproducibility purposes
 
 
