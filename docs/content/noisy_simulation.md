@@ -268,7 +268,7 @@ For `NoiseProtocol.READOUT.INDEPENDENT`, the `option` dictionary argument accept
 - `noise_distribution`: defaulted to `WhiteNoise.UNIFORM`, for non-uniform noise distributions
 
 For `NoiseProtocol.READOUT.CORRELATED`, the `option` dictionary argument accepts the following options:
-- `confusion_matrix`: The square matrix representing $T(x|x')$ for each possible bitstring of length `n` qubits. Should be of size (2**n, 2**n).
+- `confusion_matrix`: The square matrix representing $T(x|x')$ for each possible bitstring of length `n` qubits. Should be of size ($2^n, 2^n$).
 - `seed`: defaulted to `None`, for reproducibility purposes
 
 
