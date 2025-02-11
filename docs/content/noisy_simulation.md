@@ -1,48 +1,37 @@
 # Noisy Simulation
 
-Running programs on NISQ devices often leads to partially useful results due to the presence of noise. In order to perform realistic simulations, a number of noise models (for digital operations, analog operations and simulated readout errors) are supported in Qadence.
+Running programs on NISQ devices often leads to imperfect results due to the presence of noise. In order to perform realistic simulations, a number of noise models (for digital operations, analog operations and simulated readout errors) are supported in Qadence.
 
-Noisy simulations shift the quantum paradigm from a close-system to an open-system represented by a probabilistic combination $p_i$ of possible pure states $|\psi_i \rangle$. Thus, the system is described by a density matrix $\rho$ defined as follows:
+Noisy simulations shift the quantum paradigm from a close-system (noiseless case) to an open-system (noisy case) where a quantum system is represented by a probabilistic combination $p_i$ of possible pure states $|\psi_i \rangle$. Thus, the system is described by a density matrix $\rho$ (and computation modify the density matrix) defined as follows:
 
 $$
 \rho = \sum_i p_i |\psi_i\rangle \langle \psi_i|
 $$
 
-The transformations of the density operator of an open quantum system interacting with its environment (noise) are represented by the super-operator $S: \rho \rightarrow S(\rho)$. Any arbitrary super-operator can be decomposed in the following form:
-
-$$
-S(\rho) = \sum_i K_i \rho K^{\dagger}_i
-$$
-
-Where $K_i$ are the Kraus operators, and satisfy the property $\sum_i K_i K^{\dagger}_i = \mathbb{I}$. As noise is the result of system interactions with its environment, it is therefore possible to simulate noisy quantum circuit with noisy type of gates.
+The noise protocols applicable in `Qadence` are classified into three types: digital (for digital operations), analog (for analog operations), and readout error (for measurements).
 
 ## Noise Protocols
 
-The noise protocols applicable in `Qadence` are classified into three types: digital, analog, and readout error. Digital noise in quantum computers occurs due to unintended state changes during the gate operations such as `BitFlip` or `AmplitudeDamping`. Analog noise is when qubits lose coherence due to environmental interactions, as in `Depolarizing`. Readout error arises during the measurement process, leading to incorrect state assignment due to imperfections in the detection mechanism.
+### Specifying a noise protocol
 
-When dealing with programs involving digital operations(including readout errors), `Qadence` has interface to noise models implemented in `PyQTorch`. The following is a list of the supported types of noise. Detailed equation of noise options are available from [PyQTorch](https://pasqal-io.github.io/pyqtorch/latest/noise/). In terms of analog noise, both `PyQTorch` and `Pulser` backends are supporting the noisy simulation operation. For `Pulser` noise implementation, you can refer to [Pulser](https://pulser.readthedocs.io/en/stable/tutorials/noisy_sim.html).
-
-Each noise protocol requires specific `options` parameter for its usage which can be found [here](https://github.com/pasqal-io/qadence/blob/main/qadence/noise/protocols.py).
+Each noise protocol can be specified using `NoiseProtocol` and requires specific `options` parameter passed as a dictionary. We show below for each type of noise how this can be done.
 
 ### Digital noise protocol
 
 The following are the protocols of supported digital noise, along with brief descriptions. For digital noise, the `error_probability` is necessary for the noise initialization at the `options` parameter.
 
 - BITFLIP: flips between |0⟩ and |1⟩ with `error_probability`
-
 - PHASEFLIP: flips the phase of a qubit by applying a Z gate with `error_probability`
-
 - DEPOLARIZING: randomizes the state of a qubit by applying I, X, Y, or Z gates with equal `error_probability`
-
-- PAULI_CHANNEL: applies one of the Pauli operators (X, Y, Z) to a qubit with specified `error_probabilities`
-
-- AMPLITUDE_DAMPING: transitions qubit status from |1⟩ to |0⟩ with `error_probability`
-
-- PHASE_DAMPING: reduces coherence by randomizing the phase with `error_probability`
-
+- PAULI_CHANNEL: applies the Pauli operators (X, Y, Z) to a qubit with specified `error_probabilities`
+- AMPLITUDE_DAMPING: models the asymmetric process through which the qubit state |1⟩ irreversibly decays into the state |0⟩ with `error_probability`
+- PHASE_DAMPING: similar to AMPLITUDE_DAMPING but concrening the phase
 - GENERALIZED_AMPLITUDE_DAMPING: extends amplitude damping; the first float is `error_probability` of amplitude damping, and second float is the `damping_rate`
 
-For digital noise simulation, you need to state `NoiseProtocol` with `DIGITAL` and then specify the noise type. Also, you put the value of `error_probability` as in next example.
+When dealing with programs involving digital operations, `Qadence` has interface to noise models implemented in `PyQTorch`.
+Detailed equation for these protocols are available from [PyQTorch](https://pasqal-io.github.io/pyqtorch/latest/noise/).
+
+For digital noise simulation, you need to state `NoiseProtocol` with `DIGITAL` and then specify the noise protocol. Also, you put the value of `error_probability` as in next example.
 
 ```python exec="on" source="material-block" session="noise" result="json"
 from qadence import NoiseProtocol
@@ -53,9 +42,12 @@ options = {"error_probability": 0.1}
 
 ### Analog noise protocol
 
-Qadence is in the process of fully supporting all the noise protocols in the backend(especially `Pulser`). However, we are in transition, and currently, only DEPOLARIZING is available for analog noise protocol. The `noise_probs` is necessary for the noise initialization at the `options` parameter.
+Analog noise can be set for analog operations. At the moment, we only enabled simulations via the `Pulser` backend.
+For `Pulser` noise implementation, you can refer to [Pulser](https://pulser.readthedocs.io/en/stable/tutorials/noisy_sim.html).
+Qadence is in the process of fully supporting all the noise protocols in the backends (especially `Pulser`). However, we are in transition, and currently, only DEPOLARIZING and DEPHAZING are available as protocols. The `options` dictionary requires to specify the field `noise_probs`.
 
 - Depolarizing: evolves to the maximally mixed state with `noise_probs`
+- Dephazing: TOCOMPLETE
 
 ```python exec="on" source="material-block" session="noise" result="json"
 from qadence import NoiseProtocol
@@ -66,7 +58,7 @@ options = {"noise_probs": 0.1}
 
 ### Readout error protocol
 
-Readout errors are linked to the incorrect identification of the final state of the qubits. This is computed with the density matrix of the state through `sample` execution. We have a `seed` parameter in `options` for reproducible purposes.
+Readout errors are linked to the incorrect measurement outcomes from the system. This is computed with the density matrix of the state through `sample` execution. We have a `seed` parameter in `options` for reproducible purposes. Currently, two readout protocols are available via [PyQTorch](https://pasqal-io.github.io/pyqtorch/latest/noise/).
 
 - Independent: all bits are corrupted with an equal `error_probability`
 - Correlated: apply `confusion_matrix` on error probabilities
