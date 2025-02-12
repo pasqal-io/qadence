@@ -36,11 +36,6 @@ class Trainer(BaseTrainer):
     Attributes:
         current_epoch (int): The current epoch number.
         global_step (int): The global step across all epochs.
-        log_device (str): Device for logging, default is "cpu".
-        device (torch_device): Device used for computation.
-        dtype (torch_dtype | None): Data type used for computation.
-        data_dtype (torch_dtype | None): Data type for data.
-            Depends on the model's data type.
 
     Inherited Attributes:
         use_grad (bool): Indicates if gradients are used for optimization. Default is True.
