@@ -231,15 +231,15 @@ class TrainConfig:
     - "cpu": Forces the use of CPU regardless of GPU availability.
     """
 
-    backend: str = "nccl"
+    backend: str = "gloo"
     """
     Backend used for distributed training communication.
 
-    The default is "nccl", which is optimized for GPU-based training. Other options may include "gloo" or "mpi",
+    The default is "gloo". Other options may include "nccl" - which is optimized for GPU-based training or "mpi",
     depending on your system and requirements.
     """
 
-    log_setup: str = "auto"
+    log_setup: str = "cpu"
     """
     Logging device setup; options are "auto" or "cpu".
 
