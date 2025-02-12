@@ -253,8 +253,6 @@ class Trainer(BaseTrainer):
             val_dataloader (DataLoader | DictDataLoader |  None): DataLoader for validation data.
             test_dataloader (DataLoader | DictDataLoader |  None): DataLoader for test data.
             optimize_step (Callable): Function to execute an optimization step.
-            device (torch_device): Device to use for computation.
-            dtype (torch_dtype): Data type for computation.
             max_batches (int | None): Maximum number of batches to process per epoch.
                 This is only valid in case of finite TensorDataset dataloaders.
                 if max_batches is not None, the maximum number of batches used will
