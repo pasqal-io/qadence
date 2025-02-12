@@ -379,7 +379,7 @@ class Accelerator(DistributionStrategy):
         """
 
         @functools.wraps(fun)
-        def wrapper(instance: Any, *args: Any, **kwargs: Any) -> None:
+        def wrapper(instance: Any, *args: Any, **kwargs: Any) -> Any:
             if self.spawn:
                 # Spawn multiple processes that will run the worker function.
                 nprocs = self.nprocs
@@ -395,6 +395,12 @@ class Accelerator(DistributionStrategy):
                 # In single process mode, call the worker with rank 0.
                 self.worker(0, instance, fun.__name__, args, kwargs)
 
-            return
+            # TODO: Return the original returns from fun
+            # Currently it only returns the model and optimizer
+            # similar to the fit method.
+            try:
+                return instance.model, instance.optimizer
+            except Exception:
+                return
 
         return wrapper
