@@ -11,7 +11,10 @@ programs** with tunable qubit interactions and arbitrary register topologies rea
 
 **For a high-level overview of Qadence features, [check out our white paper](https://arxiv.org/abs/2401.09915).**
 
-**For more detailed information, [check out the documentation](https://pasqal-io.github.io/qadence/latest/).**
+**For more detailed information, [check out the documentation](https://pasqal-io.github.io/qadence/latest/).
+
+**For any questions or comments, [feel free to start a discussion](https://github.com/pasqal-io/qadence/discussions).
+**
 
 [![Linting](https://github.com/pasqal-io/qadence/actions/workflows/lint.yml/badge.svg)](https://github.com/pasqal-io/qadence/actions/workflows/lint.yml)
 [![Tests](https://github.com/pasqal-io/qadence/actions/workflows/test_fast.yml/badge.svg)](https://github.com/pasqal-io/qadence/actions/workflows/test_fast.yml)

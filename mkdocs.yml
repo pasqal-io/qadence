@@ -19,6 +19,7 @@ nav:
     - Quantum models: content/quantummodels.md
     - Quantum registers: content/register.md
     - State initialization: content/state_init.md
+    - Noisy Simulation: content/noisy_simulation.md
     - Arbitrary Hamiltonians: content/hamiltonians.md
     - Time-dependent generators: content/time_dependent.md
     - QML Constructors: content/qml_constructors.md
@@ -91,6 +92,8 @@ nav:
       - PyQTorch: api/backends/pyqtorch.md
       - Pulser: api/backends/pulser.md
       - DifferentiableBackend: api/backends/differentiable.md
+
+  - Contact: https://github.com/pasqal-io/qadence/discussions
 
 edit_uri: edit/main/docs/
 

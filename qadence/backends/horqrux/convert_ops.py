@@ -245,7 +245,7 @@ class HorqHamiltonianEvolution(NativeHorqHEvo):
 
         self._time_evolution = lambda values: values[self.param_names[0]]
 
-    def unitary(self, values: dict[str, Array]) -> Array:
+    def _unitary(self, values: dict[str, Array]) -> Array:
         """The evolved operator given current parameter values for generator and time evolution."""
         return expm(self._hamiltonian(self, values) * (-1j * self._time_evolution(values)))
 

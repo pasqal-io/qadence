@@ -66,6 +66,7 @@ T(x|x')=\delta_{xx'}
 $$
 
 Two types of readout protocols are available:
+
 - `NoiseProtocol.READOUT.INDEPENDENT` where each bit can be corrupted independently of each other.
 - `NoiseProtocol.READOUT.CORRELATED` where we can define of confusion matrix of corruption between each
 possible bitstrings.
@@ -108,11 +109,12 @@ For `NoiseProtocol.READOUT.INDEPENDENT`, the `option` dictionary argument accept
 - `noise_distribution`: defaulted to `WhiteNoise.UNIFORM`, for non-uniform noise distributions
 
 For `NoiseProtocol.READOUT.CORRELATED`, the `option` dictionary argument accepts the following options:
-- `confusion_matrix`: The square matrix representing $T(x|x')$ for each possible bitstring of length `n` qubits. Should be of size (2**n, 2**n).
+
+- `confusion_matrix`: The square matrix representing $T(x|x')$ for each possible bitstring of length `n` qubits. Should be of size ($2^n, 2^n$).
 - `seed`: defaulted to `None`, for reproducibility purposes
 
 
-Noisy simulations go hand-in-hand with measurement protocols discussed in the previous [section](measurements.md), to assess the impact of noise on expectation values. In this case, both measurement and noise protocols have to be defined appropriately. Please note that a noise protocol without a measurement protocol will be ignored for expectation values computations.
+Noisy simulations go hand-in-hand with measurement protocols discussed in the [measurements section](measurements.md), to assess the impact of noise on expectation values. In this case, both measurement and noise protocols have to be defined appropriately. Please note that a noise protocol without a measurement protocol will be ignored for expectation values computations.
 
 
 ```python exec="on" source="material-block" session="noise" result="json"
@@ -136,7 +138,7 @@ print(f"noisy = {noisy_exp}") # markdown-exec: hide
 
 ## Analog noisy simulation
 
-At the moment, analog noisy simulations are only compatable with the Pulser backend.
+At the moment, analog noisy simulations are only compatible with the Pulser backend.
 ```python exec="on" source="material-block" session="noise" result="json"
 from qadence import DiffMode, NoiseHandler, QuantumModel
 from qadence.blocks import chain, kron
@@ -177,7 +179,7 @@ op = RX(0, torch.pi, noise = noise)
 print(run(op))
 ```
 
-It is also possible to set a noise configuration to gates within a composite block or circuit as follows:
+It is also possible to set a noise configuration to all gates within a block or circuit as follows:
 
 ```python exec="on" source="material-block" session="noise" result="json"
 from qadence import set_noise, chain
@@ -193,7 +195,7 @@ set_noise(block, noise)
 print(run(block))
 ```
 
-There is an extra optional argument to specify the type of block we want to apply noise to. E.g., let's say we want to apply noise only to `X` gates, a `target_class` argument can be passed with the corresponding block:
+There is an extra optional argument to specify the type of block we want to apply a noise configuration to. E.g., let's say we want to apply noise only to `X` gates, a `target_class` argument can be passed with the corresponding block:
 
 ```python exec="on" source="material-block" session="noise" result="json"
 from qadence import X
