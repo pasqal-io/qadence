@@ -300,7 +300,7 @@ class DistributionStrategy:
             The attributes `self.spawn` and `self.nprocs` are referenced here but are assumed to be defined externally.
         """
         self.setup_environment(process_rank)
-        if nprocs and self.rank == 0 and str(nprocs) != str(self.world_size):
+        if self.spawn and nprocs and self.rank == 0 and str(nprocs) != str(self.world_size):
             logger.warning(
                 "Provided nprocs (%d) does not match environment world size (%d). Using environment world size.",
                 nprocs,

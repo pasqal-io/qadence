@@ -78,6 +78,15 @@ For example of how to use the TrainConfig with `Trainer`, please see [Examples i
 | `verbose`                | `bool`                   | `True`                   | Enables detailed logging. |
 | `tracking_tool`          | `ExperimentTrackingTool` | `TENSORBOARD`            | Tool for tracking training metrics. |
 | `plotting_functions`     | `tuple`                  | `()`                     | Functions for plotting metrics. |
+| `hyperparams`            | `dict`                   | `{}`                     | Dictionary of hyperparameters |
+| `spawn`                  | `bool`                   | `False`           | If `True`, spawns subprocesses for parallel/distributed training. |
+| `nprocs`                 | `int`                    | `1`               | Number of processes to use when spawning subprocesses; for multi-GPU setups, set this to the total number of GPUs. |
+| `compute_setup`          | `str`                    | `"cpu"`                  | Specifies the compute device: `"auto"`, `"gpu"`, or `"cpu"`.|
+| `backend`                | `str`                    | `"gloo"`                 | Backend for distributed training communication (e.g., `"gloo"`, `"nccl"`, or `"mpi"`). |
+| `log_setup`              | `str`                    | `"cpu"`                  | Device setup for logging; use `"cpu"` to avoid GPU conflicts|
+| `dtype`                  | `dtype` or `None`        | `None`                   | Data type for computations (e.g., `torch.float32`) |
+| `all_reduce_metrics`     | `bool`                   | `False`                  | If `True`, aggregates metrics (e.g., loss) across processes |
+
 
 
 ```python exec="on" source="material-block"
@@ -206,12 +215,44 @@ config = TrainConfig(
 )
 ```
 
+#### Advanced Distributed Training and Precision Options
 
+- `spawn` (**bool**): When enabled, spawns additional subprocesses for training. This is useful for parallel or distributed training setups.
 
+- `nprocs` (**int**): Specifies the number of processes to be used when `spawn` is enabled. For multi-GPU training, this should match the total number of GPUs available.
 
+- `compute_setup` (**str**): Determines the compute device configuration:
+  - `"auto"`: Automatically selects GPU if available.
+  - `"gpu"`: Forces GPU usage and errors if no GPU is detected.
+  - `"cpu"`: Forces the use of the CPU.
 
+- `backend` (**str**): Specifies the communication backend for distributed training. Common options are `"gloo"` (default), `"nccl"` (optimized for GPUs), or `"mpi"`, depending on your setup.
 
+- `log_setup` (**str**): Configures the device used for logging. Using `"cpu"` ensures logging runs on the CPU (which may avoid conflicts with GPU operations), while `"auto"` aligns logging with the compute device.
 
+- `dtype` (**dtype** or **None**): Sets the numerical precision (data type) for computations. For instance, you can use `torch.float32` or `torch.float16` depending on your performance and precision needs.
+
+- `all_reduce_metrics` (**bool**): When enabled, aggregates metrics (such as loss or accuracy) across all training processes to provide a unified summary, though it may introduce additional synchronization overhead.
+
+Example: For CPU MultiProcessing
+```python
+config = TrainConfig(
+    spawn= True,
+    compute_setup="cpu",
+    nprocs=5,
+    backend="gloo"
+)
+```
+
+Example: For GPU Training
+```python
+config = TrainConfig(
+    spawn= True,
+    compute_setup="gpu",
+    nprocs=5, # World-size/Total number of GPUs 
+    backend="nccl"
+)
+```
 
 ## 3. Experiment tracking with mlflow
 
