@@ -249,7 +249,7 @@ Example: For GPU Training
 config = TrainConfig(
     spawn= True,
     compute_setup="gpu",
-    nprocs=5, # World-size/Total number of GPUs 
+    nprocs=5, # World-size/Total number of GPUs
     backend="nccl"
 )
 ```
