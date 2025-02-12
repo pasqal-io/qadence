@@ -4,6 +4,7 @@ from .callbacks.saveload import load_checkpoint, load_model, write_checkpoint
 from .config import AnsatzConfig, FeatureMapConfig, TrainConfig
 from .constructors import create_ansatz, create_fm_blocks, observable_from_config
 from .data import DictDataLoader, InfiniteTensorDataset, OptimizeResult, to_dataloader
+from .information import InformationContent
 from .models import QNN
 from .optimize_step import optimize_step as default_optimize_step
 from .parameters import get_parameters, num_parameters, set_parameters
