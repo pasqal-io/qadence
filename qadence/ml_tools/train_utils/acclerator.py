@@ -82,6 +82,8 @@ class Accelerator(DistributionStrategy):
         self.rank = 0
         self.local_rank = 0
         self.world_size = 1
+        self.device = "cpu"
+        self.log_device = "cpu"
 
     def setup(self, process_rank: int) -> None:
         """
