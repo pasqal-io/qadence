@@ -31,7 +31,6 @@ class Accelerator(DistributionStrategy):
         nprocs (int): Number of processes to launch for distributed training.
         strategy (str): Detected strategy for process launch ("torchrun", "slurm", or "default").
 
-
     Inherited Attributes:
         backend (str): The backend used for distributed communication (e.g., "nccl", "gloo").
         compute_setup (str): Desired computation device setup.
@@ -78,7 +77,7 @@ class Accelerator(DistributionStrategy):
         self.strategy = self.detect_strategy()
         self._log_warnings()
 
-        # Default values 
+        # Default values
         self.rank = 0
         self.local_rank = 0
         self.world_size = 1
