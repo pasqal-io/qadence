@@ -623,7 +623,8 @@ class Trainer(BaseTrainer):
         num_batches: int,
     ) -> Iterable[tuple[torch.Tensor, ...] | None]:
         """
-        Yields batches from the provided dataloader.
+        Yields batches from the provided dataloader. The batch of data is also moved 
+        to the correct device and dtype using accelerator.prepare.
 
         Args:
             dataloader ([DataLoader]): The dataloader to iterate over.
@@ -891,9 +892,7 @@ class Trainer(BaseTrainer):
 
         batch = next(iter(self._batch_iter(dataloader, num_batches=1)))
 
-        xs = data_to_device(batch, device=self.device, dtype=self.data_dtype)
-
-        ic = InformationContent(self.model, self.loss_fn, xs, epsilons)
+        ic = InformationContent(self.model, self.loss_fn, batch, epsilons)
 
         max_ic_lower_bound, max_ic_upper_bound = ic.get_grad_norm_bounds_max_IC()
         sensitivity_ic_upper_bound = ic.get_grad_norm_bounds_sensitivity_IC(eta)

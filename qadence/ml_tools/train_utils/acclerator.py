@@ -191,9 +191,6 @@ class Accelerator(DistributionStrategy):
         """
         Passes through the optimizer without modification.
 
-        In this preparation routine, optimizers do not require moving to a specific device or
-        changing precision. They are simply returned as provided.
-
         Args:
             optimizer (optim.Optimizer): The optimizer to prepare.
 
@@ -206,10 +203,6 @@ class Accelerator(DistributionStrategy):
     def _prepare_data(self, dataloader: DataLoader | DictDataLoader) -> DataLoader | DictDataLoader:
         """
         Adjusts DataLoader(s) for distributed training.
-
-        For a single DataLoader, this method applies the necessary adjustments (e.g., setting up a
-        distributed sampler). If a DictDataLoader (a container for multiple DataLoaders) is provided,
-        each contained DataLoader is prepared individually.
 
         Args:
             dataloader (Union[DataLoader, DictDataLoader]): The dataloader or dictionary of dataloaders to prepare.
