@@ -411,6 +411,8 @@ class Trainer(BaseTrainer):
                         "Validation",
                         total=(self.config_manager.config.max_iter + 1) / self.config.val_every,
                     )
+                else:
+                    val_task = None
                 train_losses, val_losses = self._train_epoch(
                     epoch_start, epoch_end, train_task, val_task
                 )
