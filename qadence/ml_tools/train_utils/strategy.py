@@ -25,7 +25,6 @@ class DistributionStrategy:
         backend (str): The backend used for distributed communication (e.g., "nccl", "gloo").
         compute_setup (str): Desired computation device setup.
         log_setup (str): Desired logging device setup.
-        strategy (str): Detected strategy for process launch ("torchrun", "slurm", or "default").
         rank (int | None): Global rank of the process (to be set during environment setup).
         world_size (int | None): Total number of processes (to be set during environment setup).
         local_rank (int | None): Local rank on the node (to be set during environment setup).
