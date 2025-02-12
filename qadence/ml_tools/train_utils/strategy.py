@@ -237,15 +237,15 @@ class DistributionStrategy:
             return int(process_rank)
         return 0
 
-    def _set_compute(self) -> None: 
+    def _set_compute(self) -> None:
         """
         Set the compute (cpu or gpu) for the current process based on the compute setup.
+
         The method checks for CUDA availability and selects the appropriate device.
         If compute_setup is set to "gpu" but CUDA is unavailable, a RuntimeError is raised.
 
         Raises:
             RuntimeError: If compute_setup is "gpu" but no CUDA devices are available.
-        
         """
         compute = "cpu"
         if self.compute_setup == "gpu":
@@ -261,9 +261,7 @@ class DistributionStrategy:
         self.compute = compute
 
     def _set_device(self) -> None:
-        """
-        Set the computation device (cpu or cuda:<n>) for the current process based on the compute setup.
-        """
+        """Set the computation device (cpu or cuda:<n>) for the current process based on the compute setup."""
         if self.compute == "gpu":
             self.device = f"cuda:{self.local_rank}"
             torch.cuda.set_device(self.local_rank)
