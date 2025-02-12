@@ -29,6 +29,22 @@ class Accelerator(DistributionStrategy):
     Attributes:
         spawn (bool): Whether to use multiprocessing spawn mode for process initialization.
         nprocs (int): Number of processes to launch for distributed training.
+        strategy (str): Detected strategy for process launch ("torchrun", "slurm", or "default").
+
+
+    Inherited Attributes:
+        backend (str): The backend used for distributed communication (e.g., "nccl", "gloo").
+        compute_setup (str): Desired computation device setup.
+        log_setup (str): Desired logging device setup.
+        rank (int | None): Global rank of the process (to be set during environment setup).
+        world_size (int | None): Total number of processes (to be set during environment setup).
+        local_rank (int | None): Local rank on the node (to be set during environment setup).
+        master_addr (str | None): Master node address (to be set during environment setup).
+        master_port (str | None): Master node port (to be set during environment setup).
+        device (str | None): Computation device, e.g., "cpu" or "cuda:<local_rank>".
+        log_device (str | None): Logging device, e.g., "cpu" or "cuda:<local_rank>".
+        dtype (torch.dtype): Data type for controlling numerical precision (e.g., torch.float32).
+        data_dtype (torch.dtype): Data type for controlling datasets precision (e.g., torch.float16).
     """
 
     def __init__(
@@ -61,6 +77,11 @@ class Accelerator(DistributionStrategy):
         self.nprocs = nprocs
         self.strategy = self.detect_strategy()
         self._log_warnings()
+
+        # Default values 
+        self.rank = 0
+        self.local_rank = 0
+        self.world_size = 1
 
     def setup(self, process_rank: int) -> None:
         """
