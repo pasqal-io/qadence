@@ -202,26 +202,67 @@ class TrainConfig:
 
     Each subfolder is of structure `<id>_<timestamp>_<PID>`.
     """
+
     spawn: bool = False
+    """
+    Whether to spawn subprocesses for training.
+
+    If True, the training framework will launch additional processes (e.g., for distributed or parallel training).
+    - For CPU setup, spawn = True will launch a true parallel processes
+    - For GPU setup, spawn = True will launch a distributed training routine.
+    This uses the DistributedDataParallel framework from PyTorch.
+    """
+
     nprocs: int = 1
+    """
+    The number of processes to use for training when spawning subprocesses.
+
+    For effective parallel processing, set this to a value greater than 1.
+    - In case of Multi-GPU or Multi-Node-Multi-GPU setups, nprocs should be equal to
+    the total world_size, or total number of GPU to be used.
+    """
+
     compute_setup: str = "cpu"
-    """Auto, cpu, and gpu.
-
-    compute_setup (str): Compute device setup; options are "auto" (default), "gpu", or "cpu".
-                - "auto": Uses GPU if available, otherwise CPU.
-                - "gpu": Forces GPU usage, raising an error if no CUDA device is available.
-                - "cpu": Forces CPU usage.
     """
-    log_setup: str = "auto"
-    """Only auto and cpu.
+    Compute device setup; options are "auto", "gpu", or "cpu".
 
-    log_setup (str): Logging device setup; options are "auto", "cpu" (default).
-                - "auto": Uses same device to log as used for computation.
-                - "cpu": Forces CPU logging.
+    - "auto": Automatically uses GPU if available; otherwise, falls back to CPU.
+    - "gpu": Forces GPU usage, raising an error if no CUDA device is available.
+    - "cpu": Forces the use of CPU regardless of GPU availability.
     """
+
     backend: str = "nccl"
+    """
+    Backend used for distributed training communication.
+
+    The default is "nccl", which is optimized for GPU-based training. Other options may include "gloo" or "mpi",
+    depending on your system and requirements.
+    """
+
+    log_setup: str = "auto"
+    """
+    Logging device setup; options are "auto" or "cpu".
+
+    - "auto": Uses the same device for logging as for computation.
+    - "cpu": Forces logging to occur on the CPU. This can be useful to avoid potential conflicts with GPU processes.
+    """
+
     dtype: torch.dtype | None = None
-    aggregate_metrics: bool = False
+    """
+    Data type (precision) for computations.
+
+    If specified (e.g., torch.float32, torch.float16), models and tensors are cast to this dtype during training.
+    If None, the default (usually torch.float32) is used.
+    """
+
+    all_reduce_metrics: bool = False
+    """
+    Whether to aggregate metrics (e.g., loss, accuracy) across processes.
+
+    When True, metrics from different training processes are combined to provide a consolidated metrics.
+    Note: Since aggregation requires synchronization/all_reduce operation, this can increase the
+     computation time significantly.
+    """
 
 
 @dataclass
