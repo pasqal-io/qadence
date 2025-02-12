@@ -20,7 +20,7 @@ from qadence.types import (
     ReuploadScaling,
     Strategy,
 )
-import torch
+from torch import dtype
 
 logger = getLogger(__file__)
 
@@ -247,7 +247,7 @@ class TrainConfig:
     - "cpu": Forces logging to occur on the CPU. This can be useful to avoid potential conflicts with GPU processes.
     """
 
-    dtype: torch.dtype | None = None
+    dtype: dtype | None = None
     """
     Data type (precision) for computations.
 
