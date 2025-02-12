@@ -1,24 +1,12 @@
 from __future__ import annotations
 
 import copy
-import os
-from functools import wraps
-import torch.multiprocessing as mp
 from itertools import islice
 from logging import getLogger
-from typing import Any, Callable, Iterable, Tuple, cast
+from typing import Any, Callable, Iterable, cast
 from nevergrad.optimization.base import Optimizer as NGOptimizer
 import torch
-import torch.distributed as dist
-from torch import (
-    complex128,
-    float32,
-    float64,
-    nn,
-    optim,
-    device as torch_device,
-    dtype as torch_dtype,
-)
+from torch import nn, optim
 from torch.utils.data import DataLoader
 from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, TimeRemainingColumn
 
@@ -29,8 +17,6 @@ from qadence.ml_tools.optimize_step import optimize_step, update_ng_parameters
 from qadence.ml_tools.stages import TrainingStage
 
 from .train_utils.base_trainer import BaseTrainer
-
-# Integration: Import Accelerator which wraps DistributionStrategy.
 from .train_utils.acclerator import Accelerator
 
 logger = getLogger("ml_tools")
@@ -316,10 +302,6 @@ class Trainer(BaseTrainer):
         The dataloaders can be provided to train on new datasets, or the default dataloaders
         provided in the trainer will be used.
 
-        Executes the training workflow for a specific worker in a distributed or single-node setting.
-        This method is responsible for setting up the accelerator, initializing the training process,
-        executing the training loop, and finalizing the fit procedure.
-
         Args:
             train_dataloader (DataLoader | DictDataLoader |  None): DataLoader for training data.
             val_dataloader (DataLoader | DictDataLoader |  None): DataLoader for validation data.
@@ -357,7 +339,7 @@ class Trainer(BaseTrainer):
             )
         )
 
-        # rank 0 or None
+        # Progress bar for training visualization
         if not self.accelerator.spawn:
             self.progress = Progress(
                 TextColumn("[progress.description]{task.description}"),
@@ -712,8 +694,8 @@ class Trainer(BaseTrainer):
             self.optimizer_old = self.optimizer
 
     def _aggregate_result(
-        self, result: Tuple[torch.Tensor, dict[str, Any]]
-    ) -> Tuple[torch.Tensor, dict[str, Any]]:
+        self, result: tuple[torch.Tensor, dict[str, Any]]
+    ) -> tuple[torch.Tensor, dict[str, Any]]:
         """
         Aggregates the loss and metrics using the Accelerator's all_reduce_dict method if aggregation is enabled.
 
@@ -722,7 +704,7 @@ class Trainer(BaseTrainer):
             metrics (dict[str, Any]): A dictionary of metric tensors.
 
         Returns:
-            Tuple[torch.Tensor, dict[str, Any]]: The aggregated loss and metrics.
+            tuple[torch.Tensor, dict[str, Any]]: The aggregated loss and metrics.
         """
         loss, metrics = result
         if self.config.all_reduce_metrics:

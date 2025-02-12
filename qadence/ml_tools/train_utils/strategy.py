@@ -2,7 +2,6 @@ from __future__ import annotations
 
 
 from logging import getLogger
-from typing import Tuple
 
 import os
 import subprocess
@@ -107,7 +106,7 @@ class DistributionStrategy:
             int(torch.cuda.device_count()) if torch.cuda.is_available() else 1
         )
 
-    def setup_environment(self, process_rank: int) -> Tuple[int, int, int | None]:
+    def setup_environment(self, process_rank: int) -> tuple[int, int, int | None]:
         """
         Set up environment variables and the computation device for distributed processing.
 
@@ -117,7 +116,7 @@ class DistributionStrategy:
         the computation device based on the specified compute setup.
 
         Returns:
-            Tuple[int, int, int]: A tuple containing the global rank, world size, and local rank.
+            tuple[int, int, int]: A tuple containing the global rank, world size, and local rank.
         """
         # set the process based variables
         self.node_rank = int(os.environ.get("SLURM_NODEID", 0))
@@ -279,7 +278,7 @@ class DistributionStrategy:
 
     def setup_process(
         self, process_rank: int, nprocs: int
-    ) -> Tuple[int | None, int | None, int | None, str | None]:
+    ) -> tuple[int | None, int | None, int | None, str | None]:
         """
         Set up the process for distributed training, especially useful when processes are spawned.
 
@@ -292,7 +291,7 @@ class DistributionStrategy:
             nprocs (int | None): The total number of processes expected. Used for validation against the environment.
 
         Returns:
-            Tuple[int, int, int, str]: A tuple containing:
+            tuple[int, int, int, str]: A tuple containing:
                 - rank (int): Global rank of the process.
                 - world_size (int): Total number of processes.
                 - local_rank (int): Local rank on the node.
