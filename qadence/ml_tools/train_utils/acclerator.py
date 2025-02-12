@@ -6,7 +6,7 @@ import functools
 import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
-from torch import complex128, float32, float64, dtype as torch_dtype, device as torch_device
+from torch import dtype as torch_dtype
 from torch import nn, optim
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
