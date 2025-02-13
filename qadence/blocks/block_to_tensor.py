@@ -21,8 +21,6 @@ from qadence.parameters import evaluate, stringify
 
 # from qadence.states import product_state
 from qadence.types import PI, Endianness, TensorType, TNumber
-from pyqtorch.utils import permute_basis
-
 
 J = torch.tensor(1j)
 
