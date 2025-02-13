@@ -7,6 +7,8 @@ import numpy as np
 import torch
 from torch.linalg import eigvals
 
+from math import log
+
 from qadence.blocks import PrimitiveBlock
 from qadence.noise import NoiseHandler
 
@@ -84,6 +86,8 @@ class MatrixBlock(PrimitiveBlock):
             if not self.is_unitary(matrix):
                 logger.warning("Provided matrix is not unitary.")
         self.matrix = matrix.clone()
+        if int(log(self.matrix.size(1),2)) != len(qubit_support):
+            raise TypeError("Provided matrix does not match the qubit_support length.")
         super().__init__(qubit_support, noise)
 
     @cached_property
