@@ -21,6 +21,8 @@ from qadence.parameters import evaluate, stringify
 
 # from qadence.states import product_state
 from qadence.types import PI, Endianness, TensorType, TNumber
+from pyqtorch.utils import permute_basis
+
 
 J = torch.tensor(1j)
 
@@ -79,6 +81,7 @@ def _fill_identities(
         torch.Tensor: augmented matrix with dimensions (2**nqubits, 2**nqubits)
         or a tensor (2**n_qubits) if diag_only
     """
+    full_qubit_support = tuple(sorted(full_qubit_support))
     qubit_support = tuple(sorted(qubit_support))
     block_mat = block_mat.to(device)
     mat = IMAT.to(device) if qubit_support[0] != full_qubit_support[0] else block_mat
@@ -469,14 +472,13 @@ def _block_to_tensor_embedded(
         )
 
     elif isinstance(block, MatrixBlock):
-        mat = block.matrix.unsqueeze(0)
-        # FIXME: properly handle identity filling in matrix blocks
-        # mat = _fill_identities(
-        #    block.matrix.unsqueeze(0),
-        #    block.qubit_support,
-        #    qubit_support,
-        #    endianness=endianness,
-        # )
+        mat = _fill_identities(
+            block.matrix.unsqueeze(0),
+            block.qubit_support,
+            qubit_support,
+            endianness=endianness,
+            device=device,
+        )
 
     elif isinstance(block, SWAP):
         swap_block = _swap_block(block)

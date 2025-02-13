@@ -92,3 +92,22 @@ def test_qm_with_matblock() -> None:
     exp = qm.expectation({})
 
     assert torch.all(torch.isclose(wf_mat, wf)) and torch.isclose(exp, exp_mat)
+
+
+def test_matrixblock_totensor() -> None:
+
+    op_support = (0, 2)
+    lookup_support = (2, 0)
+
+    # An example operation
+    op_block = CNOT(op_support[0], op_support[1])
+
+    # The matrix block that should be completely equivalent to the operation
+    matrix = block_to_tensor(op_block, use_full_support=False)
+    matrix_block = MatrixBlock(matrix, qubit_support=op_support)
+
+    # Looking at both through block_to_tensor
+    assert torch.allclose(
+        block_to_tensor(matrix_block, qubit_support=lookup_support),
+        block_to_tensor(op_block, qubit_support=lookup_support),
+    )
