@@ -125,5 +125,5 @@ def test_error_matrixblock(block: AbstractBlock) -> None:
     op_block = block(op_support[0], op_support[1])  # type: ignore[operator]
     matrix = block_to_tensor(op_block, use_full_support=True)
 
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         matrix_block = MatrixBlock(matrix, qubit_support=op_support)
