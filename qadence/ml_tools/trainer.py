@@ -351,7 +351,6 @@ class Trainer(BaseTrainer):
 
     def _fit_end(self) -> None:
         """Finalizes the training and closes the writer."""
-        self.accelerator.finalize()
         self.callback_manager.end_training(trainer=self)
 
     @BaseTrainer.callback("train")
