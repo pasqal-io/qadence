@@ -6,17 +6,7 @@ The `Accelerator` class is designed to simplify distributed training with PyTorc
 
 This tutorial will guide you through setting up and using `Accelerator` for distributed training.
 
-## Using Accelerator with Trainer
-
-`Accelerator` is already integrated into the `Trainer` class from `qadence.ml_tools`, and `Trainer` can automatically distribute the training process based on the configurations provided in `TrainConfig`.
-
-```python
-from qadence.ml_tools.trainer import Trainer
-trainer = Trainer(model, optimizer, config)
-model, optimizer = trainer.fit(dataloader)
-```
-
-## Initializing the Accelerator
+## Accelerator
 
 The `Accelerator` class manages the training environment and process distribution. Here’s how you initialize it:
 
@@ -34,44 +24,74 @@ accelerator = Accelerator(
 )
 ```
 
-## Training in Distributed Setup
+#### Using Accelerator with Trainer
 
-The `Accelerator` offers three key methods: `prepare`, `prepare_batch`, and `all_reduce_dict`.
+`Accelerator` is already integrated into the `Trainer` class from `qadence.ml_tools`, and `Trainer` can automatically distribute the training process based on the configurations provided in `TrainConfig`.
 
-### `prepare()`
-This method ensures that models, optimizers, and dataloaders are properly placed on the correct devices for distributed training. It wraps models into `DistributedDataParallel` and synchronizes parameters across processes.
-
-#### Example Usage:
 ```python
-model, optimizer, dataloader = accelerator.prepare(model, optimizer, dataloader)
+from qadence.ml_tools.trainer import Trainer
+from qadence.ml_tools import TrainConfig
+
+config = TrainConfig(spawn = True, nprocs=4)
+
+trainer = Trainer(model, optimizer, config)
+model, optimizer = trainer.fit(dataloader)
 ```
 
-### `prepare_batch()`
-Moves data batches to the correct device and formats them properly for distributed training.
 
-#### Example Usage:
-```python
-batch = accelerator.prepare_batch(batch)
-batch_data, batch_targets = batch
-```
+### Accelerator features
 
-### `all_reduce_dict()`
-Aggregates and synchronizes metrics across all processes during training. Note: This will cause a synchronization overhead and slow down the training processes.
+The `Accelerator` also provides a `distribute()` function wrapper that simplifies running distributed training across multiple processes. This method can be used to prepare/wrap function that need to be distributed.
 
-#### Example Usage:
-```python
-metrics = {"loss": torch.tensor(1.0)}
-reduced_metrics = accelerator.all_reduce_dict(metrics)
-print(reduced_metrics)
-```
+-  `distribute()`
 
-## Training with Distributed Data
+    This method allows you to wrap your training function so it runs across multiple processes, handling rank management and process spawning automatically.
+
+    **Example Usage**:
+    ```python
+    distributed_fun = accelerator.distribute(fun)
+    distributed_fun(*args, **kwargs)
+    ```
+
+    The `distribute()` function ensures that each process runs on a designated device and synchronizes properly, making it easier to scale training with minimal code modifications.
+
+The `Accelerator` further offers these key methods: `prepare`, `prepare_batch`, and `all_reduce_dict`.
+
+
+- `prepare()`
+
+    This method ensures that models, optimizers, and dataloaders are properly placed on the correct devices for distributed training. It wraps models into `DistributedDataParallel` and synchronizes parameters across processes.
+
+    ```python
+    model, optimizer, dataloader = accelerator.prepare(model,
+                                                        optimizer,
+                                                        dataloader)
+    ```
+
+- `prepare_batch()`
+    Moves data batches to the correct device and formats them properly for distributed training.
+
+    ```python
+    batch = accelerator.prepare_batch(batch)
+    batch_data, batch_targets = batch
+    ```
+
+- `all_reduce_dict()`
+    Aggregates and synchronizes metrics across all processes during training. Note: This will cause a synchronization overhead and slow down the training processes.
+
+    ```python
+    metrics = {"loss": torch.tensor(1.0)}
+    reduced_metrics = accelerator.all_reduce_dict(metrics)
+    print(reduced_metrics)
+    ```
+
+## Example
 
 To launch distributed training across multiple GPUs/CPUs, use the following approach:
 Each batch should be moved to the correct device. The `prepare_batch()` method simplifies this process.
 
 ### Example Code (train_script.py):
-```python
+```python exec="on" source="material-block" html="1"
 import torch
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
@@ -82,7 +102,7 @@ def train_epoch(epochs, model, dataloader, optimizer, accelerator):
 
     # Prepare model, optimizer, and dataloader for distributed training
     model, optimizer, dataloader = accelerator.prepare(model, optimizer, dataloader)
-    
+
     # accelerator.rank will provide you the rank of the process.
     if accelerator.rank == 0:
         print("Prepared model of type: ", type(model))
@@ -119,9 +139,9 @@ if __name__ =="__main__":
     accelerator = Accelerator(
         spawn=True,             # Enable multiprocessing spawn
         nprocs=4,               # Number of processes (e.g., GPUs)
-        compute_setup="cpu",    # or choose GPU 
+        compute_setup="cpu",    # or choose GPU
         backend="gloo"          # choose `nccl` for GPU
-    )   
+    )
 
     distributed_train_epoch = accelerator.distribute(train_epoch)
     distributed_train_epoch(n_epochs, model, dataloader, optimizer, accelerator)
@@ -129,57 +149,54 @@ if __name__ =="__main__":
 
 ### Running Distributed Training
 
-#### SLURM
-To launch distributed training across multiple GPUs:
-
-Inside an interactive `srun` session, you can directly use:
+The above example can be directly run on the terminal as following:
 
 ```bash
 python train_script.py
 ```
 
-Or submit the following sbatch script:
+- **SLURM**:
 
-```bash
-#!/bin/bash
-#SBATCH --job-name=MG_slurm
-#SBATCH --nodes=1      
-#SBATCH --ntasks=1              # tasks = number of nodes
-#SBATCH --gpus-per-task=4       # same as nprocs
-#SBATCH --cpus-per-task=4
-#SBATCH --mem=56G
+    To launch distributed training across multiple GPUs
 
-srun python3 test.py
-```
+    Inside an interactive `srun` session, you can directly use:
+    ```bash
+    python train_script.py
+    ```
 
-#### Torchrun
-To run distributed training with `torchrun`:
+    Or submit the following sbatch script:
+    ```bash
+    #!/bin/bash
+    #SBATCH --job-name=MG_slurm
+    #SBATCH --nodes=1
+    #SBATCH --ntasks=1              # tasks = number of nodes
+    #SBATCH --gpus-per-task=4       # same as nprocs
+    #SBATCH --cpus-per-task=4
+    #SBATCH --mem=56G
 
-```bash
-#!/bin/bash
-#SBATCH --job-name=MG_torchrun
-#SBATCH --nodes=1
-#SBATCH --ntasks=1              # tasks = number of nodes
-#SBATCH --gpus-per-task=2       # same as nprocs
-#SBATCH --cpus-per-task=4
-#SBATCH --mem=56G
+    srun python3 train_script.py
+    ```
 
-nodes=( $( scontrol show hostnames $SLURM_JOB_NODELIST ) )
-nodes_array=($nodes)
-head_node=${nodes_array[0]}
-head_node_ip=$(srun --nodes=1 --ntasks=1 -w "$head_node" hostname -I | awk '{print $1}')
+- **Torchrun**:
 
-srun torchrun --nnodes 1 --nproc_per_node 2 --rdzv_id $RANDOM --rdzv_backend c10d --rdzv_endpoint $head_node_ip:29522 test.py
-```
+    To run distributed training with `torchrun`
+    ```bash
+    #!/bin/bash
+    #SBATCH --job-name=MG_torchrun
+    #SBATCH --nodes=1
+    #SBATCH --ntasks=1              # tasks = number of nodes
+    #SBATCH --gpus-per-task=2       # same as nprocs
+    #SBATCH --cpus-per-task=4
+    #SBATCH --mem=56G
+
+    nodes=( $( scontrol show hostnames $SLURM_JOB_NODELIST ) )
+    nodes_array=($nodes)
+    head_node=${nodes_array[0]}
+    head_node_ip=$(srun --nodes=1 --ntasks=1 -w "$head_node" hostname -I | awk '{print $1}')
+
+    srun torchrun --nnodes 1 --nproc_per_node 2 --rdzv_id $RANDOM --rdzv_backend c10d --rdzv_endpoint $head_node_ip:29522 train_script.py
+    ```
 
 ## Conclusion
 
 The `Accelerator` class simplifies distributed training by handling process management, device setup, and data distribution. By integrating it into your PyTorch training workflow, you can efficiently scale training across multiple devices with minimal code modifications.
-
-## Footnotes
-
-Ensure you have PyTorch installed with distributed support. For CUDA-based training, install the appropriate CUDA version.
-
-```bash
-pip install torch torchvision torchaudio
-```

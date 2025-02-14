@@ -359,30 +359,29 @@ class Accelerator(DistributionStrategy):
         else:
             self.setup(rank)
 
-
         if hasattr(fun, "__wrapped__"):
             # Explicitly get the original (unbound) method, passing in the instance.
             # We need to call the original method in case so that MP spawn does not
             # create multiple processes. (To Avoid infinite loop)
             fun = fun.__wrapped__  # Unwrap if decorated
             fun(instance, *args, **kwargs) if instance else fun(*args, **kwargs)
-        else:    
+        else:
             fun(*args, **kwargs)
 
-    def is_class_method(self, fun, args):
+    def is_class_method(self, fun: Callable, args: Any) -> bool:
         """
         Determines if `fun` is a class method or a standalone function.
-        
+
         Args:
             fun (Callable): The function being checked.
             args (tuple): The arguments passed to the function.
-        
+
         Returns:
             bool: True if `fun` is a class method, False otherwise.
         """
-        return bool(args) and isinstance(args[0], object) and hasattr(args[0], '__dict__')
-    
-    def _spawn_method(self, instance, method, args, kwargs):
+        return bool(args) and isinstance(args[0], object) and hasattr(args[0], "__dict__")
+
+    def _spawn_method(self, instance: Any, method: Callable, args: Any, kwargs: Any) -> None:
 
         if self.spawn:
             # Spawn multiple processes that will run the worker function.
@@ -398,7 +397,6 @@ class Accelerator(DistributionStrategy):
         else:
             # In single process mode, call the worker with rank 0.
             self.worker(0, instance, method, args, kwargs)
-
 
     def distribute(self, fun: Callable) -> Callable:
         """
@@ -427,23 +425,23 @@ class Accelerator(DistributionStrategy):
 
         @functools.wraps(fun)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            
-            # Get the original picklable function 
-            # for the case of bound class method 
+
+            # Get the original picklable function
+            # for the case of bound class method
             # as well as a function
             if self.is_class_method(fun, args):
-                instance = args[0]  
+                instance = args[0]
                 method_name = fun.__name__
                 method = getattr(instance, method_name)
-                args = args[1:] 
+                args = args[1:]
                 self._spawn_method(instance, method, args, kwargs)
             else:
                 instance = None
                 # method_name = fun.__name__
-                # module = inspect.getmodule(fun)  
-                # method = getattr(module, method_name) if module else fun 
+                # module = inspect.getmodule(fun)
+                # method = getattr(module, method_name) if module else fun
                 self._spawn_method(instance, fun, args, kwargs)
-            
+
             if instance and hasattr(instance, "accelerator"):
                 instance.accelerator.finalize()
             else:

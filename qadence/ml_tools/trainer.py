@@ -622,7 +622,9 @@ class Trainer(BaseTrainer):
         num_batches: int,
     ) -> Iterable[tuple[torch.Tensor, ...] | None]:
         """
-        Yields batches from the provided dataloader. The batch of data is also moved 
+        Yields batches from the provided dataloader.
+
+        The batch of data is also moved
         to the correct device and dtype using accelerator.prepare.
 
         Args:
