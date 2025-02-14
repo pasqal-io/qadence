@@ -332,7 +332,7 @@ class Accelerator(DistributionStrategy):
                 logger.warning("Setting spawn=False")
                 self.spawn = False
 
-    def worker(self, rank: int, instance: Any, method_name: str, args: tuple, kwargs: dict) -> None:
+    def worker(self, rank: int, instance: Any, fun: Callable, args: tuple, kwargs: dict) -> None:
         """
         Worker function to be executed in each spawned process.
 
@@ -354,19 +354,51 @@ class Accelerator(DistributionStrategy):
             kwargs (dict): Keyword arguments to pass to the target method.
         """
         # Setup the accelerator for the given process rank (e.g., configuring GPU)
-        instance.accelerator.setup(rank)
-        method = getattr(instance, method_name)
-
-        # If the method is wrapped by a decorator, retrieve the original function.
-        if hasattr(method, "__wrapped__"):
-            # Explicitly call the original (unbound) method, passing in the instance.
-            # We need to call the original method in case so that MP spawn does not
-            # create multiple processes.
-            original_method = method.__wrapped__
-            original_method(instance, *args, **kwargs)
+        if instance and instance.accelerator:
+            instance.accelerator.setup(rank)
         else:
-            # Otherwise, simply call the method.
-            method(*args, **kwargs)
+            self.setup(rank)
+
+
+        if hasattr(fun, "__wrapped__"):
+            # Explicitly get the original (unbound) method, passing in the instance.
+            # We need to call the original method in case so that MP spawn does not
+            # create multiple processes. (To Avoid infinite loop)
+            fun = fun.__wrapped__  # Unwrap if decorated
+            fun(instance, *args, **kwargs) if instance else fun(*args, **kwargs)
+        else:    
+            fun(*args, **kwargs)
+
+    def is_class_method(self, fun, args):
+        """
+        Determines if `fun` is a class method or a standalone function.
+        
+        Args:
+            fun (Callable): The function being checked.
+            args (tuple): The arguments passed to the function.
+        
+        Returns:
+            bool: True if `fun` is a class method, False otherwise.
+        """
+        return bool(args) and isinstance(args[0], object) and hasattr(args[0], '__dict__')
+    
+    def _spawn_method(self, instance, method, args, kwargs):
+
+        if self.spawn:
+            # Spawn multiple processes that will run the worker function.
+            nprocs = self.nprocs
+            if self.num_nodes > 1:
+                nprocs //= self.num_nodes
+            mp.spawn(
+                self.worker,
+                args=(instance, method, args, kwargs),
+                nprocs=int(nprocs),
+                join=True,
+            )
+        else:
+            # In single process mode, call the worker with rank 0.
+            self.worker(0, instance, method, args, kwargs)
+
 
     def distribute(self, fun: Callable) -> Callable:
         """
@@ -394,21 +426,28 @@ class Accelerator(DistributionStrategy):
         """
 
         @functools.wraps(fun)
-        def wrapper(instance: Any, *args: Any, **kwargs: Any) -> Any:
-            if self.spawn:
-                # Spawn multiple processes that will run the worker function.
-                nprocs = self.nprocs
-                if self.num_nodes > 1:
-                    nprocs //= self.num_nodes
-                mp.spawn(
-                    self.worker,
-                    args=(instance, fun.__name__, args, kwargs),
-                    nprocs=int(nprocs),
-                    join=True,
-                )
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            
+            # Get the original picklable function 
+            # for the case of bound class method 
+            # as well as a function
+            if self.is_class_method(fun, args):
+                instance = args[0]  
+                method_name = fun.__name__
+                method = getattr(instance, method_name)
+                args = args[1:] 
+                self._spawn_method(instance, method, args, kwargs)
             else:
-                # In single process mode, call the worker with rank 0.
-                self.worker(0, instance, fun.__name__, args, kwargs)
+                instance = None
+                # method_name = fun.__name__
+                # module = inspect.getmodule(fun)  
+                # method = getattr(module, method_name) if module else fun 
+                self._spawn_method(instance, fun, args, kwargs)
+            
+            if instance and hasattr(instance, "accelerator"):
+                instance.accelerator.finalize()
+            else:
+                self.finalize()
 
             # TODO: Return the original returns from fun
             # Currently it only returns the model and optimizer
