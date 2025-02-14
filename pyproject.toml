@@ -23,11 +23,12 @@ authors = [
     { name = "Charles Moussa", email = "charles.moussa@pasqal.com" },
     { name = "Giorgio Tosti Balducci", email = "giorgio.tosti-balducci@pasqal.com" },
     { name = "Daniele Cucurachi", email = "daniele.cucurachi@pasqal.com" },
-    { name = "Pim Venderbosch", email = "pim.venderbosch@pasqal.com" }
+    { name = "Pim Venderbosch", email = "pim.venderbosch@pasqal.com" },
+    { name = "Manu Lahariya", email = "manu.lahariya@pasqal.com" },
 ]
 requires-python = ">=3.9"
 license = { text = "Apache 2.0" }
-version = "1.10.2"
+version = "1.10.3"
 classifiers = [
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python",
