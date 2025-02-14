@@ -215,24 +215,15 @@ config = TrainConfig(
 )
 ```
 
-#### Advanced Distributed Training and Precision Options
+#### Advanced Distributed Training
 
 - `spawn` (**bool**): When enabled, spawns additional subprocesses for training. This is useful for parallel or distributed training setups.
 
 - `nprocs` (**int**): Specifies the number of processes to be used when `spawn` is enabled. For multi-GPU training, this should match the total number of GPUs available.
 
-- `compute_setup` (**str**): Determines the compute device configuration:
-  - `"auto"`: Automatically selects GPU if available.
-  - `"gpu"`: Forces GPU usage and errors if no GPU is detected.
-  - `"cpu"`: Forces the use of the CPU.
+- `compute_setup` (**str**): Determines the compute device configuration: 1.`"auto"` (automatically selects GPU if available), 2. `"gpu"` - (forces GPU usage and errors if no GPU is detected), and 3. `"cpu"` (Forces the use of the CPU).
 
 - `backend` (**str**): Specifies the communication backend for distributed training. Common options are `"gloo"` (default), `"nccl"` (optimized for GPUs), or `"mpi"`, depending on your setup.
-
-- `log_setup` (**str**): Configures the device used for logging. Using `"cpu"` ensures logging runs on the CPU (which may avoid conflicts with GPU operations), while `"auto"` aligns logging with the compute device.
-
-- `dtype` (**dtype** or **None**): Sets the numerical precision (data type) for computations. For instance, you can use `torch.float32` or `torch.float16` depending on your performance and precision needs.
-
-- `all_reduce_metrics` (**bool**): When enabled, aggregates metrics (such as loss or accuracy) across all training processes to provide a unified summary, though it may introduce additional synchronization overhead.
 
 Example: For CPU MultiProcessing
 ```python
@@ -249,10 +240,20 @@ Example: For GPU Training
 config = TrainConfig(
     spawn= True,
     compute_setup="gpu",
-    nprocs=5, # World-size/Total number of GPUs
+    nprocs=2, # World-size/Total number of GPUs
     backend="nccl"
 )
 ```
+
+#### Precision Options
+
+- `dtype` (**dtype** or **None**): Sets the numerical precision (data type) for computations. For instance, you can use `torch.float32` or `torch.float16` depending on your performance and precision needs.
+
+Furthermore, the user can also utilize the following options:
+
+- `log_setup` (**str**): Configures the device used for logging. Using `"cpu"` ensures logging runs on the CPU (which may avoid conflicts with GPU operations), while `"auto"` aligns logging with the compute device.
+
+- `all_reduce_metrics` (**bool**): When enabled, aggregates metrics (such as loss or accuracy) across all training processes to provide a unified summary, though it may introduce additional synchronization overhead.
 
 ## 3. Experiment tracking with mlflow
 
