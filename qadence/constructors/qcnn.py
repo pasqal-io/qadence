@@ -1,11 +1,35 @@
+from __future__ import annotations
+from typing import Any
+
+import torch
+from qadence import (
+    QNN,
+    RX,
+    RZ,
+    AbstractBlock,
+    BackendName,
+    DiffMode,
+    CZ,
+    I,
+    Parameter,
+    QuantumCircuit,
+    Z,
+    add,
+    chain,
+    feature_map,
+    kron,
+    tag,
+)
+
+####
 class qcnn(QNN):
     def __init__(
         self,
         n_inputs: int,
         n_qubits: int,
         depth: list[int],
-        operations: list[Any],
-        entangler: Any,
+        operations: list[RX,RZ,RX],
+        entangler: CZ,
         random_meas: bool,
         use_dagger: bool = True,  # True for using the adjoint operation
         **kwargs: Any,
@@ -37,7 +61,7 @@ class qcnn(QNN):
         circuit, last_target_qubits = self.create_circuit(
             self.n_inputs, self.n_qubits, self.depth, self.operations, self.entangler
         )
-        obs = self.create_obs(self.n_qubits, self.random_meas, last_target_qubits)
+        obs = self.create_obs(self.n_qubits, self.random_meas)
 
         super().__init__(
             circuit=circuit,
@@ -69,8 +93,8 @@ class qcnn(QNN):
     def create_gate_sequence(
         self,
         params: dict,
-        operations: list[Any],
-        entangler: Any,
+        operations: list[RX,RZ,RX],
+        entangler: CZ,
         layer: int,
         rep: int,
         control: int,
@@ -132,8 +156,8 @@ class qcnn(QNN):
         reps: int,
         current_indices: list[int],
         params: dict,
-        operations: list[Any],
-        entangler: Any,
+        operations: list[RX,RZ,RX],
+        entangler: CZ,
         n_qubits: int,
     ) -> tuple[AbstractBlock, list[int]]:
         """
@@ -215,7 +239,7 @@ class qcnn(QNN):
         n_qubits: int,
         depth: list[int],
         operations: list[Any],
-        entangler: Any,
+        entangler: CZ,
     ) -> tuple[QuantumCircuit, list[int]]:
         """
         Defines a single, continuous quantum circuit with custom repeating ansatz for each depth.
@@ -233,20 +257,29 @@ class qcnn(QNN):
         """
         # Feature map (FM)
         fm_temp = []
+        qubits_per_input = n_qubits // n_inputs  # Base number of qubits per input
+        exceeding_qubits = n_qubits % n_inputs  # Number of exceeding qubits
+        start = 0  # Track current qubit index
+
         for i in range(n_inputs):
-            # Calculate the start and end qubits for each input feature
-            start = i * (n_qubits // n_inputs)
-            end = (i + 1) * (n_qubits // n_inputs) if i != n_inputs - 1 else n_qubits
-            support = tuple(range(start, end))
+            # Assign base qubits + 1 extra if input has exceeding qubits
+            num_qubits = (
+                qubits_per_input + 1 if i < exceeding_qubits else qubits_per_input
+            )
+            end = start + num_qubits
+
+            # Create FM for this input
             fm_temp.append(
                 feature_map(
-                    n_qubits=len(support),
+                    n_qubits=num_qubits,
                     param=f"\u03C6_{i}",
                     op=RX,
                     fm_type="Fourier",
-                    support=support,
+                    support=tuple(range(start, end)),
                 )
             )
+            start = end  # Update starting index for next FM
+
         fm = kron(*fm_temp)
         tag(fm, "FM")
 
@@ -294,7 +327,7 @@ class qcnn(QNN):
         return qc, next_indices
 
     def create_obs(
-        self, n_qubits: int, random_meas: bool, last_target_qubits: list[int]
+        self, n_qubits: int, random_meas: bool
     ) -> AbstractBlock | list[AbstractBlock]:
         """
         Defines the measurements to be performed on the specified target qubits.
@@ -309,10 +342,10 @@ class qcnn(QNN):
                 or a list of observables.
         """
         if random_meas:
-            w1 = [Parameter(f"w{i}") for i in last_target_qubits]
-            obs = add(Z(i) * w for i, w in zip(last_target_qubits, w1))
+            w1 = [Parameter(f"w{i}") for i in range(n_qubits)]
+            obs = add(Z(i) * w for i, w in zip(range(n_qubits), w1))
         else:
-            obs = add(Z(i) for i in last_target_qubits)
+            obs = add(Z(i) for i in range(n_qubits))
 
         print(obs)
         return obs
