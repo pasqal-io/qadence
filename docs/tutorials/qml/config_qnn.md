@@ -13,7 +13,7 @@ One convenient way to construct these three parts of the model is to use the con
 
 The model output is the expectation value of the defined observable(s). We use the `ObservableConfig` class to specify the observable.
 
-It can be used to create Hamiltonians with 2-qubit interactions and single-qubit detunings. Any Hamiltonian supported by [`hamiltonian_factory`](qadence.constructors.hamiltonians.hamiltonian_factory) can be specified for measurement.
+It can be used to create Hamiltonians with 2-qubit interactions and single-qubit detunings. Any Hamiltonian supported by [`hamiltonian_factory`][qadence.constructors.hamiltonians.hamiltonian_factory] can be specified for measurement.
 
 For example, suppose we want to measure the Z operator:
 
