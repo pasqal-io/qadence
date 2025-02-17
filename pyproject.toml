@@ -23,11 +23,12 @@ authors = [
     { name = "Charles Moussa", email = "charles.moussa@pasqal.com" },
     { name = "Giorgio Tosti Balducci", email = "giorgio.tosti-balducci@pasqal.com" },
     { name = "Daniele Cucurachi", email = "daniele.cucurachi@pasqal.com" },
-    { name = "Pim Venderbosch", email = "pim.venderbosch@pasqal.com" }
+    { name = "Pim Venderbosch", email = "pim.venderbosch@pasqal.com" },
+    { name = "Manu Lahariya", email = "manu.lahariya@pasqal.com" },
 ]
 requires-python = ">=3.9"
 license = { text = "Apache 2.0" }
-version = "1.10.1"
+version = "1.10.3"
 classifiers = [
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python",
@@ -64,8 +65,8 @@ allow-ambiguous-features = true
 
 [project.optional-dependencies]
 pulser = [
-    "pulser-core==1.2.1",
-    "pulser-simulation==1.2.1",
+    "pulser-core==1.3.0",
+    "pulser-simulation==1.3.0",
     "pasqal-cloud==0.12.7",
 ]
 visualization = [
@@ -75,7 +76,7 @@ visualization = [
     # "scour",
 ]
 horqrux = [
-    "horqrux==0.6.2",
+    "horqrux==0.7.0",
     "jax",
     "flax",
     "optax",
@@ -136,7 +137,7 @@ filterwarnings = [
 [tool.hatch.envs.docs]
 dependencies = [
     "mkdocs",
-    "mkdocs_autorefs<1.3.1",
+    "mkdocs_autorefs",
     "mkdocs-material",
     "mkdocstrings",
     "mkdocstrings-python",
