@@ -138,12 +138,15 @@ Users also report problems running Hatch on Windows, we suggest using WSL2.
 If you use Qadence for a publication, we kindly ask you to cite our work using the following BibTex entry:
 
 ```latex
-@article{qadence2024pasqal,
-  title = {Qadence: a differentiable interface for digital-analog programs.},
-  author={Dominik Seitz and Niklas Heim and João P. Moutinho and Roland Guichard and Vytautas Abramavicius and Aleksander Wennersteen and Gert-Jan Both and Anton Quelle and Caroline de Groot and Gergana V. Velikova and Vincent E. Elfving and Mario Dagrada},
-  journal={arXiv:2401.09915},
-  url = {https://github.com/pasqal-io/qadence},
-  year = {2024}
+@article{qadence2025,
+author = {Seitz, Dominik and Heim, Niklas and Moutinho, João and Guichard, Roland and Abramavicius, Vytautas and Wennersteen, Aleksander and Both, Gert-Jan and Quelle, Anton and Groot, Caroline and Velikova, Gergana and Elfving, Vincent and Dagrada, Mario},
+year = {2025},
+month = {01},
+pages = {1-14},
+title = {Qadence: a differentiable interface for digital and analog programs},
+volume = {PP},
+journal = {IEEE Software},
+doi = {10.1109/MS.2025.3536607}
 }
 ```
 
