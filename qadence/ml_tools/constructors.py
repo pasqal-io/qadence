@@ -33,7 +33,6 @@ from qadence.types import (
     InputDiffMode,
     Interaction,
     MultivariateStrategy,
-    ObservableTransform,
     ReuploadScaling,
     Strategy,
     TParameter,
@@ -707,14 +706,6 @@ def _interleave_ansatz_in_fm(
     return chain(*full_fm)
 
 
-ObservableTransformMap = {
-    ObservableTransform.RANGE: lambda detuning, scale, shift: (
-        (shift, shift - scale) if detuning is N else (0.5 * (shift - scale), 0.5 * (scale + shift))
-    ),
-    ObservableTransform.SCALE: lambda _, scale, shift: (scale, shift),
-}
-
-
 def _global_identity(register: int | Register) -> KronBlock:
     """Create a global identity block."""
     return kron(
@@ -736,9 +727,6 @@ def create_observable(
     Returns:
         AbstractBlock: The observable block.
     """
-    if config.transformation_type == ObservableTransform.RANGE:
-        config.scale, config.shift = ObservableTransformMap[config.transformation_type](config.detuning, config.scale, config.shift)  # type: ignore[index]
-
     shifting_term: AbstractBlock = config.shift * _global_identity(register)  # type: ignore[operator]
     detuning_hamiltonian: AbstractBlock = config.scale * hamiltonian_factory(  # type: ignore[operator]
         register=register,

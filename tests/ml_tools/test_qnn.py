@@ -23,7 +23,7 @@ from qadence.ml_tools.constructors import (
 from qadence.operations import RX, RY, Z
 from qadence.parameters import FeatureParameter, Parameter
 from qadence.states import uniform_state
-from qadence.types import PI, AnsatzType, BackendName, DiffMode, ObservableTransform, Strategy
+from qadence.types import PI, AnsatzType, BackendName, DiffMode, Strategy
 
 
 def build_circuit(n_qubits_per_feature: int, n_features: int, depth: int = 2) -> QuantumCircuit:
@@ -470,14 +470,12 @@ def test_config_qnn_output_transform() -> None:
         interaction=Interaction.ZZ,
         scale=-1.0,
         shift=1.0,
-        transformation_type="range",  # type: ignore[arg-type]
     )
     transformed_observable_config = ObservableConfig(
         detuning=Z,
         interaction=Interaction.ZZ,
         scale=-10.0,
         shift=10.0,
-        transformation_type=ObservableTransform.RANGE,  # type: ignore[arg-type]
     )
 
     qnn = QNN.from_configs(

@@ -12,7 +12,7 @@ from qadence.parameters import Parameter
 from qadence.blocks import AbstractBlock, add, block_is_qubit_hamiltonian
 from qadence.operations import N, X, Y, Z, H
 from qadence.register import Register
-from qadence.types import Interaction, ObservableTransform, TArray, TParameter
+from qadence.types import Interaction, TArray, TParameter
 
 logger = getLogger(__name__)
 
@@ -273,16 +273,6 @@ class ObservableConfig:
     """The scale by which to multiply the output of the observable."""
     shift: TParameter = 0.0
     """The shift to add to the output of the observable."""
-    transformation_type: ObservableTransform = ObservableTransform.NONE  # type: ignore[assignment]
-    """
-    If ObservableTransform.SCALE or ObservableTransform.NONE then shift and scale are assumed to be.
-
-    the shift and scale parameter respectively for linear transformation.
-
-    if ObservableTransform.RANGE then shift and scale are assumed to form the range of the expected
-    output. The QNN output is linearly transformed accordingly to have the output be bounded in
-    range [shift, scale].
-    """
     trainable_transform: bool | None = None
     """
     Whether to have a trainable transformation on the output of the observable.
@@ -316,14 +306,12 @@ class ObservableConfig:
 def total_magnetization_config(
     scale: TParameter = 1.0,
     shift: TParameter = 0.0,
-    transformation_type: ObservableTransform = ObservableTransform.NONE,  # type: ignore[assignment]
     trainable_transform: bool | None = None,
 ) -> ObservableConfig:
     return ObservableConfig(
         detuning=Z,
         scale=scale,
         shift=shift,
-        transformation_type=transformation_type,
         trainable_transform=trainable_transform,
     )
 
@@ -331,7 +319,6 @@ def total_magnetization_config(
 def zz_hamiltonian_config(
     scale: TParameter = 1.0,
     shift: TParameter = 0.0,
-    transformation_type: ObservableTransform = ObservableTransform.NONE,  # type: ignore[assignment]
     trainable_transform: bool | None = None,
 ) -> ObservableConfig:
     return ObservableConfig(
@@ -339,6 +326,30 @@ def zz_hamiltonian_config(
         detuning=Z,
         scale=scale,
         shift=shift,
-        transformation_type=transformation_type,
+        trainable_transform=trainable_transform,
+    )
+
+
+def ising_hamiltonian_config(
+    scale: TParameter = 1.0,
+    shift: TParameter = 0.0,
+    trainable_transform: bool | None = None,
+) -> ObservableConfig:
+
+    def ZZ_Z_hamiltonian(i: int, j: int) -> AbstractBlock:
+        result = Z(i) @ Z(j)
+
+        if i == 0:
+            result += Z(j)
+        elif i == 1 and j == 2:
+            result += Z(0)
+
+        return result
+
+    return ObservableConfig(
+        interaction=ZZ_Z_hamiltonian,
+        detuning=Z,
+        scale=scale,
+        shift=shift,
         trainable_transform=trainable_transform,
     )

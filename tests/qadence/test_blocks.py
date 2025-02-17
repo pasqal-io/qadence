@@ -34,6 +34,7 @@ from qadence.constructors import (
     zz_hamiltonian,
     zz_hamiltonian_config,
     total_magnetization_config,
+    ising_hamiltonian_config,
 )
 from qadence.ml_tools import create_observable
 from qadence.operations import CNOT, CRX, CRY, RX, RY, H, I, X, Y, Z, Zero
@@ -68,6 +69,9 @@ def test_block_is_qubit_ham_constructors() -> None:
     )
     assert block_is_qubit_hamiltonian(
         create_observable(register=n_qubits, config=zz_hamiltonian_config())
+    )
+    assert block_is_qubit_hamiltonian(
+        create_observable(register=n_qubits, config=ising_hamiltonian_config())
     )
 
 

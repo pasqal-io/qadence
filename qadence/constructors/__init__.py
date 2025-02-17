@@ -19,6 +19,7 @@ from .hamiltonians import (
     zz_hamiltonian,
     total_magnetization_config,
     zz_hamiltonian_config,
+    ising_hamiltonian_config,
 )
 
 from .rydberg_hea import rydberg_hea, rydberg_hea_layer
@@ -41,6 +42,7 @@ __all__ = [
     "ObservableConfig",
     "total_magnetization_config",
     "zz_hamiltonian_config",
+    "ising_hamiltonian_config",
     "qft",
     "daqc_transform",
     "rydberg_hea",
