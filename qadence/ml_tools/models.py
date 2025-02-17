@@ -208,6 +208,8 @@ class QNN(QuantumModel):
         else:
             raise ValueError(f"Unkown forward diff mode: {self.input_diff_mode}")
 
+        self._model_configs: dict = dict()
+
     @classmethod
     def from_configs(
         cls,
@@ -293,7 +295,13 @@ class QNN(QuantumModel):
         """
         from .constructors import build_qnn_from_configs
 
-        return build_qnn_from_configs(
+        _model_configs = {
+            "register": register,
+            "observable_config": obs_config,
+            "fm_config": fm_config,
+            "ansatz_config": ansatz_config,
+        }
+        qnn = build_qnn_from_configs(
             register=register,
             observable_config=obs_config,
             fm_config=fm_config,
@@ -305,6 +313,15 @@ class QNN(QuantumModel):
             configuration=configuration,
             input_diff_mode=input_diff_mode,
         )
+        qnn._model_configs = _model_configs
+        return qnn
+
+    def __str__(self) -> str | Any:
+        if bool(self._model_configs):
+            configs_str = " \n".join((k + " = " + str(v) for k, v in self._model_configs.items()))
+            return f"{type(self).__name__}(\n {configs_str} \n)"
+
+        return super().__str__()
 
     def forward(
         self,
