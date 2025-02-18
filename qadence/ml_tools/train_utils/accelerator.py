@@ -343,8 +343,7 @@ class Accelerator(DistributionStrategy):
         It performs the following tasks:
           1. Sets up the accelerator for the given process rank. This typically involves configuring
              the GPU or other hardware resources for distributed training.
-          2. Retrieves the method specified by `method_name` from the provided `instance`.
-          3. If the retrieved method has been decorated (i.e. it has a '__wrapped__' attribute),
+          2. If the retrieved method has been decorated (i.e. it has a '__wrapped__' attribute),
              the original, unwrapped function is invoked with the given arguments. Otherwise,
              the method is called directly.
 
@@ -352,7 +351,8 @@ class Accelerator(DistributionStrategy):
             rank (int): The rank (or identifier) of the spawned process.
             instance (object): The object (Trainer) that contains the method to execute.
                                This object is expected to have an `accelerator` attribute with a `setup(rank)` method.
-            method_name (str): The name of the method on the instance to be executed.
+                               This argument is optional, in case it is None, the fun will be called independently.
+            fun (Callable): The function of the method on the instance to be executed.
             args (tuple): Positional arguments to pass to the target method.
             kwargs (dict): Keyword arguments to pass to the target method.
         """
@@ -385,6 +385,20 @@ class Accelerator(DistributionStrategy):
         return bool(args) and isinstance(args[0], object) and hasattr(args[0], "__dict__")
 
     def _spawn_method(self, instance: Any, method: Callable, args: Any, kwargs: Any) -> None:
+        """
+        This method spawns the required numbers of processes.
+
+        - if spawn is `True`, it will spawn `nproc` processes across all nodes
+        - if spawn is `False`, it will run a single process.
+
+        Args:
+            instance (object): The object (Trainer) that contains the method to execute.
+                               This object is expected to have an `accelerator` attribute with a `setup(rank)` method.
+                               This argument is optional, in case it is None, the fun will be called independently.
+            method (Callable): The function of the method on the instance to be executed.
+            args (tuple): Positional arguments to pass to the target method.
+            kwargs (dict): Keyword arguments to pass to the target method.
+        """
 
         if self.spawn:
             # Spawn multiple processes that will run the worker function.
@@ -405,8 +419,8 @@ class Accelerator(DistributionStrategy):
         """
         Decorator to distribute the fit function across multiple processes.
 
-        This function is
-        generic and can work with other methods as well. Weather it is bound or unbound.
+        This function is generic and can work with other methods as well.
+        Weather it is bound or unbound.
 
         When applied to a function (typically a fit function), this decorator
         will execute the function in a distributed fashion using torch.multiprocessing if

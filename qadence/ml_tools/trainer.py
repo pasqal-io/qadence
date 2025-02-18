@@ -676,8 +676,9 @@ class Trainer(BaseTrainer):
         Aggregates the loss and metrics using the Accelerator's all_reduce_dict method if aggregation is enabled.
 
         Args:
-            loss (torch.Tensor): The loss tensor.
-            metrics (dict[str, Any]): A dictionary of metric tensors.
+            result:     (tuple[torch.Tensor, dict[str, Any]])
+                            The result consisting of loss and metrics.For more details,
+                            look at the signature of build_optimize_result.
 
         Returns:
             tuple[torch.Tensor, dict[str, Any]]: The aggregated loss and metrics.
