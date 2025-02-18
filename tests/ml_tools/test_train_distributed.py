@@ -102,7 +102,7 @@ def test_train_spawn(Basic: nn.Module, backend: str, device: str) -> None:
 
     trainer.fit()
 
-    time.sleep(2)  # Allow time for processes to spawn and settle
+    time.sleep(5)  # Allow time for processes to spawn and settle
     worker_count: int = count_worker_processes(master_pid)
 
     assert (
@@ -148,7 +148,7 @@ def test_train_spawn_dictdataloader(Basic: nn.Module, backend: str, device: str)
 
     trainer.fit()
 
-    time.sleep(2)  # Allow time for processes to spawn and settle
+    time.sleep(5)  # Allow time for processes to spawn and settle
     worker_count: int = count_worker_processes(master_pid)
 
     assert (
