@@ -1,11 +1,13 @@
+import os
+import random
+import time
+import multiprocessing
+from typing import Any, Dict, Tuple
+
 import pytest
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import os
-import random
-import multiprocessing
-import time
 import psutil
 from torch.utils.data import DataLoader
 
@@ -20,33 +22,39 @@ def dataloader(batch_size: int = 25) -> DataLoader:
 
 
 def dictdataloader() -> DictDataLoader:
-    data_configs = {
+    data_configs: Dict[str, Dict[str, int]] = {
         "train": {"data_size": 50, "batch_size": 5},
         "val": {"data_size": 30, "batch_size": 5},
     }
-    dls = {}
+    dls: Dict[str, DataLoader] = {}
     for name, config in data_configs.items():
-        data_size = config["data_size"]
-        batch_size = config["batch_size"]
+        data_size: int = config["data_size"]
+        batch_size: int = config["batch_size"]
         x = torch.rand(data_size, 1)
         y = torch.sin(x)
         dls[name] = to_dataloader(x, y, batch_size=batch_size, infinite=True)
     return DictDataLoader(dls)
 
-def count_worker_processes(master_pid):
+
+def count_worker_processes(master_pid: int) -> int:
     """Count all worker processes spawned by the master process."""
     parent = psutil.Process(master_pid)
     children = parent.children(recursive=True)
     return len(children)
 
-def normal_loss_fn(model, data):
+
+def normal_loss_fn(
+    model: nn.Module, data: Tuple[torch.Tensor, torch.Tensor]
+) -> Tuple[torch.Tensor, Dict[str, Any]]:
     """Picklable loss function for normal DataLoader."""
     x, y = data
     out = model(x)
     return nn.MSELoss()(out, y), {}
 
 
-def dict_loss_fn(model, data_dict):
+def dict_loss_fn(
+    model: nn.Module, data_dict: Dict[str, Tuple[torch.Tensor, torch.Tensor]]
+) -> Tuple[torch.Tensor, Dict[str, Any]]:
     """Picklable loss function for DictDataLoader."""
     losses = []
     for _, (x, y) in data_dict.items():
@@ -55,25 +63,24 @@ def dict_loss_fn(model, data_dict):
     avg_loss = sum(losses) / len(losses)
     return avg_loss, {}
 
+
 @pytest.mark.parametrize("backend", ["gloo", "nccl"])
 @pytest.mark.parametrize("device", ["cpu", "gpu", "auto"])
-def test_train_spawn(
-    Basic: nn.Module, backend: str, device: str
-):
+def test_train_spawn(Basic: nn.Module, backend: str, device: str) -> None:
     """Test that Trainer.fit() correctly spawns multiple processes for normal DataLoader."""
     if device in ["gpu", "auto"] and not torch.cuda.is_available():
         pytest.skip("CUDA is not available for GPU/Auto mode.")
     if backend == "nccl" and not torch.cuda.is_available():
         pytest.skip("CUDA is required for NCCL backend.")
 
-    model = Basic
-    optimizer = optim.Adam(model.parameters(), lr=0.01)
-    nprocs = 2
+    model: nn.Module = Basic
+    optimizer: optim.Optimizer = optim.Adam(model.parameters(), lr=0.01)
+    nprocs: int = 2
 
     os.environ["MASTER_ADDR"] = "localhost"
     os.environ["MASTER_PORT"] = str(random.randint(10000, 60000))
 
-    config = TrainConfig(
+    config: TrainConfig = TrainConfig(
         compute_setup=device,
         backend=backend,
         spawn=True,
@@ -82,7 +89,7 @@ def test_train_spawn(
         print_every=1,
     )
 
-    trainer = Trainer(
+    trainer: Trainer = Trainer(
         model=model,
         optimizer=optimizer,
         config=config,
@@ -91,35 +98,35 @@ def test_train_spawn(
         optimize_step=optimize_step,
     )
 
-    master_pid = os.getpid()
+    master_pid: int = os.getpid()
 
     trainer.fit()
 
     time.sleep(2)  # Allow time for processes to spawn and settle
-    worker_count = count_worker_processes(master_pid)
+    worker_count: int = count_worker_processes(master_pid)
 
-    assert worker_count >= nprocs, f"Expected at least {nprocs} worker processes, found {worker_count}"
+    assert (
+        worker_count >= nprocs
+    ), f"Expected at least {nprocs} worker processes, found {worker_count}"
 
 
 @pytest.mark.parametrize("backend", ["gloo", "nccl"])
 @pytest.mark.parametrize("device", ["cpu", "gpu", "auto"])
-def test_train_spawn_dictdataloader(
-    Basic: nn.Module, backend: str, device: str
-):
+def test_train_spawn_dictdataloader(Basic: nn.Module, backend: str, device: str) -> None:
     """Test that Trainer.fit() correctly spawns multiple processes for DictDataLoader."""
     if device in ["gpu", "auto"] and not torch.cuda.is_available():
         pytest.skip("CUDA is not available for GPU/Auto mode.")
     if backend == "nccl" and not torch.cuda.is_available():
         pytest.skip("CUDA is required for NCCL backend.")
 
-    model = Basic
-    optimizer = optim.Adam(model.parameters(), lr=0.01)
-    nprocs = 2
+    model: nn.Module = Basic
+    optimizer: optim.Optimizer = optim.Adam(model.parameters(), lr=0.01)
+    nprocs: int = 2
 
     os.environ["MASTER_ADDR"] = "localhost"
     os.environ["MASTER_PORT"] = str(random.randint(10000, 60000))
 
-    config = TrainConfig(
+    config: TrainConfig = TrainConfig(
         compute_setup=device,
         backend=backend,
         spawn=True,
@@ -128,7 +135,7 @@ def test_train_spawn_dictdataloader(
         print_every=1,
     )
 
-    trainer = Trainer(
+    trainer: Trainer = Trainer(
         model=model,
         optimizer=optimizer,
         config=config,
@@ -137,11 +144,13 @@ def test_train_spawn_dictdataloader(
         optimize_step=optimize_step,
     )
 
-    master_pid = os.getpid()
+    master_pid: int = os.getpid()
 
     trainer.fit()
 
     time.sleep(2)  # Allow time for processes to spawn and settle
-    worker_count = count_worker_processes(master_pid)
+    worker_count: int = count_worker_processes(master_pid)
 
-    assert worker_count >= nprocs, f"Expected at least {nprocs} worker processes, found {worker_count}"
+    assert (
+        worker_count >= nprocs
+    ), f"Expected at least {nprocs} worker processes, found {worker_count}"
