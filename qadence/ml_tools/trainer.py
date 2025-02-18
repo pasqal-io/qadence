@@ -521,7 +521,7 @@ class Trainer(BaseTrainer):
             )
             self.ng_params = ng_params
             loss_metrics = loss, metrics
-        
+
         # --------------------- FIX: Post-Optimization Loss --------------------- #
         # Because the loss/metrics are returned before the optimization. To sync
         # model state and current loss/metrics we calculate them again after optimization.
