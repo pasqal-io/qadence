@@ -285,18 +285,21 @@ class Accelerator(DistributionStrategy):
         Returns:
             Any: The batch with all elements moved to `self.device` and cast to `self.data_dtype`.
         """
-        if batch:
-            if isinstance(batch, dict):
-                return {
-                    key: data_to_device(value, device=self.device, dtype=self.data_dtype)
-                    for key, value in batch.items()
-                }
-            elif isinstance(batch, (tuple, list)):
-                return tuple(
-                    data_to_device(x, device=self.device, dtype=self.data_dtype) for x in batch
-                )
-            else:
-                return data_to_device(batch, device=self.device, dtype=self.data_dtype)
+        if batch is None:
+            return None
+
+        if isinstance(batch, dict):
+            return {
+                key: data_to_device(value, device=self.device, dtype=self.data_dtype)
+                for key, value in batch.items()
+            }
+        elif isinstance(batch, (tuple, list)):
+            return tuple(
+                data_to_device(x, device=self.device, dtype=self.data_dtype) for x in batch
+            )
+        elif isinstance(batch, torch.Tensor):
+            return data_to_device(batch, device=self.device, dtype=self.data_dtype)
+        return
 
     def all_reduce_dict(self, d: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
         """
