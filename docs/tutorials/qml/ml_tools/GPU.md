@@ -225,7 +225,7 @@ Slurm can be used to train to train the model.
 - `nprocs` should be equal to the total number of gpus (world_size). which is this case is 4.
 
 ```bash
-##!/bin/bash
+#!/bin/bash
 #SBATCH --job-name=multi_node
 #SBATCH --nodes=2
 #SBATCH --ntasks=2
@@ -243,7 +243,7 @@ Torchrun takes care of setting the `nprocs` and `spawn` based on the cluster set
 - `nproc_per_node` should be equal to the number of GPUs per node.
 
 ```bash
-##!/bin/bash
+#!/bin/bash
 #SBATCH --job-name=multi_node
 #SBATCH --nodes=2
 #SBATCH --ntasks=2
