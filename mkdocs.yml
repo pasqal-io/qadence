@@ -43,14 +43,19 @@ nav:
 
     - Variational quantum algorithms:
       - tutorials/qml/index.md
-      - Training: tutorials/qml/ml_tools/trainer.md
-      - Training Callbacks: tutorials/qml/ml_tools/callbacks.md
-      - Data and Configurations: tutorials/qml/ml_tools/data_and_config.md
-      - Accelerator: tutorials/qml/ml_tools/accelerator.md
       - Configuring a QNN: tutorials/qml/config_qnn.md
       - Quantum circuit learning: tutorials/qml/qcl.md
       - Solving MaxCut with QAOA: tutorials/qml/qaoa.md
       - Solving a 1D ODE: tutorials/qml/dqc_1d.md
+
+    - ML Tools:
+      - tutorials/qml/ml_tools/intro.md
+      - Training: tutorials/qml/ml_tools/trainer.md
+      - Data and Configurations: tutorials/qml/ml_tools/data_and_config.md
+      - Training Callbacks: tutorials/qml/ml_tools/callbacks.md
+      - Accelerator: tutorials/qml/ml_tools/accelerator.md
+      - CPU Training: tutorials/qml/ml_tools/CPU.md
+      - GPU Training: tutorials/qml/ml_tools/GPU.md
 
     - Advanced Tutorials:
       - tutorials/advanced_tutorials/index.md
