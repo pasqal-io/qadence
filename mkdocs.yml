@@ -53,7 +53,7 @@ nav:
       - Training: tutorials/qml/ml_tools/trainer.md
       - Data and Configurations: tutorials/qml/ml_tools/data_and_config.md
       - Training Callbacks: tutorials/qml/ml_tools/callbacks.md
-      - Accelerator: tutorials/qml/ml_tools/accelerator.md
+      - Accelerator: tutorials/qml/ml_tools/accelerator_doc.md
       - CPU Training: tutorials/qml/ml_tools/CPU.md
       - GPU Training: tutorials/qml/ml_tools/GPU.md
 

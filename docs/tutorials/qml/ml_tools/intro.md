@@ -29,6 +29,6 @@ To dive in, explore the detailed sections below:
   - [Qadence Trainer Guide](./trainer.md)
   - [Training Configuration](./data_and_config.md)
   - [Callbacks for Trainer](./callbacks.md)
-  - [Accelerator for Distributed Training](./accelerator.md)
+  - [Accelerator for Distributed Training](./accelerator_doc.md)
   - [Training on GPU with Trainer](./GPU.md)
   - [Training on CPU with Trainer](./CPU.md)
