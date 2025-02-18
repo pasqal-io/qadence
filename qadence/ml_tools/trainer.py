@@ -341,9 +341,6 @@ class Trainer(BaseTrainer):
                 TimeRemainingColumn(elapsed_when_finished=True),
             )
 
-        # Quick Fix for iteration 0
-        self._reset_model_and_opt()
-
         # Run validation at the start if specified in the configuration
         self.perform_val = self.config.val_every > 0
         if self.perform_val:
@@ -387,16 +384,16 @@ class Trainer(BaseTrainer):
                     )
                 else:
                     val_task = None
-                train_losses, val_losses = self._train_epoch(
+                train_losses, val_losses = self._train_epochs(
                     epoch_start, epoch_end, train_task, val_task
                 )
         else:
-            train_losses, val_losses = self._train_epoch(epoch_start, epoch_end)
+            train_losses, val_losses = self._train_epochs(epoch_start, epoch_end)
 
         self.on_train_end(train_losses, val_losses)
         return train_losses
 
-    def _train_epoch(
+    def _train_epochs(
         self,
         epoch_start: int,
         epoch_end: int,
@@ -471,8 +468,6 @@ class Trainer(BaseTrainer):
         """
         self.model.train()
         train_epoch_loss_metrics = []
-        # Quick Fix for iteration 0
-        self._reset_model_and_opt()
 
         for batch in self._batch_iter(dataloader, self.num_training_batches):
             self.on_train_batch_start(batch)
@@ -526,8 +521,16 @@ class Trainer(BaseTrainer):
             )
             self.ng_params = ng_params
             loss_metrics = loss, metrics
+        
+        # --------------------- FIX: Post-Optimization Loss --------------------- #
+        # Because the loss/metrics are returned before the optimization. To sync
+        # model state and current loss/metrics we calculate them again after optimization.
+        # This is not strictly necessary.
+        # TODO: Should be removed if loss can be logged at an unoptimized model state
+        with torch.no_grad():
+            post_update_loss_metrics = self.loss_fn(self.model, batch)
 
-        return self._modify_batch_end_loss_metrics(loss_metrics)
+        return self._modify_batch_end_loss_metrics(post_update_loss_metrics)
 
     @BaseTrainer.callback("val_epoch")
     def run_validation(self, dataloader: DataLoader) -> list[tuple[torch.Tensor, dict[str, Any]]]:
@@ -666,28 +669,6 @@ class Trainer(BaseTrainer):
                 return loss, updated_metrics
         return loss_metrics
 
-    def _reset_model_and_opt(self) -> None:
-        """
-        Save model_old and optimizer_old for epoch 0.
-
-        This allows us to create a copy of model
-        and optimizer before running the optimization.
-
-        We do this because optimize step provides loss, metrics
-        before step of optimization
-        To align them with model/optimizer correctly, we checkpoint
-        the older copy of the model.
-        """
-
-        # TODO: review optimize_step to provide iteration aligned model and loss.
-        try:
-            # Deep copy model and optimizer to maintain checkpoints
-            self.model_old = copy.deepcopy(self.model)
-            self.optimizer_old = copy.deepcopy(self.optimizer)
-        except Exception:
-            self.model_old = self.model
-            self.optimizer_old = self.optimizer
-
     def _aggregate_result(
         self, result: tuple[torch.Tensor, dict[str, Any]]
     ) -> tuple[torch.Tensor, dict[str, Any]]:
@@ -790,8 +771,8 @@ class Trainer(BaseTrainer):
         # Store the optimization result
         self.opt_result = OptimizeResult(
             self.current_epoch,
-            self.model_old,
-            self.optimizer_old,
+            self.model,
+            self.optimizer,
             loss,
             metrics,
             rank=self.accelerator.rank,
