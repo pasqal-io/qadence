@@ -14,7 +14,7 @@ logger = getLogger("ml_tools")
 
 class DistributionStrategy:
     """
-    Class to set up and manage distributed training environments using PyTorch.
+    Class to set up and manage distributed training environments.
 
     This class detects the current launch strategy (e.g., torchrun, SLURM, or default),
     configures environment variables required for distributed training (such as rank, world size,
@@ -73,6 +73,7 @@ class DistributionStrategy:
         self.nprocs: int
         self.dtype: torch.dtype | None = dtype
         self.data_dtype: torch.dtype | None = None
+        # TODO: This is legacy behavior of data_dtype. Modify it appropriately.
         if self.dtype:
             self.data_dtype = torch.float64 if (self.dtype == torch.complex128) else torch.float32
         self._set_cluster_variables()
@@ -96,6 +97,12 @@ class DistributionStrategy:
             return "none"
 
     def _set_cluster_variables(self) -> None:
+        """
+        Sets the initial default variables for the cluster.
+
+        For now it only supports SLURM Cluster, and should be extended to others
+        when needed.
+        """
         self.job_id = int(os.environ.get("SLURM_JOB_ID", 93345))
         self.num_nodes = int(os.environ.get("SLURM_JOB_NUM_NODES", 1))
         self.node_list = os.environ.get("SLURM_JOB_NODELIST", "Unknown")

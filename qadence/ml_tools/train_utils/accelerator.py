@@ -20,7 +20,7 @@ logger = getLogger("ml_tools")
 
 class Accelerator(DistributionStrategy):
     """
-    A class for handling distributed training with PyTorch.
+    A class for handling distributed training.
 
     This class extends `DistributionStrategy` to manage distributed training using PyTorch's
     `torch.distributed` API. It supports spawning multiple processes and wrapping models with
