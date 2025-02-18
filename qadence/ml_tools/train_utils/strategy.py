@@ -249,7 +249,7 @@ class DistributionStrategy:
         if self.compute_setup == "gpu":
             if not torch.cuda.is_available():
                 raise RuntimeError(
-                    f"Device set to {self.device} but no CUDA devices are available."
+                    f"Compute setup set to {self.compute_setup} but no CUDA devices are available."
                 )
             else:
                 compute = "gpu"
