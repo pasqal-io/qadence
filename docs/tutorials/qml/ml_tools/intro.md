@@ -4,22 +4,22 @@ Welcome to the Qadence `ML Tools` documentation! This submodule is designed to s
 
 ## What You'll Find in This Documentation
 
-- **Trainer Class**  
+- **Trainer Class**
   Learn how to leverage the versatile `Trainer` class to manage your training loops, handle data loading, and integrate with experiment tracking tools like TensorBoard and MLflow. Detailed guides cover:
 
     - Setting up training on both GPUs and CPUs.
     - Configuring single-process, multi-processing, and distributed training setups.
 
-- **Gradient Optimization Methods**  
+- **Gradient Optimization Methods**
   Explore both gradient-based and gradient-free optimization strategies. Find examples demonstrating how to switch between these modes and how to use context managers for mixed optimization.
 
-- **Custom Loss Functions and Hooks**  
+- **Custom Loss Functions and Hooks**
   Discover how to define custom loss functions tailored to your tasks and use hooks to insert custom behaviors at various stages of the training process.
 
-- **Callbacks for Enhanced Training**  
+- **Callbacks for Enhanced Training**
   Utilize built-in and custom callbacks to log metrics, save checkpoints, adjust learning rates, and more. This section explains how to integrate callbacks seamlessly into your training workflow.
 
-- **Experiment Tracking**  
+- **Experiment Tracking**
   Understand how to configure experiment tracking with tools such as TensorBoard and MLflow to monitor your model’s progress and performance.
 
 ## Getting Started
