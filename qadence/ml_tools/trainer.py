@@ -267,7 +267,7 @@ class Trainer(BaseTrainer):
         )
         self.current_epoch: int = 0
         self.global_step: int = 0
-        self.stop_training: bool = False
+        self._stop_training: torch.Tensor
         self.progress: Progress | None = None
 
         # Integration with Accelerator:
@@ -321,8 +321,11 @@ class Trainer(BaseTrainer):
         The callback_manager.start_training takes care of loading checkpoint,
         and setting up the writer.
         """
-        self.stop_training = False
-        self.config_manager.initialize_config(rank=self.accelerator.rank)
+        self._stop_training = torch.tensor(0, dtype=torch.int, device=self.accelerator.device)
+        # initalize config in the first process, and broadcast it to all processes
+        if self.accelerator.rank == 0:
+            self.config_manager.initialize_config()
+        self.config_manager = self.accelerator.broadcast(self.config_manager, src=0)
         self.callback_manager.start_training(trainer=self)
 
         # Integration with Accelerator: prepare the model, optimizer, and dataloaders.
@@ -429,7 +432,7 @@ class Trainer(BaseTrainer):
 
         # Iterate over the epochs
         for epoch in range(epoch_start, epoch_end):
-            if not self.stop_training:
+            if not self.stop_training():
                 try:
                     self.current_epoch = epoch
                     self.on_train_epoch_start()
@@ -449,8 +452,12 @@ class Trainer(BaseTrainer):
                     if train_task is not None:
                         self.progress.update(train_task, advance=1)  # type: ignore[union-attr]
                 except KeyboardInterrupt:
+                    self._stop_training.fill_(1)
+            else:
+                if self.accelerator.rank == 0:
                     logger.info("Terminating training gracefully after the current iteration.")
-                    break
+                self.accelerator.finalize()
+                break
         return train_losses, val_losses
 
     @BaseTrainer.callback("train_epoch")
@@ -691,6 +698,21 @@ class Trainer(BaseTrainer):
             return loss, metrics
         else:
             return loss, metrics
+
+    def stop_training(self) -> bool:
+        """
+        Helper function to indicate if the training should be stopped.
+
+        We all_reduce the indicator across all processes to ensure all processes are stopped.
+
+        Notes:
+            self._stop_training indicator indicates if the training should be stopped.
+            0 is continue. 1 is stop.
+        """
+        _stop_training = self.accelerator.all_reduce_dict(
+            {"indicator": self._stop_training}, op="max"
+        )
+        return bool(_stop_training["indicator"] > 0)
 
     def build_optimize_result(
         self,
