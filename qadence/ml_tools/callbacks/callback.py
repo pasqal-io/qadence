@@ -742,7 +742,7 @@ class EarlyStopping(Callback):
                 f"EarlyStopping: No improvement in '{self.monitor}' for {self.patience} epochs. "
                 "Stopping training."
             )
-            trainer.stop_training = True
+            trainer._stop_training.fill_(1)
 
 
 class GradientMonitoring(Callback):
