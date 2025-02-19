@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import os
+from typing import Any
 import torch.distributed as dist
 
 from qadence.ml_tools.train_utils.strategy import DistributionStrategy
 
-def test_detect_strategy_default(monkeypatch):
+
+def test_detect_strategy_default(monkeypatch: Any) -> None:
     monkeypatch.setenv("LOCAL_RANK", "0")
     ds = DistributionStrategy(compute_setup="cpu")
     ds.spawn = False  # even if spawn is False, presence of LOCAL_RANK implies default
@@ -14,7 +16,7 @@ def test_detect_strategy_default(monkeypatch):
     monkeypatch.delenv("LOCAL_RANK", raising=False)
 
 
-def test_detect_strategy_torchrun(monkeypatch):
+def test_detect_strategy_torchrun(monkeypatch: Any) -> None:
     monkeypatch.setenv("TORCHELASTIC_RUN_ID", "dummy")
     ds = DistributionStrategy(compute_setup="cpu")
     ds.spawn = False
@@ -23,7 +25,7 @@ def test_detect_strategy_torchrun(monkeypatch):
     monkeypatch.delenv("TORCHELASTIC_RUN_ID", raising=False)
 
 
-def test_detect_strategy_none(monkeypatch):
+def test_detect_strategy_none(monkeypatch: Any) -> None:
     monkeypatch.delenv("LOCAL_RANK", raising=False)
     monkeypatch.delenv("TORCHELASTIC_RUN_ID", raising=False)
     ds = DistributionStrategy(compute_setup="cpu")
@@ -31,7 +33,8 @@ def test_detect_strategy_none(monkeypatch):
     strategy = ds.detect_strategy()
     assert strategy == "none"
 
-def test_set_cluster_variables(monkeypatch):
+
+def test_set_cluster_variables(monkeypatch: Any) -> None:
     monkeypatch.setenv("SLURM_JOB_ID", "12345")
     monkeypatch.setenv("SLURM_JOB_NUM_NODES", "2")
     monkeypatch.setenv("SLURM_JOB_NODELIST", "node1,node2")
@@ -41,7 +44,8 @@ def test_set_cluster_variables(monkeypatch):
     assert ds.num_nodes == 2
     assert ds.node_list == "node1,node2"
 
-def test_get_master_addr_env(monkeypatch):
+
+def test_get_master_addr_env(monkeypatch: Any) -> None:
     monkeypatch.setenv("MASTER_ADDR", "1.2.3.4")
     ds = DistributionStrategy(compute_setup="cpu")
     ds.strategy = "none"
@@ -49,7 +53,8 @@ def test_get_master_addr_env(monkeypatch):
     assert addr == "1.2.3.4"
     monkeypatch.delenv("MASTER_ADDR", raising=False)
 
-def test_get_master_port_env(monkeypatch):
+
+def test_get_master_port_env(monkeypatch: Any) -> None:
     monkeypatch.setenv("MASTER_PORT", "23456")
     ds = DistributionStrategy(compute_setup="cpu")
     ds.strategy = "none"
@@ -57,7 +62,8 @@ def test_get_master_port_env(monkeypatch):
     assert port == "23456"
     monkeypatch.delenv("MASTER_PORT", raising=False)
 
-def test_get_master_port_default(monkeypatch):
+
+def test_get_master_port_default(monkeypatch: Any) -> None:
     monkeypatch.delenv("MASTER_PORT", raising=False)
     ds = DistributionStrategy(compute_setup="cpu")
     ds.strategy = "default"
@@ -66,7 +72,8 @@ def test_get_master_port_default(monkeypatch):
     expected_port = str(int(12000 + 12000 % 5000))
     assert port == expected_port
 
-def test_setup_environment(monkeypatch):
+
+def test_setup_environment(monkeypatch: Any) -> None:
     # Set necessary environment variables for SLURM-like setup.
     monkeypatch.setenv("SLURM_NODEID", "0")
     monkeypatch.setenv("SLURMD_NODENAME", "test_node")
@@ -87,7 +94,7 @@ def test_setup_environment(monkeypatch):
     assert "LOCAL_RANK" in os.environ
 
 
-def test_setup_process(monkeypatch):
+def test_setup_process() -> None:
     ds = DistributionStrategy(compute_setup="cpu")
     ds.strategy = "default"
     ds.spawn = False
@@ -99,7 +106,8 @@ def test_setup_process(monkeypatch):
     # In CPU mode, local_rank should be None.
     assert local_rank is None
 
-def test_start_process_group(monkeypatch):
+
+def test_start_process_group(monkeypatch: Any) -> None:
     ds = DistributionStrategy(compute_setup="cpu")
     ds.world_size = 2
     ds.rank = 0
@@ -108,11 +116,11 @@ def test_start_process_group(monkeypatch):
     init_called = False
     barrier_called = False
 
-    def fake_init_process_group(backend, rank, world_size):
+    def fake_init_process_group(backend: str, rank: int, world_size: int) -> None:
         nonlocal init_called
         init_called = True
 
-    def fake_barrier():
+    def fake_barrier() -> None:
         nonlocal barrier_called
         barrier_called = True
 
@@ -123,12 +131,12 @@ def test_start_process_group(monkeypatch):
     assert barrier_called is True
 
 
-def test_cleanup_process_group(monkeypatch):
+def test_cleanup_process_group(monkeypatch: Any) -> None:
     ds = DistributionStrategy(compute_setup="cpu")
     ds.rank = 0
     destroy_called = False
 
-    def fake_destroy():
+    def fake_destroy() -> None:
         nonlocal destroy_called
         destroy_called = True
 
