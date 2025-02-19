@@ -228,7 +228,7 @@ config = TrainConfig(
 
 > Notes:
 > - *Logging Specific Callbacks*: Logging is availiable only through the main process, i.e. process 0.  Model logging, plotting, logging metrics will only be performed for a single process, even is multiple processes are run.
-> - *Training specific callbacks*: Callbacks specific to training, e.g., `EarlyStopping`, `GradientMonitoring`, etc will be called from each process.
+> - *Training specific callbacks*: Callbacks specific to training, e.g., `EarlyStopping`, `LRSchedulerStepDecay`, etc will be called from each process.
 > - `PrintMetrics` (set through the `print_every` argument in `TrainCongig`) is available from all processes.
 
 
