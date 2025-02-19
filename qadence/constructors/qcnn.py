@@ -1,6 +1,5 @@
 from __future__ import annotations
 from typing import Any
-
 import torch
 from qadence import (
     QNN,
@@ -21,6 +20,7 @@ from qadence import (
     tag,
 )
 
+
 ####
 class qcnn(QNN):
     def __init__(
@@ -28,8 +28,8 @@ class qcnn(QNN):
         n_inputs: int,
         n_qubits: int,
         depth: list[int],
-        operations: list[RX,RZ,RX],
-        entangler: CZ,
+        operations: list[Any],
+        entangler: Any,
         random_meas: bool,
         use_dagger: bool = True,  # True for using the adjoint operation
         **kwargs: Any,
@@ -72,7 +72,7 @@ class qcnn(QNN):
             **kwargs,
         )
 
-    def get_param(self, params: dict, layer: int, rep: int, pos: int) -> Parameter:
+    def get_param(self, params: dict, layer: int, rep: int, pos: int) -> Any:
         """
         Retrieves or creates a parameter key for the given layer, repetition, and position.
 
@@ -93,15 +93,15 @@ class qcnn(QNN):
     def create_gate_sequence(
         self,
         params: dict,
-        operations: list[RX,RZ,RX],
-        entangler: CZ,
+        operations: list[Any],
+        entangler: Any,
         layer: int,
         rep: int,
         control: int,
         target: int,
         spacing: int = 0,
         n_qubits: int = 8,
-    ) -> AbstractBlock:
+    ) -> Any:
         """
         Creates a sequence of gates for a control-target pair.
 
@@ -156,8 +156,8 @@ class qcnn(QNN):
         reps: int,
         current_indices: list[int],
         params: dict,
-        operations: list[RX,RZ,RX],
-        entangler: CZ,
+        operations: list[Any],
+        entangler: Any,
         n_qubits: int,
     ) -> tuple[AbstractBlock, list[int]]:
         """
@@ -239,7 +239,7 @@ class qcnn(QNN):
         n_qubits: int,
         depth: list[int],
         operations: list[Any],
-        entangler: CZ,
+        entangler: Any,
     ) -> tuple[QuantumCircuit, list[int]]:
         """
         Defines a single, continuous quantum circuit with custom repeating ansatz for each depth.
@@ -263,9 +263,7 @@ class qcnn(QNN):
 
         for i in range(n_inputs):
             # Assign base qubits + 1 extra if input has exceeding qubits
-            num_qubits = (
-                qubits_per_input + 1 if i < exceeding_qubits else qubits_per_input
-            )
+            num_qubits = qubits_per_input + 1 if i < exceeding_qubits else qubits_per_input
             end = start + num_qubits
 
             # Create FM for this input
@@ -288,9 +286,7 @@ class qcnn(QNN):
         all_target_indices = []  # To store target indices for each layer
 
         # Define layer patterns based on depth
-        layer_patterns = [
-            (2**layer_index, depth[layer_index]) for layer_index in range(len(depth))
-        ]
+        layer_patterns = [(2**layer_index, depth[layer_index]) for layer_index in range(len(depth))]
 
         # Initialize all qubits for the first layer
         current_indices = list(range(n_qubits))
@@ -326,9 +322,7 @@ class qcnn(QNN):
         qc = QuantumCircuit(n_qubits, fm, ansatz)
         return qc, next_indices
 
-    def create_obs(
-        self, n_qubits: int, random_meas: bool
-    ) -> AbstractBlock | list[AbstractBlock]:
+    def create_obs(self, n_qubits: int, random_meas: bool) -> AbstractBlock | list[AbstractBlock]:
         """
         Defines the measurements to be performed on the specified target qubits.
 
@@ -370,9 +364,7 @@ class qcnn_msg_passing(torch.nn.Module):
         torch.Tensor: Mean of the final QNN model's output.
     """
 
-    def __init__(
-        self, qgcn_list: torch.nn.ModuleList, qgcn_output_size: int = 1
-    ) -> None:
+    def __init__(self, qgcn_list: torch.nn.ModuleList, qgcn_output_size: int = 1) -> None:
         """
         Initialize the QCNN message-passing module.
 
