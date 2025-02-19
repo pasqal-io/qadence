@@ -79,7 +79,7 @@ def test_train_spawn(Basic: nn.Module, backend: str, device: str) -> None:
 
     os.environ["MASTER_ADDR"] = "localhost"
     os.environ["MASTER_PORT"] = str(random.randint(10000, 60000))
-    os.environ["MASTER_ADDR"] = str(nprocs)
+    os.environ["WORLD_SIZE"] = str(nprocs)
 
     config: TrainConfig = TrainConfig(
         compute_setup=device,
@@ -126,7 +126,7 @@ def test_train_spawn_dictdataloader(Basic: nn.Module, backend: str, device: str)
 
     os.environ["MASTER_ADDR"] = "localhost"
     os.environ["MASTER_PORT"] = str(random.randint(10000, 60000))
-    os.environ["MASTER_ADDR"] = str(nprocs)
+    os.environ["WORLD_SIZE"] = str(nprocs)
 
     config: TrainConfig = TrainConfig(
         compute_setup=device,
