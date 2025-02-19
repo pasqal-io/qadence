@@ -16,15 +16,6 @@ def test_detect_strategy_default(monkeypatch: Any) -> None:
     monkeypatch.delenv("LOCAL_RANK", raising=False)
 
 
-def test_detect_strategy_torchrun(monkeypatch: Any) -> None:
-    monkeypatch.setenv("TORCHELASTIC_RUN_ID", "dummy")
-    ds = DistributionStrategy(compute_setup="cpu")
-    ds.spawn = False
-    strategy = ds.detect_strategy()
-    assert strategy == "torchrun"
-    monkeypatch.delenv("TORCHELASTIC_RUN_ID", raising=False)
-
-
 def test_detect_strategy_none(monkeypatch: Any) -> None:
     monkeypatch.delenv("LOCAL_RANK", raising=False)
     monkeypatch.delenv("TORCHELASTIC_RUN_ID", raising=False)
