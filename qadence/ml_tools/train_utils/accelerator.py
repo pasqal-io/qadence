@@ -301,12 +301,16 @@ class Accelerator(DistributionStrategy):
             return data_to_device(batch, device=self.device, dtype=self.data_dtype)
         return
 
-    def all_reduce_dict(self, d: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
+    def all_reduce_dict(
+        self, d: dict[str, torch.Tensor], op: str = "mean"
+    ) -> dict[str, torch.Tensor]:
         """
         Performs an all-reduce operation on a dictionary of tensors, averaging values across all processes.
 
         Args:
             d (dict[str, torch.Tensor]): A dictionary where values are tensors to be reduced across processes.
+            op (str): Operation method to all_reduce with. Available options include `sum`, `avg`, and `max`.
+                            Defaults to `avg`
 
         Returns:
             dict[str, torch.Tensor]: A dictionary with the reduced tensors, averaged over the world size.
@@ -318,12 +322,37 @@ class Accelerator(DistributionStrategy):
                 if not isinstance(tensor, torch.Tensor):
                     tensor = torch.tensor(tensor, device=self.device, dtype=self.dtype)
                 tensor = tensor.detach().clone()
-                dist.all_reduce(tensor, op=dist.ReduceOp.SUM)
-                tensor /= world_size
+                if op == "max":
+                    dist.all_reduce(tensor, op=dist.ReduceOp.MAX)
+                elif op == "sum":
+                    dist.all_reduce(tensor, op=dist.ReduceOp.SUM)
+                else:
+                    dist.all_reduce(tensor, op=dist.ReduceOp.SUM)
+                    tensor /= world_size
                 reduced[key] = tensor
             return reduced
         else:
             return d
+
+    def broadcast(self, obj: Any, src: int) -> Any:
+        """
+        Broadcasts an object from the source process to all processes.
+
+        On non-source processes, this value is ignored.
+
+        Args:
+            obj (Any): The object to broadcast on the source process.
+            src (int): The source process rank.
+
+        Returns:
+            Any : The broadcasted object from the source process.
+        """
+        if dist.is_initialized():
+            obj_list = [obj] if self.rank == src else [None]
+            dist.broadcast_object_list(obj_list, src=src)
+            return obj_list[0]
+        else:
+            return obj
 
     def _log_warnings(self) -> None:
         if self.spawn:
