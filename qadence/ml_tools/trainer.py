@@ -267,7 +267,7 @@ class Trainer(BaseTrainer):
         )
         self.current_epoch: int = 0
         self.global_step: int = 0
-        self._stop_training: torch.Tensor
+        self._stop_training: torch.Tensor = torch.tensor(0, dtype=torch.int)
         self.progress: Progress | None = None
 
         # Integration with Accelerator:
