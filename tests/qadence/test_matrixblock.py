@@ -4,9 +4,12 @@ import numpy as np
 import pytest
 import torch
 
+import strategies as st
+from hypothesis import given, settings
+
 from qadence import QuantumModel as QM
 from qadence.backends.api import DiffMode
-from qadence.blocks import MatrixBlock, ParametricBlock, PrimitiveBlock, chain
+from qadence.blocks import MatrixBlock, ParametricBlock, PrimitiveBlock, chain, AbstractBlock
 from qadence.blocks.block_to_tensor import OPERATIONS_DICT, block_to_tensor
 from qadence.circuit import QuantumCircuit as QC
 from qadence.constructors import hea
@@ -92,3 +95,35 @@ def test_qm_with_matblock() -> None:
     exp = qm.expectation({})
 
     assert torch.all(torch.isclose(wf_mat, wf)) and torch.isclose(exp, exp_mat)
+
+
+@given(st.random_twoqubit_gate())
+@settings(deadline=None)
+def test_matrixblock_totensor(block: AbstractBlock) -> None:
+
+    op_support = (0, 2)
+    lookup_support = (2, 0)
+
+    # An example operation
+    op_block = block(op_support[0], op_support[1])  # type: ignore[operator]
+
+    # The matrix block that should be completely equivalent to the operation
+    matrix = block_to_tensor(op_block, use_full_support=False)
+    matrix_block = MatrixBlock(matrix, qubit_support=op_support)
+
+    # Looking at both through block_to_tensor
+    assert torch.allclose(
+        block_to_tensor(matrix_block, qubit_support=lookup_support),
+        block_to_tensor(op_block, qubit_support=lookup_support),
+    )
+
+
+@given(st.random_twoqubit_gate())
+@settings(deadline=None)
+def test_error_matrixblock(block: AbstractBlock) -> None:
+    op_support = (0, 2)
+    op_block = block(op_support[0], op_support[1])  # type: ignore[operator]
+    matrix = block_to_tensor(op_block, use_full_support=True)
+
+    with pytest.raises(ValueError):
+        matrix_block = MatrixBlock(matrix, qubit_support=op_support)

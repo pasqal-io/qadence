@@ -216,6 +216,13 @@ def rand_digital_blocks(gate_list: list[AbstractBlock]) -> Callable:
 
 
 @st.composite
+def random_twoqubit_gate(draw: Callable[[SearchStrategy[Any]], Any]) -> Any:
+    pool_2q_fixed = [gate for gate in two_qubit_gateset if not issubclass(gate, ParametricBlock)]
+    gate = draw(st.sampled_from(pool_2q_fixed))
+    return gate
+
+
+@st.composite
 def digital_circuits(
     draw: Callable[[SearchStrategy[Any]], Any],
     n_qubits: SearchStrategy[int] = N_QUBITS_STRATEGY,

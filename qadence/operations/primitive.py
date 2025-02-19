@@ -377,10 +377,6 @@ class SWAP(PrimitiveBlock):
         return torch.tensor([-1, 1, 1, 1], dtype=cdouble)
 
     @property
-    def n_qubits(self) -> int:
-        return 2
-
-    @property
     def _block_title(self) -> str:
         c, t = self.qubit_support
         s = f"{self.name}({c}, {t})"
