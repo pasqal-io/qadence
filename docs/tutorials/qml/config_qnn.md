@@ -13,8 +13,7 @@ One convenient way to construct these three parts of the model is to use the con
 
 The model output is the expectation value of the defined observable(s). We use the `ObservableConfig` class to specify the observable.
 
-It can be used to create Hamiltonians with 2-qubit interactions and single-qubit detunings. Any Hamiltonian supported by [`hamiltonian_factory`][qadence.constructors.hamiltonians.hamiltonian_factory] can be specified for measurement.
-
+It can be used to create Hamiltonians with 2-qubit interactions and single-qubit detunings. Any Hamiltonian supported by [`hamiltonian_factory`][qadence.constructors.hamiltonians.hamiltonian_factory] can be specified as an observable.
 For example, suppose we want to measure the Z operator:
 
 ```python exec="on" source="material-block" session="config" html="1"
@@ -50,8 +49,9 @@ from qadence.draw import html_string # markdown-exec: hide
 
 Alternatively, you can define the observable as a list of observables, in which case the QNN will output a list of values.
 
-### Scaling and Shifting the Spectrum
-By appropriately choosing the scale $\alpha$ and shift $\beta$, you can constrain the spectrum of the observable’s eigenvalues within a desired range. This can be particularly useful when normalizing measurements or ensuring that the values remain within a meaningful interval for optimization. If the maximum eigenvalue $\lambda_{max}$  and minimum eigenvalue $\lambda_{min}$ of your observable are known, you can set the scale and shift such that the eigenvalues are mapped to a specific range [a,b].
+### Scaling and Shifting the QNN Output
+For a given observable, by appropriately choosing the scale $\alpha$ and shift $\beta$, you can constrain the QNN output within a desired range. This is particularly useful for normalizing measurements or ensuring that values remain within a meaningful interval for optimization.
+To accomplish to ths task you need to know the maximum $\lambda_{max}$  and minimum $\lambda_{min}$ values of your QNN for the selected observable. Using these values, you can set the scale and shift so that the QNN output is mapped to a specific range [a,b].
 
 To achieve this, choose:
 
