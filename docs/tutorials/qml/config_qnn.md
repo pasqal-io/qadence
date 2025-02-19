@@ -41,8 +41,6 @@ For example, the total magnetization configuration:
 from qadence import create_observable
 from qadence.constructors import total_magnetization_config
 
-
-
 observable_total_magnetization  = create_observable(register=4, config=total_magnetization_config())
 from qadence.draw import html_string # markdown-exec: hide
 ```
@@ -50,10 +48,8 @@ from qadence.draw import html_string # markdown-exec: hide
 Alternatively, you can define the observable as a list of observables, in which case the QNN will output a list of values.
 
 ### Scaling and Shifting the QNN Output
-For a given observable, by appropriately choosing the scale $\alpha$ and shift $\beta$, you can constrain the QNN output within a desired range. This is particularly useful for normalizing measurements or ensuring that values remain within a meaningful interval for optimization.
-To accomplish to ths task you need to know the maximum $\lambda_{max}$  and minimum $\lambda_{min}$ values of your QNN for the selected observable. Using these values, you can set the scale and shift so that the QNN output is mapped to a specific range [a,b].
-
-To achieve this, choose:
+For any observable, by appropriately choosing the scale $\alpha$ and shift $\beta$, you can constrain the QNN output within a desired range. This is particularly useful for normalizing measurements or ensuring that values remain within a meaningful interval for optimization.
+To accomplish to this, you need to determine the maximum $\lambda_{max}$ and minimum $\lambda_{min}$ values of your QNN for the selected observable. Using these values, you can set the scale $\alpha$ and shift $\beta$ so that the QNN output is mapped to a specific range $[a,b]$:
 
 $$\alpha = \frac{b-a}{\lambda_{max}-\lambda_{min}}$$
 
