@@ -49,7 +49,7 @@ Alternatively, you can define the observable as a list of observables, in which 
 
 ### Scaling and Shifting the QNN Output
 For any observable, by appropriately choosing the scale $\alpha$ and shift $\beta$, you can constrain the QNN output within a desired range. This is particularly useful for normalizing measurements or ensuring that values remain within a meaningful interval for optimization.
-To accomplish to this, you need to determine the maximum $\lambda_{max}$ and minimum $\lambda_{min}$ values of your QNN for the selected observable. Using these values, you can set the scale $\alpha$ and shift $\beta$ so that the QNN output is mapped to a specific range $[a,b]$:
+To accomplish this, you need to determine the maximum and minimum values that the QNN output can take. For an observable, these extreme values are the two extreme eigenvalues $\lambda_{max}$ and $\lambda_{min}$ of the concerned Hamiltonian. Using these values, you can set the scale $\alpha$ and shift $\beta$ so that the QNN output is mapped to a specific range $[a,b]$:
 
 $$\alpha = \frac{b-a}{\lambda_{max}-\lambda_{min}}$$
 
