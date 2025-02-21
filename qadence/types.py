@@ -445,17 +445,6 @@ class InputDiffMode(StrEnum):
     """Central finite differencing."""
 
 
-class ObservableTransform:
-    """Observable transformation type."""
-
-    SCALE = "scale"
-    """Use the given values as scale and shift."""
-    RANGE = "range"
-    """Use the given values as min and max."""
-    NONE = "none"
-    """No transformation."""
-
-
 class ExperimentTrackingTool(StrEnum):
     TENSORBOARD = "tensorboard"
     """Use the tensorboard experiment tracker."""
