@@ -94,7 +94,7 @@ class TrainConfig:
     model's state will be logged, useful for model versioning and reproducibility.
     """
 
-    root_folder: Path = Path("./qml_logs")
+    root_folder: Path | None = None
     """The root folder for saving checkpoints and tensorboard logs.
 
     The default path is "./qml_logs"
@@ -112,7 +112,7 @@ class TrainConfig:
     the latest checkpoint if one exists in the specified log folder.
     """
 
-    log_folder: Path = Path("./")
+    log_folder: Path | None = None
     """The log folder for saving checkpoints and tensorboard logs.
 
     This stores the path where all logs and checkpoints are being saved
