@@ -13,25 +13,51 @@ One convenient way to construct these three parts of the model is to use the con
 
 The model output is the expectation value of the defined observable(s). We use the `ObservableConfig` class to specify the observable.
 
-We can specify any Hamiltonian that we want to measure at the end of the circuit. Let us say we want to measure the $Z$ operator.
+It can be used to create Hamiltonians with 2-qubit interactions and single-qubit detunings. Any Hamiltonian supported by [`hamiltonian_factory`][qadence.constructors.hamiltonians.hamiltonian_factory] can be specified as an observable.
+For example, suppose we want to measure the Z operator:
 
 ```python exec="on" source="material-block" session="config" html="1"
-from qadence import observable_from_config, ObservableConfig, Z
+from qadence import create_observable, ObservableConfig, Z
 
 observable_config = ObservableConfig(
     detuning=Z,
-    scale=3.0,
+    interaction = None,
+    scale = 2.0,
     shift=-1.0,
 )
 
-observable = observable_from_config(register=4, config=observable_config)
+observable = create_observable(register=4, config=observable_config)
 from qadence.draw import html_string # markdown-exec: hide
 print(html_string(observable)) # markdown-exec: hide
 ```
 
-We have specified the observable Hamiltonian to be one with $Z$-detuning. The result is linearly scaled by 3.0 and shifted by -1.0. These parameters can optionally also be [FeatureParameter][qadence.parameters.FeatureParameter] or [VariationalParameter][qadence.parameters.VariationalParameter]
+We have specified the observable Hamiltonian to be one with $Z$-detuning. The result is linearly scaled by 2.0 and shifted by -1.0. The shift or the scale can optionally also be a [VariationalParameter][qadence.parameters.VariationalParameter]
 
-One can also specify the observable as a list of observables, in which case the QNN will output a list of values.
+It is also possible to import some common Hamiltonians, such as `total_magnetization_config`, `zz_hamiltonian_config` and, `ising_hamiltonian_config`.
+
+For example, the total magnetization configuration:
+
+```python exec="on" source="material-block" session="config" html="1"
+from qadence import create_observable
+from qadence.constructors import total_magnetization_config
+
+observable_total_magnetization  = create_observable(register=4, config=total_magnetization_config())
+from qadence.draw import html_string # markdown-exec: hide
+```
+
+Alternatively, you can define the observable as a list of observables, in which case the QNN will output a list of values.
+
+### Scaling and Shifting the QNN Output
+For any observable, by appropriately choosing the scale $\alpha$ and shift $\beta$, you can constrain the QNN output within a desired range. This is particularly useful for normalizing measurements or ensuring that values remain within a meaningful interval for optimization.
+To accomplish this, you need to determine the maximum and minimum values that the QNN output can take. For an observable, these extreme values are the two extreme eigenvalues $\lambda_{max}$ and $\lambda_{min}$ of the concerned Hamiltonian. Using these values, you can set the scale $\alpha$ and shift $\beta$ so that the QNN output is mapped to a specific range $[a,b]$:
+
+$$\alpha = \frac{b-a}{\lambda_{max}-\lambda_{min}}$$
+
+$$\beta = \frac{a\lambda_{max}-b\lambda_{min}}{\lambda_{max}-\lambda_{min}}$$
+
+This transformation ensures that:
+
+$$ a \leq \alpha \lambda + \beta \leq b,\quad\forall \lambda \in [\lambda_{min},\lambda_{max}] $$
 
 For full details on the `ObservableConfig` class, see the [API documentation][qadence.constructors.hamiltonians.ObservableConfig].
 

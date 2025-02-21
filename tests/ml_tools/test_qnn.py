@@ -14,15 +14,16 @@ from qadence.blocks import (
 )
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import hea, ising_hamiltonian, total_magnetization
+from qadence.constructors.hamiltonians import Interaction
 from qadence.ml_tools.config import AnsatzConfig, FeatureMapConfig
 from qadence.ml_tools.constructors import (
     ObservableConfig,
-    observable_from_config,
+    create_observable,
 )
 from qadence.operations import RX, RY, Z
 from qadence.parameters import FeatureParameter, Parameter
 from qadence.states import uniform_state
-from qadence.types import PI, AnsatzType, BackendName, DiffMode, ObservableTransform, Strategy
+from qadence.types import PI, AnsatzType, BackendName, DiffMode, Strategy
 
 
 def build_circuit(n_qubits_per_feature: int, n_features: int, depth: int = 2) -> QuantumCircuit:
@@ -264,9 +265,9 @@ def get_qnn(
     shift: float = 0.0,
     trainable_transform: bool | None = None,
 ) -> QNN:
-    observable = observable_from_config(
+    observable = create_observable(
         n_qubits,
-        ObservableConfig(Z, scale, shift, "scale", trainable_transform),  # type: ignore[arg-type]
+        ObservableConfig(detuning=Z, interaction=Interaction.ZZ, scale=scale, shift=shift, trainable_transform=trainable_transform),  # type: ignore[arg-type]
     )
     circuit = SmallCircuit
     model = QNN(
@@ -279,7 +280,7 @@ def get_qnn(
     return model
 
 
-@pytest.mark.parametrize("output_range", [(1.0, 0.0, False), (2.0, 0.0, None), (3.0, 1.0, False)])
+@pytest.mark.parametrize("output_range", [(1.0, 0.1, False), (2.0, 0.0, None), (3.0, 1.0, False)])
 def test_constant_and_feature_transformed_module(
     SmallCircuit: QuantumCircuit, output_range: tuple[float, float, bool]
 ) -> None:
@@ -352,7 +353,7 @@ def test_config_qnn(diff_mode: DiffMode) -> None:
     backend = BackendName.PYQTORCH
     fm_config = FeatureMapConfig(num_features=1)
     ansatz_config = AnsatzConfig()
-    observable_config = ObservableConfig(detuning=Z)
+    observable_config = ObservableConfig(detuning=Z, interaction=Interaction.ZZ)
 
     qnn = QNN.from_configs(
         register=2,
@@ -376,7 +377,7 @@ def test_ala_ansatz_config(diff_mode: DiffMode) -> None:
     backend = BackendName.PYQTORCH
     fm_config = FeatureMapConfig(num_features=1)
     ansatz_config = AnsatzConfig(ansatz_type=AnsatzType.ALA, m_block_qubits=2)
-    observable_config = ObservableConfig(detuning=Z)
+    observable_config = ObservableConfig(detuning=Z, interaction=Interaction.ZZ)
 
     qnn = QNN.from_configs(
         register=4,
@@ -419,7 +420,7 @@ def test_config_qnn_input_transform() -> None:
     fm_config = FeatureMapConfig(num_features=1)
     transformed_fm_config = FeatureMapConfig(num_features=1, feature_range=(0.0, 1.0))
     ansatz_config = AnsatzConfig()
-    observable_config = ObservableConfig(detuning=Z)
+    observable_config = ObservableConfig(detuning=Z, interaction=Interaction.ZZ)
 
     qnn = QNN.from_configs(
         register=2,
@@ -444,8 +445,10 @@ def test_config_qnn_input_transform() -> None:
 def test_config_qnn_output_transform() -> None:
     fm_config = FeatureMapConfig(num_features=1)
     ansatz_config = AnsatzConfig()
-    observable_config = ObservableConfig(detuning=Z)
-    transformed_observable_config = ObservableConfig(detuning=Z, scale=2.0, shift=1.0)
+    observable_config = ObservableConfig(detuning=Z, interaction=Interaction.ZZ)
+    transformed_observable_config = ObservableConfig(
+        detuning=Z, interaction=Interaction.ZZ, scale=2.0, shift=1.0
+    )
 
     qnn = QNN.from_configs(
         register=2,
@@ -467,15 +470,15 @@ def test_config_qnn_output_transform() -> None:
 
     observable_config = ObservableConfig(
         detuning=Z,
+        interaction=Interaction.ZZ,
         scale=-1.0,
         shift=1.0,
-        transformation_type="range",  # type: ignore[arg-type]
     )
     transformed_observable_config = ObservableConfig(
         detuning=Z,
+        interaction=Interaction.ZZ,
         scale=-10.0,
         shift=10.0,
-        transformation_type=ObservableTransform.RANGE,  # type: ignore[arg-type]
     )
 
     qnn = QNN.from_configs(
