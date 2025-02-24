@@ -329,7 +329,7 @@ def blocktree_to_mathematical_expression(block: Tree) -> str:
     if first_part in [" + ", " ⊗ ", " * "]:
         block_title = block_title[3:]
 
-    # if too manny trees, add parentheses.
+    # if too many trees, add parentheses.
     nb_children = len(block.children)
     if nb_children > 1:
         block_title = "(" + block_title + ")"
