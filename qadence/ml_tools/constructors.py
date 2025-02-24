@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable
+from typing import Callable, Any
 import numpy as np
 from sympy import Basic
 
@@ -38,6 +38,7 @@ from qadence.types import (
     TParameter,
     TArray,
 )
+from qadence.parameters import Parameter
 
 from .config import AnsatzConfig, FeatureMapConfig
 from .models import QNN
@@ -809,3 +810,168 @@ def build_qnn_from_configs(
     )
 
     return ufa
+
+
+def __get_param(params: dict, layer: int, rep: int, pos: int) -> Any:
+    """
+    Retrieves or creates a parameter key for the given layer, repetition, and position.
+
+    Args:
+        params (dict): Dictionary to store and retrieve parameters.
+        layer (int): The index of the current layer.
+        rep (int): The index of the current repetition in the layer.
+        pos (int): Position of the qubit in the layer.
+
+    Returns:
+        Parameter: The created or retrieved parameter.
+    """
+    key = f"\u03B8_{layer}_{rep}_{pos}"
+    if key not in params:
+        params[key] = Parameter(key)
+    return params[key]
+
+
+def __create_gate_sequence(
+    params: dict,
+    operations: list[Any],
+    entangler: Any,
+    layer: int,
+    rep: int,
+    control: int,
+    target: int,
+    spacing: int = 0,
+    n_qubits: int = 8,
+    use_dagger: bool = True,
+) -> ChainBlock:
+    """
+    Creates a sequence of gates for a control-target pair.
+
+    Args:
+        params (dict): Dictionary to store and retrieve parameters.
+        operations (list[Any]): List of gate operations to apply (e.g., [RX, RZ]).
+        entangler (Any): Entangling operation, such as CNOT or CZ.
+        layer (int): The index of the current layer.
+        rep (int): The index of the current repetition in the layer.
+        control (int): Index of the control qubit.
+        target (int): Index of the target qubit.
+        spacing (int, optional): Number of qubits to include as padding. Defaults to 0.
+        n_qubits (int, optional): Total number of qubits. Defaults to 8.
+
+    Returns:
+        AbstractBlock: The sequence of gates as a quantum block.
+    """
+    pad = [
+        I(q)
+        for q in range(control - spacing, control + spacing + 1)
+        if q != control and q != target and 0 <= q < n_qubits
+    ]
+    gates = []
+    # Apply user-defined operations
+    for op in operations:
+        gates.append(
+            kron(
+                *pad,
+                op(control, __get_param(params, layer, rep, control)),
+                op(target, __get_param(params, layer, rep, target)),
+            )
+        )
+    gates.append(entangler(control, target))
+
+    # Conditionally apply negative gates in reverse order
+    if use_dagger:  # Only apply negative gates if use_dagger is True
+        for op in reversed(operations):
+            gates.append(
+                kron(
+                    *pad,
+                    op(control, -__get_param(params, layer, rep, target)),
+                    op(target, -__get_param(params, layer, rep, control)),
+                )
+            )
+        gates.append(entangler(control, target))
+
+    return chain(*gates)
+
+
+def __create_layer(
+    layer_index: int,
+    reps: int,
+    current_indices: list[int],
+    params: dict,
+    operations: list[Any],
+    entangler: Any,
+    n_qubits: int,
+    use_dagger: bool,
+) -> tuple[AbstractBlock, list[int]]:
+    """
+    Helper function to create a single layer of the ansatz.
+
+    Args:
+        layer_index (int): The index of the current layer.
+        reps (int): Number of repetitions for this layer.
+        current_indices (list[int]): Indices of qubits for the current layer.
+        params (dict): Dictionary to store and retrieve parameters.
+        operations (list[Any]): List of quantum operations to apply in the gates.
+        entangler (Any): Entangling operation, such as CNOT or CZ.
+        n_qubits (int): Total number of qubits.
+
+    Returns:
+        tuple[AbstractBlock, list[int]]: A tuple containing the quantum block for the layer and the target indices for the next layer.
+    """
+    current_layer = []
+    next_indices = []  # To store the targets for the next layer
+    spacing = layer_index  # Define spacing based on layer index
+
+    if layer_index in [0, 1]:  # Special behavior for first two layers
+        layer_reps = []
+        for d in range(reps):
+            rep_kron = []
+            # Define qubit pairs based on odd/even repetition
+            if d % 2 == 0:  # Even d: regular behavior
+                pairs = zip(current_indices[::2], current_indices[1::2])
+            else:  # Odd d: shift downward, leaving qubits 0 and 7 free
+                pairs = zip(current_indices[1:-1:2], current_indices[2:-1:2])
+
+            # Build the gate sequence for each pair
+            for control, target in pairs:
+                gate_sequence = __create_gate_sequence(
+                    params,
+                    operations,
+                    entangler,
+                    layer_index,
+                    d,
+                    control,
+                    target,
+                    spacing=spacing,
+                    n_qubits=n_qubits,
+                    use_dagger=use_dagger,
+                )
+                rep_kron.append(gate_sequence)
+
+            # Combine gates for this repetition using `kron`
+            if rep_kron:
+                layer_reps.append(kron(*rep_kron))
+
+        # Combine all repetitions using `chain`
+        if layer_reps:
+            current_layer.append(chain(*layer_reps))
+
+    else:  # Original behavior for other layers
+        for d in range(reps):
+            for control, target in zip(current_indices[::2], current_indices[1::2]):
+                gate_sequence = __create_gate_sequence(
+                    params,
+                    operations,
+                    entangler,
+                    layer_index,
+                    d,
+                    control,
+                    target,
+                    spacing=spacing,
+                    n_qubits=n_qubits,
+                    use_dagger=use_dagger,
+                )
+                current_layer.append(gate_sequence)
+
+    # Update `next_indices` with the **targets** of the current layer
+    next_indices = current_indices[1::2]
+    return chain(*current_layer), next_indices
