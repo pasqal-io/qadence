@@ -82,7 +82,7 @@ class ConfigManager:
         else:
             if self.config._subfolders:
                 # self.config.log_folder is an old subfolder.
-                if self.config.log_folder is not None:
+                if self.config.log_folder:
                     log_folder = Path(self.config.log_folder)
                 else:
                     raise ValueError(
@@ -184,9 +184,9 @@ class ConfigManager:
                 "`Checkpoint_best_only` is only available when `validation_criterion` is provided."
                 "No checkpoints will be saved."
             )
-        if self.config.log_folder is not None and self.config.root_folder is not None:
+        if self.config.log_folder and self.config.root_folder:
             logger.warning("Both `log_folder` and `root_folder` provided by the user.")
-        if self.config.log_folder is not None and self.config.create_subfolder_per_run:
+        if self.config.log_folder and self.config.create_subfolder_per_run:
             logger.warning(
                 "`log_folder` is invalid when `create_subfolder_per_run` = True."
                 "`root_folder` (default qml_logs) will be used to save logs."
