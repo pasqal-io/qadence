@@ -95,7 +95,7 @@ class qcnn(QNN):
         tag(fm, "FM")
 
         ansatz_layers = []  # To store each layer of the ansatz
-        params = {}
+        params: dict[str, Parameter] = {}
         all_target_indices = []  # To store target indices for each layer
 
         # Define layer patterns based on depth
