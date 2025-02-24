@@ -12,7 +12,7 @@ from qadence.circuit import QuantumCircuit
 from qadence.types import BackendName, DiffMode
 from qadence.parameters import Parameter
 
-from qadence.ml_tools.constructors import __create_layer
+from qadence.ml_tools.constructors import __create_qcnn_layer
 
 
 ####
@@ -88,16 +88,28 @@ class qcnn(QNN):
             tuple[QuantumCircuit, list[int]]: A tuple containing the quantum circuit and the final target indices.
         """
         # Feature map (FM)
-        fm_temp = [
-            feature_map(
-                n_qubits=(n_qubits // n_inputs),
-                param=f"\u03C6_{i}",
-                op=RX,
-                fm_type="Fourier",
-                support=tuple(range(i * (n_qubits // n_inputs), (i + 1) * (n_qubits // n_inputs))),
+        fm_temp = []
+        qubits_per_input = n_qubits // n_inputs  # Base number of qubits per input
+        exceeding_qubits = n_qubits % n_inputs  # Number of exceeding qubits
+        start = 0  # Track current qubit index
+
+        for i in range(n_inputs):
+            # Assign base qubits + 1 extra if input has exceeding qubits
+            num_qubits = qubits_per_input + 1 if i < exceeding_qubits else qubits_per_input
+            end = start + num_qubits
+
+            # Create FM for this input
+            fm_temp.append(
+                feature_map(
+                    n_qubits=num_qubits,
+                    param=f"\u03C6_{i}",
+                    op=RX,
+                    fm_type="Fourier",
+                    support=tuple(range(start, end)),
+                )
             )
-            for i in range(n_inputs)
-        ]
+            start = end  # Update starting index for next FM
+
         fm = kron(*fm_temp)
         tag(fm, "FM")
 
@@ -116,7 +128,7 @@ class qcnn(QNN):
             if reps == 0 or len(current_indices) < 2:
                 break  # Skip this layer if depth is 0 or fewer than 2 qubits remain
 
-            layer_block, next_indices = __create_layer(
+            layer_block, next_indices = __create_qcnn_layer(
                 layer_index,
                 reps,
                 current_indices,

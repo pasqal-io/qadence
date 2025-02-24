@@ -831,7 +831,7 @@ def __get_param(params: dict, layer: int, rep: int, pos: int) -> Any:
     return params[key]
 
 
-def __create_gate_sequence(
+def __create_qcnn_gate_sequence(
     params: dict,
     operations: list[Any],
     entangler: Any,
@@ -844,7 +844,7 @@ def __create_gate_sequence(
     use_dagger: bool = True,
 ) -> ChainBlock:
     """
-    Creates a sequence of gates for a control-target pair.
+    Creates the 2 qubit unitary W for a neigboring qubit pair.
 
     Args:
         params (dict): Dictionary to store and retrieve parameters.
@@ -892,7 +892,7 @@ def __create_gate_sequence(
     return chain(*gates)
 
 
-def __create_layer(
+def __create_qcnn_layer(
     layer_index: int,
     reps: int,
     current_indices: list[int],
@@ -903,7 +903,7 @@ def __create_layer(
     use_dagger: bool,
 ) -> tuple[AbstractBlock, list[int]]:
     """
-    Helper function to create a single layer of the ansatz.
+    Helper function to create a single layer of the QCNN conv.
 
     Args:
         layer_index (int): The index of the current layer.
@@ -933,7 +933,7 @@ def __create_layer(
 
             # Build the gate sequence for each pair
             for control, target in pairs:
-                gate_sequence = __create_gate_sequence(
+                gate_sequence = __create_qcnn_gate_sequence(
                     params,
                     operations,
                     entangler,
@@ -958,7 +958,7 @@ def __create_layer(
     else:  # Original behavior for other layers
         for d in range(reps):
             for control, target in zip(current_indices[::2], current_indices[1::2]):
-                gate_sequence = __create_gate_sequence(
+                gate_sequence = __create_qcnn_gate_sequence(
                     params,
                     operations,
                     entangler,
