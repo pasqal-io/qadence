@@ -14,6 +14,7 @@ from qadence.parameters import Parameter
 
 from qadence.ml_tools.constructors import __create_layer
 
+
 ####
 class qcnn(QNN):
     def __init__(
@@ -65,9 +66,15 @@ class qcnn(QNN):
         )
 
     def create_circuit(
-        self, n_inputs: int, n_qubits: int, depth: list[int], operations: list[Any], entangler:Any, use_dagger:bool,
+        self,
+        n_inputs: int,
+        n_qubits: int,
+        depth: list[int],
+        operations: list[Any],
+        entangler: Any,
+        use_dagger: bool,
     ) -> tuple[QuantumCircuit, list[int]]:
-        '''
+        """
         Defines a single, continuous quantum circuit with custom repeating ansatz for each depth.
 
         Args:
@@ -79,7 +86,7 @@ class qcnn(QNN):
 
         Returns:
             tuple[QuantumCircuit, list[int]]: A tuple containing the quantum circuit and the final target indices.
-        '''
+        """
         # Feature map (FM)
         fm_temp = [
             feature_map(
@@ -99,7 +106,7 @@ class qcnn(QNN):
         all_target_indices = []  # To store target indices for each layer
 
         # Define layer patterns based on depth
-        layer_patterns = [(2 ** layer_index, depth[layer_index]) for layer_index in range(len(depth))]
+        layer_patterns = [(2**layer_index, depth[layer_index]) for layer_index in range(len(depth))]
 
         # Initialize all qubits for the first layer
         current_indices = list(range(n_qubits))
@@ -110,7 +117,14 @@ class qcnn(QNN):
                 break  # Skip this layer if depth is 0 or fewer than 2 qubits remain
 
             layer_block, next_indices = __create_layer(
-                layer_index, reps, current_indices, params, operations, entangler, n_qubits, use_dagger
+                layer_index,
+                reps,
+                current_indices,
+                params,
+                operations,
+                entangler,
+                n_qubits,
+                use_dagger,
             )
 
             # Append the current `current_indices` to `all_target_indices`
@@ -128,7 +142,7 @@ class qcnn(QNN):
 
         qc = QuantumCircuit(n_qubits, fm, ansatz)
         return qc, next_indices
-    
+
     def create_obs(self, n_qubits: int, random_meas: bool) -> AbstractBlock | list[AbstractBlock]:
         """
         Defines the measurements to be performed on the specified target qubits.
