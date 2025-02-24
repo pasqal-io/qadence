@@ -297,9 +297,7 @@ P1 = partial(one_qubit_projector, "1")
 
 
 def blocktree_to_mathematical_expression(block: Tree) -> str:
-    """Convert the rich Tree representation of a block to a readable.
-
-        mathematical expression.
+    """Convert the rich Tree representation of a block to a readable mathematical expression.
 
         Useful for printing Observables as a mathematical expression.
 

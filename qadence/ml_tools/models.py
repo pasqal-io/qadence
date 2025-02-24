@@ -295,12 +295,6 @@ class QNN(QuantumModel):
         """
         from .constructors import build_qnn_from_configs
 
-        _model_configs = {
-            "register": register,
-            "observable_config": obs_config,
-            "fm_config": fm_config,
-            "ansatz_config": ansatz_config,
-        }
         qnn = build_qnn_from_configs(
             register=register,
             observable_config=obs_config,
@@ -313,11 +307,16 @@ class QNN(QuantumModel):
             configuration=configuration,
             input_diff_mode=input_diff_mode,
         )
-        qnn._model_configs = _model_configs
+        qnn._model_configs = {
+            "register": register,
+            "observable_config": obs_config,
+            "fm_config": fm_config,
+            "ansatz_config": ansatz_config,
+        }
         return qnn
 
     def __str__(self) -> str | Any:
-        """Obtain the string representation of a QNN.
+        """Return a string representation of a QNN.
 
         When creating a QNN from a set of configurations,
         we print the configurations used. Otherwise, we use the default printing.
@@ -348,7 +347,7 @@ class QNN(QuantumModel):
             ansatz_config=ansatz_config,
             backend=backend,
         )
-        print(str(qnn)) # markdown-exec: hide
+        print(qnn) # markdown-exec: hide
         ```
         """
         if bool(self._model_configs):
