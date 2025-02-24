@@ -92,7 +92,9 @@ def pulse_experiment(
         )
     # Convert observable to Numpy types compatible with QuTip simulations.
     # Matrices are flipped to match QuTip conventions.
-    converted_observable = [np.flip(block_to_tensor(obs).numpy()) for obs in observable]
+    converted_observable = [
+        np.flip(block_to_tensor(obs, use_full_support=True).numpy()) for obs in observable
+    ]
     # Create ZNE datasets by looping over batches.
     for observable in converted_observable:
         # Get expectation values at the end of the time serie [0,t]
@@ -130,7 +132,9 @@ def noise_level_experiment(
     )
     # Convert observable to Numpy types compatible with QuTip simulations.
     # Matrices are flipped to match QuTip conventions.
-    converted_observable = [np.flip(block_to_tensor(obs).numpy()) for obs in observable]
+    converted_observable = [
+        np.flip(block_to_tensor(obs, use_full_support=True).numpy()) for obs in observable
+    ]
     # Create ZNE datasets by looping over batches.
     for observable in converted_observable:
         # Get expectation values at the end of the time serie [0,t]
