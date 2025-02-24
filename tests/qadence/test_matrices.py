@@ -544,7 +544,7 @@ def _calc_mat_vec_wavefunction(
     ],
 )
 def test_projector_tensor(projector: AbstractBlock, exp_projector_mat: Tensor) -> None:
-    projector_mat = block_to_tensor(projector)
+    projector_mat = block_to_tensor(projector, use_full_support=True)
     assert torch.allclose(projector_mat, exp_projector_mat, atol=1.0e-4)
 
 
@@ -583,8 +583,10 @@ def test_projector_composition_unitaries(
 def test_embedded(circ_and_inputs: tuple[QuantumCircuit, dict[str, torch.Tensor]]) -> None:
     circ, inputs = circ_and_inputs
     ps, embed = embedding(circ.block, to_gate_params=False)
-    m = block_to_tensor(circ.block, inputs)
-    m_embedded = _block_to_tensor_embedded(circ.block, values=embed(ps, inputs))
+    m = block_to_tensor(circ.block, inputs, use_full_support=True)
+    m_embedded = _block_to_tensor_embedded(
+        circ.block, values=embed(ps, inputs), use_full_support=True
+    )
     zro_state = zero_state(circ.n_qubits)
     wf_run = run(circ, values=inputs)
     wf_embedded = torch.einsum("bij,kj->bi", m_embedded, zro_state)
