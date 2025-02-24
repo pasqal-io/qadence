@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections import Counter
+from collections import Counter, OrderedDict
 from logging import getLogger
 from typing import Any, Callable
 
@@ -19,6 +19,7 @@ from qadence.model import QuantumModel
 from qadence.noise import NoiseHandler
 from qadence.register import Register
 from qadence.types import BackendName, DiffMode, Endianness, InputDiffMode, ParamDictType
+from qadence.utils import blocktree_to_mathematical_expression
 
 logger = getLogger(__name__)
 
@@ -316,9 +317,61 @@ class QNN(QuantumModel):
         return qnn
 
     def __str__(self) -> str | Any:
+        """Obtain the string representation of a QNN.
+
+        When creating a QNN from a set of configurations,
+        we print the configurations used. Otherwise, we use the default printing.
+
+        Returns:
+            str | Any: A string representation of a QNN.
+
+        Example:
+        ```python exec="on" source="material-block" result="json"
+        from qadence import QNN
+        from qadence.constructors.hamiltonians import Interaction
+        from qadence.ml_tools.config import AnsatzConfig, FeatureMapConfig
+        from qadence.ml_tools.constructors import (
+            ObservableConfig,
+        )
+        from qadence.operations import Z
+        from qadence.types import BackendName
+
+        backend = BackendName.PYQTORCH
+        fm_config = FeatureMapConfig(num_features=1)
+        ansatz_config = AnsatzConfig()
+        observable_config = ObservableConfig(detuning=Z, interaction=Interaction.ZZ, scale=2)
+
+        qnn = QNN.from_configs(
+            register=2,
+            obs_config=observable_config,
+            fm_config=fm_config,
+            ansatz_config=ansatz_config,
+            backend=backend,
+        )
+        print(str(qnn)) # markdown-exec: hide
+        ```
+        """
         if bool(self._model_configs):
-            configs_str = " \n".join((k + " = " + str(v) for k, v in self._model_configs.items()))
-            return f"{type(self).__name__}(\n {configs_str} \n)"
+            configs_str = "\n".join(
+                (
+                    k + " = " + str(self._model_configs[k])
+                    for k in sorted(self._model_configs.keys())
+                    if k != "observable_config"
+                )
+            )
+            observable_str = ""
+            if self._observable:
+                observable_str = (
+                    "observable_config = [\n"
+                    + "\n".join(
+                        (
+                            blocktree_to_mathematical_expression(obs.original.__rich_tree__())
+                            for obs in self._observable
+                        )
+                    )
+                    + "\n]"
+                )
+            return f"{type(self).__name__}(\n{configs_str}\n{observable_str}\n)"
 
         return super().__str__()
 

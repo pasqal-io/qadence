@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import re
 from collections import Counter
 from functools import partial
 from logging import getLogger
@@ -12,6 +13,9 @@ from numpy.typing import ArrayLike
 from torch import Tensor, stack, vmap
 from torch import complex as make_complex
 from torch.linalg import eigvals
+
+from rich.tree import Tree
+
 
 from qadence.types import Endianness, ResultType, TNumber
 
@@ -290,3 +294,45 @@ def one_qubit_projector_matrix(state: str) -> Tensor:
 
 P0 = partial(one_qubit_projector, "0")
 P1 = partial(one_qubit_projector, "1")
+
+
+def blocktree_to_mathematical_expression(block: Tree) -> str:
+    """Convert the rich Tree representation of a block to a readable.
+
+        mathematical expression.
+
+        Useful for printing Observables as a mathematical expression.
+
+    Args:
+        block (Tree): Tree instance.
+
+    Returns:
+        str: A mathematical expression.
+    """
+    block_title = block.label if isinstance(block.label, str) else ""
+    if "AddBlock" in block_title:
+        block_title = " + ".join(
+            [blocktree_to_mathematical_expression(block_child) for block_child in block.children]
+        )
+    if "KronBlock" in block_title:
+        block_title = " ⊗ ".join(
+            [blocktree_to_mathematical_expression(block_child) for block_child in block.children]
+        )
+    if "mul" in block_title:
+        block_title = re.findall("\d+\.\d+", block_title)[0]
+        coeff = float(block_title)
+        if coeff == 0:
+            block_title = ""
+        elif coeff == 1:
+            block_title = blocktree_to_mathematical_expression(block.children[0])
+        else:
+            block_title += " * " + blocktree_to_mathematical_expression(block.children[0])
+    first_part = block_title[:3]
+    if first_part in [" + ", " ⊗ ", " * "]:
+        block_title = block_title[3:]
+
+    # if too manny trees, add parentheses.
+    nb_children = len(block.children)
+    if nb_children > 1:
+        block_title = "(" + block_title + ")"
+    return block_title
