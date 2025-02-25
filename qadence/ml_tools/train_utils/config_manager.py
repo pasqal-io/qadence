@@ -90,13 +90,13 @@ class ConfigManager:
                         "was updated externally."
                     )
             else:
-                if self.config.log_folder is None:
+                if self.config.custom_log_folder is None:
                     # A subfolder must be created (no specific folder given to config).
                     self._add_subfolder()
                     log_folder = root_folder_path / self.config._subfolders[-1]
                 else:
                     # The folder is one and fully specified by the user.
-                    log_folder = Path(self.config.log_folder)
+                    log_folder = Path(self.config.custom_log_folder)
 
         log_folder.mkdir(parents=True, exist_ok=True)
         return log_folder
