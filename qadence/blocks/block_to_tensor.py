@@ -284,16 +284,16 @@ def block_to_diagonal(
     if isinstance(block, (ChainBlock, KronBlock)):
         v = torch.ones(2**nqubits, dtype=torch.cdouble)
         for b in block.blocks:
-            v *= block_to_diagonal(b, qubit_support)
+            v *= block_to_diagonal(b, qubit_support, device=device)
     if isinstance(block, AddBlock):
         t = torch.zeros(2**nqubits, dtype=torch.cdouble)
         for b in block.blocks:
-            t += block_to_diagonal(b, qubit_support)
+            t += block_to_diagonal(b, qubit_support, device=device)
         v = t
     elif isinstance(block, ScaleBlock):
         _s = evaluate(block.scale, {}, as_torch=True)  # type: ignore[attr-defined]
         _s = _s.detach()  # type: ignore[union-attr]
-        v = _s * block_to_diagonal(block.block, qubit_support)
+        v = _s * block_to_diagonal(block.block, qubit_support, device=device)
 
     elif isinstance(block, PrimitiveBlock):
         v = _fill_identities(
@@ -302,6 +302,7 @@ def block_to_diagonal(
             qubit_support,  # type: ignore [arg-type]
             diag_only=True,
             endianness=endianness,
+            device=device,
         )
     return v
 
