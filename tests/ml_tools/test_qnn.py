@@ -363,6 +363,9 @@ def test_config_qnn(diff_mode: DiffMode) -> None:
         diff_mode=diff_mode,
         backend=backend,
     )
+    str_qnn = str(qnn)
+    for k in qnn._model_configs.keys():
+        assert k in str_qnn
 
     assert isinstance(qnn, QNN)
     assert qnn._diff_mode == diff_mode
