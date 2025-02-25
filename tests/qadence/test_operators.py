@@ -279,7 +279,7 @@ def test_to_matrix(block_and_mat: tuple[AbstractBlock, np.ndarray]) -> None:
 def test_from_openfermion(qubit_op: QubitOperator) -> None:
     obs = from_openfermion(qubit_op)
     expected_mat = get_sparse_operator(qubit_op).toarray()
-    np_mat = block_to_tensor(obs).squeeze().numpy()
+    np_mat = block_to_tensor(obs, use_full_support=True).squeeze().numpy()
     assert np.array_equal(np_mat, expected_mat)
     op = to_openfermion(obs)
     assert op == qubit_op

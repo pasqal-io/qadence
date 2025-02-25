@@ -17,6 +17,7 @@ from qadence.blocks import (
     ParametricBlock,
     ParametricControlBlock,
     embedding,
+    MatrixBlock,
 )
 from qadence.blocks.block_to_tensor import (
     IMAT,
@@ -544,7 +545,7 @@ def _calc_mat_vec_wavefunction(
     ],
 )
 def test_projector_tensor(projector: AbstractBlock, exp_projector_mat: Tensor) -> None:
-    projector_mat = block_to_tensor(projector)
+    projector_mat = block_to_tensor(projector, use_full_support=True)
     assert torch.allclose(projector_mat, exp_projector_mat, atol=1.0e-4)
 
 
@@ -578,18 +579,27 @@ def test_projector_composition_unitaries(
     assert torch.allclose(block_to_tensor(projector), block_to_tensor(exp_projector), atol=ATOL_64)
 
 
+@pytest.mark.parametrize("use_full_support", [True, False])
 @given(st.batched_digital_circuits())
 @settings(deadline=None)
-def test_embedded(circ_and_inputs: tuple[QuantumCircuit, dict[str, torch.Tensor]]) -> None:
+def test_embedded(
+    use_full_support: bool, circ_and_inputs: tuple[QuantumCircuit, dict[str, torch.Tensor]]
+) -> None:
     circ, inputs = circ_and_inputs
     ps, embed = embedding(circ.block, to_gate_params=False)
-    m = block_to_tensor(circ.block, inputs)
-    m_embedded = _block_to_tensor_embedded(circ.block, values=embed(ps, inputs))
+    m = block_to_tensor(circ.block, inputs, use_full_support=use_full_support)
+    m_embedded = _block_to_tensor_embedded(
+        circ.block, values=embed(ps, inputs), use_full_support=use_full_support
+    )
+    assert torch.allclose(m, m_embedded)
     zro_state = zero_state(circ.n_qubits)
     wf_run = run(circ, values=inputs)
-    wf_embedded = torch.einsum("bij,kj->bi", m_embedded, zro_state)
-    wf_nonembedded = torch.einsum("bij,kj->bi", m, zro_state)
-    assert torch.allclose(m, m_embedded)
+    if use_full_support:
+        wf_embedded = torch.einsum("bij,kj->bi", m_embedded, zro_state)
+        wf_nonembedded = torch.einsum("bij,kj->bi", m, zro_state)
+    else:
+        wf_embedded = run(circ, values=embed(ps, inputs))
+        wf_nonembedded = wf_run
     assert equivalent_state(wf_run, wf_embedded, atol=ATOL_E6)
     assert equivalent_state(wf_run, wf_nonembedded, atol=ATOL_E6)
 
