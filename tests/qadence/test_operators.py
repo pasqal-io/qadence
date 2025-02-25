@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+import random
 import pytest
 import torch
 from openfermion import QubitOperator, get_sparse_operator
@@ -96,58 +97,38 @@ def cphase_eigenvals(p: float, n_qubits: int = 2) -> torch.Tensor:
     return torch.cat((torch.ones(2**n_qubits - 1), eigenval(2.0 * p).conj()))
 
 
-# PyQTorch only supports single qubit projectors.
-@pytest.mark.parametrize(
-    "projector, state, exp_wf",
-    [
-        (
-            Projector(bra="0", ket="0", qubit_support=0),
-            product_state("0"),
-            torch.tensor([[1.0, 0.0]], dtype=torch.cdouble),
-        ),
-        (
-            Projector(bra="0", ket="0", qubit_support=0),
-            product_state("1"),
-            torch.tensor([[0.0, 0.0]], dtype=torch.cdouble),
-        ),
-        (
-            Projector(bra="1", ket="1", qubit_support=0),
-            product_state("0"),
-            torch.tensor([[0.0, 0.0]], dtype=torch.cdouble),
-        ),
-        (
-            Projector(bra="1", ket="1", qubit_support=0),
-            product_state("1"),
-            torch.tensor([[0.0, 1.0]], dtype=torch.cdouble),
-        ),
-        (
-            Projector(bra="00", ket="00", qubit_support=(0, 1)),
-            product_state("00"),
-            torch.tensor([[1.0, 0.0, 0.0, 0.0]], dtype=torch.cdouble),
-        ),
-        (
-            Projector(bra="01", ket="10", qubit_support=(0, 1)),
-            product_state("01"),
-            torch.tensor([[0.0, 0.0, 1.0, 0.0]], dtype=torch.cdouble),
-        ),
-        (
-            Projector(bra="10", ket="01", qubit_support=(0, 1)),
-            product_state("10"),
-            torch.tensor([[0.0, 1.0, 0.0, 0.0]], dtype=torch.cdouble),
-        ),
-        (
-            Projector(bra="11", ket="11", qubit_support=(0, 1)),
-            product_state("11"),
-            torch.tensor([[0.0, 0.0, 0.0, 1.0]], dtype=torch.cdouble),
-        ),
-    ],
-)
-def test_projector_with_pyqtorch(projector: AbstractBlock, state: Tensor, exp_wf: Tensor) -> None:
-    circuit = QuantumCircuit(projector.n_qubits, projector)
+@pytest.mark.parametrize("n_qubits", [1, 2, 3])
+def test_projector_with_pyqtorch(n_qubits: int) -> None:
+    qubit_support = tuple(range(n_qubits))
+    max_possibility = 2**n_qubits
+    possible_nbs = list(range(max_possibility - 1))
+
     backend_inst = backend_factory(backend=BackendName.PYQTORCH)
-    conv_circuit = backend_inst.circuit(circuit=circuit)
-    wf = backend_inst.run(circuit=conv_circuit, state=state)
-    assert torch.allclose(wf, exp_wf)
+
+    for ket in [random.choice(possible_nbs) for _ in range(2 * n_qubits)]:
+        for bra in [random.choice(possible_nbs) for _ in range(2 * n_qubits)]:
+            projector = Projector(
+                qubit_support=qubit_support, ket=f"{ket:0{n_qubits}b}", bra=f"{bra:0{n_qubits}b}"
+            )
+            exp_wf = product_state(f"{ket:0{n_qubits}b}")
+
+            circuit = QuantumCircuit(projector.n_qubits, projector)
+            conv_circuit = backend_inst.circuit(circuit=circuit)
+            wf = backend_inst.run(circuit=conv_circuit, state=product_state(f"{bra:0{n_qubits}b}"))
+            # input state bra will transform to ket
+            assert torch.allclose(wf, exp_wf)
+
+        if ket > 0:
+            projector = Projector(
+                qubit_support=qubit_support, ket=f"{ket:0{n_qubits}b}", bra=f"{ket:0{n_qubits}b}"
+            )
+            circuit = QuantumCircuit(projector.n_qubits, projector)
+            conv_circuit = backend_inst.circuit(circuit=circuit)
+            wf = backend_inst.run(
+                circuit=conv_circuit, state=product_state(f"{ket-1:0{n_qubits}b}")
+            )
+            exp_wf = torch.zeros((1, max_possibility), dtype=torch.cdouble)
+            assert torch.allclose(wf, exp_wf)
 
 
 @pytest.mark.parametrize(
