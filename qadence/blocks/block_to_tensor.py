@@ -359,10 +359,11 @@ def block_to_tensor(
     from qadence.blocks import embedding
 
     (ps, embed) = embedding(block)
+    values = embed(ps, values)
     if tensor_type == TensorType.DENSE:
         return _block_to_tensor_embedded(
             block,
-            embed(ps, values),
+            values,
             qubit_support,
             use_full_support,
             endianness=endianness,
@@ -370,7 +371,7 @@ def block_to_tensor(
         )
 
     elif tensor_type == TensorType.SPARSEDIAGONAL:
-        t = block_to_diagonal(block, endianness=endianness, values=embed(ps, values))
+        t = block_to_diagonal(block, endianness=endianness, values=values)
         indices, values, size = torch.nonzero(t), t[t != 0], len(t)
         indices = torch.stack((indices.flatten(), indices.flatten()))
         return torch.sparse_coo_tensor(indices, values, (size, size))
