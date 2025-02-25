@@ -270,9 +270,8 @@ def block_to_diagonal(
     use_full_support: bool = False,
     endianness: Endianness = Endianness.BIG,
     device: torch.device = None,
+    values: dict[str, TNumber | torch.Tensor] = {},
 ) -> torch.Tensor:
-    if block.is_parametric:
-        raise TypeError("Sparse observables cant be parametric.")
     if not block._is_diag_pauli:
         raise TypeError("Sparse observables can only be used on paulis which are diagonal.")
     if qubit_support is None:
@@ -284,16 +283,31 @@ def block_to_diagonal(
     if isinstance(block, (ChainBlock, KronBlock)):
         v = torch.ones(2**nqubits, dtype=torch.cdouble)
         for b in block.blocks:
-            v *= block_to_diagonal(b, qubit_support, device=device)
+            v *= block_to_diagonal(b, qubit_support, device=device, values=values)
     if isinstance(block, AddBlock):
         t = torch.zeros(2**nqubits, dtype=torch.cdouble)
         for b in block.blocks:
-            t += block_to_diagonal(b, qubit_support, device=device)
+            t += block_to_diagonal(b, qubit_support, device=device, values=values)
         v = t
     elif isinstance(block, ScaleBlock):
         _s = evaluate(block.scale, {}, as_torch=True)  # type: ignore[attr-defined]
         _s = _s.detach()  # type: ignore[union-attr]
-        v = _s * block_to_diagonal(block.block, qubit_support, device=device)
+        v = _s * block_to_diagonal(block.block, qubit_support, device=device, values=values)
+    elif isinstance(block, (ControlBlock, ParametricControlBlock)):
+        c_block, newparams = _controlled_block_with_params(block)
+        newparams.update(values)
+        v = block_to_diagonal(
+            c_block, qubit_support, endianness=endianness, device=device, values=newparams
+        )
+    elif isinstance(block, ParametricBlock):
+        v = _fill_identities(
+            _parametric_matrix(block, values),
+            block.qubit_support,
+            qubit_support,  # type: ignore [arg-type]
+            diag_only=True,
+            endianness=endianness,
+            device=device,
+        )
 
     elif isinstance(block, PrimitiveBlock):
         v = _fill_identities(
@@ -342,15 +356,10 @@ def block_to_tensor(
     print(block_to_tensor(obs, tensor_type="SparseDiagonal"))
     ```
     """
+    from qadence.blocks import embedding
 
-    # FIXME: default use_full_support to False. In general, it would
-    # be more efficient to do that, and make sure that computations such
-    # as observables only do the matmul of the size of the qubit support.
-
+    (ps, embed) = embedding(block)
     if tensor_type == TensorType.DENSE:
-        from qadence.blocks import embedding
-
-        (ps, embed) = embedding(block)
         return _block_to_tensor_embedded(
             block,
             embed(ps, values),
@@ -361,7 +370,7 @@ def block_to_tensor(
         )
 
     elif tensor_type == TensorType.SPARSEDIAGONAL:
-        t = block_to_diagonal(block, endianness=endianness)
+        t = block_to_diagonal(block, endianness=endianness, values=embed(ps, values))
         indices, values, size = torch.nonzero(t), t[t != 0], len(t)
         indices = torch.stack((indices.flatten(), indices.flatten()))
         return torch.sparse_coo_tensor(indices, values, (size, size))
