@@ -82,18 +82,20 @@ def _fill_identities(
     full_qubit_support = tuple(sorted(full_qubit_support))
     qubit_support = tuple(sorted(qubit_support))
     block_mat = block_mat.to(device)
-    mat = IMAT.to(device) if qubit_support[0] != full_qubit_support[0] else block_mat
+    identity_mat = IMAT.to(device)
     if diag_only:
-        mat = torch.diag(mat.squeeze(0))
+        block_mat = torch.diag(block_mat.squeeze(0))
+        identity_mat = torch.diag(identity_mat.squeeze(0))
+    mat = identity_mat if qubit_support[0] != full_qubit_support[0] else block_mat
     for i in full_qubit_support[1:]:
         if i == qubit_support[0]:
-            other = torch.diag(block_mat.squeeze(0)) if diag_only else block_mat
+            other = block_mat
             if endianness == Endianness.LITTLE:
                 mat = torch.kron(other, mat)
             else:
                 mat = torch.kron(mat.contiguous(), other.contiguous())
         elif i not in qubit_support:
-            other = torch.diag(IMAT.squeeze(0).to(device)) if diag_only else IMAT.to(device)
+            other = identity_mat
             if endianness == Endianness.LITTLE:
                 mat = torch.kron(other.contiguous(), mat.contiguous())
             else:
