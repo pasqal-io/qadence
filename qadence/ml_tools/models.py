@@ -19,7 +19,7 @@ from qadence.model import QuantumModel
 from qadence.noise import NoiseHandler
 from qadence.register import Register
 from qadence.types import BackendName, DiffMode, Endianness, InputDiffMode, ParamDictType
-from qadence.utils import blocktree_to_mathematical_expression
+from qadence.utils import block_to_mathematical_expression
 
 logger = getLogger(__name__)
 
@@ -362,12 +362,7 @@ class QNN(QuantumModel):
             if self._observable:
                 observable_str = (
                     "observable_config = [\n"
-                    + "\n".join(
-                        (
-                            blocktree_to_mathematical_expression(obs.original.__rich_tree__())
-                            for obs in self._observable
-                        )
-                    )
+                    + "\n".join((block_to_mathematical_expression(obs) for obs in self._observable))
                     + "\n]"
                 )
             return f"{type(self).__name__}(\n{configs_str}\n{observable_str}\n)"

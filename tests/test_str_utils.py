@@ -4,7 +4,7 @@ import pytest
 
 from qadence import Z, hamiltonian_factory, kron
 from qadence.blocks import AbstractBlock, MatrixBlock, KronBlock
-from qadence.utils import blocktree_to_mathematical_expression
+from qadence.utils import block_to_mathematical_expression
 import torch
 
 
@@ -20,5 +20,5 @@ import torch
         ),
     ],
 )
-def test_blocktree_to_mathematical_expression(block: AbstractBlock, expected_str: str) -> None:
-    assert blocktree_to_mathematical_expression(block.__rich_tree__()) == expected_str
+def test_block_to_mathematical_expression(block: AbstractBlock, expected_str: str) -> None:
+    assert block_to_mathematical_expression(block) == expected_str
