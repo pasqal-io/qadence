@@ -290,8 +290,8 @@ def block_to_diagonal(
             t += block_to_diagonal(b, values, qubit_support, device=device)
         v = t
     elif isinstance(block, ScaleBlock):
-        _s = evaluate(block.scale, {}, as_torch=True)  # type: ignore[attr-defined]
-        _s = _s.detach()  # type: ignore[union-attr]
+        _s = evaluate(block.scale, values, as_torch=True)  # type: ignore[attr-defined]
+        _s = _s.detach().squeeze(0)  # type: ignore[union-attr]
         v = _s * block_to_diagonal(block.block, values, qubit_support, device=device)
     elif isinstance(block, PrimitiveBlock):
         v = _fill_identities(
