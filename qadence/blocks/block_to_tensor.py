@@ -266,11 +266,11 @@ def _gate_parameters(b: AbstractBlock, values: dict[str, torch.Tensor]) -> tuple
 
 def block_to_diagonal(
     block: AbstractBlock,
+    values: dict[str, TNumber | torch.Tensor] = {},
     qubit_support: tuple | list | None = None,
     use_full_support: bool = False,
     endianness: Endianness = Endianness.BIG,
     device: torch.device = None,
-    values: dict[str, TNumber | torch.Tensor] = {},
 ) -> torch.Tensor:
     if not block._is_diag_pauli:
         raise TypeError("Sparse observables can only be used on paulis which are diagonal.")
@@ -283,16 +283,16 @@ def block_to_diagonal(
     if isinstance(block, (ChainBlock, KronBlock)):
         v = torch.ones(2**nqubits, dtype=torch.cdouble)
         for b in block.blocks:
-            v *= block_to_diagonal(b, qubit_support, device=device, values=values)
+            v *= block_to_diagonal(b, values, qubit_support, device=device)
     if isinstance(block, AddBlock):
         t = torch.zeros(2**nqubits, dtype=torch.cdouble)
         for b in block.blocks:
-            t += block_to_diagonal(b, qubit_support, device=device, values=values)
+            t += block_to_diagonal(b, values, qubit_support, device=device)
         v = t
     elif isinstance(block, ScaleBlock):
         _s = evaluate(block.scale, {}, as_torch=True)  # type: ignore[attr-defined]
         _s = _s.detach()  # type: ignore[union-attr]
-        v = _s * block_to_diagonal(block.block, qubit_support, device=device, values=values)
+        v = _s * block_to_diagonal(block.block, values, qubit_support, device=device)
     elif isinstance(block, PrimitiveBlock):
         v = _fill_identities(
             OPERATIONS_DICT[block.name],
@@ -355,7 +355,7 @@ def block_to_tensor(
         )
 
     elif tensor_type == TensorType.SPARSEDIAGONAL:
-        t = block_to_diagonal(block, endianness=endianness, values=values)
+        t = block_to_diagonal(block, values, endianness=endianness)
         indices, values, size = torch.nonzero(t), t[t != 0], len(t)
         indices = torch.stack((indices.flatten(), indices.flatten()))
         return torch.sparse_coo_tensor(indices, values, (size, size))
