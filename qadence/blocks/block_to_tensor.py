@@ -293,22 +293,6 @@ def block_to_diagonal(
         _s = evaluate(block.scale, {}, as_torch=True)  # type: ignore[attr-defined]
         _s = _s.detach()  # type: ignore[union-attr]
         v = _s * block_to_diagonal(block.block, qubit_support, device=device, values=values)
-    elif isinstance(block, (ControlBlock, ParametricControlBlock)):
-        c_block, newparams = _controlled_block_with_params(block)
-        newparams.update(values)
-        v = block_to_diagonal(
-            c_block, qubit_support, endianness=endianness, device=device, values=newparams
-        )
-    elif isinstance(block, ParametricBlock):
-        v = _fill_identities(
-            _parametric_matrix(block, values),
-            block.qubit_support,
-            qubit_support,  # type: ignore [arg-type]
-            diag_only=True,
-            endianness=endianness,
-            device=device,
-        )
-
     elif isinstance(block, PrimitiveBlock):
         v = _fill_identities(
             OPERATIONS_DICT[block.name],

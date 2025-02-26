@@ -61,6 +61,7 @@ from qadence.operations import (
     X,
     Y,
     Z,
+    CRZ,
 )
 from qadence.states import equivalent_state, random_state, zero_state
 from qadence.types import BasisSet, Interaction, ReuploadScaling
@@ -806,16 +807,22 @@ def test_block_is_diag(block: AbstractBlock, is_diag_pauli: bool) -> None:
 
 
 @pytest.mark.parametrize("n_qubits", [i for i in range(1, 5)])
-@pytest.mark.parametrize("obs", [total_magnetization, zz_hamiltonian, variational_ising])
+@pytest.mark.parametrize(
+    "obs",
+    [
+        total_magnetization,
+        zz_hamiltonian,
+        variational_ising,
+        lambda n: "x" * chain(Z(0), Z(n - 1)) if n > 1 else "x" * Z(0),
+    ],
+)
 def test_sparse_obs_conversion(n_qubits: int, obs: AbstractBlock) -> None:
     obs = obs(n_qubits)  # type: ignore[operator]
     values = {}
     if obs.is_parametric:
         values = {p: torch.rand(1, requires_grad=True) for p in parameters(obs)}
     sparse_diag = block_to_tensor(obs, values=values, tensor_type=TensorType.SPARSEDIAGONAL)
-    true_diag = torch.diag(
-        block_to_tensor(obs, values, tuple([i for i in range(n_qubits)])).squeeze(0)
-    )
+    true_diag = torch.diag(block_to_tensor(obs, values).squeeze(0))
     # to_sparse conversion does not allow automatic differentiation
     with torch.no_grad():
         assert torch.allclose(
