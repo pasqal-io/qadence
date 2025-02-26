@@ -504,6 +504,10 @@ def test_projector_composition_unitaries(
             - Projector(ket="1", bra="1", qubit_support=0),
             Z(0),
         ),
+        (
+            cnot,
+            CNOT(0, 1),
+        ),
     ],
 )
 def test_projector_hamevo(projector_decomp: AbstractBlock, pauli: AbstractBlock) -> None:
