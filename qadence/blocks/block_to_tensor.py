@@ -266,7 +266,7 @@ def _gate_parameters(b: AbstractBlock, values: dict[str, torch.Tensor]) -> tuple
 
 def block_to_diagonal(
     block: AbstractBlock,
-    values: dict[str, TNumber | torch.Tensor] = {},
+    values: dict[str, TNumber | torch.Tensor] = dict(),
     qubit_support: tuple | list | None = None,
     use_full_support: bool = False,
     endianness: Endianness = Endianness.BIG,
