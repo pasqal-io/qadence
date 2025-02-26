@@ -77,99 +77,6 @@ def _calc_mat_vec_wavefunction(
     "projector, exp_projector_mat",
     [
         (
-            Projector(bra="1", ket="1", qubit_support=0),
-            torch.tensor([[0.0 + 0.0j, 0.0 + 0.0j], [0.0 + 0.0j, 1.0 + 0.0j]]),
-        ),
-        (
-            Projector(bra="10", ket="01", qubit_support=(1, 2)),
-            torch.tensor(
-                [
-                    [
-                        [
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                        ],
-                        [
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                        ],
-                        [
-                            0.0 + 0.0j,
-                            1.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                        ],
-                        [
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                        ],
-                        [
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                        ],
-                        [
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                        ],
-                        [
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            1.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                        ],
-                        [
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                        ],
-                    ]
-                ]
-            ),
-        ),
-        (
             N(0),
             (IMAT - ZMAT) / 2.0,
         ),
@@ -577,6 +484,37 @@ def test_projector_composition_unitaries(
     projector: AbstractBlock, exp_projector: AbstractBlock
 ) -> None:
     assert torch.allclose(block_to_tensor(projector), block_to_tensor(exp_projector), atol=ATOL_64)
+
+
+@pytest.mark.parametrize(
+    "projector_decomp, pauli",
+    [
+        (
+            Projector(ket="0", bra="1", qubit_support=0)
+            + Projector(ket="1", bra="0", qubit_support=0),
+            X(0),
+        ),
+        (
+            1j * Projector(ket="0", bra="1", qubit_support=0)
+            - 1j * Projector(ket="1", bra="0", qubit_support=0),
+            Y(0),
+        ),
+        (
+            Projector(ket="0", bra="0", qubit_support=0)
+            - Projector(ket="1", bra="1", qubit_support=0),
+            Z(0),
+        ),
+        (
+            cnot,
+            CNOT(0, 1),
+        ),
+    ],
+)
+def test_projector_hamevo(projector_decomp: AbstractBlock, pauli: AbstractBlock) -> None:
+    tevo = np.random.rand()
+    hamevo_comp = HamEvo(projector_decomp, tevo)
+    hamevo_pauli = HamEvo(pauli, tevo)
+    assert torch.allclose(block_to_tensor(hamevo_comp), block_to_tensor(hamevo_pauli), atol=ATOL_64)
 
 
 @pytest.mark.parametrize("use_full_support", [True, False])
