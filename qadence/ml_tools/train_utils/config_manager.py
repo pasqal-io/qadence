@@ -41,11 +41,10 @@ class ConfigManager:
         handling hyperparameters, deriving additional parameters,
         and logging warnings.
         """
+        self._log_warnings()
         self._initialize_folder()
         self._handle_hyperparams()
         self._setup_additional_configuration()
-        # TODO check if warnings shouldn't be at the start of the init
-        self._log_warnings()
 
     def _initialize_folder(self) -> None:
         """
