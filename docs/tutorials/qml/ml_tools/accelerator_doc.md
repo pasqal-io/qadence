@@ -32,7 +32,7 @@ accelerator = Accelerator(
 from qadence.ml_tools.trainer import Trainer
 from qadence.ml_tools import TrainConfig
 
-config = TrainConfig(spawn = True, nprocs=4)
+config = TrainConfig(spawn=True, nprocs=4)
 
 trainer = Trainer(model, optimizer, config)
 model, optimizer = trainer.fit(dataloader)
@@ -41,7 +41,7 @@ model, optimizer = trainer.fit(dataloader)
 
 ### Accelerator features
 
-The `Accelerator` also provides a `distribute()` function wrapper that simplifies running distributed training across multiple processes. This method can be used to prepare/wrap function that need to be distributed.
+The `Accelerator` also provides a `distribute()` function wrapper that simplifies running distributed training across multiple processes. This method can be used to prepare or wrap a function that needs to be distributed.
 
 -  `distribute()`
 
@@ -72,8 +72,7 @@ The `Accelerator` further offers these key methods: `prepare`, `prepare_batch`, 
     Moves data batches to the correct device and formats them properly for distributed training.
 
     ```python
-    batch = accelerator.prepare_batch(batch)
-    batch_data, batch_targets = batch
+    batch_data, batch_targets = accelerator.prepare(batch)
     ```
 
 - `all_reduce_dict()`
@@ -124,8 +123,7 @@ def train_epoch(epochs, model, dataloader, optimizer, accelerator):
             optimizer.step()
         print("Rank: ", accelerator.rank, " | Epoch: ", epoch, " | Loss: ", loss.item())
 
-if __name__ =="__main__":
-    n_epochs = 5
+if __name__ == "__main__":
 
     model = nn.Sequential(
         nn.Linear(10, 100),  # Input Layer
@@ -133,6 +131,7 @@ if __name__ =="__main__":
         nn.Linear(100, 1)  # Output Layer
     )
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+    # A random dataset with 10 features and a target to predict.
     dataset = TensorDataset(torch.randn(100, 10), torch.randn(100, 1))
     dataloader = DataLoader(dataset, batch_size=32)
 

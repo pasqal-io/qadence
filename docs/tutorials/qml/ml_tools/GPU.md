@@ -57,8 +57,12 @@ train_config = TrainConfig(
 
 ## Examples
 
-The following sections provide Python scripts and SLURM batch scripts for each setup.
+The following sections provide Python scripts and training approach scripts for each setup.
 
+
+> Some organizations use [SLURM](https://slurm.schedmd.com) to manage resources. Slurm is an open source, fault-tolerant, and highly scalable cluster management and job scheduling system for large and small Linux clusters. If you are using slurm, you can use the `Trainer` by submitting a batch script using sbatch. Further below, we also provide the sbatch scripts for each setup.
+
+> You can also use `torchrun` to run the training process - which provides a superset of the functionality as `torch.distributed.launch `. Here you need to specify the [torchrun arguments](https://pytorch.org/docs/stable/elastic/run.html) arguments to set up the distributed training setup. We also include the `torchrun` sbatch scripts for each setup below.
 
 ### Example Training Script (`train.py`):
 
@@ -75,26 +79,25 @@ Trainer.set_use_grad(True)
 
 # __main__ is recommended.
 if __name__ == "__main__":
+    # simple dataset for y = 2πx
     x = torch.linspace(0, 1, 100).reshape(-1, 1)
     y = torch.sin(2 * torch.pi * x)
     dataloader = DataLoader(TensorDataset(x, y), batch_size=16, shuffle=True)
+    # Simple model with no hidden layer and ReLU activation to fit the data for y = 2πx
     model = nn.Sequential(nn.Linear(1, 16), nn.ReLU(), nn.Linear(16, 1))
+    # SGD optimizer with 0.01 learning rate
     optimizer = optim.SGD(model.parameters(), lr=0.01)
 
     # TrainConfig
     parser = argparse.ArgumentParser()
-    parser.add_argument("--nprocs", type=int, default=1, help="Number of processes (GPUs) to use.")
-    parser.add_argument("--compute_setup", type=str, default="auto", choices=["cpu", "gpu", "auto"], help="Computational Setup.")
-    parser.add_argument("--backend", type=str, default="nccl", choices=["nccl", "gloo", "mpi"], help="Distributed backend.")
-    parser.add_argument("--spawn", action="store_true", help="Enable multiprocessing spawn mode.")
-    args = parser.parse_args()
-    train_config = TrainConfig(backend=args.backend,
+    train_config = TrainConfig(
+                                backend=args.backend,
                                 spawn=args.spawn,
                                 nprocs=args.nprocs,
                                 compute_setup=args.compute_setup,
                                 print_every=5,
-                                max_iter=50)
-
+                                max_iter=50
+                 )
 
     trainer = Trainer(model, optimizer, train_config, loss_fn="mse", optimize_step=optimize_step)
     trainer.fit(dataloader)
@@ -130,6 +133,7 @@ Torchrun takes care of setting the `nprocs` and `spawn` based on the cluster set
 - `nnodes` for torchrun should be the number of nodes
 - `nproc_per_node` should be equal to the number of GPUs per node.
 
+> Note: We use the first node of the allocated resources on the cluster as the head node. However, any other node can also be chosen.
 ```bash
 #!/bin/bash
 #SBATCH --job-name=single_gpu
@@ -157,17 +161,16 @@ train.py --compute_setup auto
 ### 2. Multi-GPU (Single Node):
 
 For high performance using multiple GPUs in one node.
+- *Assuming that you have 1 node with 2 GPU. These numbers can be changed depending on user needs.*
 
-- *Assuming that you have 1 node1 with 2 GPU. These numbers can be changed depending on user needs.*
-
-You can train by sinply calling this on the head node.
+You can train by simply calling this on the head node.  
 ```bash
 python3 train.py --spawn --backend nccl --nprocs 2
 ```
 
 #### SLURM
-Slurm can be used to train to train the model.
-- We should have 1 task per gpu. i.e. ntasks is equal to nodes
+Slurm can be used to train the model but also to dispatch the workload on multiple GPUs or CPUs.
+- Here, we should have one task per gpu. i.e. `ntasks` is equal to the number of nodes  
 - `nprocs` should be equal to the total number of gpus (world_size). which is this case is 2.
 
 ```bash
@@ -187,6 +190,7 @@ Torchrun takes care of setting the `nprocs` and `spawn` based on the cluster set
 - `nnodes` for torchrun should be the number of nodes
 - `nproc_per_node` should be equal to the number of GPUs per node.
 
+> Note: We use the first node of the allocated resources on the cluster as the head node. However, any other node can also be chosen.
 ```bash
 #!/bin/bash
 #SBATCH --job-name=multi_gpu
@@ -213,15 +217,13 @@ train.py --compute_setup auto
 
 ### 3. Multi-Node Multi-GPU:
 
-For distributed training across multiple nodes.
-
-- *Assuming that you have 2 nodes with 2 GPU each. These numbers can be changed depending on user needs.*
+For high performance using multiple GPUs in multiple nodes.
+- *Assuming that you have two nodes with two GPU each. These numbers can be customised on user needs.*
 
 For multi-node, it is suggested to submit a sbatch script.
 
 #### SLURM
-Slurm can be used to train to train the model.
-- We should have 1 task per gpu. i.e. ntasks is equal to nodes
+- We should have one task per gpu. i.e. `ntasks` is equal to the number of nodes.
 - `nprocs` should be equal to the total number of gpus (world_size). which is this case is 4.
 
 ```bash
@@ -242,6 +244,7 @@ Torchrun takes care of setting the `nprocs` and `spawn` based on the cluster set
 - `nnodes` for torchrun should be the number of nodes
 - `nproc_per_node` should be equal to the number of GPUs per node.
 
+> Note: We use the first node of the allocated resources on the cluster as the head node. However, any other node can also be chosen.
 ```bash
 #!/bin/bash
 #SBATCH --job-name=multi_node

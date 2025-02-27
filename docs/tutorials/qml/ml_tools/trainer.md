@@ -403,7 +403,7 @@ train_dataloader = to_dataloader(x, y, batch_size=batch_size, infinite=True)
 val_dataloader =  to_dataloader(x, y, batch_size=batch_size, infinite=True)
 
 trainer = Trainer(model, optimizer, config, loss_fn=loss_fn,
-                    train_dataloader = train_dataloader, val_dataloader = val_dataloader)
+                    train_dataloader=train_dataloader, val_dataloader=val_dataloader)
 trainer.fit()
 
 plt.clf()

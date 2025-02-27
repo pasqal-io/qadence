@@ -223,12 +223,12 @@ config = TrainConfig(
 
 - `compute_setup` (**str**): Determines the compute device configuration: 1.`"auto"` (automatically selects GPU if available), 2. `"gpu"` - (forces GPU usage and errors if no GPU is detected), and 3. `"cpu"` (Forces the use of the CPU).
 
-- `backend` (**str**): Specifies the communication backend for distributed training. Common options are `"gloo"` (default), `"nccl"` (optimized for GPUs), or `"mpi"`, depending on your setup.
+- `backend` (**str**): Specifies the communication backend for distributed training. Common options are `"gloo"` (default), `"nccl"` (optimized for GPUs), or `"mpi"`, depending on your setup. It should be one of the backends supported by `torch.distributed`. For further details, please look at [torch backends](https://pytorch.org/docs/stable/distributed.html#torch.distributed.Backend)
 
 
 > Notes:
-> - *Logging Specific Callbacks*: Logging is availiable only through the main process, i.e. process 0.  Model logging, plotting, logging metrics will only be performed for a single process, even is multiple processes are run.
-> - *Training specific callbacks*: Callbacks specific to training, e.g., `EarlyStopping`, `LRSchedulerStepDecay`, etc will be called from each process.
+> - *Logging Specific Callbacks*: Logging is available only through the main process, i.e. process 0.  Model logging, plotting, logging metrics will only be performed for a single process, even if multiple processes are run.
+> - *Training with specific callbacks*: Callbacks specific to training, e.g., `EarlyStopping`, `LRSchedulerStepDecay`, etc will be called from each process.
 > - `PrintMetrics` (set through the `print_every` argument in `TrainCongig`) is available from all processes.
 
 
@@ -242,7 +242,7 @@ config = TrainConfig(
 )
 ```
 
-Example: For GPU Training
+Example: For GPU multiprocessing training
 ```python
 config = TrainConfig(
     spawn= True,
@@ -254,7 +254,9 @@ config = TrainConfig(
 
 #### Precision Options
 
-- `dtype` (**dtype** or **None**): Sets the numerical precision (data type) for computations. For instance, you can use `torch.float32` or `torch.float16` depending on your performance and precision needs.
+- `dtype` (**dtype** or **None**): Sets the numerical precision (data type) for computations. For instance, you can use `torch.float32` or `torch.float16` depending on your performance and precision needs. Both model parameters, and dataset will be of the provided precision.
+    - If not specified or None, the default torch precision (usually torch.float32) is used.
+    - If provided dtype is torch.complex128, model parameters will be torch.complex128, and data parameters will be torch.float64
 
 Furthermore, the user can also utilize the following options:
 

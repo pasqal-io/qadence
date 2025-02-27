@@ -1,8 +1,8 @@
 # Introduction to Qadence ML Tools
 
-Welcome to the Qadence `ML Tools` documentation! This submodule is designed to streamline your machine learning workflows—especially for quantum machine learning—by providing a set of robust tools for training, monitoring, and optimizing your models.
+Welcome to the Qadence `ML Tools` documentation. This submodule is designed to streamline your machine learning workflows —especially for quantum machine learning— by providing a set of robust tools for training, monitoring, and optimizing your models.
 
-## What You'll Find in This Documentation
+## What this documentation is about
 
 - **Trainer Class**
   Learn how to leverage the versatile `Trainer` class to manage your training loops, handle data loading, and integrate with experiment tracking tools like TensorBoard and MLflow. Detailed guides cover:
