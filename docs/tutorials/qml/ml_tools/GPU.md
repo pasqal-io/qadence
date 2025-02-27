@@ -3,8 +3,7 @@
 This guide explains how to train models on **GPU** using `Trainer` from `qadence.ml_tools`, covering **single-GPU**, **multi-GPU (single node)**, and **multi-node multi-GPU** setups.
 
 ### Understanding Arguments
-- *spawn*: If True, enables multi-processing and launches separate processes.
-- *nprocs*: Number of processes to run.
+- *nprocs*: Number of processes to run. To enable multi-processing and launch separate processes, set nprocs > 1.
 - *compute_setup*: The computational setup used for training. Options include `cpu`, `gpu`, and `auto`.
 
 For more details on the advanced training options, please refer to [TrainConfig Documentation](./data_and_config.md)
@@ -15,13 +14,11 @@ By adjusting `TrainConfig`, you can switch between single and multi-GPU training
 ### **Single-GPU Training Configuration:**
 - **`compute_setup`**: Selected training setup. (`gpu` or `auto`)
 - **`backend="nccl"`**: Optimized backend for GPU training.
-- **`spawn=False`**: Uses a single process.
 - **`nprocs=1`**: Uses one GPU.
 ```python
 train_config = TrainConfig(
     compute_setup="auto",
     backend="nccl",
-    spawn=False,
     nprocs=1,
 )
 ```
@@ -29,13 +26,11 @@ train_config = TrainConfig(
 ### **Multi-GPU (Single Node) Training Configuration:**
 - **`compute_setup`**: Selected training setup. (`gpu` or `auto`)
 - **`backend="nccl"`**: Multi-GPU optimized backend.
-- **`spawn=True`**: Enables multi-processing.
 - **`nprocs=2`**: Utilizes 2 GPUs on a single node.
 ```python
 train_config = TrainConfig(
     compute_setup="auto",
     backend="nccl",
-    spawn=True,
     nprocs=2,
 )
 ```
@@ -43,13 +38,11 @@ train_config = TrainConfig(
 ### **Multi-Node Multi-GPU Training Configuration:**
 - **`compute_setup`**: Selected training setup. (`gpu` or `auto`)
 - **`backend="nccl"`**: Required for multi-node setups.
-- **`spawn=True`**: Enables multi-node processing.
 - **`nprocs=4`**: Uses 4 GPUs across nodes.
 ```python
 train_config = TrainConfig(
     compute_setup="auto",
     backend="nccl",
-    spawn=True,
     nprocs=4,
 )
 ```
@@ -90,14 +83,20 @@ if __name__ == "__main__":
 
     # TrainConfig
     parser = argparse.ArgumentParser()
+    parser.add_argument("--nprocs", type=int,
+                        default=1, help="Number of processes (GPUs) to use.")
+    parser.add_argument("--compute_setup", type=str,
+                        default="auto", choices=["cpu", "gpu", "auto"], help="Computational Setup.")
+    parser.add_argument("--backend", type=str,
+                        default="nccl", choices=["nccl", "gloo", "mpi"], help="Distributed backend.")
+    args = parser.parse_args()
     train_config = TrainConfig(
                                 backend=args.backend,
-                                spawn=args.spawn,
                                 nprocs=args.nprocs,
                                 compute_setup=args.compute_setup,
                                 print_every=5,
                                 max_iter=50
-                 )
+                            )
 
     trainer = Trainer(model, optimizer, train_config, loss_fn="mse", optimize_step=optimize_step)
     trainer.fit(dataloader)
@@ -111,7 +110,7 @@ Simple and suitable for single-card setups.
 
 You can train by calling this on the head node.
 ```bash
-python3 train.py --spawn --backend nccl --nprocs 1
+python3 train.py --backend nccl --nprocs 1
 ```
 
 #### SLURM
@@ -125,11 +124,11 @@ Slurm can be used to train to train the model.
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=10G
 
-srun python3 train.py --spawn --backend nccl --nprocs 1
+srun python3 train.py --backend nccl --nprocs 1
 ```
 
 #### TORCHRUN
-Torchrun takes care of setting the `nprocs` and `spawn` based on the cluster setup. We only need to specify to use the `compute_setup`, which can be either `auto` or `gpu`.
+Torchrun takes care of setting the `nprocs` based on the cluster setup. We only need to specify to use the `compute_setup`, which can be either `auto` or `gpu`.
 - `nnodes` for torchrun should be the number of nodes
 - `nproc_per_node` should be equal to the number of GPUs per node.
 
@@ -163,14 +162,14 @@ train.py --compute_setup auto
 For high performance using multiple GPUs in one node.
 - *Assuming that you have 1 node with 2 GPU. These numbers can be changed depending on user needs.*
 
-You can train by simply calling this on the head node.  
+You can train by simply calling this on the head node.
 ```bash
-python3 train.py --spawn --backend nccl --nprocs 2
+python3 train.py --backend nccl --nprocs 2
 ```
 
 #### SLURM
 Slurm can be used to train the model but also to dispatch the workload on multiple GPUs or CPUs.
-- Here, we should have one task per gpu. i.e. `ntasks` is equal to the number of nodes  
+- Here, we should have one task per gpu. i.e. `ntasks` is equal to the number of nodes
 - `nprocs` should be equal to the total number of gpus (world_size). which is this case is 2.
 
 ```bash
@@ -182,11 +181,11 @@ Slurm can be used to train the model but also to dispatch the workload on multip
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=10G
 
-srun python3 train.py --spawn --backend nccl --nprocs 2
+srun python3 train.py --backend nccl --nprocs 2
 ```
 
 #### TORCHRUN
-Torchrun takes care of setting the `nprocs` and `spawn` based on the cluster setup. We only need to specify to use the `compute_setup`, which can be either `auto` or `gpu`.
+Torchrun takes care of setting the `nprocs` based on the cluster setup. We only need to specify to use the `compute_setup`, which can be either `auto` or `gpu`.
 - `nnodes` for torchrun should be the number of nodes
 - `nproc_per_node` should be equal to the number of GPUs per node.
 
@@ -235,12 +234,12 @@ For multi-node, it is suggested to submit a sbatch script.
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=10G
 
-srun python3 train.py --spawn --backend nccl --nprocs 4
+srun python3 train.py --backend nccl --nprocs 4
 ```
 
 
 #### TORCHRUN
-Torchrun takes care of setting the `nprocs` and `spawn` based on the cluster setup. We only need to specify to use the `compute_setup`, which can be either `auto` or `gpu`.
+Torchrun takes care of setting the `nprocs` based on the cluster setup. We only need to specify to use the `compute_setup`, which can be either `auto` or `gpu`.
 - `nnodes` for torchrun should be the number of nodes
 - `nproc_per_node` should be equal to the number of GPUs per node.
 

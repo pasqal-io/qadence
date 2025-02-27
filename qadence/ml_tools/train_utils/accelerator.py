@@ -46,7 +46,6 @@ class Accelerator(DistributionStrategy):
 
     def __init__(
         self,
-        spawn: bool = False,
         nprocs: int = 1,
         compute_setup: str = "auto",
         log_setup: str = "cpu",
@@ -57,7 +56,6 @@ class Accelerator(DistributionStrategy):
         Initializes the Accelerator class.
 
         Args:
-            spawn (bool): Whether to use the `spawn` method for multiprocessing. Default is False.
             nprocs (int): Number of processes to launch. Default is 1.
             compute_setup (str): Compute device setup; options are "auto" (default), "gpu", or "cpu".
                 - "auto": Uses GPU if available, otherwise CPU.
@@ -70,7 +68,6 @@ class Accelerator(DistributionStrategy):
             backend (str): The backend for distributed communication. Default is "nccl".
         """
         super().__init__(compute_setup, log_setup, dtype, backend)
-        self.spawn = spawn
         self.nprocs = nprocs
         self.strategy = self.detect_strategy()
         self._log_warnings()

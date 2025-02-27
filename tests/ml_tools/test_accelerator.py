@@ -85,7 +85,7 @@ def setup_logger() -> logging.Logger:
 
 
 def test_prepare_model_without_ddp() -> None:
-    accelerator = Accelerator(spawn=False, nprocs=1, compute_setup="cpu")
+    accelerator = Accelerator(nprocs=1, compute_setup="cpu")
     accelerator.world_size = 1
     accelerator.device = "cpu"
     model = DummyModel()
@@ -97,7 +97,7 @@ def test_prepare_model_without_ddp() -> None:
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA not available")
 def test_prepare_model_with_ddp_cuda() -> None:
-    accelerator = Accelerator(spawn=False, nprocs=2, compute_setup="gpu")
+    accelerator = Accelerator(nprocs=2, compute_setup="gpu")
     accelerator.world_size = 2
     accelerator.local_rank = 0
     accelerator.device = "cuda:0"
@@ -109,32 +109,29 @@ def test_prepare_model_with_ddp_cuda() -> None:
 
 
 def test_prepare_optimizer() -> None:
-    accelerator = Accelerator(spawn=False)
+    accelerator = Accelerator(nprocs=1)
     model = DummyModel()
     optimizer = get_dummy_optimizer(model)
     prepared_optimizer = accelerator._prepare_optimizer(optimizer)
     assert prepared_optimizer is optimizer
 
 
-def test_prepare_data_without_distributed() -> None:
-    accelerator = Accelerator(spawn=False)
-    accelerator.world_size = 1
+@pytest.mark.parametrize("world_size", [1, 2])
+def test_prepare_data_without_distributed(world_size: int) -> None:
+    accelerator = Accelerator(nprocs=world_size)
+    accelerator.world_size = world_size
+    if world_size == 2:
+        accelerator.local_rank = 0
     dl = get_dummy_dataloader()
     prepared_dl = accelerator._prepare_data(dl)
-    assert prepared_dl is dl
-
-
-def test_prepare_data_with_distributed() -> None:
-    accelerator = Accelerator(spawn=False)
-    accelerator.world_size = 2
-    accelerator.local_rank = 0
-    dl = get_dummy_dataloader()
-    prepared_dl = accelerator._prepare_data(dl)
-    assert isinstance(prepared_dl.sampler, DistributedSampler)  # type: ignore[union-attr]
+    if world_size == 1:
+        assert prepared_dl is dl
+    else:
+        assert isinstance(prepared_dl.sampler, DistributedSampler)  # type: ignore[union-attr]
 
 
 def test_prepare_dict_dataloader(dict_dataloader: DictDataLoader) -> None:
-    accelerator = Accelerator(spawn=False)
+    accelerator = Accelerator(nprocs=1)
     accelerator.world_size = 2
     accelerator.local_rank = 0
     prepared_dl = accelerator._prepare_data(dict_dataloader)
@@ -146,7 +143,7 @@ def test_prepare_dict_dataloader(dict_dataloader: DictDataLoader) -> None:
 def test_prepare_function(
     dummy_model: DummyModel, dummy_optimizer: optim.Optimizer, dummy_dataloader: DataLoader
 ) -> None:
-    accelerator = Accelerator(spawn=False)
+    accelerator = Accelerator(nprocs=1)
     model_prepped, opt_prepped, dl_prepped = accelerator.prepare(
         dummy_model, dummy_optimizer, dummy_dataloader
     )
@@ -156,12 +153,11 @@ def test_prepare_function(
 
 
 def test_prepare_function_with_spawn(
-    mock_mp_spawn: Any,
     dummy_model: DummyModel,
     dummy_optimizer: optim.Optimizer,
     dummy_dataloader: DataLoader,
 ) -> None:
-    accelerator = Accelerator(spawn=True, nprocs=2)
+    accelerator = Accelerator(nprocs=2)
     model_prepped, opt_prepped, dl_prepped = accelerator.prepare(
         dummy_model, dummy_optimizer, dummy_dataloader
     )
@@ -171,7 +167,7 @@ def test_prepare_function_with_spawn(
 
 
 def test_prepare_batch_dict() -> None:
-    accelerator = Accelerator(spawn=False)
+    accelerator = Accelerator(nprocs=1)
     accelerator.device = "cpu"
     accelerator.data_dtype = torch.float32
     batch: Dict[str, torch.Tensor] = {"x": torch.tensor([1.0]), "y": torch.tensor([2.0])}
@@ -182,7 +178,7 @@ def test_prepare_batch_dict() -> None:
 
 
 def test_prepare_batch_list() -> None:
-    accelerator = Accelerator(spawn=False)
+    accelerator = Accelerator(nprocs=1)
     accelerator.device = "cpu"
     accelerator.data_dtype = torch.float32
     batch: List[torch.Tensor] = [torch.tensor([1.0]), torch.tensor([2.0])]
@@ -193,7 +189,7 @@ def test_prepare_batch_list() -> None:
 
 
 def test_prepare_batch_tensor() -> None:
-    accelerator = Accelerator(spawn=False)
+    accelerator = Accelerator(nprocs=1)
     accelerator.device = "cpu"
     accelerator.data_dtype = torch.float32
     tensor: torch.Tensor = torch.tensor([1.0, 2.0])
@@ -203,7 +199,7 @@ def test_prepare_batch_tensor() -> None:
 
 
 def test_all_reduce_dict_not_initialized() -> None:
-    accelerator = Accelerator(spawn=False)
+    accelerator = Accelerator(nprocs=1)
     with patch.object(dist, "is_initialized", return_value=False):
         input_dict: Dict[str, torch.Tensor] = {"a": torch.tensor(2.0)}
         result = accelerator.all_reduce_dict(input_dict)
@@ -211,7 +207,7 @@ def test_all_reduce_dict_not_initialized() -> None:
 
 
 def test_all_reduce_dict_initialized() -> None:
-    accelerator = Accelerator(spawn=False)
+    accelerator = Accelerator(nprocs=1)
     with (
         patch.object(dist, "is_initialized", return_value=True),
         patch.object(dist, "get_world_size", return_value=2),
@@ -224,7 +220,7 @@ def test_all_reduce_dict_initialized() -> None:
 
 def test_log_warnings(capsys: pytest.LogCaptureFixture) -> None:
     setup_logger()
-    accelerator = Accelerator(spawn=True)
+    accelerator = Accelerator(nprocs=2)
     accelerator.strategy = "torchrun"
     accelerator._log_warnings()
     captured = capsys.readouterr()
@@ -233,7 +229,7 @@ def test_log_warnings(capsys: pytest.LogCaptureFixture) -> None:
 
 
 def test_is_class_method() -> None:
-    accelerator = Accelerator(spawn=False)
+    accelerator = Accelerator(nprocs=1)
 
     class Dummy:
         def method(self) -> None:
@@ -251,7 +247,7 @@ def test_is_class_method() -> None:
 
 
 def test_distribute_decorator() -> None:
-    accelerator = Accelerator(spawn=False)
+    accelerator = Accelerator(nprocs=1)
     calls: List[str] = []
 
     def dummy_fun(*args: Any, **kwargs: Any) -> None:
@@ -263,7 +259,7 @@ def test_distribute_decorator() -> None:
 
 
 def test_distribute_decorator_with_class_method() -> None:
-    accelerator = Accelerator(spawn=False)
+    accelerator = Accelerator(nprocs=1)
 
     class Dummy:
         def __init__(self) -> None:

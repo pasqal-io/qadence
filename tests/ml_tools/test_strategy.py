@@ -10,7 +10,6 @@ from qadence.ml_tools.train_utils.strategy import DistributionStrategy
 def test_detect_strategy_default(monkeypatch: Any) -> None:
     monkeypatch.setenv("LOCAL_RANK", "0")
     ds = DistributionStrategy(compute_setup="cpu")
-    ds.spawn = False  # even if spawn is False, presence of LOCAL_RANK implies default
     strategy = ds.detect_strategy()
     assert strategy == "default"
     monkeypatch.delenv("LOCAL_RANK", raising=False)
@@ -20,7 +19,6 @@ def test_detect_strategy_none(monkeypatch: Any) -> None:
     monkeypatch.delenv("LOCAL_RANK", raising=False)
     monkeypatch.delenv("TORCHELASTIC_RUN_ID", raising=False)
     ds = DistributionStrategy(compute_setup="cpu")
-    ds.spawn = False
     strategy = ds.detect_strategy()
     assert strategy == "none"
 
@@ -70,9 +68,13 @@ def test_setup_environment(monkeypatch: Any) -> None:
     monkeypatch.setenv("SLURMD_NODENAME", "test_node")
     ds = DistributionStrategy(compute_setup="cpu")
     ds.strategy = "default"
-    ds.spawn = False
     ds.nprocs = 4
-    rank, world_size, local_rank = ds.setup_environment(1)
+    values_dict = ds.setup_distributed_environment(1)
+    local_rank, world_size, rank = (
+        values_dict["LOCAL_RANK"],
+        values_dict["WORLD_SIZE"],
+        values_dict["RANK"],
+    )
     assert isinstance(rank, int)
     assert isinstance(world_size, int)
 
@@ -88,7 +90,6 @@ def test_setup_environment(monkeypatch: Any) -> None:
 def test_setup_process() -> None:
     ds = DistributionStrategy(compute_setup="cpu")
     ds.strategy = "default"
-    ds.spawn = False
     ds.nprocs = 4
     rank, world_size, local_rank, device = ds.setup_process(0, 4)
     assert device == "cpu"

@@ -273,7 +273,6 @@ class Trainer(BaseTrainer):
         # Integration with Accelerator:
         self.accelerator = Accelerator(
             backend=config.backend,
-            spawn=config.spawn,
             nprocs=config.nprocs,
             compute_setup=config.compute_setup,
             dtype=config.dtype,

@@ -79,7 +79,6 @@ For example of how to use the TrainConfig with `Trainer`, please see [Examples i
 | `tracking_tool`          | `ExperimentTrackingTool` | `TENSORBOARD`            | Tool for tracking training metrics. |
 | `plotting_functions`     | `tuple`                  | `()`                     | Functions for plotting metrics. |
 | `hyperparams`            | `dict`                   | `{}`                     | Dictionary of hyperparameters |
-| `spawn`                  | `bool`                   | `False`           | If `True`, spawns subprocesses for parallel/distributed training. |
 | `nprocs`                 | `int`                    | `1`               | Number of processes to use when spawning subprocesses; for multi-GPU setups, set this to the total number of GPUs. |
 | `compute_setup`          | `str`                    | `"cpu"`                  | Specifies the compute device: `"auto"`, `"gpu"`, or `"cpu"`.|
 | `backend`                | `str`                    | `"gloo"`                 | Backend for distributed training communication (e.g., `"gloo"`, `"nccl"`, or `"mpi"`). |
@@ -217,9 +216,7 @@ config = TrainConfig(
 
 #### Advanced Distributed Training
 
-- `spawn` (**bool**): When enabled, spawns additional subprocesses for training. This is useful for parallel or distributed training setups.
-
-- `nprocs` (**int**): Specifies the number of processes to be used when `spawn` is enabled. For multi-GPU training, this should match the total number of GPUs available.
+- `nprocs` (**int**): Specifies the number of processes to be used. For multi-GPU training, this should match the total number of GPUs available. When nprocs is greater than 1, `Trainer` spawns additional subprocesses for training. This is useful for parallel or distributed training setups.
 
 - `compute_setup` (**str**): Determines the compute device configuration: 1.`"auto"` (automatically selects GPU if available), 2. `"gpu"` - (forces GPU usage and errors if no GPU is detected), and 3. `"cpu"` (Forces the use of the CPU).
 
@@ -235,7 +232,6 @@ config = TrainConfig(
 Example: For CPU MultiProcessing
 ```python
 config = TrainConfig(
-    spawn= True,
     compute_setup="cpu",
     nprocs=5,
     backend="gloo"
@@ -245,7 +241,6 @@ config = TrainConfig(
 Example: For GPU multiprocessing training
 ```python
 config = TrainConfig(
-    spawn= True,
     compute_setup="gpu",
     nprocs=2, # World-size/Total number of GPUs
     backend="nccl"

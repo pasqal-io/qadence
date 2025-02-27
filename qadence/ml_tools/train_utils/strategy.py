@@ -74,14 +74,35 @@ class DistributionStrategy:
         self.compute: str
         self.device: str
         self.log_device: str
-        self.spawn: bool
-        self.nprocs: int
+        self.spawn: bool = False
+        self._nprocs: int = 1
         self.dtype: torch.dtype | None = dtype
         self.data_dtype: torch.dtype | None = None
         # TODO: This is legacy behavior of data_dtype. Modify it appropriately.
         if self.dtype:
             self.data_dtype = torch.float64 if (self.dtype == torch.complex128) else self.dtype
         self._set_cluster_variables()
+
+    @property
+    def nprocs(self) -> int:
+        """
+        Returns the test nprocs for the accelerator.
+
+        Returns:
+            int: Number of processes.
+        """
+        return self._nprocs
+
+    @nprocs.setter
+    def nprocs(self, nprocs: int) -> None:
+        """
+        Sets the number of processes and the spawn variable.
+
+        Args:
+            nprocs (int): Number of processes
+        """
+        self.spawn = nprocs > 1
+        self._nprocs = nprocs
 
     def detect_strategy(self) -> str:
         """
@@ -117,7 +138,7 @@ class DistributionStrategy:
             int(torch.cuda.device_count()) if torch.cuda.is_available() else 1
         )
 
-    def setup_environment(self, process_rank: int) -> tuple[int, int, int | None]:
+    def setup_distributed_environment(self, process_rank: int) -> dict[str, int | None]:
         """
         Set up environment variables and the computation device for distributed processing.
 
@@ -138,7 +159,7 @@ class DistributionStrategy:
             process_rank (int | None): The rank to assign to the process (used in spawn scenarios).
 
         Returns:
-            tuple[int, int, int]: A tuple containing the global rank, world size, and local rank.
+            dict[str, int | None]: A dictionary containing the global rank, world size, and local rank.
         """
         # set the process based variables
         self.node_rank = int(os.environ.get("SLURM_NODEID", 0))
@@ -156,7 +177,7 @@ class DistributionStrategy:
         os.environ["MASTER_ADDR"] = self.master_addr = self._get_master_addr()
         os.environ["MASTER_PORT"] = self.master_port = self._get_master_port()
 
-        return self.rank, self.world_size, self.local_rank
+        return {"RANK": self.rank, "WORLD_SIZE": self.world_size, "LOCAL_RANK": self.local_rank}
 
     def _get_master_addr(self) -> str:
         """
@@ -314,7 +335,7 @@ class DistributionStrategy:
         Set up the process for distributed training, especially useful when processes are spawned.
 
         This method optionally sets environment variables for a spawned process if a process rank is provided.
-        It then calls setup_environment() to configure the global settings and logs a warning if the provided
+        It then calls setup_distributed_environment() to configure the global settings and logs a warning if the provided
         number of processes does not match the environment's world size (only for the master process).
 
         Args:
@@ -331,7 +352,7 @@ class DistributionStrategy:
         Note:
             The attributes `self.spawn` and `self.nprocs` are referenced here but are assumed to be defined externally.
         """
-        self.setup_environment(process_rank)
+        self.setup_distributed_environment(process_rank)
         if self.spawn and nprocs and self.rank == 0 and str(nprocs) != str(self.world_size):
             logger.warning(
                 "Provided nprocs (%d) does not match environment world size (%d). Using environment world size.",

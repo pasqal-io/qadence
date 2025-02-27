@@ -82,7 +82,6 @@ def test_train_spawn(Basic: nn.Module, backend: str, device: str) -> None:
     config: TrainConfig = TrainConfig(
         compute_setup=device,
         backend=backend,
-        spawn=True,
         nprocs=nprocs,
         max_iter=5,
         print_every=1,
@@ -127,7 +126,6 @@ def test_train_spawn_dictdataloader(Basic: nn.Module, backend: str, device: str)
     config: TrainConfig = TrainConfig(
         compute_setup=device,
         backend=backend,
-        spawn=True,
         nprocs=nprocs,
         max_iter=5,
         print_every=1,

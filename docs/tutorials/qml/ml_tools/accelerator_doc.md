@@ -15,8 +15,7 @@ from qadence.ml_tools.train_utils import Accelerator
 import torch
 
 accelerator = Accelerator(
-    spawn=True,             # Enable multiprocessing spawn
-    nprocs=4,               # Number of processes (e.g., GPUs)
+    nprocs=4,               # Number of processes (e.g., GPUs). Enables multiprocessing.
     compute_setup="auto",   # Automatically selects available compute devices
     log_setup="cpu",        # Logs on CPU to avoid memory overhead
     dtype=torch.float32,    # Data type for numerical precision
@@ -32,7 +31,7 @@ accelerator = Accelerator(
 from qadence.ml_tools.trainer import Trainer
 from qadence.ml_tools import TrainConfig
 
-config = TrainConfig(spawn=True, nprocs=4)
+config = TrainConfig(nprocs=4)
 
 trainer = Trainer(model, optimizer, config)
 model, optimizer = trainer.fit(dataloader)
@@ -136,8 +135,7 @@ if __name__ == "__main__":
     dataloader = DataLoader(dataset, batch_size=32)
 
     accelerator = Accelerator(
-        spawn=True,             # Enable multiprocessing spawn
-        nprocs=4,               # Number of processes (e.g., GPUs)
+        nprocs=4,               # Number of processes (e.g., GPUs). Enables multiprocessing.
         compute_setup="cpu",    # or choose GPU
         backend="gloo"          # choose `nccl` for GPU
     )

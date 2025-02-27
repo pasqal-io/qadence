@@ -3,8 +3,7 @@
 This guide explains how to train models on **CPU** using `Trainer` from `qadence.ml_tools`, covering **single-process** and **multi-processing** setups.
 
 ### Understanding Arguments
-- *spawn*: If True, enables multi-processing and launches separate processes.
-- *nprocs*: Number of processes to run.
+- *nprocs*: Number of processes to run. To enable multi-processing and launch separate processes, set nprocs > 1.
 - *compute_setup*: The computational setup used for training. Options include `cpu`, `gpu`, and `auto`.
 
 For more details on the advanced training options, please refer to [TrainConfig Documentation](./data_and_config.md)
@@ -15,7 +14,6 @@ By adjusting `TrainConfig`, you can seamlessly switch between single and multi-c
 
 ### Single-Process Training Configuration:
 - **`backend="cpu"`**: Ensures training runs on the CPU.
-- **`spawn=False`**: Uses a single process (default).
 - **`nprocs=1`**: Uses one CPU core.
 
 ```python
@@ -26,14 +24,12 @@ train_config = TrainConfig(
 
 ### Multi-Processing Configuration
 - **`backend="gloo"`**: Uses the Gloo backend for CPU multi-processing.
-- **`spawn=True`**: Enables multi-processing.
 - **`nprocs=4`**: Utilizes 4 CPU cores.
 
 ```python
 train_config = TrainConfig(
     compute_setup="cpu",
     backend="gloo",
-    spawn=True,
     nprocs=4,
 )
 ```
@@ -42,7 +38,7 @@ train_config = TrainConfig(
 
 ### Single-Process CPU Training Example
 
-Single-Process Training: Simple and suitable for small datasets. Use `backend="cpu"`, `spawn=False`.
+Single-Process Training: Simple and suitable for small datasets. Use `backend="cpu"`.
 
 ```python exec="on" source="material-block" result="json"
 import torch
@@ -70,7 +66,7 @@ trainer.fit(dataloader)
 
 ### Multi-Processing CPU Training Example
 
-Multi-Processing Training: Best for large datasets, utilizes multiple CPU processes. Use `backend="gloo"`, `spawn=True`, and set `nprocs`.
+Multi-Processing Training: Best for large datasets, utilizes multiple CPU processes. Use `backend="gloo"` and set `nprocs`.
 
 ```python exec="on" source="material-block" result="json" html="1"
 import torch
@@ -92,7 +88,6 @@ if __name__ == "__main__":
     train_config = TrainConfig(
         compute_setup="cpu",
         backend="gloo",
-        spawn=True,
         nprocs=4,
         max_iter=5,
         print_every=1)
