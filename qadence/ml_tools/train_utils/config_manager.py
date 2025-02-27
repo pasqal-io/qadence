@@ -23,7 +23,7 @@ class ConfigManager:
         containing parameters and settings.
     """
 
-    root_folder_default = Path("./qml_logs")
+    optimization_type: str = "with_grad"
 
     def __init__(self, config: TrainConfig):
         """
@@ -41,10 +41,11 @@ class ConfigManager:
         handling hyperparameters, deriving additional parameters,
         and logging warnings.
         """
-        self._check_train_config()
         self._initialize_folder()
         self._handle_hyperparams()
         self._setup_additional_configuration()
+        # TODO check if warnings shouldn't be at the start of the init
+        self._log_warnings()
 
     def _initialize_folder(self) -> None:
         """
@@ -57,9 +58,6 @@ class ConfigManager:
         - subfolders: list of subfolders inside `folder` that are used for logging
         - log_folder: folder currently used for logging.
         """
-        if self.config.root_folder is None:
-            self.config.root_folder = ConfigManager.root_folder_default
-
         self.config.log_folder = self._createlog_folder(self.config.root_folder)
 
     def _createlog_folder(self, root_folder: str | Path) -> Path:
@@ -82,15 +80,9 @@ class ConfigManager:
         else:
             if self.config._subfolders:
                 # self.config.log_folder is an old subfolder.
-                if self.config.log_folder is not None:
-                    log_folder = Path(self.config.log_folder)
-                else:
-                    raise ValueError(
-                        "`config.log_folder` is `None`, possibly because `config._subfolders` "
-                        "was updated externally."
-                    )
+                log_folder = Path(self.config.log_folder)
             else:
-                if self.config.log_folder is None:
+                if self.config.log_folder == Path("./"):
                     # A subfolder must be created (no specific folder given to config).
                     self._add_subfolder()
                     log_folder = root_folder_path / self.config._subfolders[-1]
@@ -158,7 +150,7 @@ class ConfigManager:
         if self.config.trainstop_criterion is None:
             self.config.trainstop_criterion = lambda x: x <= self.config.max_iter
 
-    def _check_train_config(self) -> None:
+    def _log_warnings(self) -> None:
         """
         Log warnings for incompatible configurations related to tracking tools.
 
@@ -184,9 +176,9 @@ class ConfigManager:
                 "`Checkpoint_best_only` is only available when `validation_criterion` is provided."
                 "No checkpoints will be saved."
             )
-        if self.config.log_folder is not None and self.config.root_folder is not None:
+        if self.config.log_folder != Path("./") and self.config.root_folder != Path("./qml_logs"):
             logger.warning("Both `log_folder` and `root_folder` provided by the user.")
-        if self.config.log_folder is not None and self.config.create_subfolder_per_run:
+        if self.config.log_folder != Path("./") and self.config.create_subfolder_per_run:
             logger.warning(
                 "`log_folder` is invalid when `create_subfolder_per_run` = True."
                 "`root_folder` (default qml_logs) will be used to save logs."

@@ -380,7 +380,7 @@ class SaveCheckpoint(Callback):
         model = trainer.model
         optimizer = trainer.optimizer
         opt_result = trainer.opt_result
-        write_checkpoint(folder, model, optimizer, opt_result.iteration)  # type: ignore[arg-type]
+        write_checkpoint(folder, model, optimizer, opt_result.iteration)
 
 
 class SaveBestCheckpoint(SaveCheckpoint):
@@ -414,7 +414,7 @@ class SaveBestCheckpoint(SaveCheckpoint):
             model = trainer.model
             optimizer = trainer.optimizer
             opt_result = trainer.opt_result
-            write_checkpoint(folder, model, optimizer, "best")  # type: ignore[arg-type]
+            write_checkpoint(folder, model, optimizer, "best")
 
 
 class LoadCheckpoint(Callback):
@@ -435,7 +435,7 @@ class LoadCheckpoint(Callback):
         model = trainer.model
         optimizer = trainer.optimizer
         device = trainer.log_device
-        return load_checkpoint(folder, model, optimizer, device=device)  # type: ignore[arg-type]
+        return load_checkpoint(folder, model, optimizer, device=device)
 
 
 class LogModelTracker(Callback):
