@@ -24,7 +24,6 @@ class DistributionStrategy:
     Attributes:
         spawn (bool): Whether to use multiprocessing spawn mode for process initialization.
         nprocs (int): Number of processes to launch for distributed training.
-                Provided by the user.
         strategy (str): Detected strategy for process launch ("torchrun", "slurm", or "default").
         backend (str): The backend used for distributed communication (e.g., "nccl", "gloo").
             It should be one of the backends supported by torch.distributed
@@ -32,7 +31,6 @@ class DistributionStrategy:
         log_setup (str): Desired logging device setup.
         rank (int | None): Global rank of the process (to be set during environment setup).
         world_size (int | None): Total number of processes (to be set during environment setup).
-                Set during the env setup. Must match nprocs.
         local_rank (int | None): Local rank on the node (to be set during environment setup).
         master_addr (str | None): Master node address (to be set during environment setup).
         master_port (str | None): Master node port (to be set during environment setup).
@@ -356,8 +354,8 @@ class DistributionStrategy:
         """
         self.setup_distributed_environment(process_rank)
         if self.spawn and nprocs and self.rank == 0 and str(nprocs) != str(self.world_size):
-            raise ValueError(
-                "Provided nprocs (%d) does not match environment world size (%d).",
+            logger.warning(
+                "Provided nprocs (%d) does not match environment world size (%d). Using environment world size.",
                 nprocs,
                 self.world_size,
             )
