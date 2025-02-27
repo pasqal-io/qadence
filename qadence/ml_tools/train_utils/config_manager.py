@@ -41,10 +41,10 @@ class ConfigManager:
         handling hyperparameters, deriving additional parameters,
         and logging warnings.
         """
+        self._log_warnings()
         self._initialize_folder()
         self._handle_hyperparams()
         self._setup_additional_configuration()
-        self._log_warnings()
 
     def _initialize_folder(self) -> None:
         """
@@ -78,19 +78,19 @@ class ConfigManager:
             log_folder = root_folder_path / self.config._subfolders[-1]
         else:
             if self.config._subfolders:
-                if self.config.log_folder == root_folder_path / self.config._subfolders[-1]:
-                    log_folder = root_folder_path / self.config._subfolders[-1]
-                else:
-                    log_folder = Path(self.config.log_folder)
+                # self.config.log_folder is an old subfolder.
+                log_folder = Path(self.config.log_folder)
             else:
                 if self.config.log_folder == Path("./"):
+                    # A subfolder must be created (no specific folder given to config).
                     self._add_subfolder()
                     log_folder = root_folder_path / self.config._subfolders[-1]
                 else:
+                    # The folder is one and fully specified by the user.
                     log_folder = Path(self.config.log_folder)
 
         log_folder.mkdir(parents=True, exist_ok=True)
-        return Path(log_folder)
+        return log_folder
 
     def _add_subfolder(self) -> None:
         """

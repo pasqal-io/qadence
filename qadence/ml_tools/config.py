@@ -116,10 +116,9 @@ class TrainConfig:
     """The log folder for saving checkpoints and tensorboard logs.
 
     This stores the path where all logs and checkpoints are being saved
-    for this training session. `log_folder` takes precedence over `root_folder` and
-    `create_subfolder_per_run` arguments. If the user specifies a log_folder,
-    all checkpoints will be saved in this folder and `root_folder` argument
-    will not be used.
+    for this training session. `log_folder` takes precedence over `root_folder`,
+    but it is ignored if `create_subfolders_per_run=True` (in which case, subfolders
+    will be spawned in the root folder).
     """
 
     checkpoint_best_only: bool = False
@@ -195,7 +194,7 @@ class TrainConfig:
     plots that are logged or saved at specified intervals.
     """
 
-    _subfolders: list = field(default_factory=list)
+    _subfolders: list[str] = field(default_factory=list)
     """List of subfolders used for logging different runs using the same config inside the.
 
     root folder.
