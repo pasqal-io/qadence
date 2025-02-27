@@ -170,7 +170,7 @@ python3 train.py --backend nccl --nprocs 2
 #### SLURM
 Slurm can be used to train the model but also to dispatch the workload on multiple GPUs or CPUs.
 - Here, we should have one task per gpu. i.e. `ntasks` is equal to the number of nodes
-- `nprocs` should be equal to the total number of gpus. which is this case is 2.
+- `nprocs` should be equal to the total number of gpus (world_size). which is this case is 2.
 
 ```bash
 #!/bin/bash
@@ -223,7 +223,7 @@ For multi-node, it is suggested to submit a sbatch script.
 
 #### SLURM
 - We should have one task per gpu. i.e. `ntasks` is equal to the number of nodes.
-- `nprocs` should be equal to the total number of gpus. which is this case is 4.
+- `nprocs` should be equal to the total number of gpus (world_size). which is this case is 4.
 
 ```bash
 #!/bin/bash
