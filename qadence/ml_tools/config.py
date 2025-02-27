@@ -219,7 +219,7 @@ class TrainConfig:
 
     For effective parallel processing, set this to a value greater than 1.
     - In case of Multi-GPU or Multi-Node-Multi-GPU setups, nprocs should be equal to
-    the total world_size, or total number of GPU to be used.
+    the total number of GPUs across all nodes (world size), or total number of GPU to be used.
     """
 
     compute_setup: str = "cpu"
@@ -237,6 +237,8 @@ class TrainConfig:
 
     The default is "gloo". Other options may include "nccl" - which is optimized for GPU-based training or "mpi",
     depending on your system and requirements.
+    It should be one of the backends supported by `torch.distributed`. For further details, please look at 
+    [torch backends](https://pytorch.org/docs/stable/distributed.html#torch.distributed.Backend)
     """
 
     log_setup: str = "cpu"
@@ -249,17 +251,18 @@ class TrainConfig:
 
     dtype: dtype | None = None
     """
-    Data type (precision) for computations.
+    Data type (precision) for computations. Both model parameters, and dataset will be of the provided precision.
+    
+    If not specified or None, the default torch precision (usually torch.float32) is used.
+    If provided dtype is torch.complex128, model parameters will be torch.complex128, and data parameters will be torch.float64
 
-    If specified (e.g., torch.float32, torch.float16), models and tensors are cast to this dtype during training.
-    If None, the default (usually torch.float32) is used.
     """
 
     all_reduce_metrics: bool = False
     """
     Whether to aggregate metrics (e.g., loss, accuracy) across processes.
 
-    When True, metrics from different training processes are combined to provide a consolidated metrics.
+    When True, metrics from different training processes are averaged to provide a consolidated metrics.
     Note: Since aggregation requires synchronization/all_reduce operation, this can increase the
      computation time significantly.
     """

@@ -26,12 +26,10 @@ class Accelerator(DistributionStrategy):
     `torch.distributed` API. It supports spawning multiple processes and wrapping models with
     `DistributedDataParallel` (DDP) when required.
 
-    Attributes:
+    Inherited Attributes:
         spawn (bool): Whether to use multiprocessing spawn mode for process initialization.
         nprocs (int): Number of processes to launch for distributed training.
         strategy (str): Detected strategy for process launch ("torchrun", "slurm", or "default").
-
-    Inherited Attributes:
         backend (str): The backend used for distributed communication (e.g., "nccl", "gloo").
         compute_setup (str): Desired computation device setup.
         log_setup (str): Desired logging device setup.
