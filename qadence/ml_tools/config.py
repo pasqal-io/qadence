@@ -203,16 +203,6 @@ class TrainConfig:
     Each subfolder is of structure `<id>_<timestamp>_<PID>`.
     """
 
-    spawn: bool = False
-    """
-    Whether to spawn subprocesses for training.
-
-    If True, the training framework will launch additional processes (e.g., for distributed or parallel training).
-    - For CPU setup, spawn = True will launch a true parallel processes
-    - For GPU setup, spawn = True will launch a distributed training routine.
-    This uses the DistributedDataParallel framework from PyTorch.
-    """
-
     nprocs: int = 1
     """
     The number of processes to use for training when spawning subprocesses.
@@ -220,6 +210,12 @@ class TrainConfig:
     For effective parallel processing, set this to a value greater than 1.
     - In case of Multi-GPU or Multi-Node-Multi-GPU setups, nprocs should be equal to
     the total number of GPUs across all nodes (world size), or total number of GPU to be used.
+
+    If nprocs > 1, multiple processes will be spawned for training. The training framework will launch
+    additional processes (e.g., for distributed or parallel training).
+    - For CPU setup, this will launch a true parallel processes
+    - For GPU setup, this will launch a distributed training routine.
+    This uses the DistributedDataParallel framework from PyTorch.
     """
 
     compute_setup: str = "cpu"
@@ -237,7 +233,7 @@ class TrainConfig:
 
     The default is "gloo". Other options may include "nccl" - which is optimized for GPU-based training or "mpi",
     depending on your system and requirements.
-    It should be one of the backends supported by `torch.distributed`. For further details, please look at 
+    It should be one of the backends supported by `torch.distributed`. For further details, please look at
     [torch backends](https://pytorch.org/docs/stable/distributed.html#torch.distributed.Backend)
     """
 
@@ -251,11 +247,12 @@ class TrainConfig:
 
     dtype: dtype | None = None
     """
-    Data type (precision) for computations. Both model parameters, and dataset will be of the provided precision.
-    
+    Data type (precision) for computations.
+
+    Both model parameters, and dataset will be of the provided precision.
+
     If not specified or None, the default torch precision (usually torch.float32) is used.
     If provided dtype is torch.complex128, model parameters will be torch.complex128, and data parameters will be torch.float64
-
     """
 
     all_reduce_metrics: bool = False

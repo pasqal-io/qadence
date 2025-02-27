@@ -183,15 +183,10 @@ class ConfigManager:
                 "`root_folder` (default qml_logs) will be used to save logs."
             )
 
-        if self.config.spawn:
+        if self.config.nprocs > 1:
             logger.info(
-                f"Process spawning is enabled (spawn={self.config.spawn})."
+                f"Process spawning is enabled (nprocs={self.config.nprocs}). "
                 "Initiating process spawning."
             )
-            if not self.config.nprocs:
-                logger.warning(
-                    f"Invalid process count (nprocs={self.config.nprocs}) while spawning is enabled (spawn={self.config.spawn}). "
-                    "Only a single process will be started."
-                )
         else:
-            logger.info(f"Process spawning is disabled (spawn={self.config.spawn}).")
+            logger.info(f"Process spawning is disabled (nprocs={self.config.nprocs}).")
