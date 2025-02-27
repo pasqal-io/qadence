@@ -163,7 +163,7 @@ def test_log_folder_logging(BasicQuantumModel: QuantumModel, tmp_path: Path) -> 
         loss = criterion(out, torch.rand(1))
         return loss, {}
 
-    config = TrainConfig(custom_log_folder=tmp_path, max_iter=10, checkpoint_every=1)
+    config = TrainConfig(log_folder=tmp_path, max_iter=10, checkpoint_every=1)
     trainer = Trainer(model, optimizer, config, loss_fn, data)
     with trainer.enable_grad_opt():
         trainer.fit()

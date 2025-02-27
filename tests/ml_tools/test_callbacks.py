@@ -42,7 +42,7 @@ def trainer(Basic: torch.nn.Module, tmp_path: Path) -> Trainer:
     model = Basic
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
     config = TrainConfig(
-        custom_log_folder=tmp_path,
+        log_folder=tmp_path,
         max_iter=1,
         checkpoint_best_only=True,
         validation_criterion=lambda loss, best, ep: loss < (best - ep),

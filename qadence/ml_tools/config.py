@@ -112,11 +112,11 @@ class TrainConfig:
     the latest checkpoint if one exists in the specified log folder.
     """
 
-    custom_log_folder: Path | None = None
+    log_folder: Path | None = None
     """The log folder for saving checkpoints and tensorboard logs.
 
     This stores the path where all logs and checkpoints are being saved
-    for this training session. `custom_log_folder` takes precedence over `root_folder`,
+    for this training session. `log_folder` takes precedence over `root_folder`,
     but it is ignored if `create_subfolders_per_run=True` (in which case, subfolders
     will be spawned in the root folder).
     """
@@ -200,14 +200,6 @@ class TrainConfig:
     root folder.
 
     Each subfolder is of structure `<id>_<timestamp>_<PID>`.
-    """
-
-    log_folder: Path = field(init=False)
-    """The final logging folder, defined according to the logic of.
-
-    the `qadence.ml_tools.ConfigManager`.
-
-    Not set by the user.
     """
 
 
