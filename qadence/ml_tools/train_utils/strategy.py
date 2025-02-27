@@ -22,7 +22,11 @@ class DistributionStrategy:
     It also provides methods to start and clean up the PyTorch distributed process group.
 
     Attributes:
+        spawn (bool): Whether to use multiprocessing spawn mode for process initialization.
+        nprocs (int): Number of processes to launch for distributed training.
+        strategy (str): Detected strategy for process launch ("torchrun", "slurm", or "default").
         backend (str): The backend used for distributed communication (e.g., "nccl", "gloo").
+            It should be one of the backends supported by torch.distributed
         compute_setup (str): Desired computation device setup.
         log_setup (str): Desired logging device setup.
         rank (int | None): Global rank of the process (to be set during environment setup).
@@ -34,6 +38,7 @@ class DistributionStrategy:
         log_device (str | None): Logging device, e.g., "cpu" or "cuda:<local_rank>".
         dtype (torch.dtype): Data type for controlling numerical precision (e.g., torch.float32).
         data_dtype (torch.dtype): Data type for controlling datasets precision (e.g., torch.float16).
+        node_rank (int): Rank of the node on the cluster setup.
     """
 
     def __init__(
@@ -75,7 +80,7 @@ class DistributionStrategy:
         self.data_dtype: torch.dtype | None = None
         # TODO: This is legacy behavior of data_dtype. Modify it appropriately.
         if self.dtype:
-            self.data_dtype = torch.float64 if (self.dtype == torch.complex128) else torch.float32
+            self.data_dtype = torch.float64 if (self.dtype == torch.complex128) else self.dtype
         self._set_cluster_variables()
 
     def detect_strategy(self) -> str:
@@ -120,6 +125,17 @@ class DistributionStrategy:
         sets the corresponding environment variables, and if running in a multi-process setting,
         sets up the master address and port for distributed communication. Finally, it configures
         the computation device based on the specified compute setup.
+        This method sets:
+            rank (int | None): Global rank of the process (to be set during environment setup).
+            world_size (int | None): Total number of processes (to be set during environment setup).
+            local_rank (int | None): Local rank on the node (to be set during environment setup).
+            master_addr (str | None): Master node address (to be set during environment setup).
+            master_port (str | None): Master node port (to be set during environment setup).
+            node_rank (int): Rank of the node on the cluster setup.
+            node_name (str): Name of the node on the cluster setup.
+
+        Args:
+            process_rank (int | None): The rank to assign to the process (used in spawn scenarios).
 
         Returns:
             tuple[int, int, int]: A tuple containing the global rank, world size, and local rank.
@@ -193,6 +209,9 @@ class DistributionStrategy:
         """
         Retrieve the global rank of the current process.
 
+        Args:
+            process_rank (int | None): The rank to assign to the process (used in spawn scenarios).
+
         Returns:
             int: The global rank of the process.
                  Priority is given to the "RANK" environment variable; if not found, in a SLURM environment,
@@ -213,6 +232,9 @@ class DistributionStrategy:
         """
         Retrieve the total number of processes in the distributed training job.
 
+        Args:
+            process_rank (int | None): The rank to assign to the process (used in spawn scenarios).
+
         Returns:
             int: The total number of processes (world size).
                  Uses the "WORLD_SIZE" environment variable if set, or "SLURM_NTASKS" in a SLURM environment.
@@ -227,6 +249,9 @@ class DistributionStrategy:
     def _get_local_rank(self, process_rank: int) -> int | None:
         """
         Retrieve the local rank of the current process (its index on the local node).
+
+        Args:
+            process_rank (int | None): The rank to assign to the process (used in spawn scenarios).
 
         Returns:
             int: The local rank.
