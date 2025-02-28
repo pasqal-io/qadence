@@ -452,6 +452,13 @@ class ExperimentTrackingTool(StrEnum):
     """Use the ml-flow experiment tracker."""
 
 
+class ExecutionType(StrEnum):
+    TORCHRUN = "torchrun"
+    """Torchrun based distribution execution."""
+    DEFAULT = "default"
+    """Default distribution execution."""
+
+
 LoggablePlotFunction = Callable[[Module, int], tuple[str, Figure]]
 
 

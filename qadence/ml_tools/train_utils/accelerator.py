@@ -12,38 +12,47 @@ from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 from torch.nn.parallel import DistributedDataParallel as DDP
 
-from qadence.ml_tools.train_utils.strategy import DistributionStrategy
+from qadence.ml_tools.train_utils.distribution import Distributor
 from qadence.ml_tools.data import data_to_device, InfiniteTensorDataset, DictDataLoader
+from qadence.types import ExecutionType
 
 logger = getLogger("ml_tools")
 
 
-class Accelerator(DistributionStrategy):
+class Accelerator(Distributor):
     """
     A class for handling distributed training.
 
-    This class extends `DistributionStrategy` to manage distributed training using PyTorch's
+    This class extends `Distributor` to manage distributed training using PyTorch's
     `torch.distributed` API. It supports spawning multiple processes and wrapping models with
     `DistributedDataParallel` (DDP) when required.
 
     Inherited Attributes:
-        spawn (bool): Whether to use multiprocessing spawn mode for process initialization.
         nprocs (int): Number of processes to launch for distributed training.
-        strategy (str): Detected strategy for process launch ("torchrun", "slurm", or "default").
-        backend (str): The backend used for distributed communication (e.g., "nccl", "gloo").
-        compute_setup (str): Desired computation device setup.
-        log_setup (str): Desired logging device setup.
+        execution (BaseExecution): Detected execution instance for process launch (e.g., "torchrun","default").
+        execution_type (ExecutionType): Type of exeuction used.
         rank (int | None): Global rank of the process (to be set during environment setup).
         world_size (int | None): Total number of processes (to be set during environment setup).
         local_rank (int | None): Local rank on the node (to be set during environment setup).
         master_addr (str | None): Master node address (to be set during environment setup).
         master_port (str | None): Master node port (to be set during environment setup).
-        device (str | None): Computation device, e.g., "cpu" or "cuda:<local_rank>".
-        log_device (str | None): Logging device, e.g., "cpu" or "cuda:<local_rank>".
-        dtype (torch.dtype): Data type for controlling numerical precision (e.g., torch.float32).
-        data_dtype (torch.dtype): Data type for controlling datasets precision (e.g., torch.float16).
+        node_rank (int): Rank of the node on the cluster setup.
+
+    NOTE: There are three different indicators for number of processes executed.
+        - 1. self._config_nprocs: Number of processes specified by the user.
+        Provided in the initilization of the Accelerator. (acc = Accelerator(nprocs = 2))
+        - 2. self.nprocs: Number of processes defined at the head level.
+            - When accelerator is used to spawn processes (e.g., In case default, python execution),
+            nprocs = _config_nprocs.
+            - When an external elastic method is used to spawn processes (e.g., In case of torchrun),
+            nprocs = 1. This is because the external launcher already spawns multiple processes,
+            and the accelerator __init__ is called from each process.
+        - 3. self.world_size: Number of processes actually executed.
     """
 
+    # -----------------------------------------------------------------------------
+    # HEAD level methods
+    # -----------------------------------------------------------------------------
     def __init__(
         self,
         nprocs: int = 1,
@@ -67,55 +76,155 @@ class Accelerator(DistributionStrategy):
             dtype (torch.dtype): Data type for controlling numerical precision. Default is torch.float32.
             backend (str): The backend for distributed communication. Default is "nccl".
         """
-        super().__init__(compute_setup, log_setup, dtype, backend)
-        self.nprocs = nprocs
-        self.strategy = self.detect_strategy()
-        self._log_warnings()
+        super().__init__(nprocs, compute_setup, log_setup, dtype, backend)
 
         # Default values
         self.rank = 0
         self.local_rank = 0
-        self.world_size = 1
-        self.device = "cpu"
-        self.log_device = "cpu"
+        self.world_size = self.execution.get_world_size(0, self.nprocs)
 
-    def setup(self, process_rank: int) -> None:
+    def distribute(self, fun: Callable) -> Callable:
         """
-        Sets up the distributed training environment for a given process.
+        Decorator to distribute the fit function across multiple processes.
 
-        Each process sets up a rank, local_rank, and world size. If there are multiple processes
-        (based on the world size) a master_add and master port are also assigned.
-        Setting up process also sets up the device for the process. These are selected based on 'compute_setup'
-        argument in TrainConfig. For compute_setup = "auto" - gpus are selected if available.
-        The selected devices could be
-            - "cpu": in case of cpu based computation
-            - "cuda:n": GPU based on the distributed setup. Note that n is the local_rank of the gpu.
-        This also sets up the logging device for each process. In case the log_setup is "auto",
-        log_device is the same as device - otherwise its "cpu".
+        This function is generic and can work with other methods as well.
+        Weather it is bound or unbound.
 
-        This method initializes the distributed process group and logs relevant details.
+        When applied to a function (typically a fit function), this decorator
+        will execute the function in a distributed fashion using torch.multiprocessing.
+        The number of processes used is determined by `self.nprocs`,
+        and if multiple nodes are involved (`self.num_nodes > 1`), the process count is
+        adjusted accordingly. In single process mode (`self.nporcs` is 1), the function
+        is executed directly in the current process.
+
+        After execution, the decorator returns the model stored in `instance.model`.
+
+        Parameters:
+            fun (callable): The function to be decorated. This function usually implements
+                            a model fitting or training routine.
+
+        Returns:
+            callable: The wrapped function. When called, it will execute in distributed mode
+                      (if configured) and return the value of `instance.model`.
+        """
+
+        @functools.wraps(fun)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+
+            # Get the original picklable function
+            # for the case of bound class method
+            # as well as a function
+            if self.is_class_method(fun, args):
+                instance = args[0]
+                method_name = fun.__name__
+                method = getattr(instance, method_name)
+                args = args[1:]
+                self._spawn_method(instance, method, args, kwargs)
+            else:
+                instance = None
+                # method_name = fun.__name__
+                # module = inspect.getmodule(fun)
+                # method = getattr(module, method_name) if module else fun
+                self._spawn_method(instance, fun, args, kwargs)
+
+            if instance and hasattr(instance, "accelerator"):
+                instance.accelerator.finalize()
+            else:
+                self.finalize()
+
+            # TODO: Return the original returns from fun
+            # Currently it only returns the model and optimizer
+            # similar to the fit method.
+            try:
+                return instance.model, instance.optimizer
+            except Exception:
+                return
+
+        return wrapper
+
+    def worker(self, rank: int, instance: Any, fun: Callable, args: tuple, kwargs: dict) -> None:
+        """
+        Worker function to be executed in each spawned process.
+
+        This function is called in every subprocess created by torch.multiprocessing (via mp.spawn).
+        It performs the following tasks:
+          1. Sets up the accelerator for the given process rank. This typically involves configuring
+             the GPU or other hardware resources for distributed training.
+          2. If the retrieved method has been decorated (i.e. it has a '__wrapped__' attribute),
+             the original, unwrapped function is invoked with the given arguments. Otherwise,
+             the method is called directly.
 
         Args:
-            process_rank (int): The rank of the process in the distributed setting.
+            rank (int): The rank (or identifier) of the spawned process.
+            instance (object): The object (Trainer) that contains the method to execute.
+                               This object is expected to have an `accelerator` attribute with a `setup_process(rank)` method.
+                               This argument is optional, in case it is None, the fun will be called independently.
+            fun (Callable): The function of the method on the instance to be executed.
+            args (tuple): Positional arguments to pass to the target method.
+            kwargs (dict): Keyword arguments to pass to the target method.
         """
-        self.setup_process(process_rank, self.nprocs)
+        # Setup the accelerator for the given process rank (e.g., configuring GPU)
+        if instance and instance.accelerator:
+            instance.accelerator.setup_process(rank)
+        else:
+            self.setup_process(rank)
 
-        logger.info("Initializing Accelerator")
-        logger.info("=============================")
-        logger.info("  Node             : %s", str(self.node_name))
-        logger.info("  Rank             : %s", str(self.rank))
-        logger.info("  Local Rank       : %s", str(self.local_rank))
-        logger.info("  World Size       : %s", str(self.world_size))
-        logger.info("  Device           : %s", self.device)
-        logger.info("  Master Address   : %s", self.master_addr)
-        logger.info("  Master Port      : %s", self.master_port)
+        if hasattr(fun, "__wrapped__"):
+            # Explicitly get the original (unbound) method, passing in the instance.
+            # We need to call the original method in case so that MP spawn does not
+            # create multiple processes. (To Avoid infinite loop)
+            fun = fun.__wrapped__  # Unwrap if decorated
+            fun(instance, *args, **kwargs) if instance else fun(*args, **kwargs)
+        else:
+            fun(*args, **kwargs)
 
-        self.start_process_group()
+    def is_class_method(self, fun: Callable, args: Any) -> bool:
+        """
+        Determines if `fun` is a class method or a standalone function.
 
-    def finalize(self) -> None:
-        """Cleans up the distributed process group, ensuring proper shutdown of distributed communication."""
-        self.cleanup_process_group()
+        Args:
+            fun (Callable): The function being checked.
+            args (tuple): The arguments passed to the function.
 
+        Returns:
+            bool: True if `fun` is a class method, False otherwise.
+        """
+        return bool(args) and isinstance(args[0], object) and hasattr(args[0], "__dict__")
+
+    def _spawn_method(self, instance: Any, method: Callable, args: Any, kwargs: Any) -> None:
+        """
+        This method spawns the required numbers of processes.
+
+        - if execution is `default`, it will spawn `nproc` processes across all nodes
+        - if execution is `otherwise`, it will run a single process.
+
+        Args:
+            instance (object): The object (Trainer) that contains the method to execute.
+                               This object is expected to have an `accelerator` attribute with a `setup_process(rank)` method.
+                               This argument is optional, in case it is None, the fun will be called independently.
+            method (Callable): The function of the method on the instance to be executed.
+            args (tuple): Positional arguments to pass to the target method.
+            kwargs (dict): Keyword arguments to pass to the target method.
+        """
+
+        if self.execution_type == ExecutionType.DEFAULT:
+            # Spawn multiple processes that will run the worker function.
+            nprocs = self.nprocs
+            if self.execution.num_nodes > 1:
+                nprocs //= self.execution.num_nodes
+            mp.spawn(
+                self.worker,
+                args=(instance, method, args, kwargs),
+                nprocs=int(nprocs),
+                join=True,
+            )
+        else:
+            # In single process mode, call the worker with rank 0.
+            self.worker(0, instance, method, args, kwargs)
+
+    # -----------------------------------------------------------------------------
+    # PROCESS level methods
+    # -----------------------------------------------------------------------------
     def prepare(self, *args: Any) -> tuple[Any, ...]:
         """
         Prepares models, optimizers, and dataloaders for distributed training.
@@ -168,11 +277,11 @@ class Accelerator(DistributionStrategy):
         Returns:
             nn.Module: The model moved to the correct device (and wrapped in DDP if applicable).
         """
-        model = model.to(device=self.device, dtype=self.dtype)
+        model = model.to(device=self.execution.device, dtype=self.execution.dtype)
 
         # If using distributed training with more than one device:
         if self.world_size > 1:
-            if self.device.startswith("cuda"):
+            if self.execution.device.startswith("cuda"):
                 # For GPU-based training: wrap the model with DDP and specify the local GPU.
                 model = DDP(model, device_ids=[self.local_rank])
             else:
@@ -285,15 +394,20 @@ class Accelerator(DistributionStrategy):
 
         if isinstance(batch, dict):
             return {
-                key: data_to_device(value, device=self.device, dtype=self.data_dtype)
+                key: data_to_device(
+                    value, device=self.execution.device, dtype=self.execution.data_dtype
+                )
                 for key, value in batch.items()
             }
         elif isinstance(batch, (tuple, list)):
             return tuple(
-                data_to_device(x, device=self.device, dtype=self.data_dtype) for x in batch
+                data_to_device(x, device=self.execution.device, dtype=self.execution.data_dtype)
+                for x in batch
             )
         elif isinstance(batch, torch.Tensor):
-            return data_to_device(batch, device=self.device, dtype=self.data_dtype)
+            return data_to_device(
+                batch, device=self.execution.device, dtype=self.execution.data_dtype
+            )
         return
 
     def all_reduce_dict(
@@ -315,7 +429,9 @@ class Accelerator(DistributionStrategy):
             reduced: dict[str, torch.Tensor] = {}
             for key, tensor in d.items():
                 if not isinstance(tensor, torch.Tensor):
-                    tensor = torch.tensor(tensor, device=self.device, dtype=self.dtype)
+                    tensor = torch.tensor(
+                        tensor, device=self.execution.device, dtype=self.execution.data_dtype
+                    )
                 tensor = tensor.detach().clone()
                 if op == "max":
                     dist.all_reduce(tensor, op=dist.ReduceOp.MAX)
@@ -348,152 +464,3 @@ class Accelerator(DistributionStrategy):
             return obj_list[0]
         else:
             return obj
-
-    def _log_warnings(self) -> None:
-        if self.spawn:
-            if self.strategy == "torchrun":
-                logger.warning(
-                    f"Spawn mode is enabled (spawn={self.spawn}), but the process was launched using `torchrun`, "
-                    "which is incompatible with spawning new processes."
-                )
-                logger.warning("Setting spawn=False")
-                self.spawn = False
-
-    def worker(self, rank: int, instance: Any, fun: Callable, args: tuple, kwargs: dict) -> None:
-        """
-        Worker function to be executed in each spawned process.
-
-        This function is called in every subprocess created by torch.multiprocessing (via mp.spawn).
-        It performs the following tasks:
-          1. Sets up the accelerator for the given process rank. This typically involves configuring
-             the GPU or other hardware resources for distributed training.
-          2. If the retrieved method has been decorated (i.e. it has a '__wrapped__' attribute),
-             the original, unwrapped function is invoked with the given arguments. Otherwise,
-             the method is called directly.
-
-        Args:
-            rank (int): The rank (or identifier) of the spawned process.
-            instance (object): The object (Trainer) that contains the method to execute.
-                               This object is expected to have an `accelerator` attribute with a `setup(rank)` method.
-                               This argument is optional, in case it is None, the fun will be called independently.
-            fun (Callable): The function of the method on the instance to be executed.
-            args (tuple): Positional arguments to pass to the target method.
-            kwargs (dict): Keyword arguments to pass to the target method.
-        """
-        # Setup the accelerator for the given process rank (e.g., configuring GPU)
-        if instance and instance.accelerator:
-            instance.accelerator.setup(rank)
-        else:
-            self.setup(rank)
-
-        if hasattr(fun, "__wrapped__"):
-            # Explicitly get the original (unbound) method, passing in the instance.
-            # We need to call the original method in case so that MP spawn does not
-            # create multiple processes. (To Avoid infinite loop)
-            fun = fun.__wrapped__  # Unwrap if decorated
-            fun(instance, *args, **kwargs) if instance else fun(*args, **kwargs)
-        else:
-            fun(*args, **kwargs)
-
-    def is_class_method(self, fun: Callable, args: Any) -> bool:
-        """
-        Determines if `fun` is a class method or a standalone function.
-
-        Args:
-            fun (Callable): The function being checked.
-            args (tuple): The arguments passed to the function.
-
-        Returns:
-            bool: True if `fun` is a class method, False otherwise.
-        """
-        return bool(args) and isinstance(args[0], object) and hasattr(args[0], "__dict__")
-
-    def _spawn_method(self, instance: Any, method: Callable, args: Any, kwargs: Any) -> None:
-        """
-        This method spawns the required numbers of processes.
-
-        - if spawn is `True`, it will spawn `nproc` processes across all nodes
-        - if spawn is `False`, it will run a single process.
-
-        Args:
-            instance (object): The object (Trainer) that contains the method to execute.
-                               This object is expected to have an `accelerator` attribute with a `setup(rank)` method.
-                               This argument is optional, in case it is None, the fun will be called independently.
-            method (Callable): The function of the method on the instance to be executed.
-            args (tuple): Positional arguments to pass to the target method.
-            kwargs (dict): Keyword arguments to pass to the target method.
-        """
-
-        if self.spawn:
-            # Spawn multiple processes that will run the worker function.
-            nprocs = self.nprocs
-            if self.num_nodes > 1:
-                nprocs //= self.num_nodes
-            mp.spawn(
-                self.worker,
-                args=(instance, method, args, kwargs),
-                nprocs=int(nprocs),
-                join=True,
-            )
-        else:
-            # In single process mode, call the worker with rank 0.
-            self.worker(0, instance, method, args, kwargs)
-
-    def distribute(self, fun: Callable) -> Callable:
-        """
-        Decorator to distribute the fit function across multiple processes.
-
-        This function is generic and can work with other methods as well.
-        Weather it is bound or unbound.
-
-        When applied to a function (typically a fit function), this decorator
-        will execute the function in a distributed fashion using torch.multiprocessing if
-        `self.spawn` is True. The number of processes used is determined by `self.nprocs`,
-        and if multiple nodes are involved (`self.num_nodes > 1`), the process count is
-        adjusted accordingly. In single process mode (`self.spawn` is False), the function
-        is executed directly in the current process.
-
-        After execution, the decorator returns the model stored in `instance.model`.
-
-        Parameters:
-            fun (callable): The function to be decorated. This function usually implements
-                            a model fitting or training routine.
-
-        Returns:
-            callable: The wrapped function. When called, it will execute in distributed mode
-                      (if configured) and return the value of `instance.model`.
-        """
-
-        @functools.wraps(fun)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
-
-            # Get the original picklable function
-            # for the case of bound class method
-            # as well as a function
-            if self.is_class_method(fun, args):
-                instance = args[0]
-                method_name = fun.__name__
-                method = getattr(instance, method_name)
-                args = args[1:]
-                self._spawn_method(instance, method, args, kwargs)
-            else:
-                instance = None
-                # method_name = fun.__name__
-                # module = inspect.getmodule(fun)
-                # method = getattr(module, method_name) if module else fun
-                self._spawn_method(instance, fun, args, kwargs)
-
-            if instance and hasattr(instance, "accelerator"):
-                instance.accelerator.finalize()
-            else:
-                self.finalize()
-
-            # TODO: Return the original returns from fun
-            # Currently it only returns the model and optimizer
-            # similar to the fit method.
-            try:
-                return instance.model, instance.optimizer
-            except Exception:
-                return
-
-        return wrapper
