@@ -4,60 +4,50 @@ import os
 from typing import Any
 import torch.distributed as dist
 
-from qadence.ml_tools.train_utils.strategy import DistributionStrategy
+from qadence.ml_tools.train_utils.distribution import Distributor
+from qadence.ml_tools.train_utils.execution import detect_execution
+from qadence.types import ExecutionType
 
 
-def test_detect_strategy_default(monkeypatch: Any) -> None:
+def test_detect_execution_default(monkeypatch: Any) -> None:
     monkeypatch.setenv("LOCAL_RANK", "0")
-    ds = DistributionStrategy(compute_setup="cpu")
-    strategy = ds.detect_strategy()
-    assert strategy == "default"
+    ds = Distributor(compute_setup="cpu")
+    assert ExecutionType.DEFAULT == ds.execution_type
     monkeypatch.delenv("LOCAL_RANK", raising=False)
-
-
-def test_detect_strategy_none(monkeypatch: Any) -> None:
-    monkeypatch.delenv("LOCAL_RANK", raising=False)
-    monkeypatch.delenv("TORCHELASTIC_RUN_ID", raising=False)
-    ds = DistributionStrategy(compute_setup="cpu")
-    strategy = ds.detect_strategy()
-    assert strategy == "none"
 
 
 def test_set_cluster_variables(monkeypatch: Any) -> None:
     monkeypatch.setenv("SLURM_JOB_ID", "12345")
     monkeypatch.setenv("SLURM_JOB_NUM_NODES", "2")
     monkeypatch.setenv("SLURM_JOB_NODELIST", "node1,node2")
-    ds = DistributionStrategy(compute_setup="cpu")
-    ds._set_cluster_variables()
-    assert ds.job_id == 12345
-    assert ds.num_nodes == 2
-    assert ds.node_list == "node1,node2"
+    ds = Distributor(compute_setup="cpu")
+    ds.execution._set_cluster_variables()
+    assert ds.execution.job_id == 12345
+    assert ds.execution.num_nodes == 2
+    assert ds.execution.node_list == "node1,node2"
 
 
 def test_get_master_addr_env(monkeypatch: Any) -> None:
     monkeypatch.setenv("MASTER_ADDR", "1.2.3.4")
-    ds = DistributionStrategy(compute_setup="cpu")
-    ds.strategy = "none"
-    addr = ds._get_master_addr()
+    ds = Distributor(compute_setup="cpu")
+    addr = ds.execution.get_master_addr()
     assert addr == "1.2.3.4"
     monkeypatch.delenv("MASTER_ADDR", raising=False)
 
 
 def test_get_master_port_env(monkeypatch: Any) -> None:
     monkeypatch.setenv("MASTER_PORT", "23456")
-    ds = DistributionStrategy(compute_setup="cpu")
-    ds.strategy = "none"
-    port = ds._get_master_port()
+    ds = Distributor(compute_setup="cpu")
+    port = ds.execution.get_master_port()
     assert port == "23456"
     monkeypatch.delenv("MASTER_PORT", raising=False)
 
 
 def test_get_master_port_default(monkeypatch: Any) -> None:
     monkeypatch.delenv("MASTER_PORT", raising=False)
-    ds = DistributionStrategy(compute_setup="cpu")
-    ds.strategy = "default"
-    ds.job_id = 12000
-    port = ds._get_master_port()
+    ds = Distributor(compute_setup="cpu")
+    ds.execution.job_id = 12000
+    port = ds.execution.get_master_port()
     expected_port = str(int(12000 + 12000 % 5000))
     assert port == expected_port
 
@@ -66,10 +56,9 @@ def test_setup_environment(monkeypatch: Any) -> None:
     # Set necessary environment variables for SLURM-like setup.
     monkeypatch.setenv("SLURM_NODEID", "0")
     monkeypatch.setenv("SLURMD_NODENAME", "test_node")
-    ds = DistributionStrategy(compute_setup="cpu")
-    ds.strategy = "default"
-    ds.nprocs = 4
-    values_dict = ds.setup_distributed_environment(1)
+    ds = Distributor(compute_setup="cpu")
+    ds.execution_type = ExecutionType.DEFAULT
+    values_dict = ds.setup_process_rank_environment(0)
     local_rank, world_size, rank = (
         values_dict["LOCAL_RANK"],
         values_dict["WORLD_SIZE"],
@@ -87,20 +76,8 @@ def test_setup_environment(monkeypatch: Any) -> None:
     assert "LOCAL_RANK" in os.environ
 
 
-def test_setup_process() -> None:
-    ds = DistributionStrategy(compute_setup="cpu")
-    ds.strategy = "default"
-    ds.nprocs = 4
-    rank, world_size, local_rank, device = ds.setup_process(0, 4)
-    assert device == "cpu"
-    assert isinstance(rank, int)
-    assert isinstance(world_size, int)
-    # In CPU mode, local_rank should be None.
-    assert local_rank is None
-
-
 def test_start_process_group(monkeypatch: Any) -> None:
-    ds = DistributionStrategy(compute_setup="cpu")
+    ds = Distributor(compute_setup="cpu")
     ds.world_size = 2
     ds.rank = 0
     ds.master_addr = "localhost"
@@ -124,7 +101,7 @@ def test_start_process_group(monkeypatch: Any) -> None:
 
 
 def test_cleanup_process_group(monkeypatch: Any) -> None:
-    ds = DistributionStrategy(compute_setup="cpu")
+    ds = Distributor(compute_setup="cpu")
     ds.rank = 0
     destroy_called = False
 
@@ -134,5 +111,5 @@ def test_cleanup_process_group(monkeypatch: Any) -> None:
 
     monkeypatch.setattr(dist, "is_initialized", lambda: True)
     monkeypatch.setattr(dist, "destroy_process_group", fake_destroy)
-    ds.cleanup_process_group()
+    ds.finalize()
     assert destroy_called is True

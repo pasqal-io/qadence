@@ -182,11 +182,3 @@ class ConfigManager:
                 "`log_folder` is invalid when `create_subfolder_per_run` = True."
                 "`root_folder` (default qml_logs) will be used to save logs."
             )
-
-        if self.config.nprocs > 1:
-            logger.info(
-                f"Process spawning is enabled (nprocs={self.config.nprocs}). "
-                "Initiating process spawning."
-            )
-        else:
-            logger.info(f"Process spawning is disabled (nprocs={self.config.nprocs}).")

@@ -13,6 +13,7 @@ from typing import Any, Callable, Dict, Generator, Iterator, List, Tuple
 
 from qadence.ml_tools.train_utils.accelerator import Accelerator
 from qadence.ml_tools.data import DictDataLoader, to_dataloader
+from qadence.types import ExecutionType
 
 
 class DummyModel(nn.Module):
@@ -87,7 +88,7 @@ def setup_logger() -> logging.Logger:
 def test_prepare_model_without_ddp() -> None:
     accelerator = Accelerator(nprocs=1, compute_setup="cpu")
     accelerator.world_size = 1
-    accelerator.device = "cpu"
+    accelerator.execution.device = "cpu"
     model = DummyModel()
     prepared_model = accelerator._prepare_model(model)
     assert not isinstance(prepared_model, DDP)
@@ -100,7 +101,7 @@ def test_prepare_model_with_ddp_cuda() -> None:
     accelerator = Accelerator(nprocs=2, compute_setup="gpu")
     accelerator.world_size = 2
     accelerator.local_rank = 0
-    accelerator.device = "cuda:0"
+    accelerator.execution.device = "cuda:0"
     model = DummyModel()
     prepared_model = accelerator._prepare_model(model)
     assert isinstance(prepared_model, DDP)
@@ -168,8 +169,8 @@ def test_prepare_function_with_spawn(
 
 def test_prepare_batch_dict() -> None:
     accelerator = Accelerator(nprocs=1)
-    accelerator.device = "cpu"
-    accelerator.data_dtype = torch.float32
+    accelerator.execution.device = "cpu"
+    accelerator.execution.data_dtype = torch.float32
     batch: Dict[str, torch.Tensor] = {"x": torch.tensor([1.0]), "y": torch.tensor([2.0])}
     prepared = accelerator.prepare_batch(batch)
     assert isinstance(prepared, dict)
@@ -179,8 +180,8 @@ def test_prepare_batch_dict() -> None:
 
 def test_prepare_batch_list() -> None:
     accelerator = Accelerator(nprocs=1)
-    accelerator.device = "cpu"
-    accelerator.data_dtype = torch.float32
+    accelerator.execution.device = "cpu"
+    accelerator.execution.data_dtype = torch.float32
     batch: List[torch.Tensor] = [torch.tensor([1.0]), torch.tensor([2.0])]
     prepared = accelerator.prepare_batch(batch)
     assert isinstance(prepared, tuple)
@@ -190,8 +191,8 @@ def test_prepare_batch_list() -> None:
 
 def test_prepare_batch_tensor() -> None:
     accelerator = Accelerator(nprocs=1)
-    accelerator.device = "cpu"
-    accelerator.data_dtype = torch.float32
+    accelerator.execution.device = "cpu"
+    accelerator.execution.data_dtype = torch.float32
     tensor: torch.Tensor = torch.tensor([1.0, 2.0])
     prepared = accelerator.prepare_batch(tensor)
     assert prepared.device.type == "cpu"
@@ -221,11 +222,10 @@ def test_all_reduce_dict_initialized() -> None:
 def test_log_warnings(capsys: pytest.LogCaptureFixture) -> None:
     setup_logger()
     accelerator = Accelerator(nprocs=2)
-    accelerator.strategy = "torchrun"
+    accelerator.execution_type = ExecutionType.TORCHRUN
     accelerator._log_warnings()
     captured = capsys.readouterr()
     assert "Spawn mode is enabled" in captured.err
-    assert not accelerator.spawn
 
 
 def test_is_class_method() -> None:

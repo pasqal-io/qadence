@@ -320,7 +320,9 @@ class Trainer(BaseTrainer):
         The callback_manager.start_training takes care of loading checkpoint,
         and setting up the writer.
         """
-        self._stop_training = torch.tensor(0, dtype=torch.int, device=self.accelerator.device)
+        self._stop_training = torch.tensor(
+            0, dtype=torch.int, device=self.accelerator.execution.device
+        )
         # initalize config in the first process, and broadcast it to all processes
         if self.accelerator.rank == 0:
             self.config_manager.initialize_config()
@@ -335,7 +337,7 @@ class Trainer(BaseTrainer):
         )
 
         # Progress bar for training visualization
-        if not self.accelerator.spawn:
+        if self.accelerator.world_size == 1:
             self.progress = Progress(
                 TextColumn("[progress.description]{task.description}"),
                 BarColumn(),
@@ -373,7 +375,7 @@ class Trainer(BaseTrainer):
             self.global_step + self.config_manager.config.max_iter + 1,
         )
 
-        if not self.accelerator.spawn and self.progress:
+        if self.accelerator.world_size == 1 and self.progress:
             # Progress setup is only available for non-spawned training.
             with self.progress:
                 train_task = self.progress.add_task(
@@ -513,8 +515,8 @@ class Trainer(BaseTrainer):
                 optimizer=self.optimizer,
                 loss_fn=self.loss_fn,
                 xs=batch,
-                device=self.accelerator.device,
-                dtype=self.accelerator.data_dtype,
+                device=self.accelerator.execution.device,
+                dtype=self.accelerator.execution.data_dtype,
             )
         else:
             # Perform optimization using Nevergrad
@@ -798,7 +800,7 @@ class Trainer(BaseTrainer):
             loss,
             metrics,
             rank=self.accelerator.rank,
-            device=self.accelerator.device,
+            device=self.accelerator.execution.device,
         )
 
     def get_ic_grad_bounds(
