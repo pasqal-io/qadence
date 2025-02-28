@@ -201,7 +201,8 @@ class CallbacksManager:
                     logger.debug(f"Loaded model and optimizer from {self.config.log_folder}")
 
         # Setup writer
-        self.writer.open(self.config, iteration=trainer.global_step)
+        if trainer.accelerator.rank == 0:
+            self.writer.open(self.config, iteration=trainer.global_step)
 
     def end_training(self, trainer: Any) -> None:
         """
@@ -210,5 +211,5 @@ class CallbacksManager:
         Args:
             trainer (Any): The training object managing the training process.
         """
-        if self.writer:
+        if trainer.accelerator.rank == 0 and self.writer:
             self.writer.close()
