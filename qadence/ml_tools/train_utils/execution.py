@@ -6,7 +6,6 @@ from abc import ABC, abstractmethod
 from logging import getLogger
 
 import torch
-import torch.distributed as dist
 
 from qadence.types import ExecutionType
 
@@ -261,7 +260,7 @@ class DefaultExecution(BaseExecution):
 
 class TorchRunexecution(BaseExecution):
     """
-    execution for torchrun or when using TORCHELASTIC.
+    Execution for torchrun or when using TORCHELASTIC.
 
     Expects that environment variables like RANK, LOCAL_RANK, WORLD_SIZE,
     MASTER_ADDR, and MASTER_PORT are already set.

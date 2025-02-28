@@ -59,7 +59,7 @@ class Accelerator(Distributor):
         compute_setup: str = "auto",
         log_setup: str = "cpu",
         dtype: torch_dtype | None = torch.float32,
-        backend: str = "nccl",
+        backend: str = "gloo",
     ) -> None:
         """
         Initializes the Accelerator class.
@@ -74,7 +74,7 @@ class Accelerator(Distributor):
                 - "auto": Uses same device to log as used for computation.
                 - "cpu": Forces CPU logging.
             dtype (torch.dtype): Data type for controlling numerical precision. Default is torch.float32.
-            backend (str): The backend for distributed communication. Default is "nccl".
+            backend (str): The backend for distributed communication. Default is "gloo".
         """
         super().__init__(nprocs, compute_setup, log_setup, dtype, backend)
 
