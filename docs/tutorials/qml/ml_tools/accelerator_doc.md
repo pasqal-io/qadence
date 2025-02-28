@@ -123,7 +123,7 @@ def train_epoch(epochs, model, dataloader, optimizer, accelerator):
         print("Rank: ", accelerator.rank, " | Epoch: ", epoch, " | Loss: ", loss.item())
 
 if __name__ == "__main__":
-
+    n_epochs = 10
     model = nn.Sequential(
         nn.Linear(10, 100),  # Input Layer
         nn.ReLU(),  # Activation Function

@@ -34,9 +34,10 @@ class Distributor:
         master_port (str | None): Master node port (to be set during environment setup).
         node_rank (int): Rank of the node on the cluster setup.
     """
-    #-----------------------------------------------------------------------------
+
+    # -----------------------------------------------------------------------------
     # HEAD level methods
-    #-----------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------
     def __init__(
         self,
         nprocs: int = 1,
@@ -68,7 +69,9 @@ class Distributor:
         self.master_port: str
         self.execution: BaseExecution
 
-        self.execution, self.execution_type = detect_execution(compute_setup, log_setup, dtype, backend)
+        self.execution, self.execution_type = detect_execution(
+            compute_setup, log_setup, dtype, backend
+        )
 
         self._config_nprocs = nprocs
         if self.execution_type == ExecutionType.TORCHRUN:
@@ -77,9 +80,9 @@ class Distributor:
         else:
             self.nprocs = nprocs
 
-    #-----------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------
     # PROCESS level methods
-    #-----------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------
     def setup_process(self, process_rank: int) -> None:
         """
         Sets up the distributed training environment for a given process.
@@ -103,13 +106,18 @@ class Distributor:
 
         logger.info("Initializing Accelerator")
         logger.info("=============================")
-        logger.info("  Node             : %s", str(self.execution.node_name))
-        logger.info("  Device           : %s", self.execution.device)
-        logger.info("  Rank             : %s", str(self.rank))
-        logger.info("  Local Rank       : %s", str(self.local_rank))
-        logger.info("  World Size       : %s", str(self.world_size))
-        logger.info("  Master Address   : %s", self.master_addr)
-        logger.info("  Master Port      : %s", self.master_port)
+        logger.info(
+            " Node, Device                : %s, %s",
+            str(self.execution.node_name),
+            self.execution.device,
+        )
+        logger.info(
+            " Rank, Local Rank, World Size: %s, %s, %s",
+            str(self.rank),
+            str(self.local_rank),
+            str(self.world_size),
+        )
+        logger.info(" Master Address, Master Port : %s, %s", self.master_addr, self.master_port)
 
         self.start_process_group()
         if self.rank == 0:
@@ -118,6 +126,7 @@ class Distributor:
     def setup_process_rank_environment(self, process_rank: int) -> dict[str, int | None]:
         """
         Set up the process for distributed training, especially useful when processes are spawned.
+
         Set up environment variables and the computation device for distributed processing.
 
         This method optionally sets environment variables for a spawned process if a process rank is provided.
@@ -136,7 +145,6 @@ class Distributor:
 
         Args:
             process_rank (int | None): The rank to assign to the process (used in spawn scenarios).
-            
 
         Returns:
             dict[str, int | None]: A dictionary containing the global rank, world size, and local rank.
@@ -171,10 +179,10 @@ class Distributor:
             if self.rank == 0:
                 logger.info("Starting Distributed Process Group")
                 logger.info("=============================")
-                logger.info("  Total Nodes       : %d", int(os.environ.get("SLURM_NNODES", 1)))
-                logger.info("  Total Processes   : %d", self.world_size)
-                logger.info("  Master Address    : %s", self.master_addr)
-                logger.info("  Master Port       : %s", self.master_port)
+                logger.info(" Total Nodes       : %d", int(os.environ.get("SLURM_NNODES", 1)))
+                logger.info(" Total Processes   : %d", self.world_size)
+                logger.info(" Master Address    : %s", self.master_addr)
+                logger.info(" Master Port       : %s", self.master_port)
             dist.barrier()
 
     def finalize(self) -> None:
@@ -189,7 +197,6 @@ class Distributor:
             if self.rank == 0:
                 logger.info("Killing Distributed Process Group")
 
-
     def _log_warnings(self) -> None:
 
         if self.execution_type == ExecutionType.TORCHRUN:
@@ -199,5 +206,3 @@ class Distributor:
             )
         logger.info(f"User sepcifed `nprocs`={self._config_nprocs}")
         logger.info(f"Total processes spawned={self.world_size}")
-        
-        

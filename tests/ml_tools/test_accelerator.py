@@ -225,7 +225,7 @@ def test_log_warnings(capsys: pytest.LogCaptureFixture) -> None:
     accelerator.execution_type = ExecutionType.TORCHRUN
     accelerator._log_warnings()
     captured = capsys.readouterr()
-    assert "Spawn mode is enabled" in captured.err
+    assert "Process was launched using `torchrun`" in captured.err
 
 
 def test_is_class_method() -> None:
