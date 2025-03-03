@@ -14,26 +14,47 @@ logger = getLogger("ml_tools")
 
 class BaseExecution(ABC):
     """
-    Attributes:
+    Class to set up and manage execution of the processes in different environments.
 
+    This is a abstract base class, and inherited classes should implement methods to get rank,
+    local rank,  world size, master addr and master port.
+
+    It configures environment variables required for distributed training (such as rank, world size,
+    master address, and master port), and sets the appropriate computation device (CPU or GPU).
+
+    Attributes:
        backend (str): The backend used for distributed communication (e.g., "nccl", "gloo").
            It should be one of the backends supported by torch.distributed
        compute_setup (str): Desired computation device setup.
        log_setup (str): Desired logging device setup.
        device (str | None): Computation device, e.g., "cpu" or "cuda:<local_rank>".
        log_device (str | None): Logging device, e.g., "cpu" or "cuda:<local_rank>".
-       dtype (torch.dtype): Data type for controlling numerical precision (e.g., torch.float32).
-       data_dtype (torch.dtype): Data type for controlling datasets precision (e.g., torch.float16).
+       dtype (torch.dtype | None): Data type for controlling numerical precision (e.g., torch.float32).
+       data_dtype (torch.dtype | None): Data type for controlling datasets precision (e.g., torch.float16).
        node_rank (int): Rank of the node on the cluster setup.
     """
 
     def __init__(
         self,
-        compute_setup: str = "auto",
-        log_setup: str = "cpu",
-        backend: str = "nccl",
-        dtype: torch.dtype = torch.float32,
+        compute_setup: str,
+        log_setup: str,
+        backend: str,
+        dtype: torch.dtype | None = None,
     ) -> None:
+        """
+        Initialize the BaseExecution.
+
+        Args:
+            compute_setup (str): Compute device setup; options are "auto" (default), "gpu", or "cpu".
+                - "auto": Uses GPU if available, otherwise CPU.
+                - "gpu": Forces GPU usage, raising an error if no CUDA device is available.
+                - "cpu": Forces CPU usage.
+            log_setup (str): Logging device setup; options are "auto", "cpu" (default).
+                - "auto": Uses same device to log as used for computation.
+                - "cpu": Forces CPU logging.
+            backend (str): Backend to use for distributed communication (default: "nccl").
+            dtype (torch.dtype | None): Data type for controlling numerical precision. Default is None.
+        """
         self.compute_setup = compute_setup
         self.log_setup = log_setup
         self.backend = backend
@@ -49,6 +70,7 @@ class BaseExecution(ABC):
 
         self._set_cluster_variables()
         self._set_compute()
+        self.device = "cpu"  # set the initial device to cpu, it will change to correct device when process runs.
 
     @abstractmethod
     def get_rank(self, process_rank: int) -> int:
@@ -328,10 +350,10 @@ class TorchRunexecution(BaseExecution):
 
 
 def detect_execution(
-    compute_setup: str = "auto",
-    log_setup: str = "cpu",
-    dtype: torch.dtype = torch.float32,
-    backend: str = "nccl",
+    compute_setup: str,
+    log_setup: str,
+    backend: str,
+    dtype: torch.dtype | None = None,
 ) -> tuple[BaseExecution, ExecutionType]:
     """
     Detect and return the appropriate execution instance.
@@ -346,8 +368,8 @@ def detect_execution(
         log_setup (str): Logging device setup; options are "auto", "cpu" (default).
             - "auto": Uses same device to log as used for computation.
             - "cpu": Forces CPU logging.
-        dtype (torch.dtype): Data type for controlling numerical precision. Default is torch.float32.
         backend (str): Backend to use for distributed communication (default: "nccl").
+        dtype (torch.dtype | None): Data type for controlling numerical precision. Default is None.
 
     Returns:
         tuple[BaseExecution, ExecutionType]: tuple of

@@ -4,7 +4,6 @@ from __future__ import annotations
 from logging import getLogger
 
 import os
-import subprocess
 import torch
 import torch.distributed as dist
 from qadence.ml_tools.train_utils.execution import BaseExecution, detect_execution
@@ -16,22 +15,24 @@ logger = getLogger("ml_tools")
 
 class Distributor:
     """
-    Class to set up and manage distributed training environments.
+    Class to set up and manage distributed training.
 
-    This class detects the current launch execution (e.g., torchrun, SLURM, or default),
-    configures environment variables required for distributed training (such as rank, world size,
+    This class uses the detect_execution() method to get the correct current launch execution
+    (e.g., torchrun, default). It provides methods to setup processes, start, and clean up the
+    PyTorch distributed process group.
+
+    The execution configures environment variables required for distributed training (such as rank, world size,
     master address, and master port), and sets the appropriate computation device (CPU or GPU).
-    It also provides methods to start and clean up the PyTorch distributed process group.
 
     Attributes:
         nprocs (int): Number of processes to launch for distributed training.
         execution (BaseExecution): Detected execution instance for process launch (e.g., "torchrun","default").
         execution_type (ExecutionType): Type of exeuction used.
-        rank (int | None): Global rank of the process (to be set during environment setup).
-        world_size (int | None): Total number of processes (to be set during environment setup).
+        rank (int): Global rank of the process (to be set during environment setup).
+        world_size (int): Total number of processes (to be set during environment setup).
         local_rank (int | None): Local rank on the node (to be set during environment setup).
-        master_addr (str | None): Master node address (to be set during environment setup).
-        master_port (str | None): Master node port (to be set during environment setup).
+        master_addr (str): Master node address (to be set during environment setup).
+        master_port (str): Master node port (to be set during environment setup).
         node_rank (int): Rank of the node on the cluster setup.
     """
 
@@ -40,17 +41,17 @@ class Distributor:
     # -----------------------------------------------------------------------------
     def __init__(
         self,
-        nprocs: int = 1,
-        compute_setup: str = "auto",
-        log_setup: str = "cpu",
-        dtype: torch.dtype | None = torch.float32,
-        backend: str = "nccl",
+        nprocs: int,
+        compute_setup: str,
+        log_setup: str,
+        backend: str,
+        dtype: torch.dtype | None = None,
     ) -> None:
         """
-        Initialize the Distributionexecution.
+        Initialize the Distributor.
 
         Args:
-            nprocs (int): Number of processes to launch. Default is 1.
+            nprocs (int): Number of processes to launch.
             compute_setup (str): Compute device setup; options are "auto" (default), "gpu", or "cpu".
                 - "auto": Uses GPU if available, otherwise CPU.
                 - "gpu": Forces GPU usage, raising an error if no CUDA device is available.
@@ -58,8 +59,8 @@ class Distributor:
             log_setup (str): Logging device setup; options are "auto", "cpu" (default).
                 - "auto": Uses same device to log as used for computation.
                 - "cpu": Forces CPU logging.
-            dtype (torch.dtype): Data type for controlling numerical precision. Default is torch.float32.
             backend (str): Backend to use for distributed communication (default: "nccl").
+            dtype (torch.dtype | None): Data type for controlling numerical precision. Default is None.
         """
         self._nprocs: int
         self.rank: int
@@ -70,7 +71,7 @@ class Distributor:
         self.execution: BaseExecution
 
         self.execution, self.execution_type = detect_execution(
-            compute_setup, log_setup, dtype, backend
+            compute_setup, log_setup, backend, dtype
         )
 
         self._config_nprocs = nprocs
@@ -135,11 +136,11 @@ class Distributor:
         sets up the master address and port for distributed communication. Finally, it configures
         the computation device based on the specified compute setup.
         This method sets:
-            rank (int | None): Global rank of the process (to be set during environment setup).
-            world_size (int | None): Total number of processes (to be set during environment setup).
+            rank (int): Global rank of the process (to be set during environment setup).
+            world_size (int): Total number of processes (to be set during environment setup).
             local_rank (int | None): Local rank on the node (to be set during environment setup).
-            master_addr (str | None): Master node address (to be set during environment setup).
-            master_port (str | None): Master node port (to be set during environment setup).
+            master_addr (str): Master node address (to be set during environment setup).
+            master_port (str): Master node port (to be set during environment setup).
             node_rank (int): Rank of the node on the cluster setup.
             node_name (str): Name of the node on the cluster setup.
 

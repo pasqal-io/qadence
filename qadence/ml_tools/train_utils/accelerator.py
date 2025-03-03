@@ -27,15 +27,20 @@ class Accelerator(Distributor):
     `torch.distributed` API. It supports spawning multiple processes and wrapping models with
     `DistributedDataParallel` (DDP) when required.
 
+    This class is provides head level method - distribute() - which wraps a function at a head process level,
+    before launching `nprocs` processes as required. Furthermore, it provides processes level methods,
+    such as prepare(), and prepare_batch() which can be run inside each process for correct movement and
+    preparation of model, optimizers and datasets.
+
     Inherited Attributes:
         nprocs (int): Number of processes to launch for distributed training.
         execution (BaseExecution): Detected execution instance for process launch (e.g., "torchrun","default").
-        execution_type (ExecutionType): Type of exeuction used.
-        rank (int | None): Global rank of the process (to be set during environment setup).
-        world_size (int | None): Total number of processes (to be set during environment setup).
+        execution_type (ExecutionType): Type of execution used.
+        rank (int): Global rank of the process (to be set during environment setup).
+        world_size (int): Total number of processes (to be set during environment setup).
         local_rank (int | None): Local rank on the node (to be set during environment setup).
-        master_addr (str | None): Master node address (to be set during environment setup).
-        master_port (str | None): Master node port (to be set during environment setup).
+        master_addr (str): Master node address (to be set during environment setup).
+        master_port (str): Master node port (to be set during environment setup).
         node_rank (int): Rank of the node on the cluster setup.
 
     NOTE: There are three different indicators for number of processes executed.
@@ -58,8 +63,8 @@ class Accelerator(Distributor):
         nprocs: int = 1,
         compute_setup: str = "auto",
         log_setup: str = "cpu",
-        dtype: torch_dtype | None = torch.float32,
         backend: str = "gloo",
+        dtype: torch_dtype | None = None,
     ) -> None:
         """
         Initializes the Accelerator class.
@@ -73,10 +78,10 @@ class Accelerator(Distributor):
             log_setup (str): Logging device setup; options are "auto", "cpu" (default).
                 - "auto": Uses same device to log as used for computation.
                 - "cpu": Forces CPU logging.
-            dtype (torch.dtype): Data type for controlling numerical precision. Default is torch.float32.
             backend (str): The backend for distributed communication. Default is "gloo".
+            dtype (torch.dtype | None): Data type for controlling numerical precision. Default is None.
         """
-        super().__init__(nprocs, compute_setup, log_setup, dtype, backend)
+        super().__init__(nprocs, compute_setup, log_setup, backend, dtype)
 
         # Default values
         self.rank = 0
@@ -207,7 +212,7 @@ class Accelerator(Distributor):
             kwargs (dict): Keyword arguments to pass to the target method.
         """
 
-        if self.execution_type == ExecutionType.DEFAULT:
+        if self.execution_type == ExecutionType.DEFAULT and self.world_size > 1:
             # Spawn multiple processes that will run the worker function.
             nprocs = self.nprocs
             if self.execution.num_nodes > 1:
