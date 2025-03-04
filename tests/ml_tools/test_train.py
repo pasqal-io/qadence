@@ -173,9 +173,6 @@ def test_train_tensor_tuple(Basic: torch.nn.Module, BasicQNN: QNN) -> None:
         batch_size = 25
         x = torch.linspace(0, 1, batch_size).reshape(-1, 1)
         y = torch.sin(x)
-        model = model.to(
-            torch.float32
-        )  # BasicQNN might have float64, and Adam behaves weirdly with mixed precision
 
         cnt = count()
         criterion = torch.nn.MSELoss()

@@ -187,6 +187,10 @@ class Accelerator(Distributor):
         """
         Determines if `fun` is a class method or a standalone function.
 
+        Frist argument of the args should be:
+        - An object and has __dict__: making it a class
+        - Has a method named fun: making it a class that has this method.
+
         Args:
             fun (Callable): The function being checked.
             args (tuple): The arguments passed to the function.
@@ -194,7 +198,12 @@ class Accelerator(Distributor):
         Returns:
             bool: True if `fun` is a class method, False otherwise.
         """
-        return bool(args) and isinstance(args[0], object) and hasattr(args[0], "__dict__")
+        return (
+            bool(args)
+            and isinstance(args[0], object)
+            and hasattr(args[0], "__dict__")
+            and hasattr(args[0], fun.__name__)
+        )
 
     def _spawn_method(self, instance: Any, method: Callable, args: Any, kwargs: Any) -> None:
         """

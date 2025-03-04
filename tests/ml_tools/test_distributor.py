@@ -11,7 +11,7 @@ from qadence.types import ExecutionType
 
 def test_detect_execution_default(monkeypatch: Any) -> None:
     monkeypatch.setenv("LOCAL_RANK", "0")
-    ds = Distributor(compute_setup="cpu")
+    ds = Distributor(compute_setup="cpu", log_setup="cpu", nprocs=1, backend="gloo")
     assert ExecutionType.DEFAULT == ds.execution_type
     monkeypatch.delenv("LOCAL_RANK", raising=False)
 
@@ -20,16 +20,16 @@ def test_set_cluster_variables(monkeypatch: Any) -> None:
     monkeypatch.setenv("SLURM_JOB_ID", "12345")
     monkeypatch.setenv("SLURM_JOB_NUM_NODES", "2")
     monkeypatch.setenv("SLURM_JOB_NODELIST", "node1,node2")
-    ds = Distributor(compute_setup="cpu")
+    ds = Distributor(compute_setup="cpu", log_setup="cpu", nprocs=1, backend="gloo")
     ds.execution._set_cluster_variables()
-    assert ds.execution.job_id == 12345
+    assert ds.execution.job_id == "12345"
     assert ds.execution.num_nodes == 2
     assert ds.execution.node_list == "node1,node2"
 
 
 def test_get_master_addr_env(monkeypatch: Any) -> None:
     monkeypatch.setenv("MASTER_ADDR", "1.2.3.4")
-    ds = Distributor(compute_setup="cpu")
+    ds = Distributor(compute_setup="cpu", log_setup="cpu", nprocs=1, backend="gloo")
     addr = ds.execution.get_master_addr()
     assert addr == "1.2.3.4"
     monkeypatch.delenv("MASTER_ADDR", raising=False)
@@ -37,26 +37,17 @@ def test_get_master_addr_env(monkeypatch: Any) -> None:
 
 def test_get_master_port_env(monkeypatch: Any) -> None:
     monkeypatch.setenv("MASTER_PORT", "23456")
-    ds = Distributor(compute_setup="cpu")
+    ds = Distributor(compute_setup="cpu", log_setup="cpu", nprocs=1, backend="gloo")
     port = ds.execution.get_master_port()
     assert port == "23456"
     monkeypatch.delenv("MASTER_PORT", raising=False)
-
-
-def test_get_master_port_default(monkeypatch: Any) -> None:
-    monkeypatch.delenv("MASTER_PORT", raising=False)
-    ds = Distributor(compute_setup="cpu")
-    ds.execution.job_id = 12000
-    port = ds.execution.get_master_port()
-    expected_port = str(int(12000 + 12000 % 5000))
-    assert port == expected_port
 
 
 def test_setup_environment(monkeypatch: Any) -> None:
     # Set necessary environment variables for SLURM-like setup.
     monkeypatch.setenv("SLURM_NODEID", "0")
     monkeypatch.setenv("SLURMD_NODENAME", "test_node")
-    ds = Distributor(compute_setup="cpu")
+    ds = Distributor(compute_setup="cpu", log_setup="cpu", nprocs=1, backend="gloo")
     ds.execution_type = ExecutionType.DEFAULT
     values_dict = ds.setup_process_rank_environment(0)
     local_rank, world_size, rank = (
@@ -77,7 +68,7 @@ def test_setup_environment(monkeypatch: Any) -> None:
 
 
 def test_start_process_group(monkeypatch: Any) -> None:
-    ds = Distributor(compute_setup="cpu")
+    ds = Distributor(compute_setup="cpu", log_setup="cpu", nprocs=1, backend="gloo")
     ds.world_size = 2
     ds.rank = 0
     ds.master_addr = "localhost"
@@ -101,7 +92,7 @@ def test_start_process_group(monkeypatch: Any) -> None:
 
 
 def test_cleanup_process_group(monkeypatch: Any) -> None:
-    ds = Distributor(compute_setup="cpu")
+    ds = Distributor(compute_setup="cpu", nprocs=1, backend="gloo", log_setup="cpu")
     ds.rank = 0
     destroy_called = False
 

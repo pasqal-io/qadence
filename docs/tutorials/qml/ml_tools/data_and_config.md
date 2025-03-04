@@ -251,7 +251,20 @@ config = TrainConfig(
 
 - `dtype` (**dtype** or **None**): Sets the numerical precision (data type) for computations. For instance, you can use `torch.float32` or `torch.float16` depending on your performance and precision needs. Both model parameters, and dataset will be of the provided precision.
     - If not specified or None, the default torch precision (usually torch.float32) is used.
-    - If provided dtype is torch.complex128, model parameters will be torch.complex128, and data parameters will be torch.float64
+    - If provided dtype is complex dtype, appropriate precision for the data and model parameters will be used as follows:
+
+    | Data Type (`dtype`)   | Data Precision | Model Precision | Model Parameters Precision  (*Real Part*  & *Imaginary Part* )|
+    |---------------------|---------------|----------------|-------------------------------------|
+    | `torch.float16`     | 16-bit        | 16-bit         | N/A            | N/A                |
+    | `torch.float32`     | 32-bit        | 32-bit         | N/A            | N/A                |
+    | `torch.float64`     | 64-bit        | 64-bit         | N/A            | N/A                |
+    | `torch.complex32`   | 16-bit        | 32-bit         | 16-bit         | 16-bit             |
+    | `torch.complex64`   | 32-bit        | 64-bit         | 32-bit         | 32-bit             |
+    | `torch.complex128`  | 64-bit        | 128-bit        | 64-bit         | 64-bit             |
+
+    **Complex Dtypes**: Complex data types are useful for Quantum Neural Networks - such as `QNN` provided by qadence. The industry standard is to use `torch.complex128`, however, the user can also specify a lower precision (`torch.complex64` or  `torch.complex32`) for faster training.
+
+
 
 Furthermore, the user can also utilize the following options:
 

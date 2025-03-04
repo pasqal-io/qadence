@@ -462,7 +462,7 @@ class LoadCheckpoint(Callback):
             folder = config.log_folder
             model = trainer.model
             optimizer = trainer.optimizer
-            device = trainer.accelerator.log_device
+            device = trainer.accelerator.execution.log_device
             return load_checkpoint(folder, model, optimizer, device=device)
 
 

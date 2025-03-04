@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import os
+import random
+import socket
 import subprocess
 from abc import ABC, abstractmethod
 from logging import getLogger
@@ -64,13 +66,23 @@ class BaseExecution(ABC):
 
         self.dtype: torch.dtype | None = dtype
         self.data_dtype: torch.dtype | None = None
-        # TODO: This is legacy behavior of data_dtype. Modify it appropriately.
         if self.dtype:
-            self.data_dtype = torch.float64 if (self.dtype == torch.complex128) else self.dtype
+            if self.dtype == torch.complex128:
+                self.data_dtype = torch.float64
+            elif self.dtype == torch.complex64:
+                self.data_dtype = torch.float32
+            elif self.dtype == torch.complex32:
+                self.data_dtype = torch.float16
+            else:
+                self.data_dtype = self.dtype
 
         self._set_cluster_variables()
         self._set_compute()
+        # We assign an available host/port in the __init__ so that spawnned subprocesses can use it.
+        self._available_host: str = "localhost"
+        self._available_port: str = self._find_available_port()
         self.device = "cpu"  # set the initial device to cpu, it will change to correct device when process runs.
+        self.log_device = "cpu"
 
     @abstractmethod
     def get_rank(self, process_rank: int) -> int:
@@ -143,7 +155,7 @@ class BaseExecution(ABC):
         For now it only supports SLURM Cluster, and should be extended to others
         when needed.
         """
-        self.job_id = int(os.environ.get("SLURM_JOB_ID", 93345))
+        self.job_id = str(os.environ.get("SLURM_JOB_ID", "Unknown"))
         self.num_nodes = int(os.environ.get("SLURM_JOB_NUM_NODES", 1))
         self.node_list = os.environ.get("SLURM_JOB_NODELIST", "Unknown")
         self.node_rank = int(os.environ.get("SLURM_NODEID", 0))
@@ -188,8 +200,31 @@ class BaseExecution(ABC):
         else:
             raise ValueError(f"log_setup {self.log_setup} not supported. Choose 'auto' or 'cpu'.")
 
+    def _find_available_port(
+        self, start: int = 1024, end: int = 65535, max_attempts: int = 100
+    ) -> str:
+        """
+        Find an available port by trying random ports in the specified range.
 
-# --- DefaultExecution Implementation ---
+        Args:
+            param start: Start of port range (default: 1024)
+            param end: End of port range (default: 65535)
+            param max_attempts: Maximum attempts before giving up (default: 100)
+        Return:
+            int : Available port number. if no port is found, raises runtime error.
+        """
+        attempts = 0
+        while attempts < max_attempts:
+            port = random.randint(start, end)
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                try:
+                    s.bind(("0.0.0.0", port))
+                    return str(port)
+                except OSError:
+                    attempts += 1
+        raise RuntimeError("Available port not found")
+
+
 class DefaultExecution(BaseExecution):
     """
     Default execution for SLURM-like environments.
@@ -260,7 +295,7 @@ class DefaultExecution(BaseExecution):
             )
             return output.splitlines()[0].decode("utf-8").strip()
         except Exception:
-            return "localhost"
+            return self._available_host
 
     def get_master_port(self) -> str:
         """
@@ -273,11 +308,11 @@ class DefaultExecution(BaseExecution):
         """
         if "MASTER_PORT" in os.environ:
             return os.environ["MASTER_PORT"]
-        try:
-            # Compute port based on SLURM_JOB_ID to avoid conflicts.
+        if self.job_id == "Unknown":
+            return str(self._available_port)
+        else:
+            # This is needed for Multi-node Slurm clusters
             return str(int(12000 + int(self.job_id) % 5000))
-        except Exception:
-            return "12542"
 
 
 class TorchRunexecution(BaseExecution):

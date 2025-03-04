@@ -9,7 +9,7 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data import DataLoader, TensorDataset
 from torch.utils.data.distributed import DistributedSampler
 from unittest.mock import patch
-from typing import Any, Callable, Dict, Generator, Iterator, List, Tuple
+from typing import Any, Dict, List
 
 from qadence.ml_tools.train_utils.accelerator import Accelerator
 from qadence.ml_tools.data import DictDataLoader, to_dataloader
@@ -62,20 +62,6 @@ def dict_dataloader() -> DictDataLoader:
         y = torch.randn(cfg["data_size"], 1)
         dataloaders[name] = to_dataloader(x, y, batch_size=cfg["batch_size"])
     return DictDataLoader(dataloaders)
-
-
-@pytest.fixture
-def mock_mp_spawn() -> Iterator[None]:
-    def fake_mp_spawn(
-        fn: Callable[[int, Any, Callable[..., None], Any, Dict[Any, Any]], None],
-        spawn_args: Any,
-        nprocs: int,
-        join: bool,
-    ) -> None:
-        fn(0, None, lambda *a, **kw: None, spawn_args, {})
-
-    with patch.object(mp, "spawn", fake_mp_spawn):
-        yield
 
 
 def setup_logger() -> logging.Logger:
@@ -153,18 +139,20 @@ def test_prepare_function(
     assert isinstance(dl_prepped, DataLoader)
 
 
-def test_prepare_function_with_spawn(
-    dummy_model: DummyModel,
-    dummy_optimizer: optim.Optimizer,
-    dummy_dataloader: DataLoader,
-) -> None:
-    accelerator = Accelerator(nprocs=2)
-    model_prepped, opt_prepped, dl_prepped = accelerator.prepare(
-        dummy_model, dummy_optimizer, dummy_dataloader
-    )
-    assert isinstance(model_prepped, nn.Module)
-    assert isinstance(opt_prepped, optim.Optimizer)
-    assert isinstance(dl_prepped, DataLoader)
+def dummy_worker(run_processes: mp.Value) -> None:
+    with run_processes.get_lock():
+        run_processes.value += 1
+
+
+@pytest.mark.parametrize("nprocs", [3])
+def test_spawn_multiple_methods(nprocs: int) -> None:
+    run_processes = mp.Value("i", 0)
+
+    accelerator = Accelerator(nprocs=nprocs)
+    dummy_dist_worker = accelerator.distribute(dummy_worker)
+
+    dummy_dist_worker(run_processes)
+    assert run_processes.value == nprocs
 
 
 def test_prepare_batch_dict() -> None:
