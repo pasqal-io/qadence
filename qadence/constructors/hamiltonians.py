@@ -319,7 +319,7 @@ def total_magnetization_config(
         scale=scale,
         shift=shift,
         trainable_transform=trainable_transform,
-        tag="total_magnetization",
+        tag="Total Magnetization",
     )
 
 
@@ -334,7 +334,7 @@ def zz_hamiltonian_config(
         scale=scale,
         shift=shift,
         trainable_transform=trainable_transform,
-        tag="zz_hamiltonian",
+        tag="ZZ Hamiltonian",
     )
 
 
@@ -356,9 +356,9 @@ def ising_hamiltonian_config(
 
     return ObservableConfig(
         interaction=ZZ_Z_hamiltonian,
-        detuning=Z,
+        detuning=X,
         scale=scale,
         shift=shift,
         trainable_transform=trainable_transform,
-        tag="ising_hamiltonian",
+        tag="Ising Hamiltonian",
     )

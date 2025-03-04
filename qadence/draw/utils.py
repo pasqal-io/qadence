@@ -147,7 +147,8 @@ def _(model: QuantumModel, *args: Any, **kwargs: Any) -> QuantumCircuitDiagram:
             raise ValueError("Cannot visualize QuantumModel with more than one observable.")
 
         obs = deepcopy(model._observable[0].original)  # type: ignore [index]
-        obs.tag = "Obs."
+        if not isinstance(obs.tag, str):
+            obs.tag = "Obs.test"
 
         block: AbstractBlock = chain(model._circuit.original.block, obs)
     else:
