@@ -51,6 +51,25 @@ print(f"{wf = }") # markdown-exec: hide
 
 Since a batch of input values was passed, the `run` function returns a batch of output states. Note that `FeatureParameter("x")` and `VariationalParameter("x")` are simply aliases for `Parameter("x", trainable = False)` and `Parameter("x", trainable = True)`.
 
+## Switching Between Feature Parameters and Variational Parameters
+
+If you want to switch between **feature parameters** and **variational parameters**, you can use `set_trainable` to modify the `trainable` attribute of the variable. Additionally, `set_trainable` can apply the same `trainable` option to multiple blocks if the input is provided in the format `List[blocks]`.
+
+```python exec="on" source="material-block" result="json"
+from qadence import RX, VariationalParameter, set_trainable
+from qadence.blocks.utils import parameters # markdown-exec: hide
+
+variational_block = [RX(0, VariationalParameter("theta")), RX(1, VariationalParameter("phi"))]
+
+for gate in variational_block: # markdown-exec: hide
+    print(f"trainable is set to {parameters(gate)[0].trainable} in {gate}")  # markdown-exec: hide
+
+feature_block = set_trainable(variational_block, False)
+
+for gate in feature_block: # markdown-exec: hide
+    print(f"trainable is set to {parameters(gate)[0].trainable} in {gate}")  # markdown-exec: hide
+```
+
 ## Multiparameter expressions and analog integration
 
 The integration with Sympy becomes useful when one wishes to write arbitrary parameter compositions. Parameters can also be used as scaling coefficients in the block system, which is essential when defining arbitrary analog operations.
