@@ -50,7 +50,7 @@ def set_trainable(
         blocks (AbstractBlock | list[AbstractBlock]): Block or list of blocks for which
             to set the trainable attribute
         value (bool, optional): The value of the trainable attribute to assign to the input blocks
-        inplace (bool, optional): Whether to modify the block(s) in place or not. Currently, only
+        inplace (bool, optional): Whether to modify the block(s) in place or not. Currently, only `True` is available.
 
     Raises:
         NotImplementedError: if the `inplace` argument is set to False, the function will
