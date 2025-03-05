@@ -569,27 +569,27 @@ class QuantumModel(nn.Module):
             logger.warning(f"Unable to move {self} to {args}, {kwargs} due to {e}.")
         return self
 
-    def to_pauli_list(self) -> str:
+    def observables_to_expression(self) -> dict[str, str] | str:
         """
-        Convert the observable to a formatted string representation of Pauli terms.
+            Convert the observable to a dictionary representation of Pauli terms.
 
-        If no observable is set, returns "No observable set." Each observable is
-        represented by its tag (if available) followed by its mathematical expression.
+        If no observable is set, returns an empty dictionary. Each observable is
+        represented by its tag (if available) as the key and its mathematical expression
+        as the value.
 
         Returns:
-        str: A string in the format "<tag> : <mathematical expression>". Uses "Obs." if no
-            tag is provided.
+            dict[str, str]: A dictionary where the keys are observable tags (or "Obs." if not provided)
+                            and the values are the corresponding mathematical expressions.
         """
         if self._observable is None:
             return "No observable set."
         else:
-            return ", ".join(
-                (
-                    f"{obs.original.tag if obs.original.tag else 'Obs.'} : "
-                    + block_to_mathematical_expression(obs.original)
-                    for obs in self._observable
+            return {
+                obs.original.tag if obs.original.tag else "Obs.": block_to_mathematical_expression(
+                    obs.original
                 )
-            )
+                for obs in self._observable
+            }
 
     @property
     def device(self) -> torch.device:
