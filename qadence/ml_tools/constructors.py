@@ -734,7 +734,7 @@ def create_observable(
         detuning=config.detuning,
     )
 
-    obs = add(shifting_term, detuning_hamiltonian)
+    obs: AbstractBlock = add(shifting_term, detuning_hamiltonian)
 
     if isinstance(config.tag, str):
         tag(obs, config.tag)

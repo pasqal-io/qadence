@@ -148,7 +148,7 @@ def _(model: QuantumModel, *args: Any, **kwargs: Any) -> QuantumCircuitDiagram:
 
         obs = deepcopy(model._observable[0].original)  # type: ignore [index]
         if not isinstance(obs.tag, str):
-            obs.tag = "Obs.test"
+            obs.tag = "Obs."
 
         block: AbstractBlock = chain(model._circuit.original.block, obs)
     else:
