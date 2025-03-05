@@ -54,6 +54,8 @@ The `Accelerator` also provides a `distribute()` function wrapper that simplifie
 
     The `distribute()` function ensures that each process runs on a designated device and synchronizes properly, making it easier to scale training with minimal code modifications.
 
+    > **NOTE**: `fun` should be **Pickleable**: Using `distribute` on `fun` allows user to spawn multiple processes that run `fun` using `torch.multiprocessing`. As a requirment for `torch.multiprocessing`,`fun` should be pickleable. It can either be a bounded class method, or an unabounded method defined in `__main__`.
+
 The `Accelerator` further offers these key methods: `prepare`, `prepare_batch`, and `all_reduce_dict`.
 
 
