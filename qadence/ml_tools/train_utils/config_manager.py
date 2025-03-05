@@ -147,7 +147,7 @@ class ConfigManager:
         Sets the stopping criterion if it is not already defined.
         """
         if self.config.trainstop_criterion is None:
-            self.config.trainstop_criterion = lambda x: x <= self.config.max_iter
+            return
 
     def _log_warnings(self) -> None:
         """

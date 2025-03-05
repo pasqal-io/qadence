@@ -95,14 +95,36 @@ class Callback:
         self.callback: CallbackFunction | None = callback
         self.on: str | TrainingStage = on
         self.called_every: int = called_every
-        self.callback_condition = callback_condition or (lambda _: True)
+        self.callback_condition = (
+            callback_condition if callback_condition else Callback.default_callback
+        )
 
         if isinstance(modify_optimize_result, dict):
-            self.modify_optimize_result = (
-                lambda opt_res: opt_res.extra.update(modify_optimize_result) or opt_res
+            self.modify_optimize_result = lambda opt_res: Callback.modify_opt_res_dict(
+                opt_res, modify_optimize_result
             )
         else:
-            self.modify_optimize_result = modify_optimize_result or (lambda opt_res: opt_res)
+            self.modify_optimize_result = (
+                modify_optimize_result
+                if modify_optimize_result
+                else Callback.modify_opt_res_default
+            )
+
+    @staticmethod
+    def default_callback(_: Any) -> bool:
+        return True
+
+    @staticmethod
+    def modify_opt_res_dict(
+        opt_res: OptimizeResult,
+        modify_optimize_result: dict[str, Any] = {},
+    ) -> OptimizeResult:
+        opt_res.extra.update(modify_optimize_result)
+        return opt_res
+
+    @staticmethod
+    def modify_opt_res_default(opt_res: OptimizeResult) -> OptimizeResult:
+        return opt_res
 
     @property
     def on(self) -> TrainingStage | str:
@@ -261,8 +283,9 @@ class WriteMetrics(Callback):
             config (TrainConfig): The configuration object.
             writer (BaseWriter ): The writer object for logging.
         """
-        opt_result = trainer.opt_result
-        writer.write(opt_result.iteration, opt_result.metrics)
+        if trainer.accelerator.rank == 0:
+            opt_result = trainer.opt_result
+            writer.write(opt_result.iteration, opt_result.metrics)
 
 
 class PlotMetrics(Callback):
@@ -299,9 +322,10 @@ class PlotMetrics(Callback):
             config (TrainConfig): The configuration object.
             writer (BaseWriter ): The writer object for logging.
         """
-        opt_result = trainer.opt_result
-        plotting_functions = config.plotting_functions
-        writer.plot(trainer.model, opt_result.iteration, plotting_functions)
+        if trainer.accelerator.rank == 0:
+            opt_result = trainer.opt_result
+            plotting_functions = config.plotting_functions
+            writer.plot(trainer.model, opt_result.iteration, plotting_functions)
 
 
 class LogHyperparameters(Callback):
@@ -338,8 +362,9 @@ class LogHyperparameters(Callback):
             config (TrainConfig): The configuration object.
             writer (BaseWriter ): The writer object for logging.
         """
-        hyperparams = config.hyperparams
-        writer.log_hyperparams(hyperparams)
+        if trainer.accelerator.rank == 0:
+            hyperparams = config.hyperparams
+            writer.log_hyperparams(hyperparams)
 
 
 class SaveCheckpoint(Callback):
@@ -376,11 +401,12 @@ class SaveCheckpoint(Callback):
             config (TrainConfig): The configuration object.
             writer (BaseWriter ): The writer object for logging.
         """
-        folder = config.log_folder
-        model = trainer.model
-        optimizer = trainer.optimizer
-        opt_result = trainer.opt_result
-        write_checkpoint(folder, model, optimizer, opt_result.iteration)
+        if trainer.accelerator.rank == 0:
+            folder = config.log_folder
+            model = trainer.model
+            optimizer = trainer.optimizer
+            opt_result = trainer.opt_result
+            write_checkpoint(folder, model, optimizer, opt_result.iteration)
 
 
 class SaveBestCheckpoint(SaveCheckpoint):
@@ -404,17 +430,18 @@ class SaveBestCheckpoint(SaveCheckpoint):
             config (TrainConfig): The configuration object.
             writer (BaseWriter ): The writer object for logging.
         """
-        opt_result = trainer.opt_result
-        if config.validation_criterion and config.validation_criterion(
-            opt_result.loss, self.best_loss, config.val_epsilon
-        ):
-            self.best_loss = opt_result.loss
-
-            folder = config.log_folder
-            model = trainer.model
-            optimizer = trainer.optimizer
+        if trainer.accelerator.rank == 0:
             opt_result = trainer.opt_result
-            write_checkpoint(folder, model, optimizer, "best")
+            if config.validation_criterion and config.validation_criterion(
+                opt_result.loss, self.best_loss, config.val_epsilon
+            ):
+                self.best_loss = opt_result.loss
+
+                folder = config.log_folder
+                model = trainer.model
+                optimizer = trainer.optimizer
+                opt_result = trainer.opt_result
+                write_checkpoint(folder, model, optimizer, "best")
 
 
 class LoadCheckpoint(Callback):
@@ -431,11 +458,12 @@ class LoadCheckpoint(Callback):
         Returns:
             Any: The result of loading the checkpoint.
         """
-        folder = config.log_folder
-        model = trainer.model
-        optimizer = trainer.optimizer
-        device = trainer.log_device
-        return load_checkpoint(folder, model, optimizer, device=device)
+        if trainer.accelerator.rank == 0:
+            folder = config.log_folder
+            model = trainer.model
+            optimizer = trainer.optimizer
+            device = trainer.accelerator.execution.log_device
+            return load_checkpoint(folder, model, optimizer, device=device)
 
 
 class LogModelTracker(Callback):
@@ -449,10 +477,11 @@ class LogModelTracker(Callback):
             config (TrainConfig): The configuration object.
             writer (BaseWriter ): The writer object for logging.
         """
-        model = trainer.model
-        writer.log_model(
-            model, trainer.train_dataloader, trainer.val_dataloader, trainer.test_dataloader
-        )
+        if trainer.accelerator.rank == 0:
+            model = trainer.model
+            writer.log_model(
+                model, trainer.train_dataloader, trainer.val_dataloader, trainer.test_dataloader
+            )
 
 
 class LRSchedulerStepDecay(Callback):
@@ -713,7 +742,7 @@ class EarlyStopping(Callback):
                 f"EarlyStopping: No improvement in '{self.monitor}' for {self.patience} epochs. "
                 "Stopping training."
             )
-            trainer.stop_training = True
+            trainer._stop_training.fill_(1)
 
 
 class GradientMonitoring(Callback):
@@ -759,17 +788,18 @@ class GradientMonitoring(Callback):
             config (TrainConfig): The configuration object.
             writer (BaseWriter): The writer object for logging.
         """
-        gradient_stats = {}
-        for name, param in trainer.model.named_parameters():
-            if param.grad is not None:
-                grad = param.grad
-                gradient_stats.update(
-                    {
-                        name + "_mean": grad.mean().item(),
-                        name + "_std": grad.std().item(),
-                        name + "_max": grad.max().item(),
-                        name + "_min": grad.min().item(),
-                    }
-                )
+        if trainer.accelerator.rank == 0:
+            gradient_stats = {}
+            for name, param in trainer.model.named_parameters():
+                if param.grad is not None:
+                    grad = param.grad
+                    gradient_stats.update(
+                        {
+                            name + "_mean": grad.mean().item(),
+                            name + "_std": grad.std().item(),
+                            name + "_max": grad.max().item(),
+                            name + "_min": grad.min().item(),
+                        }
+                    )
 
-        writer.write(trainer.opt_result.iteration, gradient_stats)
+            writer.write(trainer.opt_result.iteration, gradient_stats)

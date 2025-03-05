@@ -20,6 +20,7 @@ from qadence.types import (
     ReuploadScaling,
     Strategy,
 )
+from torch import dtype
 
 logger = getLogger(__file__)
 
@@ -200,6 +201,67 @@ class TrainConfig:
     root folder.
 
     Each subfolder is of structure `<id>_<timestamp>_<PID>`.
+    """
+
+    nprocs: int = 1
+    """
+    The number of processes to use for training when spawning subprocesses.
+
+    For effective parallel processing, set this to a value greater than 1.
+    - In case of Multi-GPU or Multi-Node-Multi-GPU setups, nprocs should be equal to
+    the total number of GPUs across all nodes (world size), or total number of GPU to be used.
+
+    If nprocs > 1, multiple processes will be spawned for training. The training framework will launch
+    additional processes (e.g., for distributed or parallel training).
+    - For CPU setup, this will launch a true parallel processes
+    - For GPU setup, this will launch a distributed training routine.
+    This uses the DistributedDataParallel framework from PyTorch.
+    """
+
+    compute_setup: str = "cpu"
+    """
+    Compute device setup; options are "auto", "gpu", or "cpu".
+
+    - "auto": Automatically uses GPU if available; otherwise, falls back to CPU.
+    - "gpu": Forces GPU usage, raising an error if no CUDA device is available.
+    - "cpu": Forces the use of CPU regardless of GPU availability.
+    """
+
+    backend: str = "gloo"
+    """
+    Backend used for distributed training communication.
+
+    The default is "gloo". Other options may include "nccl" - which is optimized for GPU-based training or "mpi",
+    depending on your system and requirements.
+    It should be one of the backends supported by `torch.distributed`. For further details, please look at
+    [torch backends](https://pytorch.org/docs/stable/distributed.html#torch.distributed.Backend)
+    """
+
+    log_setup: str = "cpu"
+    """
+    Logging device setup; options are "auto" or "cpu".
+
+    - "auto": Uses the same device for logging as for computation.
+    - "cpu": Forces logging to occur on the CPU. This can be useful to avoid potential conflicts with GPU processes.
+    """
+
+    dtype: dtype | None = None
+    """
+    Data type (precision) for computations.
+
+    Both model parameters, and dataset will be of the provided precision.
+
+    If not specified or None, the default torch precision (usually torch.float32) is used.
+    If provided dtype is torch.complex128, model parameters will be torch.complex128, and data parameters will be torch.float64
+    """
+
+    all_reduce_metrics: bool = False
+    """
+    Whether to aggregate metrics (e.g., loss, accuracy) across processes.
+
+    When True, metrics from different training processes are averaged to provide a consolidated metrics.
+    Note: Since aggregation requires synchronization/all_reduce operation, this can increase the
+     computation time significantly.
     """
 
 

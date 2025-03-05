@@ -210,15 +210,17 @@ def test_early_stopping(trainer: Trainer) -> None:
     # Simulate metric values
     trainer.opt_result.metrics = {monitor_metric: 0.5}
     callback(stage, trainer, trainer.config, writer)
-    assert trainer.stop_training is False
+    assert trainer._stop_training.detach().item() == 0
 
     trainer.opt_result.metrics[monitor_metric] = 0.6
     callback(stage, trainer, trainer.config, writer)
-    assert trainer.stop_training is False
+    assert trainer._stop_training.detach().item() == 0
 
     trainer.opt_result.metrics[monitor_metric] = 0.7
     callback(stage, trainer, trainer.config, writer)
-    assert trainer.stop_training is True  # Should stop training after patience exceeded
+    assert (
+        trainer._stop_training.detach().item() == 1
+    )  # Should stop training after patience exceeded
 
 
 def test_gradient_monitoring(trainer: Trainer) -> None:
