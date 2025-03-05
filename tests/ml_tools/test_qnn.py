@@ -19,6 +19,8 @@ from qadence.ml_tools.config import AnsatzConfig, FeatureMapConfig
 from qadence.ml_tools.constructors import (
     ObservableConfig,
     create_observable,
+    create_ansatz,
+    create_fm_blocks,
 )
 from qadence.operations import RX, RY, Z
 from qadence.parameters import FeatureParameter, Parameter
@@ -498,3 +500,33 @@ def test_config_qnn_output_transform() -> None:
 
     input_values = torch.rand(10, requires_grad=True)
     assert torch.allclose(10.0 * qnn(input_values), transformed_qnn(input_values))
+
+
+def test_if_tag_is_added_to_abstact_block(n_qubits: int = 2) -> None:
+
+    fm_config = FeatureMapConfig(
+        num_features=2,
+        inputs=["x", "y"],
+        feature_range={
+            "x": (-1.0, 1.0),
+            "y": (0.0, 1.0),
+        },
+        tag="fm_test",
+    )
+
+    ansatz_config = AnsatzConfig(
+        depth=1, ansatz_type=AnsatzType.HEA, ansatz_strategy=Strategy.DIGITAL, tag="HEA_test"
+    )
+
+    observable_config = ObservableConfig(detuning=Z, tag="obs_test")
+
+    qnn = QNN.from_configs(
+        register=n_qubits,
+        fm_config=fm_config,
+        ansatz_config=ansatz_config,
+        obs_config=observable_config,
+    )
+
+    assert qnn._observable[0].original.tag == "obs_test"  # type: ignore[index]
+    assert qnn._circuit.original.get_blocks_by_tag("fm_test")[0].tag == "fm_test"
+    assert qnn._circuit.original.get_blocks_by_tag("HEA_test")[0].tag == "HEA_test"

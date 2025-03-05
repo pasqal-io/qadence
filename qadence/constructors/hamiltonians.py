@@ -281,6 +281,12 @@ class ObservableConfig:
     If True, the scale and shift are VariationalParameter.
     If False, the scale and shift are FeatureParameter.
     """
+    tag: str | None = None
+    """
+    String to indicate the name tag of the observable.
+
+    Defaults to None, in which case no tag will be applied.
+    """
 
     def __post_init__(self) -> None:
         if self.interaction is None and self.detuning is None:
@@ -313,6 +319,7 @@ def total_magnetization_config(
         scale=scale,
         shift=shift,
         trainable_transform=trainable_transform,
+        tag="Total Magnetization",
     )
 
 
@@ -327,6 +334,7 @@ def zz_hamiltonian_config(
         scale=scale,
         shift=shift,
         trainable_transform=trainable_transform,
+        tag="ZZ Hamiltonian",
     )
 
 
@@ -348,8 +356,9 @@ def ising_hamiltonian_config(
 
     return ObservableConfig(
         interaction=ZZ_Z_hamiltonian,
-        detuning=Z,
+        detuning=X,
         scale=scale,
         shift=shift,
         trainable_transform=trainable_transform,
+        tag="Ising Hamiltonian",
     )

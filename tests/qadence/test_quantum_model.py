@@ -351,3 +351,16 @@ def test_expectation_for_different_backends(circuit: QuantumCircuit) -> None:
     )
 
     assert torch.allclose(pyq_expectation, horqrux_expectation)
+
+
+def test_observables_to_expression() -> None:
+
+    qm_with_obs = QuantumModel(
+        QuantumCircuit(2, RX(1, FeatureParameter("x"))), observable=I(0) + Z(1)
+    )
+
+    assert qm_with_obs.observables_to_expression() == {"Obs.": "(I(0) + Z(1))"}
+
+    qm_without_obs = QuantumModel(QuantumCircuit(2, RX(1, FeatureParameter("x"))))
+
+    assert qm_without_obs.observables_to_expression() == "No observable set."
