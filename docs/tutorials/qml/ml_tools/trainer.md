@@ -358,8 +358,6 @@ from qadence.ml_tools import  TrainConfig, Trainer, to_dataloader
 
 Trainer.set_use_grad(True)
 
-DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-DTYPE = torch.complex64
 n_qubits = 4
 fm = feature_map(n_qubits)
 ansatz = hea(n_qubits=n_qubits, depth=3)
@@ -398,15 +396,14 @@ config = TrainConfig(
 )
 
 fn = lambda x, degree: .05 * reduce(add, (torch.cos(i*x) + torch.sin(i*x) for i in range(degree)), 0.)
-x = torch.linspace(0, 10, batch_size, dtype=torch.float32).reshape(-1, 1)
+x = torch.linspace(0, 10, batch_size).reshape(-1, 1)
 y = fn(x, 5)
 
 train_dataloader = to_dataloader(x, y, batch_size=batch_size, infinite=True)
 val_dataloader =  to_dataloader(x, y, batch_size=batch_size, infinite=True)
 
 trainer = Trainer(model, optimizer, config, loss_fn=loss_fn,
-                    train_dataloader = train_dataloader, val_dataloader = val_dataloader,
-                    device=DEVICE, dtype=DTYPE)
+                    train_dataloader=train_dataloader, val_dataloader=val_dataloader)
 trainer.fit()
 
 plt.clf()

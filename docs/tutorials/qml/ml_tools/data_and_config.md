@@ -78,6 +78,14 @@ For example of how to use the TrainConfig with `Trainer`, please see [Examples i
 | `verbose`                | `bool`                   | `True`                   | Enables detailed logging. |
 | `tracking_tool`          | `ExperimentTrackingTool` | `TENSORBOARD`            | Tool for tracking training metrics. |
 | `plotting_functions`     | `tuple`                  | `()`                     | Functions for plotting metrics. |
+| `hyperparams`            | `dict`                   | `{}`                     | Dictionary of hyperparameters |
+| `nprocs`                 | `int`                    | `1`               | Number of processes to use when spawning subprocesses; for multi-GPU setups, set this to the total number of GPUs. |
+| `compute_setup`          | `str`                    | `"cpu"`                  | Specifies the compute device: `"auto"`, `"gpu"`, or `"cpu"`.|
+| `backend`                | `str`                    | `"gloo"`                 | Backend for distributed training communication (e.g., `"gloo"`, `"nccl"`, or `"mpi"`). |
+| `log_setup`              | `str`                    | `"cpu"`                  | Device setup for logging; use `"cpu"` to avoid GPU conflicts|
+| `dtype`                  | `dtype` or `None`        | `None`                   | Data type for computations (e.g., `torch.float32`) |
+| `all_reduce_metrics`     | `bool`                   | `False`                  | If `True`, aggregates metrics (e.g., loss) across processes |
+
 
 
 ```python exec="on" source="material-block"
@@ -206,12 +214,63 @@ config = TrainConfig(
 )
 ```
 
+#### Advanced Distributed Training
+
+- `nprocs` (**int**): Specifies the number of processes to be used. For multi-GPU training, this should match the total number of GPUs available. When nprocs is greater than 1, `Trainer` spawns additional subprocesses for training. This is useful for parallel or distributed training setups.
+
+- `compute_setup` (**str**): Determines the compute device configuration: 1.`"auto"` (automatically selects GPU if available), 2. `"gpu"` - (forces GPU usage and errors if no GPU is detected), and 3. `"cpu"` (Forces the use of the CPU).
+
+- `backend` (**str**): Specifies the communication backend for distributed training. Common options are `"gloo"` (default), `"nccl"` (optimized for GPUs), or `"mpi"`, depending on your setup. It should be one of the backends supported by `torch.distributed`. For further details, please look at [torch backends](https://pytorch.org/docs/stable/distributed.html#torch.distributed.Backend)
+
+
+> Notes:
+> - *Logging Specific Callbacks*: Logging is available only through the main process, i.e. process 0.  Model logging, plotting, logging metrics will only be performed for a single process, even if multiple processes are run.
+> - *Training with specific callbacks*: Callbacks specific to training, e.g., `EarlyStopping`, `LRSchedulerStepDecay`, etc will be called from each process.
+> - `PrintMetrics` (set through the `print_every` argument in `TrainCongig`) is available from all processes.
+
+
+Example: For CPU MultiProcessing
+```python
+config = TrainConfig(
+    compute_setup="cpu",
+    nprocs=5,
+    backend="gloo"
+)
+```
+
+Example: For GPU multiprocessing training
+```python
+config = TrainConfig(
+    compute_setup="gpu",
+    nprocs=2, # World-size/Total number of GPUs
+    backend="nccl"
+)
+```
+
+#### Precision Options
+
+- `dtype` (**dtype** or **None**): Sets the numerical precision (data type) for computations. For instance, you can use `torch.float32` or `torch.float16` depending on your performance and precision needs. Both model parameters, and dataset will be of the provided precision.
+    - If not specified or None, the default torch precision (usually torch.float32) is used.
+    - If provided dtype is complex dtype, appropriate precision for the data and model parameters will be used as follows:
+
+    | Data Type (`dtype`)   | Data Precision | Model Precision | Model Parameters Precision  (*Real Part*  & *Imaginary Part* )|
+    |---------------------|---------------|----------------|-------------------------------------|
+    | `torch.float16`     | 16-bit        | 16-bit         | N/A            | N/A                |
+    | `torch.float32`     | 32-bit        | 32-bit         | N/A            | N/A                |
+    | `torch.float64`     | 64-bit        | 64-bit         | N/A            | N/A                |
+    | `torch.complex32`   | 16-bit        | 32-bit         | 16-bit         | 16-bit             |
+    | `torch.complex64`   | 32-bit        | 64-bit         | 32-bit         | 32-bit             |
+    | `torch.complex128`  | 64-bit        | 128-bit        | 64-bit         | 64-bit             |
+
+    **Complex Dtypes**: Complex data types are useful for Quantum Neural Networks - such as `QNN` provided by qadence. The industry standard is to use `torch.complex128`, however, the user can also specify a lower precision (`torch.complex64` or  `torch.complex32`) for faster training.
 
 
 
+Furthermore, the user can also utilize the following options:
 
+- `log_setup` (**str**): Configures the device used for logging. Using `"cpu"` ensures logging runs on the CPU (which may avoid conflicts with GPU operations), while `"auto"` aligns logging with the compute device.
 
-
+- `all_reduce_metrics` (**bool**): When enabled, aggregates metrics (such as loss or accuracy) across all training processes to provide a unified summary, though it may introduce additional synchronization overhead.
 
 ## 3. Experiment tracking with mlflow
 
