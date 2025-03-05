@@ -94,7 +94,7 @@ def test_train_dataloader_default(tmp_path: Path, Basic: torch.nn.Module) -> Non
     trainer = Trainer(model, optimizer, config, loss_fn, data)
     with trainer.enable_grad_opt():
         trainer.fit()
-    assert next(cnt) == (n_epochs + 1)
+    assert next(cnt) == 2 * (n_epochs + 1)  # loss fun is called twice - before/after optimization
 
     x = torch.rand(5, 1)
     assert torch.allclose(torch.sin(x), model(x), rtol=1e-1, atol=1e-1)
@@ -125,7 +125,7 @@ def test_train_dataloader_no_data(tmp_path: Path, BasicNoInput: torch.nn.Module)
     trainer = Trainer(model, optimizer, config, loss_fn, data)
     with trainer.enable_grad_opt():
         trainer.fit()
-    assert next(cnt) == (n_epochs + 1)
+    assert next(cnt) == 2 * (n_epochs + 1)  # loss fun is called twice - before/after optimization
 
     out = model()
     assert torch.allclose(out, torch.zeros(1), atol=1e-2, rtol=1e-2)
@@ -160,7 +160,7 @@ def test_train_val(tmp_path: Path, Basic: torch.nn.Module) -> None:
     )
     with trainer.enable_grad_opt():
         trainer.fit()
-    assert next(cnt) == (n_epochs + 1)
+    assert next(cnt) == 2 * (n_epochs + 1)  # loss fun is called twice - before/after optimization
 
     x = torch.rand(5, 1)
     assert torch.allclose(torch.sin(x), model(x), rtol=1e-1, atol=1e-1)
@@ -173,9 +173,6 @@ def test_train_tensor_tuple(Basic: torch.nn.Module, BasicQNN: QNN) -> None:
         batch_size = 25
         x = torch.linspace(0, 1, batch_size).reshape(-1, 1)
         y = torch.sin(x)
-        model = model.to(
-            torch.float32
-        )  # BasicQNN might have float64, and Adam behaves weirdly with mixed precision
 
         cnt = count()
         criterion = torch.nn.MSELoss()
@@ -194,12 +191,15 @@ def test_train_tensor_tuple(Basic: torch.nn.Module, BasicQNN: QNN) -> None:
             checkpoint_every=100,
             write_every=100,
             batch_size=batch_size,
+            dtype=dtype,
         )
         data = to_dataloader(x, y, batch_size=batch_size, infinite=True)
-        trainer = Trainer(model, optimizer, config, loss_fn, data, dtype=dtype)
+        trainer = Trainer(model, optimizer, config, loss_fn, data)
         with trainer.enable_grad_opt():
             model, _ = trainer.fit()
-        assert next(cnt) == (n_epochs + 1)
+        assert next(cnt) == 2 * (
+            n_epochs + 1
+        )  # loss fun is called twice - before/after optimization
 
         x = torch.rand(5, 1, dtype=torch.float32)
         assert torch.allclose(torch.sin(x), model(x), rtol=1e-1, atol=1e-1)
@@ -314,7 +314,9 @@ def test_train_val_checkpoint_best_only(tmp_path: Path, Basic: torch.nn.Module) 
     )
     with trainer.enable_grad_opt():
         trainer.fit()
-    assert next(cnt) == 2 + n_epochs + (n_epochs // val_every) + 1  # 1 for intial round 0 run
+    assert next(cnt) == 2 + (2 * (n_epochs + 1)) + (
+        n_epochs // val_every
+    )  # 1 for intial round 0 run
 
     files = [f for f in os.listdir(trainer.config.log_folder) if f.endswith(".pt") and "model" in f]
     # Ideally it can be ensured if the (only) saved checkpoint is indeed the best,
