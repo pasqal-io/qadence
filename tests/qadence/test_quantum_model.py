@@ -351,3 +351,9 @@ def test_expectation_for_different_backends(circuit: QuantumCircuit) -> None:
     )
 
     assert torch.allclose(pyq_expectation, horqrux_expectation)
+
+
+def test_to_pauli_list() -> None:
+
+    qm = QuantumModel(QuantumCircuit(2, RX(1, FeatureParameter("x"))), observable=I(0) + Z(1))
+    assert qm.to_pauli_list() == "Obs. : (I(0) + Z(1))"

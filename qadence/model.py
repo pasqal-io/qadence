@@ -27,6 +27,7 @@ from qadence.mitigations import Mitigations
 from qadence.noise import NoiseHandler
 from qadence.parameters import Parameter
 from qadence.types import DiffMode, Endianness
+from qadence.utils import block_to_mathematical_expression
 
 logger = getLogger(__name__)
 
@@ -567,6 +568,28 @@ class QuantumModel(nn.Module):
         except Exception as e:
             logger.warning(f"Unable to move {self} to {args}, {kwargs} due to {e}.")
         return self
+
+    def to_pauli_list(self) -> str:
+        """
+        Convert the observable to a formatted string representation of Pauli terms.
+
+        If no observable is set, returns "No observable set." Each observable is
+        represented by its tag (if available) followed by its mathematical expression.
+
+        Returns:
+        str: A string in the format "<tag> : <mathematical expression>". Uses "Obs." if no
+            tag is provided.
+        """
+        if self._observable is None:
+            return "No observable set."
+        else:
+            return ", ".join(
+                (
+                    f"{obs.original.tag if obs.original.tag else 'Obs.'} : "
+                    + block_to_mathematical_expression(obs.original)
+                    for obs in self._observable
+                )
+            )
 
     @property
     def device(self) -> torch.device:
