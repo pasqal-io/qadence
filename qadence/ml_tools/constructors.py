@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable
+from typing import Any, Callable
 import numpy as np
 from sympy import Basic
 
@@ -9,6 +9,7 @@ from qadence.blocks import chain, kron
 from qadence.blocks.abstract import AbstractBlock
 from qadence.blocks.composite import ChainBlock, KronBlock
 from qadence.blocks.utils import add, tag
+from qadence.parameters import Parameter
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import (
     analog_feature_map,
@@ -24,7 +25,7 @@ from qadence.constructors.hea import hea_digital, hea_sDAQC
 from qadence.constructors.iia import iia
 from qadence.measurements import Measurements
 from qadence.noise import NoiseHandler
-from qadence.operations import CNOT, RX, RY, I, N, Z
+from qadence.operations import CNOT, RX, RY, RZ, I, N, Z
 from qadence.register import Register
 from qadence.types import (
     AnsatzType,
@@ -814,3 +815,333 @@ def build_qnn_from_configs(
     )
 
     return ufa
+
+
+def __create_feature_map(
+    n_qubits: int,
+    n_inputs: int,
+    fm_type: str = "Fourier",
+    op: Any = RX,
+) -> Any:
+    """
+    Creates a feature map (FM) by dividing qubits among inputs and applying.
+
+    the specified feature map type.
+
+    Args:
+        n_qubits (int): Total number of qubits.
+        n_inputs (int): Number of inputs.
+        fm_type (str): Type of feature map to use (e.g., "Fourier").
+        op (Any): Quantum operation to use in the feature map (e.g., RX).
+
+    Returns:
+        Any: The combined feature map as a kronecker product of individual feature maps.
+    """
+    fm_temp = []
+    qubits_per_input = n_qubits // n_inputs  # Base number of qubits per input
+    exceeding_qubits = n_qubits % n_inputs  # Number of exceeding qubits
+    start = 0  # Track current qubit index
+
+    for i in range(n_inputs):
+        # Assign base qubits + 1 extra if input has exceeding qubits
+        num_qubits = qubits_per_input + 1 if i < exceeding_qubits else qubits_per_input
+        end = start + num_qubits
+
+        # Create FM for this input
+        fm_temp.append(
+            feature_map(
+                n_qubits=num_qubits,
+                param=f"\u03C6_{i}",  # Use phi_i as the parameter
+                op=op,
+                fm_type=fm_type,
+                support=tuple(range(start, end)),
+            )
+        )
+        start = end  # Update starting index for next FM
+
+    # Combine all feature maps using kronecker product
+    return kron(*fm_temp)
+
+
+def __get_block_params(
+    params: dict,
+    layer: int,
+    rep: int,
+    pos: int,
+) -> Any:
+    """
+    Retrieves the parameter for a given operation.
+
+    Args:
+        params (dict): Dictionary to store and retrieve parameters.
+        layer (int): The index of the current layer.
+        rep (int): The index of the current repetition in the layer.
+        pos (int): Position of the qubit in the layer.
+
+    Returns:
+        Parameter: the retrieved parameter.
+    """
+    key = f"θ_{layer}_{rep}_{pos}"
+
+    if key not in params:
+        params[key] = Parameter(key)
+    return params[key]
+
+
+def __create_W_sequence(
+    params: dict,
+    operations: list[Any],
+    entangler: Any,
+    layer: int,
+    rep: int,
+    control: int,
+    target: int,
+    spacing: int = 0,
+    n_qubits: int = 8,
+    is_opt: bool = True,
+) -> ChainBlock:
+    """Creates a single optimal convolutional cell W^opt_ij."""
+    pad = [
+        I(q)
+        for q in range(control - spacing, control + spacing + 1)
+        if q != control and q != target and 0 <= q < n_qubits
+    ]
+    gates = []
+
+    # Track per-layer repetition index for proper parameter continuity
+    key_param_counter = f"param_index_{layer}_{rep}"
+    if key_param_counter not in params:
+        params[key_param_counter] = 0  # Initialize if first time
+
+    param_index = params[key_param_counter]  # Load index
+
+    rzryrz_params = []  # Store params for reuse
+    single_params = {}  # Store params for single RZ/RY gates
+
+    # ** Apply first RZ, RY, RZ for control and target **
+    for op_index, op in enumerate(operations):
+        param_control = __get_block_params(params, layer, rep, param_index)
+        param_index += 1
+        param_target = __get_block_params(params, layer, rep, param_index)
+        param_index += 1
+        gates.append(
+            kron(
+                *pad,
+                op(control, param_control),
+                op(target, param_target),
+            )
+        )
+        rzryrz_params.append((param_control, param_target))
+
+    if is_opt:
+        # Add first entangling gate (target -> control)
+        gates.append(entangler(target, control))
+
+        # ** Apply RZ and RY for intermediate step (continue sequence) **
+        single_params["control_rz"] = __get_block_params(params, layer, rep, param_index)
+        param_index += 1
+        single_params["target_ry"] = __get_block_params(params, layer, rep, param_index)
+        param_index += 1
+        gates.append(
+            kron(
+                *pad,
+                RZ(control, single_params["control_rz"]),
+                RY(target, single_params["target_ry"]),
+            )
+        )
+        # Add second entangling gate (control -> target)
+        gates.append(entangler(control, target))
+
+        intermediate_ry = __get_block_params(params, layer, rep, param_index)
+        param_index += 1
+        gates.append(
+            kron(
+                *pad,
+                I(control),
+                RY(target, intermediate_ry),
+            )
+        )
+        # Add third entangling gate (target -> control)
+        gates.append(entangler(target, control))
+
+    else:
+        # Add third entangling gate (control -> target)
+        gates.append(entangler(control, target))
+
+    # ** Apply the second RZ, RY, RZ block (reversed but reusing correct parameters) **
+    for op_index, op in enumerate(reversed(operations)):
+        reverse_index = len(operations) - 1 - op_index
+        param_control, param_target = rzryrz_params[reverse_index]
+
+        # Reverse application with correct negations
+        gates.append(
+            kron(
+                *pad,
+                op(control, -param_target),  # Reverse control <-> target
+                op(target, -param_control),
+            )
+        )
+
+    # Add final entangling gate (control -> target)
+    gates.append(entangler(control, target))
+
+    # ** Update params dict with the last used index for continuation in the next call **
+    params[key_param_counter] = param_index
+
+    return chain(*gates)
+
+
+def __create_conv_layer(
+    layer_index: int,
+    reps: int,
+    current_indices: list[int],
+    params: dict,
+    operations: list[Any],
+    entangler: Any,
+    n_qubits: int,
+    is_opt: bool = False,
+) -> tuple[AbstractBlock, list[int]]:
+    """
+    Function to create a single convolutional layer.
+
+    Args:
+        layer_index (int): The index of the current layer.
+        reps (int): Number of repetitions for this layer.
+        current_indices (List[int]): Indices of qubits for the current layer.
+        params (dict): Dictionary to store and retrieve parameters.
+        operations (List[Any]): List of quantum operations to apply in the gates.
+        entangler (Any): Entangling operation, such as CZ.
+        n_qubits (int): Total number of qubits.
+        is_opt (bool): If True, use `create_gate_sequence_opt`; otherwise, use `create_gate_sequence`.
+
+    Returns:
+        Tuple[AbstractBlock, List[int]]: A tuple containing the quantum block for the layer
+            and the target indices for the next layer.
+    """
+    current_layer = []
+    next_indices = []  # To store the targets for the next layer
+    spacing = layer_index  # Define spacing based on layer index
+
+    if layer_index in [0, 1]:  # Special behavior for first two layers
+        layer_reps = []
+        for d in range(reps):
+            rep_kron = []
+            # Define qubit pairs based on odd/even repetition
+            if d % 2 == 0:  # Even d: regular behavior
+                pairs = zip(current_indices[::2], current_indices[1::2])
+            else:  # Odd d: shift downward, leaving qubits 0 and 7 free
+                pairs = zip(current_indices[1:-1:2], current_indices[2:-1:2])
+
+            # Build the gate sequence for each pair
+            for control, target in pairs:
+                # function that defines a single W
+                gate_sequence = __create_W_sequence(
+                    params,
+                    operations,
+                    entangler,
+                    layer_index,
+                    d,
+                    control,
+                    target,
+                    spacing=spacing,
+                    n_qubits=n_qubits,
+                    is_opt=is_opt,
+                )
+                rep_kron.append(gate_sequence)
+
+            # Combine gates for this repetition using `kron`
+            if rep_kron:
+                layer_reps.append(kron(*rep_kron))
+
+        # Combine all repetitions using `chain`
+        if layer_reps:
+            current_layer.append(chain(*layer_reps))
+
+    else:  # Original behavior for other layers
+        for d in range(reps):
+            for control, target in zip(current_indices[::2], current_indices[1::2]):
+                gate_sequence = __create_W_sequence(
+                    params,
+                    operations,
+                    entangler,
+                    layer_index,
+                    d,
+                    control,
+                    target,
+                    spacing=spacing,
+                    n_qubits=n_qubits,
+                    is_opt=is_opt,
+                )
+                current_layer.append(gate_sequence)
+
+    # Update `next_indices` with the **targets** of the current layer
+    next_indices = current_indices[1::2]
+    return chain(*current_layer), next_indices
+
+
+def QCNN_circuit(
+    n_inputs: int,
+    n_qubits: int,
+    depth: list[int],
+    operations: list[Any],
+    entangler: Any,
+    is_opt: bool,
+) -> QuantumCircuit:
+    """
+    Defines a single, continuous quantum circuit with custom repeating ansatz for each depth.
+
+    Args:
+        n_inputs (int): Number of input features.
+        n_qubits (int): Total number of qubits.
+        depth (list[int]): List defining the depth (repetitions) of each layer.
+        operations (list[Any]): List of quantum operations to apply in the gates.
+        entangler (Any): Entangling operation, such as CZ.
+
+    Returns:
+        tuple[QuantumCircuit, list[int]]: A tuple containing the quantum circuit
+            and the final target indices.
+    """
+    # Feature map (FM)
+    fm = __create_feature_map(n_qubits, n_inputs, "Fourier", RX)
+    tag(fm, "FM")
+
+    ansatz_layers = []  # To store each layer of the ansatz
+    params: dict[str, Parameter] = {}
+    all_target_indices = []  # To store target indices for each layer
+
+    # Define layer patterns based on depth
+    layer_patterns = [(2**layer_index, depth[layer_index]) for layer_index in range(len(depth))]
+
+    # Initialize all qubits for the first layer
+    current_indices = list(range(n_qubits))
+
+    # Build the circuit layer by layer using the helper
+    for layer_index, (_, reps) in enumerate(layer_patterns):
+        if reps == 0 or len(current_indices) < 2:
+            break  # Skip this layer if depth is 0 or fewer than 2 qubits remain
+
+        layer_block, next_indices = __create_conv_layer(
+            layer_index,
+            reps,
+            current_indices,
+            params,
+            operations,
+            entangler,
+            n_qubits,
+            is_opt,
+        )
+
+        # Append the current `current_indices` to `all_target_indices`
+        all_target_indices.append(current_indices)
+
+        # Update `current_indices` for the next layer
+        current_indices = next_indices
+
+        tag(layer_block, f"Layer {layer_index}")
+        ansatz_layers.append(layer_block)
+
+    # Combine all layers for the final ansatz
+    ansatz = chain(*ansatz_layers)
+    tag(ansatz, "Ansatz")
+
+    return QuantumCircuit(n_qubits, fm, ansatz)

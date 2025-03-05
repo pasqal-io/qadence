@@ -20,6 +20,11 @@ from qadence.noise import NoiseHandler
 from qadence.register import Register
 from qadence.types import BackendName, DiffMode, Endianness, InputDiffMode, ParamDictType
 from qadence.utils import block_to_mathematical_expression
+from qadence.parameters import Parameter
+from qadence.blocks.utils import add
+from qadence.operations import Z
+
+from qadence.ml_tools.constructors import QCNN_circuit
 
 logger = getLogger(__name__)
 
@@ -500,3 +505,81 @@ class QNN(QuantumModel):
             logger.warning(f"Unable to deserialize object {d} to {cls.__name__} due to {e}.")
 
         return qnn
+
+
+class QCNN(QNN):
+    def __init__(
+        self,
+        n_inputs: int,
+        n_qubits: int,
+        depth: list[int],
+        operations: list[Any],
+        entangler: Any,
+        random_meas: bool,
+        is_opt: bool = True,
+        **kwargs: Any,
+    ) -> None:
+        """
+        Creates a QCNN model.
+
+        Args:
+            n_inputs (int): Number of input features.
+            n_qubits (int): Total number of qubits.
+            depth (list[int]): List defining the depth (repetitions) of each layer.
+            operations (list[Any]): List of quantum operations to apply
+                in the gates (e.g., [RX, RZ]).
+            entangler (Any): Entangling operation, such as CZ.
+            random_meas (bool): If True, applies random weighted measurements.
+            is_opt (bool): If True, W is optimal built
+            **kwargs (Any): Additional keyword arguments for the parent QNN class.
+        """
+        self.n_inputs = n_inputs
+        self.n_qubits = n_qubits
+        self.depth = depth
+        self.operations = operations
+        self.entangler = entangler
+        self.random_meas = random_meas
+        self.is_opt = is_opt
+
+        # Create circuit and observables
+        circuit = QCNN_circuit(
+            self.n_inputs,
+            self.n_qubits,
+            self.depth,
+            self.operations,
+            self.entangler,
+            self.is_opt,
+        )
+        obs = self.qcnn_deferred_obs(self.n_qubits, self.random_meas)
+
+        super().__init__(
+            circuit=circuit,
+            observable=obs,
+            backend=BackendName.PYQTORCH,
+            diff_mode=DiffMode.AD,
+            inputs=[f"\u03C6_{i}" for i in range(self.n_inputs)],
+            **kwargs,
+        )
+
+    def qcnn_deferred_obs(
+        self, n_qubits: int, random_meas: bool
+    ) -> AbstractBlock | list[AbstractBlock]:
+        """
+        Defines the measurements to be performed on the specified target qubits.
+
+        Args:
+            n_qubits (int): Total number of qubits.
+            random_meas (bool): If True, applies random weighted measurements.
+
+        Returns:
+            AbstractBlock | list[AbstractBlock]: The measurement observable
+                 or a list of observables.
+        """
+        if random_meas:
+            w1 = [Parameter(f"w{i}") for i in range(n_qubits)]
+            obs = add(Z(i) * w for i, w in zip(range(n_qubits), w1))
+        else:
+            obs = add(Z(i) for i in range(n_qubits))
+
+        print(obs)
+        return obs
