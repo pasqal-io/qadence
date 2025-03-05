@@ -296,12 +296,10 @@ P0 = partial(one_qubit_projector, "0")
 P1 = partial(one_qubit_projector, "1")
 
 
-def block_to_mathematical_expression(block: Tree | AbstractBlock, print_tag: bool = True) -> str:
+def block_to_mathematical_expression(block: Tree | AbstractBlock) -> str:
     """Convert a block to a readable mathematical expression.
 
         Useful for printing Observables as a mathematical expression.
-        print_tag: If True, the block's tag is included in the output. If the block has no tag,
-            the string "Obs" is used. Defaults to True.
 
     Args:
         block (AbstractBlock): Tree instance.
@@ -313,17 +311,11 @@ def block_to_mathematical_expression(block: Tree | AbstractBlock, print_tag: boo
     block_title = block_tree.label if isinstance(block_tree.label, str) else ""
     if "AddBlock" in block_title:
         block_title = " + ".join(
-            [
-                block_to_mathematical_expression(block_child, print_tag=False)
-                for block_child in block_tree.children
-            ]
+            [block_to_mathematical_expression(block_child) for block_child in block_tree.children]
         )
     if "KronBlock" in block_title:
         block_title = " ⊗ ".join(
-            [
-                block_to_mathematical_expression(block_child, print_tag=False)
-                for block_child in block_tree.children
-            ]
+            [block_to_mathematical_expression(block_child) for block_child in block_tree.children]
         )
     if "mul" in block_title:
         block_title = re.findall("\d+\.\d+", block_title)[0]
@@ -331,11 +323,9 @@ def block_to_mathematical_expression(block: Tree | AbstractBlock, print_tag: boo
         if coeff == 0:
             block_title = ""
         elif coeff == 1:
-            block_title = block_to_mathematical_expression(block_tree.children[0], print_tag=False)
+            block_title = block_to_mathematical_expression(block_tree.children[0])
         else:
-            block_title += " * " + block_to_mathematical_expression(
-                block_tree.children[0], print_tag=False
-            )
+            block_title += " * " + block_to_mathematical_expression(block_tree.children[0])
     first_part = block_title[:3]
     if first_part in [" + ", " ⊗ ", " * "]:
         block_title = block_title[3:]
@@ -344,11 +334,4 @@ def block_to_mathematical_expression(block: Tree | AbstractBlock, print_tag: boo
     nb_children = len(block_tree.children)
     if nb_children > 1:
         block_title = "(" + block_title + ")"
-
-    if print_tag:
-        if isinstance(block.tag, str):
-            block_title = f"{block.tag}: {block_title}"
-        else:
-            block_title = f"Obs: {block_title}"
-
     return block_title

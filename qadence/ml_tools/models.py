@@ -362,8 +362,8 @@ class QNN(QuantumModel):
             if self._observable:
                 observable_str = (
                     "observable_config = [\n"
-                    + "\n".join(
-                        (block_to_mathematical_expression(obs.original) for obs in self._observable)
+                    + "\n".join( 
+                        (f"{obs.original.tag if obs.original.tag else 'Obs.'} : "+block_to_mathematical_expression(obs.original) for obs in self._observable)
                     )
                     + "\n]"
                 )
