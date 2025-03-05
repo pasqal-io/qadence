@@ -733,7 +733,13 @@ def create_observable(
         interaction=config.interaction,
         detuning=config.detuning,
     )
-    return add(shifting_term, detuning_hamiltonian)
+
+    obs: AbstractBlock = add(shifting_term, detuning_hamiltonian)
+
+    if isinstance(config.tag, str):
+        tag(obs, config.tag)
+
+    return obs
 
 
 def build_qnn_from_configs(
@@ -795,7 +801,6 @@ def build_qnn_from_configs(
         if isinstance(observable_config, list)
         else create_observable(register=register, config=observable_config)
     )
-
     ufa = QNN(
         circ,
         observable,
