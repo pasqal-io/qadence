@@ -360,17 +360,8 @@ class QNN(QuantumModel):
             )
             observable_str = ""
             if self._observable:
-                observable_str = (
-                    "observable_config = [\n"
-                    + "\n".join(
-                        (
-                            f"{obs.original.tag if obs.original.tag else 'Obs.'} : "
-                            + block_to_mathematical_expression(obs.original)
-                            for obs in self._observable
-                        )
-                    )
-                    + "\n]"
-                )
+                observable_str = f"observable_config = {self.observables_to_expression()}"
+
             return f"{type(self).__name__}(\n{configs_str}\n{observable_str}\n)"
 
         return super().__str__()
