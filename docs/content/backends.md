@@ -65,6 +65,8 @@ dexp_dx = torch.autograd.grad(exp, x, torch.ones_like(exp))
 print(f"{dexp_dx = }") # markdown-exec: hide
 ```
 
+In the example above, a quantum model is specified using the feature map and ansatz, and during the optimization process, the expectation value is computed and used to update the variable parameters. In this process, the derivatives with respect to the trainable parameters can be extracted at any time.
+
 ## Low-level `backend_factory` interface
 
 Every backend in Qadence inherits from the abstract `Backend` class:
