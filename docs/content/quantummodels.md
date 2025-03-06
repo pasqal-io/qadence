@@ -63,19 +63,22 @@ print(f"ex = {ex.detach()}") # markdown-exec: hide
 
 By default, the `forward` method of `QuantumModel` calls `model.run()`. To define custom quantum models, the best way is to inherit from `QuantumModel` and override the `forward` method, as typically done with custom PyTorch Modules.
 
-The `QuantumModel` class provides convenience methods to manipulate parameters. Being a `torch.nn.Module`, all torch methods are also available.
+The `QuantumModel` class provides convenience methods to manipulate parameters. Being a `torch.nn.Module`, all torch methods are also available. From below example, you can pass, check and reset the model parameters. When entering new values for the `VariationalParameter`, they must match the number of existing variables.
 
 ```python exec="on" source="material-block" result="json" session="quantum-model"
+import numpy as np
+
 # To pass onto a torch optimizer
 parameter_generator = model.parameters()
 
 # Number of variational parameters
 num_vparams = model.num_vparams
 
-# Dictionary to easily inspect variational parameter values
-vparams_values = model.vparams
+print(f"old {model.vparams = }") # markdown-exec: hide
 
-print(f"{vparams_values = }") # markdown-exec: hide
+# To reset current variational parameter to other values
+model.reset_vparams([np.random.rand()])
+print(f"new {model.vparams = }") # markdown-exec: hide
 ```
 
 ## Model output
