@@ -95,6 +95,6 @@ shift rules implementation works in Qadence.
 
 ## References
 
-[^1] Schuld, Petruccione, Machine learning on Quantum Computers, Springer Nature (2021)
+[^1]: [Schuld, Petruccione, Machine learning on Quantum Computers, Springer Nature (2021)](https://link.springer.com/book/10.1007/978-3-030-83098-4)
 
 [^2]: [Kyriienko et al., General quantum circuit differentiation rules](https://arxiv.org/abs/2108.01218)
