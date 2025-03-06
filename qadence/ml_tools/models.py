@@ -10,6 +10,7 @@ from torch import Tensor, nn
 
 from qadence.backend import BackendConfiguration, ConvertedObservable
 from qadence.backends.api import config_factory
+from qadence.blocks import chain
 from qadence.blocks.abstract import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
@@ -21,10 +22,10 @@ from qadence.register import Register
 from qadence.types import BackendName, DiffMode, Endianness, InputDiffMode, ParamDictType
 from qadence.utils import block_to_mathematical_expression
 from qadence.parameters import Parameter
-from qadence.blocks.utils import add
-from qadence.operations import Z
+from qadence.blocks.utils import add, tag
+from qadence.operations import Z, RX, CZ
 
-from qadence.ml_tools.constructors import QCNN_circuit
+from qadence.ml_tools.constructors import _create_conv_layer, _create_feature_map_qcnn
 
 logger = getLogger(__name__)
 
@@ -519,9 +520,10 @@ class QCNN(QNN):
         n_qubits: int,
         depth: list[int],
         operations: list[Any],
-        entangler: Any,
-        random_meas: bool,
-        is_opt: bool = True,
+        entangler: Any = CZ,
+        random_meas: bool = True,
+        fm_basis: str = "Fourier",
+        fm_gate: Any = RX,
         **kwargs: Any,
     ) -> None:
         """
@@ -535,7 +537,8 @@ class QCNN(QNN):
                 in the gates (e.g., [RX, RZ]).
             entangler (Any): Entangling operation, such as CZ.
             random_meas (bool): If True, applies random weighted measurements.
-            is_opt (bool): If True, W is optimal built
+            fm_basis (str): feature map basis.
+            fm_gate (Any): gate employed in the fm, such as.
             **kwargs (Any): Additional keyword arguments for the parent QNN class.
         """
         self.n_inputs = n_inputs
@@ -544,41 +547,87 @@ class QCNN(QNN):
         self.operations = operations
         self.entangler = entangler
         self.random_meas = random_meas
-        self.is_opt = is_opt
+        self.fm_basis = fm_basis
+        self.fm_gate = fm_gate
 
         # Create circuit and observables
-        circuit = QCNN_circuit(
+        qcnn_circuit = self.qcnn_circuit(
             self.n_inputs,
             self.n_qubits,
             self.depth,
             self.operations,
             self.entangler,
-            self.is_opt,
+            self.fm_basis,
+            self.fm_gate,
         )
-        obs = self.qcnn_deferred_obs(self.n_qubits, self.random_meas)
+
+        qcnn_obs = self.qcnn_deferred_obs(self.n_qubits, self.random_meas)
 
         super().__init__(
-            circuit=circuit,
-            observable=obs,
+            circuit=qcnn_circuit,
+            observable=qcnn_obs,
             backend=BackendName.PYQTORCH,
             diff_mode=DiffMode.AD,
             inputs=[f"\u03C6_{i}" for i in range(self.n_inputs)],
             **kwargs,
         )
 
+    def qcnn_circuit(
+        self,
+        n_inputs: int,
+        n_qubits: int,
+        depth: list[int],
+        operations: list[Any],
+        entangler: AbstractBlock,
+        fm_basis: str,
+        fm_gate: AbstractBlock,
+    ) -> QuantumCircuit:
+        """Defines the QCNN circuit."""
+        # Feature map (FM)
+        fm = _create_feature_map_qcnn(n_qubits, n_inputs, fm_basis, fm_gate)
+        tag(fm, "FM")
+
+        # Ansatz
+        ansatz_layers = []
+        params: dict[str, Parameter] = {}
+
+        # Define layer patterns based on depth
+        layer_patterns = [(2**layer_index, depth[layer_index]) for layer_index in range(len(depth))]
+
+        # Initialize all qubits for the first layer
+        current_indices = list(range(n_qubits))
+
+        # Build the circuit layer by layer using the helper
+        for layer_index, (_, reps) in enumerate(layer_patterns):
+            if reps == 0 or len(current_indices) < 2:
+                break
+
+            layer_block, next_indices = _create_conv_layer(
+                layer_index,
+                reps,
+                current_indices,
+                params,
+                operations,
+                entangler,
+                n_qubits,
+            )
+            current_indices = next_indices
+            tag(layer_block, f"Layer {layer_index}")
+            ansatz_layers.append(layer_block)
+
+        # Combine all layers for the final ansatz
+        ansatz = chain(*ansatz_layers)
+        tag(ansatz, "Ansatz")
+
+        return QuantumCircuit(n_qubits, fm, ansatz)
+
     def qcnn_deferred_obs(
         self, n_qubits: int, random_meas: bool
     ) -> AbstractBlock | list[AbstractBlock]:
         """
-        Defines the measurements to be performed on the specified target qubits.
+        Defines the measurements to be performedthe traced out.
 
-        Args:
-            n_qubits (int): Total number of qubits.
-            random_meas (bool): If True, applies random weighted measurements.
-
-        Returns:
-            AbstractBlock | list[AbstractBlock]: The measurement observable
-                 or a list of observables.
+        and remaining qubits.
         """
         if random_meas:
             w1 = [Parameter(f"w{i}") for i in range(n_qubits)]
@@ -586,5 +635,4 @@ class QCNN(QNN):
         else:
             obs = add(Z(i) for i in range(n_qubits))
 
-        print(obs)
         return obs
