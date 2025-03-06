@@ -107,11 +107,17 @@ for i in range(n_epochs):
     loss.backward()
     optimizer.step()
 
+    # for checking three parameters in every epoch, you can uncomment below
+    # value_gen = model._params.values()
+    # print(list(value_gen)[:3])
+
     if (i+1) % 20 == 0:
         print(f"Epoch {i+1} - Loss: {loss.item()}")
 
 assert loss.item() < 1e-3
 ```
+
+If you want to check the parameter values during the epochs, you can access and utilize the `model._params` variable as shown in the example above.
 
 Qadence offers some convenience functions to implement this training loop with advanced
 logging and metrics track features. You can refer to [this tutorial](ml_tools/trainer.md) for more details.
