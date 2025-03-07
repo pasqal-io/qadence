@@ -330,7 +330,7 @@ class Register:
 
     def _to_dict(self) -> dict:
         return {
-            "graph": nx.node_link_data(self.graph),
+            "graph": nx.node_link_data(self.graph, edges="links"),
             "device_specs": self.device_specs._to_dict(),
         }
 
