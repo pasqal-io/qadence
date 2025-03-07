@@ -159,7 +159,6 @@ class QuantumModel(nn.Module):
         """All parameters."""
         return OrderedDict({k: v.data for k, v in self._params.items()})
 
-
     @property
     def vals_vparams(self) -> Tensor:
         """Dictionary with parameters which are actually updated during optimization."""

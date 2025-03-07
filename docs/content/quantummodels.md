@@ -87,6 +87,47 @@ vparams_values = model.vparams
 print(f"new {vparams_values = }") # markdown-exec: hide
 ```
 
+## Backend configuration in quantum models
+
+When initializing a quantum model, available configuration options are determined by the backend, with current support for `PyQTorch` and `Pulser`. Information on each configuration option can be found with `BackendConfiguration.available_options` as in below example:
+
+```python exec="on" source="material-block" result="json" session="quantum-model"
+from qadence import QuantumModel, QuantumCircuit, RX, RY, kron
+from qadence import FeatureParameter, VariationalParameter
+from qadence import BackendConfiguration
+from qadence import BackendName, DiffMode
+
+# Create a quantum circuit
+theta = VariationalParameter("theta")
+phi = FeatureParameter("phi")
+block = kron(RX(0, theta), RY(1, phi))
+circuit = QuantumCircuit(2, block)
+
+# Choose your backend (PYQTORCH or PULSER)
+backend=BackendName.PYQTORCH
+# backend=BackendName.PULSER
+
+model = QuantumModel(circuit, backend=backend, diff_mode=DiffMode.GPSR)
+config = model.backend.backend.config
+
+# Check backend confugration options
+bknd_options = BackendConfiguration.available_options(config)
+print(f"{bknd_options = }") # markdown-exec: hide
+```
+
+The configuration of the quantum model can be changed by passing `options_names` and `value` in dictionary format. The detailed descriptions are available in [PyQTorch Backend Configuration](https://github.com/pasqal-io/qadence/blob/main/qadence/backends/pyqtorch/config.py) and [Pulser Backend Configuration](https://github.com/pasqal-io/qadence/blob/main/qadence/backends/pulser/config.py) here.
+
+```python exec="on" source="material-block" result="json" session="quantum-model"
+default_model = QuantumModel(circuit, backend=backend, diff_mode=DiffMode.GPSR)
+default_config = default_model.backend.backend.config
+print(f"Default {default_config = }")
+
+# change dropout_probability from 0 to 0.1
+custom_model = QuantumModel(circuit, backend=backend, diff_mode=DiffMode.GPSR, configuration = {"dropout_probability": 0.1})
+custom_config = custom_model.backend.backend.config
+print(f"Custom {custom_config = }")
+```
+
 ## Model output
 
 The output of a quantum model is typically encoded in the measurement of an expectation value. In Qadence, one way to customize the number of outputs is by batching the number of observables at model creation by passing a list of blocks.
