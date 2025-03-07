@@ -155,6 +155,12 @@ class QuantumModel(nn.Module):
         return OrderedDict({k: v.data for k, v in self._params.items() if v.requires_grad})
 
     @property
+    def params(self) -> OrderedDict:
+        """All parameters."""
+        return OrderedDict({k: v.data for k, v in self._params.items()})
+
+
+    @property
     def vals_vparams(self) -> Tensor:
         """Dictionary with parameters which are actually updated during optimization."""
         vals = torch.tensor([v for v in self._params.values() if v.requires_grad])

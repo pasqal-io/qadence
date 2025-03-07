@@ -72,7 +72,10 @@ parameter_generator = model.parameters()
 # Number of variational parameters
 num_vparams = model.num_vparams
 
-# Dictionary to easily inspect variational parameter values
+# Dictionary to see all the parameter values
+params_values = model.params
+
+# Dictionary to easily inspect variational parameters (parameters with gradient)
 vparams_values = model.vparams
 
 print(f"old {vparams_values = }") # markdown-exec: hide
