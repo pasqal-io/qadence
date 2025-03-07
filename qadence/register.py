@@ -329,8 +329,12 @@ class Register:
         return Register(g, spacing=None, device_specs=self.device_specs)
 
     def _to_dict(self) -> dict:
+        try:
+            graph_data = nx.node_link_data(self.graph, edges="links")
+        except TypeError:  # For Python 3.9 support
+            graph_data = nx.node_link_data(self.graph)
         return {
-            "graph": nx.node_link_data(self.graph),
+            "graph": graph_data,
             "device_specs": self.device_specs._to_dict(),
         }
 
