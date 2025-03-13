@@ -530,15 +530,7 @@ class Trainer(BaseTrainer):
             self.ng_params = ng_params
             loss_metrics = loss, metrics
 
-        # --------------------- FIX: Post-Optimization Loss --------------------- #
-        # Because the loss/metrics are returned before the optimization. To sync
-        # model state and current loss/metrics we calculate them again after optimization.
-        # This is not strictly necessary.
-        # TODO: Should be removed if loss can be logged at an unoptimized model state
-        with torch.no_grad():
-            post_update_loss_metrics = self.loss_fn(self.model, batch)
-
-        return self._modify_batch_end_loss_metrics(post_update_loss_metrics)
+        return self._modify_batch_end_loss_metrics(loss_metrics)
 
     @BaseTrainer.callback("val_epoch")
     def run_validation(self, dataloader: DataLoader) -> list[tuple[torch.Tensor, dict[str, Any]]]:
