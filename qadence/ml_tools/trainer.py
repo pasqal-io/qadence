@@ -534,7 +534,6 @@ class Trainer(BaseTrainer):
         # Because the loss/metrics are returned before the optimization. To sync
         # model state and current loss/metrics we calculate them again after optimization.
         # This is not strictly necessary.
-        # TODO: Should be removed if loss can be logged at an unoptimized model state
         # with torch.no_grad():
         #     post_update_loss_metrics = self.loss_fn(self.model, batch)
 
