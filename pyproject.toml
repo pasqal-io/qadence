@@ -52,7 +52,7 @@ dependencies = [
     "jsonschema",
     "nevergrad",
     "scipy",
-    "pyqtorch==1.7.2",
+    "pyqtorch==1.7.3",
     "pyyaml",
     "matplotlib",
     "Arpeggio==2.0.2",
