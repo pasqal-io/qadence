@@ -52,7 +52,7 @@ def test_train_dataloader_default(tmp_path: Path, Basic: torch.nn.Module) -> Non
     trainer = Trainer(model, None, config=config, loss_fn=loss_fn, train_dataloader=data)
     with trainer.disable_grad_opt(optimizer):
         trainer.fit()
-    assert next(cnt) == 2 * (n_epochs + 1)
+    assert next(cnt) == (n_epochs + 1)
 
     x = torch.rand(5, 1)
     assert torch.allclose(torch.cos(x), model(x), rtol=1e-1, atol=1e-1)
