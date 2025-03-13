@@ -139,15 +139,16 @@ def test_create_subfolders_perrun(BasicQuantumModel: QuantumModel, tmp_path: Pat
     assert os.path.isdir(tmp_path)
     assert len(os.listdir(tmp_path)) == 1
 
-    config = TrainConfig(root_folder=tmp_path, max_iter=10, create_subfolder_per_run=True)
+    new_tmp_path = tmp_path / "_01"
+    config = TrainConfig(root_folder=new_tmp_path, max_iter=10, create_subfolder_per_run=True)
     trainer = Trainer(model, optimizer, config, loss_fn, data)
     with trainer.enable_grad_opt():
         trainer.fit()
     with trainer.enable_grad_opt():
         trainer.fit()
 
-    assert os.path.isdir(tmp_path)
-    assert len(os.listdir(tmp_path)) == 3
+    assert os.path.isdir(new_tmp_path)
+    assert len(os.listdir(new_tmp_path)) == 2
 
 
 def test_log_folder_logging(BasicQuantumModel: QuantumModel, tmp_path: Path) -> None:
