@@ -189,7 +189,7 @@ class ParametricBlock(PrimitiveBlock):
         if isinstance(other, type(self)):
             return (
                 self.qubit_support == other.qubit_support
-                and self.parameters.parameter == other.parameters.parameter
+                and self.parameters.parameter.equals(other.parameters.parameter)
             )
         return False
 
