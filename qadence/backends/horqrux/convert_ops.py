@@ -8,10 +8,10 @@ from typing import Any, Callable, Dict
 
 import jax.numpy as jnp
 from horqrux.analog import _HamiltonianEvolution as NativeHorqHEvo
-from horqrux.apply import apply_gate
-from horqrux.parametric import RX, RY, RZ
-from horqrux.primitive import NOT, SWAP, H, I, X, Y, Z
-from horqrux.primitive import Primitive as Gate
+from horqrux.apply import apply_gates
+from horqrux.primitives.parametric import RX, RY, RZ
+from horqrux.primitives.primitive import NOT, SWAP, H, I, X, Y, Z
+from horqrux.primitives.primitive import Primitive as Gate
 from horqrux.utils import ControlQubits, TargetQubits, inner
 from jax import Array
 from jax.scipy.linalg import expm
@@ -175,7 +175,7 @@ class HorqOperation:
         self.native_gate = native_gate
 
     def forward(self, state: Array, values: ParamDictType) -> Array:
-        return apply_gate(state, self.native_gate, values)
+        return apply_gates(state, self.native_gate, values)
 
     def tree_flatten(self) -> tuple[tuple[Gate], tuple[()]]:
         children = (self.native_gate,)
@@ -216,7 +216,7 @@ class HorqHamiltonianEvolution(NativeHorqHEvo):
         config: Configuration,
     ):
         super().__init__("I", block.qubit_support, (None,))
-        self.qubit_support = block.qubit_support
+        self._qubit_support = block.qubit_support
         self.param_names = config.get_param_name(block)
         self.block = block
         self.hmat: Array
@@ -224,7 +224,7 @@ class HorqHamiltonianEvolution(NativeHorqHEvo):
         if isinstance(block.generator, AbstractBlock) and not block.generator.is_parametric:
             hmat = block_to_jax(
                 block.generator,
-                qubit_support=self.qubit_support,
+                qubit_support=self._qubit_support,
                 use_full_support=False,
             )
             self.hmat = hmat
@@ -236,7 +236,7 @@ class HorqHamiltonianEvolution(NativeHorqHEvo):
                 hmat = block_to_jax(
                     block.generator,  # type: ignore[arg-type]
                     values=values,
-                    qubit_support=self.qubit_support,
+                    qubit_support=self._qubit_support,
                     use_full_support=False,
                 )
                 return hmat
@@ -254,7 +254,7 @@ class HorqHamiltonianEvolution(NativeHorqHEvo):
         state: Array,
         values: dict[str, Array],
     ) -> Array:
-        return apply_gate(state, self, values)
+        return apply_gates(state, self, values)
 
     def tree_flatten(self) -> tuple[tuple[NativeHorqHEvo], tuple]:
         children = (self,)
