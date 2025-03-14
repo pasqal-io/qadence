@@ -110,16 +110,16 @@ def test_match_inversions() -> None:
 @pytest.mark.parametrize(
     "block, truth",
     [
-        (2.0 * X(0), 2.0 * X(0)),
+        (2 * X(0), 2 * X(0)),
         # scale only first block because we are multiplying
-        (2.0 * chain(X(0), RX(0, "theta")), chain(2.0 * X(0), RX(0, "theta"))),
-        (2.0 * kron(X(0), RX(1, "theta")), kron(2.0 * X(0), RX(1, "theta"))),
+        (2 * chain(X(0), RX(0, "theta")), chain(2 * X(0), RX(0, "theta"))),
+        (2 * kron(X(0), RX(1, "theta")), kron(2 * X(0), RX(1, "theta"))),
         # scale all blocks because we are adding
-        (2.0 * add(X(0), RX(0, "theta")), add(2.0 * X(0), 2.0 * RX(0, "theta"))),
-        (add(2.0 * chain(X(0))), add(chain(2.0 * X(0)))),
+        (2 * add(X(0), RX(0, "theta")), add(2 * X(0), 2 * RX(0, "theta"))),
+        (add(2 * chain(X(0))), add(chain(2 * X(0)))),
         (
-            2.0 * chain(add(X(2), 3.0 * X(3)), RX(0, "theta")),
-            chain(add(2.0 * X(2), 2.0 * 3.0 * X(3)), RX(0, "theta")),
+            2 * chain(add(X(2), 3 * X(3)), RX(0, "theta")),
+            chain(add(2 * X(2), 2 * 3 * X(3)), RX(0, "theta")),
         ),
         (
             add(3.0 * chain(0.5 * (I(0) - Z(0)), 0.5 * (I(1) - Z(1)))),
