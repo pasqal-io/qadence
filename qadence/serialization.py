@@ -226,7 +226,7 @@ def save_json(d: dict, file_path: str | Path) -> None:
 
 
 def load_pt(file_path: str | Path, map_location: str) -> Any:
-    return torch.load(file_path, map_location=map_location)
+    return torch.load(file_path, map_location=map_location, weights_only=False)
 
 
 def load_json(file_path: str | Path, map_location: str) -> Any:
