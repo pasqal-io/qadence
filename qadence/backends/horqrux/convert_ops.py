@@ -8,10 +8,10 @@ from typing import Any, Callable, Dict
 
 import jax.numpy as jnp
 from horqrux.analog import _HamiltonianEvolution as NativeHorqHEvo
-from horqrux.apply import apply_gate
-from horqrux.parametric import RX, RY, RZ
-from horqrux.primitive import NOT, SWAP, H, I, X, Y, Z
-from horqrux.primitive import Primitive as Gate
+from horqrux.apply import apply_gates
+from horqrux.primitives.parametric import RX, RY, RZ
+from horqrux.primitives.primitive import NOT, SWAP, H, I, X, Y, Z
+from horqrux.primitives.primitive import Primitive as Gate
 from horqrux.utils import ControlQubits, TargetQubits, inner
 from jax import Array
 from jax.scipy.linalg import expm
@@ -175,7 +175,7 @@ class HorqOperation:
         self.native_gate = native_gate
 
     def forward(self, state: Array, values: ParamDictType) -> Array:
-        return apply_gate(state, self.native_gate, values)
+        return apply_gates(state, self.native_gate, values)
 
     def tree_flatten(self) -> tuple[tuple[Gate], tuple[()]]:
         children = (self.native_gate,)
@@ -254,7 +254,7 @@ class HorqHamiltonianEvolution(NativeHorqHEvo):
         state: Array,
         values: dict[str, Array],
     ) -> Array:
-        return apply_gate(state, self, values)
+        return apply_gates(state, self, values)
 
     def tree_flatten(self) -> tuple[tuple[NativeHorqHEvo], tuple]:
         children = (self,)
