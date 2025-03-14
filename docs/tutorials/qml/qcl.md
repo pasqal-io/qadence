@@ -109,9 +109,13 @@ for i in range(n_epochs):
 
     if (i+1) % 20 == 0:
         print(f"Epoch {i+1} - Loss: {loss.item()}")
+        # for checking variational parameters inside epoch, you can uncomment below
+        # print(model.vparams)
 
 assert loss.item() < 1e-3
 ```
+
+If you want to check the parameter values during the epochs, you can access the parameter dict by  `model.vparams` as shown in the example above.
 
 Qadence offers some convenience functions to implement this training loop with advanced
 logging and metrics track features. You can refer to [this tutorial](ml_tools/trainer.md) for more details.
