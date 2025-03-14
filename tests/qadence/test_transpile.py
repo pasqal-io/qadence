@@ -49,9 +49,9 @@ def test_flatten() -> None:
 
 
 def test_digitalize() -> None:
-    x = chain(chain(X(0), HamEvo(X(0), 2), RX(0, 2)))
-    assert str(digitalize(x, LTSOrder.BASIC)) == str(
-        chain(chain(X(0), chain(H(0), RZ(0, 4.0), H(0)), RX(0, 2.0)))
+    x = chain(chain(X(0), HamEvo(X(0), 2), RX(0, 2.0)))
+    assert digitalize(x, LTSOrder.BASIC) == chain(
+        chain(X(0), chain(H(0), RZ(0, 4.0), H(0)), RX(0, 2.0))
     )
 
 
