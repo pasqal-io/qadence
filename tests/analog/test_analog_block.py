@@ -43,14 +43,14 @@ def test_analog_block() -> None:
         ConstantAnalogRotation(parameters=ParamMap(duration=2000, omega=1, delta=0, phase=0)),
         ConstantAnalogRotation(parameters=ParamMap(duration=3000, omega=1, delta=0, phase=0)),
     )
-    assert c1.duration == 5000
+    assert c1.duration == 5000.0
     assert c1.qubit_support == QubitSupport("global")
 
     c2 = kron(
         AnalogRX(PI, qubit_support=(0, 1)),
         AnalogInteraction(duration=1000, qubit_support=(2, 3)),
     )
-    assert c2.duration == 1000
+    assert c2.duration == 1000.0
     assert c2.qubit_support == QubitSupport(0, 1, 2, 3)
 
     c3 = chain(
@@ -63,7 +63,7 @@ def test_analog_block() -> None:
             AnalogRX(PI, qubit_support=(2, 3)),
         ),
     )
-    assert c3.duration == 2000
+    assert c3.duration == 2000.0
 
     with pytest.raises(ValueError, match="Only KronBlocks or global blocks can be chain'ed."):
         chain(c3, AnalogInteraction(duration=10))
