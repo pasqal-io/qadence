@@ -216,7 +216,7 @@ class HorqHamiltonianEvolution(NativeHorqHEvo):
         config: Configuration,
     ):
         super().__init__("I", block.qubit_support, (None,))
-        self.qubit_support = block.qubit_support
+        self._qubit_support = block.qubit_support
         self.param_names = config.get_param_name(block)
         self.block = block
         self.hmat: Array
@@ -224,7 +224,7 @@ class HorqHamiltonianEvolution(NativeHorqHEvo):
         if isinstance(block.generator, AbstractBlock) and not block.generator.is_parametric:
             hmat = block_to_jax(
                 block.generator,
-                qubit_support=self.qubit_support,
+                qubit_support=self._qubit_support,
                 use_full_support=False,
             )
             self.hmat = hmat
@@ -236,7 +236,7 @@ class HorqHamiltonianEvolution(NativeHorqHEvo):
                 hmat = block_to_jax(
                     block.generator,  # type: ignore[arg-type]
                     values=values,
-                    qubit_support=self.qubit_support,
+                    qubit_support=self._qubit_support,
                     use_full_support=False,
                 )
                 return hmat
