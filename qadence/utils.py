@@ -318,8 +318,12 @@ def block_to_mathematical_expression(block: Tree | AbstractBlock) -> str:
             [block_to_mathematical_expression(block_child) for block_child in block_tree.children]
         )
     if "mul" in block_title:
-        block_title = re.findall("\d+\.\d+", block_title)[0]
-        coeff = float(block_title)
+        if "." in block_title:
+            block_title = re.findall("\d+\.\d+", block_title)[0]
+            coeff = float(block_title)
+        else:
+            block_title = re.findall("\d+", block_title)[0]
+            coeff = int(block_title)
         if coeff == 0:
             block_title = ""
         elif coeff == 1:

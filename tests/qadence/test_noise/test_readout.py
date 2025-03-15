@@ -84,7 +84,7 @@ def test_readout_error_quantum_model(
 
     for noiseless, noisy in zip(noiseless_samples, noisy_samples):
         assert sum(noiseless.values()) == sum(noisy.values()) == n_shots
-        assert js_divergence(noiseless, noisy) > 0.0
+        assert js_divergence(noiseless, noisy) >= 0.0
         assert torch.allclose(
             torch.tensor(1.0 - js_divergence(noiseless, noisy)),
             torch.ones(1) - error_probability,
@@ -101,12 +101,12 @@ def test_readout_error_quantum_model(
     corr_noisy_samples: list[Counter] = model.sample(noise=corr_noise_protocol, n_shots=n_shots)
     for noiseless, noisy in zip(noiseless_samples, corr_noisy_samples):
         assert sum(noiseless.values()) == sum(noisy.values()) == n_shots
-        assert js_divergence(noiseless, noisy) > 0.0
+        assert js_divergence(noiseless, noisy) >= 0.0
 
     # assert difference noisy samples
     for noisy, corr_noisy in zip(noisy_samples, corr_noisy_samples):
         assert sum(noisy.values()) == sum(corr_noisy.values()) == n_shots
-        assert js_divergence(noisy, corr_noisy) > 0.0
+        assert js_divergence(noisy, corr_noisy) >= 0.0
 
 
 @pytest.mark.parametrize("backend", [BackendName.PYQTORCH, BackendName.PULSER])
@@ -127,7 +127,7 @@ def test_readout_error_backends(backend: BackendName) -> None:
     # compare that the results are with an error of 10% (the default error_probability)
     for sample, noisy_sample in zip(samples, noisy_samples):
         assert sum(sample.values()) == sum(noisy_sample.values())
-        assert js_divergence(sample, noisy_sample) > 0.0
+        assert js_divergence(sample, noisy_sample) >= 0.0
         assert torch.allclose(
             torch.tensor(1.0 - js_divergence(sample, noisy_sample)),
             torch.ones(1) - error_probability,

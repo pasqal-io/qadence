@@ -187,9 +187,8 @@ class ParametricBlock(PrimitiveBlock):
         if not isinstance(other, AbstractBlock):
             raise TypeError(f"Cant compare {type(self)} to {type(other)}")
         if isinstance(other, type(self)):
-            return (
-                self.qubit_support == other.qubit_support
-                and self.parameters.parameter == other.parameters.parameter
+            return self.qubit_support == other.qubit_support and self.parameters.parameter.equals(
+                other.parameters.parameter
             )
         return False
 

@@ -225,6 +225,8 @@ def sympy_to_numeric(expr: Basic) -> TNumber:
     if expr.as_real_imag()[1] != 0:
         return complex(expr)
     else:
+        if expr.is_Integer:
+            return int(expr)
         return float(expr)
 
 
