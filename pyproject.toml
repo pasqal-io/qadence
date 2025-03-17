@@ -44,7 +44,7 @@ dependencies = [
     "numpy",
     "torch",
     "openfermion",
-    "sympy<1.13.3",
+    "sympy<1.13.4",
     "sympytorch>=0.1.2",
     "rich",
     "tensorboard>=2.12.0",
