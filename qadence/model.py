@@ -520,7 +520,7 @@ class QuantumModel(nn.Module):
             file_path = file_path / get_latest_checkpoint_name(file_path, "model")
 
         try:
-            qm_pt = torch.load(file_path, map_location=map_location)
+            qm_pt = torch.load(file_path, map_location=map_location, weights_only=False)
         except Exception as e:
             logger.error(f"Unable to load QuantumModel due to {e}")
         return cls._from_dict(qm_pt, as_torch)
