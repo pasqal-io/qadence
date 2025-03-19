@@ -291,7 +291,7 @@ class Backend(BackendInterface):
             # logger.warning(
             #     "Mitigation protocol is deprecated. Use qadence-protocols instead.",
             # )
-            assert noise
+            # assert noise
             samples = apply_mitigation(noise=noise, mitigation=mitigation, samples=samples)
         return samples
 
