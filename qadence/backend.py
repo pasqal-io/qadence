@@ -54,10 +54,17 @@ class BackendConfiguration:
         conf_msg = ""
         for _field in fields(self):
             if not _field.name.startswith("_"):
-                conf_msg += (
-                    f"Name: {_field.name} - Type: {_field.type} - Default value: {_field.default}\n"
-                )
+                conf_msg += f"Name: {_field.name} - Type: {_field.type} - Current value: {getattr(self, _field.name)} - Default value: {_field.default}\n"
         return conf_msg
+
+    # def change_config(self, new_config: dict) -> None:
+    #     """Change configuration with the input."""
+
+    #     for key, value in new_config.items():
+    #         if hasattr(self, key):
+    #             setattr(self, key, value)
+    #         else:
+    #             raise ValueError(f"Warning: '{key}' is not a valid configuration attribute.")
 
     @classmethod
     def from_dict(cls, values: dict) -> BackendConfiguration:
