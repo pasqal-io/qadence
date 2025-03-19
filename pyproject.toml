@@ -53,6 +53,7 @@ dependencies = [
     "nevergrad",
     "scipy",
     "pyqtorch==1.7.4",
+    "griffe<1.6.1",
     "pyyaml",
     "matplotlib",
     "Arpeggio==2.0.2",
