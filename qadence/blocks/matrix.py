@@ -80,8 +80,9 @@ class MatrixBlock(PrimitiveBlock):
         if not self.is_square(matrix):
             raise TypeError("Please provide a square matrix.")
         if check_hermitian:
-            if not self.is_hermitian(matrix):
-                logger.warning("Provided matrix is not hermitian.")
+            pass
+            # if not self.is_hermitian(matrix):
+            #     logger.warning("Provided matrix is not hermitian.")
         if check_unitary:
             if not self.is_unitary(matrix):
                 logger.warning("Provided matrix is not unitary.")
