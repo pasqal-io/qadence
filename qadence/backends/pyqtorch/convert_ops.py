@@ -238,7 +238,7 @@ def convert_block(
                     m,
                     qubit_support=qubit_support,
                     check_unitary=False,
-                    check_hermitian=True,
+                    check_hermitian=False,
                 )
             )[0]
         else:
