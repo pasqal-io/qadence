@@ -17,6 +17,7 @@ from qadence.blocks import (
     ParametricBlock,
     ParametricControlBlock,
     embedding,
+    parameters,
 )
 from qadence.blocks.block_to_tensor import (
     IMAT,
@@ -60,6 +61,7 @@ from qadence.operations import (
     X,
     Y,
     Z,
+    CRZ,
 )
 from qadence.states import equivalent_state, random_state, zero_state
 from qadence.types import BasisSet, Interaction, ReuploadScaling
@@ -75,99 +77,6 @@ def _calc_mat_vec_wavefunction(
 @pytest.mark.parametrize(
     "projector, exp_projector_mat",
     [
-        (
-            Projector(bra="1", ket="1", qubit_support=0),
-            torch.tensor([[0.0 + 0.0j, 0.0 + 0.0j], [0.0 + 0.0j, 1.0 + 0.0j]]),
-        ),
-        (
-            Projector(bra="10", ket="01", qubit_support=(1, 2)),
-            torch.tensor(
-                [
-                    [
-                        [
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                        ],
-                        [
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                        ],
-                        [
-                            0.0 + 0.0j,
-                            1.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                        ],
-                        [
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                        ],
-                        [
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                        ],
-                        [
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                        ],
-                        [
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            1.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                        ],
-                        [
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                            0.0 + 0.0j,
-                        ],
-                    ]
-                ]
-            ),
-        ),
         (
             N(0),
             (IMAT - ZMAT) / 2.0,
@@ -544,7 +453,7 @@ def _calc_mat_vec_wavefunction(
     ],
 )
 def test_projector_tensor(projector: AbstractBlock, exp_projector_mat: Tensor) -> None:
-    projector_mat = block_to_tensor(projector)
+    projector_mat = block_to_tensor(projector, use_full_support=True)
     assert torch.allclose(projector_mat, exp_projector_mat, atol=1.0e-4)
 
 
@@ -578,18 +487,58 @@ def test_projector_composition_unitaries(
     assert torch.allclose(block_to_tensor(projector), block_to_tensor(exp_projector), atol=ATOL_64)
 
 
+@pytest.mark.parametrize(
+    "projector_decomp, pauli",
+    [
+        (
+            Projector(ket="0", bra="1", qubit_support=0)
+            + Projector(ket="1", bra="0", qubit_support=0),
+            X(0),
+        ),
+        (
+            1j * Projector(ket="0", bra="1", qubit_support=0)
+            - 1j * Projector(ket="1", bra="0", qubit_support=0),
+            Y(0),
+        ),
+        (
+            Projector(ket="0", bra="0", qubit_support=0)
+            - Projector(ket="1", bra="1", qubit_support=0),
+            Z(0),
+        ),
+        (
+            cnot,
+            CNOT(0, 1),
+        ),
+    ],
+)
+def test_projector_hamevo(projector_decomp: AbstractBlock, pauli: AbstractBlock) -> None:
+    tevo = np.random.rand()
+    hamevo_comp = HamEvo(projector_decomp, tevo)
+    hamevo_pauli = HamEvo(pauli, tevo)
+    assert torch.allclose(block_to_tensor(hamevo_comp), block_to_tensor(hamevo_pauli), atol=ATOL_64)
+
+
+@pytest.mark.parametrize("use_full_support", [True, False])
 @given(st.batched_digital_circuits())
 @settings(deadline=None)
-def test_embedded(circ_and_inputs: tuple[QuantumCircuit, dict[str, torch.Tensor]]) -> None:
+def test_embedded(
+    use_full_support: bool, circ_and_inputs: tuple[QuantumCircuit, dict[str, torch.Tensor]]
+) -> None:
     circ, inputs = circ_and_inputs
     ps, embed = embedding(circ.block, to_gate_params=False)
-    m = block_to_tensor(circ.block, inputs)
-    m_embedded = _block_to_tensor_embedded(circ.block, values=embed(ps, inputs))
+    m = block_to_tensor(circ.block, inputs, use_full_support=use_full_support)
+    m_embedded = _block_to_tensor_embedded(
+        circ.block, values=embed(ps, inputs), use_full_support=use_full_support
+    )
+    assert torch.allclose(m, m_embedded)
     zro_state = zero_state(circ.n_qubits)
     wf_run = run(circ, values=inputs)
-    wf_embedded = torch.einsum("bij,kj->bi", m_embedded, zro_state)
-    wf_nonembedded = torch.einsum("bij,kj->bi", m, zro_state)
-    assert torch.allclose(m, m_embedded)
+    if use_full_support:
+        wf_embedded = torch.einsum("bij,kj->bi", m_embedded, zro_state)
+        wf_nonembedded = torch.einsum("bij,kj->bi", m, zro_state)
+    else:
+        wf_embedded = run(circ, values=embed(ps, inputs))
+        wf_nonembedded = wf_run
     assert equivalent_state(wf_run, wf_embedded, atol=ATOL_E6)
     assert equivalent_state(wf_run, wf_nonembedded, atol=ATOL_E6)
 
@@ -858,18 +807,30 @@ def test_block_is_diag(block: AbstractBlock, is_diag_pauli: bool) -> None:
 
 
 @pytest.mark.parametrize("n_qubits", [i for i in range(1, 5)])
-@pytest.mark.parametrize("obs", [total_magnetization, zz_hamiltonian])
+@pytest.mark.parametrize(
+    "obs",
+    [
+        total_magnetization,
+        zz_hamiltonian,
+        variational_ising,
+        lambda n: "x" * chain(Z(0), Z(n - 1)) if n > 1 else "x" * Z(0),
+    ],
+)
 def test_sparse_obs_conversion(n_qubits: int, obs: AbstractBlock) -> None:
     obs = obs(n_qubits)  # type: ignore[operator]
-    sparse_diag = block_to_tensor(obs, tensor_type=TensorType.SPARSEDIAGONAL)
-    true_diag = torch.diag(block_to_tensor(obs, {}, tuple([i for i in range(n_qubits)])).squeeze(0))
-
-    assert torch.allclose(
-        sparse_diag.coalesce().values(), true_diag.to_sparse().coalesce().values()
-    )
-    assert torch.allclose(
-        sparse_diag.coalesce().indices(), true_diag.to_sparse().coalesce().indices()
-    )
+    values = {}
+    if obs.is_parametric:
+        values = {p: torch.rand(1, requires_grad=True) for p in parameters(obs)}
+    sparse_diag = block_to_tensor(obs, values=values, tensor_type=TensorType.SPARSEDIAGONAL)
+    true_diag = torch.diag(block_to_tensor(obs, values).squeeze(0))
+    # to_sparse conversion does not allow automatic differentiation
+    with torch.no_grad():
+        assert torch.allclose(
+            sparse_diag.coalesce().values(), true_diag.to_sparse().coalesce().values()
+        )
+        assert torch.allclose(
+            sparse_diag.coalesce().indices(), true_diag.to_sparse().coalesce().indices()
+        )
 
 
 def test_scaled_kron_hamevo_equal() -> None:

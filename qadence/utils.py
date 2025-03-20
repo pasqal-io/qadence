@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import re
 from collections import Counter
 from functools import partial
 from logging import getLogger
@@ -13,6 +14,9 @@ from torch import Tensor, stack, vmap
 from torch import complex as make_complex
 from torch.linalg import eigvals
 
+from rich.tree import Tree
+
+from qadence.blocks import AbstractBlock
 from qadence.types import Endianness, ResultType, TNumber
 
 if TYPE_CHECKING:
@@ -290,3 +294,48 @@ def one_qubit_projector_matrix(state: str) -> Tensor:
 
 P0 = partial(one_qubit_projector, "0")
 P1 = partial(one_qubit_projector, "1")
+
+
+def block_to_mathematical_expression(block: Tree | AbstractBlock) -> str:
+    """Convert a block to a readable mathematical expression.
+
+        Useful for printing Observables as a mathematical expression.
+
+    Args:
+        block (AbstractBlock): Tree instance.
+
+    Returns:
+        str: A mathematical expression.
+    """
+    block_tree: Tree = block.__rich_tree__() if isinstance(block, AbstractBlock) else block
+    block_title = block_tree.label if isinstance(block_tree.label, str) else ""
+    if "AddBlock" in block_title:
+        block_title = " + ".join(
+            [block_to_mathematical_expression(block_child) for block_child in block_tree.children]
+        )
+    if "KronBlock" in block_title:
+        block_title = " ⊗ ".join(
+            [block_to_mathematical_expression(block_child) for block_child in block_tree.children]
+        )
+    if "mul" in block_title:
+        if "." in block_title:
+            block_title = re.findall("\d+\.\d+", block_title)[0]
+            coeff = float(block_title)
+        else:
+            block_title = re.findall("\d+", block_title)[0]
+            coeff = int(block_title)
+        if coeff == 0:
+            block_title = ""
+        elif coeff == 1:
+            block_title = block_to_mathematical_expression(block_tree.children[0])
+        else:
+            block_title += " * " + block_to_mathematical_expression(block_tree.children[0])
+    first_part = block_title[:3]
+    if first_part in [" + ", " ⊗ ", " * "]:
+        block_title = block_title[3:]
+
+    # if too many trees, add parentheses.
+    nb_children = len(block_tree.children)
+    if nb_children > 1:
+        block_title = "(" + block_title + ")"
+    return block_title

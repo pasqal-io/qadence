@@ -20,3 +20,7 @@ This module implements a `Trainer` class for torch `Modules` and `QuantumModel`.
 ### ::: qadence.ml_tools.train_utils.base_trainer
 
 ### ::: qadence.ml_tools.callbacks.writer_registry
+
+### ::: qadence.ml_tools.information.information_content
+
+### ::: qadence.ml_tools.train_utils.accelerator

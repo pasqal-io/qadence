@@ -7,11 +7,12 @@ from typing import Callable, List, Type, Union
 import numpy as np
 from torch import Tensor, double, ones, rand
 from typing_extensions import Any
+from qadence.parameters import Parameter
 
 from qadence.blocks import AbstractBlock, add, block_is_qubit_hamiltonian
-from qadence.operations import N, X, Y, Z
+from qadence.operations import N, X, Y, Z, H
 from qadence.register import Register
-from qadence.types import Interaction, ObservableTransform, TArray, TParameter
+from qadence.types import Interaction, TArray, TParameter
 
 logger = getLogger(__name__)
 
@@ -239,7 +240,30 @@ def is_numeric(x: Any) -> bool:
 
 @dataclass
 class ObservableConfig:
-    detuning: TDetuning
+    """ObservableConfig is a configuration class for defining the parameters of an observable Hamiltonian."""
+
+    interaction: Interaction | Callable | None = None
+    """
+    The type of interaction.
+
+    Available options from the Interaction enum are:
+            - Interaction.ZZ
+            - Interaction.NN
+            - Interaction.XY
+            - Interaction.XYZ
+
+    Alternatively, a custom interaction function can be defined.
+            Example:
+
+                def custom_int(i: int, j: int):
+                    return X(i) @ X(j) + Y(i) @ Y(j)
+
+                n_qubits = 2
+
+                observable_config = ObservableConfig(interaction=custom_int, scale = 1.0, shift = 0.0)
+                observable = create_observable(register=4, config=observable_config)
+    """
+    detuning: TDetuning | None = None
     """
     Single qubit detuning of the observable Hamiltonian.
 
@@ -249,8 +273,6 @@ class ObservableConfig:
     """The scale by which to multiply the output of the observable."""
     shift: TParameter = 0.0
     """The shift to add to the output of the observable."""
-    transformation_type: ObservableTransform = ObservableTransform.NONE  # type: ignore[assignment]
-    """The type of transformation."""
     trainable_transform: bool | None = None
     """
     Whether to have a trainable transformation on the output of the observable.
@@ -259,10 +281,84 @@ class ObservableConfig:
     If True, the scale and shift are VariationalParameter.
     If False, the scale and shift are FeatureParameter.
     """
+    tag: str | None = None
+    """
+    String to indicate the name tag of the observable.
+
+    Defaults to None, in which case no tag will be applied.
+    """
 
     def __post_init__(self) -> None:
+        if self.interaction is None and self.detuning is None:
+            raise ValueError(
+                "Please provide an interaction and/or detuning for the Observable Hamiltonian."
+            )
+
         if is_numeric(self.scale) and is_numeric(self.shift):
-            assert (
-                self.trainable_transform is None
-            ), f"If scale and shift are numbers, trainable_transform must be None. \
-            But got: {self.trainable_transform}"
+            assert self.trainable_transform is None, (
+                "If scale and shift are numbers, trainable_transform must be None."
+                f"But got: {self.trainable_transform}"
+            )
+
+        # trasform the scale and shift into parameters
+        if self.trainable_transform is not None:
+            self.shift = Parameter(name=self.shift, trainable=self.trainable_transform)
+            self.scale = Parameter(name=self.scale, trainable=self.trainable_transform)
+        else:
+            self.shift = Parameter(self.shift)
+            self.scale = Parameter(self.scale)
+
+
+def total_magnetization_config(
+    scale: TParameter = 1.0,
+    shift: TParameter = 0.0,
+    trainable_transform: bool | None = None,
+) -> ObservableConfig:
+    return ObservableConfig(
+        detuning=Z,
+        scale=scale,
+        shift=shift,
+        trainable_transform=trainable_transform,
+        tag="Total Magnetization",
+    )
+
+
+def zz_hamiltonian_config(
+    scale: TParameter = 1.0,
+    shift: TParameter = 0.0,
+    trainable_transform: bool | None = None,
+) -> ObservableConfig:
+    return ObservableConfig(
+        interaction=Interaction.ZZ,
+        detuning=Z,
+        scale=scale,
+        shift=shift,
+        trainable_transform=trainable_transform,
+        tag="ZZ Hamiltonian",
+    )
+
+
+def ising_hamiltonian_config(
+    scale: TParameter = 1.0,
+    shift: TParameter = 0.0,
+    trainable_transform: bool | None = None,
+) -> ObservableConfig:
+
+    def ZZ_Z_hamiltonian(i: int, j: int) -> AbstractBlock:
+        result = Z(i) @ Z(j)
+
+        if i == 0:
+            result += Z(j)
+        elif i == 1 and j == 2:
+            result += Z(0)
+
+        return result
+
+    return ObservableConfig(
+        interaction=ZZ_Z_hamiltonian,
+        detuning=X,
+        scale=scale,
+        shift=shift,
+        trainable_transform=trainable_transform,
+        tag="Ising Hamiltonian",
+    )

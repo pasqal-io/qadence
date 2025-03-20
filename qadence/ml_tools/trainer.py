@@ -4,14 +4,11 @@ import copy
 from itertools import islice
 from logging import getLogger
 from typing import Any, Callable, Iterable, cast
-
-import torch
 from nevergrad.optimization.base import Optimizer as NGOptimizer
-from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, TimeRemainingColumn
-from torch import complex128, float32, float64, nn, optim
-from torch import device as torch_device
-from torch import dtype as torch_dtype
+import torch
+from torch import nn, optim
 from torch.utils.data import DataLoader
+from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, TimeRemainingColumn
 
 from qadence.ml_tools.config import TrainConfig
 from qadence.ml_tools.data import DictDataLoader, OptimizeResult, data_to_device
@@ -20,6 +17,7 @@ from qadence.ml_tools.optimize_step import optimize_step, update_ng_parameters
 from qadence.ml_tools.stages import TrainingStage
 
 from .train_utils.base_trainer import BaseTrainer
+from .train_utils.accelerator import Accelerator
 
 logger = getLogger("ml_tools")
 
@@ -38,11 +36,6 @@ class Trainer(BaseTrainer):
     Attributes:
         current_epoch (int): The current epoch number.
         global_step (int): The global step across all epochs.
-        log_device (str): Device for logging, default is "cpu".
-        device (torch_device): Device used for computation.
-        dtype (torch_dtype | None): Data type used for computation.
-        data_dtype (torch_dtype | None): Data type for data.
-            Depends on the model's data type.
 
     Inherited Attributes:
         use_grad (bool): Indicates if gradients are used for optimization. Default is True.
@@ -240,8 +233,6 @@ class Trainer(BaseTrainer):
         val_dataloader: DataLoader | DictDataLoader | None = None,
         test_dataloader: DataLoader | DictDataLoader | None = None,
         optimize_step: Callable = optimize_step,
-        device: torch_device | None = None,
-        dtype: torch_dtype | None = None,
         max_batches: int | None = None,
     ):
         """
@@ -257,8 +248,6 @@ class Trainer(BaseTrainer):
             val_dataloader (DataLoader | DictDataLoader |  None): DataLoader for validation data.
             test_dataloader (DataLoader | DictDataLoader |  None): DataLoader for test data.
             optimize_step (Callable): Function to execute an optimization step.
-            device (torch_device): Device to use for computation.
-            dtype (torch_dtype): Data type for computation.
             max_batches (int | None): Maximum number of batches to process per epoch.
                 This is only valid in case of finite TensorDataset dataloaders.
                 if max_batches is not None, the maximum number of batches used will
@@ -278,13 +267,21 @@ class Trainer(BaseTrainer):
         )
         self.current_epoch: int = 0
         self.global_step: int = 0
-        self.log_device: str = "cpu" if device is None else device
-        self.device: torch_device | None = device
-        self.dtype: torch_dtype | None = dtype
-        self.data_dtype: torch_dtype | None = None
-        self.stop_training: bool = False
-        if self.dtype:
-            self.data_dtype = float64 if (self.dtype == complex128) else float32
+        self._stop_training: torch.Tensor = torch.tensor(0, dtype=torch.int)
+        self.progress: Progress | None = None
+
+        # Integration with Accelerator:
+        self.accelerator = Accelerator(
+            backend=config.backend,
+            nprocs=config.nprocs,
+            compute_setup=config.compute_setup,
+            dtype=config.dtype,
+            log_setup=config.log_setup,
+        )
+        # Decorate the unbound Trainer.fit method with accelerator.distribute.
+        # We use __get__ to bind the decorated method to the current instance,
+        # ensuring that 'self' is passed only once when self.fit is called.
+        self.fit = self.accelerator.distribute(Trainer.fit).__get__(self, Trainer)  # type: ignore[method-assign]
 
     def fit(
         self,
@@ -323,26 +320,30 @@ class Trainer(BaseTrainer):
         The callback_manager.start_training takes care of loading checkpoint,
         and setting up the writer.
         """
-        self.stop_training = False
-        self.config_manager.initialize_config()
+        self._stop_training = torch.tensor(
+            0, dtype=torch.int, device=self.accelerator.execution.device
+        )
+        # initalize config in the first process, and broadcast it to all processes
+        if self.accelerator.rank == 0:
+            self.config_manager.initialize_config()
+        self.config_manager = self.accelerator.broadcast(self.config_manager, src=0)
         self.callback_manager.start_training(trainer=self)
 
-        # Move model to device
-        if isinstance(self.model, nn.DataParallel):
-            self.model = self.model.module.to(device=self.device, dtype=self.dtype)
-        else:
-            self.model = self.model.to(device=self.device, dtype=self.dtype)
-
-        # Progress bar for training visualization
-        self.progress: Progress = Progress(
-            TextColumn("[progress.description]{task.description}"),
-            BarColumn(),
-            TaskProgressColumn(),
-            TimeRemainingColumn(elapsed_when_finished=True),
+        # Integration with Accelerator: prepare the model, optimizer, and dataloaders.
+        (self.model, self.optimizer, self.train_dataloader, self.val_dataloader) = (
+            self.accelerator.prepare(
+                self.model, self.optimizer, self.train_dataloader, self.val_dataloader
+            )
         )
 
-        # Quick Fix for iteration 0
-        self._reset_model_and_opt()
+        # Progress bar for training visualization
+        if self.accelerator.world_size == 1:
+            self.progress = Progress(
+                TextColumn("[progress.description]{task.description}"),
+                BarColumn(),
+                TaskProgressColumn(),
+                TimeRemainingColumn(elapsed_when_finished=True),
+            )
 
         # Run validation at the start if specified in the configuration
         self.perform_val = self.config.val_every > 0
@@ -356,7 +357,11 @@ class Trainer(BaseTrainer):
     @BaseTrainer.callback("train")
     def _train(self) -> list[list[tuple[torch.Tensor, dict[str, Any]]]]:
         """
-        Runs the main training loop, iterating over epochs.
+        Runs the main training loop over multiple epochs.
+
+        This method sets up the training process by performing any necessary pre-training
+        actions (via `on_train_start`), configuring progress tracking (if available), and then
+        iteratively calling `_train_epoch` to run through the epochs.
 
         Returns:
             list[list[tuple[torch.Tensor, dict[str, Any]]]]: Training loss
@@ -365,44 +370,96 @@ class Trainer(BaseTrainer):
                 Epochs  -> Training Batches      -> (loss, metrics)
         """
         self.on_train_start()
-        train_losses = []
-        val_losses = []
+        epoch_start, epoch_end = (
+            self.global_step,
+            self.global_step + self.config_manager.config.max_iter + 1,
+        )
 
-        with self.progress:
-            train_task = self.progress.add_task(
-                "Training", total=self.config_manager.config.max_iter
-            )
-            if self.perform_val:
-                val_task = self.progress.add_task(
-                    "Validation",
-                    total=(self.config_manager.config.max_iter + 1) / self.config.val_every,
+        if self.accelerator.world_size == 1 and self.progress:
+            # Progress setup is only available for non-spawned training.
+            with self.progress:
+                train_task = self.progress.add_task(
+                    "Training", total=self.config_manager.config.max_iter
                 )
-            for epoch in range(
-                self.global_step, self.global_step + self.config_manager.config.max_iter + 1
-            ):
-                if not self.stop_training:
-                    try:
-                        self.current_epoch = epoch
-                        self.on_train_epoch_start()
-                        train_epoch_loss_metrics = self.run_training(self.train_dataloader)
-                        train_losses.append(train_epoch_loss_metrics)
-                        self.on_train_epoch_end(train_epoch_loss_metrics)
-
-                        # Run validation periodically if specified
-                        if self.perform_val and self.current_epoch % self.config.val_every == 0:
-                            self.on_val_epoch_start()
-                            val_epoch_loss_metrics = self.run_validation(self.val_dataloader)
-                            val_losses.append(val_epoch_loss_metrics)
-                            self.on_val_epoch_end(val_epoch_loss_metrics)
-                            self.progress.update(val_task, advance=1)
-
-                        self.progress.update(train_task, advance=1)
-                    except KeyboardInterrupt:
-                        logger.info("Terminating training gracefully after the current iteration.")
-                        break
+                if self.perform_val:
+                    val_task = self.progress.add_task(
+                        "Validation",
+                        total=(self.config_manager.config.max_iter + 1) / self.config.val_every,
+                    )
+                else:
+                    val_task = None
+                train_losses, val_losses = self._train_epochs(
+                    epoch_start, epoch_end, train_task, val_task
+                )
+        else:
+            train_losses, val_losses = self._train_epochs(epoch_start, epoch_end)
 
         self.on_train_end(train_losses, val_losses)
         return train_losses
+
+    def _train_epochs(
+        self,
+        epoch_start: int,
+        epoch_end: int,
+        train_task: int | None = None,
+        val_task: int | None = None,
+    ) -> tuple[
+        list[list[tuple[torch.Tensor, dict[str, Any]]]],
+        list[list[tuple[torch.Tensor, dict[str, Any]]]],
+    ]:
+        """
+        Executes the training loop for a series of epochs.
+
+        Args:
+            epoch_start (int): The starting epoch index.
+            epoch_end (int): The ending epoch index (non-inclusive).
+            train_task (int | None, optional): The progress bar task ID for training updates.
+                If provided, the progress bar will be updated after each epoch. Defaults to None.
+            val_task (int | None, optional): The progress bar task ID for validation updates.
+                If provided and validation is enabled, the progress bar will be updated after each validation run.
+                Defaults to None.
+
+        Returns:
+            list[list[tuple[torch.Tensor, dict[str, Any]]]]: A tuple of
+            Training loss metrics for all epochs.
+                list    -> list                  -> tuples
+                Epochs  -> Training Batches      -> (loss, metrics)
+            And Validation loss metrics for all epochs
+                list    -> list                  -> tuples
+                Epochs  -> Training Batches      -> (loss, metrics)
+        """
+        train_losses = []
+        val_losses = []
+
+        # Iterate over the epochs
+        for epoch in range(epoch_start, epoch_end):
+            if not self.stop_training():
+                try:
+                    self.current_epoch = epoch
+                    self.on_train_epoch_start()
+                    train_epoch_loss_metrics = self.run_training(self.train_dataloader)
+                    train_losses.append(train_epoch_loss_metrics)
+                    self.on_train_epoch_end(train_epoch_loss_metrics)
+
+                    # Run validation periodically if specified
+                    if self.perform_val and (epoch % self.config.val_every == 0):
+                        self.on_val_epoch_start()
+                        val_epoch_loss_metrics = self.run_validation(self.val_dataloader)
+                        val_losses.append(val_epoch_loss_metrics)
+                        self.on_val_epoch_end(val_epoch_loss_metrics)
+                        if val_task is not None:
+                            self.progress.update(val_task, advance=1)  # type: ignore[union-attr]
+
+                    if train_task is not None:
+                        self.progress.update(train_task, advance=1)  # type: ignore[union-attr]
+                except KeyboardInterrupt:
+                    self._stop_training.fill_(1)
+            else:
+                if self.accelerator.rank == 0:
+                    logger.info("Terminating training gracefully after the current iteration.")
+                self.accelerator.finalize()
+                break
+        return train_losses, val_losses
 
     @BaseTrainer.callback("train_epoch")
     def run_training(self, dataloader: DataLoader) -> list[tuple[torch.Tensor, dict[str, Any]]]:
@@ -419,12 +476,12 @@ class Trainer(BaseTrainer):
         """
         self.model.train()
         train_epoch_loss_metrics = []
-        # Quick Fix for iteration 0
-        self._reset_model_and_opt()
 
         for batch in self._batch_iter(dataloader, self.num_training_batches):
             self.on_train_batch_start(batch)
             train_batch_loss_metrics = self.run_train_batch(batch)
+            if self.config.all_reduce_metrics:
+                train_batch_loss_metrics = self._aggregate_result(train_batch_loss_metrics)
             train_epoch_loss_metrics.append(train_batch_loss_metrics)
             self.on_train_batch_end(train_batch_loss_metrics)
 
@@ -458,8 +515,8 @@ class Trainer(BaseTrainer):
                 optimizer=self.optimizer,
                 loss_fn=self.loss_fn,
                 xs=batch,
-                device=self.device,
-                dtype=self.data_dtype,
+                device=self.accelerator.execution.device,
+                dtype=self.accelerator.execution.data_dtype,
             )
         else:
             # Perform optimization using Nevergrad
@@ -494,6 +551,8 @@ class Trainer(BaseTrainer):
         for batch in self._batch_iter(dataloader, self.num_validation_batches):
             self.on_val_batch_start(batch)
             val_batch_loss_metrics = self.run_val_batch(batch)
+            if self.config.all_reduce_metrics:
+                val_batch_loss_metrics = self._aggregate_result(val_batch_loss_metrics)
             val_epoch_loss_metrics.append(val_batch_loss_metrics)
             self.on_val_batch_end(val_batch_loss_metrics)
 
@@ -568,6 +627,9 @@ class Trainer(BaseTrainer):
         """
         Yields batches from the provided dataloader.
 
+        The batch of data is also moved
+        to the correct device and dtype using accelerator.prepare.
+
         Args:
             dataloader ([DataLoader]): The dataloader to iterate over.
             num_batches (int): The maximum number of batches to yield.
@@ -581,9 +643,7 @@ class Trainer(BaseTrainer):
                 yield None
         else:
             for batch in islice(dataloader, num_batches):
-                # batch is moved to device inside optimize step
-                # batch = data_to_device(batch, device=self.device, dtype=self.data_dtype)
-                yield batch
+                yield self.accelerator.prepare_batch(batch)
 
     def _modify_batch_end_loss_metrics(
         self, loss_metrics: tuple[torch.Tensor, dict[str, Any]]
@@ -609,27 +669,43 @@ class Trainer(BaseTrainer):
                 return loss, updated_metrics
         return loss_metrics
 
-    def _reset_model_and_opt(self) -> None:
+    def _aggregate_result(
+        self, result: tuple[torch.Tensor, dict[str, Any]]
+    ) -> tuple[torch.Tensor, dict[str, Any]]:
         """
-        Save model_old and optimizer_old for epoch 0.
+        Aggregates the loss and metrics using the Accelerator's all_reduce_dict method if aggregation is enabled.
 
-        This allows us to create a copy of model
-        and optimizer before running the optimization.
+        Args:
+            result:     (tuple[torch.Tensor, dict[str, Any]])
+                            The result consisting of loss and metrics.For more details,
+                            look at the signature of build_optimize_result.
 
-        We do this because optimize step provides loss, metrics
-        before step of optimization
-        To align them with model/optimizer correctly, we checkpoint
-        the older copy of the model.
+        Returns:
+            tuple[torch.Tensor, dict[str, Any]]: The aggregated loss and metrics.
         """
+        loss, metrics = result
+        if self.config.all_reduce_metrics:
+            reduced = self.accelerator.all_reduce_dict({"loss": loss, **metrics})
+            loss = reduced.pop("loss")
+            metrics = reduced
+            return loss, metrics
+        else:
+            return loss, metrics
 
-        # TODO: review optimize_step to provide iteration aligned model and loss.
-        try:
-            # Deep copy model and optimizer to maintain checkpoints
-            self.model_old = copy.deepcopy(self.model)
-            self.optimizer_old = copy.deepcopy(self.optimizer)
-        except Exception:
-            self.model_old = self.model
-            self.optimizer_old = self.optimizer
+    def stop_training(self) -> bool:
+        """
+        Helper function to indicate if the training should be stopped.
+
+        We all_reduce the indicator across all processes to ensure all processes are stopped.
+
+        Notes:
+            self._stop_training indicator indicates if the training should be stopped.
+            0 is continue. 1 is stop.
+        """
+        _stop_training = self.accelerator.all_reduce_dict(
+            {"indicator": self._stop_training}, op="max"
+        )
+        return bool(_stop_training["indicator"] > 0)
 
     def build_optimize_result(
         self,
@@ -710,7 +786,13 @@ class Trainer(BaseTrainer):
 
         # Store the optimization result
         self.opt_result = OptimizeResult(
-            self.current_epoch, self.model_old, self.optimizer_old, loss, metrics
+            self.current_epoch,
+            self.model,
+            self.optimizer,
+            loss,
+            metrics,
+            rank=self.accelerator.rank,
+            device=self.accelerator.execution.device,
         )
 
     def get_ic_grad_bounds(
@@ -808,9 +890,7 @@ class Trainer(BaseTrainer):
 
         batch = next(iter(self._batch_iter(dataloader, num_batches=1)))
 
-        xs = data_to_device(batch, device=self.device, dtype=self.data_dtype)
-
-        ic = InformationContent(self.model, self.loss_fn, xs, epsilons)
+        ic = InformationContent(self.model, self.loss_fn, batch, epsilons)
 
         max_ic_lower_bound, max_ic_upper_bound = ic.get_grad_norm_bounds_max_IC()
         sensitivity_ic_upper_bound = ic.get_grad_norm_bounds_sensitivity_IC(eta)

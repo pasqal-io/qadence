@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Callable
 import numpy as np
 from sympy import Basic
 
@@ -24,7 +25,6 @@ from qadence.constructors.iia import iia
 from qadence.measurements import Measurements
 from qadence.noise import NoiseHandler
 from qadence.operations import CNOT, RX, RY, I, N, Z
-from qadence.parameters import Parameter
 from qadence.register import Register
 from qadence.types import (
     AnsatzType,
@@ -33,10 +33,10 @@ from qadence.types import (
     InputDiffMode,
     Interaction,
     MultivariateStrategy,
-    ObservableTransform,
     ReuploadScaling,
     Strategy,
     TParameter,
+    TArray,
 )
 
 from .config import AnsatzConfig, FeatureMapConfig
@@ -706,35 +706,6 @@ def _interleave_ansatz_in_fm(
     return chain(*full_fm)
 
 
-def load_observable_transformations(config: ObservableConfig) -> tuple[Parameter, Parameter]:
-    """
-    Get the observable shifting and scaling factors.
-
-    Args:
-        config (ObservableConfig): Observable configuration.
-
-    Returns:
-        tuple[Parameter, Parameter]: The observable shifting and scaling factors.
-    """
-    shift = config.shift
-    scale = config.scale
-    if config.trainable_transform is not None:
-        shift = Parameter(name=shift, trainable=config.trainable_transform)
-        scale = Parameter(name=scale, trainable=config.trainable_transform)
-    else:
-        shift = Parameter(shift)
-        scale = Parameter(scale)
-    return scale, shift
-
-
-ObservableTransformMap = {
-    ObservableTransform.RANGE: lambda detuning, scale, shift: (
-        (shift, shift - scale) if detuning is N else (0.5 * (shift - scale), 0.5 * (scale + shift))
-    ),
-    ObservableTransform.SCALE: lambda _, scale, shift: (scale, shift),
-}
-
-
 def _global_identity(register: int | Register) -> KronBlock:
     """Create a global identity block."""
     return kron(
@@ -742,7 +713,7 @@ def _global_identity(register: int | Register) -> KronBlock:
     )
 
 
-def observable_from_config(
+def create_observable(
     register: int | Register,
     config: ObservableConfig,
 ) -> AbstractBlock:
@@ -756,37 +727,19 @@ def observable_from_config(
     Returns:
         AbstractBlock: The observable block.
     """
-    scale, shift = load_observable_transformations(config)
-    return create_observable(register, config.detuning, scale, shift, config.transformation_type)
-
-
-def create_observable(
-    register: int | Register,
-    detuning: TDetuning = Z,
-    scale: TParameter | None = None,
-    shift: TParameter | None = None,
-    transformation_type: ObservableTransform = ObservableTransform.NONE,  # type: ignore[assignment]
-) -> AbstractBlock:
-    """
-    Create an observable block.
-
-    Args:
-        register (int | Register): Number of qubits or a register object.
-        detuning: The type of detuning.
-        scale: A parameter for the scale.
-        shift: A parameter for the shift.
-
-    Returns:
-        AbstractBlock: The observable block.
-    """
-    if transformation_type == ObservableTransform.RANGE:
-        scale, shift = ObservableTransformMap[transformation_type](detuning, scale, shift)  # type: ignore[index]
-    shifting_term: AbstractBlock = shift * _global_identity(register)  # type: ignore[operator]
-    detuning_hamiltonian: AbstractBlock = scale * hamiltonian_factory(  # type: ignore[operator]
+    shifting_term: AbstractBlock = config.shift * _global_identity(register)  # type: ignore[operator]
+    detuning_hamiltonian: AbstractBlock = config.scale * hamiltonian_factory(  # type: ignore[operator]
         register=register,
-        detuning=detuning,
+        interaction=config.interaction,
+        detuning=config.detuning,
     )
-    return add(shifting_term, detuning_hamiltonian)
+
+    obs: AbstractBlock = add(shifting_term, detuning_hamiltonian)
+
+    if isinstance(config.tag, str):
+        tag(obs, config.tag)
+
+    return obs
 
 
 def build_qnn_from_configs(
@@ -844,11 +797,10 @@ def build_qnn_from_configs(
     circ = QuantumCircuit(register, *blocks)
 
     observable: AbstractBlock | list[AbstractBlock] = (
-        [observable_from_config(register=register, config=cfg) for cfg in observable_config]
+        [create_observable(register=register, config=cfg) for cfg in observable_config]
         if isinstance(observable_config, list)
-        else observable_from_config(register=register, config=observable_config)
+        else create_observable(register=register, config=observable_config)
     )
-
     ufa = QNN(
         circ,
         observable,

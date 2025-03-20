@@ -445,22 +445,18 @@ class InputDiffMode(StrEnum):
     """Central finite differencing."""
 
 
-class ObservableTransform:
-    """Observable transformation type."""
-
-    SCALE = "scale"
-    """Use the given values as scale and shift."""
-    RANGE = "range"
-    """Use the given values as min and max."""
-    NONE = "none"
-    """No transformation."""
-
-
 class ExperimentTrackingTool(StrEnum):
     TENSORBOARD = "tensorboard"
     """Use the tensorboard experiment tracker."""
     MLFLOW = "mlflow"
     """Use the ml-flow experiment tracker."""
+
+
+class ExecutionType(StrEnum):
+    TORCHRUN = "torchrun"
+    """Torchrun based distribution execution."""
+    DEFAULT = "default"
+    """Default distribution execution."""
 
 
 LoggablePlotFunction = Callable[[Module, int], tuple[str, Figure]]
