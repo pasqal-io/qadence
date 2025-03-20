@@ -277,7 +277,7 @@ def test_default_configuration() -> None:
     [BackendName.PYQTORCH, BackendName.PULSER],
 )
 def test_custom_configuration(backend: str) -> None:
-    block = RX (0, PI)
+    block = RX(0, PI)
     circuit = QuantumCircuit(1, block)
     model = QuantumModel(circuit, backend=backend, diff_mode=DiffMode.GPSR)
     if isinstance(model.backend, DifferentiableBackend):
