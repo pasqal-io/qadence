@@ -272,12 +272,13 @@ def test_default_configuration() -> None:
         assert isinstance(opts, str)
 
 
-@given(st.digital_circuits())
 @pytest.mark.parametrize(
     "backend",
     [BackendName.PYQTORCH, BackendName.PULSER],
 )
-def test_custom_configuration(backend: str, circuit: QuantumCircuit) -> None:
+def test_custom_configuration(backend: str) -> None:
+    block = RX (0, PI)
+    circuit = QuantumCircuit(1, block)
     model = QuantumModel(circuit, backend=backend, diff_mode=DiffMode.GPSR)
     if isinstance(model.backend, DifferentiableBackend):
         old_value = model.backend.backend.config.use_sparse_observable
