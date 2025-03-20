@@ -301,6 +301,12 @@ def test_model_inputs_in_observable() -> None:
     assert m.inputs == [w]
 
 
+@given(st.digital_circuits())
+def test_model_config(circuit: QuantumCircuit) -> None:
+    model = QuantumModel(circuit)
+    assert isinstance(model.show_config, str)
+
+
 @given(st.restricted_circuits())
 @settings(deadline=None)
 def test_run_for_different_backends(circuit: QuantumCircuit) -> None:

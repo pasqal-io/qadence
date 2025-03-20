@@ -59,6 +59,9 @@ def test_parameters(parametric_circuit: QuantumCircuit) -> None:
     vparams = model.vparams
     assert isinstance(vparams, OrderedDict)
 
+    params = model.params
+    assert isinstance(params, OrderedDict)
+
     trainables: list[Parameter]
     trainables = [p for p in circ.parameters() if not p.is_number and p.trainable]  # type: ignore
     assert model.num_vparams == len(trainables)
