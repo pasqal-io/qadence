@@ -8,7 +8,7 @@ from qadence.engines.differentiable_backend import (
     DifferentiableBackend as DifferentiableBackendInterface,
 )
 from qadence.engines.torch.differentiable_expectation import DifferentiableExpectation
-from qadence.extensions import get_gpsr_fns
+from qadence.backends.parameter_shift_rules import general_psr
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.noise import NoiseHandler
@@ -76,10 +76,7 @@ class DifferentiableBackend(DifferentiableBackendInterface):
         elif self.diff_mode == DiffMode.ADJOINT:
             expectation = differentiable_expectation.adjoint
         else:
-            try:
-                fns = get_gpsr_fns()
-                psr_fn = fns[self.diff_mode]
-            except KeyError:
-                raise ValueError(f"{self.diff_mode} differentiation mode is not supported")
-            expectation = partial(differentiable_expectation.psr, psr_fn=psr_fn, **self.psr_args)
+            expectation = partial(
+                differentiable_expectation.psr, psr_fn=general_psr, **self.psr_args
+            )
         return expectation()

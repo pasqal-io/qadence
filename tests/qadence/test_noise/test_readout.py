@@ -7,7 +7,7 @@ import torch
 from sympy import acos
 
 import qadence as qd
-from qadence import BackendName, QuantumModel
+from qadence import BackendName, QuantumModel, DiffMode
 from qadence.blocks import (
     AbstractBlock,
     add,
@@ -70,7 +70,7 @@ def test_readout_error_quantum_model(
     block: AbstractBlock,
 ) -> None:
     backend = BackendName.PYQTORCH
-    diff_mode = "ad"
+    diff_mode = DiffMode.AD
     model = QuantumModel(
         QuantumCircuit(block.n_qubits, block), backend=backend, diff_mode=diff_mode
     )

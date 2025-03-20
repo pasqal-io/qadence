@@ -8,9 +8,17 @@ from torch import Tensor
 
 from qadence.types import PI
 from qadence.utils import _round_complex
+from qadence.backends.agpsr_utils import calculate_optimal_shifts
 
 
-def general_psr(spectrum: Tensor, n_eqs: int | None = None, shift_prefac: float = 0.5) -> Callable:
+def general_psr(
+    spectrum: Tensor,
+    n_eqs: int | None = None,
+    shift_prefac: float | None = 0.5,
+    gap_step: float = 1.0,
+    lb: float | None = None,
+    ub: float | None = None,
+) -> Callable:
     """Define whether single_gap_psr or multi_gap_psr is used.
 
     Args:
@@ -24,16 +32,17 @@ def general_psr(spectrum: Tensor, n_eqs: int | None = None, shift_prefac: float 
             concerned operation.
     """
     diffs = _round_complex(spectrum - spectrum.reshape(-1, 1))
-    sorted_unique_spectral_gaps = torch.unique(torch.abs(torch.tril(diffs)))
+    orig_unique_spectral_gaps = torch.unique(torch.abs(torch.tril(diffs)))
 
     # We have to filter out zeros
-    sorted_unique_spectral_gaps = sorted_unique_spectral_gaps[sorted_unique_spectral_gaps > 0]
-    n_eqs = (
-        len(sorted_unique_spectral_gaps)
-        if n_eqs is None
-        else min(n_eqs, len(sorted_unique_spectral_gaps))
-    )
-    sorted_unique_spectral_gaps = torch.tensor(list(sorted_unique_spectral_gaps)[:n_eqs])
+    orig_unique_spectral_gaps = orig_unique_spectral_gaps[orig_unique_spectral_gaps > 0]
+
+    if n_eqs is None:
+        n_eqs = len(orig_unique_spectral_gaps)
+        sorted_unique_spectral_gaps = orig_unique_spectral_gaps
+    else:
+        sorted_unique_spectral_gaps = torch.arange(0, n_eqs) * gap_step
+        sorted_unique_spectral_gaps[0] = 0.001
 
     if n_eqs == 1:
         return partial(
@@ -46,6 +55,8 @@ def general_psr(spectrum: Tensor, n_eqs: int | None = None, shift_prefac: float 
             multi_gap_psr,
             spectral_gaps=sorted_unique_spectral_gaps,
             shift_prefac=shift_prefac,
+            lb=lb,
+            ub=ub,
         )
 
 
@@ -93,7 +104,9 @@ def multi_gap_psr(
     param_dict: dict[str, Tensor],
     param_name: str,
     spectral_gaps: Tensor,
-    shift_prefac: float = 0.5,
+    shift_prefac: float | None = 0.5,
+    lb: float | None = None,
+    ub: float | None = None,
 ) -> Tensor:
     """Implements multi-gap multi-qubit GPSR rule.
 
@@ -113,10 +126,16 @@ def multi_gap_psr(
     n_eqs = len(spectral_gaps)
     batch_size = max(t.size(0) for t in param_dict.values())
 
-    # get shift values
-    shifts = shift_prefac * torch.linspace(
-        PI / 2 - PI / 4, PI / 2 + PI / 5, n_eqs
-    )  # breaking the symmetry of sampling range around PI/2
+    # get shift values - values minimize the variance of expectation
+    if shift_prefac is not None:
+        # set shift values manually
+        shifts = shift_prefac * torch.linspace(
+            PI / 2 - PI / 4, PI / 2 + PI / 5, n_eqs
+        )  # breaking the symmetry of sampling range around PI/2
+    else:
+        # calculate optimal shift values
+        shifts = calculate_optimal_shifts(n_eqs, spectral_gaps, lb, ub)
+
     device = torch.device("cpu")
     try:
         device = [v.device for v in param_dict.values()][0]

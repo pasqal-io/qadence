@@ -108,14 +108,6 @@ def _supported_gates(backend_name: str) -> list[TAbstractBlock]:
     return [getattr(operations, gate) for gate in _supported_gates]
 
 
-def _gpsr_fns() -> dict:
-    """Fallback function for native Qadence GPSR functions if extensions is not present."""
-    # avoid circular import
-    from qadence.backends.gpsr import general_psr
-
-    return {DiffMode.GPSR: general_psr}
-
-
 def _validate_diff_mode(backend: Backend, diff_mode: DiffMode) -> None:
     """Fallback function for native Qadence diff_mode if extensions is not present."""
     if not backend.supports_ad and diff_mode == DiffMode.AD:
@@ -152,11 +144,9 @@ try:
     available_backends = getattr(module, "available_backends")
     available_engines = getattr(module, "available_engines")
     supported_gates = getattr(module, "supported_gates")
-    get_gpsr_fns = getattr(module, "gpsr_fns")
     set_backend_config = getattr(module, "set_backend_config")
 except ModuleNotFoundError:
     available_backends = _available_backends
     available_engines = _available_engines
     supported_gates = _supported_gates
-    get_gpsr_fns = _gpsr_fns
     set_backend_config = _set_backend_config
