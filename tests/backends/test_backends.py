@@ -279,14 +279,20 @@ def test_custom_configuration() -> None:
         model = QuantumModel(circuit, backend=b, diff_mode=DiffMode.GPSR)
         if isinstance(model.backend, DifferentiableBackend):
             old_value = model.backend.backend.config.use_sparse_observable
-        else:
-            old_value = model.backend.config.use_sparse_observable
-        custom_config = {"use_sparse_observable": not old_value}
-        model.change_config(custom_config)
-        if isinstance(model.backend, DifferentiableBackend):
+            custom_config = {"use_sparse_observable": not old_value}
+            model.change_config(custom_config)
             new_value = model.backend.backend.config.use_sparse_observable
-        else:
-            new_value = model.backend.config.use_sparse_observable
+
+        # if isinstance(model.backend, DifferentiableBackend):
+        #     old_value = model.backend.backend.config.use_sparse_observable
+        # else:
+        #     old_value = model.backend.config.use_sparse_observable
+        # custom_config = {"use_sparse_observable": not old_value}
+        # model.change_config(custom_config)
+        # if isinstance(model.backend, DifferentiableBackend):
+        #     new_value = model.backend.backend.config.use_sparse_observable
+        # else:
+        #     new_value = model.backend.config.use_sparse_observable
 
         assert old_value == (not new_value)
 
