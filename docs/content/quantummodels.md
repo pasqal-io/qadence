@@ -116,9 +116,9 @@ The configuration of the quantum model can be changed by passing `options_names`
 
 ```python exec="on" source="material-block" result="json" session="quantum-model"
 # change dropout_probability from 0 to 0.3
-custom_model.change_config({"dropout_probability": 0.3})
+model.change_config({"dropout_probability": 0.3})
 # shows modified configuration
-print(custom_model.show_config) # markdown-exec: hide
+print(model.show_config) # markdown-exec: hide
 ```
 
 ## Model output
