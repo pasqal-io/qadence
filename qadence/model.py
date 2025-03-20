@@ -186,16 +186,12 @@ class QuantumModel(nn.Module):
         """Attain current quantum model configurations."""
         if isinstance(self.backend, DifferentiableBackend):
             current_config = self.backend.backend.config
-        else:
-            current_config = self.backend.config
         return BackendConfiguration.available_options(current_config)
 
     def change_config(self, new_config: dict) -> None:
         """Change configuration with the input."""
         if isinstance(self.backend, DifferentiableBackend):
             current_config = self.backend.backend.config
-        else:
-            current_config = self.backend.config
         BackendConfiguration.change_config(current_config, new_config)
 
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:

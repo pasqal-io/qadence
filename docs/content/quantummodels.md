@@ -109,23 +109,16 @@ backend=BackendName.PYQTORCH
 
 model = QuantumModel(circuit, backend=backend, diff_mode=DiffMode.GPSR)
 # Check your available configuration options and current values
-print(f"{model.show_config=}") # markdown-exec: hide
+print(model.show_config) # markdown-exec: hide
 ```
 
 The configuration of the quantum model can be changed by passing `options_names` and `value` in dictionary format. You can update the existing configuration values using `model.change_config()`.
 
 ```python exec="on" source="material-block" result="json" session="quantum-model"
-default_model = QuantumModel(circuit, backend=backend, diff_mode=DiffMode.GPSR)
-# shows default configuration
-print(f"{default_model.show_config=}") # markdown-exec: hide
-
-# change dropout_probability from 0 to 0.1
-custom_model = QuantumModel(circuit, backend=backend, diff_mode=DiffMode.GPSR, configuration = {"dropout_probability": 0.1})
-# shows modified configuration
-print(f"{custom_model.show_config=}") # markdown-exec: hide
-
+# change dropout_probability from 0 to 0.3
 custom_model.change_config({"dropout_probability": 0.3})
-print(f"{custom_model.show_config=}") # markdown-exec: hide
+# shows modified configuration
+print(custom_model.show_config) # markdown-exec: hide
 ```
 
 ## Model output
