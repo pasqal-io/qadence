@@ -63,7 +63,7 @@ print(f"ex = {ex.detach()}") # markdown-exec: hide
 
 By default, the `forward` method of `QuantumModel` calls `model.run()`. To define custom quantum models, the best way is to inherit from `QuantumModel` and override the `forward` method, as typically done with custom PyTorch Modules.
 
-The `QuantumModel` class provides convenience methods to manipulate parameters. Being a `torch.nn.Module`, all torch methods are also available.
+The `QuantumModel` class provides convenience methods to manipulate parameters. Being a `torch.nn.Module`, all torch methods are also available. As shown in the example below, you can pass, check and reset the model parameters. When entering new values for the `VariationalParameter`, they must match the number of existing variables.
 
 ```python exec="on" source="material-block" result="json" session="quantum-model"
 # To pass onto a torch optimizer
@@ -72,10 +72,53 @@ parameter_generator = model.parameters()
 # Number of variational parameters
 num_vparams = model.num_vparams
 
-# Dictionary to easily inspect variational parameter values
+# Dictionary to see all the parameter values
+params_values = model.params
+
+# Dictionary to easily inspect variational parameters (parameters with gradient)
 vparams_values = model.vparams
 
-print(f"{vparams_values = }") # markdown-exec: hide
+print(f"old {vparams_values = }") # markdown-exec: hide
+
+# To reset current variational parameter to other values
+model.reset_vparams([torch.rand(1).item()])
+
+vparams_values = model.vparams
+print(f"new {vparams_values = }") # markdown-exec: hide
+```
+
+## Backend configuration in quantum models
+
+When initializing a quantum model, available configuration options are determined by the backend, with current support for `PyQTorch` and `Pulser`. Information on each configuration option can be found with `model.show_config` as in below example:
+
+```python exec="on" source="material-block" result="json" session="quantum-model"
+from qadence import QuantumModel, QuantumCircuit, RX, RY, kron
+from qadence import FeatureParameter, VariationalParameter
+from qadence import BackendConfiguration
+from qadence import BackendName, DiffMode
+
+# Create a quantum circuit
+theta = VariationalParameter("theta")
+phi = FeatureParameter("phi")
+block = kron(RX(0, theta), RY(1, phi))
+circuit = QuantumCircuit(2, block)
+
+# Choose your backend (PYQTORCH or PULSER)
+backend=BackendName.PYQTORCH
+# backend=BackendName.PULSER
+
+model = QuantumModel(circuit, backend=backend, diff_mode=DiffMode.GPSR)
+# Check your available configuration options and current values
+print(model.show_config) # markdown-exec: hide
+```
+
+The configuration of the quantum model can be changed by passing `options_names` and `value` in dictionary format. You can update the existing configuration values using `model.change_config()`.
+
+```python exec="on" source="material-block" result="json" session="quantum-model"
+# change dropout_probability from 0 to 0.3
+model.change_config({"dropout_probability": 0.3})
+# shows modified configuration
+print(model.show_config) # markdown-exec: hide
 ```
 
 ## Model output

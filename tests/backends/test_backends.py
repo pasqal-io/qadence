@@ -34,6 +34,8 @@ from qadence.states import (
 from qadence.transpile import flatten, set_trainable
 from qadence.types import PI, BackendName, DiffMode
 from qadence.utils import nqubits_to_basis
+from qadence.engines.differentiable_backend import DifferentiableBackend
+
 
 BACKENDS = BackendName.list()
 BACKENDS.remove("pulser")
@@ -268,6 +270,26 @@ def test_default_configuration() -> None:
         assert isinstance(conf, BackendConfiguration)
         opts = conf.available_options()
         assert isinstance(opts, str)
+
+
+@pytest.mark.parametrize(
+    "backend",
+    [BackendName.PYQTORCH, BackendName.PULSER],
+)
+def test_custom_configuration(backend: str) -> None:
+    block = RX(0, PI)
+    circuit = QuantumCircuit(1, block)
+    model = QuantumModel(circuit, backend=backend, diff_mode=DiffMode.GPSR)
+    if isinstance(model.backend, DifferentiableBackend):
+        old_value = model.backend.backend.config.use_sparse_observable
+        custom_config = {"use_sparse_observable": not old_value}
+        model.change_config(custom_config)
+        new_value = model.backend.backend.config.use_sparse_observable
+    assert old_value == (not new_value)
+
+    with pytest.raises(ValueError):
+        custom_config = {"sparse_observable": not old_value}
+        model.change_config(custom_config)
 
 
 @given(st.digital_circuits())
