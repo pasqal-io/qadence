@@ -24,6 +24,7 @@ class QCNN(QNN):
         random_meas: bool = True,
         fm_basis: str = "Fourier",
         fm_gate: Any = RX,
+        is_corr: bool = False,
         **kwargs: Any,
     ) -> None:
         """
@@ -49,6 +50,7 @@ class QCNN(QNN):
         self.random_meas = random_meas
         self.fm_basis = fm_basis
         self.fm_gate = fm_gate
+        self.is_corr = is_corr
 
         circuit = self.qcnn_circuit(
             self.n_inputs,
@@ -58,6 +60,7 @@ class QCNN(QNN):
             self.entangler,
             self.fm_basis,
             self.fm_gate,
+            self.is_corr,
         )
 
         obs = self.qcnn_deferred_obs(self.n_qubits, self.random_meas)
@@ -80,6 +83,7 @@ class QCNN(QNN):
         entangler: AbstractBlock,
         fm_basis: str,
         fm_gate: AbstractBlock,
+        is_corr: bool,
     ) -> QuantumCircuit:
         """Defines the QCNN circuit."""
         # Validate qubit count
@@ -124,13 +128,7 @@ class QCNN(QNN):
                 )
 
             layer_block, next_indices = _create_conv_layer(
-                layer_index,
-                reps,
-                current_indices,
-                params,
-                operations,
-                entangler,
-                n_qubits,
+                layer_index, reps, current_indices, params, operations, entangler, n_qubits, is_corr
             )
             tag(layer_block, f"C+P layer {layer_index}")
             conv_layers.append(layer_block)
@@ -140,7 +138,6 @@ class QCNN(QNN):
 
         # Combine all layers for the final ansatz
         ansatz = chain(*conv_layers)
-        tag(ansatz, "Ansatz")
 
         return QuantumCircuit(n_qubits, fm, ansatz)
 

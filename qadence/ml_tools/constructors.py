@@ -896,10 +896,11 @@ def _create_single_W(
     entangler: Any,
     layer: int,
     rep: int,
+    max_reps: int,
     control: int,
     target: int,
-    spacing: int = 0,
-    n_qubits: int = 8,
+    spacing: int,
+    n_qubits: int,
     is_corr: bool = False,
 ) -> ChainBlock:
     """Creates a single convolutional cell W_ij."""
@@ -919,7 +920,7 @@ def _create_single_W(
     single_params = {}  # Store params for single RZ/RY gates
 
     # Apply the first sequence of operations
-    for op_index, op in enumerate(operations):
+    for _, op in enumerate(operations):
         param_control = _get_block_params(params, layer, rep, param_index, is_corr)
         param_index += 1
         param_target = _get_block_params(params, layer, rep, param_index, is_corr)
@@ -962,7 +963,7 @@ def _create_single_W(
     gates.append(entangler(target, control))
 
     # Apply the first sequence of operations
-    for op_index, op in enumerate(operations):
+    for _, op in enumerate(operations):
         param_control = _get_block_params(params, layer, rep, param_index, is_corr)
         param_index += 1
         param_target = _get_block_params(params, layer, rep, param_index, is_corr)
@@ -975,7 +976,8 @@ def _create_single_W(
             )
         )
     # Add final entangling gate (control -> target)
-    gates.append(entangler(control, target))
+    if rep == int(max_reps - 1):
+        gates.append(entangler(control, target))
 
     # Update params dict with the last used index
     params[key_param_counter] = param_index
@@ -985,12 +987,13 @@ def _create_single_W(
 
 def _create_conv_layer(
     layer_index: int,
-    reps: int,
+    max_reps: int,
     current_indices: list[int],
     params: dict,
     operations: list[Any],
     entangler: Any,
     n_qubits: int,
+    is_corr: bool,
 ) -> tuple[AbstractBlock, list[int]]:
     """
     Function to create a single convolutional layer.
@@ -1014,10 +1017,10 @@ def _create_conv_layer(
 
     if layer_index in [0, 1]:  # Special behavior for first two layers
         layer_reps = []
-        for d in range(reps):
+        for rep in range(max_reps):
             rep_kron = []
             # Define qubit pairs based on odd/even repetition
-            if d % 2 == 0:  # Even d: regular behavior
+            if rep % 2 == 0:  # Even d: regular behavior
                 pairs = zip(current_indices[::2], current_indices[1::2])
             else:  # Odd d: shift downward, leaving qubits 0 and 7 free
                 pairs = zip(current_indices[1:-1:2], current_indices[2:-1:2])
@@ -1029,11 +1032,13 @@ def _create_conv_layer(
                     operations,
                     entangler,
                     layer_index,
-                    d,
+                    rep,
+                    max_reps,
                     control,
                     target,
-                    spacing=spacing,
-                    n_qubits=n_qubits,
+                    spacing,
+                    n_qubits,
+                    is_corr,
                 )
                 tag(W_pairs, f"W{control,target}")
                 rep_kron.append(W_pairs)
@@ -1044,22 +1049,22 @@ def _create_conv_layer(
         current_layer.append(chain(*layer_reps))
 
     else:  # Original behavior for other layers
-        for d in range(reps):
+        for rep in range(max_reps):
             for control, target in zip(current_indices[::2], current_indices[1::2]):
                 W_pairs = _create_single_W(
                     params,
                     operations,
                     entangler,
                     layer_index,
-                    d,
+                    rep,
+                    max_reps,
                     control,
                     target,
-                    spacing=spacing,
-                    n_qubits=n_qubits,
+                    spacing,
+                    n_qubits,
+                    is_corr,
                 )
                 current_layer.append(W_pairs)
-
-            tag(chain(*current_layer), f"r{d}")
 
     # Update `next_indices` with the **targets** of the current layer
     next_indices = current_indices[1::2]
