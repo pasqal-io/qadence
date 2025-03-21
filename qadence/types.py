@@ -180,7 +180,7 @@ class AnsatzType(StrEnum):
     """Alternating Layer Ansatz."""
 
 
-class _DiffMode(StrEnum):
+class DiffMode(StrEnum):
     """Differentiation modes to choose from."""
 
     GPSR = "gpsr"
@@ -246,11 +246,9 @@ class _Engine(StrEnum):
 try:
     module = importlib.import_module("qadence_extensions.types")
     BackendName = getattr(module, "BackendName")
-    DiffMode = getattr(module, "DiffMode")
     Engine = getattr(module, "Engine")
 except ModuleNotFoundError:
     BackendName = _BackendName
-    DiffMode = _DiffMode
     Engine = _Engine
 
 
