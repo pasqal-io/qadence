@@ -2,7 +2,9 @@ In this tutorial we will show how to use Qadence to solve a basic classification
 
 ## Dataset
 
-We will use the Iris dataset separated into training and testing sets. A StandardScaler is used to normalize the data.
+We will use the Iris dataset separated into training and testing sets.
+The task is to classify iris plants presented as a multivariate dataset of 4 features into 3 labels (Iris Setosa, Iris Versicolour, or Iris Virginica).
+When applying machine learning models, and particularly neural networks, it is recommended to normalize the data. As such, we use a common StandardScaler (we transform the data $x$ to $z = (x - u) / s$ where $u, s$ are respectively the mean and standard deviation of the training samples).
 
 ```python exec="on" source="material-block" session="classification"
 
@@ -58,8 +60,10 @@ dataloader = DataLoader(dataset, batch_size=20, shuffle=True)
 ## Hybrid QNN
 
 We set up the QNN part composed of multiple feature map layers, each followed by a variational layer.
-The output will be the expectation value with respect to a $Z$ observable on qubit 0
-Then we add a simple linear layer serving as a classification head. Note softmax is not applied with the cross-entropy loss.
+The type of variational layer we use is the hardware-efficient-ansatz (HEA). You can check the [qml constructors tutorial](../../content/qml_constructors.md) to see how you can customize these components.
+The output will be the expectation value with respect to a $Z$ observable on qubit $0$.
+Then we add a simple linear layer serving as a classification head. This is equivalent to applying a weight matrix $W$ and bias vector $b$ to the output of the QNN denoted $o$, $l = W * o + b$. To obtain probabilities, we can apply the softmax function defined as: $p_i = \exp(l_i) / \sum_{j=1}^3 \exp(l_i)$.
+Note softmax is not applied during training with the [cross-entropy loss](https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html).
 
 ```python exec="on" source="material-block" session="classification"
 
@@ -80,6 +84,13 @@ qc = QuantumCircuit(n_features, blocks)
 qnn = QNN(circuit=qc, observable=Z(0), inputs=[f"x_{i}" for i in range(n_features)])
 model = nn.Sequential(qnn, nn.Linear(1, n_neurons_final_linear_layer))
 
+```
+
+Below is a visualization of the QNN:
+
+```python exec="on" source="material-block" html="1" session="classification"
+from qadence.draw import html_string # markdown-exec: hide
+print(html_string(qnn)) # markdown-exec: hide
 ```
 
 ## Training
