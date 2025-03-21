@@ -155,6 +155,11 @@ class QuantumModel(nn.Module):
         return OrderedDict({k: v.data for k, v in self._params.items() if v.requires_grad})
 
     @property
+    def params(self) -> OrderedDict:
+        """All parameters."""
+        return OrderedDict({k: v.data for k, v in self._params.items()})
+
+    @property
     def vals_vparams(self) -> Tensor:
         """Dictionary with parameters which are actually updated during optimization."""
         vals = torch.tensor([v for v in self._params.values() if v.requires_grad])
@@ -175,6 +180,19 @@ class QuantumModel(nn.Module):
     def num_vparams(self) -> int:
         """The number of variational parameters."""
         return len(self.vals_vparams)
+
+    @property
+    def show_config(self) -> str:
+        """Attain current quantum model configurations."""
+        if isinstance(self.backend, DifferentiableBackend):
+            current_config = self.backend.backend.config
+        return BackendConfiguration.available_options(current_config)
+
+    def change_config(self, new_config: dict) -> None:
+        """Change configuration with the input."""
+        if isinstance(self.backend, DifferentiableBackend):
+            current_config = self.backend.backend.config
+        BackendConfiguration.change_config(current_config, new_config)
 
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:
         """Get backend-converted circuit.
