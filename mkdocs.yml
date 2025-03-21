@@ -45,6 +45,7 @@ nav:
       - tutorials/qml/index.md
       - Configuring a QNN: tutorials/qml/config_qnn.md
       - Quantum circuit learning: tutorials/qml/qcl.md
+      - Classification with QNN: tutorials/qml/classification.md
       - Solving MaxCut with QAOA: tutorials/qml/qaoa.md
       - Solving a 1D ODE: tutorials/qml/dqc_1d.md
 
