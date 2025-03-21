@@ -29,9 +29,8 @@ class IrisDataset(Dataset):
         X, y = load_iris(return_X_y=True)
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
 
-        scaler = StandardScaler()
-        scaler.fit(X_train)
-        self.scaler = scaler
+        self.scaler = StandardScaler()
+        self.scaler.fit(X_train)
         self.X = torch.tensor(scaler.transform(X_train), requires_grad=False)
         self.y = torch.tensor(y_train, requires_grad=False)
 
