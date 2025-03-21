@@ -113,5 +113,5 @@ X_test, y_test = dataset.X_test, dataset.y_test
 preds_test = torch.argmax(torch.softmax(model(X_test), dim=1), dim=1)
 accuracy_test = (preds_test == y_test).type(torch.float32).mean()
 ## Should reach higher than 0.9
-print("Test Accuracy", accuracy_test.item()) # markdown-exec: hide
+print(f"Test Accuracy: {accuracy_test.item()}") # markdown-exec: hide
 ```
