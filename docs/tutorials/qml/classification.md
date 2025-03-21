@@ -34,7 +34,7 @@ class IrisDataset(Dataset):
         self.X = torch.tensor(self.scaler.transform(X_train), requires_grad=False)
         self.y = torch.tensor(y_train, requires_grad=False)
 
-        self.X_test = torch.tensor(scaler.transform(X_test), requires_grad=False)
+        self.X_test = torch.tensor(self.scaler.transform(X_test), requires_grad=False)
         self.y_test = torch.tensor(y_test, requires_grad=False)
 
     def __getitem__(self, index) -> tuple[Tensor, Tensor]:
