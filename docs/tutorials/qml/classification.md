@@ -31,7 +31,7 @@ class IrisDataset(Dataset):
 
         self.scaler = StandardScaler()
         self.scaler.fit(X_train)
-        self.X = torch.tensor(scaler.transform(X_train), requires_grad=False)
+        self.X = torch.tensor(self.scaler.transform(X_train), requires_grad=False)
         self.y = torch.tensor(y_train, requires_grad=False)
 
         self.X_test = torch.tensor(scaler.transform(X_test), requires_grad=False)
