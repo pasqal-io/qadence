@@ -58,7 +58,7 @@ dataloader = DataLoader(dataset, batch_size=20, shuffle=True)
 ## Hybrid QNN
 
 We set up the QNN part composed of multiple feature map layers, each followed by a variational layer.
-The output will be the expectation value wrt a Z observable on qubit 0
+The output will be the expectation value with respect to a $Z$ observable on qubit 0
 Then we add a simple linear layer serving as as classification head. Note softmax is not applied with the cross-entropy loss.
 
 ```python exec="on" source="material-block" session="classification"
