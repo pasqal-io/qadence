@@ -259,9 +259,6 @@ def test_expectation_psr(n_qubits: int, batch_size: int, n_obs: int, circuit_fn:
         ), "d3f/dx2dtheta not equal."
 
 
-# Keeping the tests failing below so we can re-activate them once
-# GPSR can handle fully generic generators. This will likely require
-# a HamEvo specific GPSR function that also takes care of parameter dimensions
 @pytest.mark.parametrize(
     ["n_qubits", "generator"],
     [
@@ -294,7 +291,6 @@ def test_hamevo_gpsr(n_qubits: int, generator: AbstractBlock) -> None:
     assert torch.allclose(dfdx_ad, dfdx_gpsr, atol=GPSR_ACCEPTANCE)
 
 
-@pytest.mark.slow
 @pytest.mark.parametrize(
     ["n_qubits", "batch_size", "circuit_fn", "shift_prefac", "n_eqs", "lb", "ub"],
     [
