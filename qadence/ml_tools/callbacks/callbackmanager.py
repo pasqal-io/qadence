@@ -115,8 +115,10 @@ class CallbacksManager:
             self.add_callback("PlotMetrics", "train_end")
         # only save the last checkpoint if not checkpoint_best_only
         if not self.config.checkpoint_best_only:
-            self.add_callback("SaveCheckpoint", "train_end")
-        self.add_callback("WriteMetrics", "train_end")
+            if self.config.checkpoint_every != 0:
+                self.add_callback("SaveCheckpoint", "train_end")
+        if self.config.write_every != 0:
+            self.add_callback("WriteMetrics", "train_end")
 
     def add_callback(
         self, callback: str | Callback, on: str | TrainingStage, called_every: int = 1
