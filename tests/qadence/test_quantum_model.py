@@ -192,8 +192,8 @@ def test_qc_obs_different_support_0() -> None:
     assert torch.isclose(model_sup1.expectation(query_dict), model_sup2.expectation(query_dict))
 
 
-@pytest.mark.parametrize("diff_mode", ["ad", "adjoint", "gpsr"])
-def test_qc_obs_different_support_1(diff_mode: str) -> None:
+@pytest.mark.parametrize("diff_mode", [DiffMode.AD, DiffMode.ADJOINT, DiffMode.GPSR])
+def test_qc_obs_different_support_1(diff_mode: DiffMode) -> None:
     model_obs0_id_0 = QuantumModel(
         QuantumCircuit(1, I(0)),
         observable=Z(0),
@@ -310,7 +310,7 @@ def test_model_config(circuit: QuantumCircuit) -> None:
 @given(st.restricted_circuits())
 @settings(deadline=None)
 def test_run_for_different_backends(circuit: QuantumCircuit) -> None:
-    pyq_model = QuantumModel(circuit, backend=BackendName.PYQTORCH, diff_mode="ad")
+    pyq_model = QuantumModel(circuit, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD)
     inputs = rand_featureparameters(circuit, 1)
     inputs_jax = {k: tensor_to_jnp(v) for k, v in inputs.items()}
 
@@ -324,7 +324,7 @@ def test_run_for_different_backends(circuit: QuantumCircuit) -> None:
 @given(st.restricted_circuits())
 @settings(deadline=None)
 def test_sample_for_different_backends(circuit: QuantumCircuit) -> None:
-    pyq_model = QuantumModel(circuit, backend=BackendName.PYQTORCH, diff_mode="ad")
+    pyq_model = QuantumModel(circuit, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD)
     inputs = rand_featureparameters(circuit, 1)
     pyq_samples = pyq_model.sample(inputs, n_shots=100)
 

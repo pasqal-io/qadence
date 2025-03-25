@@ -6,6 +6,7 @@ import torch
 import qadence as qd
 from qadence.backends.utils import finitediff
 from qadence.ml_tools.models import _torch_derivative
+from qadence import DiffMode
 
 
 @pytest.mark.parametrize(
@@ -32,7 +33,7 @@ def test_finitediff(idxs: tuple) -> None:
     ufa = qd.QNN(
         qd.QuantumCircuit(4, fm, qd.hea(4, 2)),
         observable=qd.total_magnetization(4),
-        diff_mode="ad",
+        diff_mode=DiffMode.AD,
         inputs=["x", "y"],
     )
 
