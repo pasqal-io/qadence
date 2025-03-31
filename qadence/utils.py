@@ -329,6 +329,8 @@ def block_to_mathematical_expression(block: Tree | AbstractBlock) -> str:
                 block_title = ""
             elif coeff == 1:
                 block_title = block_to_mathematical_expression(block_tree.children[0])
+            else:
+                block_title += " * " + block_to_mathematical_expression(block_tree.children[0])
 
         except ValueError:  # In case block_title is a non-numeric str (e.g. parameter name)
             block_title += " * " + block_to_mathematical_expression(block_tree.children[0])
