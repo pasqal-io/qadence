@@ -320,19 +320,19 @@ def block_to_mathematical_expression(block: Tree | AbstractBlock) -> str:
     if "mul" in block_title:
         block_title = re.findall("\[mul:\s*(.+?)\]", block_title)[0]
 
-        if "." in block_title:
-            block_title = re.findall("\d+\.\d+", block_title)[0]
-            coeff = float(block_title)
-        else:
-            block_title = re.findall("\d+", block_title)[0]
-            coeff = int(block_title)
+        try:
+            if "." in block_title:
+                coeff = float(block_title)
+            else:
+                coeff = int(block_title)
+            if coeff == 0:
+                block_title = ""
+            elif coeff == 1:
+                block_title = block_to_mathematical_expression(block_tree.children[0])
 
-        if coeff == 0:
-            block_title = ""
-        elif coeff == 1:
-            block_title = block_to_mathematical_expression(block_tree.children[0])
-        else:
+        except ValueError:  # In case block_title is a non-numeric str (e.g. parameter name)
             block_title += " * " + block_to_mathematical_expression(block_tree.children[0])
+
     first_part = block_title[:3]
     if first_part in [" + ", " ⊗ ", " * "]:
         block_title = block_title[3:]
