@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from qadence import Z, hamiltonian_factory, kron
-from qadence.blocks import AbstractBlock, MatrixBlock, KronBlock
+from qadence import Z, hamiltonian_factory, kron, Parameter
+from qadence.blocks import AbstractBlock, MatrixBlock
 from qadence.utils import block_to_mathematical_expression
 import torch
 
@@ -18,6 +18,7 @@ import torch
             2.0 * hamiltonian_factory(2, detuning=Z) + kron(Z(0), Z(1)),
             "(2.000 * (Z(0) + Z(1)) + (Z(0) ⊗ Z(1)))",
         ),
+        (Parameter("output_scaling") * Z(0), "output_scaling * Z(0)"),
     ],
 )
 def test_block_to_mathematical_expression(block: AbstractBlock, expected_str: str) -> None:
