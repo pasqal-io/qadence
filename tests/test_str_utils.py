@@ -18,7 +18,8 @@ import torch
             2.0 * hamiltonian_factory(2, detuning=Z) + kron(Z(0), Z(1)),
             "(2.000 * (Z(0) + Z(1)) + (Z(0) ⊗ Z(1)))",
         ),
-        (Parameter("output_scaling") * Z(0), "output_scaling * Z(0)"),
+        (Parameter("param_name") * Z(0), "param_name * Z(0)"),
+        (Z(0) * Parameter("param_name"), "param_name * Z(0)"),
     ],
 )
 def test_block_to_mathematical_expression(block: AbstractBlock, expected_str: str) -> None:
