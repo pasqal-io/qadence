@@ -24,13 +24,21 @@ def general_psr(
     Args:
         spectrum (Tensor): Spectrum of the operation we apply PSR onto.
         n_eqs (int | None, optional): Number of equations. Defaults to None.
-            If provided, we keep the n_eqs higher spectral gaps.
-        shift_prefac (float, optional): Shift prefactor. Defaults to 0.5.
+        If provided, aGPSR algorithm is effectively used.
+        shift_prefac (float | None, optional): prefactor governing the magnitude of parameter shift values -
+        select smaller value if spectral gaps are large. Defaults to 0.5.
+        gap_step (float): Step between generated pseudo-gaps when using aGPSR algorithm. Defaults to 1.0.
+        lb (float | None, optional): Lower bound of optimal shift value search interval. Defaults to None.
+        ub (float | None, optional): Upper bound of optimal shift value search interval. Defaults to None.
 
     Returns:
         Callable: single_gap_psr or multi_gap_psr function for
             concerned operation.
     """
+
+    print("=====================================")
+    print(n_eqs, shift_prefac, gap_step, lb, ub)
+
     diffs = _round_complex(spectrum - spectrum.reshape(-1, 1))
     orig_unique_spectral_gaps = torch.unique(torch.abs(torch.tril(diffs)))
 
@@ -113,12 +121,13 @@ def multi_gap_psr(
     Args:
         expectation_fn (Callable[[dict[str, Tensor]], Tensor]): backend-dependent function
         to calculate expectation value
-
         param_dict (dict[str, Tensor]): dict storing parameters values of parameterized blocks
         param_name (str): name of parameter with respect to that differentiation is performed
         spectral_gaps (Tensor): tensor containing spectral gap values
         shift_prefac (float): prefactor governing the magnitude of parameter shift values -
         select smaller value if spectral gaps are large
+        lb (float): lower bound of optimal shift value search interval
+        ub (float): upper bound of optimal shift value search interval
 
     Returns:
         Tensor: tensor containing derivative values

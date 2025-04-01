@@ -75,7 +75,19 @@ class DifferentiableBackend(DifferentiableBackendInterface):
             expectation = differentiable_expectation.ad
         elif self.diff_mode == DiffMode.ADJOINT:
             expectation = differentiable_expectation.adjoint
-        else:
+        elif self.diff_mode in [DiffMode.GPSR, DiffMode.AGPSR]:
+            # check if n_eqs is passed when AGPSR mode is selected
+            if self.diff_mode == DiffMode.AGPSR:
+                assert (
+                    self.psr_args.get("n_eqs") is not None
+                ), "n_eqs argument must not be None for AGPSR differentiation mode"
+
+            # ensure n_eqs is None when GPSR model is selected
+            if self.diff_mode == DiffMode.GPSR:
+                assert (
+                    self.psr_args.get("n_eqs") is None
+                ), "n_eqs must be None for GPSR differentiation mode"
+
             expectation = partial(
                 differentiable_expectation.psr, psr_fn=general_psr, **self.psr_args
             )

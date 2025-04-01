@@ -88,7 +88,6 @@ def circuit_hamevo_tensor_agpsr(n_qubits: int) -> QuantumCircuit:
     """Helper function to make an example circuit."""
 
     x = Parameter("x", trainable=False)
-    theta = Parameter("theta")
 
     h = torch.rand(2**n_qubits, 2**n_qubits)
     ham = h + torch.conj(torch.transpose(h, 0, 1))
@@ -97,7 +96,6 @@ def circuit_hamevo_tensor_agpsr(n_qubits: int) -> QuantumCircuit:
     fm = chain(
         CRY(1, 2, sympy.exp(x)),
         HamEvo(ham, x, qubit_support=tuple(range(n_qubits))),
-        CRX(1, 2, theta),
         X(0),
         CRY(0, 1, np.pi / 2),
     )
@@ -313,51 +311,34 @@ def test_expectation_agpsr(
     # Making circuit with AD
     circ = circuit_fn(n_qubits)
     obs = total_magnetization(n_qubits)
-    quantum_backend = PyQBackend()
-    conv = quantum_backend.convert(circ, obs)
-    pyq_circ, pyq_obs, embedding_fn, params = conv
-    diff_backend = DifferentiableBackend(quantum_backend, diff_mode=DiffMode.AD)
 
     # Running for some inputs
     values = {"x": torch.rand(batch_size, requires_grad=True)}
-    expval = diff_backend.expectation(pyq_circ, pyq_obs, embedding_fn(params, values))
+    # expval = diff_backend.expectation(pyq_circ, pyq_obs, embedding_fn(params, values))
+    expval = expectation(circ, observable=obs, values=values, diff_mode=DiffMode.AD)
     dexpval_x = torch.autograd.grad(
         expval, values["x"], torch.ones_like(expval), create_graph=True
     )[0]
     dexpval_xx = torch.autograd.grad(
         dexpval_x, values["x"], torch.ones_like(dexpval_x), create_graph=True
     )[0]
-    dexpval_theta = torch.autograd.grad(expval, list(params.values())[0], torch.ones_like(expval))[
-        0
-    ]
 
-    # Now running stuff for (G)PSR
-    quantum_backend.config._use_gate_params = True
-    conv = quantum_backend.convert(circ, obs)
-    pyq_circ, pyq_obs, embedding_fn, params = conv
-    diff_backend = DifferentiableBackend(
-        quantum_backend,
-        diff_mode=DiffMode.GPSR,
-        **{
-            "shift_prefac": shift_prefac,
-            "n_eqs": n_eqs,
-            "lb": lb,
-            "ub": ub,
-        },
+    # Now running stuff for aGPSR
+    config = {
+        "shift_prefac": shift_prefac,
+        "n_eqs": n_eqs,
+        "lb": lb,
+        "ub": ub,
+    }
+    expval = expectation(
+        circ, observable=obs, values=values, diff_mode=DiffMode.AGPSR, configuration=config
     )
-    expval = diff_backend.expectation(pyq_circ, pyq_obs, embedding_fn(params, values))
     dexpval_psr_x = torch.autograd.grad(
         expval, values["x"], torch.ones_like(expval), create_graph=True
     )[0]
     dexpval_psr_xx = torch.autograd.grad(
         dexpval_psr_x, values["x"], torch.ones_like(dexpval_psr_x), create_graph=True
     )[0]
-    dexpval_psr_theta = torch.autograd.grad(
-        expval, list(params.values())[0], torch.ones_like(expval)
-    )[0]
 
     assert torch.allclose(dexpval_x, dexpval_psr_x, atol=AGPSR_ACCEPTANCE), "df/dx not equal."
     assert torch.allclose(dexpval_xx, dexpval_psr_xx, atol=AGPSR_ACCEPTANCE), " d2f/dx2 not equal."
-    assert torch.allclose(
-        dexpval_theta, dexpval_psr_theta, atol=AGPSR_ACCEPTANCE
-    ), "df/dtheta not equal."

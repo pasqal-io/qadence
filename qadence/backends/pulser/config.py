@@ -66,6 +66,24 @@ class Configuration(BackendConfiguration):
     FIXME: To be deprecated.
     """
 
+    n_eqs: int = 2
+    """Number of equations to use in aGPSR calculations."""
+
+    shift_prefac: float = 0.5
+    """Prefactor governing the magnitude of parameter shift values -.
+
+    select smaller value if spectral gaps are large
+    """
+
+    gap_step: float = 1.0
+    """Step between generated pseudo-gaps when using aGPSR algorithm."""
+
+    lb: float | None = None
+    """Lower bound of optimal shift value search interval."""
+
+    ub: float | None = None
+    """Upper bound of optimal shift value search interval."""
+
     # configuration for cloud simulations
     cloud_configuration: Optional[CloudConfiguration] = None
 
