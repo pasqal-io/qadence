@@ -28,7 +28,7 @@ authors = [
 ]
 requires-python = ">=3.9"
 license = { text = "Apache 2.0" }
-version = "1.11.1"
+version = "1.11.2"
 classifiers = [
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python",
@@ -37,6 +37,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
@@ -52,7 +53,7 @@ dependencies = [
     "jsonschema",
     "nevergrad",
     "scipy",
-    "pyqtorch==1.7.4",
+    "pyqtorch==1.7.5",
     "pyyaml",
     "matplotlib",
     "Arpeggio==2.0.2",

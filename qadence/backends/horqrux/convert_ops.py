@@ -40,6 +40,7 @@ from qadence.operations import (
     MCRY,
     MCRZ,
     MCZ,
+    CZ,
 )
 from qadence.operations import SWAP as QDSWAP
 from qadence.types import OpName, ParamDictType
@@ -57,6 +58,7 @@ ops_map: Dict[str, Callable] = {
     OpName.CRX: RX,
     OpName.CRY: RY,
     OpName.CRZ: RZ,
+    OpName.CZ: Z,
     OpName.CNOT: NOT,
     OpName.I: I,
     OpName.SWAP: SWAP,
@@ -91,7 +93,7 @@ def convert_block(
         native_op_fn = ops_map[block.name]
         target, control = (
             (block.qubit_support[1], block.qubit_support[0])
-            if isinstance(block, (CNOT, CRX, CRY, CRZ, QDSWAP))
+            if isinstance(block, (CZ, CNOT, CRX, CRY, CRZ, QDSWAP))
             else (block.qubit_support[0], (None,))
         )
         native_gate: Gate
