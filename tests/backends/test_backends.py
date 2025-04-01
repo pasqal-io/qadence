@@ -7,7 +7,7 @@ import pytest
 import strategies as st  # type: ignore
 import sympy
 import torch
-from horqrux.utils import equivalent_state as horq_equivalent_state
+from horqrux.utils.operator_utils import equivalent_state as horq_equivalent_state
 from hypothesis import given, settings
 from jax import Array
 from metrics import ATOL_DICT, JAX_CONVERSION_ATOL, JS_ACCEPTANCE  # type: ignore
