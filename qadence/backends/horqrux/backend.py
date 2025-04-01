@@ -27,7 +27,8 @@ from qadence.types import BackendName, Endianness, Engine, ParamDictType
 from qadence.utils import int_to_basis
 
 from .config import Configuration, default_passes
-from .convert_ops import HorqruxCircuit, convert_block, convert_observable
+from .convert_ops import convert_block, convert_observable
+from horqrux.circuit import QuantumCircuit as HorqruxCircuit
 
 logger = getLogger(__name__)
 
@@ -58,7 +59,7 @@ class Backend(BackendInterface):
             circuit = transpile(*passes)(circuit)
         ops = convert_block(circuit.block, n_qubits=circuit.n_qubits, config=self.config)
         return ConvertedCircuit(
-            native=HorqruxCircuit(ops), abstract=circuit, original=original_circ
+            native=HorqruxCircuit(circuit.n_qubits, ops), abstract=circuit, original=original_circ
         )
 
     def observable(self, observable: AbstractBlock, n_qubits: int) -> ConvertedObservable:
@@ -97,7 +98,7 @@ class Backend(BackendInterface):
             state = zero_state(n_qubits)
         else:
             state = horqify(state) if horqify_state else state
-        state = circuit.native.forward(state, param_values)
+        state = circuit.native(state, param_values)
         if endianness != self.native_endianness:
             state = jnp.reshape(state, (1, 2**n_qubits))  # batch_size is always 1
             ls = list(range(2**n_qubits))
@@ -141,7 +142,7 @@ class Backend(BackendInterface):
             out_state = self.run(
                 circuit, params, state, endianness, horqify_state=True, unhorqify_state=False
             )
-            return jnp.array([o.native.forward(out_state, params) for o in observable])
+            return jnp.array([o.native(out_state, params) for o in observable])
 
         if batch_size > 1:  # We vmap for batch_size > 1
             expvals = jax.vmap(_expectation, in_axes=({k: 0 for k in param_values.keys()},))(

@@ -12,7 +12,11 @@ from horqrux.apply import apply_gates
 from horqrux.primitives.parametric import RX, RY, RZ
 from horqrux.primitives.primitive import NOT, SWAP, H, I, X, Y, Z
 from horqrux.primitives.primitive import Primitive as Gate
-from horqrux.utils import ControlQubits, TargetQubits, inner
+from horqrux.composite.sequence import OpSequence as HorqruxSequence
+from horqrux.composite.compose import Scale as HorqScaleGate
+from horqrux.composite.compose import Add as HorqAddGate
+from horqrux.composite.compose import Observable as HorqruxObservable
+from horqrux.utils.operator_utils import ControlQubits, TargetQubits
 from jax import Array
 from jax.scipy.linalg import expm
 from jax.tree_util import register_pytree_node_class
@@ -61,37 +65,6 @@ ops_map: Dict[str, Callable] = {
 supported_gates = list(set(list(ops_map.keys())))
 
 
-@register_pytree_node_class
-@dataclass
-class HorqruxCircuit:
-    operators: list[Gate] = field(default_factory=list)
-
-    def tree_flatten(self) -> tuple[tuple[list[Any]], tuple[()]]:
-        children = (self.operators,)
-        aux_data = ()
-        return (children, aux_data)
-
-    @classmethod
-    def tree_unflatten(cls, aux_data: Any, children: Any) -> Any:
-        return cls(*children, *aux_data)
-
-    def _forward(self, state: Array, values: ParamDictType) -> Array:
-        return reduce(lambda state, gate: gate.forward(state, values), self.operators, state)
-
-    def forward(self, state: Array, values: ParamDictType) -> Array:
-        return self._forward(state, values)
-
-
-@register_pytree_node_class
-@dataclass
-class HorqruxObservable(HorqruxCircuit):
-    def __init__(self, operators: list[Gate]):
-        super().__init__(operators=operators)
-
-    def forward(self, state: Array, values: ParamDictType) -> Array:
-        return jnp.real(inner(state, self._forward(state, values)))
-
-
 def convert_observable(
     block: AbstractBlock, n_qubits: int, config: Configuration
 ) -> HorqruxObservable:
@@ -109,7 +82,7 @@ def convert_block(
     ops = []
     if isinstance(block, CompositeBlock):
         ops = list(flatten(*(convert_block(b, n_qubits, config) for b in block.blocks)))
-        ops = [HorqAddGate(ops)] if isinstance(block, AddBlock) else [HorqruxCircuit(ops)]
+        ops = [HorqAddGate(ops)] if isinstance(block, AddBlock) else [HorqruxSequence(ops)]
     elif isinstance(block, ScaleBlock):
         op = convert_block(block.block, n_qubits, config=config)[0]
         param_name = config.get_param_name(block)[0]
@@ -133,7 +106,7 @@ def convert_block(
                 native_gate = native_op_fn(block.qubit_support[::-1])
             else:
                 native_gate = native_op_fn(target=target, control=control)
-        ops = [HorqOperation(native_gate)]
+        ops = [native_gate]
 
     elif isinstance(block, (MCRX, MCRY, MCRZ, MCZ)):
         block_name = block.name[2:] if block.name.startswith("M") else block.name
@@ -146,65 +119,13 @@ def convert_block(
             native_gate = native_op_fn(param=param, target=target, control=control)
         else:
             native_gate = native_op_fn(target, control)
-        ops = [HorqOperation(native_gate)]
+        ops = [native_gate]
     elif isinstance(block, TimeEvolutionBlock):
         ops = [HorqHamiltonianEvolution(block, config)]
     else:
         raise NotImplementedError(f"Non-supported operation of type {type(block)}.")
 
     return ops
-
-
-@register_pytree_node_class
-class HorqAddGate(HorqruxCircuit):
-    def __init__(self, operations: list[Gate]):
-        self.operators = operations
-        self.name = "Add"
-
-    def forward(self, state: Array, values: ParamDictType = {}) -> Array:
-        return reduce(add, (gate.forward(state, values) for gate in self.operators))
-
-    def __repr__(self) -> str:
-        return self.name + f"({self.operators})"
-
-
-@register_pytree_node_class
-@dataclass
-class HorqOperation:
-    def __init__(self, native_gate: Gate):
-        self.native_gate = native_gate
-
-    def forward(self, state: Array, values: ParamDictType) -> Array:
-        return apply_gates(state, self.native_gate, values)
-
-    def tree_flatten(self) -> tuple[tuple[Gate], tuple[()]]:
-        children = (self.native_gate,)
-        aux_data = ()
-        return (children, aux_data)
-
-    @classmethod
-    def tree_unflatten(cls, aux_data: Any, children: Any) -> Any:
-        return cls(*children, *aux_data)
-
-
-@register_pytree_node_class
-@dataclass
-class HorqScaleGate:
-    def __init__(self, gate: HorqOperation, parameter_name: str):
-        self.gate = gate
-        self.parameter: str = parameter_name
-
-    def forward(self, state: Array, values: ParamDictType) -> Array:
-        return jnp.array(values[self.parameter]) * self.gate.forward(state, values)
-
-    def tree_flatten(self) -> tuple[tuple[HorqOperation], tuple[str]]:
-        children = (self.gate,)
-        aux_data = (self.parameter,)
-        return (children, aux_data)
-
-    @classmethod
-    def tree_unflatten(cls, aux_data: Any, children: Any) -> Any:
-        return cls(*children, *aux_data)
 
 
 @register_pytree_node_class
@@ -249,7 +170,7 @@ class HorqHamiltonianEvolution(NativeHorqHEvo):
         """The evolved operator given current parameter values for generator and time evolution."""
         return expm(self._hamiltonian(self, values) * (-1j * self._time_evolution(values)))
 
-    def forward(
+    def __call__(
         self,
         state: Array,
         values: dict[str, Array],
