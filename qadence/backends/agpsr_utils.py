@@ -22,11 +22,15 @@ def variance(shifts: Tensor, spectral_gaps: Tensor) -> Tensor:
 
     # calculate inverse of M
     M = 4 * torch.sin(torch.outer(torch.as_tensor(shifts), spectral_gaps) / 2)
-    M_inv = torch.linalg.pinv(M)
-
-    # calculate variance of derivative estimation
-    a = torch.matmul(spectral_gaps.reshape(1, -1), M_inv)
-    var = 2 * torch.matmul(a, a.T)
+    try:
+        # calculate variance of derivative estimation by solving linear equation system
+        a = torch.linalg.solve(M, spectral_gaps.reshape(-1, 1))
+        var = 2 * torch.matmul(a.T, a)
+    except:
+        # fallback method of variance calculation using inverse matrix
+        M_inv = torch.linalg.pinv(M)
+        a = torch.matmul(spectral_gaps.reshape(1, -1), M_inv)
+        var = 2 * torch.matmul(a, a.T)
 
     return var
 
