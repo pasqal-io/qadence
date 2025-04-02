@@ -36,9 +36,6 @@ def general_psr(
             concerned operation.
     """
 
-    print("=====================================")
-    print(n_eqs, shift_prefac, gap_step, lb, ub)
-
     diffs = _round_complex(spectrum - spectrum.reshape(-1, 1))
     orig_unique_spectral_gaps = torch.unique(torch.abs(torch.tril(diffs)))
 
@@ -155,7 +152,7 @@ def multi_gap_psr(
     # calculate F vector and M matrix
     # (see: https://arxiv.org/pdf/2108.01218.pdf on p. 4 for definitions)
     F = []
-    M = torch.empty((n_eqs, n_eqs)).to(device=device)
+    M = 4 * torch.sin(torch.outer(shifts, spectral_gaps) / 2).to(device=device)
     n_obs = 1
     for i in range(n_eqs):
         # + shift
@@ -169,10 +166,6 @@ def multi_gap_psr(
         f_minus = expectation_fn(shifted_params)
 
         F.append((f_plus - f_minus))
-
-        # calculate M matrix
-        for j in range(n_eqs):
-            M[i, j] = 4 * torch.sin(shifts[i] * spectral_gaps[j] / 2)
 
     # get number of observables from expectation value tensor
     if f_plus.numel() > 1:

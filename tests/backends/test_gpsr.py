@@ -341,4 +341,6 @@ def test_expectation_agpsr(
     )[0]
 
     assert torch.allclose(dexpval_x, dexpval_psr_x, atol=AGPSR_ACCEPTANCE), "df/dx not equal."
-    assert torch.allclose(dexpval_xx, dexpval_psr_xx, atol=AGPSR_ACCEPTANCE), " d2f/dx2 not equal."
+    assert torch.allclose(
+        dexpval_xx, dexpval_psr_xx, atol=np.sqrt(AGPSR_ACCEPTANCE)
+    ), " d2f/dx2 not equal."

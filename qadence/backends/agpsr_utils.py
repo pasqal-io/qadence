@@ -9,26 +9,6 @@ from scipy.optimize import minimize
 from torch import Tensor
 
 
-def create_M_matrix(shifts: Tensor, spectral_gaps: Tensor) -> Tensor:
-    """Calculates M matrix (see: https://arxiv.org/pdf/2108.01218.pdf on p.
-
-    4 for definitions).
-
-    Args:
-        shifts (Tensor): shifts to apply for each spectral gap
-        spectral_gaps (Tensor): tensor containing spectral gap values
-
-    Returns:
-        Tensor: 2D M matrix
-    """
-    n_eqs = len(spectral_gaps)
-    M = torch.empty((n_eqs, n_eqs), dtype=torch.double)
-    for i in range(n_eqs):
-        for j in range(n_eqs):
-            M[i, j] = 4 * torch.sin(shifts[i] * spectral_gaps[j] / 2)
-    return M
-
-
 def variance(shifts: Tensor, spectral_gaps: Tensor) -> Tensor:
     """Calculate exact variance of deirivative estimation using aGPSR.
 
@@ -39,7 +19,7 @@ def variance(shifts: Tensor, spectral_gaps: Tensor) -> Tensor:
     Returns:
         Tensor: variance tensor
     """
-    M = create_M_matrix(shifts, spectral_gaps)
+    M = 4 * torch.sin(torch.outer(torch.as_tensor(shifts), spectral_gaps) / 2)
 
     # calculate iverse of M
     M_inv = torch.linalg.pinv(M)
@@ -107,6 +87,6 @@ def calculate_optimal_shifts(
             method="COBYLA",
             constraints=constraints,
         )
-        return torch.tensor(res.x)
+        return torch.as_tensor(res.x)
 
     return minimize_variance(variance)
