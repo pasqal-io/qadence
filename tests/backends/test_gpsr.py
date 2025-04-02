@@ -292,8 +292,8 @@ def test_hamevo_gpsr(n_qubits: int, generator: AbstractBlock) -> None:
 @pytest.mark.parametrize(
     ["n_qubits", "batch_size", "circuit_fn", "shift_prefac", "n_eqs", "lb", "ub"],
     [
-        (3, 1, circuit_hamevo_tensor_agpsr, 0.5, 5, 0.1, 1.0),
-        (3, 1, circuit_hamevo_tensor_agpsr, None, 5, 0.01, 0.6),
+        (3, 1, circuit_hamevo_tensor_agpsr, 0.5, 10, 0.1, 1.0),
+        (3, 1, circuit_hamevo_tensor_agpsr, None, 10, 0.01, 0.6),
     ],
 )
 def test_expectation_agpsr(
