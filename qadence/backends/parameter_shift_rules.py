@@ -41,10 +41,10 @@ def general_psr(
     # We have to filter out zeros
     orig_unique_spectral_gaps = orig_unique_spectral_gaps[orig_unique_spectral_gaps > 0]
 
-    if n_eqs is None:
+    if n_eqs is None:  # GPSR case
         n_eqs = len(orig_unique_spectral_gaps)
         sorted_unique_spectral_gaps = orig_unique_spectral_gaps
-    else:
+    else:  # aGPSR case
         sorted_unique_spectral_gaps = torch.arange(0, n_eqs) * gap_step
         sorted_unique_spectral_gaps[0] = 0.001
 
