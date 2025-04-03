@@ -23,17 +23,16 @@ def general_psr(
 
     Args:
         spectrum (Tensor): Spectrum of the operation we apply PSR onto.
-        n_eqs (int | None, optional): Number of equations. Defaults to None.
-        If provided, aGPSR algorithm is effectively used.
-        shift_prefac (float | None, optional): prefactor governing the magnitude of parameter shift values -
-        select smaller value if spectral gaps are large. Defaults to 0.5.
+        n_eqs (int | None): Number of equations. Defaults to None.
+            If provided, aGPSR algorithm is effectively used.
+        shift_prefac (float | None): prefactor governing the magnitude of parameter shift values -
+            select smaller value if spectral gaps are large. Defaults to 0.5.
         gap_step (float): Step between generated pseudo-gaps when using aGPSR algorithm. Defaults to 1.0.
-        lb (float | None, optional): Lower bound of optimal shift value search interval. Defaults to None.
-        ub (float | None, optional): Upper bound of optimal shift value search interval. Defaults to None.
+        lb (float | None): Lower bound of optimal shift value search interval. Defaults to None.
+        ub (float | None): Upper bound of optimal shift value search interval. Defaults to None.
 
     Returns:
-        Callable: single_gap_psr or multi_gap_psr function for
-            concerned operation.
+        Callable: single_gap_psr or multi_gap_psr function for concerned operation.
     """
 
     diffs = _round_complex(spectrum - spectrum.reshape(-1, 1))
@@ -76,8 +75,7 @@ def single_gap_psr(
 
     Args:
         expectation_fn (Callable[[dict[str, Tensor]], Tensor]): backend-dependent function
-        to calculate expectation value
-
+            to calculate expectation value
         param_dict (dict[str, Tensor]): dict storing parameters of parameterized blocks
         param_name (str): name of parameter with respect to that differentiation is performed
 
@@ -117,12 +115,12 @@ def multi_gap_psr(
 
     Args:
         expectation_fn (Callable[[dict[str, Tensor]], Tensor]): backend-dependent function
-        to calculate expectation value
+            to calculate expectation value
         param_dict (dict[str, Tensor]): dict storing parameters values of parameterized blocks
         param_name (str): name of parameter with respect to that differentiation is performed
-        spectral_gaps (Tensor): tensor containing spectral gap values
+            spectral_gaps (Tensor): tensor containing spectral gap values
         shift_prefac (float): prefactor governing the magnitude of parameter shift values -
-        select smaller value if spectral gaps are large
+            select smaller value if spectral gaps are large
         lb (float): lower bound of optimal shift value search interval
         ub (float): upper bound of optimal shift value search interval
 
@@ -135,9 +133,9 @@ def multi_gap_psr(
     # get shift values - values minimize the variance of expectation
     if shift_prefac is not None:
         # set shift values manually
-        shifts = shift_prefac * torch.linspace(PI / 2 - PI / 4, PI / 2 + PI / 5, n_eqs)
         # breaking the symmetry of sampling range around PI/2 so that there are fewer chances
         # that M matrix is singular
+        shifts = shift_prefac * torch.linspace(PI / 2 - PI / 4, PI / 2 + PI / 5, n_eqs)
     else:
         # calculate optimal shift values
         shifts = calculate_optimal_shifts(n_eqs, spectral_gaps, lb, ub)
