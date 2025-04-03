@@ -10,7 +10,7 @@ from torch import Tensor
 
 
 def variance(shifts: Tensor, spectral_gaps: Tensor) -> Tensor:
-    """Calculate exact variance of deirivative estimation using aGPSR.
+    """Calculate the exact variance of deirivative estimation using aGPSR.
 
     Args:
         shifts (Tensor): shifts to apply for each spectral gap
@@ -20,17 +20,18 @@ def variance(shifts: Tensor, spectral_gaps: Tensor) -> Tensor:
         Tensor: variance tensor
     """
 
-    # calculate inverse of M
+    # calculate inverse of M (see: https://arxiv.org/pdf/2108.01218.pdf on p. 4 for definitions)
     M = 4 * torch.sin(torch.outer(torch.as_tensor(shifts), spectral_gaps) / 2)
     try:
-        # calculate variance of derivative estimation by solving linear equation system
+        # calculate the variance of derivative estimation by solving a linear equation system
         a = torch.linalg.solve(M, spectral_gaps.reshape(-1, 1))
         var = 2 * torch.matmul(a.T, a)
-    except:
-        # fallback method of variance calculation using inverse matrix
-        M_inv = torch.linalg.pinv(M)
-        a = torch.matmul(spectral_gaps.reshape(1, -1), M_inv)
-        var = 2 * torch.matmul(a, a.T)
+    except RuntimeError as e:
+        if "matrix is singular" in e.args[0]:
+            # fallback method of variance calculation using inverse matrix
+            M_inv = torch.linalg.pinv(M)
+            a = torch.matmul(spectral_gaps.reshape(1, -1), M_inv)
+            var = 2 * torch.matmul(a, a.T)
 
     return var
 

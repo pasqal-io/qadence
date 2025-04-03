@@ -314,7 +314,6 @@ def test_expectation_agpsr(
 
     # Running for some inputs
     values = {"x": torch.rand(batch_size, requires_grad=True)}
-    # expval = diff_backend.expectation(pyq_circ, pyq_obs, embedding_fn(params, values))
     expval = expectation(circ, observable=obs, values=values, diff_mode=DiffMode.AD)
     dexpval_x = torch.autograd.grad(
         expval, values["x"], torch.ones_like(expval), create_graph=True
@@ -331,7 +330,7 @@ def test_expectation_agpsr(
         "ub": ub,
     }
     expval = expectation(
-        circ, observable=obs, values=values, diff_mode=DiffMode.AGPSR, configuration=config
+        circ, observable=obs, values=values, diff_mode=DiffMode.GPSR, configuration=config
     )
     dexpval_psr_x = torch.autograd.grad(
         expval, values["x"], torch.ones_like(expval), create_graph=True

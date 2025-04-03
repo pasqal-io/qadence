@@ -50,17 +50,13 @@ def backend_factory(
         # Wrap the quantum Backend in a DifferentiableBackend if a diff_mode is passed.
         if diff_mode is not None:
             diff_backend_cls = import_engine(backend_inst.engine)
-            psr_args = {}
-            if diff_mode == DiffMode.AGPSR:
-                psr_args = {
-                    "n_eqs": configuration.n_eqs,  # type: ignore [attr-defined]
-                    "shift_prefac": configuration.shift_prefac,  # type: ignore [attr-defined]
-                    "gap_step": configuration.gap_step,  # type: ignore [attr-defined]
-                    "lb": configuration.lb,  # type: ignore [attr-defined]
-                    "ub": configuration.ub,  # type: ignore [attr-defined]
-                }
-            elif diff_mode == DiffMode.GPSR:
-                psr_args = {"shift_prefac": configuration.shift_prefac}  # type: ignore [attr-defined]
+            psr_args = {
+                "n_eqs": configuration.n_eqs,  # type: ignore [attr-defined]
+                "shift_prefac": configuration.shift_prefac,  # type: ignore [attr-defined]
+                "gap_step": configuration.gap_step,  # type: ignore [attr-defined]
+                "lb": configuration.lb,  # type: ignore [attr-defined]
+                "ub": configuration.ub,  # type: ignore [attr-defined]
+            }
             backend_inst = diff_backend_cls(backend=backend_inst, diff_mode=DiffMode(diff_mode), **psr_args)  # type: ignore[operator]
         return backend_inst
     except (BackendNotFoundError, EngineNotFoundError, ConfigNotFoundError) as e:

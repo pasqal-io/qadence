@@ -135,9 +135,9 @@ def multi_gap_psr(
     # get shift values - values minimize the variance of expectation
     if shift_prefac is not None:
         # set shift values manually
-        shifts = shift_prefac * torch.linspace(
-            PI / 2 - PI / 4, PI / 2 + PI / 5, n_eqs
-        )  # breaking the symmetry of sampling range around PI/2
+        shifts = shift_prefac * torch.linspace(PI / 2 - PI / 4, PI / 2 + PI / 5, n_eqs)
+        # breaking the symmetry of sampling range around PI/2 so that there are fewer chances
+        # that M matrix is singular
     else:
         # calculate optimal shift values
         shifts = calculate_optimal_shifts(n_eqs, spectral_gaps, lb, ub)

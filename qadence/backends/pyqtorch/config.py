@@ -71,13 +71,13 @@ class Configuration(BackendConfiguration):
     dropout_mode: DropoutMode = DropoutMode.ROTATIONAL
     """Type of quantum dropout to perform."""
 
-    n_eqs: int = 2
+    n_eqs: int | None = None
     """Number of equations to use in aGPSR calculations."""
 
     shift_prefac: float = 0.5
-    """Prefactor governing the magnitude of parameter shift values -.
+    """Prefactor governing the magnitude of parameter shift values.
 
-    select smaller value if spectral gaps are large
+    Select smaller value if spectral gaps are large.
     """
 
     gap_step: float = 1.0

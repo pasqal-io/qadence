@@ -185,8 +185,6 @@ class DiffMode(StrEnum):
 
     GPSR = "gpsr"
     """Basic generalized parameter shift rule."""
-    AGPSR = "agpsr"
-    """Approximate generalized parameter shift rule."""
     AD = "ad"
     """Automatic Differentiation."""
     ADJOINT = "adjoint"
