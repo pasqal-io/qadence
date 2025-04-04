@@ -8,32 +8,45 @@ from torch import Tensor
 
 from qadence.types import PI
 from qadence.utils import _round_complex
+from qadence.backends.agpsr_utils import calculate_optimal_shifts
 
 
-def general_psr(spectrum: Tensor, n_eqs: int | None = None, shift_prefac: float = 0.5) -> Callable:
+def general_psr(
+    spectrum: Tensor,
+    n_eqs: int | None = None,
+    shift_prefac: float | None = 0.5,
+    gap_step: float = 1.0,
+    lb: float | None = None,
+    ub: float | None = None,
+) -> Callable:
     """Define whether single_gap_psr or multi_gap_psr is used.
 
     Args:
         spectrum (Tensor): Spectrum of the operation we apply PSR onto.
-        n_eqs (int | None, optional): Number of equations. Defaults to None.
-            If provided, we keep the n_eqs higher spectral gaps.
-        shift_prefac (float, optional): Shift prefactor. Defaults to 0.5.
+        n_eqs (int | None): Number of equations. Defaults to None.
+            If provided, aGPSR algorithm is effectively used.
+        shift_prefac (float | None): prefactor governing the magnitude of parameter shift values -
+            select smaller value if spectral gaps are large. Defaults to 0.5.
+        gap_step (float): Step between generated pseudo-gaps when using aGPSR algorithm. Defaults to 1.0.
+        lb (float | None): Lower bound of optimal shift value search interval. Defaults to None.
+        ub (float | None): Upper bound of optimal shift value search interval. Defaults to None.
 
     Returns:
-        Callable: single_gap_psr or multi_gap_psr function for
-            concerned operation.
+        Callable: single_gap_psr or multi_gap_psr function for concerned operation.
     """
+
     diffs = _round_complex(spectrum - spectrum.reshape(-1, 1))
-    sorted_unique_spectral_gaps = torch.unique(torch.abs(torch.tril(diffs)))
+    orig_unique_spectral_gaps = torch.unique(torch.abs(torch.tril(diffs)))
 
     # We have to filter out zeros
-    sorted_unique_spectral_gaps = sorted_unique_spectral_gaps[sorted_unique_spectral_gaps > 0]
-    n_eqs = (
-        len(sorted_unique_spectral_gaps)
-        if n_eqs is None
-        else min(n_eqs, len(sorted_unique_spectral_gaps))
-    )
-    sorted_unique_spectral_gaps = torch.tensor(list(sorted_unique_spectral_gaps)[:n_eqs])
+    orig_unique_spectral_gaps = orig_unique_spectral_gaps[orig_unique_spectral_gaps > 0]
+
+    if n_eqs is None:  # GPSR case
+        n_eqs = len(orig_unique_spectral_gaps)
+        sorted_unique_spectral_gaps = orig_unique_spectral_gaps
+    else:  # aGPSR case
+        sorted_unique_spectral_gaps = torch.arange(0, n_eqs) * gap_step
+        sorted_unique_spectral_gaps[0] = 0.001
 
     if n_eqs == 1:
         return partial(
@@ -46,6 +59,8 @@ def general_psr(spectrum: Tensor, n_eqs: int | None = None, shift_prefac: float 
             multi_gap_psr,
             spectral_gaps=sorted_unique_spectral_gaps,
             shift_prefac=shift_prefac,
+            lb=lb,
+            ub=ub,
         )
 
 
@@ -60,8 +75,7 @@ def single_gap_psr(
 
     Args:
         expectation_fn (Callable[[dict[str, Tensor]], Tensor]): backend-dependent function
-        to calculate expectation value
-
+            to calculate expectation value
         param_dict (dict[str, Tensor]): dict storing parameters of parameterized blocks
         param_name (str): name of parameter with respect to that differentiation is performed
 
@@ -93,19 +107,22 @@ def multi_gap_psr(
     param_dict: dict[str, Tensor],
     param_name: str,
     spectral_gaps: Tensor,
-    shift_prefac: float = 0.5,
+    shift_prefac: float | None = 0.5,
+    lb: float | None = None,
+    ub: float | None = None,
 ) -> Tensor:
     """Implements multi-gap multi-qubit GPSR rule.
 
     Args:
         expectation_fn (Callable[[dict[str, Tensor]], Tensor]): backend-dependent function
-        to calculate expectation value
-
+            to calculate expectation value
         param_dict (dict[str, Tensor]): dict storing parameters values of parameterized blocks
         param_name (str): name of parameter with respect to that differentiation is performed
-        spectral_gaps (Tensor): tensor containing spectral gap values
+            spectral_gaps (Tensor): tensor containing spectral gap values
         shift_prefac (float): prefactor governing the magnitude of parameter shift values -
-        select smaller value if spectral gaps are large
+            select smaller value if spectral gaps are large
+        lb (float): lower bound of optimal shift value search interval
+        ub (float): upper bound of optimal shift value search interval
 
     Returns:
         Tensor: tensor containing derivative values
@@ -113,10 +130,15 @@ def multi_gap_psr(
     n_eqs = len(spectral_gaps)
     batch_size = max(t.size(0) for t in param_dict.values())
 
-    # get shift values
-    shifts = shift_prefac * torch.linspace(
-        PI / 2 - PI / 4, PI / 2 + PI / 5, n_eqs
-    )  # breaking the symmetry of sampling range around PI/2
+    # get shift values - values minimize the variance of expectation
+    if shift_prefac is not None:
+        # Set shift values manually by breaking the symmetry of sampling range
+        # around PI/2 to reduce the possibility that M is singular
+        shifts = shift_prefac * torch.linspace(PI / 2 - PI / 4, PI / 2 + PI / 5, n_eqs)
+    else:
+        # calculate optimal shift values
+        shifts = calculate_optimal_shifts(n_eqs, spectral_gaps, lb, ub)
+
     device = torch.device("cpu")
     try:
         device = [v.device for v in param_dict.values()][0]
@@ -127,7 +149,7 @@ def multi_gap_psr(
     # calculate F vector and M matrix
     # (see: https://arxiv.org/pdf/2108.01218.pdf on p. 4 for definitions)
     F = []
-    M = torch.empty((n_eqs, n_eqs)).to(device=device)
+    M = 4 * torch.sin(torch.outer(shifts, spectral_gaps) / 2).to(device=device)
     n_obs = 1
     for i in range(n_eqs):
         # + shift
@@ -141,10 +163,6 @@ def multi_gap_psr(
         f_minus = expectation_fn(shifted_params)
 
         F.append((f_plus - f_minus))
-
-        # calculate M matrix
-        for j in range(n_eqs):
-            M[i, j] = 4 * torch.sin(shifts[i] * spectral_gaps[j] / 2)
 
     # get number of observables from expectation value tensor
     if f_plus.numel() > 1:

@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 import sympy
 import torch
-from metrics import GPSR_ACCEPTANCE, PSR_ACCEPTANCE
+from metrics import AGPSR_ACCEPTANCE, GPSR_ACCEPTANCE, PSR_ACCEPTANCE
 
 from qadence import DiffMode, Parameter, QuantumCircuit
 from qadence.analog import add_background_hamiltonian
@@ -75,6 +75,29 @@ def circuit_hamevo_tensor_gpsr(n_qubits: int) -> QuantumCircuit:
         CRX(1, 2, theta),
         X(0),
         CRY(0, 1, PI / 2),
+    )
+    ansatz = CNOT(0, 1)
+    block = chain(fm, ansatz)
+
+    circ = QuantumCircuit(n_qubits, block)
+
+    return circ
+
+
+def circuit_hamevo_tensor_agpsr(n_qubits: int) -> QuantumCircuit:
+    """Helper function to make an example circuit."""
+
+    x = Parameter("x", trainable=False)
+
+    h = torch.rand(2**n_qubits, 2**n_qubits)
+    ham = h + torch.conj(torch.transpose(h, 0, 1))
+    ham = ham[None, :, :]
+
+    fm = chain(
+        CRY(1, 2, sympy.exp(x)),
+        HamEvo(ham, x, qubit_support=tuple(range(n_qubits))),
+        X(0),
+        CRY(0, 1, np.pi / 2),
     )
     ansatz = CNOT(0, 1)
     block = chain(fm, ansatz)
@@ -234,9 +257,6 @@ def test_expectation_psr(n_qubits: int, batch_size: int, n_obs: int, circuit_fn:
         ), "d3f/dx2dtheta not equal."
 
 
-# Keeping the tests failing below so we can re-activate them once
-# GPSR can handle fully generic generators. This will likely require
-# a HamEvo specific GPSR function that also takes care of parameter dimensions
 @pytest.mark.parametrize(
     ["n_qubits", "generator"],
     [
@@ -267,3 +287,59 @@ def test_hamevo_gpsr(n_qubits: int, generator: AbstractBlock) -> None:
     dfdx_gpsr = torch.autograd.grad(exp_gpsr, xs, torch.ones_like(exp_gpsr), create_graph=True)[0]
 
     assert torch.allclose(dfdx_ad, dfdx_gpsr, atol=GPSR_ACCEPTANCE)
+
+
+@pytest.mark.parametrize(
+    ["n_qubits", "batch_size", "circuit_fn", "shift_prefac", "n_eqs", "lb", "ub"],
+    [
+        (3, 1, circuit_hamevo_tensor_agpsr, 0.5, 10, 0.1, 1.0),
+        (3, 1, circuit_hamevo_tensor_agpsr, None, 10, 0.01, 0.6),
+    ],
+)
+def test_expectation_agpsr(
+    n_qubits: int,
+    batch_size: int,
+    circuit_fn: Callable,
+    shift_prefac: float | None,
+    n_eqs: int,
+    lb: float,
+    ub: float,
+) -> None:
+    torch.manual_seed(42)
+    np.random.seed(42)
+
+    # Making circuit with AD
+    circ = circuit_fn(n_qubits)
+    obs = total_magnetization(n_qubits)
+
+    # Running for some inputs
+    values = {"x": torch.rand(batch_size, requires_grad=True)}
+    expval = expectation(circ, observable=obs, values=values, diff_mode=DiffMode.AD)
+    dexpval_x = torch.autograd.grad(
+        expval, values["x"], torch.ones_like(expval), create_graph=True
+    )[0]
+    dexpval_xx = torch.autograd.grad(
+        dexpval_x, values["x"], torch.ones_like(dexpval_x), create_graph=True
+    )[0]
+
+    # Now running stuff for aGPSR
+    config = {
+        "shift_prefac": shift_prefac,
+        "n_eqs": n_eqs,
+        "lb": lb,
+        "ub": ub,
+    }
+    expval = expectation(
+        circ, observable=obs, values=values, diff_mode=DiffMode.GPSR, configuration=config
+    )
+    dexpval_psr_x = torch.autograd.grad(
+        expval, values["x"], torch.ones_like(expval), create_graph=True
+    )[0]
+    dexpval_psr_xx = torch.autograd.grad(
+        dexpval_psr_x, values["x"], torch.ones_like(dexpval_psr_x), create_graph=True
+    )[0]
+
+    assert torch.allclose(dexpval_x, dexpval_psr_x, atol=AGPSR_ACCEPTANCE), "df/dx not equal."
+    assert torch.allclose(
+        dexpval_xx, dexpval_psr_xx, atol=np.sqrt(AGPSR_ACCEPTANCE)
+    ), " d2f/dx2 not equal."

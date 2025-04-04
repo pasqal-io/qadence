@@ -27,10 +27,10 @@ authors = [
     { name = "Manu Lahariya", email = "manu.lahariya@pasqal.com" },
 ]
 requires-python = ">=3.9"
-license = { text = "Apache 2.0" }
+license = { text = "PASQAL OPEN-SOURCE SOFTWARE LICENSE (MIT-derived)" }
 version = "1.11.2"
 classifiers = [
-    "License :: OSI Approved :: Apache Software License",
+    "License :: Other/Proprietary License",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",
