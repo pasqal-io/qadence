@@ -1,0 +1,56 @@
+<!-- Custom HTML site displayed as the Home chapter -->
+
+{% extends "main.html" %}
+{% block tabs %}
+{{ super() }}
+
+<link rel="css" type="text/css" href="./extras/css/home.css" />
+
+<!-- Main site Entry button descriptions -->
+<section class="hero-container">
+    <div class="md-grid md-typeset">
+        <div class="hero-section">
+            <div class="logo-container">
+                <div class="logo-image">
+                    <img src="./extras/assets/logo/qadence_logo_white.svg" draggable="false">
+                </div>
+            </div>
+            <div class="button-container">
+                <a href="{{ page.next_page.url | url }}" class="md-button md-button--primary">
+                    Get started
+                </a>
+                <a href="{{ config.repo_url }}" class="md-button">
+                    Go to GitHub
+                </a>
+                <a href="https://arxiv.org/abs/2401.09915" class="md-button">
+                    Whitepaper
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="main-features">
+    <div class="md-grid md-typeset">
+        <div class="header">
+            <p>A Python package for differentiable digital-analog quantum programs.</p>
+        </div>
+        <div class="arch-container">
+            <div class="arch-image">
+                <img src="./extras/assets/qadence_arch.svg" draggable="false">
+            </div>
+            <div class="features">
+                <ul>
+                    <li> <p>Digital-analog programming made simple with block-based operations.</p></li>
+                    <li> <p>Arbitrary symbolic expressions built with <a href="https://www.sympy.org/en/index.html">Sympy</a> for parametric quantum programs.</p></li>
+                    <li> <p>Full automatic differentiation with <a href="https://pytorch.org/">PyTorch</a> integration.</p></li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+{% endblock %}
+{% block content %}{% endblock %}
+{% block footer %}{% endblock %}
