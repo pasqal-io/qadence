@@ -26,12 +26,11 @@ def variance(shifts: Tensor, spectral_gaps: Tensor) -> Tensor:
         # calculate the variance of derivative estimation by solving a linear equation system
         a = torch.linalg.solve(M, spectral_gaps.reshape(-1, 1))
         var = 2 * torch.matmul(a.T, a)
-    except RuntimeError as e:
-        if "matrix is singular" in e.args[0]:
-            # fallback method of variance calculation using inverse matrix
-            M_inv = torch.linalg.pinv(M)
-            a = torch.matmul(spectral_gaps.reshape(1, -1), M_inv)
-            var = 2 * torch.matmul(a, a.T)
+    except RuntimeError:  # matrix M is singulkar
+        # fallback method of variance calculation using inverse matrix
+        M_inv = torch.linalg.pinv(M)
+        a = torch.matmul(spectral_gaps.reshape(1, -1), M_inv)
+        var = 2 * torch.matmul(a, a.T)
 
     return var
 
