@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 import torch
 
-from qadence import QNN
+from qadence import QNN, DiffMode
 from qadence.blocks import (
     chain,
     kron,
@@ -94,8 +94,8 @@ def test_input_nd(dim: int) -> None:
     assert res.size()[0] == batch_size
 
 
-@pytest.mark.parametrize("diff_mode", ["ad", "adjoint"])
-def test_qnn_expectation(diff_mode: str, n_qubits: int = 2) -> None:
+@pytest.mark.parametrize("diff_mode", [DiffMode.AD, DiffMode.ADJOINT])
+def test_qnn_expectation(diff_mode: DiffMode, n_qubits: int = 2) -> None:
     theta0 = Parameter("theta0", trainable=True)
     theta1 = Parameter("theta1", trainable=True)
 
@@ -154,8 +154,8 @@ def test_qnn_multiple_outputs(n_qubits: int = 4) -> None:
         assert torch.allclose(tmp, torch.ones(n_obs))
 
 
-@pytest.mark.parametrize("diff_mode", ["ad", "adjoint"])
-def test_multiparam_qnn_training(diff_mode: str) -> None:
+@pytest.mark.parametrize("diff_mode", [DiffMode.AD, DiffMode.ADJOINT])
+def test_multiparam_qnn_training(diff_mode: DiffMode) -> None:
     backend = BackendName.PYQTORCH
     n_qubits = 2
     n_epochs = 5

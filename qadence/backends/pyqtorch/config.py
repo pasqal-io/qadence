@@ -70,3 +70,21 @@ class Configuration(BackendConfiguration):
     """Quantum dropout probability (0 means no dropout)."""
     dropout_mode: DropoutMode = DropoutMode.ROTATIONAL
     """Type of quantum dropout to perform."""
+
+    n_eqs: int | None = None
+    """Number of equations to use in aGPSR calculations."""
+
+    shift_prefac: float = 0.5
+    """Prefactor governing the magnitude of parameter shift values.
+
+    Select smaller value if spectral gaps are large.
+    """
+
+    gap_step: float = 1.0
+    """Step between generated pseudo-gaps when using aGPSR algorithm."""
+
+    lb: float | None = None
+    """Lower bound of optimal shift value search interval."""
+
+    ub: float | None = None
+    """Upper bound of optimal shift value search interval."""
