@@ -15,7 +15,7 @@ from qadence.blocks import AbstractBlock, add, chain
 from qadence.constructors import total_magnetization
 from qadence.engines.torch.differentiable_backend import DifferentiableBackend
 from qadence.execution import expectation
-from qadence.operations import CNOT, CRX, CRY, RX, RY, AnalogRot, HamEvo, X, Y, Z
+from qadence.operations import CNOT, CRX, CRY, RX, RY, AnalogRot, HamEvo, X, Y, Z, N
 from qadence.register import Register
 from qadence.types import PI
 
@@ -159,6 +159,9 @@ def circuit_analog_rotation_gpsr(n_qubits: int) -> QuantumCircuit:
     return add_background_hamiltonian(circ)  # type: ignore [return-value]
 
 
+sum_N: Callable = lambda n: sum(i * N(i) for i in range(n))
+
+
 @pytest.mark.parametrize(
     ["n_qubits", "batch_size", "n_obs", "circuit_fn"],
     [
@@ -171,13 +174,16 @@ def circuit_analog_rotation_gpsr(n_qubits: int) -> QuantumCircuit:
         (3, 1, 1, circuit_analog_rotation_gpsr),
     ],
 )
-def test_expectation_psr(n_qubits: int, batch_size: int, n_obs: int, circuit_fn: Callable) -> None:
+@pytest.mark.parametrize("obs_fn", [total_magnetization, sum_N])
+def test_expectation_psr(
+    n_qubits: int, batch_size: int, n_obs: int, circuit_fn: Callable, obs_fn: Callable
+) -> None:
     torch.manual_seed(42)
     np.random.seed(42)
 
     # Making circuit with AD
     circ = circuit_fn(n_qubits)
-    obs = total_magnetization(n_qubits)
+    obs = obs_fn(n_qubits)
     quantum_backend = PyQBackend()
     conv = quantum_backend.convert(circ, [obs for _ in range(n_obs)])
     pyq_circ, pyq_obs, embedding_fn, params = conv
