@@ -7,6 +7,7 @@ from logging import getLogger
 from typing import Generator, List, Type, TypeVar, Union, get_args
 
 from sympy import Array, Basic, Expr
+import torch
 from torch import Tensor
 
 from qadence.blocks import (
@@ -292,31 +293,39 @@ def uuid_to_eigen(
 
     result = {}
     for uuid, b in uuid_to_block(block).items():
-        if b.eigenvalues_generator is not None:
-            if b.eigenvalues_generator.numel() > 0:
-                # GPSR assumes a factor 0.5 for differentiation
-                # so need rescaling
-                if isinstance(b, TimeEvolutionBlock) and rescale_eigenvals_timeevo:
-                    if b.eigenvalues_generator.numel() > 1:
-                        result[uuid] = (
-                            b.eigenvalues_generator * 2.0,
-                            0.5,
-                        )
-                    else:
-                        result[uuid] = (
-                            b.eigenvalues_generator * 2.0,
-                            (
-                                1.0 / (b.eigenvalues_generator.item() * 2.0)
-                                if len(b.eigenvalues_generator) == 1
-                                else 1.0
-                            ),
-                        )
-                else:
-                    result[uuid] = (b.eigenvalues_generator, 1.0)
+        eigs_generator = None
 
-                # leave only angle parameter uuid with eigenvals for ConstantAnalogRotation block
-                if isinstance(block, ConstantAnalogRotation):
-                    break
+        # this is to handle the case for the N operator
+        try:
+            eigs_generator = b.eigenvalues_generator
+        except ValueError:
+            result[uuid] = (torch.zeros(2), 1.0)
+        else:
+            if eigs_generator is not None:
+                if eigs_generator.numel() > 0:
+                    # GPSR assumes a factor 0.5 for differentiation
+                    # so need rescaling
+                    if isinstance(b, TimeEvolutionBlock) and rescale_eigenvals_timeevo:
+                        if eigs_generator.numel() > 1:
+                            result[uuid] = (
+                                eigs_generator * 2.0,
+                                0.5,
+                            )
+                        else:
+                            result[uuid] = (
+                                eigs_generator * 2.0,
+                                (
+                                    1.0 / (eigs_generator.item() * 2.0)
+                                    if len(eigs_generator) == 1
+                                    else 1.0
+                                ),
+                            )
+                    else:
+                        result[uuid] = (eigs_generator, 1.0)
+
+                    # leave only angle parameter uuid with eigenvals for ConstantAnalogRotation block
+                    if isinstance(block, ConstantAnalogRotation):
+                        break
 
     return result
 
