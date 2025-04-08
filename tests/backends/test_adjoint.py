@@ -14,10 +14,10 @@ from qadence.parameters import VariationalParameter
 from qadence.types import DiffMode
 
 
-def test_gradcheck_adjoint_first_order() -> None:
+@pytest.mark.parametrize("observable", [[Z(0)], [Z(0), X(1), "xobs" * Z(0)]])
+def test_gradcheck_adjoint_first_order(observable: list[AbstractBlock]) -> None:
     batch_size = 1
     n_qubits = 2
-    observable: list[AbstractBlock] = [Z(0)]
     circ = QuantumCircuit(n_qubits, chain(RX(0, 3 * "x"), CPHASE(0, 1, "y")))
 
     bknd = backend_factory(backend="pyqtorch", diff_mode=DiffMode.ADJOINT)
@@ -25,9 +25,10 @@ def test_gradcheck_adjoint_first_order() -> None:
 
     inputs_x = torch.rand(batch_size, requires_grad=True)
     inputs_y = torch.rand(batch_size, requires_grad=True)
+    inputs_xobs = inputs_x.clone().detach()
 
     def func(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
-        inputs = {"x": x, "y": y}
+        inputs = {"x": x, "y": y, "xobs": inputs_xobs}
         all_params = embeddings_fn(params, inputs)
         return bknd.expectation(pyqtorch_circ, pyqtorch_obs, all_params)
 
