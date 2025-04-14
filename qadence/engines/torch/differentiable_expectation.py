@@ -162,8 +162,7 @@ class DifferentiableExpectation:
             )  # we expect (batch_size, n_observables) shape
 
         expectation_list = [expectation_fn(i) for i in range(len(self.observable))]
-
-        return torch.stack(expectation_list, axis=1)
+        return torch.vstack(expectation_list)
 
     def psr(self, psr_fn: Callable, **psr_args: int | float | None) -> Tensor:
         # wrapper which unpacks the parameters
