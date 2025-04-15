@@ -23,7 +23,7 @@ repos:
     rev: v1.14.1
     hooks:
       - id: mypy
-        args: [--install-types, --non-interactive]
+        args: [--install-types, --non-interactive, --explicit-package-bases]
         exclude: examples|docs
 
 -   repo: https://github.com/DanielNoord/pydocstringformatter
