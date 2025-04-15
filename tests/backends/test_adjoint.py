@@ -13,21 +13,23 @@ from qadence.operations import CPHASE, RX, HamEvo, X, Z
 from qadence.parameters import VariationalParameter
 from qadence.types import DiffMode
 
+list_obs = [[Z(0)], [Z(0), X(1), "xobs" * Z(0)]]
 
-def test_gradcheck_adjoint_first_order() -> None:
+
+def test_gradcheck_adjoint_first_order(adjoint_observables: list[AbstractBlock]) -> None:
     batch_size = 1
     n_qubits = 2
-    observable: list[AbstractBlock] = [Z(0)]
     circ = QuantumCircuit(n_qubits, chain(RX(0, 3 * "x"), CPHASE(0, 1, "y")))
 
     bknd = backend_factory(backend="pyqtorch", diff_mode=DiffMode.ADJOINT)
-    pyqtorch_circ, pyqtorch_obs, embeddings_fn, params = bknd.convert(circ, observable)
+    pyqtorch_circ, pyqtorch_obs, embeddings_fn, params = bknd.convert(circ, adjoint_observables)
 
     inputs_x = torch.rand(batch_size, requires_grad=True)
     inputs_y = torch.rand(batch_size, requires_grad=True)
+    inputs_xobs = torch.rand(batch_size, requires_grad=False)
 
     def func(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
-        inputs = {"x": x, "y": y}
+        inputs = {"x": x, "y": y, "xobs": inputs_xobs}
         all_params = embeddings_fn(params, inputs)
         return bknd.expectation(pyqtorch_circ, pyqtorch_obs, all_params)
 
@@ -58,18 +60,20 @@ def test_gradcheck_adjoint_scale_derivatives() -> None:
     assert torch.autograd.gradcheck(func, theta)
 
 
-def test_gradcheck_hamevo_timeevo() -> None:
+def test_gradcheck_hamevo_timeevo(adjoint_observables: list[AbstractBlock]) -> None:
     generator = X(0)
     fmx = HamEvo(generator, parameter=VariationalParameter("theta"))
 
     circ = QuantumCircuit(2, fmx)
-    obs = Z(0)
     backend = backend_factory(backend="pyqtorch", diff_mode=DiffMode.ADJOINT)
-    (pyqtorch_circ, pyqtorch_obs, embeddings_fn, params) = backend.convert(circ, obs)
+    (pyqtorch_circ, pyqtorch_obs, embeddings_fn, params) = backend.convert(
+        circ, adjoint_observables
+    )
     theta = torch.rand(1, requires_grad=True)
+    xobs = torch.rand(1, requires_grad=True)
 
     def func(theta: torch.Tensor) -> torch.Tensor:
-        inputs = {"theta": theta}
+        inputs = {"theta": theta, "xobs": xobs}
         all_params = embeddings_fn(params, inputs)
         return backend.expectation(pyqtorch_circ, pyqtorch_obs, all_params)
 
@@ -96,16 +100,15 @@ def test_gradcheck_hamevo_generator() -> None:
     assert torch.autograd.gradcheck(func, theta, nondet_tol=ADJOINT_ACCEPTANCE)
 
 
-def test_first_order_hea_derivatives() -> None:
+def test_first_order_hea_derivatives(adjoint_observables: list[AbstractBlock]) -> None:
     n_qubits = 2
-    observable: list[AbstractBlock] = [Z(0)]
     block = hea(n_qubits, 1)
     circ = QuantumCircuit(n_qubits, block)
     theta_0_value = torch.rand(1, requires_grad=True)
 
     def get_grad(theta: torch.Tensor, circ: QuantumCircuit, diff_mode: str) -> torch.Tensor:
         bknd = backend_factory(backend="pyqtorch", diff_mode=diff_mode)
-        pyqtorch_circ, pyqtorch_obs, embeddings_fn, params = bknd.convert(circ, observable)
+        pyqtorch_circ, pyqtorch_obs, embeddings_fn, params = bknd.convert(circ, adjoint_observables)
         param_name = "theta_0"
         params[param_name] = theta
 
