@@ -10,6 +10,7 @@ from .optimize_step import optimize_step as default_optimize_step
 from .parameters import get_parameters, num_parameters, set_parameters
 from .tensors import numpy_to_tensor, promote_to, promote_to_tensor
 from .trainer import Trainer
+from .qcnn_model import QCNN
 
 # Modules to be automatically added to the qadence namespace
 __all__ = [
@@ -25,4 +26,5 @@ __all__ = [
     "OptimizeResult",
     "Trainer",
     "write_checkpoint",
+    "QCNN",
 ]
