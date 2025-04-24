@@ -88,7 +88,7 @@ def test_analog_feature_map(basis: BasisSet) -> None:
     )
     assert isinstance(fm, ConstantAnalogRotation)
     assert fm.parameters.phase == -PI / 2
-    assert fm.parameters.delta == 0.0
+    assert fm.parameters.delta == pytest.approx(0.0)
 
     params = list(fm.parameters.alpha.free_symbols)
     assert len(params) == 2
