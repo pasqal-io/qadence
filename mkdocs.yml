@@ -48,6 +48,7 @@ nav:
       - Classification with QNN: tutorials/qml/classification.md
       - Solving MaxCut with QAOA: tutorials/qml/qaoa.md
       - Solving a 1D ODE: tutorials/qml/dqc_1d.md
+      - QCNN model: tutorials/qml/qcnn.md
 
     - ML Tools:
       - tutorials/qml/ml_tools/intro.md
