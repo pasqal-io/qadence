@@ -236,9 +236,16 @@ class Backend(ABC):
                 conv_obs.append(c_obs)
 
             def embedding_fn_dict(a: dict, b: dict) -> dict:
-                embedding_dict = circ_embedding_fn(a, b)
-                for o in obs_embedding_fn_list:
-                    embedding_dict.update(o(a, b))
+
+                if "circuit" in b:
+                    embedding_dict = {"circuit": circ_embedding_fn(a, b), "observables": dict()}
+                    if "observables" in b:
+                        for o in obs_embedding_fn_list:
+                            embedding_dict["observables"].update(o(a, b))
+                else:
+                    embedding_dict = circ_embedding_fn(a, b)
+                    for o in obs_embedding_fn_list:
+                        embedding_dict.update(o(a, b))
                 return embedding_dict
 
             return Converted(conv_circ, conv_obs, embedding_fn_dict, params)
