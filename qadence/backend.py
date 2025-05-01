@@ -25,7 +25,15 @@ from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.noise import NoiseHandler
 from qadence.parameters import stringify
-from qadence.types import ArrayLike, BackendName, DiffMode, Endianness, Engine, ParamDictType
+from qadence.types import (
+    ArrayLike,
+    BackendName,
+    DiffMode,
+    Endianness,
+    Engine,
+    ParamDictType,
+    SeparatedParamDictType,
+)
 
 logger = getLogger(__name__)
 
@@ -294,7 +302,7 @@ class Backend(ABC):
         self,
         circuit: ConvertedCircuit,
         observable: list[ConvertedObservable] | ConvertedObservable,
-        param_values: ParamDictType = {},
+        param_values: ParamDictType | SeparatedParamDictType = {},
         state: ArrayLike | None = None,
         measurement: Measurements | None = None,
         noise: NoiseHandler | None = None,
@@ -357,7 +365,7 @@ class Converted:
     circuit: ConvertedCircuit
     observable: list[ConvertedObservable] | ConvertedObservable | None
     embedding_fn: Callable
-    params: ParamDictType
+    params: ParamDictType | SeparatedParamDictType
 
     def __iter__(self) -> Iterator:
         yield self.circuit

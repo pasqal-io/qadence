@@ -431,6 +431,7 @@ class ReadOutOptimization(StrEnum):
 
 
 ParamDictType = dict[str, ArrayLike]
+SeparatedParamDictType = dict[str, dict[str, ArrayLike]]
 DifferentiableExpression = Callable[..., ArrayLike]
 
 
