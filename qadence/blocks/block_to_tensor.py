@@ -266,7 +266,9 @@ def _gate_parameters(b: AbstractBlock, values: dict[str, torch.Tensor]) -> tuple
 
 def block_to_diagonal(
     block: AbstractBlock,
-    values: dict[str, TNumber | torch.Tensor] = dict(),
+    values: (
+        dict[str, TNumber | torch.Tensor] | dict[str, dict[str, TNumber | torch.Tensor]]
+    ) = dict(),
     qubit_support: tuple | list | None = None,
     use_full_support: bool = False,
     endianness: Endianness = Endianness.BIG,
@@ -308,7 +310,7 @@ def block_to_diagonal(
 # version that will accept user params
 def block_to_tensor(
     block: AbstractBlock,
-    values: dict[str, TNumber | torch.Tensor] = {},
+    values: dict[str, TNumber | torch.Tensor] | dict[str, dict[str, TNumber | torch.Tensor]] = {},
     qubit_support: tuple | None = None,
     use_full_support: bool = False,
     tensor_type: TensorType = TensorType.DENSE,
@@ -364,7 +366,7 @@ def block_to_tensor(
 # version that accepts embedded params
 def _block_to_tensor_embedded(
     block: AbstractBlock,
-    values: dict[str, TNumber | torch.Tensor] = {},
+    values: dict[str, TNumber | torch.Tensor] | dict[str, dict[str, TNumber | torch.Tensor]] = {},
     qubit_support: tuple | None = None,
     use_full_support: bool = False,
     endianness: Endianness = Endianness.BIG,
