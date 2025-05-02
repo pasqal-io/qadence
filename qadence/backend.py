@@ -236,7 +236,6 @@ class Backend(ABC):
                 conv_obs.append(c_obs)
 
             def embedding_fn_dict(a: dict, b: dict) -> dict:
-
                 if "circuit" in b:
                     embedding_dict = {"circuit": circ_embedding_fn(a, b), "observables": dict()}
                     if "observables" in b:
@@ -331,7 +330,11 @@ class Backend(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def assign_parameters(self, circuit: ConvertedCircuit, param_values: dict[str, Tensor]) -> Any:
+    def assign_parameters(
+        self,
+        circuit: ConvertedCircuit,
+        param_values: dict[str, Tensor] | dict[str, dict[str, Tensor]],
+    ) -> Any:
         raise NotImplementedError
 
     @staticmethod

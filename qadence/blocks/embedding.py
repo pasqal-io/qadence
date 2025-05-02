@@ -16,7 +16,15 @@ from qadence.blocks.utils import (
     uuid_to_expression,
 )
 from qadence.parameters import evaluate, make_differentiable, stringify
-from qadence.types import ArrayLike, DifferentiableExpression, Engine, ParamDictType, TNumber
+from qadence.types import (
+    ArrayLike,
+    DifferentiableExpression,
+    Engine,
+    ParamDictType,
+    TNumber,
+    SeparatedParamDictType,
+)
+from qadence.utils import merge_separate_params
 
 
 def _concretize_parameter(engine: Engine) -> Callable:
@@ -108,8 +116,12 @@ def embedding(
 
     uuid_to_expr = uuid_to_expression(block)
 
-    def embedding_fn(params: ParamDictType, inputs: ParamDictType) -> ParamDictType:
+    def embedding_fn(
+        params: ParamDictType, inputs: ParamDictType | SeparatedParamDictType
+    ) -> ParamDictType:
         embedded_params: dict[sympy.Expr, ArrayLike] = {}
+        if "circuit" in inputs or "observables" in inputs:
+            inputs = merge_separate_params(inputs)
         for expr, fn in embeddings.items():
             angle: ArrayLike
             values = {}

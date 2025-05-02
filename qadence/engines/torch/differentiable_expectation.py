@@ -94,7 +94,7 @@ class DifferentiableExpectation:
     backend: QuantumBackend
     circuit: ConvertedCircuit
     observable: list[ConvertedObservable] | ConvertedObservable
-    param_values: dict[str, Tensor]
+    param_values: dict[str, Tensor] | dict[str, dict[str, Tensor]]
     state: Tensor | None = None
     measurement: Measurements | None = None
     noise: NoiseHandler | None = None

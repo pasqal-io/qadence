@@ -12,7 +12,14 @@ from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.noise import NoiseHandler
-from qadence.types import ArrayLike, DiffMode, Endianness, Engine, ParamDictType
+from qadence.types import (
+    ArrayLike,
+    DiffMode,
+    Endianness,
+    Engine,
+    ParamDictType,
+    SeparatedParamDictType,
+)
 
 
 @dataclass(frozen=True, eq=True)
@@ -86,7 +93,7 @@ class DifferentiableBackend(ABC):
         self,
         circuit: ConvertedCircuit,
         observable: list[ConvertedObservable] | ConvertedObservable,
-        param_values: ParamDictType = {},
+        param_values: ParamDictType | SeparatedParamDictType = {},
         state: ArrayLike | None = None,
         measurement: Measurements | None = None,
         noise: NoiseHandler | None = None,
@@ -148,5 +155,7 @@ class DifferentiableBackend(ABC):
     ) -> Converted:
         return self.backend.convert(circuit, observable)
 
-    def assign_parameters(self, circuit: ConvertedCircuit, param_values: ParamDictType) -> Any:
+    def assign_parameters(
+        self, circuit: ConvertedCircuit, param_values: ParamDictType | SeparatedParamDictType
+    ) -> Any:
         return self.backend.assign_parameters(circuit, param_values)
