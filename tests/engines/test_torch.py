@@ -161,7 +161,6 @@ def test_parametricobs_expval_differentiation(batch_size: int, diff_mode: str) -
     torch.manual_seed(42)
     n_qubits = 4
     observable: list[AbstractBlock] = [add(Z(i) * Parameter(f"o_{i}") for i in range(n_qubits))]
-    n_obs = len(observable)
     circ = parametric_circuit(n_qubits)
 
     ad_backend = backend_factory(backend="pyqtorch", diff_mode=diff_mode)
@@ -189,3 +188,12 @@ def test_parametricobs_expval_differentiation(batch_size: int, diff_mode: str) -
         finite_diff(lambda w: func(inputs_x, inputs_y, w), param_w.reshape(-1, 1), (0,)),
         torch.autograd.grad(expval, param_w, torch.ones_like(expval), create_graph=True)[0],
     )
+
+    # test separating parameters
+    def func_separate(w: torch.Tensor) -> torch.Tensor:
+        inputs = {"circuit": {"x": inputs_x, "y": inputs_y}, "observables": {"o_1": w}}
+        all_params = embeddings_fn(params, inputs)
+        return ad_backend.expectation(pyqtorch_circ, pyqtorch_obs, all_params)
+
+    assert torch.autograd.gradcheck(func_separate, (param_w))
+    assert torch.autograd.gradgradcheck(func_separate, (param_w))
