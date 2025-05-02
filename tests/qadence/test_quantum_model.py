@@ -235,6 +235,24 @@ def test_qc_obs_different_support_1(diff_mode: DiffMode) -> None:
     for m in [model_obs0_rot1, model_obs1_rot1, model_obs01_rot1]:
         assert torch.autograd.gradcheck(lambda x: fn(m, x), x, nondet_tol=ADJOINT_ACCEPTANCE)
 
+    query_sep_dict = {"circuit": query_dict}
+    if diff_mode == diff_mode.AD:
+        assert torch.isclose(
+            model_obs0_rot1.expectation(query_sep_dict), model_obs0_id_0.expectation({})
+        )
+        assert torch.isclose(
+            model_obs01_rot1.expectation(query_sep_dict), model_obs01_rot1.expectation(query_dict)
+        )
+        assert torch.isclose(
+            model_obs1_rot1.expectation(query_sep_dict), model_obs1_rot1.expectation(query_dict)
+        )
+
+        def fn(model: QuantumModel, x: torch.Tensor) -> torch.Tensor:
+            return model.expectation({"circuit": {"x": x}})
+
+        for m in [model_obs0_rot1, model_obs1_rot1, model_obs01_rot1]:
+            assert torch.autograd.gradcheck(lambda x: fn(m, x), x, nondet_tol=ADJOINT_ACCEPTANCE)
+
 
 def test_distinct_obs_invert() -> None:
     qc = QuantumCircuit(2, chain(RX(0, FeatureParameter("x")), RX(1, FeatureParameter("y"))))
