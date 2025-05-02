@@ -172,9 +172,7 @@ def test_parametricobs_expval_differentiation(batch_size: int, diff_mode: str) -
     param_w = torch.rand(1, requires_grad=True)
 
     def func(x: torch.Tensor, y: torch.Tensor, w: torch.Tensor) -> torch.Tensor:
-        # FIXME: add a parameter from a parametric observable
-        inputs = {"x": x, "y": y}
-        params["o_1"] = w
+        inputs = {"x": x, "y": y, "o_1": w}
         all_params = embeddings_fn(params, inputs)
         return ad_backend.expectation(pyqtorch_circ, pyqtorch_obs, all_params)
 
