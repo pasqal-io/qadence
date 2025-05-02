@@ -149,4 +149,12 @@ def test_multiparam_multiobs() -> None:
         expectation(block, obs, values=values_jax, backend=BackendName.HORQRUX), dtype=torch.double
     )
 
-    torch.allclose(exp_pyq, exp_horq)
+    assert torch.allclose(exp_pyq, exp_horq)
+
+    # test parameters with circuit
+    values_separated = {"circuit": values_jax}
+    with pytest.raises(NotImplementedError):
+        exp_horq_sep = jarr_to_tensor(
+            expectation(block, obs, values=values_separated, backend=BackendName.HORQRUX),
+            dtype=torch.double,
+        )

@@ -136,8 +136,9 @@ class Backend(BackendInterface):
         """
         observable = observable if isinstance(observable, list) else [observable]
         if "observables" in param_values or "circuit" in param_values:
-            batch_size = max([arr.size for arr in merge_separate_params(param_values).values()])
+            raise NotImplementedError("The HORQRUX backend does not support separated parameters.")
         else:
+            merged_params = param_values
             batch_size = max([arr.size for arr in param_values.values()])  # type: ignore[union-attr]
         n_obs = len(observable)
 
@@ -155,8 +156,8 @@ class Backend(BackendInterface):
             return jnp.array([o.native(out_state, param_observables) for o in observable])
 
         if batch_size > 1:  # We vmap for batch_size > 1
-            expvals = jax.vmap(_expectation, in_axes=({k: 0 for k in param_values.keys()},))(
-                uniform_batchsize(param_values)
+            expvals = jax.vmap(_expectation, in_axes=({k: 0 for k in merged_params.keys()},))(
+                uniform_batchsize(merged_params)
             )
         else:
             expvals = _expectation(param_values)
