@@ -191,7 +191,7 @@ dexpval_z_ad = torch.autograd.grad(
 ```
 
 !!! warning "Only available via the PyQTorch backend"
-    Currently, separated parameters is only
+    Currently, differentiating with separated parameters is only
     possible when the `pyqtorch` backend is selected.
 
 ## References

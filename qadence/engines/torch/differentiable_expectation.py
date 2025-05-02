@@ -20,7 +20,7 @@ from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.ml_tools import promote_to_tensor
 from qadence.noise import NoiseHandler
-from qadence.types import Endianness
+from qadence.types import Endianness, ParamDictType, SeparatedParamDictType
 
 
 class PSRExpectation(Function):
@@ -94,7 +94,7 @@ class DifferentiableExpectation:
     backend: QuantumBackend
     circuit: ConvertedCircuit
     observable: list[ConvertedObservable] | ConvertedObservable
-    param_values: dict[str, Tensor] | dict[str, dict[str, Tensor]]
+    param_values: ParamDictType | SeparatedParamDictType
     state: Tensor | None = None
     measurement: Measurements | None = None
     noise: NoiseHandler | None = None

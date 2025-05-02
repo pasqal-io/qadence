@@ -8,7 +8,14 @@ from qadence.engines.jax.differentiable_expectation import DifferentiableExpecta
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.noise import NoiseHandler
-from qadence.types import ArrayLike, DiffMode, Endianness, Engine, ParamDictType
+from qadence.types import (
+    ArrayLike,
+    DiffMode,
+    Endianness,
+    Engine,
+    ParamDictType,
+    SeparatedParamDictType,
+)
 
 
 class DifferentiableBackend(DifferentiableBackendInterface):
@@ -33,7 +40,7 @@ class DifferentiableBackend(DifferentiableBackendInterface):
         self,
         circuit: ConvertedCircuit,
         observable: list[ConvertedObservable] | ConvertedObservable,
-        param_values: ParamDictType = {},
+        param_values: ParamDictType | SeparatedParamDictType = {},
         state: ArrayLike | None = None,
         measurement: Measurements | None = None,
         noise: NoiseHandler | None = None,
