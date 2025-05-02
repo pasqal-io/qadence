@@ -171,6 +171,26 @@ when the generator $\hat{G}$ or the quantum operation is a dense matrix, for exa
 ### Low-level differentiation of qadence circuits using JAX
 For users interested in using the `JAX` engine instead, we show how to run and differentiate qadence programs using the `horqrux` backend under [qadence examples](https://github.com/pasqal-io/qadence/tree/main/examples/backends/low_level).
 
+## Parametrized observable differentiation
+
+To allow differentiating observable parameters only, we need to specify the `values` argument as a dictionary with one of the two keys `circuit` and `observables`, each being a dictionary of corresponding parameters and values, as follows:
+
+```python exec="on" source="material-block" session="differentiability"
+parametric_obs = "z" * obs
+z = torch.tensor([2.0], requires_grad=True)
+values = {"circuit": {"x": xs}, "observables": {"z" : z}}
+
+model_ad = QuantumModel(circuit, parametric_obs,
+                        backend=BackendName.PYQTORCH,
+                        diff_mode=DiffMode.AD)
+exp_val_ad = model_ad.expectation(values)
+
+dexpval_z_ad = torch.autograd.grad(
+    exp_val_ad, z, torch.ones_like(exp_val_ad), create_graph=True
+)[0]
+```
+
+
 ## References
 
 [^1]: [A. G. Baydin et al., Automatic Differentiation in Machine Learning: a Survey](https://www.jmlr.org/papers/volume18/17-468/17-468.pdf)
