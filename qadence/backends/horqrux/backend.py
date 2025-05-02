@@ -23,8 +23,8 @@ from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.noise import NoiseHandler
 from qadence.transpile import flatten, scale_primitive_blocks_only, transpile
-from qadence.types import BackendName, Endianness, Engine, ParamDictType
-from qadence.utils import int_to_basis
+from qadence.types import BackendName, Endianness, Engine, ParamDictType, SeparatedParamDictType
+from qadence.utils import int_to_basis, merge_separate_params
 
 from .config import Configuration, default_passes
 from .convert_ops import convert_block, convert_observable
@@ -112,7 +112,7 @@ class Backend(BackendInterface):
         self,
         circuit: ConvertedCircuit,
         observable: list[ConvertedObservable] | ConvertedObservable,
-        param_values: ParamDictType = {},
+        param_values: ParamDictType | SeparatedParamDictType = {},
         state: ArrayLike | None = None,
         measurement: Measurements | None = None,
         noise: NoiseHandler | None = None,
@@ -135,14 +135,24 @@ class Backend(BackendInterface):
             A jax.Array of shape (batch_size, n_observables)
         """
         observable = observable if isinstance(observable, list) else [observable]
-        batch_size = max([arr.size for arr in param_values.values()])
+        if "observables" in param_values or "circuit" in param_values:
+            batch_size = max([arr.size for arr in merge_separate_params(param_values).values()])
+        else:
+            batch_size = max([arr.size for arr in param_values.values()])  # type: ignore[union-attr]
         n_obs = len(observable)
 
-        def _expectation(params: ParamDictType) -> ArrayLike:
+        def _expectation(params: ParamDictType | SeparatedParamDictType) -> ArrayLike:
+            param_circuits = params["circuit"] if "circuit" in params else params
+            param_observables = params["observables"] if "observables" in params else params
             out_state = self.run(
-                circuit, params, state, endianness, horqify_state=True, unhorqify_state=False
+                circuit,
+                param_circuits,
+                state,
+                endianness,
+                horqify_state=True,
+                unhorqify_state=False,
             )
-            return jnp.array([o.native(out_state, params) for o in observable])
+            return jnp.array([o.native(out_state, param_observables) for o in observable])
 
         if batch_size > 1:  # We vmap for batch_size > 1
             expvals = jax.vmap(_expectation, in_axes=({k: 0 for k in param_values.keys()},))(
