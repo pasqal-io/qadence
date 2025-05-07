@@ -39,7 +39,14 @@ def merge_separate_params(param_dict: ParamDictType) -> ParamDictType:
 
 
 def check_param_dict_values(param_dict: ParamDictType) -> bool:
-    """Check if dictionary of `ParamDictType` contains array values."""
+    """Check if `param_dict` contains array values.
+
+    Args:
+        param_dict (ParamDictType): Dictionary of parameters.
+
+    Returns:
+        bool: True if values are arrays, False if values are dict.
+    """
     if all(isinstance(p, dict) for p in param_dict.values()):
         return False
     return True
