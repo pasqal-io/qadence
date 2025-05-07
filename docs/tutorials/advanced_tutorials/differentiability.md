@@ -173,7 +173,7 @@ For users interested in using the `JAX` engine instead, we show how to run and d
 
 ## Parametrized observable differentiation
 
-To allow differentiating observable parameters only, we need to specify the `values` argument as a dictionary with one of the two keys `circuit` and `observables`, each being a dictionary of corresponding parameters and values, as follows:
+To allow differentiating observable parameters only, we need to specify the `values` argument as a dictionary with one of the two keys `circuit` and `observables`, each being a dictionary of corresponding parameters and values:
 
 ```python exec="on" source="material-block" session="differentiability"
 parametric_obs = "z" * obs
