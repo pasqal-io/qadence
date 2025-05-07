@@ -18,7 +18,6 @@ from qadence.types import (
     Endianness,
     Engine,
     ParamDictType,
-    SeparatedParamDictType,
 )
 
 
@@ -44,7 +43,7 @@ class DifferentiableBackend(DifferentiableBackendInterface):
         self,
         circuit: ConvertedCircuit,
         observable: list[ConvertedObservable] | ConvertedObservable,
-        param_values: ParamDictType | SeparatedParamDictType = {},
+        param_values: ParamDictType = {},
         state: ArrayLike | None = None,
         measurement: Measurements | None = None,
         noise: NoiseHandler | None = None,

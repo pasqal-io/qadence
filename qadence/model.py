@@ -29,7 +29,7 @@ from qadence.parameters import Parameter
 from qadence.types import DiffMode, Endianness
 from qadence.utils import (
     block_to_mathematical_expression,
-    check_ParamDictType,
+    check_Param_dict_values,
     merge_separate_params,
 )
 
@@ -146,7 +146,7 @@ class QuantumModel(nn.Module):
         self._measurement = measurement
         self._noise = noise
         self._mitigation = mitigation
-        if check_ParamDictType(conv.params):
+        if check_Param_dict_values(conv.params):
             self._params = nn.ParameterDict(
                 {
                     str(key): nn.Parameter(val, requires_grad=val.requires_grad)  # type: ignore[union-attr]
@@ -156,7 +156,7 @@ class QuantumModel(nn.Module):
         else:
             self._params = nn.ParameterDict(
                 {
-                    str(key): nn.Parameter(val, requires_grad=val.requires_grad)
+                    str(key): nn.Parameter(val, requires_grad=val.requires_grad)  # type: ignore[union-attr]
                     for key, val in merge_separate_params(conv.params).items()
                 }
             )

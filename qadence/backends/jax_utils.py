@@ -18,7 +18,7 @@ from qadence.blocks import (
     ScaleBlock,
 )
 from qadence.blocks.block_to_tensor import _gate_parameters
-from qadence.types import Endianness, ParamDictType, SeparatedParamDictType
+from qadence.types import Endianness, ParamDictType
 from qadence.utils import merge_separate_params
 
 
@@ -52,7 +52,7 @@ def horqify(state: Array) -> Array:
     return state.reshape([2] * n_qubits)
 
 
-def uniform_batchsize(param_values: ParamDictType | SeparatedParamDictType) -> ParamDictType:
+def uniform_batchsize(param_values: ParamDictType) -> ParamDictType:
     if "observables" in param_values or "circuit" in param_values:
         param_values = merge_separate_params(param_values)
     max_batch_size = max(p.size for p in param_values.values())  # type: ignore[union-attr]

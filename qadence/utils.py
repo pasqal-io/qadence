@@ -17,7 +17,7 @@ from torch.linalg import eigvals
 from rich.tree import Tree
 
 from qadence.blocks import AbstractBlock
-from qadence.types import Endianness, ResultType, TNumber, ParamDictType, SeparatedParamDictType
+from qadence.types import Endianness, ResultType, TNumber, ParamDictType
 
 if TYPE_CHECKING:
     from qadence.operations import Projector
@@ -30,7 +30,7 @@ __all__ = []  # type: ignore
 logger = getLogger(__name__)
 
 
-def merge_separate_params(param_dict: SeparatedParamDictType) -> ParamDictType:
+def merge_separate_params(param_dict: ParamDictType) -> ParamDictType:
     """Merge circuit and observables parameters."""
     merged_dict: ParamDictType = dict()
     for p in param_dict.values():
@@ -38,8 +38,8 @@ def merge_separate_params(param_dict: SeparatedParamDictType) -> ParamDictType:
     return merged_dict
 
 
-def check_ParamDictType(param_dict: ParamDictType | SeparatedParamDictType) -> bool:
-    """Check if dictionary is a dictionary of `ParamDictType`instances."""
+def check_Param_dict_values(param_dict: ParamDictType) -> bool:
+    """Check if dictionary of `ParamDictType` contains dictionary values."""
     if all(isinstance(p, dict) for p in param_dict.values()):
         return False
     return True

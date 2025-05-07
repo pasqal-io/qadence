@@ -22,7 +22,6 @@ from qadence.types import (
     Engine,
     ParamDictType,
     TNumber,
-    SeparatedParamDictType,
 )
 from qadence.utils import merge_separate_params
 
@@ -116,9 +115,7 @@ def embedding(
 
     uuid_to_expr = uuid_to_expression(block)
 
-    def embedding_fn(
-        params: ParamDictType, inputs: ParamDictType | SeparatedParamDictType
-    ) -> ParamDictType:
+    def embedding_fn(params: ParamDictType, inputs: ParamDictType) -> ParamDictType:
         embedded_params: dict[sympy.Expr, ArrayLike] = {}
         if "circuit" in inputs or "observables" in inputs:
             inputs = merge_separate_params(inputs)

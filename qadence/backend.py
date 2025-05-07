@@ -32,7 +32,6 @@ from qadence.types import (
     Endianness,
     Engine,
     ParamDictType,
-    SeparatedParamDictType,
 )
 
 logger = getLogger(__name__)
@@ -223,7 +222,7 @@ class Backend(ABC):
         if observable is not None:
             observable = observable if isinstance(observable, list) else [observable]
             conv_obs = []
-            obs_embedding_fn_list = []
+            obs_embedding_fns = []
 
             for obs in observable:
                 obs = check_observable(obs)
@@ -232,19 +231,18 @@ class Backend(ABC):
                     c_obs.abstract, self.config._use_gate_params, self.engine
                 )
                 params.update(obs_params)
-                obs_embedding_fn_list.append(obs_embedding_fn)
+                obs_embedding_fns.append(obs_embedding_fn)
                 conv_obs.append(c_obs)
 
             def embedding_fn_dict(a: dict, b: dict) -> dict:
-                if "circuit" in b:
+                if "circuit" in b or "observables" in b:
                     embedding_dict = {"circuit": circ_embedding_fn(a, b), "observables": dict()}
-                    if "observables" in b:
-                        for o in obs_embedding_fn_list:
-                            embedding_dict["observables"].update(o(a, b))
+                    for obs_embedding_fn in obs_embedding_fns:
+                        embedding_dict["observables"].update(obs_embedding_fn(a, b))
                 else:
                     embedding_dict = circ_embedding_fn(a, b)
-                    for o in obs_embedding_fn_list:
-                        embedding_dict.update(o(a, b))
+                    for obs_embedding_fn in obs_embedding_fns:
+                        embedding_dict.update(obs_embedding_fn(a, b))
                 return embedding_dict
 
             return Converted(conv_circ, conv_obs, embedding_fn_dict, params)
@@ -308,7 +306,7 @@ class Backend(ABC):
         self,
         circuit: ConvertedCircuit,
         observable: list[ConvertedObservable] | ConvertedObservable,
-        param_values: ParamDictType | SeparatedParamDictType = {},
+        param_values: ParamDictType = {},
         state: ArrayLike | None = None,
         measurement: Measurements | None = None,
         noise: NoiseHandler | None = None,
@@ -375,7 +373,7 @@ class Converted:
     circuit: ConvertedCircuit
     observable: list[ConvertedObservable] | ConvertedObservable | None
     embedding_fn: Callable
-    params: ParamDictType | SeparatedParamDictType
+    params: ParamDictType
 
     def __iter__(self) -> Iterator:
         yield self.circuit

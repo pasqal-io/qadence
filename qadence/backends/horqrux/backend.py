@@ -23,8 +23,8 @@ from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.noise import NoiseHandler
 from qadence.transpile import flatten, scale_primitive_blocks_only, transpile
-from qadence.types import BackendName, Endianness, Engine, ParamDictType, SeparatedParamDictType
-from qadence.utils import int_to_basis, merge_separate_params
+from qadence.types import BackendName, Endianness, Engine, ParamDictType
+from qadence.utils import int_to_basis
 
 from .config import Configuration, default_passes
 from .convert_ops import convert_block, convert_observable
@@ -112,7 +112,7 @@ class Backend(BackendInterface):
         self,
         circuit: ConvertedCircuit,
         observable: list[ConvertedObservable] | ConvertedObservable,
-        param_values: ParamDictType | SeparatedParamDictType = {},
+        param_values: ParamDictType = {},
         state: ArrayLike | None = None,
         measurement: Measurements | None = None,
         noise: NoiseHandler | None = None,
@@ -142,7 +142,7 @@ class Backend(BackendInterface):
             batch_size = max([arr.size for arr in param_values.values()])  # type: ignore[union-attr]
         n_obs = len(observable)
 
-        def _expectation(params: ParamDictType | SeparatedParamDictType) -> ArrayLike:
+        def _expectation(params: ParamDictType) -> ArrayLike:
             param_circuits = params["circuit"] if "circuit" in params else params
             param_observables = params["observables"] if "observables" in params else params
             out_state = self.run(
