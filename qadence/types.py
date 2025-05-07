@@ -430,7 +430,7 @@ class ReadOutOptimization(StrEnum):
     CONSTRAINED = "constrained"
 
 
-ParamDictType = dict[str, ArrayLike | dict[str, ArrayLike]]
+ParamDictType = dict[str, Union[ArrayLike, dict[str, ArrayLike]]]
 DifferentiableExpression = Callable[..., ArrayLike]
 
 
