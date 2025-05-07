@@ -25,6 +25,7 @@ authors = [
     { name = "Daniele Cucurachi", email = "daniele.cucurachi@pasqal.com" },
     { name = "Pim Venderbosch", email = "pim.venderbosch@pasqal.com" },
     { name = "Manu Lahariya", email = "manu.lahariya@pasqal.com" },
+    { name = "Sungwoo Ahn", email = "sungwoo.ahn@pasqal.com" },
 ]
 requires-python = ">=3.9"
 license = { text = "PASQAL OPEN-SOURCE SOFTWARE LICENSE (MIT-derived)" }
@@ -90,7 +91,14 @@ libs = ["qadence-libs"]
 dlprof = ["nvidia-pyindex", "nvidia-dlprof[pytorch]"]
 mlflow = ["mlflow"]
 all = ["pulser", "visualization", "protocols", "libs", "mlflow"]
-
+hub = [
+    "qadence-mitigation",
+    "qadence-measurement",
+    "qadence-model",
+]
+mitigation = ["qadence-mitigation"]
+measurement = ["qadence-measurement"]
+model = ["qadence-model"]
 
 [tool.hatch.envs.default]
 dependencies = [
