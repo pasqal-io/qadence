@@ -134,7 +134,7 @@ class Backend(BackendInterface):
         Returns:
             A jax.Array of shape (batch_size, n_observables)
         """
-        observable = observable if isinstance(observable, list) else [observable]
+        observables = observable if isinstance(observable, list) else [observable]
         if "observables" in param_values or "circuit" in param_values:
             raise NotImplementedError("The Horqrux backend does not support separated parameters.")
         else:
@@ -153,7 +153,9 @@ class Backend(BackendInterface):
                 horqify_state=True,
                 unhorqify_state=False,
             )
-            return jnp.array([observable.native(out_state, param_observables) for observable in observables])
+            return jnp.array(
+                [observable.native(out_state, param_observables) for observable in observables]
+            )
 
         if batch_size > 1:  # We vmap for batch_size > 1
             expvals = jax.vmap(_expectation, in_axes=({k: 0 for k in merged_params.keys()},))(

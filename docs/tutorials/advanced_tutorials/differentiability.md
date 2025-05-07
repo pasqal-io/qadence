@@ -178,11 +178,11 @@ To allow differentiating observable parameters only, we need to specify the `val
 ```python exec="on" source="material-block" session="differentiability"
 parametric_obs = "z" * obs
 z = torch.tensor([2.0], requires_grad=True)
-values = {"circuit": {"x": xs}, "observables": {"z" : z}}
+values = {"circuit": {"x": xs}, "observables": {"z": z}}
 
-model_ad = QuantumModel(circuit, parametric_obs,
-                        backend=BackendName.PYQTORCH,
-                        diff_mode=DiffMode.AD)
+model_ad = QuantumModel(
+    circuit, parametric_obs, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD
+)
 exp_val_ad = model_ad.expectation(values)
 
 dexpval_z_ad = torch.autograd.grad(
