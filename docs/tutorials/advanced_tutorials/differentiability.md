@@ -190,6 +190,10 @@ dexpval_z_ad = torch.autograd.grad(
 )[0]
 ```
 
+!!! warning "Only available via the PyQTorch backend"
+    Currently, differentiating with separated parameters is only
+    possible when the `pyqtorch` backend is selected.
+
 ### Differentiating only with circuit parameters
 
 We can also specify only the `circuit` key if the observable has no parameters.
@@ -215,6 +219,11 @@ We can also specify only the `observables` key if the circuit has no parameters.
 
 
 ```python exec="on" source="material-block" session="differentiability"
+block = chain(
+    hea(n_qubits, 1), RX(0, torch.rand(1, requires_grad=False))
+)
+circuit = QuantumCircuit(n_qubits, block)
+
 parametric_obs = "z" * obs
 z = torch.tensor([2.0], requires_grad=True)
 values = {"observables": {"z": z}}
@@ -225,13 +234,14 @@ model_ad = QuantumModel(
 exp_val_ad = model_ad.expectation(values)
 
 dexpval_z_ad = torch.autograd.grad(
-    exp_val_ad, values["observables"]["z"], torch.ones_like(exp_val_ad), create_graph=True
+    exp_val_ad,
+    values["observables"]["z"],
+    torch.ones_like(exp_val_ad),
+    create_graph=True,
 )[0]
 ```
 
-!!! warning "Only available via the PyQTorch backend"
-    Currently, differentiating with separated parameters is only
-    possible when the `pyqtorch` backend is selected.
+
 
 ## References
 
