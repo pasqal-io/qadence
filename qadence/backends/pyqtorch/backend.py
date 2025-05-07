@@ -31,7 +31,7 @@ from qadence.transpile import (
     set_noise,
     transpile,
 )
-from qadence.types import BackendName, Endianness, Engine
+from qadence.types import BackendName, Endianness, Engine, ParamDictType
 
 from .config import Configuration, default_passes
 from .convert_ops import convert_block, convert_readout_noise
@@ -182,7 +182,7 @@ class Backend(BackendInterface):
         self,
         circuit: ConvertedCircuit,
         observable: list[ConvertedObservable] | ConvertedObservable,
-        param_values: dict[str, Tensor] | dict[str, dict[str, Tensor]] = {},
+        param_values: ParamDictType = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
         noise: NoiseHandler | None = None,
@@ -213,7 +213,7 @@ class Backend(BackendInterface):
         self,
         circuit: ConvertedCircuit,
         observable: list[ConvertedObservable] | ConvertedObservable,
-        param_values: dict[str, Tensor] | dict[str, dict[str, Tensor]] = {},
+        param_values: ParamDictType = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
         noise: NoiseHandler | None = None,
@@ -256,7 +256,7 @@ class Backend(BackendInterface):
         self,
         circuit: ConvertedCircuit,
         observable: list[ConvertedObservable] | ConvertedObservable,
-        param_values: dict[str, Tensor] | dict[str, dict[str, Tensor]] = {},
+        param_values: ParamDictType = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
         noise: NoiseHandler | None = None,
@@ -283,7 +283,7 @@ class Backend(BackendInterface):
     def sample(
         self,
         circuit: ConvertedCircuit,
-        param_values: dict[str, Tensor] = {},
+        param_values: ParamDictType = {},
         n_shots: int = 1,
         state: Tensor | None = None,
         noise: NoiseHandler | None = None,
@@ -309,7 +309,7 @@ class Backend(BackendInterface):
             samples = apply_mitigation(noise=noise, mitigation=mitigation, samples=samples)
         return samples
 
-    def assign_parameters(self, circuit: ConvertedCircuit, param_values: dict[str, Tensor]) -> Any:
+    def assign_parameters(self, circuit: ConvertedCircuit, param_values: ParamDictType) -> Any:
         raise NotImplementedError
 
     @staticmethod

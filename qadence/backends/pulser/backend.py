@@ -28,7 +28,7 @@ from qadence.noise import NoiseHandler
 from qadence.overlap import overlap_exact
 from qadence.register import Register
 from qadence.transpile import transpile
-from qadence.types import BackendName, DeviceType, Endianness, Engine, NoiseProtocol
+from qadence.types import BackendName, DeviceType, Endianness, Engine, NoiseProtocol, ParamDictType
 
 from .channels import GLOBAL_CHANNEL, LOCAL_CHANNEL
 from .cloud import get_client
@@ -183,7 +183,7 @@ class Backend(BackendInterface):
     def run(
         self,
         circuit: ConvertedCircuit,
-        param_values: dict[str, Tensor] = {},
+        param_values: ParamDictType = {},
         state: Tensor | None = None,
         endianness: Endianness = Endianness.BIG,
         noise: NoiseHandler | None = None,
@@ -235,7 +235,7 @@ class Backend(BackendInterface):
         self,
         circuit: ConvertedCircuit,
         noise: NoiseHandler,
-        param_values: dict[str, Tensor] = dict(),
+        param_values: ParamDictType = dict(),
         state: Tensor | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
@@ -284,7 +284,7 @@ class Backend(BackendInterface):
     def sample(
         self,
         circuit: ConvertedCircuit,
-        param_values: dict[str, Tensor] = {},
+        param_values: ParamDictType = {},
         n_shots: int = 1,
         state: Tensor | None = None,
         noise: NoiseHandler | None = None,
@@ -322,7 +322,7 @@ class Backend(BackendInterface):
         self,
         circuit: ConvertedCircuit,
         observable: list[ConvertedObservable] | ConvertedObservable,
-        param_values: dict[str, Tensor] | dict[str, dict[str, Tensor]] = {},
+        param_values: ParamDictType = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
         noise: NoiseHandler | None = None,
