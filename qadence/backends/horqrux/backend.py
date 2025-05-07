@@ -136,7 +136,7 @@ class Backend(BackendInterface):
         """
         observable = observable if isinstance(observable, list) else [observable]
         if "observables" in param_values or "circuit" in param_values:
-            raise NotImplementedError("The HORQRUX backend does not support separated parameters.")
+            raise NotImplementedError("The Horqrux backend does not support separated parameters.")
         else:
             merged_params = param_values
             batch_size = max([arr.size for arr in param_values.values()])  # type: ignore[union-attr]
