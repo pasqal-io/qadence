@@ -153,7 +153,7 @@ class Backend(BackendInterface):
                 horqify_state=True,
                 unhorqify_state=False,
             )
-            return jnp.array([o.native(out_state, param_observables) for o in observable])
+            return jnp.array([observable.native(out_state, param_observables) for observable in observables])
 
         if batch_size > 1:  # We vmap for batch_size > 1
             expvals = jax.vmap(_expectation, in_axes=({k: 0 for k in merged_params.keys()},))(
