@@ -195,7 +195,7 @@ dexpval_z_ad = torch.autograd.grad(
 We can also specify only the `circuit` key if the observable has no parameters.
 
 ```python exec="on" source="material-block" session="differentiability"
-obs = 2.0 * obs
+obs = hamiltonian_factory(n_qubits, detuning=Z)
 xs = torch.linspace(0, 2*torch.pi, 100, requires_grad=True)
 values = {"circuit": {"x": xs}}
 
