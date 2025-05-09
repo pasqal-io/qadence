@@ -118,6 +118,40 @@ def set_as_fixed(
     return set_trainable(blocks, value=False, inplace=inplace)
 
 
+def set_as_feature(
+    blocks: AbstractBlock | list[AbstractBlock], parameters_to_set: list[str], inplace: bool = True
+) -> AbstractBlock | list[AbstractBlock]:
+    """Set list parameters in blocks as features (non-trainable parameters).
+
+    Args:
+        blocks (AbstractBlock | list[AbstractBlock]): Block or list of blocks for which
+            to set the trainable attribute
+        parameters_to_set (list[str]): Parameters names to set as feature parameters.
+        inplace (bool, optional): Whether to modify the block(s) in place or not. Currently, only
+
+    Raises:
+        NotImplementedError: if the `inplace` argument is set to False, the function will
+            raise  this exception
+
+    Returns:
+        AbstractBlock | list[AbstractBlock]: the input block or list of blocks with the
+            list of `parameters_to_set` set as feature parameters.
+    """
+    if isinstance(blocks, AbstractBlock):
+        blocks = [blocks]
+
+    if inplace:
+        for block in blocks:
+            params: list[sympy.Basic] = parameters(block)
+            for p in params:
+                if not p.is_number and p.name in parameters_to_set:
+                    p.trainable = False
+    else:
+        raise NotImplementedError("Not inplace set_as_feature is not yet available")
+
+    return blocks if len(blocks) > 1 else blocks[0]
+
+
 def validate(block: AbstractBlock) -> AbstractBlock:
     """Moves a block from global to local qubit numbers by adding PutBlocks.
 

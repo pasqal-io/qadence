@@ -39,7 +39,7 @@ from qadence.constructors import (
 from qadence.ml_tools import create_observable
 from qadence.operations import CNOT, CRX, CRY, RX, RY, H, I, X, Y, Z, Zero
 from qadence.parameters import Parameter, evaluate
-from qadence.transpile import invert_endianness, reassign, set_as_variational, set_as_fixed
+from qadence.transpile import invert_endianness, reassign, set_as_feature, set_as_fixed
 from qadence.types import PI, TNumber
 
 
@@ -258,10 +258,16 @@ def test_set_trainable() -> None:
     for p in params:
         assert p.trainable
 
+    non_trainable_b = set_as_feature(comp_block, ["rot_theta"])  # type: ignore [assignment]
+    assert isinstance(non_trainable_b, ChainBlock)
+    params = parameters(comp_block)
+    for p in params[:-1]:
+        assert p.trainable
+    assert not params[-1].trainable
+
     non_trainable_b = set_as_fixed(comp_block)  # type: ignore [assignment]
     assert isinstance(non_trainable_b, ChainBlock)
     assert len(non_trainable_b) == 4
-
     for p in params:
         assert not p.trainable
 
