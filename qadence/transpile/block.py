@@ -76,6 +76,48 @@ def set_trainable(
     return blocks if len(blocks) > 1 else blocks[0]
 
 
+def set_as_variational(
+    blocks: AbstractBlock | list[AbstractBlock], inplace: bool = True
+) -> AbstractBlock | list[AbstractBlock]:
+    """Set parameters in blocks as variational (trainable parameters).
+
+    Args:
+        blocks (AbstractBlock | list[AbstractBlock]): Block or list of blocks for which
+            to set the trainable attribute
+        inplace (bool, optional): Whether to modify the block(s) in place or not. Currently, only
+
+    Raises:
+        NotImplementedError: if the `inplace` argument is set to False, the function will
+            raise  this exception
+
+    Returns:
+        AbstractBlock | list[AbstractBlock]: the input block or list of blocks with the trainable
+            attribute set to True
+    """
+    return set_trainable(blocks, inplace=inplace)
+
+
+def set_as_fixed(
+    blocks: AbstractBlock | list[AbstractBlock], inplace: bool = True
+) -> AbstractBlock | list[AbstractBlock]:
+    """Set parameters in blocks as fixed (non-trainable parameters).
+
+    Args:
+        blocks (AbstractBlock | list[AbstractBlock]): Block or list of blocks for which
+            to set the trainable attribute
+        inplace (bool, optional): Whether to modify the block(s) in place or not. Currently, only
+
+    Raises:
+        NotImplementedError: if the `inplace` argument is set to False, the function will
+            raise  this exception
+
+    Returns:
+        AbstractBlock | list[AbstractBlock]: the input block or list of blocks with the trainable
+            attribute set to False
+    """
+    return set_trainable(blocks, value=False, inplace=inplace)
+
+
 def validate(block: AbstractBlock) -> AbstractBlock:
     """Moves a block from global to local qubit numbers by adding PutBlocks.
 

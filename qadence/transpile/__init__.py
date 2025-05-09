@@ -5,7 +5,8 @@ from .block import (
     chain_single_qubit_ops,
     repeat,
     scale_primitive_blocks_only,
-    set_trainable,
+    set_as_variational,
+    set_as_fixed,
     validate,
 )
 from .circuit import fill_identities
@@ -15,4 +16,4 @@ from .invert import invert_endianness, reassign
 from .noise import set_noise
 from .transpile import blockfn_to_circfn, transpile
 
-__all__ = ["set_trainable", "invert_endianness", "set_noise"]
+__all__ = ["set_as_variational", "set_as_fixed", "invert_endianness", "set_noise"]
