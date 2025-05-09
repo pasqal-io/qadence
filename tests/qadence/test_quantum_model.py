@@ -162,6 +162,8 @@ def test_set_trainable() -> None:
     assert model.num_vparams == 0
     model.set_as_variational()
     assert model.num_vparams == 1
+    model.set_as_fixed(["theta"])
+    assert model.num_vparams == 0
 
 
 @pytest.mark.parametrize(
