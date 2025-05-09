@@ -58,7 +58,7 @@ from qadence.operations import (
 )
 from qadence.parameters import FeatureParameter, Parameter
 from qadence.states import DensityMatrix, density_mat, random_state, uniform_state, zero_state
-from qadence.transpile import set_trainable
+from qadence.transpile import set_as_variational, set_as_fixed
 from qadence.types import PI, BackendName, DiffMode
 from qadence.utils import P0, P1
 
@@ -734,7 +734,7 @@ def test_dagger_returning_parametric_gates(
 ) -> None:
     n_qubits = 2 if block_class not in [RX, RY, RZ] else 1
     block = block_class(*tuple(range(n_qubits)), p_type)  # type: ignore[operator]
-    set_trainable(block, trainable)
+    set_as_variational(block) if trainable else set_as_fixed(block)
     circ = QuantumCircuit(n_qubits, block, block.dagger())
     backend = backend_factory(backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD)
     (pyqtorch_circ, _, embed, params) = backend.convert(circ)
@@ -750,11 +750,11 @@ def test_dagger_returning_parametric_gates(
 def test_dagger_returning_kernel() -> None:
     generatorx = 3.1 * X(0) + 1.2 * Y(0) + 1.1 * Y(1) + 1.9 * X(1) + 2.4 * Z(0) * Z(1)
     fmx = HamEvo(generatorx, parameter=acos(Parameter("x")))
-    set_trainable(fmx, False)
+    set_as_fixed(fmx)
     fmy = HamEvo(generatorx, parameter=acos(Parameter("y")))
-    set_trainable(fmy, False)
+    set_as_fixed(fmy)
     ansatz = hea(2, 2)
-    set_trainable(ansatz, True)
+    set_as_variational(ansatz)
     circ = QuantumCircuit(2, fmx, ansatz.dagger(), ansatz, fmy.dagger())
     backend = backend_factory(backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD)
     (pyqtorch_circ, _, embed, params) = backend.convert(circ)
