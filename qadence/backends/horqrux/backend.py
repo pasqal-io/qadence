@@ -134,19 +134,32 @@ class Backend(BackendInterface):
         Returns:
             A jax.Array of shape (batch_size, n_observables)
         """
-        observable = observable if isinstance(observable, list) else [observable]
-        batch_size = max([arr.size for arr in param_values.values()])
+        observables = observable if isinstance(observable, list) else [observable]
+        if "observables" in param_values or "circuit" in param_values:
+            raise NotImplementedError("The Horqrux backend does not support separated parameters.")
+        else:
+            merged_params = param_values
+            batch_size = max([arr.size for arr in param_values.values()])  # type: ignore[union-attr]
         n_obs = len(observable)
 
         def _expectation(params: ParamDictType) -> ArrayLike:
+            param_circuits = params["circuit"] if "circuit" in params else params
+            param_observables = params["observables"] if "observables" in params else params
             out_state = self.run(
-                circuit, params, state, endianness, horqify_state=True, unhorqify_state=False
+                circuit,
+                param_circuits,
+                state,
+                endianness,
+                horqify_state=True,
+                unhorqify_state=False,
             )
-            return jnp.array([o.native(out_state, params) for o in observable])
+            return jnp.array(
+                [observable.native(out_state, param_observables) for observable in observables]
+            )
 
         if batch_size > 1:  # We vmap for batch_size > 1
-            expvals = jax.vmap(_expectation, in_axes=({k: 0 for k in param_values.keys()},))(
-                uniform_batchsize(param_values)
+            expvals = jax.vmap(_expectation, in_axes=({k: 0 for k in merged_params.keys()},))(
+                uniform_batchsize(merged_params)
             )
         else:
             expvals = _expectation(param_values)

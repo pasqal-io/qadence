@@ -17,7 +17,7 @@ from torch.linalg import eigvals
 from rich.tree import Tree
 
 from qadence.blocks import AbstractBlock
-from qadence.types import Endianness, ResultType, TNumber
+from qadence.types import Endianness, ResultType, TNumber, ParamDictType
 
 if TYPE_CHECKING:
     from qadence.operations import Projector
@@ -28,6 +28,28 @@ __all__ = []  # type: ignore
 
 
 logger = getLogger(__name__)
+
+
+def merge_separate_params(param_dict: ParamDictType) -> ParamDictType:
+    """Merge circuit and observables parameters."""
+    merged_dict: ParamDictType = dict()
+    for p in param_dict.values():
+        merged_dict |= p
+    return merged_dict
+
+
+def check_param_dict_values(param_dict: ParamDictType) -> bool:
+    """Check if `param_dict` contains array values.
+
+    Args:
+        param_dict (ParamDictType): Dictionary of parameters.
+
+    Returns:
+        bool: True if values are arrays, False if values are dict.
+    """
+    if all(isinstance(p, dict) for p in param_dict.values()):
+        return False
+    return True
 
 
 def basis_to_int(basis: str, endianness: Endianness = Endianness.BIG) -> int:
