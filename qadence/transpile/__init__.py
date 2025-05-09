@@ -7,7 +7,6 @@ from .block import (
     scale_primitive_blocks_only,
     set_as_variational,
     set_as_fixed,
-    set_as_feature,
     validate,
 )
 from .circuit import fill_identities
@@ -17,4 +16,4 @@ from .invert import invert_endianness, reassign
 from .noise import set_noise
 from .transpile import blockfn_to_circfn, transpile
 
-__all__ = ["set_as_variational", "set_as_fixed", "set_as_feature", "invert_endianness", "set_noise"]
+__all__ = ["set_as_variational", "set_as_fixed", "invert_endianness", "set_noise"]

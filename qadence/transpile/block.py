@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from functools import singledispatch
 from logging import getLogger
+from functools import singledispatch
 from typing import Callable, Iterable, Type
 
 import sympy
@@ -42,13 +42,17 @@ def repeat(
 
 
 def set_trainable(
-    blocks: AbstractBlock | list[AbstractBlock], value: bool = True, inplace: bool = True
+    blocks: AbstractBlock | list[AbstractBlock],
+    restricted_names: list[str] = list(),
+    value: bool = True,
+    inplace: bool = True,
 ) -> AbstractBlock | list[AbstractBlock]:
     """Set the trainability of all parameters in a block to a given value.
 
     Args:
         blocks (AbstractBlock | list[AbstractBlock]): Block or list of blocks for which
             to set the trainable attribute
+        restricted_names (list[str]): Restricted list of parameters names to set the value.
         value (bool, optional): The value of the trainable attribute to assign to the input blocks
         inplace (bool, optional): Whether to modify the block(s) in place or not. Currently, only
 
@@ -66,10 +70,11 @@ def set_trainable(
 
     if inplace:
         for block in blocks:
-            params: list[sympy.Basic] = parameters(block)
+            params: list[sympy.Basic] = list(filter(lambda p: not p.is_number, parameters(block)))
+            if bool(restricted_names):
+                params = list(filter(lambda p: p.name in restricted_names, params))
             for p in params:
-                if not p.is_number:
-                    p.trainable = value
+                p.trainable = value
     else:
         raise NotImplementedError("Not inplace set_trainable is not yet available")
 
@@ -77,13 +82,16 @@ def set_trainable(
 
 
 def set_as_variational(
-    blocks: AbstractBlock | list[AbstractBlock], inplace: bool = True
+    blocks: AbstractBlock | list[AbstractBlock],
+    restricted_names: list[str] = list(),
+    inplace: bool = True,
 ) -> AbstractBlock | list[AbstractBlock]:
     """Set parameters in blocks as variational (trainable parameters).
 
     Args:
         blocks (AbstractBlock | list[AbstractBlock]): Block or list of blocks for which
             to set the trainable attribute
+        restricted_names (list[str]): Restricted list of parameters names to set the value.
         inplace (bool, optional): Whether to modify the block(s) in place or not. Currently, only
 
     Raises:
@@ -94,17 +102,20 @@ def set_as_variational(
         AbstractBlock | list[AbstractBlock]: the input block or list of blocks with the trainable
             attribute set to True
     """
-    return set_trainable(blocks, inplace=inplace)
+    return set_trainable(blocks, restricted_names=restricted_names, inplace=inplace)
 
 
 def set_as_fixed(
-    blocks: AbstractBlock | list[AbstractBlock], inplace: bool = True
+    blocks: AbstractBlock | list[AbstractBlock],
+    restricted_names: list[str] = list(),
+    inplace: bool = True,
 ) -> AbstractBlock | list[AbstractBlock]:
     """Set parameters in blocks as fixed (non-trainable parameters).
 
     Args:
         blocks (AbstractBlock | list[AbstractBlock]): Block or list of blocks for which
             to set the trainable attribute
+        restricted_names (list[str]): Restricted list of parameters names to set the value.
         inplace (bool, optional): Whether to modify the block(s) in place or not. Currently, only
 
     Raises:
@@ -115,41 +126,7 @@ def set_as_fixed(
         AbstractBlock | list[AbstractBlock]: the input block or list of blocks with the trainable
             attribute set to False
     """
-    return set_trainable(blocks, value=False, inplace=inplace)
-
-
-def set_as_feature(
-    blocks: AbstractBlock | list[AbstractBlock], parameters_to_set: list[str], inplace: bool = True
-) -> AbstractBlock | list[AbstractBlock]:
-    """Set list parameters in blocks as features (non-trainable parameters).
-
-    Args:
-        blocks (AbstractBlock | list[AbstractBlock]): Block or list of blocks for which
-            to set the trainable attribute
-        parameters_to_set (list[str]): Parameters names to set as feature parameters.
-        inplace (bool, optional): Whether to modify the block(s) in place or not. Currently, only
-
-    Raises:
-        NotImplementedError: if the `inplace` argument is set to False, the function will
-            raise  this exception
-
-    Returns:
-        AbstractBlock | list[AbstractBlock]: the input block or list of blocks with the
-            list of `parameters_to_set` set as feature parameters.
-    """
-    if isinstance(blocks, AbstractBlock):
-        blocks = [blocks]
-
-    if inplace:
-        for block in blocks:
-            params: list[sympy.Basic] = parameters(block)
-            for p in params:
-                if not p.is_number and p.name in parameters_to_set:
-                    p.trainable = False
-    else:
-        raise NotImplementedError("Not inplace set_as_feature is not yet available")
-
-    return blocks if len(blocks) > 1 else blocks[0]
+    return set_trainable(blocks, restricted_names=restricted_names, value=False, inplace=inplace)
 
 
 def validate(block: AbstractBlock) -> AbstractBlock:
