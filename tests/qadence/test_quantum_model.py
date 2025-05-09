@@ -152,6 +152,18 @@ def test_hamevo_qm() -> None:
     assert not torch.all(torch.isnan(model.expectation({})))
 
 
+def test_set_trainable() -> None:
+    obs = [Z(0) for _ in range(np.random.randint(1, 4))]
+    block = HamEvo(VariationalParameter("theta") * X(1), 1, (0, 1))
+    circ = QuantumCircuit(2, block)
+    model = QuantumModel(circ, obs, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD)  # type: ignore  # noqa
+    assert model.num_vparams == 1
+    model.set_as_fixed()
+    assert model.num_vparams == 0
+    model.set_as_variational()
+    assert model.num_vparams == 1
+
+
 @pytest.mark.parametrize(
     "backend",
     [
