@@ -229,12 +229,20 @@ class QuantumModel(nn.Module):
         self.embedding_fn = conv.embedding_fn
         self._circuit = conv.circuit
         self._observable = conv.observable
-        self._params = nn.ParameterDict(
-            {
-                str(key): nn.Parameter(val, requires_grad=val.requires_grad)
-                for key, val in conv.params.items()
-            }
-        )
+        if check_param_dict_values(conv.params):
+            self._params = nn.ParameterDict(
+                {
+                    str(key): nn.Parameter(val, requires_grad=val.requires_grad)  # type: ignore[union-attr]
+                    for key, val in conv.params.items()
+                }
+            )
+        else:
+            self._params = nn.ParameterDict(
+                {
+                    str(key): nn.Parameter(val, requires_grad=val.requires_grad)  # type: ignore[union-attr]
+                    for key, val in merge_separate_params(conv.params).items()
+                }
+            )
 
     def set_as_fixed(self, params: list[str] = list()) -> None:
         """Set as fixed the list of names in `params`.
@@ -258,12 +266,20 @@ class QuantumModel(nn.Module):
         self.embedding_fn = conv.embedding_fn
         self._circuit = conv.circuit
         self._observable = conv.observable
-        self._params = nn.ParameterDict(
-            {
-                str(key): nn.Parameter(val, requires_grad=val.requires_grad)
-                for key, val in conv.params.items()
-            }
-        )
+        if check_param_dict_values(conv.params):
+            self._params = nn.ParameterDict(
+                {
+                    str(key): nn.Parameter(val, requires_grad=val.requires_grad)  # type: ignore[union-attr]
+                    for key, val in conv.params.items()
+                }
+            )
+        else:
+            self._params = nn.ParameterDict(
+                {
+                    str(key): nn.Parameter(val, requires_grad=val.requires_grad)  # type: ignore[union-attr]
+                    for key, val in merge_separate_params(conv.params).items()
+                }
+            )
 
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:
         """Get backend-converted circuit.
