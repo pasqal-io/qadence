@@ -1,0 +1,12 @@
+:root {
+    /*
+    Proposal palette for Qadence
+    */
+    --marian-blue: #023E8A;
+    --federal-blue: #03045E;
+    --baby-powder: #FFFDFA;
+    --azure-blue: #DFF0F6;
+
+    --md-primary-fg-color: var(--federal-blue);
+    --md-accent-fg-color: var(--marian-blue);
+}
