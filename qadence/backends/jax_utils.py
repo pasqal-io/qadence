@@ -19,6 +19,7 @@ from qadence.blocks import (
 )
 from qadence.blocks.block_to_tensor import _gate_parameters
 from qadence.types import Endianness, ParamDictType
+from qadence.utils import merge_separate_params
 
 
 def jarr_to_tensor(arr: Array, dtype: Any = cdouble) -> Tensor:
@@ -52,9 +53,11 @@ def horqify(state: Array) -> Array:
 
 
 def uniform_batchsize(param_values: ParamDictType) -> ParamDictType:
-    max_batch_size = max(p.size for p in param_values.values())
+    if "observables" in param_values or "circuit" in param_values:
+        param_values = merge_separate_params(param_values)
+    max_batch_size = max(p.size for p in param_values.values())  # type: ignore[union-attr]
     batched_values = {
-        k: (v if v.size == max_batch_size else v.repeat(max_batch_size))
+        k: (v if v.size == max_batch_size else v.repeat(max_batch_size))  # type: ignore[union-attr]
         for k, v in param_values.items()
     }
     return batched_values

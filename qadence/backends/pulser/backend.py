@@ -28,7 +28,7 @@ from qadence.noise import NoiseHandler
 from qadence.overlap import overlap_exact
 from qadence.register import Register
 from qadence.transpile import transpile
-from qadence.types import BackendName, DeviceType, Endianness, Engine, NoiseProtocol
+from qadence.types import BackendName, DeviceType, Endianness, Engine, NoiseProtocol, ParamDictType
 
 from .channels import GLOBAL_CHANNEL, LOCAL_CHANNEL
 from .cloud import get_client
@@ -183,7 +183,7 @@ class Backend(BackendInterface):
     def run(
         self,
         circuit: ConvertedCircuit,
-        param_values: dict[str, Tensor] = {},
+        param_values: ParamDictType = {},
         state: Tensor | None = None,
         endianness: Endianness = Endianness.BIG,
         noise: NoiseHandler | None = None,
@@ -235,7 +235,7 @@ class Backend(BackendInterface):
         self,
         circuit: ConvertedCircuit,
         noise: NoiseHandler,
-        param_values: dict[str, Tensor] = dict(),
+        param_values: ParamDictType = dict(),
         state: Tensor | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
@@ -284,7 +284,7 @@ class Backend(BackendInterface):
     def sample(
         self,
         circuit: ConvertedCircuit,
-        param_values: dict[str, Tensor] = {},
+        param_values: ParamDictType = {},
         n_shots: int = 1,
         state: Tensor | None = None,
         noise: NoiseHandler | None = None,
@@ -322,7 +322,7 @@ class Backend(BackendInterface):
         self,
         circuit: ConvertedCircuit,
         observable: list[ConvertedObservable] | ConvertedObservable,
-        param_values: dict[str, Tensor] = {},
+        param_values: ParamDictType = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
         noise: NoiseHandler | None = None,
@@ -330,14 +330,19 @@ class Backend(BackendInterface):
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         observable = observable if isinstance(observable, list) else [observable]
+        param_circuit = param_values["circuit"] if "circuit" in param_values else param_values
+        param_observables = (
+            param_values["observables"] if "observables" in param_values else param_values
+        )
         if mitigation is None:
             if noise is None:
                 state = self.run(
-                    circuit, param_values=param_values, state=state, endianness=endianness
+                    circuit, param_values=param_circuit, state=state, endianness=endianness
                 )
                 support = sorted(list(circuit.abstract.register.support))
                 res_list = [
-                    obs.native(state, param_values, qubit_support=support) for obs in observable
+                    obs.native(state, param_observables, qubit_support=support)
+                    for obs in observable
                 ]
                 res = torch.transpose(torch.stack(res_list), 0, 1)
                 res = res if len(res.shape) > 0 else res.reshape(1)
@@ -345,7 +350,7 @@ class Backend(BackendInterface):
             elif noise is not None:
                 dms = self.run(
                     circuit=circuit,
-                    param_values=param_values,
+                    param_values=param_circuit,
                     state=state,
                     endianness=endianness,
                     noise=noise,
@@ -353,7 +358,9 @@ class Backend(BackendInterface):
                 support = sorted(list(circuit.abstract.register.support))
                 res_list = [
                     [
-                        obs.native(dm.squeeze(), param_values, qubit_support=support, noise=noise)
+                        obs.native(
+                            dm.squeeze(), param_observables, qubit_support=support, noise=noise
+                        )
                         for dm in dms
                     ]
                     for obs in observable

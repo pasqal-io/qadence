@@ -249,6 +249,24 @@ def test_qc_obs_different_support_1(diff_mode: DiffMode) -> None:
     for m in [model_obs0_rot1, model_obs1_rot1, model_obs01_rot1]:
         assert torch.autograd.gradcheck(lambda x: fn(m, x), x, nondet_tol=ADJOINT_ACCEPTANCE)
 
+    query_sep_dict = {"circuit": query_dict}
+    if diff_mode == diff_mode.AD:
+        assert torch.isclose(
+            model_obs0_rot1.expectation(query_sep_dict), model_obs0_id_0.expectation({})
+        )
+        assert torch.isclose(
+            model_obs01_rot1.expectation(query_sep_dict), model_obs01_rot1.expectation(query_dict)
+        )
+        assert torch.isclose(
+            model_obs1_rot1.expectation(query_sep_dict), model_obs1_rot1.expectation(query_dict)
+        )
+
+        def fn(model: QuantumModel, x: torch.Tensor) -> torch.Tensor:
+            return model.expectation({"circuit": {"x": x}})
+
+        for m in [model_obs0_rot1, model_obs1_rot1, model_obs01_rot1]:
+            assert torch.autograd.gradcheck(lambda x: fn(m, x), x, nondet_tol=ADJOINT_ACCEPTANCE)
+
 
 def test_distinct_obs_invert() -> None:
     qc = QuantumCircuit(2, chain(RX(0, FeatureParameter("x")), RX(1, FeatureParameter("y"))))
@@ -272,8 +290,10 @@ def test_distinct_obs_invert() -> None:
     )
 
     query_dict = {"x": torch.tensor([2.1]), "y": torch.tensor([2.1])}
+    query_dict_sep = {"circuit": query_dict}
 
     assert torch.isclose(m_pyq.expectation(query_dict), m_pyq_inv.expectation(query_dict))
+    assert torch.isclose(m_pyq.expectation(query_dict), m_pyq_inv.expectation(query_dict_sep))
 
 
 def test_qm_obs_single_feature_param() -> None:
@@ -288,6 +308,9 @@ def test_qm_obs_single_feature_param() -> None:
         QuantumCircuit(1, I(0)), cost_f, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD
     )
     assert torch.all(torch.isclose(model_f.expectation({"x": torch.tensor([2.7])}), model_v_exp))
+    assert torch.all(
+        torch.isclose(model_f.expectation({"observables": {"x": torch.tensor([2.7])}}), model_v_exp)
+    )
 
 
 @pytest.mark.parametrize("batch_size", [1, 2])
@@ -305,8 +328,9 @@ def test_qm_obs_batch_feature_param(batch_size: int, observables: list[AbstractB
         QuantumCircuit(1, I(0)), observables, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD
     )
     model_f_exp = model_f.expectation(batch_query_dict)
-
+    model_f_exp_sep = model_f.expectation({"observables": batch_query_dict})
     assert torch.all(torch.isclose(model_f_exp, expected_output))
+    assert torch.all(torch.isclose(model_f_exp, model_f_exp_sep))
 
 
 def test_model_inputs_in_observable() -> None:

@@ -31,7 +31,7 @@ from qadence.transpile import (
     set_noise,
     transpile,
 )
-from qadence.types import BackendName, Endianness, Engine
+from qadence.types import BackendName, Endianness, Engine, ParamDictType
 
 from .config import Configuration, default_passes
 from .convert_ops import convert_block, convert_readout_noise
@@ -182,16 +182,21 @@ class Backend(BackendInterface):
         self,
         circuit: ConvertedCircuit,
         observable: list[ConvertedObservable] | ConvertedObservable,
-        param_values: dict[str, Tensor] = {},
+        param_values: ParamDictType = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
         noise: NoiseHandler | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         set_block_and_readout_noises(circuit, noise, self.config)
+        param_circuit = param_values["circuit"] if "circuit" in param_values else param_values
+        param_observables = (
+            param_values["observables"] if "observables" in param_values else param_values
+        )
+
         state = self.run(
             circuit,
-            param_values=param_values,
+            param_values=param_circuit,
             state=state,
             endianness=endianness,
             pyqify_state=True,
@@ -200,7 +205,7 @@ class Backend(BackendInterface):
         )
         observable = observable if isinstance(observable, list) else [observable]
         _expectation = torch.hstack(
-            [obs.native.expectation(state, param_values).reshape(-1, 1) for obs in observable]
+            [obs.native.expectation(state, param_observables).reshape(-1, 1) for obs in observable]
         )
         return _expectation
 
@@ -208,7 +213,7 @@ class Backend(BackendInterface):
         self,
         circuit: ConvertedCircuit,
         observable: list[ConvertedObservable] | ConvertedObservable,
-        param_values: dict[str, Tensor] = {},
+        param_values: ParamDictType = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
         noise: NoiseHandler | None = None,
@@ -230,9 +235,18 @@ class Backend(BackendInterface):
 
         list_expvals = []
         observables = observable if isinstance(observable, list) else [observable]
-        for vals in to_list_of_dicts(param_values):
-            wf = self.run(circuit, vals, state, endianness, pyqify_state=True, unpyqify_state=False)
-            exs = torch.cat([obs.native.expectation(wf, vals) for obs in observables], 0)
+        param_circuits = param_values["circuit"] if "circuit" in param_values else param_values
+        param_observables = (
+            param_values["observables"] if "observables" in param_values else param_values
+        )
+
+        for vals_circ, vals_obs in zip(
+            to_list_of_dicts(param_circuits), to_list_of_dicts(param_observables)
+        ):
+            wf = self.run(
+                circuit, vals_circ, state, endianness, pyqify_state=True, unpyqify_state=False
+            )
+            exs = torch.cat([obs.native.expectation(wf, vals_obs) for obs in observables], 0)
             list_expvals.append(exs)
 
         batch_expvals = torch.vstack(list_expvals)
@@ -242,7 +256,7 @@ class Backend(BackendInterface):
         self,
         circuit: ConvertedCircuit,
         observable: list[ConvertedObservable] | ConvertedObservable,
-        param_values: dict[str, Tensor] = {},
+        param_values: ParamDictType = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
         noise: NoiseHandler | None = None,
@@ -269,7 +283,7 @@ class Backend(BackendInterface):
     def sample(
         self,
         circuit: ConvertedCircuit,
-        param_values: dict[str, Tensor] = {},
+        param_values: ParamDictType = {},
         n_shots: int = 1,
         state: Tensor | None = None,
         noise: NoiseHandler | None = None,
@@ -295,7 +309,7 @@ class Backend(BackendInterface):
             samples = apply_mitigation(noise=noise, mitigation=mitigation, samples=samples)
         return samples
 
-    def assign_parameters(self, circuit: ConvertedCircuit, param_values: dict[str, Tensor]) -> Any:
+    def assign_parameters(self, circuit: ConvertedCircuit, param_values: ParamDictType) -> Any:
         raise NotImplementedError
 
     @staticmethod
