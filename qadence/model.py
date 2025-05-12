@@ -32,6 +32,7 @@ from qadence.utils import (
     check_param_dict_values,
     merge_separate_params,
 )
+from qadence.transpile import set_as_variational, set_as_fixed
 
 logger = getLogger(__name__)
 
@@ -205,6 +206,80 @@ class QuantumModel(nn.Module):
         if isinstance(self.backend, DifferentiableBackend):
             current_config = self.backend.backend.config
         BackendConfiguration.change_config(current_config, new_config)
+
+    def set_as_variational(self, params: list[str] = list()) -> None:
+        """Set as variational the list of names in `params`.
+
+        Args:
+            params (list[str], optional): List of parameters to fix. Defaults to list().
+        """
+        circuit: QuantumCircuit = self._circuit.original
+        if self._observable is not None:
+            if isinstance(self._observable, list):
+                for obs in self._observable:
+                    set_as_variational(obs.original, params)
+                observable = [obs.original for obs in self._observable]
+            else:
+                set_as_variational(self._observable.original, params)
+                observable = [self._observable.original]
+        else:
+            observable = self._observable  # type: ignore[assignment]
+        set_as_variational(circuit.block, params)
+        conv = self.backend.convert(circuit, observable)
+        self.embedding_fn = conv.embedding_fn
+        self._circuit = conv.circuit
+        self._observable = conv.observable
+        if check_param_dict_values(conv.params):
+            self._params = nn.ParameterDict(
+                {
+                    str(key): nn.Parameter(val, requires_grad=val.requires_grad)  # type: ignore[union-attr]
+                    for key, val in conv.params.items()
+                }
+            )
+        else:
+            self._params = nn.ParameterDict(
+                {
+                    str(key): nn.Parameter(val, requires_grad=val.requires_grad)  # type: ignore[union-attr]
+                    for key, val in merge_separate_params(conv.params).items()
+                }
+            )
+
+    def set_as_fixed(self, params: list[str] = list()) -> None:
+        """Set as fixed the list of names in `params`.
+
+        Args:
+            params (list[str], optional): List of parameters to fix. Defaults to list().
+        """
+        circuit: QuantumCircuit = self._circuit.original
+        if self._observable is not None:
+            if isinstance(self._observable, list):
+                for obs in self._observable:
+                    set_as_fixed(obs.original, params)
+                observable = [obs.original for obs in self._observable]
+            else:
+                set_as_fixed(self._observable.original, params)
+                observable = [self._observable.original]
+        else:
+            observable = self._observable  # type: ignore[assignment]
+        set_as_fixed(circuit.block, params)
+        conv = self.backend.convert(circuit, observable)
+        self.embedding_fn = conv.embedding_fn
+        self._circuit = conv.circuit
+        self._observable = conv.observable
+        if check_param_dict_values(conv.params):
+            self._params = nn.ParameterDict(
+                {
+                    str(key): nn.Parameter(val, requires_grad=val.requires_grad)  # type: ignore[union-attr]
+                    for key, val in conv.params.items()
+                }
+            )
+        else:
+            self._params = nn.ParameterDict(
+                {
+                    str(key): nn.Parameter(val, requires_grad=val.requires_grad)  # type: ignore[union-attr]
+                    for key, val in merge_separate_params(conv.params).items()
+                }
+            )
 
     def circuit(self, circuit: QuantumCircuit) -> ConvertedCircuit:
         """Get backend-converted circuit.

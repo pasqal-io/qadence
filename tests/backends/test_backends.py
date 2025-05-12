@@ -31,7 +31,7 @@ from qadence.states import (
     rand_product_state,
     random_state,
 )
-from qadence.transpile import flatten, set_trainable
+from qadence.transpile import flatten, set_as_fixed, set_as_variational
 from qadence.types import PI, BackendName, DiffMode
 from qadence.utils import nqubits_to_basis
 from qadence.engines.differentiable_backend import DifferentiableBackend
@@ -371,11 +371,11 @@ def test_dagger_returning_kernel(backend_name: BackendName) -> None:
 
     generatorx = 3.1 * X(0) + 1.2 * Y(0) + 1.1 * Y(1) + 1.9 * X(1) + 2.4 * Z(0) * Z(1)
     fmx = HamEvo(generatorx, parameter=sympy.acos(Parameter("x")))
-    set_trainable(fmx, False)
+    set_as_fixed(fmx)
     fmy = HamEvo(generatorx, parameter=sympy.acos(Parameter("y")))
-    set_trainable(fmy, False)
+    set_as_fixed(fmy)
     ansatz = hea(2, 2)
-    set_trainable(ansatz, True)
+    set_as_variational(ansatz)
     circ = QuantumCircuit(2, fmx, ansatz.dagger(), ansatz, fmy.dagger())
     backend = backend_factory(backend=backend_name, diff_mode=DiffMode.AD)
     (pyqtorch_circ, _, embed, params) = backend.convert(circ)
