@@ -610,7 +610,7 @@ def partial_trace(rho: DensityMatrix, keep_indices: list[int]) -> DensityMatrix:
     """
     from pyqtorch.utils import dm_partial_trace
 
-    return dm_partial_trace(rho.permute((1, 2, 0)), keep_indices).permute((0, 1, 2))
+    return dm_partial_trace(rho.permute((1, 2, 0)), keep_indices).permute((2, 0, 1))
 
 
 def von_neumann_entropy(rho: DensityMatrix, eps: float = 1e-12) -> torch.Tensor:
@@ -693,7 +693,10 @@ def fidelity(rho: DensityMatrix, sigma: DensityMatrix) -> Tensor:
     sqrt_rho = torch.zeros_like(rho)
     for i in range(rho.shape[0]):
         sqrt_rho[i] = torch.mm(
-            rho_eigvecs[i], torch.mm(torch.diag(sqrt_eigvals[i]), rho_eigvecs[i].t().conj())
+            rho_eigvecs[i],
+            torch.mm(
+                torch.diag(sqrt_eigvals[i]).to(dtype=rho_eigvecs.dtype), rho_eigvecs[i].t().conj()
+            ),
         )
 
     # Compute √ρ σ √ρ for each batch element
