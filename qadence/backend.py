@@ -25,7 +25,14 @@ from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.noise import NoiseHandler
 from qadence.parameters import stringify
-from qadence.types import ArrayLike, BackendName, DiffMode, Endianness, Engine, ParamDictType
+from qadence.types import (
+    ArrayLike,
+    BackendName,
+    DiffMode,
+    Endianness,
+    Engine,
+    ParamDictType,
+)
 
 logger = getLogger(__name__)
 
@@ -215,7 +222,7 @@ class Backend(ABC):
         if observable is not None:
             observable = observable if isinstance(observable, list) else [observable]
             conv_obs = []
-            obs_embedding_fn_list = []
+            obs_embedding_fns = []
 
             for obs in observable:
                 obs = check_observable(obs)
@@ -224,13 +231,18 @@ class Backend(ABC):
                     c_obs.abstract, self.config._use_gate_params, self.engine
                 )
                 params.update(obs_params)
-                obs_embedding_fn_list.append(obs_embedding_fn)
+                obs_embedding_fns.append(obs_embedding_fn)
                 conv_obs.append(c_obs)
 
             def embedding_fn_dict(a: dict, b: dict) -> dict:
-                embedding_dict = circ_embedding_fn(a, b)
-                for o in obs_embedding_fn_list:
-                    embedding_dict.update(o(a, b))
+                if "circuit" in b or "observables" in b:
+                    embedding_dict = {"circuit": circ_embedding_fn(a, b), "observables": dict()}
+                    for obs_embedding_fn in obs_embedding_fns:
+                        embedding_dict["observables"].update(obs_embedding_fn(a, b))
+                else:
+                    embedding_dict = circ_embedding_fn(a, b)
+                    for obs_embedding_fn in obs_embedding_fns:
+                        embedding_dict.update(obs_embedding_fn(a, b))
                 return embedding_dict
 
             return Converted(conv_circ, conv_obs, embedding_fn_dict, params)
@@ -316,7 +328,11 @@ class Backend(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def assign_parameters(self, circuit: ConvertedCircuit, param_values: dict[str, Tensor]) -> Any:
+    def assign_parameters(
+        self,
+        circuit: ConvertedCircuit,
+        param_values: dict[str, Tensor] | dict[str, dict[str, Tensor]],
+    ) -> Any:
         raise NotImplementedError
 
     @staticmethod

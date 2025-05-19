@@ -8,7 +8,13 @@ from qadence.engines.jax.differentiable_expectation import DifferentiableExpecta
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.noise import NoiseHandler
-from qadence.types import ArrayLike, DiffMode, Endianness, Engine, ParamDictType
+from qadence.types import (
+    ArrayLike,
+    DiffMode,
+    Endianness,
+    Engine,
+    ParamDictType,
+)
 
 
 class DifferentiableBackend(DifferentiableBackendInterface):

@@ -37,6 +37,11 @@ def test_expectation_batched(batched_circuit: QuantumCircuit) -> None:
     expval = backend.expectation(circ, observable=obs, param_values=embed(params, values))
     assert expval.shape == (batch_size, len(observables))
 
+    # try separated values
+    values_sep = {"circuit": values}
+    expval_sep = backend.expectation(circ, observable=obs, param_values=embed(params, values_sep))
+    assert torch.allclose(expval, expval_sep)
+
 
 def test_run_batched(batched_circuit: QuantumCircuit) -> None:
     batch_size = 3
