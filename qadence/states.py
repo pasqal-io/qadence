@@ -41,6 +41,10 @@ __all__ = [
     "DensityMatrix",
     "density_mat",
     "overlap",
+    "partial_trace",
+    "von_neumann_entropy",
+    "purity",
+    "fidelity",
 ]
 
 ATOL_64 = 1e-14  # 64 bit precision

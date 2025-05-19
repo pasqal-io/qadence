@@ -122,6 +122,9 @@ def test_density_mat_utilsfn() -> None:
     for n in [1, 2, 3, 4]:
         assert torch.allclose(purity(dm_00, n), torch.ones(1, dtype=torch.double))
         assert torch.allclose(purity(bell_state, n), torch.ones(1, dtype=torch.double))
+        assert torch.allclose(
+            purity(mixed_state, n), (2 ** (1 - n)) * torch.ones(1, dtype=torch.double)
+        )
 
     assert torch.allclose(fidelity(dm_00, dm_00), torch.ones(1, dtype=torch.double))
     assert torch.allclose(fidelity(bell_state, bell_state), torch.ones(1, dtype=torch.double))
