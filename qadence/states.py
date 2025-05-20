@@ -602,7 +602,7 @@ def partial_trace(rho: DensityMatrix, keep_indices: list[int]) -> DensityMatrix:
     """
     Compute the partial trace of a density matrix for a system of several qubits with batch size.
 
-    This function also permutes the qubits according to the order specified in keep_indices.
+    This function also permutes qubits according to the order specified in keep_indices.
 
     Args:
         rho (DensityMatrix) : Density matrix of shape [batch_size, 2**n_qubits, 2**n_qubits].
