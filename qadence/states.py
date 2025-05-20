@@ -632,7 +632,7 @@ def von_neumann_entropy(rho: DensityMatrix, eps: float = 1e-12) -> torch.Tensor:
     """
 
     # Compute eigenvalues for each density matrix in the batch
-    # For a density matrix, eigenvalues should be real and non-negative
+    # For a Hermitian density matrix, eigenvalues should be real and non-negative
     eigenvalues = torch.linalg.eigvalsh(rho)
 
     # Normalize eigenvalues to ensure they sum to 1 (trace preservation)
