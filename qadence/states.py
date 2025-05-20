@@ -41,6 +41,10 @@ __all__ = [
     "DensityMatrix",
     "density_mat",
     "overlap",
+    "partial_trace",
+    "von_neumann_entropy",
+    "purity",
+    "fidelity",
 ]
 
 ATOL_64 = 1e-14  # 64 bit precision
@@ -589,3 +593,128 @@ def equivalent_state(
     fidelity = overlap(s0, s1)
     expected = torch.ones_like(fidelity)
     return torch.allclose(fidelity, expected, rtol=rtol, atol=atol)  # type: ignore[no-any-return]
+
+
+# DensityMatrix utility functions
+
+
+def partial_trace(rho: DensityMatrix, keep_indices: list[int]) -> DensityMatrix:
+    """
+    Compute the partial trace of a density matrix for a system of several qubits with batch size.
+
+    This function also permutes qubits according to the order specified in keep_indices.
+
+    Args:
+        rho (DensityMatrix) : Density matrix of shape [batch_size, 2**n_qubits, 2**n_qubits].
+        keep_indices (list[int]): Index of the qubit subsystems to keep.
+
+    Returns:
+        DensityMatrix: Reduced density matrix after the partial trace,
+        of shape [batch_size, 2**n_keep, 2**n_keep].
+    """
+    from pyqtorch.utils import dm_partial_trace
+
+    return dm_partial_trace(rho.permute((1, 2, 0)), keep_indices).permute((2, 0, 1))
+
+
+def von_neumann_entropy(rho: DensityMatrix, eps: float = 1e-12) -> torch.Tensor:
+    """Calculate the von Neumann entropy of a quantum density matrix.
+
+    The von Neumann entropy is defined as S(ρ) = -Tr(ρ log₂ ρ) = -∑ᵢ λᵢ log₂ λᵢ,
+    where λᵢ are the eigenvalues of ρ.
+
+    Args:
+        rho: Density matrix of shape [batch_size, dim, dim]
+        eps: Small value to avoid log(0) for zero eigenvalues
+
+    Returns:
+        Von Neumann entropy for each density matrix in the batch, shape [batch_size]
+    """
+
+    # Compute eigenvalues for each density matrix in the batch
+    # For a Hermitian density matrix, eigenvalues should be real and non-negative
+    eigenvalues = torch.linalg.eigvalsh(rho)
+
+    # Normalize eigenvalues to ensure they sum to 1 (trace preservation)
+    # This step might be redundant but helps with numerical stability
+    eigenvalues = eigenvalues / torch.sum(eigenvalues, dim=1, keepdim=True)
+
+    # Filter out very small eigenvalues to avoid numerical issues
+    valid_eigenvalues = eigenvalues.clone()
+    valid_eigenvalues[valid_eigenvalues < eps] = eps
+
+    # Compute the entropy: -∑ᵢ λᵢ log₂ λᵢ
+    # Using natural logarithm and converting to base 2
+    log_base_conversion = torch.log(torch.tensor(2.0, device=rho.device))
+    entropy = -torch.sum(
+        valid_eigenvalues * torch.log(valid_eigenvalues) / log_base_conversion, dim=1
+    )
+
+    return entropy
+
+
+def purity(rho: DensityMatrix, order: int = 2) -> Tensor:
+    """Compute the n-th purity of a density matrix.
+
+    Args:
+        rho (DensityMatrix): Density matrix.
+        order (int, optional): Exponent n.
+
+    Returns:
+        Tensor: Tr[rho ** n]
+    """
+    # Compute eigenvalues
+    eigenvalues = torch.linalg.eigvalsh(rho)
+
+    # Compute the sum of eigenvalues raised to power n
+    return torch.sum(eigenvalues**order, dim=1)
+
+
+def fidelity(rho: DensityMatrix, sigma: DensityMatrix) -> Tensor:
+    """Calculate the fidelity between two quantum states represented by density matrices.
+
+    The fidelity is defined as F(ρ,σ) = Tr[√(√ρ σ √ρ)], or equivalently,
+    F(ρ,σ) = ||√ρ·√σ||₁ where ||·||₁ is the trace norm.
+
+    Args:
+        rho: First density matrix of shape [batch_size, dim, dim]
+        sigma: Second density matrix of shape [batch_size, dim, dim]
+
+    Returns:
+        Fidelity between each pair of density matrices in the batch, shape [batch_size]
+    """
+
+    # Compute square root of rho
+    rho_eigvals, rho_eigvecs = torch.linalg.eigh(rho)
+
+    # Ensure non-negative eigenvalues
+    rho_eigvals = torch.clamp(rho_eigvals, min=0)
+
+    # Compute square root using eigendecomposition
+    sqrt_eigvals = torch.sqrt(rho_eigvals)
+
+    # Compute √ρ for each batch element
+    sqrt_rho = torch.zeros_like(rho)
+    for i in range(rho.shape[0]):
+        sqrt_rho[i] = torch.mm(
+            rho_eigvecs[i],
+            torch.mm(
+                torch.diag(sqrt_eigvals[i]).to(dtype=rho_eigvecs.dtype), rho_eigvecs[i].t().conj()
+            ),
+        )
+
+    # Compute √ρ σ √ρ for each batch element
+    inner_product = torch.zeros_like(rho)
+    for i in range(rho.shape[0]):
+        inner_product[i] = torch.mm(sqrt_rho[i], torch.mm(sigma[i], sqrt_rho[i]))
+
+    # Compute eigenvalues of inner product
+    inner_eigvals = torch.linalg.eigvalsh(inner_product)
+
+    # Ensure non-negative eigenvalues
+    inner_eigvals = torch.clamp(inner_eigvals, min=0)
+
+    # Compute the fidelity as the sum of the square roots of eigenvalues
+    fidelity_values = torch.sum(torch.sqrt(inner_eigvals), dim=1)
+
+    return fidelity_values
