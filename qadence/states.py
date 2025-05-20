@@ -600,7 +600,7 @@ def equivalent_state(
 
 def partial_trace(rho: DensityMatrix, keep_indices: list[int]) -> DensityMatrix:
     """
-    Computes the partial trace of a density matrix for a system of several qubits with batch size.
+    Compute the partial trace of a density matrix for a system of several qubits with batch size.
 
     This function also permutes the qubits according to the order specified in keep_indices.
 
