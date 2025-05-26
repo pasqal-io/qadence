@@ -1,0 +1,4674 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://pasqal-io.github.io/qadence/v1.11.4/tutorials/qml/config_qnn/">
+      
+      
+        <link rel="prev" href="../">
+      
+      
+        <link rel="next" href="../qcl/">
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.14">
+    
+    
+      
+        <title>Configuring a QNN - Qadence</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.342714a4.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/_markdown_exec_pyodide.css">
+    
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../../extras/css/mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../../extras/css/colors.css">
+    
+      <link rel="stylesheet" href="../../../extras/css/home.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#defining-the-observable" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="Qadence" class="md-header__button md-logo" aria-label="Qadence" data-md-component="logo">
+      
+  <img src="../../../extras/assets/logo/qadence_logo_small_white.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Qadence
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Configuring a QNN
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/pasqal-io/qadence/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    qadence
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../getting_started/installation/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Getting started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../content/block_system/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Contents
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="../../" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Tutorials
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../api/blocks/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  API
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="https://github.com/pasqal-io/qadence/discussions" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Contact
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="Qadence" class="md-nav__button md-logo" aria-label="Qadence" data-md-component="logo">
+      
+  <img src="../../../extras/assets/logo/qadence_logo_small_white.svg" alt="logo">
+
+    </a>
+    Qadence
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/pasqal-io/qadence/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    qadence
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Getting started
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Getting started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting_started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Installation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_2" id="__nav_2_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Development & Info
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            Development & Info
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting_started/CONTRIBUTING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Contributing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting_started/CODE_OF_CONDUCT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Code of conduct
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting_started/LICENSE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    License
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Contents
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Contents
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../content/block_system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Block system
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../content/parameters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Parametric programs
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../content/quantummodels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quantum models
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../content/register/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quantum registers
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../content/state_init/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    State initialization
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../content/noisy_simulation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Noisy Simulation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../content/hamiltonians/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Arbitrary Hamiltonians
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../content/time_dependent/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Time-dependent generators
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../content/qml_constructors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    QML Constructors
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../content/overlap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Wavefunction overlaps
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../content/backends/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Backends
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_12" id="__nav_3_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Useful info
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_12">
+            <span class="md-nav__icon md-icon"></span>
+            Useful info
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../content/state_conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    State conventions
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../content/serializ_and_prep/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Serialization
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Tutorials
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Tutorials
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../digital_analog_qc/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Digital-analog quantum computing
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_1" id="__nav_4_1_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_1">
+            <span class="md-nav__icon md-icon"></span>
+            Digital-analog quantum computing
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../digital_analog_qc/analog-basics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Basic operations on neutral-atoms
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../digital_analog_qc/analog-blocks-qcl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Fitting a function with analog blocks
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../digital_analog_qc/semi-local-addressing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Restricted local addressability
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../digital_analog_qc/pulser-basic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Pulse-level programming with Pulser
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../digital_analog_qc/digital-analog-qcl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Fitting a function with a Hamiltonian ansatz
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../digital_analog_qc/analog-qubo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Solve a QUBO problem
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../digital_analog_qc/daqc-cnot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    CNOT with interacting qubits
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Variational quantum algorithms
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_2" id="__nav_4_2_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            Variational quantum algorithms
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Configuring a QNN
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Configuring a QNN
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#defining-the-observable" class="md-nav__link">
+    <span class="md-ellipsis">
+      Defining the Observable
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Defining the Observable">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#scaling-and-shifting-the-qnn-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      Scaling and Shifting the QNN Output
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#defining-the-feature-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      Defining the Feature Map
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#defining-the-ansatz" class="md-nav__link">
+    <span class="md-ellipsis">
+      Defining the Ansatz
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#defining-the-qnn-from-the-configs" class="md-nav__link">
+    <span class="md-ellipsis">
+      Defining the QNN from the Configs
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../qcl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quantum circuit learning
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../classification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Classification with QNN
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../qaoa/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Solving MaxCut with QAOA
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dqc_1d/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Solving a 1D ODE
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../qcnn/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    QCNN model
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../ml_tools/intro/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    ML Tools
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_3" id="__nav_4_3_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_3">
+            <span class="md-nav__icon md-icon"></span>
+            ML Tools
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ml_tools/trainer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Training
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ml_tools/data_and_config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Data and Configurations
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ml_tools/callbacks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Training Callbacks
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ml_tools/accelerator_doc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Accelerator
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ml_tools/CPU/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    CPU Training
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ml_tools/GPU/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    GPU Training
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../advanced_tutorials/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Advanced Tutorials
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_4" id="__nav_4_4_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_4">
+            <span class="md-nav__icon md-icon"></span>
+            Advanced Tutorials
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../advanced_tutorials/differentiability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quantum circuits differentiation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../advanced_tutorials/custom-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Custom quantum models
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../advanced_tutorials/projectors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Projector blocks
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../advanced_tutorials/profiling-and-debugging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Profiling and debugging on CUDA devices
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../advanced_tutorials/cloud-submission/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Submission to Pasqal Cloud
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../realistic_sims/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Realistic simulations
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_5" id="__nav_4_5_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_5">
+            <span class="md-nav__icon md-icon"></span>
+            Realistic simulations
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../realistic_sims/measurements/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Measurement protocols
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../realistic_sims/noise/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Simulated errors
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../realistic_sims/mitigation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Error mitigation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_6" id="__nav_4_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Development
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_6">
+            <span class="md-nav__icon md-icon"></span>
+            Development
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Architecture and sharp bits
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/draw/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Drawing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    API
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            API
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/blocks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Block system
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/operations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Operations
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/register/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Register
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/quantumcircuit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    QuantumCircuit
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/parameters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Parameters
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/states/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    State preparation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/noise/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Noise
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/constructors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Constructors
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/transpile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Transpilation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/execution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Execution
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quantum models
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/ml_tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    QML tools
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/serialization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Serialization
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/types/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Types
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/draw/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Drawing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/pasqal_cloud_connection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Pasqal Cloud Connection
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_17" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_17" id="__nav_5_17_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Backends
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_17_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_17">
+            <span class="md-nav__icon md-icon"></span>
+            Backends
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/backends/backend/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Abstract backend
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/backends/pyqtorch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    PyQTorch
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/backends/pulser/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Pulser
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/backends/differentiable/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    DifferentiableBackend
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/pasqal-io/qadence/discussions" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Contact
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#defining-the-observable" class="md-nav__link">
+    <span class="md-ellipsis">
+      Defining the Observable
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Defining the Observable">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#scaling-and-shifting-the-qnn-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      Scaling and Shifting the QNN Output
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#defining-the-feature-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      Defining the Feature Map
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#defining-the-ansatz" class="md-nav__link">
+    <span class="md-ellipsis">
+      Defining the Ansatz
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#defining-the-qnn-from-the-configs" class="md-nav__link">
+    <span class="md-ellipsis">
+      Defining the QNN from the Configs
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+  <h1>Configuring a QNN</h1>
+
+<p>In <code>qadence</code>, the <a class="autorefs autorefs-internal" title="QNN(circuit, observable, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD, measurement=None, noise=None, configuration=None, inputs=None, input_diff_mode=InputDiffMode.AD)" href="../../../api/ml_tools/#qadence.ml_tools.models.QNN"><code>QNN</code></a> is a variational quantum model that can potentially take multi-dimensional input.</p>
+<p>The <code>QNN</code> class needs a circuit and a list of observables; the number of feature parameters in the input circuit determines the number of input features (i.e. the dimensionality of the classical data given as input) whereas the number of observables determines the number of outputs of the quantum neural network.</p>
+<p>The circuit has two parts, the feature map and the ansatz. The feature map is responsible for encoding the input data into the quantum state, while the ansatz is responsible for the variational part of the model. In addition, a third part of the QNN is the observables, which is (a list of) operators that are measured at the end of the circuit.</p>
+<p>In <a href="../../../content/qml_constructors/">QML Constructors</a> we have seen how to construct the feature map and the ansatz. In this tutorial, we will see how to do the same using configs.</p>
+<p>One convenient way to construct these three parts of the model is to use the config classes, namely,
+<a class="autorefs autorefs-internal" title="ObservableConfig(interaction=None, detuning=None, scale=1.0, shift=0.0, trainable_transform=None, tag=None)
+
+  
+      dataclass
+  " href="../../../api/constructors/#qadence.constructors.hamiltonians.ObservableConfig"><code>ObservableConfig</code></a>, <a class="autorefs autorefs-internal" title="FeatureMapConfig(num_features=0, basis_set=BasisSet.FOURIER, reupload_scaling=ReuploadScaling.CONSTANT, feature_range=None, target_range=None, multivariate_strategy=MultivariateStrategy.PARALLEL, feature_map_strategy=Strategy.DIGITAL, param_prefix=None, num_repeats=0, operation=None, inputs=None, tag=None)
+
+  
+      dataclass
+  " href="../../../api/ml_tools/#qadence.ml_tools.config.FeatureMapConfig"><code>FeatureMapConfig</code></a>, <a class="autorefs autorefs-internal" title="AnsatzConfig(depth=1, ansatz_type=AnsatzType.HEA, ansatz_strategy=Strategy.DIGITAL, strategy_args=dict(), m_block_qubits=None, param_prefix='theta', tag=None)
+
+  
+      dataclass
+  " href="../../../api/ml_tools/#qadence.ml_tools.config.AnsatzConfig"><code>AnsatzConfig</code></a>. These classes allow you to specify the type of circuit and the parameters of the circuit in a structured way.</p>
+<h2 id="defining-the-observable">Defining the Observable</h2>
+<p>The model output is the expectation value of the defined observable(s). We use the <code>ObservableConfig</code> class to specify the observable.</p>
+<p>It can be used to create Hamiltonians with 2-qubit interactions and single-qubit detunings. Any Hamiltonian supported by <a class="autorefs autorefs-internal" title="hamiltonian_factory(register, interaction=None, detuning=None, interaction_strength=None, detuning_strength=None, random_strength=False, use_all_node_pairs=False)" href="../../../api/constructors/#qadence.constructors.hamiltonians.hamiltonian_factory"><code>hamiltonian_factory</code></a> can be specified as an observable.
+For example, suppose we want to measure the Z operator:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qadence</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_observable</span><span class="p">,</span> <span class="n">ObservableConfig</span><span class="p">,</span> <span class="n">Z</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">observable_config</span> <span class="o">=</span> <span class="n">ObservableConfig</span><span class="p">(</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">detuning</span><span class="o">=</span><span class="n">Z</span><span class="p">,</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">interaction</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">scale</span> <span class="o">=</span> <span class="mf">2.0</span><span class="p">,</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">shift</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">,</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="p">)</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">observable</span> <span class="o">=</span> <span class="n">create_observable</span><span class="p">(</span><span class="n">register</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">observable_config</span><span class="p">)</span>
+</code></pre></div>
+<div class="result" markdown="1" >
+
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.43.0 (0)
+ -->
+<!-- Title: %3 Pages: 1 -->
+<svg width="329pt" height="305pt"
+ viewBox="0.00 0.00 329.00 305.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 301)">
+<title>%3</title>
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-301 325,-301 325,4 -4,4"/>
+<g id="clust1" class="cluster">
+<title>cluster_75613d6b8c784b5887b5fe8aa982c54e</title>
+<path fill="lightgrey" stroke="black" stroke-width="2" d="M94,-8C94,-8 227,-8 227,-8 233,-8 239,-14 239,-20 239,-20 239,-277 239,-277 239,-283 233,-289 227,-289 227,-289 94,-289 94,-289 88,-289 82,-283 82,-277 82,-277 82,-20 82,-20 82,-14 88,-8 94,-8"/>
+</g>
+<!-- 8a5c45d543c946a892d07087fdfcdf7f -->
+<g id="node1" class="node">
+<title>8a5c45d543c946a892d07087fdfcdf7f</title>
+<text text-anchor="middle" x="27" y="-248.5" font-family="JetBrains Mono" font-size="15.00">0</text>
+</g>
+<!-- 64b0ab1cd4ae4f9bbd78fb907e49b081 -->
+<g id="node2" class="node">
+<title>64b0ab1cd4ae4f9bbd78fb907e49b081</title>
+</g>
+<!-- 8a5c45d543c946a892d07087fdfcdf7f&#45;&#45;64b0ab1cd4ae4f9bbd78fb907e49b081 -->
+<g id="edge1" class="edge">
+<title>8a5c45d543c946a892d07087fdfcdf7f&#45;&#45;64b0ab1cd4ae4f9bbd78fb907e49b081</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54.29,-252C62.53,-252 72.08,-252 82,-252"/>
+</g>
+<!-- 388fc2022ff94a8cbc021cc88e054682 -->
+<g id="node4" class="node">
+<title>388fc2022ff94a8cbc021cc88e054682</title>
+<text text-anchor="middle" x="27" y="-179.5" font-family="JetBrains Mono" font-size="15.00">1</text>
+</g>
+<!-- 8a5c45d543c946a892d07087fdfcdf7f&#45;&#45;388fc2022ff94a8cbc021cc88e054682 -->
+<!-- 0c0f6d039b884fd3b8d945f6aa7ec199 -->
+<g id="node3" class="node">
+<title>0c0f6d039b884fd3b8d945f6aa7ec199</title>
+</g>
+<!-- 64b0ab1cd4ae4f9bbd78fb907e49b081&#45;&#45;0c0f6d039b884fd3b8d945f6aa7ec199 -->
+<g id="edge2" class="edge">
+<title>64b0ab1cd4ae4f9bbd78fb907e49b081&#45;&#45;0c0f6d039b884fd3b8d945f6aa7ec199</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M239,-252C248.89,-252 258.41,-252 266.63,-252"/>
+</g>
+<!-- 4cda91b4bee8430fa668cd8f7f830ae8 -->
+<g id="node6" class="node">
+<title>4cda91b4bee8430fa668cd8f7f830ae8</title>
+</g>
+<!-- 0c0f6d039b884fd3b8d945f6aa7ec199&#45;&#45;4cda91b4bee8430fa668cd8f7f830ae8 -->
+<!-- c70ef2fcdda54d8fbfb0b6c6cf0e30ef -->
+<g id="node5" class="node">
+<title>c70ef2fcdda54d8fbfb0b6c6cf0e30ef</title>
+<text text-anchor="middle" x="160.5" y="-178" font-family="JetBrains Mono" font-size="20.00">AddBlock</text>
+</g>
+<!-- 388fc2022ff94a8cbc021cc88e054682&#45;&#45;c70ef2fcdda54d8fbfb0b6c6cf0e30ef -->
+<g id="edge3" class="edge">
+<title>388fc2022ff94a8cbc021cc88e054682&#45;&#45;c70ef2fcdda54d8fbfb0b6c6cf0e30ef</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54.29,-183C62.53,-183 72.08,-183 82,-183"/>
+</g>
+<!-- dc7fe050f8d1486885c3cd1ffcf5f506 -->
+<g id="node7" class="node">
+<title>dc7fe050f8d1486885c3cd1ffcf5f506</title>
+<text text-anchor="middle" x="27" y="-110.5" font-family="JetBrains Mono" font-size="15.00">2</text>
+</g>
+<!-- 388fc2022ff94a8cbc021cc88e054682&#45;&#45;dc7fe050f8d1486885c3cd1ffcf5f506 -->
+<!-- c70ef2fcdda54d8fbfb0b6c6cf0e30ef&#45;&#45;4cda91b4bee8430fa668cd8f7f830ae8 -->
+<g id="edge4" class="edge">
+<title>c70ef2fcdda54d8fbfb0b6c6cf0e30ef&#45;&#45;4cda91b4bee8430fa668cd8f7f830ae8</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M239,-183C248.91,-183 258.46,-183 266.7,-183"/>
+</g>
+<!-- d1b5dbfca7c44ca18ffc77776bb639ff -->
+<g id="node9" class="node">
+<title>d1b5dbfca7c44ca18ffc77776bb639ff</title>
+</g>
+<!-- 4cda91b4bee8430fa668cd8f7f830ae8&#45;&#45;d1b5dbfca7c44ca18ffc77776bb639ff -->
+<!-- d327a9a66dba4f66a659e878af9633ee -->
+<g id="node8" class="node">
+<title>d327a9a66dba4f66a659e878af9633ee</title>
+</g>
+<!-- dc7fe050f8d1486885c3cd1ffcf5f506&#45;&#45;d327a9a66dba4f66a659e878af9633ee -->
+<g id="edge5" class="edge">
+<title>dc7fe050f8d1486885c3cd1ffcf5f506&#45;&#45;d327a9a66dba4f66a659e878af9633ee</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54.29,-114C62.53,-114 72.08,-114 82,-114"/>
+</g>
+<!-- 68765071771b4be6b05b99c408b96b58 -->
+<g id="node10" class="node">
+<title>68765071771b4be6b05b99c408b96b58</title>
+<text text-anchor="middle" x="27" y="-41.5" font-family="JetBrains Mono" font-size="15.00">3</text>
+</g>
+<!-- dc7fe050f8d1486885c3cd1ffcf5f506&#45;&#45;68765071771b4be6b05b99c408b96b58 -->
+<!-- d327a9a66dba4f66a659e878af9633ee&#45;&#45;d1b5dbfca7c44ca18ffc77776bb639ff -->
+<g id="edge6" class="edge">
+<title>d327a9a66dba4f66a659e878af9633ee&#45;&#45;d1b5dbfca7c44ca18ffc77776bb639ff</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M239,-114C248.89,-114 258.41,-114 266.63,-114"/>
+</g>
+<!-- 64abdb0197b64b8783cd8acabbee9d02 -->
+<g id="node12" class="node">
+<title>64abdb0197b64b8783cd8acabbee9d02</title>
+</g>
+<!-- d1b5dbfca7c44ca18ffc77776bb639ff&#45;&#45;64abdb0197b64b8783cd8acabbee9d02 -->
+<!-- 1818e99ea16b4858977b9876acd901b6 -->
+<g id="node11" class="node">
+<title>1818e99ea16b4858977b9876acd901b6</title>
+</g>
+<!-- 68765071771b4be6b05b99c408b96b58&#45;&#45;1818e99ea16b4858977b9876acd901b6 -->
+<g id="edge7" class="edge">
+<title>68765071771b4be6b05b99c408b96b58&#45;&#45;1818e99ea16b4858977b9876acd901b6</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54.29,-45C62.53,-45 72.08,-45 82,-45"/>
+</g>
+<!-- 1818e99ea16b4858977b9876acd901b6&#45;&#45;64abdb0197b64b8783cd8acabbee9d02 -->
+<g id="edge8" class="edge">
+<title>1818e99ea16b4858977b9876acd901b6&#45;&#45;64abdb0197b64b8783cd8acabbee9d02</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M239,-45C248.89,-45 258.41,-45 266.63,-45"/>
+</g>
+</g>
+</svg>
+
+
+
+</div>
+<p>We have specified the observable Hamiltonian to be one with <span class="arithmatex">\(Z\)</span>-detuning. The result is linearly scaled by 2.0 and shifted by -1.0. The shift or the scale can optionally also be a <a class="autorefs autorefs-internal" title="VariationalParameter(name, **kwargs)" href="../../../api/parameters/#qadence.parameters.VariationalParameter">VariationalParameter</a></p>
+<p>It is also possible to import some common Hamiltonians, such as <code>total_magnetization_config</code>, <code>zz_hamiltonian_config</code> and, <code>ising_hamiltonian_config</code>.</p>
+<p>For example, the total magnetization configuration:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qadence</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_observable</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qadence.constructors</span><span class="w"> </span><span class="kn">import</span> <span class="n">total_magnetization_config</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">observable_total_magnetization</span>  <span class="o">=</span> <span class="n">create_observable</span><span class="p">(</span><span class="n">register</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">total_magnetization_config</span><span class="p">())</span>
+</code></pre></div>
+<div class="result" markdown="1" >
+
+
+
+</div>
+<p>Alternatively, you can define the observable as a list of observables, in which case the QNN will output a list of values.</p>
+<h3 id="scaling-and-shifting-the-qnn-output">Scaling and Shifting the QNN Output</h3>
+<p>For any observable, by appropriately choosing the scale <span class="arithmatex">\(\alpha\)</span> and shift <span class="arithmatex">\(\beta\)</span>, you can constrain the QNN output within a desired range. This is particularly useful for normalizing measurements or ensuring that values remain within a meaningful interval for optimization.
+To accomplish this, you need to determine the maximum and minimum values that the QNN output can take. For an observable, these extreme values are the two extreme eigenvalues <span class="arithmatex">\(\lambda_{max}\)</span> and <span class="arithmatex">\(\lambda_{min}\)</span> of the concerned Hamiltonian. Using these values, you can set the scale <span class="arithmatex">\(\alpha\)</span> and shift <span class="arithmatex">\(\beta\)</span> so that the QNN output is mapped to a specific range <span class="arithmatex">\([a,b]\)</span>:</p>
+<div class="arithmatex">\[\alpha = \frac{b-a}{\lambda_{max}-\lambda_{min}}\]</div>
+<div class="arithmatex">\[\beta = \frac{a\lambda_{max}-b\lambda_{min}}{\lambda_{max}-\lambda_{min}}\]</div>
+<p>This transformation ensures that:</p>
+<div class="arithmatex">\[ a \leq \alpha \lambda + \beta \leq b,\quad\forall \lambda \in [\lambda_{min},\lambda_{max}] \]</div>
+<p>For full details on the <code>ObservableConfig</code> class, see the <a class="autorefs autorefs-internal" title="ObservableConfig(interaction=None, detuning=None, scale=1.0, shift=0.0, trainable_transform=None, tag=None)
+
+  
+      dataclass
+  " href="../../../api/constructors/#qadence.constructors.hamiltonians.ObservableConfig">API documentation</a>.</p>
+<h2 id="defining-the-feature-map">Defining the Feature Map</h2>
+<p>Let us say we want to build a 4-qubit QNN that takes two inputs, namely, the <span class="arithmatex">\(x\)</span> and the <span class="arithmatex">\(y\)</span> coordinates of a point in the plane. We can use the <code>FeatureMapConfig</code> class to specify the feature map.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qadence</span><span class="w"> </span><span class="kn">import</span> <span class="n">BasisSet</span><span class="p">,</span> <span class="n">chain</span><span class="p">,</span> <span class="n">create_fm_blocks</span><span class="p">,</span> <span class="n">FeatureMapConfig</span><span class="p">,</span> <span class="n">ReuploadScaling</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">fm_config</span> <span class="o">=</span> <span class="n">FeatureMapConfig</span><span class="p">(</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">num_features</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">inputs</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">],</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">basis_set</span><span class="o">=</span><span class="n">BasisSet</span><span class="o">.</span><span class="n">CHEBYSHEV</span><span class="p">,</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">reupload_scaling</span><span class="o">=</span><span class="n">ReuploadScaling</span><span class="o">.</span><span class="n">TOWER</span><span class="p">,</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">feature_range</span><span class="o">=</span><span class="p">{</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>        <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>        <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    <span class="p">},</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="p">)</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="n">fm_blocks</span> <span class="o">=</span> <span class="n">create_fm_blocks</span><span class="p">(</span><span class="n">register</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">fm_config</span><span class="p">)</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="n">feature_map</span> <span class="o">=</span> <span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="n">fm_blocks</span><span class="p">)</span>
+</code></pre></div>
+<div class="result" markdown="1" >
+
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.43.0 (0)
+ -->
+<!-- Title: %3 Pages: 1 -->
+<svg width="533pt" height="362pt"
+ viewBox="0.00 0.00 533.00 362.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 358)">
+<title>%3</title>
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-358 529,-358 529,4 -4,4"/>
+<g id="clust1" class="cluster">
+<title>cluster_c16516c6aa6640dca07d569589fd2353</title>
+<path fill="white" stroke="black" stroke-width="2" d="M94,-8C94,-8 431,-8 431,-8 437,-8 443,-14 443,-20 443,-20 443,-161 443,-161 443,-167 437,-173 431,-173 431,-173 94,-173 94,-173 88,-173 82,-167 82,-161 82,-161 82,-20 82,-20 82,-14 88,-8 94,-8"/>
+<text text-anchor="middle" x="262.5" y="-158.6" font-family="JetBrains Mono" font-size="13.00">Tower Chebyshev FM</text>
+</g>
+<g id="clust2" class="cluster">
+<title>cluster_fe2139e440b74c95a7f938a52587760a</title>
+<path fill="white" stroke="black" stroke-width="2" d="M154,-181C154,-181 371,-181 371,-181 377,-181 383,-187 383,-193 383,-193 383,-334 383,-334 383,-340 377,-346 371,-346 371,-346 154,-346 154,-346 148,-346 142,-340 142,-334 142,-334 142,-193 142,-193 142,-187 148,-181 154,-181"/>
+<text text-anchor="middle" x="262.5" y="-331.6" font-family="JetBrains Mono" font-size="13.00">Tower Chebyshev FM</text>
+</g>
+<!-- 253a6c2be9f844b5a49a2912c2743468 -->
+<g id="node1" class="node">
+<title>253a6c2be9f844b5a49a2912c2743468</title>
+<text text-anchor="middle" x="27" y="-283.5" font-family="JetBrains Mono" font-size="15.00">0</text>
+</g>
+<!-- f90a35b672da4adeb83918f80518d977 -->
+<g id="node2" class="node">
+<title>f90a35b672da4adeb83918f80518d977</title>
+<path fill="#b2e8c2" stroke="#2d954d" stroke-width="2.7" d="M363,-316C363,-316 162,-316 162,-316 156,-316 150,-310 150,-304 150,-304 150,-270 150,-270 150,-264 156,-258 162,-258 162,-258 363,-258 363,-258 369,-258 375,-264 375,-270 375,-270 375,-304 375,-304 375,-310 369,-316 363,-316"/>
+<text text-anchor="middle" x="262.5" y="-282" font-family="JetBrains Mono" font-size="20.00">RX(1.0*acos(x))</text>
+</g>
+<!-- 253a6c2be9f844b5a49a2912c2743468&#45;&#45;f90a35b672da4adeb83918f80518d977 -->
+<g id="edge1" class="edge">
+<title>253a6c2be9f844b5a49a2912c2743468&#45;&#45;f90a35b672da4adeb83918f80518d977</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54.33,-287C77.95,-287 114.28,-287 149.96,-287"/>
+</g>
+<!-- 21ae3911eac044009fbf17de0634940e -->
+<g id="node4" class="node">
+<title>21ae3911eac044009fbf17de0634940e</title>
+<text text-anchor="middle" x="27" y="-214.5" font-family="JetBrains Mono" font-size="15.00">1</text>
+</g>
+<!-- 253a6c2be9f844b5a49a2912c2743468&#45;&#45;21ae3911eac044009fbf17de0634940e -->
+<!-- ffe9363056184ad48fed62c2e95a79fd -->
+<g id="node3" class="node">
+<title>ffe9363056184ad48fed62c2e95a79fd</title>
+</g>
+<!-- f90a35b672da4adeb83918f80518d977&#45;&#45;ffe9363056184ad48fed62c2e95a79fd -->
+<g id="edge2" class="edge">
+<title>f90a35b672da4adeb83918f80518d977&#45;&#45;ffe9363056184ad48fed62c2e95a79fd</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M375.12,-287C410.77,-287 447.05,-287 470.65,-287"/>
+</g>
+<!-- cf59f8e7861b4280ba40047982c0e11f -->
+<g id="node6" class="node">
+<title>cf59f8e7861b4280ba40047982c0e11f</title>
+</g>
+<!-- ffe9363056184ad48fed62c2e95a79fd&#45;&#45;cf59f8e7861b4280ba40047982c0e11f -->
+<!-- 309f11ce36c8484b9aa28928516d619a -->
+<g id="node5" class="node">
+<title>309f11ce36c8484b9aa28928516d619a</title>
+<path fill="#b2e8c2" stroke="#2d954d" stroke-width="2.7" d="M363,-247C363,-247 162,-247 162,-247 156,-247 150,-241 150,-235 150,-235 150,-201 150,-201 150,-195 156,-189 162,-189 162,-189 363,-189 363,-189 369,-189 375,-195 375,-201 375,-201 375,-235 375,-235 375,-241 369,-247 363,-247"/>
+<text text-anchor="middle" x="262.5" y="-213" font-family="JetBrains Mono" font-size="20.00">RX(2.0*acos(x))</text>
+</g>
+<!-- 21ae3911eac044009fbf17de0634940e&#45;&#45;309f11ce36c8484b9aa28928516d619a -->
+<g id="edge3" class="edge">
+<title>21ae3911eac044009fbf17de0634940e&#45;&#45;309f11ce36c8484b9aa28928516d619a</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54.33,-218C77.95,-218 114.28,-218 149.96,-218"/>
+</g>
+<!-- e2e60759fd68477c99e30bbd86ea43f9 -->
+<g id="node7" class="node">
+<title>e2e60759fd68477c99e30bbd86ea43f9</title>
+<text text-anchor="middle" x="27" y="-110.5" font-family="JetBrains Mono" font-size="15.00">2</text>
+</g>
+<!-- 21ae3911eac044009fbf17de0634940e&#45;&#45;e2e60759fd68477c99e30bbd86ea43f9 -->
+<!-- 309f11ce36c8484b9aa28928516d619a&#45;&#45;cf59f8e7861b4280ba40047982c0e11f -->
+<g id="edge4" class="edge">
+<title>309f11ce36c8484b9aa28928516d619a&#45;&#45;cf59f8e7861b4280ba40047982c0e11f</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M375.12,-218C410.77,-218 447.05,-218 470.65,-218"/>
+</g>
+<!-- abaf17e417994facbc3993f48ffd8655 -->
+<g id="node9" class="node">
+<title>abaf17e417994facbc3993f48ffd8655</title>
+</g>
+<!-- cf59f8e7861b4280ba40047982c0e11f&#45;&#45;abaf17e417994facbc3993f48ffd8655 -->
+<!-- aca4cd0e4f7a46a9b46586e273dc89a9 -->
+<g id="node8" class="node">
+<title>aca4cd0e4f7a46a9b46586e273dc89a9</title>
+<path fill="#b2e8c2" stroke="#2d954d" stroke-width="2.7" d="M423,-143C423,-143 102,-143 102,-143 96,-143 90,-137 90,-131 90,-131 90,-97 90,-97 90,-91 96,-85 102,-85 102,-85 423,-85 423,-85 429,-85 435,-91 435,-97 435,-97 435,-131 435,-131 435,-137 429,-143 423,-143"/>
+<text text-anchor="middle" x="262.5" y="-109" font-family="JetBrains Mono" font-size="20.00">RX(1.0*acos(2.0*y &#45; 1.0))</text>
+</g>
+<!-- e2e60759fd68477c99e30bbd86ea43f9&#45;&#45;aca4cd0e4f7a46a9b46586e273dc89a9 -->
+<g id="edge5" class="edge">
+<title>e2e60759fd68477c99e30bbd86ea43f9&#45;&#45;aca4cd0e4f7a46a9b46586e273dc89a9</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54.33,-114C64.23,-114 76.37,-114 89.75,-114"/>
+</g>
+<!-- 53b0c091dca241f884bf8aed689718ee -->
+<g id="node10" class="node">
+<title>53b0c091dca241f884bf8aed689718ee</title>
+<text text-anchor="middle" x="27" y="-41.5" font-family="JetBrains Mono" font-size="15.00">3</text>
+</g>
+<!-- e2e60759fd68477c99e30bbd86ea43f9&#45;&#45;53b0c091dca241f884bf8aed689718ee -->
+<!-- aca4cd0e4f7a46a9b46586e273dc89a9&#45;&#45;abaf17e417994facbc3993f48ffd8655 -->
+<g id="edge6" class="edge">
+<title>aca4cd0e4f7a46a9b46586e273dc89a9&#45;&#45;abaf17e417994facbc3993f48ffd8655</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M435.04,-114C448.55,-114 460.8,-114 470.77,-114"/>
+</g>
+<!-- ae0d27f6b67e49ceab55b683ad69a8f2 -->
+<g id="node12" class="node">
+<title>ae0d27f6b67e49ceab55b683ad69a8f2</title>
+</g>
+<!-- abaf17e417994facbc3993f48ffd8655&#45;&#45;ae0d27f6b67e49ceab55b683ad69a8f2 -->
+<!-- 26a00267e12546ac83f511fb8bfa3713 -->
+<g id="node11" class="node">
+<title>26a00267e12546ac83f511fb8bfa3713</title>
+<path fill="#b2e8c2" stroke="#2d954d" stroke-width="2.7" d="M423,-74C423,-74 102,-74 102,-74 96,-74 90,-68 90,-62 90,-62 90,-28 90,-28 90,-22 96,-16 102,-16 102,-16 423,-16 423,-16 429,-16 435,-22 435,-28 435,-28 435,-62 435,-62 435,-68 429,-74 423,-74"/>
+<text text-anchor="middle" x="262.5" y="-40" font-family="JetBrains Mono" font-size="20.00">RX(2.0*acos(2.0*y &#45; 1.0))</text>
+</g>
+<!-- 53b0c091dca241f884bf8aed689718ee&#45;&#45;26a00267e12546ac83f511fb8bfa3713 -->
+<g id="edge7" class="edge">
+<title>53b0c091dca241f884bf8aed689718ee&#45;&#45;26a00267e12546ac83f511fb8bfa3713</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54.33,-45C64.23,-45 76.37,-45 89.75,-45"/>
+</g>
+<!-- 26a00267e12546ac83f511fb8bfa3713&#45;&#45;ae0d27f6b67e49ceab55b683ad69a8f2 -->
+<g id="edge8" class="edge">
+<title>26a00267e12546ac83f511fb8bfa3713&#45;&#45;ae0d27f6b67e49ceab55b683ad69a8f2</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M435.04,-45C448.55,-45 460.8,-45 470.77,-45"/>
+</g>
+</g>
+</svg>
+
+
+
+</div>
+<p>We have specified that the feature map should take two features, and have named the <a class="autorefs autorefs-internal" title="FeatureParameter(name, **kwargs)" href="../../../api/parameters/#qadence.parameters.FeatureParameter"><code>FeatureParameter</code></a> "x" and "y" respectively. Both these parameters are encoded using the Chebyshev basis set, and the reupload scaling is set to <code>ReuploadScaling.TOWER</code>. One can optionally add the basis and the reupload scaling for each parameter separately.</p>
+<p>The <code>feature_range</code> parameter is a dictionary that specifies the range of values that each feature comes from. This is useful for scaling the input data to the range that the encoding function can handle. In default case, this range is mapped to the target range of the Chebyshev basis set which is <span class="arithmatex">\([-1, 1]\)</span>. One can also specify the target range for each feature separately.</p>
+<p>For full details on the <code>FeatureMapConfig</code> class, see the <a class="autorefs autorefs-internal" title="FeatureMapConfig(num_features=0, basis_set=BasisSet.FOURIER, reupload_scaling=ReuploadScaling.CONSTANT, feature_range=None, target_range=None, multivariate_strategy=MultivariateStrategy.PARALLEL, feature_map_strategy=Strategy.DIGITAL, param_prefix=None, num_repeats=0, operation=None, inputs=None, tag=None)
+
+  
+      dataclass
+  " href="../../../api/ml_tools/#qadence.ml_tools.config.FeatureMapConfig">API documentation</a>.</p>
+<h2 id="defining-the-ansatz">Defining the Ansatz</h2>
+<p>The next part of the QNN is the ansatz. We use <code>AnsatzConfig</code> class to specify the type of ansatz.</p>
+<p>Let us say, we want to follow this feature map with 2 layers of hardware efficient ansatz.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qadence</span><span class="w"> </span><span class="kn">import</span> <span class="n">AnsatzConfig</span><span class="p">,</span> <span class="n">AnsatzType</span><span class="p">,</span> <span class="n">create_ansatz</span><span class="p">,</span> <span class="n">Strategy</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">ansatz_config</span> <span class="o">=</span> <span class="n">AnsatzConfig</span><span class="p">(</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">depth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">ansatz_type</span><span class="o">=</span><span class="n">AnsatzType</span><span class="o">.</span><span class="n">HEA</span><span class="p">,</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">ansatz_strategy</span><span class="o">=</span><span class="n">Strategy</span><span class="o">.</span><span class="n">DIGITAL</span><span class="p">,</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="p">)</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="n">ansatz</span> <span class="o">=</span> <span class="n">create_ansatz</span><span class="p">(</span><span class="n">register</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">ansatz_config</span><span class="p">)</span>
+</code></pre></div>
+<div class="result" markdown="1" >
+
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.43.0 (0)
+ -->
+<!-- Title: %3 Pages: 1 -->
+<svg width="1782pt" height="273pt"
+ viewBox="0.00 0.00 1782.00 273.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 269)">
+<title>%3</title>
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-269 1778,-269 1778,4 -4,4"/>
+<!-- 67df882f69114d5bbad4628ff977bc66 -->
+<g id="node1" class="node">
+<title>67df882f69114d5bbad4628ff977bc66</title>
+<text text-anchor="middle" x="27" y="-232.5" font-family="JetBrains Mono" font-size="15.00">0</text>
+</g>
+<!-- 96060f7a2b364d81a30d59180d4c4ea2 -->
+<g id="node2" class="node">
+<title>96060f7a2b364d81a30d59180d4c4ea2</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M243,-265C243,-265 102,-265 102,-265 96,-265 90,-259 90,-253 90,-253 90,-219 90,-219 90,-213 96,-207 102,-207 102,-207 243,-207 243,-207 249,-207 255,-213 255,-219 255,-219 255,-253 255,-253 255,-259 249,-265 243,-265"/>
+<text text-anchor="middle" x="172.5" y="-231" font-family="JetBrains Mono" font-size="20.00">RX(theta₀)</text>
+</g>
+<!-- 67df882f69114d5bbad4628ff977bc66&#45;&#45;96060f7a2b364d81a30d59180d4c4ea2 -->
+<g id="edge1" class="edge">
+<title>67df882f69114d5bbad4628ff977bc66&#45;&#45;96060f7a2b364d81a30d59180d4c4ea2</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54.32,-236C64.6,-236 76.98,-236 89.8,-236"/>
+</g>
+<!-- bf389ab187114982ab44762543461dc0 -->
+<g id="node13" class="node">
+<title>bf389ab187114982ab44762543461dc0</title>
+<text text-anchor="middle" x="27" y="-163.5" font-family="JetBrains Mono" font-size="15.00">1</text>
+</g>
+<!-- 67df882f69114d5bbad4628ff977bc66&#45;&#45;bf389ab187114982ab44762543461dc0 -->
+<!-- aab88239194444838ee07e09b60038b6 -->
+<g id="node3" class="node">
+<title>aab88239194444838ee07e09b60038b6</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M444,-265C444,-265 303,-265 303,-265 297,-265 291,-259 291,-253 291,-253 291,-219 291,-219 291,-213 297,-207 303,-207 303,-207 444,-207 444,-207 450,-207 456,-213 456,-219 456,-219 456,-253 456,-253 456,-259 450,-265 444,-265"/>
+<text text-anchor="middle" x="373.5" y="-231" font-family="JetBrains Mono" font-size="20.00">RY(theta₄)</text>
+</g>
+<!-- 96060f7a2b364d81a30d59180d4c4ea2&#45;&#45;aab88239194444838ee07e09b60038b6 -->
+<g id="edge2" class="edge">
+<title>96060f7a2b364d81a30d59180d4c4ea2&#45;&#45;aab88239194444838ee07e09b60038b6</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M255.02,-236C266.82,-236 278.98,-236 290.79,-236"/>
+</g>
+<!-- 45613c69bcbe4e979d6a022f352e7e10 -->
+<g id="node4" class="node">
+<title>45613c69bcbe4e979d6a022f352e7e10</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M651,-265C651,-265 510,-265 510,-265 504,-265 498,-259 498,-253 498,-253 498,-219 498,-219 498,-213 504,-207 510,-207 510,-207 651,-207 651,-207 657,-207 663,-213 663,-219 663,-219 663,-253 663,-253 663,-259 657,-265 651,-265"/>
+<text text-anchor="middle" x="580.5" y="-231" font-family="JetBrains Mono" font-size="20.00">RX(theta₈)</text>
+</g>
+<!-- aab88239194444838ee07e09b60038b6&#45;&#45;45613c69bcbe4e979d6a022f352e7e10 -->
+<g id="edge3" class="edge">
+<title>aab88239194444838ee07e09b60038b6&#45;&#45;45613c69bcbe4e979d6a022f352e7e10</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M456.11,-236C469.84,-236 484.1,-236 497.84,-236"/>
+</g>
+<!-- da607740e0ce45faaf38109b38c13d67 -->
+<g id="node5" class="node">
+<title>da607740e0ce45faaf38109b38c13d67</title>
+<ellipse fill="black" stroke="black" cx="734" cy="-236" rx="7.2" ry="7.2"/>
+</g>
+<!-- 45613c69bcbe4e979d6a022f352e7e10&#45;&#45;da607740e0ce45faaf38109b38c13d67 -->
+<g id="edge4" class="edge">
+<title>45613c69bcbe4e979d6a022f352e7e10&#45;&#45;da607740e0ce45faaf38109b38c13d67</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M663.02,-236C689.63,-236 715.29,-236 726.75,-236"/>
+</g>
+<!-- cfbd3e831a314960b01c53dfdb25ac07 -->
+<g id="node6" class="node">
+<title>cfbd3e831a314960b01c53dfdb25ac07</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="828.5,-236.5 827.5,-236.5 827.5,-235.5 828.5,-235.5 828.5,-236.5"/>
+</g>
+<!-- da607740e0ce45faaf38109b38c13d67&#45;&#45;cfbd3e831a314960b01c53dfdb25ac07 -->
+<g id="edge5" class="edge">
+<title>da607740e0ce45faaf38109b38c13d67&#45;&#45;cfbd3e831a314960b01c53dfdb25ac07</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M741.32,-236C761.78,-236 824.98,-236 826.95,-236"/>
+</g>
+<!-- 2a4cf5e400464cf08052be815b336d78 -->
+<g id="node7" class="node">
+<title>2a4cf5e400464cf08052be815b336d78</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M1058,-265C1058,-265 905,-265 905,-265 899,-265 893,-259 893,-253 893,-253 893,-219 893,-219 893,-213 899,-207 905,-207 905,-207 1058,-207 1058,-207 1064,-207 1070,-213 1070,-219 1070,-219 1070,-253 1070,-253 1070,-259 1064,-265 1058,-265"/>
+<text text-anchor="middle" x="981.5" y="-231" font-family="JetBrains Mono" font-size="20.00">RX(theta₁₂)</text>
+</g>
+<!-- cfbd3e831a314960b01c53dfdb25ac07&#45;&#45;2a4cf5e400464cf08052be815b336d78 -->
+<g id="edge6" class="edge">
+<title>cfbd3e831a314960b01c53dfdb25ac07&#45;&#45;2a4cf5e400464cf08052be815b336d78</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M829.11,-236C831.12,-236 860.34,-236 892.59,-236"/>
+</g>
+<!-- cf149e0c9b254498a7ff9e02660429ee -->
+<g id="node8" class="node">
+<title>cf149e0c9b254498a7ff9e02660429ee</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M1271,-265C1271,-265 1118,-265 1118,-265 1112,-265 1106,-259 1106,-253 1106,-253 1106,-219 1106,-219 1106,-213 1112,-207 1118,-207 1118,-207 1271,-207 1271,-207 1277,-207 1283,-213 1283,-219 1283,-219 1283,-253 1283,-253 1283,-259 1277,-265 1271,-265"/>
+<text text-anchor="middle" x="1194.5" y="-231" font-family="JetBrains Mono" font-size="20.00">RY(theta₁₆)</text>
+</g>
+<!-- 2a4cf5e400464cf08052be815b336d78&#45;&#45;cf149e0c9b254498a7ff9e02660429ee -->
+<g id="edge7" class="edge">
+<title>2a4cf5e400464cf08052be815b336d78&#45;&#45;cf149e0c9b254498a7ff9e02660429ee</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1070.15,-236C1081.93,-236 1094.01,-236 1105.78,-236"/>
+</g>
+<!-- 1b632862dfcb461a9f129b198f6c8dd9 -->
+<g id="node9" class="node">
+<title>1b632862dfcb461a9f129b198f6c8dd9</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M1484,-265C1484,-265 1331,-265 1331,-265 1325,-265 1319,-259 1319,-253 1319,-253 1319,-219 1319,-219 1319,-213 1325,-207 1331,-207 1331,-207 1484,-207 1484,-207 1490,-207 1496,-213 1496,-219 1496,-219 1496,-253 1496,-253 1496,-259 1490,-265 1484,-265"/>
+<text text-anchor="middle" x="1407.5" y="-231" font-family="JetBrains Mono" font-size="20.00">RX(theta₂₀)</text>
+</g>
+<!-- cf149e0c9b254498a7ff9e02660429ee&#45;&#45;1b632862dfcb461a9f129b198f6c8dd9 -->
+<g id="edge8" class="edge">
+<title>cf149e0c9b254498a7ff9e02660429ee&#45;&#45;1b632862dfcb461a9f129b198f6c8dd9</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1283.15,-236C1294.93,-236 1307.01,-236 1318.78,-236"/>
+</g>
+<!-- 60424827f71d49f3b926b78d020362fe -->
+<g id="node10" class="node">
+<title>60424827f71d49f3b926b78d020362fe</title>
+<ellipse fill="black" stroke="black" cx="1561" cy="-236" rx="7.2" ry="7.2"/>
+</g>
+<!-- 1b632862dfcb461a9f129b198f6c8dd9&#45;&#45;60424827f71d49f3b926b78d020362fe -->
+<g id="edge9" class="edge">
+<title>1b632862dfcb461a9f129b198f6c8dd9&#45;&#45;60424827f71d49f3b926b78d020362fe</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1496.19,-236C1520.53,-236 1543.19,-236 1553.76,-236"/>
+</g>
+<!-- 8cdf58446a694600b6d1bef7335a9c82 -->
+<g id="node11" class="node">
+<title>8cdf58446a694600b6d1bef7335a9c82</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="1655.5,-236.5 1654.5,-236.5 1654.5,-235.5 1655.5,-235.5 1655.5,-236.5"/>
+</g>
+<!-- 60424827f71d49f3b926b78d020362fe&#45;&#45;8cdf58446a694600b6d1bef7335a9c82 -->
+<g id="edge10" class="edge">
+<title>60424827f71d49f3b926b78d020362fe&#45;&#45;8cdf58446a694600b6d1bef7335a9c82</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1568.32,-236C1588.78,-236 1651.98,-236 1653.95,-236"/>
+</g>
+<!-- 1994fe7968354abe9b0b52bf2798dd8e -->
+<g id="node12" class="node">
+<title>1994fe7968354abe9b0b52bf2798dd8e</title>
+</g>
+<!-- 8cdf58446a694600b6d1bef7335a9c82&#45;&#45;1994fe7968354abe9b0b52bf2798dd8e -->
+<g id="edge11" class="edge">
+<title>8cdf58446a694600b6d1bef7335a9c82&#45;&#45;1994fe7968354abe9b0b52bf2798dd8e</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1656.07,-236C1657.8,-236 1693.79,-236 1719.7,-236"/>
+</g>
+<!-- 9c88ee8c5e9a4d379fa1627e8ba9129a -->
+<g id="node24" class="node">
+<title>9c88ee8c5e9a4d379fa1627e8ba9129a</title>
+</g>
+<!-- 1994fe7968354abe9b0b52bf2798dd8e&#45;&#45;9c88ee8c5e9a4d379fa1627e8ba9129a -->
+<!-- 49ebacee3ee249eab6a66efbcf7a43d4 -->
+<g id="node14" class="node">
+<title>49ebacee3ee249eab6a66efbcf7a43d4</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M243,-196C243,-196 102,-196 102,-196 96,-196 90,-190 90,-184 90,-184 90,-150 90,-150 90,-144 96,-138 102,-138 102,-138 243,-138 243,-138 249,-138 255,-144 255,-150 255,-150 255,-184 255,-184 255,-190 249,-196 243,-196"/>
+<text text-anchor="middle" x="172.5" y="-162" font-family="JetBrains Mono" font-size="20.00">RX(theta₁)</text>
+</g>
+<!-- bf389ab187114982ab44762543461dc0&#45;&#45;49ebacee3ee249eab6a66efbcf7a43d4 -->
+<g id="edge12" class="edge">
+<title>bf389ab187114982ab44762543461dc0&#45;&#45;49ebacee3ee249eab6a66efbcf7a43d4</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54.32,-167C64.6,-167 76.98,-167 89.8,-167"/>
+</g>
+<!-- e644a399404945c48c849f39ea5c3d79 -->
+<g id="node25" class="node">
+<title>e644a399404945c48c849f39ea5c3d79</title>
+<text text-anchor="middle" x="27" y="-94.5" font-family="JetBrains Mono" font-size="15.00">2</text>
+</g>
+<!-- bf389ab187114982ab44762543461dc0&#45;&#45;e644a399404945c48c849f39ea5c3d79 -->
+<!-- ce53688b9ac944498e2aaabc0f0f2326 -->
+<g id="node15" class="node">
+<title>ce53688b9ac944498e2aaabc0f0f2326</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M444,-196C444,-196 303,-196 303,-196 297,-196 291,-190 291,-184 291,-184 291,-150 291,-150 291,-144 297,-138 303,-138 303,-138 444,-138 444,-138 450,-138 456,-144 456,-150 456,-150 456,-184 456,-184 456,-190 450,-196 444,-196"/>
+<text text-anchor="middle" x="373.5" y="-162" font-family="JetBrains Mono" font-size="20.00">RY(theta₅)</text>
+</g>
+<!-- 49ebacee3ee249eab6a66efbcf7a43d4&#45;&#45;ce53688b9ac944498e2aaabc0f0f2326 -->
+<g id="edge13" class="edge">
+<title>49ebacee3ee249eab6a66efbcf7a43d4&#45;&#45;ce53688b9ac944498e2aaabc0f0f2326</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M255.02,-167C266.82,-167 278.98,-167 290.79,-167"/>
+</g>
+<!-- b5c0268f77464ed7a2ed4db694ffcc6e -->
+<g id="node16" class="node">
+<title>b5c0268f77464ed7a2ed4db694ffcc6e</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M651,-196C651,-196 510,-196 510,-196 504,-196 498,-190 498,-184 498,-184 498,-150 498,-150 498,-144 504,-138 510,-138 510,-138 651,-138 651,-138 657,-138 663,-144 663,-150 663,-150 663,-184 663,-184 663,-190 657,-196 651,-196"/>
+<text text-anchor="middle" x="580.5" y="-162" font-family="JetBrains Mono" font-size="20.00">RX(theta₉)</text>
+</g>
+<!-- ce53688b9ac944498e2aaabc0f0f2326&#45;&#45;b5c0268f77464ed7a2ed4db694ffcc6e -->
+<g id="edge14" class="edge">
+<title>ce53688b9ac944498e2aaabc0f0f2326&#45;&#45;b5c0268f77464ed7a2ed4db694ffcc6e</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M456.11,-167C469.84,-167 484.1,-167 497.84,-167"/>
+</g>
+<!-- e1db86e56698494b93c8a99f64f4e126 -->
+<g id="node17" class="node">
+<title>e1db86e56698494b93c8a99f64f4e126</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M751,-196C751,-196 717,-196 717,-196 711,-196 705,-190 705,-184 705,-184 705,-150 705,-150 705,-144 711,-138 717,-138 717,-138 751,-138 751,-138 757,-138 763,-144 763,-150 763,-150 763,-184 763,-184 763,-190 757,-196 751,-196"/>
+<text text-anchor="middle" x="734" y="-162" font-family="JetBrains Mono" font-size="20.00">X</text>
+</g>
+<!-- b5c0268f77464ed7a2ed4db694ffcc6e&#45;&#45;e1db86e56698494b93c8a99f64f4e126 -->
+<g id="edge15" class="edge">
+<title>b5c0268f77464ed7a2ed4db694ffcc6e&#45;&#45;e1db86e56698494b93c8a99f64f4e126</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M663.02,-167C678,-167 692.69,-167 704.71,-167"/>
+</g>
+<!-- e1db86e56698494b93c8a99f64f4e126&#45;&#45;da607740e0ce45faaf38109b38c13d67 -->
+<g id="edge45" class="edge">
+<title>e1db86e56698494b93c8a99f64f4e126&#45;&#45;da607740e0ce45faaf38109b38c13d67</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M734,-196.11C734,-206.91 734,-217.72 734,-228.52"/>
+</g>
+<!-- cfff58480e83446abe0fa3e782a8a52c -->
+<g id="node18" class="node">
+<title>cfff58480e83446abe0fa3e782a8a52c</title>
+<ellipse fill="black" stroke="black" cx="828" cy="-167" rx="7.2" ry="7.2"/>
+</g>
+<!-- e1db86e56698494b93c8a99f64f4e126&#45;&#45;cfff58480e83446abe0fa3e782a8a52c -->
+<g id="edge16" class="edge">
+<title>e1db86e56698494b93c8a99f64f4e126&#45;&#45;cfff58480e83446abe0fa3e782a8a52c</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M763.1,-167C783.18,-167 808.65,-167 820.45,-167"/>
+</g>
+<!-- 35756c8bb25446efa925dc113f5acae1 -->
+<g id="node19" class="node">
+<title>35756c8bb25446efa925dc113f5acae1</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M1058,-196C1058,-196 905,-196 905,-196 899,-196 893,-190 893,-184 893,-184 893,-150 893,-150 893,-144 899,-138 905,-138 905,-138 1058,-138 1058,-138 1064,-138 1070,-144 1070,-150 1070,-150 1070,-184 1070,-184 1070,-190 1064,-196 1058,-196"/>
+<text text-anchor="middle" x="981.5" y="-162" font-family="JetBrains Mono" font-size="20.00">RX(theta₁₃)</text>
+</g>
+<!-- cfff58480e83446abe0fa3e782a8a52c&#45;&#45;35756c8bb25446efa925dc113f5acae1 -->
+<g id="edge17" class="edge">
+<title>cfff58480e83446abe0fa3e782a8a52c&#45;&#45;35756c8bb25446efa925dc113f5acae1</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M835.51,-167C846.21,-167 868.77,-167 892.98,-167"/>
+</g>
+<!-- 4b23bda3af744d10ae869559af7c3208 -->
+<g id="node20" class="node">
+<title>4b23bda3af744d10ae869559af7c3208</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M1271,-196C1271,-196 1118,-196 1118,-196 1112,-196 1106,-190 1106,-184 1106,-184 1106,-150 1106,-150 1106,-144 1112,-138 1118,-138 1118,-138 1271,-138 1271,-138 1277,-138 1283,-144 1283,-150 1283,-150 1283,-184 1283,-184 1283,-190 1277,-196 1271,-196"/>
+<text text-anchor="middle" x="1194.5" y="-162" font-family="JetBrains Mono" font-size="20.00">RY(theta₁₇)</text>
+</g>
+<!-- 35756c8bb25446efa925dc113f5acae1&#45;&#45;4b23bda3af744d10ae869559af7c3208 -->
+<g id="edge18" class="edge">
+<title>35756c8bb25446efa925dc113f5acae1&#45;&#45;4b23bda3af744d10ae869559af7c3208</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1070.15,-167C1081.93,-167 1094.01,-167 1105.78,-167"/>
+</g>
+<!-- aed838be231c4e93abe33388d519cb6f -->
+<g id="node21" class="node">
+<title>aed838be231c4e93abe33388d519cb6f</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M1484,-196C1484,-196 1331,-196 1331,-196 1325,-196 1319,-190 1319,-184 1319,-184 1319,-150 1319,-150 1319,-144 1325,-138 1331,-138 1331,-138 1484,-138 1484,-138 1490,-138 1496,-144 1496,-150 1496,-150 1496,-184 1496,-184 1496,-190 1490,-196 1484,-196"/>
+<text text-anchor="middle" x="1407.5" y="-162" font-family="JetBrains Mono" font-size="20.00">RX(theta₂₁)</text>
+</g>
+<!-- 4b23bda3af744d10ae869559af7c3208&#45;&#45;aed838be231c4e93abe33388d519cb6f -->
+<g id="edge19" class="edge">
+<title>4b23bda3af744d10ae869559af7c3208&#45;&#45;aed838be231c4e93abe33388d519cb6f</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1283.15,-167C1294.93,-167 1307.01,-167 1318.78,-167"/>
+</g>
+<!-- 3b00310f25f84321a45b66e26533f153 -->
+<g id="node22" class="node">
+<title>3b00310f25f84321a45b66e26533f153</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M1578,-196C1578,-196 1544,-196 1544,-196 1538,-196 1532,-190 1532,-184 1532,-184 1532,-150 1532,-150 1532,-144 1538,-138 1544,-138 1544,-138 1578,-138 1578,-138 1584,-138 1590,-144 1590,-150 1590,-150 1590,-184 1590,-184 1590,-190 1584,-196 1578,-196"/>
+<text text-anchor="middle" x="1561" y="-162" font-family="JetBrains Mono" font-size="20.00">X</text>
+</g>
+<!-- aed838be231c4e93abe33388d519cb6f&#45;&#45;3b00310f25f84321a45b66e26533f153 -->
+<g id="edge20" class="edge">
+<title>aed838be231c4e93abe33388d519cb6f&#45;&#45;3b00310f25f84321a45b66e26533f153</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1496.19,-167C1509.02,-167 1521.37,-167 1531.74,-167"/>
+</g>
+<!-- 3b00310f25f84321a45b66e26533f153&#45;&#45;60424827f71d49f3b926b78d020362fe -->
+<g id="edge46" class="edge">
+<title>3b00310f25f84321a45b66e26533f153&#45;&#45;60424827f71d49f3b926b78d020362fe</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1561,-196.11C1561,-206.91 1561,-217.72 1561,-228.52"/>
+</g>
+<!-- bbb5a09bffda44909adee3ee93b739e0 -->
+<g id="node23" class="node">
+<title>bbb5a09bffda44909adee3ee93b739e0</title>
+<ellipse fill="black" stroke="black" cx="1655" cy="-167" rx="7.2" ry="7.2"/>
+</g>
+<!-- 3b00310f25f84321a45b66e26533f153&#45;&#45;bbb5a09bffda44909adee3ee93b739e0 -->
+<g id="edge21" class="edge">
+<title>3b00310f25f84321a45b66e26533f153&#45;&#45;bbb5a09bffda44909adee3ee93b739e0</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1590.1,-167C1610.18,-167 1635.65,-167 1647.45,-167"/>
+</g>
+<!-- bbb5a09bffda44909adee3ee93b739e0&#45;&#45;9c88ee8c5e9a4d379fa1627e8ba9129a -->
+<g id="edge22" class="edge">
+<title>bbb5a09bffda44909adee3ee93b739e0&#45;&#45;9c88ee8c5e9a4d379fa1627e8ba9129a</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1662.47,-167C1674.32,-167 1700.1,-167 1719.91,-167"/>
+</g>
+<!-- cbd69aa7a49f4efe94a17e1147a891eb -->
+<g id="node36" class="node">
+<title>cbd69aa7a49f4efe94a17e1147a891eb</title>
+</g>
+<!-- 9c88ee8c5e9a4d379fa1627e8ba9129a&#45;&#45;cbd69aa7a49f4efe94a17e1147a891eb -->
+<!-- 4a29eb7e7ccb441d95468f6c023647c8 -->
+<g id="node26" class="node">
+<title>4a29eb7e7ccb441d95468f6c023647c8</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M243,-127C243,-127 102,-127 102,-127 96,-127 90,-121 90,-115 90,-115 90,-81 90,-81 90,-75 96,-69 102,-69 102,-69 243,-69 243,-69 249,-69 255,-75 255,-81 255,-81 255,-115 255,-115 255,-121 249,-127 243,-127"/>
+<text text-anchor="middle" x="172.5" y="-93" font-family="JetBrains Mono" font-size="20.00">RX(theta₂)</text>
+</g>
+<!-- e644a399404945c48c849f39ea5c3d79&#45;&#45;4a29eb7e7ccb441d95468f6c023647c8 -->
+<g id="edge23" class="edge">
+<title>e644a399404945c48c849f39ea5c3d79&#45;&#45;4a29eb7e7ccb441d95468f6c023647c8</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54.32,-98C64.6,-98 76.98,-98 89.8,-98"/>
+</g>
+<!-- 2b74251281c042578e6be7614af59cc6 -->
+<g id="node37" class="node">
+<title>2b74251281c042578e6be7614af59cc6</title>
+<text text-anchor="middle" x="27" y="-25.5" font-family="JetBrains Mono" font-size="15.00">3</text>
+</g>
+<!-- e644a399404945c48c849f39ea5c3d79&#45;&#45;2b74251281c042578e6be7614af59cc6 -->
+<!-- d009898ce3324ab7b8b20009796612a9 -->
+<g id="node27" class="node">
+<title>d009898ce3324ab7b8b20009796612a9</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M444,-127C444,-127 303,-127 303,-127 297,-127 291,-121 291,-115 291,-115 291,-81 291,-81 291,-75 297,-69 303,-69 303,-69 444,-69 444,-69 450,-69 456,-75 456,-81 456,-81 456,-115 456,-115 456,-121 450,-127 444,-127"/>
+<text text-anchor="middle" x="373.5" y="-93" font-family="JetBrains Mono" font-size="20.00">RY(theta₆)</text>
+</g>
+<!-- 4a29eb7e7ccb441d95468f6c023647c8&#45;&#45;d009898ce3324ab7b8b20009796612a9 -->
+<g id="edge24" class="edge">
+<title>4a29eb7e7ccb441d95468f6c023647c8&#45;&#45;d009898ce3324ab7b8b20009796612a9</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M255.02,-98C266.82,-98 278.98,-98 290.79,-98"/>
+</g>
+<!-- 65d98ce88b7a4c1bb0df13706a45328f -->
+<g id="node28" class="node">
+<title>65d98ce88b7a4c1bb0df13706a45328f</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M657,-127C657,-127 504,-127 504,-127 498,-127 492,-121 492,-115 492,-115 492,-81 492,-81 492,-75 498,-69 504,-69 504,-69 657,-69 657,-69 663,-69 669,-75 669,-81 669,-81 669,-115 669,-115 669,-121 663,-127 657,-127"/>
+<text text-anchor="middle" x="580.5" y="-93" font-family="JetBrains Mono" font-size="20.00">RX(theta₁₀)</text>
+</g>
+<!-- d009898ce3324ab7b8b20009796612a9&#45;&#45;65d98ce88b7a4c1bb0df13706a45328f -->
+<g id="edge25" class="edge">
+<title>d009898ce3324ab7b8b20009796612a9&#45;&#45;65d98ce88b7a4c1bb0df13706a45328f</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M456.11,-98C467.83,-98 479.94,-98 491.78,-98"/>
+</g>
+<!-- 04d8a830b5db402a95f3a9f9dd23af7d -->
+<g id="node29" class="node">
+<title>04d8a830b5db402a95f3a9f9dd23af7d</title>
+<ellipse fill="black" stroke="black" cx="734" cy="-98" rx="7.2" ry="7.2"/>
+</g>
+<!-- 65d98ce88b7a4c1bb0df13706a45328f&#45;&#45;04d8a830b5db402a95f3a9f9dd23af7d -->
+<g id="edge26" class="edge">
+<title>65d98ce88b7a4c1bb0df13706a45328f&#45;&#45;04d8a830b5db402a95f3a9f9dd23af7d</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M669.19,-98C693.53,-98 716.19,-98 726.76,-98"/>
+</g>
+<!-- 4c2d377b276444949bafe306e0a38193 -->
+<g id="node30" class="node">
+<title>4c2d377b276444949bafe306e0a38193</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M845,-127C845,-127 811,-127 811,-127 805,-127 799,-121 799,-115 799,-115 799,-81 799,-81 799,-75 805,-69 811,-69 811,-69 845,-69 845,-69 851,-69 857,-75 857,-81 857,-81 857,-115 857,-115 857,-121 851,-127 845,-127"/>
+<text text-anchor="middle" x="828" y="-93" font-family="JetBrains Mono" font-size="20.00">X</text>
+</g>
+<!-- 04d8a830b5db402a95f3a9f9dd23af7d&#45;&#45;4c2d377b276444949bafe306e0a38193 -->
+<g id="edge27" class="edge">
+<title>04d8a830b5db402a95f3a9f9dd23af7d&#45;&#45;4c2d377b276444949bafe306e0a38193</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M741.32,-98C753.02,-98 778.66,-98 798.87,-98"/>
+</g>
+<!-- 4c2d377b276444949bafe306e0a38193&#45;&#45;cfff58480e83446abe0fa3e782a8a52c -->
+<g id="edge47" class="edge">
+<title>4c2d377b276444949bafe306e0a38193&#45;&#45;cfff58480e83446abe0fa3e782a8a52c</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M828,-127.11C828,-137.91 828,-148.72 828,-159.52"/>
+</g>
+<!-- 09c1490cf1224d73b36a1aad6030d467 -->
+<g id="node31" class="node">
+<title>09c1490cf1224d73b36a1aad6030d467</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M1058,-127C1058,-127 905,-127 905,-127 899,-127 893,-121 893,-115 893,-115 893,-81 893,-81 893,-75 899,-69 905,-69 905,-69 1058,-69 1058,-69 1064,-69 1070,-75 1070,-81 1070,-81 1070,-115 1070,-115 1070,-121 1064,-127 1058,-127"/>
+<text text-anchor="middle" x="981.5" y="-93" font-family="JetBrains Mono" font-size="20.00">RX(theta₁₄)</text>
+</g>
+<!-- 4c2d377b276444949bafe306e0a38193&#45;&#45;09c1490cf1224d73b36a1aad6030d467 -->
+<g id="edge28" class="edge">
+<title>4c2d377b276444949bafe306e0a38193&#45;&#45;09c1490cf1224d73b36a1aad6030d467</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M857.14,-98C867.58,-98 880.05,-98 892.99,-98"/>
+</g>
+<!-- 2a2b2f3af3064e79b98aba31aaf06c75 -->
+<g id="node32" class="node">
+<title>2a2b2f3af3064e79b98aba31aaf06c75</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M1271,-127C1271,-127 1118,-127 1118,-127 1112,-127 1106,-121 1106,-115 1106,-115 1106,-81 1106,-81 1106,-75 1112,-69 1118,-69 1118,-69 1271,-69 1271,-69 1277,-69 1283,-75 1283,-81 1283,-81 1283,-115 1283,-115 1283,-121 1277,-127 1271,-127"/>
+<text text-anchor="middle" x="1194.5" y="-93" font-family="JetBrains Mono" font-size="20.00">RY(theta₁₈)</text>
+</g>
+<!-- 09c1490cf1224d73b36a1aad6030d467&#45;&#45;2a2b2f3af3064e79b98aba31aaf06c75 -->
+<g id="edge29" class="edge">
+<title>09c1490cf1224d73b36a1aad6030d467&#45;&#45;2a2b2f3af3064e79b98aba31aaf06c75</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1070.15,-98C1081.93,-98 1094.01,-98 1105.78,-98"/>
+</g>
+<!-- a12341301caa46faaf483d824fbace9b -->
+<g id="node33" class="node">
+<title>a12341301caa46faaf483d824fbace9b</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M1484,-127C1484,-127 1331,-127 1331,-127 1325,-127 1319,-121 1319,-115 1319,-115 1319,-81 1319,-81 1319,-75 1325,-69 1331,-69 1331,-69 1484,-69 1484,-69 1490,-69 1496,-75 1496,-81 1496,-81 1496,-115 1496,-115 1496,-121 1490,-127 1484,-127"/>
+<text text-anchor="middle" x="1407.5" y="-93" font-family="JetBrains Mono" font-size="20.00">RX(theta₂₂)</text>
+</g>
+<!-- 2a2b2f3af3064e79b98aba31aaf06c75&#45;&#45;a12341301caa46faaf483d824fbace9b -->
+<g id="edge30" class="edge">
+<title>2a2b2f3af3064e79b98aba31aaf06c75&#45;&#45;a12341301caa46faaf483d824fbace9b</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1283.15,-98C1294.93,-98 1307.01,-98 1318.78,-98"/>
+</g>
+<!-- 032ef2445d12419bb31fd6f5fe3b0d80 -->
+<g id="node34" class="node">
+<title>032ef2445d12419bb31fd6f5fe3b0d80</title>
+<ellipse fill="black" stroke="black" cx="1561" cy="-98" rx="7.2" ry="7.2"/>
+</g>
+<!-- a12341301caa46faaf483d824fbace9b&#45;&#45;032ef2445d12419bb31fd6f5fe3b0d80 -->
+<g id="edge31" class="edge">
+<title>a12341301caa46faaf483d824fbace9b&#45;&#45;032ef2445d12419bb31fd6f5fe3b0d80</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1496.19,-98C1520.53,-98 1543.19,-98 1553.76,-98"/>
+</g>
+<!-- 8f391e543d824f9b8289f06105f53eb1 -->
+<g id="node35" class="node">
+<title>8f391e543d824f9b8289f06105f53eb1</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M1672,-127C1672,-127 1638,-127 1638,-127 1632,-127 1626,-121 1626,-115 1626,-115 1626,-81 1626,-81 1626,-75 1632,-69 1638,-69 1638,-69 1672,-69 1672,-69 1678,-69 1684,-75 1684,-81 1684,-81 1684,-115 1684,-115 1684,-121 1678,-127 1672,-127"/>
+<text text-anchor="middle" x="1655" y="-93" font-family="JetBrains Mono" font-size="20.00">X</text>
+</g>
+<!-- 032ef2445d12419bb31fd6f5fe3b0d80&#45;&#45;8f391e543d824f9b8289f06105f53eb1 -->
+<g id="edge32" class="edge">
+<title>032ef2445d12419bb31fd6f5fe3b0d80&#45;&#45;8f391e543d824f9b8289f06105f53eb1</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1568.32,-98C1580.02,-98 1605.66,-98 1625.87,-98"/>
+</g>
+<!-- 8f391e543d824f9b8289f06105f53eb1&#45;&#45;bbb5a09bffda44909adee3ee93b739e0 -->
+<g id="edge48" class="edge">
+<title>8f391e543d824f9b8289f06105f53eb1&#45;&#45;bbb5a09bffda44909adee3ee93b739e0</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1655,-127.11C1655,-137.91 1655,-148.72 1655,-159.52"/>
+</g>
+<!-- 8f391e543d824f9b8289f06105f53eb1&#45;&#45;cbd69aa7a49f4efe94a17e1147a891eb -->
+<g id="edge33" class="edge">
+<title>8f391e543d824f9b8289f06105f53eb1&#45;&#45;cbd69aa7a49f4efe94a17e1147a891eb</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1684.48,-98C1695.81,-98 1708.76,-98 1719.85,-98"/>
+</g>
+<!-- 3d85f34477e1493492070391437ab38b -->
+<g id="node48" class="node">
+<title>3d85f34477e1493492070391437ab38b</title>
+</g>
+<!-- cbd69aa7a49f4efe94a17e1147a891eb&#45;&#45;3d85f34477e1493492070391437ab38b -->
+<!-- 7d4cc9bdec11474798cff7d340642ad9 -->
+<g id="node38" class="node">
+<title>7d4cc9bdec11474798cff7d340642ad9</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M243,-58C243,-58 102,-58 102,-58 96,-58 90,-52 90,-46 90,-46 90,-12 90,-12 90,-6 96,0 102,0 102,0 243,0 243,0 249,0 255,-6 255,-12 255,-12 255,-46 255,-46 255,-52 249,-58 243,-58"/>
+<text text-anchor="middle" x="172.5" y="-24" font-family="JetBrains Mono" font-size="20.00">RX(theta₃)</text>
+</g>
+<!-- 2b74251281c042578e6be7614af59cc6&#45;&#45;7d4cc9bdec11474798cff7d340642ad9 -->
+<g id="edge34" class="edge">
+<title>2b74251281c042578e6be7614af59cc6&#45;&#45;7d4cc9bdec11474798cff7d340642ad9</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54.32,-29C64.6,-29 76.98,-29 89.8,-29"/>
+</g>
+<!-- e7a15ccf444749f781605829b3c73223 -->
+<g id="node39" class="node">
+<title>e7a15ccf444749f781605829b3c73223</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M444,-58C444,-58 303,-58 303,-58 297,-58 291,-52 291,-46 291,-46 291,-12 291,-12 291,-6 297,0 303,0 303,0 444,0 444,0 450,0 456,-6 456,-12 456,-12 456,-46 456,-46 456,-52 450,-58 444,-58"/>
+<text text-anchor="middle" x="373.5" y="-24" font-family="JetBrains Mono" font-size="20.00">RY(theta₇)</text>
+</g>
+<!-- 7d4cc9bdec11474798cff7d340642ad9&#45;&#45;e7a15ccf444749f781605829b3c73223 -->
+<g id="edge35" class="edge">
+<title>7d4cc9bdec11474798cff7d340642ad9&#45;&#45;e7a15ccf444749f781605829b3c73223</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M255.02,-29C266.82,-29 278.98,-29 290.79,-29"/>
+</g>
+<!-- 325102cdb52b4e97b9784ecec0c7ed4f -->
+<g id="node40" class="node">
+<title>325102cdb52b4e97b9784ecec0c7ed4f</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M657,-58C657,-58 504,-58 504,-58 498,-58 492,-52 492,-46 492,-46 492,-12 492,-12 492,-6 498,0 504,0 504,0 657,0 657,0 663,0 669,-6 669,-12 669,-12 669,-46 669,-46 669,-52 663,-58 657,-58"/>
+<text text-anchor="middle" x="580.5" y="-24" font-family="JetBrains Mono" font-size="20.00">RX(theta₁₁)</text>
+</g>
+<!-- e7a15ccf444749f781605829b3c73223&#45;&#45;325102cdb52b4e97b9784ecec0c7ed4f -->
+<g id="edge36" class="edge">
+<title>e7a15ccf444749f781605829b3c73223&#45;&#45;325102cdb52b4e97b9784ecec0c7ed4f</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M456.11,-29C467.83,-29 479.94,-29 491.78,-29"/>
+</g>
+<!-- 70515e0310534be6a5a5d9d4c21bde00 -->
+<g id="node41" class="node">
+<title>70515e0310534be6a5a5d9d4c21bde00</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M751,-58C751,-58 717,-58 717,-58 711,-58 705,-52 705,-46 705,-46 705,-12 705,-12 705,-6 711,0 717,0 717,0 751,0 751,0 757,0 763,-6 763,-12 763,-12 763,-46 763,-46 763,-52 757,-58 751,-58"/>
+<text text-anchor="middle" x="734" y="-24" font-family="JetBrains Mono" font-size="20.00">X</text>
+</g>
+<!-- 325102cdb52b4e97b9784ecec0c7ed4f&#45;&#45;70515e0310534be6a5a5d9d4c21bde00 -->
+<g id="edge37" class="edge">
+<title>325102cdb52b4e97b9784ecec0c7ed4f&#45;&#45;70515e0310534be6a5a5d9d4c21bde00</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M669.19,-29C682.02,-29 694.37,-29 704.74,-29"/>
+</g>
+<!-- 70515e0310534be6a5a5d9d4c21bde00&#45;&#45;04d8a830b5db402a95f3a9f9dd23af7d -->
+<g id="edge49" class="edge">
+<title>70515e0310534be6a5a5d9d4c21bde00&#45;&#45;04d8a830b5db402a95f3a9f9dd23af7d</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M734,-58.11C734,-68.91 734,-79.72 734,-90.52"/>
+</g>
+<!-- 36fd328cc23943deb05ea5edb3405b2d -->
+<g id="node42" class="node">
+<title>36fd328cc23943deb05ea5edb3405b2d</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="828.5,-29.5 827.5,-29.5 827.5,-28.5 828.5,-28.5 828.5,-29.5"/>
+</g>
+<!-- 70515e0310534be6a5a5d9d4c21bde00&#45;&#45;36fd328cc23943deb05ea5edb3405b2d -->
+<g id="edge38" class="edge">
+<title>70515e0310534be6a5a5d9d4c21bde00&#45;&#45;36fd328cc23943deb05ea5edb3405b2d</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M763.1,-29C789.31,-29 824.71,-29 826.89,-29"/>
+</g>
+<!-- ea854b2335ce47c49c34321a6a854fbb -->
+<g id="node43" class="node">
+<title>ea854b2335ce47c49c34321a6a854fbb</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M1058,-58C1058,-58 905,-58 905,-58 899,-58 893,-52 893,-46 893,-46 893,-12 893,-12 893,-6 899,0 905,0 905,0 1058,0 1058,0 1064,0 1070,-6 1070,-12 1070,-12 1070,-46 1070,-46 1070,-52 1064,-58 1058,-58"/>
+<text text-anchor="middle" x="981.5" y="-24" font-family="JetBrains Mono" font-size="20.00">RX(theta₁₅)</text>
+</g>
+<!-- 36fd328cc23943deb05ea5edb3405b2d&#45;&#45;ea854b2335ce47c49c34321a6a854fbb -->
+<g id="edge39" class="edge">
+<title>36fd328cc23943deb05ea5edb3405b2d&#45;&#45;ea854b2335ce47c49c34321a6a854fbb</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M829.11,-29C831.12,-29 860.34,-29 892.59,-29"/>
+</g>
+<!-- 8a7cecab3fa8489aa95a7a5d57637333 -->
+<g id="node44" class="node">
+<title>8a7cecab3fa8489aa95a7a5d57637333</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M1271,-58C1271,-58 1118,-58 1118,-58 1112,-58 1106,-52 1106,-46 1106,-46 1106,-12 1106,-12 1106,-6 1112,0 1118,0 1118,0 1271,0 1271,0 1277,0 1283,-6 1283,-12 1283,-12 1283,-46 1283,-46 1283,-52 1277,-58 1271,-58"/>
+<text text-anchor="middle" x="1194.5" y="-24" font-family="JetBrains Mono" font-size="20.00">RY(theta₁₉)</text>
+</g>
+<!-- ea854b2335ce47c49c34321a6a854fbb&#45;&#45;8a7cecab3fa8489aa95a7a5d57637333 -->
+<g id="edge40" class="edge">
+<title>ea854b2335ce47c49c34321a6a854fbb&#45;&#45;8a7cecab3fa8489aa95a7a5d57637333</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1070.15,-29C1081.93,-29 1094.01,-29 1105.78,-29"/>
+</g>
+<!-- cb0686b332554e0da93ecde55746b66e -->
+<g id="node45" class="node">
+<title>cb0686b332554e0da93ecde55746b66e</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M1484,-58C1484,-58 1331,-58 1331,-58 1325,-58 1319,-52 1319,-46 1319,-46 1319,-12 1319,-12 1319,-6 1325,0 1331,0 1331,0 1484,0 1484,0 1490,0 1496,-6 1496,-12 1496,-12 1496,-46 1496,-46 1496,-52 1490,-58 1484,-58"/>
+<text text-anchor="middle" x="1407.5" y="-24" font-family="JetBrains Mono" font-size="20.00">RX(theta₂₃)</text>
+</g>
+<!-- 8a7cecab3fa8489aa95a7a5d57637333&#45;&#45;cb0686b332554e0da93ecde55746b66e -->
+<g id="edge41" class="edge">
+<title>8a7cecab3fa8489aa95a7a5d57637333&#45;&#45;cb0686b332554e0da93ecde55746b66e</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1283.15,-29C1294.93,-29 1307.01,-29 1318.78,-29"/>
+</g>
+<!-- 15c3d06fd41143a2978b712ab27b494b -->
+<g id="node46" class="node">
+<title>15c3d06fd41143a2978b712ab27b494b</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M1578,-58C1578,-58 1544,-58 1544,-58 1538,-58 1532,-52 1532,-46 1532,-46 1532,-12 1532,-12 1532,-6 1538,0 1544,0 1544,0 1578,0 1578,0 1584,0 1590,-6 1590,-12 1590,-12 1590,-46 1590,-46 1590,-52 1584,-58 1578,-58"/>
+<text text-anchor="middle" x="1561" y="-24" font-family="JetBrains Mono" font-size="20.00">X</text>
+</g>
+<!-- cb0686b332554e0da93ecde55746b66e&#45;&#45;15c3d06fd41143a2978b712ab27b494b -->
+<g id="edge42" class="edge">
+<title>cb0686b332554e0da93ecde55746b66e&#45;&#45;15c3d06fd41143a2978b712ab27b494b</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1496.19,-29C1509.02,-29 1521.37,-29 1531.74,-29"/>
+</g>
+<!-- 15c3d06fd41143a2978b712ab27b494b&#45;&#45;032ef2445d12419bb31fd6f5fe3b0d80 -->
+<g id="edge50" class="edge">
+<title>15c3d06fd41143a2978b712ab27b494b&#45;&#45;032ef2445d12419bb31fd6f5fe3b0d80</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1561,-58.11C1561,-68.91 1561,-79.72 1561,-90.52"/>
+</g>
+<!-- 9ca048c54d9848cca2f5ebbadecc7a0b -->
+<g id="node47" class="node">
+<title>9ca048c54d9848cca2f5ebbadecc7a0b</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="1655.5,-29.5 1654.5,-29.5 1654.5,-28.5 1655.5,-28.5 1655.5,-29.5"/>
+</g>
+<!-- 15c3d06fd41143a2978b712ab27b494b&#45;&#45;9ca048c54d9848cca2f5ebbadecc7a0b -->
+<g id="edge43" class="edge">
+<title>15c3d06fd41143a2978b712ab27b494b&#45;&#45;9ca048c54d9848cca2f5ebbadecc7a0b</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1590.1,-29C1616.31,-29 1651.71,-29 1653.89,-29"/>
+</g>
+<!-- 9ca048c54d9848cca2f5ebbadecc7a0b&#45;&#45;3d85f34477e1493492070391437ab38b -->
+<g id="edge44" class="edge">
+<title>9ca048c54d9848cca2f5ebbadecc7a0b&#45;&#45;3d85f34477e1493492070391437ab38b</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1656.07,-29C1657.8,-29 1693.79,-29 1719.7,-29"/>
+</g>
+</g>
+</svg>
+
+
+
+</div>
+<p>We have specified that the ansatz should have a depth of 2, and the ansatz type is "hea" (Hardware Efficient Ansatz). The ansatz strategy is set to "digital", which means digital gates are being used. One could alternatively use "analog" or "rydberg" as the ansatz strategy.</p>
+<p>For full details on the <code>AnsatzConfig</code> class, see the <a class="autorefs autorefs-internal" title="AnsatzConfig(depth=1, ansatz_type=AnsatzType.HEA, ansatz_strategy=Strategy.DIGITAL, strategy_args=dict(), m_block_qubits=None, param_prefix='theta', tag=None)
+
+  
+      dataclass
+  " href="../../../api/ml_tools/#qadence.ml_tools.config.AnsatzConfig">API documentation</a>.</p>
+<h2 id="defining-the-qnn-from-the-configs">Defining the QNN from the Configs</h2>
+<p>To build the QNN, we can now use the <code>QNN</code> class as a <code>QuantumModel</code> subtype. In addition to the feature map, ansatz and the observable configs, we can also specify options such as the <code>backend</code>, <code>diff_mode</code>, etc. For full details on the <code>QNN</code> class, see the <a class="autorefs autorefs-internal" title="QNN(circuit, observable, backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD, measurement=None, noise=None, configuration=None, inputs=None, input_diff_mode=InputDiffMode.AD)" href="../../../api/ml_tools/#qadence.ml_tools.models.QNN">API documentation</a> or the documentation on the config constructor <a class="autorefs autorefs-internal" title="from_configs(register, obs_config, fm_config=FeatureMapConfig(), ansatz_config=AnsatzConfig(), backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD, measurement=None, noise=None, configuration=None, input_diff_mode=InputDiffMode.AD)
+
+  
+      classmethod
+  " href="../../../api/ml_tools/#qadence.ml_tools.models.QNN.from_configs">here</a>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qadence</span><span class="w"> </span><span class="kn">import</span> <span class="n">BackendName</span><span class="p">,</span> <span class="n">DiffMode</span><span class="p">,</span> <span class="n">QNN</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">qnn</span> <span class="o">=</span> <span class="n">QNN</span><span class="o">.</span><span class="n">from_configs</span><span class="p">(</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">register</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">obs_config</span><span class="o">=</span><span class="n">observable_config</span><span class="p">,</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">fm_config</span><span class="o">=</span><span class="n">fm_config</span><span class="p">,</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">ansatz_config</span><span class="o">=</span><span class="n">ansatz_config</span><span class="p">,</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">backend</span><span class="o">=</span><span class="n">BackendName</span><span class="o">.</span><span class="n">PYQTORCH</span><span class="p">,</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">diff_mode</span><span class="o">=</span><span class="n">DiffMode</span><span class="o">.</span><span class="n">AD</span><span class="p">,</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="p">)</span>
+</code></pre></div>
+<div class="result" markdown="1" >
+
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.43.0 (0)
+ -->
+<!-- Title: %3 Pages: 1 -->
+<svg width="2340pt" height="362pt"
+ viewBox="0.00 0.00 2340.00 362.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 358)">
+<title>%3</title>
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-358 2336,-358 2336,4 -4,4"/>
+<g id="clust1" class="cluster">
+<title>cluster_6530487ff8f44b9db382a1eb520b6732</title>
+<path fill="white" stroke="black" stroke-width="2" d="M2097,-15C2097,-15 2246,-15 2246,-15 2252,-15 2258,-21 2258,-27 2258,-27 2258,-322 2258,-322 2258,-328 2252,-334 2246,-334 2246,-334 2097,-334 2097,-334 2091,-334 2085,-328 2085,-322 2085,-322 2085,-27 2085,-27 2085,-21 2091,-15 2097,-15"/>
+<text text-anchor="middle" x="2171.5" y="-319.6" font-family="JetBrains Mono" font-size="13.00">Obs.</text>
+</g>
+<g id="clust2" class="cluster">
+<title>cluster_5dd038ee07c1460db05913165acb1c0e</title>
+<path fill="lightgrey" stroke="black" stroke-width="2" d="M2105,-23C2105,-23 2238,-23 2238,-23 2244,-23 2250,-29 2250,-35 2250,-35 2250,-292 2250,-292 2250,-298 2244,-304 2238,-304 2238,-304 2105,-304 2105,-304 2099,-304 2093,-298 2093,-292 2093,-292 2093,-35 2093,-35 2093,-29 2099,-23 2105,-23"/>
+</g>
+<g id="clust5" class="cluster">
+<title>cluster_8e0e62ffcca44d2393735170606d2cf6</title>
+<path fill="white" stroke="black" stroke-width="2" d="M154,-181C154,-181 371,-181 371,-181 377,-181 383,-187 383,-193 383,-193 383,-334 383,-334 383,-340 377,-346 371,-346 371,-346 154,-346 154,-346 148,-346 142,-340 142,-334 142,-334 142,-193 142,-193 142,-187 148,-181 154,-181"/>
+<text text-anchor="middle" x="262.5" y="-331.6" font-family="JetBrains Mono" font-size="13.00">Tower Chebyshev FM</text>
+</g>
+<g id="clust4" class="cluster">
+<title>cluster_5c310b9b73cd4ee9adea75e867f341fd</title>
+<path fill="white" stroke="black" stroke-width="2" d="M94,-8C94,-8 431,-8 431,-8 437,-8 443,-14 443,-20 443,-20 443,-161 443,-161 443,-167 437,-173 431,-173 431,-173 94,-173 94,-173 88,-173 82,-167 82,-161 82,-161 82,-20 82,-20 82,-14 88,-8 94,-8"/>
+<text text-anchor="middle" x="262.5" y="-158.6" font-family="JetBrains Mono" font-size="13.00">Tower Chebyshev FM</text>
+</g>
+<g id="clust3" class="cluster">
+<title>cluster_c5ac18230ba84119a6719b92630b1da4</title>
+<path fill="white" stroke="black" stroke-width="2" d="M475,-23C475,-23 2061,-23 2061,-23 2067,-23 2073,-29 2073,-35 2073,-35 2073,-314 2073,-314 2073,-320 2067,-326 2061,-326 2061,-326 475,-326 475,-326 469,-326 463,-320 463,-314 463,-314 463,-35 463,-35 463,-29 469,-23 475,-23"/>
+<text text-anchor="middle" x="1268" y="-311.6" font-family="JetBrains Mono" font-size="13.00">HEA</text>
+</g>
+<!-- 1fdb4c13f22e4a1c84cf486c06305ce8 -->
+<g id="node1" class="node">
+<title>1fdb4c13f22e4a1c84cf486c06305ce8</title>
+<text text-anchor="middle" x="27" y="-283.5" font-family="JetBrains Mono" font-size="15.00">0</text>
+</g>
+<!-- b793a9684de244088b18c0f1b7c9c123 -->
+<g id="node2" class="node">
+<title>b793a9684de244088b18c0f1b7c9c123</title>
+<path fill="#b2e8c2" stroke="#2d954d" stroke-width="2.7" d="M363,-316C363,-316 162,-316 162,-316 156,-316 150,-310 150,-304 150,-304 150,-270 150,-270 150,-264 156,-258 162,-258 162,-258 363,-258 363,-258 369,-258 375,-264 375,-270 375,-270 375,-304 375,-304 375,-310 369,-316 363,-316"/>
+<text text-anchor="middle" x="262.5" y="-282" font-family="JetBrains Mono" font-size="20.00">RX(1.0*acos(x))</text>
+</g>
+<!-- 1fdb4c13f22e4a1c84cf486c06305ce8&#45;&#45;b793a9684de244088b18c0f1b7c9c123 -->
+<g id="edge1" class="edge">
+<title>1fdb4c13f22e4a1c84cf486c06305ce8&#45;&#45;b793a9684de244088b18c0f1b7c9c123</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54.33,-287C77.95,-287 114.28,-287 149.96,-287"/>
+</g>
+<!-- 79f45a62a40945028be95dd8ec1e7fda -->
+<g id="node15" class="node">
+<title>79f45a62a40945028be95dd8ec1e7fda</title>
+<text text-anchor="middle" x="27" y="-214.5" font-family="JetBrains Mono" font-size="15.00">1</text>
+</g>
+<!-- 1fdb4c13f22e4a1c84cf486c06305ce8&#45;&#45;79f45a62a40945028be95dd8ec1e7fda -->
+<!-- 769d118489a5406fa0aaca58a00f0042 -->
+<g id="node3" class="node">
+<title>769d118489a5406fa0aaca58a00f0042</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M624,-296C624,-296 483,-296 483,-296 477,-296 471,-290 471,-284 471,-284 471,-250 471,-250 471,-244 477,-238 483,-238 483,-238 624,-238 624,-238 630,-238 636,-244 636,-250 636,-250 636,-284 636,-284 636,-290 630,-296 624,-296"/>
+<text text-anchor="middle" x="553.5" y="-262" font-family="JetBrains Mono" font-size="20.00">RX(theta₀)</text>
+</g>
+<!-- b793a9684de244088b18c0f1b7c9c123&#45;&#45;769d118489a5406fa0aaca58a00f0042 -->
+<g id="edge2" class="edge">
+<title>b793a9684de244088b18c0f1b7c9c123&#45;&#45;769d118489a5406fa0aaca58a00f0042</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M375.23,-279.27C407,-277.07 441,-274.72 470.64,-272.67"/>
+</g>
+<!-- d4b74bbcbd4243c5ba788c43de9e39e4 -->
+<g id="node4" class="node">
+<title>d4b74bbcbd4243c5ba788c43de9e39e4</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M825,-296C825,-296 684,-296 684,-296 678,-296 672,-290 672,-284 672,-284 672,-250 672,-250 672,-244 678,-238 684,-238 684,-238 825,-238 825,-238 831,-238 837,-244 837,-250 837,-250 837,-284 837,-284 837,-290 831,-296 825,-296"/>
+<text text-anchor="middle" x="754.5" y="-262" font-family="JetBrains Mono" font-size="20.00">RY(theta₄)</text>
+</g>
+<!-- 769d118489a5406fa0aaca58a00f0042&#45;&#45;d4b74bbcbd4243c5ba788c43de9e39e4 -->
+<g id="edge3" class="edge">
+<title>769d118489a5406fa0aaca58a00f0042&#45;&#45;d4b74bbcbd4243c5ba788c43de9e39e4</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M636.02,-267C647.82,-267 659.98,-267 671.79,-267"/>
+</g>
+<!-- 0add87d4a46549b7b57c5ab5ac7f6ffb -->
+<g id="node5" class="node">
+<title>0add87d4a46549b7b57c5ab5ac7f6ffb</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M1032,-296C1032,-296 891,-296 891,-296 885,-296 879,-290 879,-284 879,-284 879,-250 879,-250 879,-244 885,-238 891,-238 891,-238 1032,-238 1032,-238 1038,-238 1044,-244 1044,-250 1044,-250 1044,-284 1044,-284 1044,-290 1038,-296 1032,-296"/>
+<text text-anchor="middle" x="961.5" y="-262" font-family="JetBrains Mono" font-size="20.00">RX(theta₈)</text>
+</g>
+<!-- d4b74bbcbd4243c5ba788c43de9e39e4&#45;&#45;0add87d4a46549b7b57c5ab5ac7f6ffb -->
+<g id="edge4" class="edge">
+<title>d4b74bbcbd4243c5ba788c43de9e39e4&#45;&#45;0add87d4a46549b7b57c5ab5ac7f6ffb</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M837.11,-267C850.84,-267 865.1,-267 878.84,-267"/>
+</g>
+<!-- f9c41fefee0d48a59ea0c39685a4ea32 -->
+<g id="node6" class="node">
+<title>f9c41fefee0d48a59ea0c39685a4ea32</title>
+<ellipse fill="black" stroke="black" cx="1115" cy="-267" rx="7.2" ry="7.2"/>
+</g>
+<!-- 0add87d4a46549b7b57c5ab5ac7f6ffb&#45;&#45;f9c41fefee0d48a59ea0c39685a4ea32 -->
+<g id="edge5" class="edge">
+<title>0add87d4a46549b7b57c5ab5ac7f6ffb&#45;&#45;f9c41fefee0d48a59ea0c39685a4ea32</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1044.02,-267C1070.63,-267 1096.29,-267 1107.75,-267"/>
+</g>
+<!-- d872170d30854187a0a051297262f32b -->
+<g id="node7" class="node">
+<title>d872170d30854187a0a051297262f32b</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="1209.5,-267.5 1208.5,-267.5 1208.5,-266.5 1209.5,-266.5 1209.5,-267.5"/>
+</g>
+<!-- f9c41fefee0d48a59ea0c39685a4ea32&#45;&#45;d872170d30854187a0a051297262f32b -->
+<g id="edge6" class="edge">
+<title>f9c41fefee0d48a59ea0c39685a4ea32&#45;&#45;d872170d30854187a0a051297262f32b</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1122.32,-267C1142.78,-267 1205.98,-267 1207.95,-267"/>
+</g>
+<!-- 27fc018e52db4932a4075778ba36a924 -->
+<g id="node8" class="node">
+<title>27fc018e52db4932a4075778ba36a924</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M1439,-296C1439,-296 1286,-296 1286,-296 1280,-296 1274,-290 1274,-284 1274,-284 1274,-250 1274,-250 1274,-244 1280,-238 1286,-238 1286,-238 1439,-238 1439,-238 1445,-238 1451,-244 1451,-250 1451,-250 1451,-284 1451,-284 1451,-290 1445,-296 1439,-296"/>
+<text text-anchor="middle" x="1362.5" y="-262" font-family="JetBrains Mono" font-size="20.00">RX(theta₁₂)</text>
+</g>
+<!-- d872170d30854187a0a051297262f32b&#45;&#45;27fc018e52db4932a4075778ba36a924 -->
+<g id="edge7" class="edge">
+<title>d872170d30854187a0a051297262f32b&#45;&#45;27fc018e52db4932a4075778ba36a924</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1210.11,-267C1212.12,-267 1241.34,-267 1273.59,-267"/>
+</g>
+<!-- e43f711faf164524b4f8d8f864a71034 -->
+<g id="node9" class="node">
+<title>e43f711faf164524b4f8d8f864a71034</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M1652,-296C1652,-296 1499,-296 1499,-296 1493,-296 1487,-290 1487,-284 1487,-284 1487,-250 1487,-250 1487,-244 1493,-238 1499,-238 1499,-238 1652,-238 1652,-238 1658,-238 1664,-244 1664,-250 1664,-250 1664,-284 1664,-284 1664,-290 1658,-296 1652,-296"/>
+<text text-anchor="middle" x="1575.5" y="-262" font-family="JetBrains Mono" font-size="20.00">RY(theta₁₆)</text>
+</g>
+<!-- 27fc018e52db4932a4075778ba36a924&#45;&#45;e43f711faf164524b4f8d8f864a71034 -->
+<g id="edge8" class="edge">
+<title>27fc018e52db4932a4075778ba36a924&#45;&#45;e43f711faf164524b4f8d8f864a71034</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1451.15,-267C1462.93,-267 1475.01,-267 1486.78,-267"/>
+</g>
+<!-- 0669654d917241ca8c4c6d4d34aa92e6 -->
+<g id="node10" class="node">
+<title>0669654d917241ca8c4c6d4d34aa92e6</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M1865,-296C1865,-296 1712,-296 1712,-296 1706,-296 1700,-290 1700,-284 1700,-284 1700,-250 1700,-250 1700,-244 1706,-238 1712,-238 1712,-238 1865,-238 1865,-238 1871,-238 1877,-244 1877,-250 1877,-250 1877,-284 1877,-284 1877,-290 1871,-296 1865,-296"/>
+<text text-anchor="middle" x="1788.5" y="-262" font-family="JetBrains Mono" font-size="20.00">RX(theta₂₀)</text>
+</g>
+<!-- e43f711faf164524b4f8d8f864a71034&#45;&#45;0669654d917241ca8c4c6d4d34aa92e6 -->
+<g id="edge9" class="edge">
+<title>e43f711faf164524b4f8d8f864a71034&#45;&#45;0669654d917241ca8c4c6d4d34aa92e6</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1664.15,-267C1675.93,-267 1688.01,-267 1699.78,-267"/>
+</g>
+<!-- 083b67ff9a7149df8aa2fae477ecc742 -->
+<g id="node11" class="node">
+<title>083b67ff9a7149df8aa2fae477ecc742</title>
+<ellipse fill="black" stroke="black" cx="1942" cy="-267" rx="7.2" ry="7.2"/>
+</g>
+<!-- 0669654d917241ca8c4c6d4d34aa92e6&#45;&#45;083b67ff9a7149df8aa2fae477ecc742 -->
+<g id="edge10" class="edge">
+<title>0669654d917241ca8c4c6d4d34aa92e6&#45;&#45;083b67ff9a7149df8aa2fae477ecc742</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1877.19,-267C1901.53,-267 1924.19,-267 1934.76,-267"/>
+</g>
+<!-- deb3dfeed4104f6486b2d6ad12310067 -->
+<g id="node12" class="node">
+<title>deb3dfeed4104f6486b2d6ad12310067</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="2036.5,-267.5 2035.5,-267.5 2035.5,-266.5 2036.5,-266.5 2036.5,-267.5"/>
+</g>
+<!-- 083b67ff9a7149df8aa2fae477ecc742&#45;&#45;deb3dfeed4104f6486b2d6ad12310067 -->
+<g id="edge11" class="edge">
+<title>083b67ff9a7149df8aa2fae477ecc742&#45;&#45;deb3dfeed4104f6486b2d6ad12310067</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1949.32,-267C1969.78,-267 2032.98,-267 2034.95,-267"/>
+</g>
+<!-- ffad3078ffb14b3f9ab944e33f79ffd2 -->
+<g id="node13" class="node">
+<title>ffad3078ffb14b3f9ab944e33f79ffd2</title>
+</g>
+<!-- deb3dfeed4104f6486b2d6ad12310067&#45;&#45;ffad3078ffb14b3f9ab944e33f79ffd2 -->
+<g id="edge12" class="edge">
+<title>deb3dfeed4104f6486b2d6ad12310067&#45;&#45;ffad3078ffb14b3f9ab944e33f79ffd2</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M2037.1,-267C2038.86,-267 2064.6,-267 2093,-267"/>
+</g>
+<!-- 207cb64b1b77433c8a217508a4599bdf -->
+<g id="node14" class="node">
+<title>207cb64b1b77433c8a217508a4599bdf</title>
+</g>
+<!-- ffad3078ffb14b3f9ab944e33f79ffd2&#45;&#45;207cb64b1b77433c8a217508a4599bdf -->
+<g id="edge13" class="edge">
+<title>ffad3078ffb14b3f9ab944e33f79ffd2&#45;&#45;207cb64b1b77433c8a217508a4599bdf</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M2250,-267C2259.89,-267 2269.41,-267 2277.63,-267"/>
+</g>
+<!-- 64acbfa1d8c941a688fe2edba8d7b097 -->
+<g id="node28" class="node">
+<title>64acbfa1d8c941a688fe2edba8d7b097</title>
+</g>
+<!-- 207cb64b1b77433c8a217508a4599bdf&#45;&#45;64acbfa1d8c941a688fe2edba8d7b097 -->
+<!-- afbeba92e2164356b1e2aea97bc9cd36 -->
+<g id="node16" class="node">
+<title>afbeba92e2164356b1e2aea97bc9cd36</title>
+<path fill="#b2e8c2" stroke="#2d954d" stroke-width="2.7" d="M363,-247C363,-247 162,-247 162,-247 156,-247 150,-241 150,-235 150,-235 150,-201 150,-201 150,-195 156,-189 162,-189 162,-189 363,-189 363,-189 369,-189 375,-195 375,-201 375,-201 375,-235 375,-235 375,-241 369,-247 363,-247"/>
+<text text-anchor="middle" x="262.5" y="-213" font-family="JetBrains Mono" font-size="20.00">RX(2.0*acos(x))</text>
+</g>
+<!-- 79f45a62a40945028be95dd8ec1e7fda&#45;&#45;afbeba92e2164356b1e2aea97bc9cd36 -->
+<g id="edge14" class="edge">
+<title>79f45a62a40945028be95dd8ec1e7fda&#45;&#45;afbeba92e2164356b1e2aea97bc9cd36</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54.33,-218C77.95,-218 114.28,-218 149.96,-218"/>
+</g>
+<!-- c4f9b9c193fd4891b165fb6dc782d9fe -->
+<g id="node29" class="node">
+<title>c4f9b9c193fd4891b165fb6dc782d9fe</title>
+<text text-anchor="middle" x="27" y="-110.5" font-family="JetBrains Mono" font-size="15.00">2</text>
+</g>
+<!-- 79f45a62a40945028be95dd8ec1e7fda&#45;&#45;c4f9b9c193fd4891b165fb6dc782d9fe -->
+<!-- cb2dc2db9e2c418aaacf4a64b1742524 -->
+<g id="node17" class="node">
+<title>cb2dc2db9e2c418aaacf4a64b1742524</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M624,-227C624,-227 483,-227 483,-227 477,-227 471,-221 471,-215 471,-215 471,-181 471,-181 471,-175 477,-169 483,-169 483,-169 624,-169 624,-169 630,-169 636,-175 636,-181 636,-181 636,-215 636,-215 636,-221 630,-227 624,-227"/>
+<text text-anchor="middle" x="553.5" y="-193" font-family="JetBrains Mono" font-size="20.00">RX(theta₁)</text>
+</g>
+<!-- afbeba92e2164356b1e2aea97bc9cd36&#45;&#45;cb2dc2db9e2c418aaacf4a64b1742524 -->
+<g id="edge15" class="edge">
+<title>afbeba92e2164356b1e2aea97bc9cd36&#45;&#45;cb2dc2db9e2c418aaacf4a64b1742524</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M375.23,-210.27C407,-208.07 441,-205.72 470.64,-203.67"/>
+</g>
+<!-- 865381ebf1b44191be0956b0c00d78ee -->
+<g id="node18" class="node">
+<title>865381ebf1b44191be0956b0c00d78ee</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M825,-227C825,-227 684,-227 684,-227 678,-227 672,-221 672,-215 672,-215 672,-181 672,-181 672,-175 678,-169 684,-169 684,-169 825,-169 825,-169 831,-169 837,-175 837,-181 837,-181 837,-215 837,-215 837,-221 831,-227 825,-227"/>
+<text text-anchor="middle" x="754.5" y="-193" font-family="JetBrains Mono" font-size="20.00">RY(theta₅)</text>
+</g>
+<!-- cb2dc2db9e2c418aaacf4a64b1742524&#45;&#45;865381ebf1b44191be0956b0c00d78ee -->
+<g id="edge16" class="edge">
+<title>cb2dc2db9e2c418aaacf4a64b1742524&#45;&#45;865381ebf1b44191be0956b0c00d78ee</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M636.02,-198C647.82,-198 659.98,-198 671.79,-198"/>
+</g>
+<!-- 2399d5d01aac43188b5591482d00aaa8 -->
+<g id="node19" class="node">
+<title>2399d5d01aac43188b5591482d00aaa8</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M1032,-227C1032,-227 891,-227 891,-227 885,-227 879,-221 879,-215 879,-215 879,-181 879,-181 879,-175 885,-169 891,-169 891,-169 1032,-169 1032,-169 1038,-169 1044,-175 1044,-181 1044,-181 1044,-215 1044,-215 1044,-221 1038,-227 1032,-227"/>
+<text text-anchor="middle" x="961.5" y="-193" font-family="JetBrains Mono" font-size="20.00">RX(theta₉)</text>
+</g>
+<!-- 865381ebf1b44191be0956b0c00d78ee&#45;&#45;2399d5d01aac43188b5591482d00aaa8 -->
+<g id="edge17" class="edge">
+<title>865381ebf1b44191be0956b0c00d78ee&#45;&#45;2399d5d01aac43188b5591482d00aaa8</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M837.11,-198C850.84,-198 865.1,-198 878.84,-198"/>
+</g>
+<!-- 831ded7cbc44406eb511d5e1304ea79b -->
+<g id="node20" class="node">
+<title>831ded7cbc44406eb511d5e1304ea79b</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M1132,-227C1132,-227 1098,-227 1098,-227 1092,-227 1086,-221 1086,-215 1086,-215 1086,-181 1086,-181 1086,-175 1092,-169 1098,-169 1098,-169 1132,-169 1132,-169 1138,-169 1144,-175 1144,-181 1144,-181 1144,-215 1144,-215 1144,-221 1138,-227 1132,-227"/>
+<text text-anchor="middle" x="1115" y="-193" font-family="JetBrains Mono" font-size="20.00">X</text>
+</g>
+<!-- 2399d5d01aac43188b5591482d00aaa8&#45;&#45;831ded7cbc44406eb511d5e1304ea79b -->
+<g id="edge18" class="edge">
+<title>2399d5d01aac43188b5591482d00aaa8&#45;&#45;831ded7cbc44406eb511d5e1304ea79b</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1044.02,-198C1059,-198 1073.69,-198 1085.71,-198"/>
+</g>
+<!-- 831ded7cbc44406eb511d5e1304ea79b&#45;&#45;f9c41fefee0d48a59ea0c39685a4ea32 -->
+<g id="edge53" class="edge">
+<title>831ded7cbc44406eb511d5e1304ea79b&#45;&#45;f9c41fefee0d48a59ea0c39685a4ea32</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1115,-227.11C1115,-237.91 1115,-248.72 1115,-259.52"/>
+</g>
+<!-- 711590e7150f451685a7e6ffd506d61f -->
+<g id="node21" class="node">
+<title>711590e7150f451685a7e6ffd506d61f</title>
+<ellipse fill="black" stroke="black" cx="1209" cy="-198" rx="7.2" ry="7.2"/>
+</g>
+<!-- 831ded7cbc44406eb511d5e1304ea79b&#45;&#45;711590e7150f451685a7e6ffd506d61f -->
+<g id="edge19" class="edge">
+<title>831ded7cbc44406eb511d5e1304ea79b&#45;&#45;711590e7150f451685a7e6ffd506d61f</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1144.1,-198C1164.18,-198 1189.65,-198 1201.45,-198"/>
+</g>
+<!-- 2b8eeacbbbfb4394b91855d47d351b22 -->
+<g id="node22" class="node">
+<title>2b8eeacbbbfb4394b91855d47d351b22</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M1439,-227C1439,-227 1286,-227 1286,-227 1280,-227 1274,-221 1274,-215 1274,-215 1274,-181 1274,-181 1274,-175 1280,-169 1286,-169 1286,-169 1439,-169 1439,-169 1445,-169 1451,-175 1451,-181 1451,-181 1451,-215 1451,-215 1451,-221 1445,-227 1439,-227"/>
+<text text-anchor="middle" x="1362.5" y="-193" font-family="JetBrains Mono" font-size="20.00">RX(theta₁₃)</text>
+</g>
+<!-- 711590e7150f451685a7e6ffd506d61f&#45;&#45;2b8eeacbbbfb4394b91855d47d351b22 -->
+<g id="edge20" class="edge">
+<title>711590e7150f451685a7e6ffd506d61f&#45;&#45;2b8eeacbbbfb4394b91855d47d351b22</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1216.51,-198C1227.21,-198 1249.77,-198 1273.98,-198"/>
+</g>
+<!-- 9803d9bb90134e5a901455d94d5896e2 -->
+<g id="node23" class="node">
+<title>9803d9bb90134e5a901455d94d5896e2</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M1652,-227C1652,-227 1499,-227 1499,-227 1493,-227 1487,-221 1487,-215 1487,-215 1487,-181 1487,-181 1487,-175 1493,-169 1499,-169 1499,-169 1652,-169 1652,-169 1658,-169 1664,-175 1664,-181 1664,-181 1664,-215 1664,-215 1664,-221 1658,-227 1652,-227"/>
+<text text-anchor="middle" x="1575.5" y="-193" font-family="JetBrains Mono" font-size="20.00">RY(theta₁₇)</text>
+</g>
+<!-- 2b8eeacbbbfb4394b91855d47d351b22&#45;&#45;9803d9bb90134e5a901455d94d5896e2 -->
+<g id="edge21" class="edge">
+<title>2b8eeacbbbfb4394b91855d47d351b22&#45;&#45;9803d9bb90134e5a901455d94d5896e2</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1451.15,-198C1462.93,-198 1475.01,-198 1486.78,-198"/>
+</g>
+<!-- 45f6145d1d32423a993b4792dadedf1d -->
+<g id="node24" class="node">
+<title>45f6145d1d32423a993b4792dadedf1d</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M1865,-227C1865,-227 1712,-227 1712,-227 1706,-227 1700,-221 1700,-215 1700,-215 1700,-181 1700,-181 1700,-175 1706,-169 1712,-169 1712,-169 1865,-169 1865,-169 1871,-169 1877,-175 1877,-181 1877,-181 1877,-215 1877,-215 1877,-221 1871,-227 1865,-227"/>
+<text text-anchor="middle" x="1788.5" y="-193" font-family="JetBrains Mono" font-size="20.00">RX(theta₂₁)</text>
+</g>
+<!-- 9803d9bb90134e5a901455d94d5896e2&#45;&#45;45f6145d1d32423a993b4792dadedf1d -->
+<g id="edge22" class="edge">
+<title>9803d9bb90134e5a901455d94d5896e2&#45;&#45;45f6145d1d32423a993b4792dadedf1d</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1664.15,-198C1675.93,-198 1688.01,-198 1699.78,-198"/>
+</g>
+<!-- 4d6466ec6dea48b4905977acdd67d9ae -->
+<g id="node25" class="node">
+<title>4d6466ec6dea48b4905977acdd67d9ae</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M1959,-227C1959,-227 1925,-227 1925,-227 1919,-227 1913,-221 1913,-215 1913,-215 1913,-181 1913,-181 1913,-175 1919,-169 1925,-169 1925,-169 1959,-169 1959,-169 1965,-169 1971,-175 1971,-181 1971,-181 1971,-215 1971,-215 1971,-221 1965,-227 1959,-227"/>
+<text text-anchor="middle" x="1942" y="-193" font-family="JetBrains Mono" font-size="20.00">X</text>
+</g>
+<!-- 45f6145d1d32423a993b4792dadedf1d&#45;&#45;4d6466ec6dea48b4905977acdd67d9ae -->
+<g id="edge23" class="edge">
+<title>45f6145d1d32423a993b4792dadedf1d&#45;&#45;4d6466ec6dea48b4905977acdd67d9ae</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1877.19,-198C1890.02,-198 1902.37,-198 1912.74,-198"/>
+</g>
+<!-- 4d6466ec6dea48b4905977acdd67d9ae&#45;&#45;083b67ff9a7149df8aa2fae477ecc742 -->
+<g id="edge54" class="edge">
+<title>4d6466ec6dea48b4905977acdd67d9ae&#45;&#45;083b67ff9a7149df8aa2fae477ecc742</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1942,-227.11C1942,-237.91 1942,-248.72 1942,-259.52"/>
+</g>
+<!-- ac54e0edb27846a8b7266caa762c9f38 -->
+<g id="node26" class="node">
+<title>ac54e0edb27846a8b7266caa762c9f38</title>
+<ellipse fill="black" stroke="black" cx="2036" cy="-198" rx="7.2" ry="7.2"/>
+</g>
+<!-- 4d6466ec6dea48b4905977acdd67d9ae&#45;&#45;ac54e0edb27846a8b7266caa762c9f38 -->
+<g id="edge24" class="edge">
+<title>4d6466ec6dea48b4905977acdd67d9ae&#45;&#45;ac54e0edb27846a8b7266caa762c9f38</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1971.1,-198C1991.18,-198 2016.65,-198 2028.45,-198"/>
+</g>
+<!-- 9156bf558be441d1a71c3903316e39a1 -->
+<g id="node27" class="node">
+<title>9156bf558be441d1a71c3903316e39a1</title>
+<text text-anchor="middle" x="2171.5" y="-193" font-family="JetBrains Mono" font-size="20.00">AddBlock</text>
+</g>
+<!-- ac54e0edb27846a8b7266caa762c9f38&#45;&#45;9156bf558be441d1a71c3903316e39a1 -->
+<g id="edge25" class="edge">
+<title>ac54e0edb27846a8b7266caa762c9f38&#45;&#45;9156bf558be441d1a71c3903316e39a1</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M2043.44,-198C2053.07,-198 2072.33,-198 2093,-198"/>
+</g>
+<!-- 9156bf558be441d1a71c3903316e39a1&#45;&#45;64acbfa1d8c941a688fe2edba8d7b097 -->
+<g id="edge26" class="edge">
+<title>9156bf558be441d1a71c3903316e39a1&#45;&#45;64acbfa1d8c941a688fe2edba8d7b097</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M2250,-198C2259.91,-198 2269.46,-198 2277.7,-198"/>
+</g>
+<!-- fb601a5f4fd84710969fae4a8a6d0f2c -->
+<g id="node42" class="node">
+<title>fb601a5f4fd84710969fae4a8a6d0f2c</title>
+</g>
+<!-- 64acbfa1d8c941a688fe2edba8d7b097&#45;&#45;fb601a5f4fd84710969fae4a8a6d0f2c -->
+<!-- 4cd1711ebdc74cdc8fa519bc2fccb02a -->
+<g id="node30" class="node">
+<title>4cd1711ebdc74cdc8fa519bc2fccb02a</title>
+<path fill="#b2e8c2" stroke="#2d954d" stroke-width="2.7" d="M423,-143C423,-143 102,-143 102,-143 96,-143 90,-137 90,-131 90,-131 90,-97 90,-97 90,-91 96,-85 102,-85 102,-85 423,-85 423,-85 429,-85 435,-91 435,-97 435,-97 435,-131 435,-131 435,-137 429,-143 423,-143"/>
+<text text-anchor="middle" x="262.5" y="-109" font-family="JetBrains Mono" font-size="20.00">RX(1.0*acos(2.0*y &#45; 1.0))</text>
+</g>
+<!-- c4f9b9c193fd4891b165fb6dc782d9fe&#45;&#45;4cd1711ebdc74cdc8fa519bc2fccb02a -->
+<g id="edge27" class="edge">
+<title>c4f9b9c193fd4891b165fb6dc782d9fe&#45;&#45;4cd1711ebdc74cdc8fa519bc2fccb02a</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54.33,-114C64.23,-114 76.37,-114 89.75,-114"/>
+</g>
+<!-- 30ba3dce34e646c181381aa3bed1eebd -->
+<g id="node43" class="node">
+<title>30ba3dce34e646c181381aa3bed1eebd</title>
+<text text-anchor="middle" x="27" y="-41.5" font-family="JetBrains Mono" font-size="15.00">3</text>
+</g>
+<!-- c4f9b9c193fd4891b165fb6dc782d9fe&#45;&#45;30ba3dce34e646c181381aa3bed1eebd -->
+<!-- 08a13d77264e465dbbacaf9b6c38d36e -->
+<g id="node31" class="node">
+<title>08a13d77264e465dbbacaf9b6c38d36e</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M624,-158C624,-158 483,-158 483,-158 477,-158 471,-152 471,-146 471,-146 471,-112 471,-112 471,-106 477,-100 483,-100 483,-100 624,-100 624,-100 630,-100 636,-106 636,-112 636,-112 636,-146 636,-146 636,-152 630,-158 624,-158"/>
+<text text-anchor="middle" x="553.5" y="-124" font-family="JetBrains Mono" font-size="20.00">RX(theta₂)</text>
+</g>
+<!-- 4cd1711ebdc74cdc8fa519bc2fccb02a&#45;&#45;08a13d77264e465dbbacaf9b6c38d36e -->
+<g id="edge28" class="edge">
+<title>4cd1711ebdc74cdc8fa519bc2fccb02a&#45;&#45;08a13d77264e465dbbacaf9b6c38d36e</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M435.37,-122.92C447.61,-123.56 459.58,-124.18 470.91,-124.77"/>
+</g>
+<!-- c0b7a6d33b4b4bee9d36c8764a98cb15 -->
+<g id="node32" class="node">
+<title>c0b7a6d33b4b4bee9d36c8764a98cb15</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M825,-158C825,-158 684,-158 684,-158 678,-158 672,-152 672,-146 672,-146 672,-112 672,-112 672,-106 678,-100 684,-100 684,-100 825,-100 825,-100 831,-100 837,-106 837,-112 837,-112 837,-146 837,-146 837,-152 831,-158 825,-158"/>
+<text text-anchor="middle" x="754.5" y="-124" font-family="JetBrains Mono" font-size="20.00">RY(theta₆)</text>
+</g>
+<!-- 08a13d77264e465dbbacaf9b6c38d36e&#45;&#45;c0b7a6d33b4b4bee9d36c8764a98cb15 -->
+<g id="edge29" class="edge">
+<title>08a13d77264e465dbbacaf9b6c38d36e&#45;&#45;c0b7a6d33b4b4bee9d36c8764a98cb15</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M636.02,-129C647.82,-129 659.98,-129 671.79,-129"/>
+</g>
+<!-- 43768d2e66d8407cbb39004d0d93e295 -->
+<g id="node33" class="node">
+<title>43768d2e66d8407cbb39004d0d93e295</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M1038,-158C1038,-158 885,-158 885,-158 879,-158 873,-152 873,-146 873,-146 873,-112 873,-112 873,-106 879,-100 885,-100 885,-100 1038,-100 1038,-100 1044,-100 1050,-106 1050,-112 1050,-112 1050,-146 1050,-146 1050,-152 1044,-158 1038,-158"/>
+<text text-anchor="middle" x="961.5" y="-124" font-family="JetBrains Mono" font-size="20.00">RX(theta₁₀)</text>
+</g>
+<!-- c0b7a6d33b4b4bee9d36c8764a98cb15&#45;&#45;43768d2e66d8407cbb39004d0d93e295 -->
+<g id="edge30" class="edge">
+<title>c0b7a6d33b4b4bee9d36c8764a98cb15&#45;&#45;43768d2e66d8407cbb39004d0d93e295</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M837.11,-129C848.83,-129 860.94,-129 872.78,-129"/>
+</g>
+<!-- cbf400fb9a6b475cb4ed821421faa979 -->
+<g id="node34" class="node">
+<title>cbf400fb9a6b475cb4ed821421faa979</title>
+<ellipse fill="black" stroke="black" cx="1115" cy="-129" rx="7.2" ry="7.2"/>
+</g>
+<!-- 43768d2e66d8407cbb39004d0d93e295&#45;&#45;cbf400fb9a6b475cb4ed821421faa979 -->
+<g id="edge31" class="edge">
+<title>43768d2e66d8407cbb39004d0d93e295&#45;&#45;cbf400fb9a6b475cb4ed821421faa979</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1050.19,-129C1074.53,-129 1097.19,-129 1107.76,-129"/>
+</g>
+<!-- 71005bcd14774b64adb1938d2f96214e -->
+<g id="node35" class="node">
+<title>71005bcd14774b64adb1938d2f96214e</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M1226,-158C1226,-158 1192,-158 1192,-158 1186,-158 1180,-152 1180,-146 1180,-146 1180,-112 1180,-112 1180,-106 1186,-100 1192,-100 1192,-100 1226,-100 1226,-100 1232,-100 1238,-106 1238,-112 1238,-112 1238,-146 1238,-146 1238,-152 1232,-158 1226,-158"/>
+<text text-anchor="middle" x="1209" y="-124" font-family="JetBrains Mono" font-size="20.00">X</text>
+</g>
+<!-- cbf400fb9a6b475cb4ed821421faa979&#45;&#45;71005bcd14774b64adb1938d2f96214e -->
+<g id="edge32" class="edge">
+<title>cbf400fb9a6b475cb4ed821421faa979&#45;&#45;71005bcd14774b64adb1938d2f96214e</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1122.32,-129C1134.02,-129 1159.66,-129 1179.87,-129"/>
+</g>
+<!-- 71005bcd14774b64adb1938d2f96214e&#45;&#45;711590e7150f451685a7e6ffd506d61f -->
+<g id="edge55" class="edge">
+<title>71005bcd14774b64adb1938d2f96214e&#45;&#45;711590e7150f451685a7e6ffd506d61f</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1209,-158.11C1209,-168.91 1209,-179.72 1209,-190.52"/>
+</g>
+<!-- 6fbda4d31e524633904eb8494fe0f2a2 -->
+<g id="node36" class="node">
+<title>6fbda4d31e524633904eb8494fe0f2a2</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M1439,-158C1439,-158 1286,-158 1286,-158 1280,-158 1274,-152 1274,-146 1274,-146 1274,-112 1274,-112 1274,-106 1280,-100 1286,-100 1286,-100 1439,-100 1439,-100 1445,-100 1451,-106 1451,-112 1451,-112 1451,-146 1451,-146 1451,-152 1445,-158 1439,-158"/>
+<text text-anchor="middle" x="1362.5" y="-124" font-family="JetBrains Mono" font-size="20.00">RX(theta₁₄)</text>
+</g>
+<!-- 71005bcd14774b64adb1938d2f96214e&#45;&#45;6fbda4d31e524633904eb8494fe0f2a2 -->
+<g id="edge33" class="edge">
+<title>71005bcd14774b64adb1938d2f96214e&#45;&#45;6fbda4d31e524633904eb8494fe0f2a2</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1238.14,-129C1248.58,-129 1261.05,-129 1273.99,-129"/>
+</g>
+<!-- 57d1b0c1fe9c4e8f8433dae91411a9bf -->
+<g id="node37" class="node">
+<title>57d1b0c1fe9c4e8f8433dae91411a9bf</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M1652,-158C1652,-158 1499,-158 1499,-158 1493,-158 1487,-152 1487,-146 1487,-146 1487,-112 1487,-112 1487,-106 1493,-100 1499,-100 1499,-100 1652,-100 1652,-100 1658,-100 1664,-106 1664,-112 1664,-112 1664,-146 1664,-146 1664,-152 1658,-158 1652,-158"/>
+<text text-anchor="middle" x="1575.5" y="-124" font-family="JetBrains Mono" font-size="20.00">RY(theta₁₈)</text>
+</g>
+<!-- 6fbda4d31e524633904eb8494fe0f2a2&#45;&#45;57d1b0c1fe9c4e8f8433dae91411a9bf -->
+<g id="edge34" class="edge">
+<title>6fbda4d31e524633904eb8494fe0f2a2&#45;&#45;57d1b0c1fe9c4e8f8433dae91411a9bf</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1451.15,-129C1462.93,-129 1475.01,-129 1486.78,-129"/>
+</g>
+<!-- fa31a1e8f18a49efa44d464c69e4abea -->
+<g id="node38" class="node">
+<title>fa31a1e8f18a49efa44d464c69e4abea</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M1865,-158C1865,-158 1712,-158 1712,-158 1706,-158 1700,-152 1700,-146 1700,-146 1700,-112 1700,-112 1700,-106 1706,-100 1712,-100 1712,-100 1865,-100 1865,-100 1871,-100 1877,-106 1877,-112 1877,-112 1877,-146 1877,-146 1877,-152 1871,-158 1865,-158"/>
+<text text-anchor="middle" x="1788.5" y="-124" font-family="JetBrains Mono" font-size="20.00">RX(theta₂₂)</text>
+</g>
+<!-- 57d1b0c1fe9c4e8f8433dae91411a9bf&#45;&#45;fa31a1e8f18a49efa44d464c69e4abea -->
+<g id="edge35" class="edge">
+<title>57d1b0c1fe9c4e8f8433dae91411a9bf&#45;&#45;fa31a1e8f18a49efa44d464c69e4abea</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1664.15,-129C1675.93,-129 1688.01,-129 1699.78,-129"/>
+</g>
+<!-- 0c04401874e64b339b7d0dcc324802d9 -->
+<g id="node39" class="node">
+<title>0c04401874e64b339b7d0dcc324802d9</title>
+<ellipse fill="black" stroke="black" cx="1942" cy="-129" rx="7.2" ry="7.2"/>
+</g>
+<!-- fa31a1e8f18a49efa44d464c69e4abea&#45;&#45;0c04401874e64b339b7d0dcc324802d9 -->
+<g id="edge36" class="edge">
+<title>fa31a1e8f18a49efa44d464c69e4abea&#45;&#45;0c04401874e64b339b7d0dcc324802d9</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1877.19,-129C1901.53,-129 1924.19,-129 1934.76,-129"/>
+</g>
+<!-- 786290aed56f472ebfffa8acd0eef1d3 -->
+<g id="node40" class="node">
+<title>786290aed56f472ebfffa8acd0eef1d3</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M2053,-158C2053,-158 2019,-158 2019,-158 2013,-158 2007,-152 2007,-146 2007,-146 2007,-112 2007,-112 2007,-106 2013,-100 2019,-100 2019,-100 2053,-100 2053,-100 2059,-100 2065,-106 2065,-112 2065,-112 2065,-146 2065,-146 2065,-152 2059,-158 2053,-158"/>
+<text text-anchor="middle" x="2036" y="-124" font-family="JetBrains Mono" font-size="20.00">X</text>
+</g>
+<!-- 0c04401874e64b339b7d0dcc324802d9&#45;&#45;786290aed56f472ebfffa8acd0eef1d3 -->
+<g id="edge37" class="edge">
+<title>0c04401874e64b339b7d0dcc324802d9&#45;&#45;786290aed56f472ebfffa8acd0eef1d3</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1949.32,-129C1961.02,-129 1986.66,-129 2006.87,-129"/>
+</g>
+<!-- 786290aed56f472ebfffa8acd0eef1d3&#45;&#45;ac54e0edb27846a8b7266caa762c9f38 -->
+<g id="edge56" class="edge">
+<title>786290aed56f472ebfffa8acd0eef1d3&#45;&#45;ac54e0edb27846a8b7266caa762c9f38</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M2036,-158.11C2036,-168.91 2036,-179.72 2036,-190.52"/>
+</g>
+<!-- fed0b6f959974c76abedfde4d7056d69 -->
+<g id="node41" class="node">
+<title>fed0b6f959974c76abedfde4d7056d69</title>
+</g>
+<!-- 786290aed56f472ebfffa8acd0eef1d3&#45;&#45;fed0b6f959974c76abedfde4d7056d69 -->
+<g id="edge38" class="edge">
+<title>786290aed56f472ebfffa8acd0eef1d3&#45;&#45;fed0b6f959974c76abedfde4d7056d69</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M2065.31,-129C2073.63,-129 2083.15,-129 2093,-129"/>
+</g>
+<!-- fed0b6f959974c76abedfde4d7056d69&#45;&#45;fb601a5f4fd84710969fae4a8a6d0f2c -->
+<g id="edge39" class="edge">
+<title>fed0b6f959974c76abedfde4d7056d69&#45;&#45;fb601a5f4fd84710969fae4a8a6d0f2c</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M2250,-129C2259.89,-129 2269.41,-129 2277.63,-129"/>
+</g>
+<!-- f342f8fe2b4840bbba2d27a6d04eb861 -->
+<g id="node56" class="node">
+<title>f342f8fe2b4840bbba2d27a6d04eb861</title>
+</g>
+<!-- fb601a5f4fd84710969fae4a8a6d0f2c&#45;&#45;f342f8fe2b4840bbba2d27a6d04eb861 -->
+<!-- 1c0a25c669374e2b878a8f0cd77f8b0f -->
+<g id="node44" class="node">
+<title>1c0a25c669374e2b878a8f0cd77f8b0f</title>
+<path fill="#b2e8c2" stroke="#2d954d" stroke-width="2.7" d="M423,-74C423,-74 102,-74 102,-74 96,-74 90,-68 90,-62 90,-62 90,-28 90,-28 90,-22 96,-16 102,-16 102,-16 423,-16 423,-16 429,-16 435,-22 435,-28 435,-28 435,-62 435,-62 435,-68 429,-74 423,-74"/>
+<text text-anchor="middle" x="262.5" y="-40" font-family="JetBrains Mono" font-size="20.00">RX(2.0*acos(2.0*y &#45; 1.0))</text>
+</g>
+<!-- 30ba3dce34e646c181381aa3bed1eebd&#45;&#45;1c0a25c669374e2b878a8f0cd77f8b0f -->
+<g id="edge40" class="edge">
+<title>30ba3dce34e646c181381aa3bed1eebd&#45;&#45;1c0a25c669374e2b878a8f0cd77f8b0f</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M54.33,-45C64.23,-45 76.37,-45 89.75,-45"/>
+</g>
+<!-- 587560592c3c4d51bd757e246aa3092c -->
+<g id="node45" class="node">
+<title>587560592c3c4d51bd757e246aa3092c</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M624,-89C624,-89 483,-89 483,-89 477,-89 471,-83 471,-77 471,-77 471,-43 471,-43 471,-37 477,-31 483,-31 483,-31 624,-31 624,-31 630,-31 636,-37 636,-43 636,-43 636,-77 636,-77 636,-83 630,-89 624,-89"/>
+<text text-anchor="middle" x="553.5" y="-55" font-family="JetBrains Mono" font-size="20.00">RX(theta₃)</text>
+</g>
+<!-- 1c0a25c669374e2b878a8f0cd77f8b0f&#45;&#45;587560592c3c4d51bd757e246aa3092c -->
+<g id="edge41" class="edge">
+<title>1c0a25c669374e2b878a8f0cd77f8b0f&#45;&#45;587560592c3c4d51bd757e246aa3092c</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M435.37,-53.92C447.61,-54.56 459.58,-55.18 470.91,-55.77"/>
+</g>
+<!-- 2df2470797804086aedb8e8891ac161c -->
+<g id="node46" class="node">
+<title>2df2470797804086aedb8e8891ac161c</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M825,-89C825,-89 684,-89 684,-89 678,-89 672,-83 672,-77 672,-77 672,-43 672,-43 672,-37 678,-31 684,-31 684,-31 825,-31 825,-31 831,-31 837,-37 837,-43 837,-43 837,-77 837,-77 837,-83 831,-89 825,-89"/>
+<text text-anchor="middle" x="754.5" y="-55" font-family="JetBrains Mono" font-size="20.00">RY(theta₇)</text>
+</g>
+<!-- 587560592c3c4d51bd757e246aa3092c&#45;&#45;2df2470797804086aedb8e8891ac161c -->
+<g id="edge42" class="edge">
+<title>587560592c3c4d51bd757e246aa3092c&#45;&#45;2df2470797804086aedb8e8891ac161c</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M636.02,-60C647.82,-60 659.98,-60 671.79,-60"/>
+</g>
+<!-- cad6df0bf532458fb7ed302f7517f500 -->
+<g id="node47" class="node">
+<title>cad6df0bf532458fb7ed302f7517f500</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M1038,-89C1038,-89 885,-89 885,-89 879,-89 873,-83 873,-77 873,-77 873,-43 873,-43 873,-37 879,-31 885,-31 885,-31 1038,-31 1038,-31 1044,-31 1050,-37 1050,-43 1050,-43 1050,-77 1050,-77 1050,-83 1044,-89 1038,-89"/>
+<text text-anchor="middle" x="961.5" y="-55" font-family="JetBrains Mono" font-size="20.00">RX(theta₁₁)</text>
+</g>
+<!-- 2df2470797804086aedb8e8891ac161c&#45;&#45;cad6df0bf532458fb7ed302f7517f500 -->
+<g id="edge43" class="edge">
+<title>2df2470797804086aedb8e8891ac161c&#45;&#45;cad6df0bf532458fb7ed302f7517f500</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M837.11,-60C848.83,-60 860.94,-60 872.78,-60"/>
+</g>
+<!-- e536c8fe568840708cb7163c9e38ca71 -->
+<g id="node48" class="node">
+<title>e536c8fe568840708cb7163c9e38ca71</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M1132,-89C1132,-89 1098,-89 1098,-89 1092,-89 1086,-83 1086,-77 1086,-77 1086,-43 1086,-43 1086,-37 1092,-31 1098,-31 1098,-31 1132,-31 1132,-31 1138,-31 1144,-37 1144,-43 1144,-43 1144,-77 1144,-77 1144,-83 1138,-89 1132,-89"/>
+<text text-anchor="middle" x="1115" y="-55" font-family="JetBrains Mono" font-size="20.00">X</text>
+</g>
+<!-- cad6df0bf532458fb7ed302f7517f500&#45;&#45;e536c8fe568840708cb7163c9e38ca71 -->
+<g id="edge44" class="edge">
+<title>cad6df0bf532458fb7ed302f7517f500&#45;&#45;e536c8fe568840708cb7163c9e38ca71</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1050.19,-60C1063.02,-60 1075.37,-60 1085.74,-60"/>
+</g>
+<!-- e536c8fe568840708cb7163c9e38ca71&#45;&#45;cbf400fb9a6b475cb4ed821421faa979 -->
+<g id="edge57" class="edge">
+<title>e536c8fe568840708cb7163c9e38ca71&#45;&#45;cbf400fb9a6b475cb4ed821421faa979</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1115,-89.11C1115,-99.91 1115,-110.72 1115,-121.52"/>
+</g>
+<!-- df44e185f14d40b7920e000ba9c86a10 -->
+<g id="node49" class="node">
+<title>df44e185f14d40b7920e000ba9c86a10</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="1209.5,-60.5 1208.5,-60.5 1208.5,-59.5 1209.5,-59.5 1209.5,-60.5"/>
+</g>
+<!-- e536c8fe568840708cb7163c9e38ca71&#45;&#45;df44e185f14d40b7920e000ba9c86a10 -->
+<g id="edge45" class="edge">
+<title>e536c8fe568840708cb7163c9e38ca71&#45;&#45;df44e185f14d40b7920e000ba9c86a10</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1144.1,-60C1170.31,-60 1205.71,-60 1207.89,-60"/>
+</g>
+<!-- cdc7f595b16e4bd6b4af975d5171fc54 -->
+<g id="node50" class="node">
+<title>cdc7f595b16e4bd6b4af975d5171fc54</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M1439,-89C1439,-89 1286,-89 1286,-89 1280,-89 1274,-83 1274,-77 1274,-77 1274,-43 1274,-43 1274,-37 1280,-31 1286,-31 1286,-31 1439,-31 1439,-31 1445,-31 1451,-37 1451,-43 1451,-43 1451,-77 1451,-77 1451,-83 1445,-89 1439,-89"/>
+<text text-anchor="middle" x="1362.5" y="-55" font-family="JetBrains Mono" font-size="20.00">RX(theta₁₅)</text>
+</g>
+<!-- df44e185f14d40b7920e000ba9c86a10&#45;&#45;cdc7f595b16e4bd6b4af975d5171fc54 -->
+<g id="edge46" class="edge">
+<title>df44e185f14d40b7920e000ba9c86a10&#45;&#45;cdc7f595b16e4bd6b4af975d5171fc54</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1210.11,-60C1212.12,-60 1241.34,-60 1273.59,-60"/>
+</g>
+<!-- 5e1ee9e8b71046b6ba2c53e0e3917376 -->
+<g id="node51" class="node">
+<title>5e1ee9e8b71046b6ba2c53e0e3917376</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M1652,-89C1652,-89 1499,-89 1499,-89 1493,-89 1487,-83 1487,-77 1487,-77 1487,-43 1487,-43 1487,-37 1493,-31 1499,-31 1499,-31 1652,-31 1652,-31 1658,-31 1664,-37 1664,-43 1664,-43 1664,-77 1664,-77 1664,-83 1658,-89 1652,-89"/>
+<text text-anchor="middle" x="1575.5" y="-55" font-family="JetBrains Mono" font-size="20.00">RY(theta₁₉)</text>
+</g>
+<!-- cdc7f595b16e4bd6b4af975d5171fc54&#45;&#45;5e1ee9e8b71046b6ba2c53e0e3917376 -->
+<g id="edge47" class="edge">
+<title>cdc7f595b16e4bd6b4af975d5171fc54&#45;&#45;5e1ee9e8b71046b6ba2c53e0e3917376</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1451.15,-60C1462.93,-60 1475.01,-60 1486.78,-60"/>
+</g>
+<!-- 87fa701f453747f38ed6801cb6248fef -->
+<g id="node52" class="node">
+<title>87fa701f453747f38ed6801cb6248fef</title>
+<path fill="#afd3e9" stroke="#3182bd" stroke-width="2.7" d="M1865,-89C1865,-89 1712,-89 1712,-89 1706,-89 1700,-83 1700,-77 1700,-77 1700,-43 1700,-43 1700,-37 1706,-31 1712,-31 1712,-31 1865,-31 1865,-31 1871,-31 1877,-37 1877,-43 1877,-43 1877,-77 1877,-77 1877,-83 1871,-89 1865,-89"/>
+<text text-anchor="middle" x="1788.5" y="-55" font-family="JetBrains Mono" font-size="20.00">RX(theta₂₃)</text>
+</g>
+<!-- 5e1ee9e8b71046b6ba2c53e0e3917376&#45;&#45;87fa701f453747f38ed6801cb6248fef -->
+<g id="edge48" class="edge">
+<title>5e1ee9e8b71046b6ba2c53e0e3917376&#45;&#45;87fa701f453747f38ed6801cb6248fef</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1664.15,-60C1675.93,-60 1688.01,-60 1699.78,-60"/>
+</g>
+<!-- b9794d70d3d64229b45292a05731dab2 -->
+<g id="node53" class="node">
+<title>b9794d70d3d64229b45292a05731dab2</title>
+<path fill="#f0c1be" stroke="#d03a2f" stroke-width="2.7" d="M1959,-89C1959,-89 1925,-89 1925,-89 1919,-89 1913,-83 1913,-77 1913,-77 1913,-43 1913,-43 1913,-37 1919,-31 1925,-31 1925,-31 1959,-31 1959,-31 1965,-31 1971,-37 1971,-43 1971,-43 1971,-77 1971,-77 1971,-83 1965,-89 1959,-89"/>
+<text text-anchor="middle" x="1942" y="-55" font-family="JetBrains Mono" font-size="20.00">X</text>
+</g>
+<!-- 87fa701f453747f38ed6801cb6248fef&#45;&#45;b9794d70d3d64229b45292a05731dab2 -->
+<g id="edge49" class="edge">
+<title>87fa701f453747f38ed6801cb6248fef&#45;&#45;b9794d70d3d64229b45292a05731dab2</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1877.19,-60C1890.02,-60 1902.37,-60 1912.74,-60"/>
+</g>
+<!-- b9794d70d3d64229b45292a05731dab2&#45;&#45;0c04401874e64b339b7d0dcc324802d9 -->
+<g id="edge58" class="edge">
+<title>b9794d70d3d64229b45292a05731dab2&#45;&#45;0c04401874e64b339b7d0dcc324802d9</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1942,-89.11C1942,-99.91 1942,-110.72 1942,-121.52"/>
+</g>
+<!-- 9a9d3ec2492b4aaeb4bb8f59022890b5 -->
+<g id="node54" class="node">
+<title>9a9d3ec2492b4aaeb4bb8f59022890b5</title>
+<polygon fill="black" stroke="black" stroke-width="1.35" points="2036.5,-60.5 2035.5,-60.5 2035.5,-59.5 2036.5,-59.5 2036.5,-60.5"/>
+</g>
+<!-- b9794d70d3d64229b45292a05731dab2&#45;&#45;9a9d3ec2492b4aaeb4bb8f59022890b5 -->
+<g id="edge50" class="edge">
+<title>b9794d70d3d64229b45292a05731dab2&#45;&#45;9a9d3ec2492b4aaeb4bb8f59022890b5</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M1971.1,-60C1997.31,-60 2032.71,-60 2034.89,-60"/>
+</g>
+<!-- a84e2a9690884bad8817b2a4c0006d9b -->
+<g id="node55" class="node">
+<title>a84e2a9690884bad8817b2a4c0006d9b</title>
+</g>
+<!-- 9a9d3ec2492b4aaeb4bb8f59022890b5&#45;&#45;a84e2a9690884bad8817b2a4c0006d9b -->
+<g id="edge51" class="edge">
+<title>9a9d3ec2492b4aaeb4bb8f59022890b5&#45;&#45;a84e2a9690884bad8817b2a4c0006d9b</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M2037.1,-60C2038.86,-60 2064.6,-60 2093,-60"/>
+</g>
+<!-- a84e2a9690884bad8817b2a4c0006d9b&#45;&#45;f342f8fe2b4840bbba2d27a6d04eb861 -->
+<g id="edge52" class="edge">
+<title>a84e2a9690884bad8817b2a4c0006d9b&#45;&#45;f342f8fe2b4840bbba2d27a6d04eb861</title>
+<path fill="none" stroke="black" stroke-width="2.7" d="M2250,-60C2259.89,-60 2269.41,-60 2277.63,-60"/>
+</g>
+</g>
+</svg>
+
+
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../../..", "features": ["content.code.annotate", "navigation.tabs", "navigation.indexes", "navigation.sections", "content.code.copy", "content.code.annotate"], "search": "../../../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+        <script src="../../../assets/_markdown_exec_pyodide.js"></script>
+      
+        <script src="../../../extras/javascripts/mathjax.js"></script>
+      
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
