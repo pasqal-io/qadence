@@ -39,22 +39,30 @@ $$
 f(x) = \left\langle 0\right|\hat{U}^{\dagger}(x)\hat{C}\hat{U}(x)\left|0\right\rangle
 $$
 
-where $\hat{U}(x)={\rm exp}{\left( -i\frac{x}{2}\hat{G}\right)}$ is the quantum evolution operator with generator $\hat{G}$ representing the structure of the underlying quantum circuit and $\hat{C}$ is the cost operator. Then using the eigenvalue spectrum $\lambda_n$ of the generator $\hat{G}$ we calculate the full set of corresponding unique non-zero spectral gaps ${ \Delta_s\}$ (differences between eigenvalues). It can be shown that the final expression of derivative of $f(x)$ is then given by the following expression:
+where $\hat{U}(x)={\rm exp}{\left( -i\frac{x}{2}\hat{G}\right)}$ is the quantum evolution operator
+with generator $\hat{G}$ representing the structure of the underlying quantum circuit and $\hat{C}$ is the cost operator.
+Then using the eigenvalue spectrum $\lambda_n$ of the generator $\hat{G}$
+we calculate the full set of corresponding unique non-zero spectral gaps ${ \Delta_s\}$ (differences between eigenvalues).
+It can be shown that the final expression of derivative of $f(x)$ is then given by the following expression:
 
-$\begin{equation}
+$$
+\begin{equation}
 \frac{{\rm d}f\left(x\right)}{{\rm d}x}=\overset{S}{\underset{s=1}{\sum}}\Delta_{s}R_{s},
-\end{equation}$
+\end{equation}
+$$
 
 where $S$ is the number of unique non-zero spectral gaps and $R_s$ are real quantities that are solutions of a system of linear equations
 
-$\begin{equation}
+$$
+\begin{equation}
 \begin{cases}
 F_{1} & =4\overset{S}{\underset{s=1}{\sum}}{\rm sin}\left(\frac{\delta_{1}\Delta_{s}}{2}\right)R_{s},\\
 F_{2} & =4\overset{S}{\underset{s=1}{\sum}}{\rm sin}\left(\frac{\delta_{2}\Delta_{s}}{2}\right)R_{s},\\
  & ...\\
 F_{S} & =4\overset{S}{\underset{s=1}{\sum}}{\rm sin}\left(\frac{\delta_{M}\Delta_{s}}{2}\right)R_{s}.
 \end{cases}
-\end{equation}$
+\end{equation}
+$$
 
 Here $F_s=f(x+\delta_s)-f(x-\delta_s)$ denotes the difference between values of functions evaluated at shifted arguments $x\pm\delta_s$.
 
