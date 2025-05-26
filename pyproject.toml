@@ -54,7 +54,7 @@ dependencies = [
     "jsonschema",
     "nevergrad",
     "scipy",
-    "pyqtorch==1.7.6",
+    "pyqtorch==1.7.7",
     "pyyaml",
     "matplotlib",
     "Arpeggio==2.0.2",
@@ -78,7 +78,7 @@ visualization = [
     # "scour",
 ]
 horqrux = [
-    "horqrux==0.8.1",
+    "horqrux==0.9.0",
     "jax",
     "flax",
     "optax",
