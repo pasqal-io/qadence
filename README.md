@@ -150,5 +150,15 @@ doi = {10.1109/MS.2025.3536607}
 }
 ```
 
+If you use the approximate Generalized parameter shift rule for your publication, we kindly ask you to cite:
+```latex
+@misc{2505.18090,
+Author = {Vytautas Abramavicius and Evan Philip and Kaonan Micadei and Charles Moussa and Mario Dagrada and Vincent E. Elfving and Panagiotis Barkoutsos and Roland Guichard},
+Title = {Evaluation of derivatives using approximate generalized parameter shift rule},
+Year = {2025},
+Eprint = {arXiv:2505.18090},
+}
+```
+
 ## License
 Qadence is a free and open source software package, released under the PASQAL OPEN-SOURCE SOFTWARE LICENSE (MIT-derived).
