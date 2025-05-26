@@ -39,7 +39,7 @@ $$
 f(x) = \left\langle 0\right|\hat{U}^{\dagger}(x)\hat{C}\hat{U}(x)\left|0\right\rangle
 $$
 
-where $\hat{U}(x)={\rm exp}{\left( -i\frac{x}{2}\hat{G}\right)}$ is the quantum evolution operator with generator $\hat{G}$ representing the structure of the underlying quantum circuit and $\hat{C}$ is the cost operator. Then using the eigenvalue spectrum $\left\{ \lambda_n\right\}$ of the generator $\hat{G}$ we calculate the full set of corresponding unique non-zero spectral gaps $\left\{ \Delta_s\right\}$ (differences between eigenvalues). It can be shown that the final expression of derivative of $f(x)$ is then given by the following expression:
+where $\hat{U}(x)={\rm exp}{\left( -i\frac{x}{2}\hat{G}\right)}$ is the quantum evolution operator with generator $\hat{G}$ representing the structure of the underlying quantum circuit and $\hat{C}$ is the cost operator. Then using the eigenvalue spectrum $\lambda_n$ of the generator $\hat{G}$ we calculate the full set of corresponding unique non-zero spectral gaps ${ \Delta_s\}$ (differences between eigenvalues). It can be shown that the final expression of derivative of $f(x)$ is then given by the following expression:
 
 $\begin{equation}
 \frac{{\rm d}f\left(x\right)}{{\rm d}x}=\overset{S}{\underset{s=1}{\sum}}\Delta_{s}R_{s},
@@ -63,7 +63,7 @@ Here $F_s=f(x+\delta_s)-f(x-\delta_s)$ denotes the difference between values of 
 The approximate generalized parameter shift rule (aGPSR) implementation in Qadence was introduced in [^4]. The aGPSR has been proposed as method
 of estimating derivative of a function spawned by an arbitrary generator having a non-trivial spectrum
 of eigenvalues in a limited shot budget setting. The idea is to reduce significantly the number of gaps involved in the system of equations above.
-Hence, we introduce using pseudo-gaps $\left\{ \delta_k\right\}_{k=1}^K$, with $K << S$.  aGPSR is very interesting when using analog operations as we can reduce significantly the number of expectation calls.
+Hence, we introduce using pseudo-gaps $\{\delta_k\}_{k=1}^K$, with $K << S$. aGPSR is very interesting when using analog operations as we can reduce significantly the number of expectation calls.
 
 ## Adjoint Differentiation
 Qadence also offers a memory-efficient, non-device compatible alternative to automatic differentation, called 'Adjoint Differentiation' [^5] and allows for precisely calculating the gradients of variational parameters in O(P) time and using O(1) state-vectors. Adjoint Differentation is currently only supported by the Torch Engine and allows for first-order derivatives only.
@@ -182,7 +182,9 @@ To use aGPSR, we can simply specify the number of pseudo-gaps using a dictionary
 For the model, we use the same configuration used in the aGPSR paper [^4].
 
 ```python exec="on" source="material-block" session="differentiability"
-from qadence import HamEvo, add, Register
+from qadence import HamEvo, add, Register, Parameter, X, N, Y
+from qadence.analog.constants import C6_DICT
+from math import cos, sin
 
 config = {
     "n_eqs": 4,
@@ -231,8 +233,6 @@ def create_analog_circuit(n_qubits: int):
     circ = QuantumCircuit(register, block)
     return circ
 
-
-obs = total_magnetization(n_qubits)
 model_agpsr = QuantumModel(create_analog_circuit(n_qubits), obs,
                           backend=BackendName.PYQTORCH,
                           diff_mode=DiffMode.GPSR, configuration=config)
