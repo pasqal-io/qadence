@@ -58,8 +58,15 @@ F_{S} & =4\overset{S}{\underset{s=1}{\sum}}{\rm sin}\left(\frac{\delta_{M}\Delta
 
 Here $F_s=f(x+\delta_s)-f(x-\delta_s)$ denotes the difference between values of functions evaluated at shifted arguments $x\pm\delta_s$.
 
+### Approximate Generalized parameter shift rule
+
+The approximate generalized parameter shift rule (aGPSR) implementation in Qadence was introduced in [^4]. The aGPSR has been proposed as method
+of estimating derivative of a function spawned by an arbitrary generator having a non-trivial spectrum
+of eigenvalues in a limited shot budget setting. The idea is to reduce significantly the number of gaps involved in the system of equations above.
+Hence, we introduce using pseudo-gaps $\left\{ \delta_k\right\}_{k=1}^K$, with $K << S$.  aGPSR is very interesting when using analog operations as we can reduce significantly the number of expectation calls.
+
 ## Adjoint Differentiation
-Qadence also offers a memory-efficient, non-device compatible alternative to automatic differentation, called 'Adjoint Differentiation' [^4] and allows for precisely calculating the gradients of variational parameters in O(P) time and using O(1) state-vectors. Adjoint Differentation is currently only supported by the Torch Engine and allows for first-order derivatives only.
+Qadence also offers a memory-efficient, non-device compatible alternative to automatic differentation, called 'Adjoint Differentiation' [^5] and allows for precisely calculating the gradients of variational parameters in O(P) time and using O(1) state-vectors. Adjoint Differentation is currently only supported by the Torch Engine and allows for first-order derivatives only.
 
 ## Usage
 
@@ -145,6 +152,7 @@ from docs import docsutils # markdown-exec: hide
 print(docsutils.fig_to_html(plt.gcf())) # markdown-exec: hide
 ```
 
+
 ### Low-level control on the shift values
 
 In order to get a finer control over the GPSR differentiation engine we can use the low-level Qadence API to define a `DifferentiableBackend`.
@@ -168,8 +176,77 @@ Here we passed an additional argument `shift_prefac` to the `DifferentiableBacke
 Tuning parameter $\alpha$ is useful to improve results
 when the generator $\hat{G}$ or the quantum operation is a dense matrix, for example a complex `HamEvo` operation; if many entries of this matrix are sufficiently larger than 0 the operation is equivalent to a strongly interacting system. In such case parameter $\alpha$ should be gradually lowered in order to achieve exact derivative values.
 
+### Using the approximate Generalized parameter shift rule
+
+To use aGPSR, we can simply specify the number of pseudo-gaps using a dictionary with a key `n_eqs` when configuring a model.
+For the model, we use the same configuration used in the aGPSR paper [^4].
+
+```python exec="on" source="material-block" session="differentiability"
+from qadence import HamEvo, add, Register
+
+config = {
+    "n_eqs": 4,
+    "gap_step": 3.0,
+}
+
+def create_analog_circuit(n_qubits: int):
+    """Create a circuit with one analog operation similar to the aGPSR paper"""
+    spacing = 7.0
+    omega = 5
+    detuning = 0
+    phase = 0.0
+
+    # differentiable param
+    x = Parameter("x", trainable=False)
+
+    # define register
+    register = Register.rectangular_lattice(n_qubits, 1, spacing=spacing)
+
+
+    # Building the terms in the driving Hamiltonian
+    h_x = add((omega * (i*0.+1) / 2) * cos(phase) * X(i) for i in range(n_qubits))
+    h_y = add((-1.0 * omega * (i*0.+1) / 2) * sin(phase) * Y(i) for i in range(n_qubits))
+    h_n = -1.0 * detuning * add(N(i) for i in range(n_qubits))
+
+    # Building the interaction Hamiltonian
+
+    # Dictionary of coefficient values for each Rydberg level, which is 60 by default
+    c_6 = C6_DICT[60]
+    h_int = c_6 * (
+        1/(spacing**6) * (N(1)@N(0))
+    )
+    for i in range(2, n_qubits):
+        for j in range(i):
+            s = (i - j) * spacing
+            h_int += c_6 * (
+                1/(s**6) * (N(i)@N(j))
+            )
+
+    hamiltonian = h_x + h_y + h_n + h_int
+
+
+    # Convert duration to µs due to the units of the Hamiltonian
+    block = HamEvo(hamiltonian, x / omega)
+
+    circ = QuantumCircuit(register, block)
+    return circ
+
+
+obs = total_magnetization(n_qubits)
+model_agpsr = QuantumModel(create_analog_circuit(n_qubits), obs,
+                          backend=BackendName.PYQTORCH,
+                          diff_mode=DiffMode.GPSR, configuration=config)
+
+exp_val_agpsr = model_gpsr.expectation(values)
+dexpval_x_gpsr = torch.autograd.grad(
+    exp_val_agpsr, values["x"], torch.ones_like(exp_val_agpsr), create_graph=True
+)[0]
+```
+
 ### Low-level differentiation of qadence circuits using JAX
 For users interested in using the `JAX` engine instead, we show how to run and differentiate qadence programs using the `horqrux` backend under [qadence examples](https://github.com/pasqal-io/qadence/tree/main/examples/backends/low_level).
+
+
 
 ## Parametrized observable differentiation
 
@@ -251,4 +328,6 @@ dexpval_z_ad = torch.autograd.grad(
 
 [^3]: [Kyriienko et al., General quantum circuit differentiation rules](https://arxiv.org/abs/2108.01218)
 
-[^4]: [Tyson et al., Efficient calculation of gradients in classical simulations of variational quantum algorithms](https://arxiv.org/abs/2009.02823)
+[^4]: [Abramavicius et al., Evaluation of derivatives using approximate generalized parameter shift rule](https://arxiv.org/abs/2505.18090)
+
+[^5]: [Tyson et al., Efficient calculation of gradients in classical simulations of variational quantum algorithms](https://arxiv.org/abs/2009.02823)
