@@ -29,7 +29,7 @@ authors = [
 ]
 requires-python = ">=3.9"
 license = { text = "PASQAL OPEN-SOURCE SOFTWARE LICENSE (MIT-derived)" }
-version = "1.11.4"
+version = "1.11.5"
 classifiers = [
     "License :: Other/Proprietary License",
     "Programming Language :: Python",
