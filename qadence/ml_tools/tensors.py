@@ -39,3 +39,12 @@ def promote_to(x: Tensor, dtype: Any) -> float | np.ndarray | Tensor:
         return x
     else:
         raise ValueError(f"Don't know how to convert Tensor to {dtype}")
+
+
+def detach_loss_metrics(
+    loss_metrics: tuple[torch.Tensor, dict[str, Any]],
+) -> tuple[torch.Tensor, dict[str, Any]]:
+    """Detach the tensors contained in the loss and metrics history."""
+    loss, metrics = loss_metrics
+    detached_metrics = {k: v.detach() if isinstance(v, Tensor) else v for k, v in metrics.items()}
+    return loss.detach(), detached_metrics
