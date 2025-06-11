@@ -108,7 +108,7 @@ edit_uri: edit/main/docs/
 theme:
   name: material
   custom_dir: docs/extras/overrides/
-  logo: extras/assets/logo/qadence_logo_small_white.svg
+  logo: extras/assets/logo/QADENCE_Logo-light-RGB.svg
   features:
   - content.code.annotate
   - navigation.tabs

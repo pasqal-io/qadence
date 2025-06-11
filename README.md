@@ -1,8 +1,8 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./docs/extras/assets/logo/qadence_logo_white.svg" width="75%">
-    <source media="(prefers-color-scheme: light)" srcset="./docs/extras/assets/logo/qadence_logo.svg" width="75%">
-    <img alt="Qadence logo" src="./docs/assets/logo/qadence_logo.svg" width="75%">
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/extras/assets/logo/QADENCE_Logo-RGB.svg" width="75%">
+    <source media="(prefers-color-scheme: light)" srcset="./docs/extras/assets/logo/QADENCE_Logo-light-RGB.svg" width="75%">
+    <img alt="Qadence logo" src="./docs/assets/logo/QADENCE_Logo-RGB.svg" width="75%">
   </picture>
 </p>
 
