@@ -22,7 +22,7 @@ from qadence.blocks import AbstractBlock
 from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.mitigations.protocols import Mitigations, apply_mitigation
-from qadence.noise import NoiseHandler
+from qadence.noise import AbstractNoise
 from qadence.transpile import (
     chain_single_qubit_ops,
     flatten,
@@ -49,12 +49,12 @@ def set_noise_abstract_to_native(circuit: ConvertedCircuit, config: Configuratio
     circuit.native = pyq.QuantumCircuit(circuit.native.n_qubits, ops, circuit.native.readout_noise)
 
 
-def set_readout_noise(circuit: ConvertedCircuit, noise: NoiseHandler) -> None:
+def set_readout_noise(circuit: ConvertedCircuit, noise: AbstractNoise) -> None:
     """Set readout noise in place in native.
 
     Args:
         circuit (ConvertedCircuit):  Input converted circuit.
-        noise (NoiseHandler | None): Noise.
+        noise (AbstractNoise | None): Noise.
     """
     readout = convert_readout_noise(circuit.abstract.n_qubits, noise)
     if readout:
@@ -62,7 +62,7 @@ def set_readout_noise(circuit: ConvertedCircuit, noise: NoiseHandler) -> None:
 
 
 def set_block_and_readout_noises(
-    circuit: ConvertedCircuit, noise: NoiseHandler | None, config: Configuration
+    circuit: ConvertedCircuit, noise: AbstractNoise | None, config: Configuration
 ) -> None:
     """Add noise on blocks and readout on circuit.
 
@@ -71,7 +71,7 @@ def set_block_and_readout_noises(
 
     Args:
         circuit (ConvertedCircuit): Input circuit.
-        noise (NoiseHandler | None): Noise to add.
+        noise (AbstractNoise | None): Noise to add.
     """
     if noise:
         set_noise(circuit, noise)
@@ -185,7 +185,7 @@ class Backend(BackendInterface):
         param_values: ParamDictType = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
-        noise: NoiseHandler | None = None,
+        noise: AbstractNoise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         set_block_and_readout_noises(circuit, noise, self.config)
@@ -216,7 +216,7 @@ class Backend(BackendInterface):
         param_values: ParamDictType = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
-        noise: NoiseHandler | None = None,
+        noise: AbstractNoise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         if state is None:
@@ -259,7 +259,7 @@ class Backend(BackendInterface):
         param_values: ParamDictType = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
-        noise: NoiseHandler | None = None,
+        noise: AbstractNoise | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
@@ -286,7 +286,7 @@ class Backend(BackendInterface):
         param_values: ParamDictType = {},
         n_shots: int = 1,
         state: Tensor | None = None,
-        noise: NoiseHandler | None = None,
+        noise: AbstractNoise | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
         pyqify_state: bool = True,

@@ -4,14 +4,15 @@ import pytest
 import torch
 from torch import Tensor, tensor
 
-from qadence import DiffMode, NoiseHandler, QuantumModel
+from qadence import DiffMode, AbstractNoise, QuantumModel
 from qadence.backends import backend_factory
 from qadence.blocks import chain, kron
 from qadence.circuit import QuantumCircuit
 from qadence.constructors import total_magnetization
 from qadence.operations import RX, AnalogRX, AnalogRZ, Z
 from qadence.parameters import FeatureParameter, VariationalParameter
-from qadence.types import PI, BackendName, NoiseProtocol
+from qadence.types import PI, BackendName
+from qadence.noise import NoiseCategory
 
 
 @pytest.fixture
@@ -64,7 +65,7 @@ def test_noisy_simulations(noiseless_pulser_sim: Tensor, noisy_pulser_sim: Tenso
     noiseless_expectation = model_noiseless.expectation()
 
     options = {"noise_probs": 0.1}
-    noise = NoiseHandler(protocol=NoiseProtocol.ANALOG.DEPOLARIZING, options=options)
+    noise = AbstractNoise(protocol=NoiseProtocol.ANALOG.DEPOLARIZING, options=options)
     model_noisy = QuantumModel(
         circuit=circuit,
         observable=observable,
@@ -97,7 +98,7 @@ def test_batched_noisy_simulations(
     noiseless_expectation = model_noiseless.expectation()
 
     options = {"noise_probs": [0.1, 0.2, 0.3, 0.4]}
-    noise = NoiseHandler(protocol=NoiseProtocol.ANALOG.DEPHASING, options=options)
+    noise = AbstractNoise(protocol=NoiseProtocol.ANALOG.DEPHASING, options=options)
     model_noisy = QuantumModel(
         circuit=circuit,
         observable=observable,

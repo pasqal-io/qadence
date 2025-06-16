@@ -72,53 +72,53 @@ options = {"error_probability": 0.01, "seed": 0}
 
 ### Preparing noise protocols for usage
 
-In order to apply the noise to `Qadence` objects, we need a wrapper called the `NoiseHandler` type. It is a container of several noise instances that require a specific `protocol` and a dictionary of `options` (or lists). The `protocol` field is to be instantiated from `NoiseProtocol` and `options` includes error-related information such as `error_probability`, `noise_probs`, and `seed`.
+In order to apply the noise to `Qadence` objects, we need a wrapper called the `AbstractNoise` type. It is a container of several noise instances that require a specific `protocol` and a dictionary of `options` (or lists). The `protocol` field is to be instantiated from `NoiseProtocol` and `options` includes error-related information such as `error_probability`, `noise_probs`, and `seed`.
 
 ```python exec="on" source="material-block" session="output"
-from qadence import NoiseHandler, NoiseProtocol
+from qadence import AbstractNoise, NoiseProtocol
 
-digital_noise = NoiseHandler(protocol=NoiseProtocol.DIGITAL.AMPLITUDE_DAMPING, options={"error_probability": 0.1})
-analog_noise = NoiseHandler(protocol=NoiseProtocol.ANALOG.DEPOLARIZING, options={"noise_probs": 0.1})
-readout_noise = NoiseHandler(protocol=NoiseProtocol.READOUT.INDEPENDENT, options={"error_probability": 0.1, "seed": 0})
+digital_noise = AbstractNoise(protocol=NoiseProtocol.DIGITAL.AMPLITUDE_DAMPING, options={"error_probability": 0.1})
+analog_noise = AbstractNoise(protocol=NoiseProtocol.ANALOG.DEPOLARIZING, options={"noise_probs": 0.1})
+readout_noise = AbstractNoise(protocol=NoiseProtocol.READOUT.INDEPENDENT, options={"error_probability": 0.1, "seed": 0})
 ```
 
-`NoiseHandler` can be used in a more compact way to represent noise in batches.
+`AbstractNoise` can be used in a more compact way to represent noise in batches.
 
-- A `NoiseHandler` can be initiated with a list of protocols and a list of options (careful with the order)
-- A `NoiseHandler` can be appended to other `NoiseHandler` instances
+- A `AbstractNoise` can be initiated with a list of protocols and a list of options (careful with the order)
+- A `AbstractNoise` can be appended to other `AbstractNoise` instances
 
 ```python exec="on" source="material-block" session="noise" result="json"
-from qadence import NoiseHandler, NoiseProtocol
+from qadence import AbstractNoise, NoiseProtocol
 
 # initiating with list of protocols and options
 protocols = [NoiseProtocol.DIGITAL.DEPOLARIZING, NoiseProtocol.READOUT]
 options = [{"error_probability": 0.1}, {"error_probability": 0.1, "seed": 0}]
 
-noise_handler_list = NoiseHandler(protocols, options)
+noise_handler_list = AbstractNoise(protocols, options)
 
-# NoiseHandler appending
-depo_noise = NoiseHandler(protocol=NoiseProtocol.DIGITAL.DEPOLARIZING, options={"error_probability": 0.1})
-readout_noise = NoiseHandler(protocol=NoiseProtocol.READOUT.INDEPENDENT, options={"error_probability": 0.1, "seed": 0})
-noise_combination = NoiseHandler(protocol=NoiseProtocol.DIGITAL.BITFLIP, options={"error_probability": 0.1})
+# AbstractNoise appending
+depo_noise = AbstractNoise(protocol=NoiseProtocol.DIGITAL.DEPOLARIZING, options={"error_probability": 0.1})
+readout_noise = AbstractNoise(protocol=NoiseProtocol.READOUT.INDEPENDENT, options={"error_probability": 0.1, "seed": 0})
+noise_combination = AbstractNoise(protocol=NoiseProtocol.DIGITAL.BITFLIP, options={"error_probability": 0.1})
 
 # prints noise_combination
 noise_combination.append([depo_noise, readout_noise])
 print(noise_combination)  # markdown-exec: hide
 ```
 
-!!! warning "NoiseHandler scope"
-    Note it is not possible to define `NoiseHandler` instances with both digital and analog noises, both readout and analog noises, several analog noises, several readout noises, or a readout noise that is not the last defined protocol within `NoiseHandler`.
+!!! warning "AbstractNoise scope"
+    Note it is not possible to define `AbstractNoise` instances with both digital and analog noises, both readout and analog noises, several analog noises, several readout noises, or a readout noise that is not the last defined protocol within `AbstractNoise`.
 
 
 ## Executing Noisy Simulation
 
-Noisy simulation can be set by applying a `NoiseHandler` to the desired `gate`, `block`, `QuantumCircuit`, or `QuantumModel`.
+Noisy simulation can be set by applying a `AbstractNoise` to the desired `gate`, `block`, `QuantumCircuit`, or `QuantumModel`.
 
 ```python exec="on" source="material-block" session="noise" result="json"
-from qadence import NoiseProtocol, RX, run, NoiseHandler
+from qadence import NoiseProtocol, RX, run, AbstractNoise
 import torch
 
-noise = NoiseHandler(NoiseProtocol.DIGITAL.BITFLIP, {"error_probability": 0.2})
+noise = AbstractNoise(NoiseProtocol.DIGITAL.BITFLIP, {"error_probability": 0.2})
 circuit = RX(0, torch.pi, noise = noise)
 
 # prints density matrix
@@ -129,7 +129,7 @@ print(f"Noisy density matrix = {run(circuit)}")  # markdown-exec: hide
 We can also apply noise with the `set_noise` function that apply a given noise configuration to the whole object.
 
 ```python exec="on" source="material-block" session="noise" result="json"
-from qadence import DiffMode, NoiseHandler, QuantumModel
+from qadence import DiffMode, AbstractNoise, QuantumModel
 from qadence.blocks import chain, kron
 from qadence.circuit import QuantumCircuit
 from qadence.operations import AnalogRX, AnalogRZ, Z
@@ -140,7 +140,7 @@ analog_block = chain(AnalogRX(PI / 2.0), AnalogRZ(PI))
 observable = Z(0) + Z(1)
 circuit = QuantumCircuit(2, analog_block)
 
-noise = NoiseHandler(protocol=NoiseProtocol.ANALOG.DEPOLARIZING, options={"noise_probs": 0.2})
+noise = AbstractNoise(protocol=NoiseProtocol.ANALOG.DEPOLARIZING, options={"noise_probs": 0.2})
 model = QuantumModel(
     circuit=circuit,
     observable=observable,
@@ -159,10 +159,10 @@ print(f"Noisy expectation = {noisy_expectation}") # markdown-exec: hide
 Let's say we want to apply noise only to specific type of gates, a `target_class` argument can be passed with the corresponding block in `set_noise`.
 
 ```python exec="on" source="material-block" session="noise" result="json"
-from qadence import X, chain, set_noise, NoiseHandler, NoiseProtocol
+from qadence import X, chain, set_noise, AbstractNoise, NoiseProtocol
 
 block = chain(RX(0, "theta"), X(0))
-noise = NoiseHandler(NoiseProtocol.DIGITAL.AMPLITUDE_DAMPING, {"error_probability": 0.1})
+noise = AbstractNoise(NoiseProtocol.DIGITAL.AMPLITUDE_DAMPING, {"error_probability": 0.1})
 
 # prints noise configuration for each gate
 set_noise(block, noise, target_class=X)
@@ -174,12 +174,12 @@ for block in block.blocks: # markdown-exec: hide
 One can set different noise models for each individual gates within the same circuit as follows:
 
 ```python exec="on" source="material-block" session="noise" result="json" html="1"
-from qadence import QuantumCircuit, X, sample, kron, NoiseHandler, NoiseProtocol
+from qadence import QuantumCircuit, X, sample, kron, AbstractNoise, NoiseProtocol
 import matplotlib.pyplot as plt
 
 n_qubits = 2
-noise_bitflip = NoiseHandler(NoiseProtocol.DIGITAL.BITFLIP, {"error_probability": 0.1})
-noise_amplitude_damping = NoiseHandler(NoiseProtocol.DIGITAL.AMPLITUDE_DAMPING, {"error_probability": 0.3})
+noise_bitflip = AbstractNoise(NoiseProtocol.DIGITAL.BITFLIP, {"error_probability": 0.1})
+noise_amplitude_damping = AbstractNoise(NoiseProtocol.DIGITAL.AMPLITUDE_DAMPING, {"error_probability": 0.3})
 block = kron(X(0, noise=noise_bitflip), X(1, noise=noise_amplitude_damping))
 circuit = QuantumCircuit(n_qubits, block)
 
@@ -217,7 +217,7 @@ observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
 model = QuantumModel(circuit=circuit, observable=observable)
 
 # Define a noise model to use.
-noise = NoiseHandler(protocol=NoiseProtocol.READOUT.INDEPENDENT, options={"error_probability": 0.1})
+noise = AbstractNoise(protocol=NoiseProtocol.READOUT.INDEPENDENT, options={"error_probability": 0.1})
 
 # Run noiseless and noisy simulations.
 noiseless_samples = model.sample(n_shots=100)

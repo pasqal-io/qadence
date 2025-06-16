@@ -12,7 +12,7 @@ from scipy.optimize import LinearConstraint, minimize
 
 from qadence.backends.pyqtorch.convert_ops import convert_readout_noise
 from qadence.mitigations.protocols import Mitigations
-from qadence.noise.protocols import NoiseHandler
+from qadence.noise import AbstractNoise
 from qadence.types import ReadOutOptimization
 
 
@@ -70,7 +70,7 @@ def matrix_inv(K: npt.NDArray) -> npt.NDArray:
 
 
 def mitigation_minimization(
-    noise: NoiseHandler,
+    noise: AbstractNoise,
     mitigation: Mitigations,
     samples: list[Counter],
 ) -> list[Counter]:
@@ -165,5 +165,7 @@ def mitigation_minimization(
     return corrected_counters
 
 
-def mitigate(noise: NoiseHandler, mitigation: Mitigations, samples: list[Counter]) -> list[Counter]:
+def mitigate(
+    noise: AbstractNoise, mitigation: Mitigations, samples: list[Counter]
+) -> list[Counter]:
     return mitigation_minimization(noise=noise, mitigation=mitigation, samples=samples)

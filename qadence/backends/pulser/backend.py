@@ -24,11 +24,12 @@ from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.mitigations.protocols import apply_mitigation
-from qadence.noise import NoiseHandler
+from qadence.noise import AbstractNoise
 from qadence.overlap import overlap_exact
 from qadence.register import Register
 from qadence.transpile import transpile
-from qadence.types import BackendName, DeviceType, Endianness, Engine, NoiseProtocol, ParamDictType
+from qadence.types import BackendName, DeviceType, Endianness, Engine, ParamDictType
+from qadence.noise import NoiseCategory
 
 from .channels import GLOBAL_CHANNEL, LOCAL_CHANNEL
 from .cloud import get_client
@@ -186,7 +187,7 @@ class Backend(BackendInterface):
         param_values: ParamDictType = {},
         state: Tensor | None = None,
         endianness: Endianness = Endianness.BIG,
-        noise: NoiseHandler | None = None,
+        noise: AbstractNoise | None = None,
     ) -> Tensor:
         vals = to_list_of_dicts(param_values)
 
@@ -234,15 +235,19 @@ class Backend(BackendInterface):
     def _run_noisy(
         self,
         circuit: ConvertedCircuit,
-        noise: NoiseHandler,
+        noise: AbstractNoise,
         param_values: ParamDictType = dict(),
         state: Tensor | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         vals = to_list_of_dicts(param_values)
-        if not isinstance(noise.protocol[-1], NoiseProtocol.ANALOG):
-            raise TypeError("Noise must be of type `NoiseProtocol.ANALOG`.")
-        noise_probs = noise.options[-1].get("noise_probs", None)
+        noise = noise.flatten()
+        if isinstance(noise, list):
+            if len(noise) > 0:
+                noise = noise[-1]
+            if not isinstance(noise.protocol, NoiseCategory.ANALOG):
+                raise TypeError("Noise must be of type `NoiseCategory.ANALOG`.")
+        noise_probs = noise.error_definition
 
         def run_noisy_sim(noise_prob: float) -> Tensor:
             batched_dm = np.zeros(
@@ -251,8 +256,8 @@ class Backend(BackendInterface):
             )
             # pulser requires lower letters
             sim_config = {
-                "noise": noise.protocol[-1].lower(),
-                noise.protocol[-1].lower() + "_rate": noise_prob,
+                "noise": noise.protocol.lower(),
+                noise.protocol.lower() + "_rate": noise_prob,
             }
             self.config.sim_config = SimConfig(**sim_config)
 
@@ -287,7 +292,7 @@ class Backend(BackendInterface):
         param_values: ParamDictType = {},
         n_shots: int = 1,
         state: Tensor | None = None,
-        noise: NoiseHandler | None = None,
+        noise: AbstractNoise | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
@@ -325,7 +330,7 @@ class Backend(BackendInterface):
         param_values: ParamDictType = {},
         state: Tensor | None = None,
         measurement: Measurements | None = None,
-        noise: NoiseHandler | None = None,
+        noise: AbstractNoise | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:

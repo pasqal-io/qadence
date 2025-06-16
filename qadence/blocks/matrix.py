@@ -10,7 +10,7 @@ from torch.linalg import eigvals
 from math import log
 
 from qadence.blocks import PrimitiveBlock
-from qadence.noise import NoiseHandler
+from qadence.noise import AbstractNoise
 
 logger = getLogger(__name__)
 
@@ -67,7 +67,7 @@ class MatrixBlock(PrimitiveBlock):
         self,
         matrix: torch.Tensor | np.ndarray,
         qubit_support: tuple[int, ...],
-        noise: NoiseHandler | None = None,
+        noise: AbstractNoise | None = None,
         check_unitary: bool = True,
         check_hermitian: bool = False,
     ) -> None:
