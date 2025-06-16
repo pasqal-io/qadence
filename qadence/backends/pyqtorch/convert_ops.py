@@ -405,3 +405,4 @@ def convert_readout_noise(n_qubits: int, noise: AbstractNoise) -> pyq.noise.Read
             options["confusion_matrix"] = options.pop("error_definition")
 
             return pyq.noise.CorrelatedReadoutNoise(**options)
+    return None

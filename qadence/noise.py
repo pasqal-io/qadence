@@ -13,6 +13,5 @@ try:
     available_protocols = getattr(module, "protocols")
 except ModuleNotFoundError:
     raise ModuleNotFoundError(
-        "The 'qermod' module is not present."
-        " Please install the 'qermod' package."
+        "The 'qermod' module is not present." " Please install the 'qermod' package."
     )
