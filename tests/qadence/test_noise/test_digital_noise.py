@@ -18,7 +18,7 @@ from qadence import (
     kron,
     set_noise,
 )
-from qadence.noise import NoiseCategory, available_protocols
+from qadence.noise import NoiseCategory, PrimitiveNoise
 from qadence.backends import backend_factory
 from qadence.types import BackendName, DiffMode
 
@@ -38,7 +38,7 @@ def test_set_noise(protocol: str, circuit: QuantumCircuit) -> None:
     all_blocks = circuit.block.blocks if hasattr(circuit.block, "blocks") else [circuit.block]
     for block in all_blocks:
         assert block.noise is None
-    noise = available_protocols.PrimitiveNoise(protocol=protocol, error_definition=0.2)
+    noise = PrimitiveNoise(protocol=protocol, error_definition=0.2)
     assert noise.protocol == protocol
     set_noise(circuit, noise)
 
@@ -50,7 +50,7 @@ def test_set_noise(protocol: str, circuit: QuantumCircuit) -> None:
 @given(st.digital_circuits())
 @settings(deadline=None)
 def test_set_noise_restricted(protocol: str, circuit: QuantumCircuit) -> None:
-    noise = available_protocols.PrimitiveNoise(protocol=protocol, error_definition=0.2)
+    noise = PrimitiveNoise(protocol=protocol, error_definition=0.2)
     assert noise.protocol == protocol
     all_blocks = circuit.block.blocks if hasattr(circuit.block, "blocks") else [circuit.block]
     index_random_block = random.randint(0, len(all_blocks) - 1)
@@ -79,10 +79,7 @@ def test_run_digital(noisy_config: list[NoiseCategory]) -> None:
     observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
     noise = reduce(
         add,
-        [
-            available_protocols.PrimitiveNoise(protocol=protocol, error_definition=0.1)
-            for protocol in noisy_config
-        ],
+        [PrimitiveNoise(protocol=protocol, error_definition=0.1) for protocol in noisy_config],
     )
 
     # Construct a quantum model.
@@ -116,10 +113,7 @@ def test_expectation_digital_noise(noisy_config: list[NoiseCategory]) -> None:
     observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
     noise = reduce(
         add,
-        [
-            available_protocols.PrimitiveNoise(protocol=protocol, error_definition=0.1)
-            for protocol in noisy_config
-        ],
+        [PrimitiveNoise(protocol=protocol, error_definition=0.1) for protocol in noisy_config],
     )
     backend = backend_factory(backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD)
 

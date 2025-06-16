@@ -141,7 +141,7 @@ from qadence import RX, run
 from qadence.noise import NoiseCategory, PrimitiveNoise
 import torch
 
-noise = PrimitiveNoise(protocol=NoiseCategory.DIGITAL.BITFLIP, error_probability=0.2)
+noise = PrimitiveNoise(protocol=NoiseCategory.DIGITAL.BITFLIP, error_definition=0.2)
 op = RX(0, torch.pi, noise = noise)
 
 print(run(op))
@@ -157,7 +157,7 @@ n_qubits = 2
 
 block = chain(RX(i, f"theta_{i}") for i in range(n_qubits))
 
-noise = PrimitiveNoise(protocol=NoiseCategory.DIGITAL.BITFLIP, error_probability=0.2)
+noise = PrimitiveNoise(protocol=NoiseCategory.DIGITAL.BITFLIP, error_definition=0.2)
 
 # The function changes the block in place:
 set_noise(block, noise)
@@ -171,7 +171,7 @@ from qadence import X, set_noise
 from qadence.noise import NoiseCategory, PrimitiveNoise
 
 block = chain(RX(0, "theta"), X(0))
-noise = PrimitiveNoise(protocol=NoiseCategory.DIGITAL.BITFLIP, error_probability=0.2)
+noise = PrimitiveNoise(protocol=NoiseCategory.DIGITAL.BITFLIP, error_definition=0.2)
 set_noise(block, noise, target_class = X)
 
 for block in block.blocks:
