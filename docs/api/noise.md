@@ -1,3 +1,3 @@
 ## Noise for simulations
 
-### ::: qadence.noise.protocols
+### ::: qadence.noise
