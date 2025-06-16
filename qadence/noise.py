@@ -11,6 +11,7 @@ try:
     AbstractNoise = getattr(module, "AbstractNoise")
     NoiseCategory = getattr(module, "NoiseCategory")
     available_protocols = getattr(module, "protocols")
+    PrimitiveNoise = getattr(available_protocols, "PrimitiveNoise")
 except ModuleNotFoundError:
     raise ModuleNotFoundError(
         "The 'qermod' module is not present." " Please install the 'qermod' package."

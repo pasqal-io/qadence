@@ -4,14 +4,14 @@ corresponding error mitigation techniques whenever possible.
 
 # PrimitiveNoise
 
-Noise models can be defined via the `Qermod` package, imported via `qadence.noise`. Several noise instances are available via `qadence.noise.available_protocols` which require generally to specify a `protocol` and an `error_definition` arguments. The `protocol` field is to be instantiated from `NoiseCategory`.
+Noise models can be defined via the `Qermod` package, imported via `qadence.noise`. Several noise instances are available via `qadence.noise.PrimitiveNoise` which require generally to specify a `protocol` and an `error_definition` arguments. The `protocol` field is to be instantiated from `NoiseCategory`.
 
 ```python exec="on" source="material-block" session="noise" result="json"
-from qadence.noise import NoiseCategory, available_protocols
+from qadence.noise import NoiseCategory, PrimitiveNoise
 
-analog_noise = available_protocols.PrimitiveNoise(protocol=NoiseCategory.ANALOG.DEPOLARIZING, error_definition= 0.1)
-digital_noise = available_protocols.PrimitiveNoise(protocol=NoiseCategory.DIGITAL.DEPOLARIZING, error_definition=0.1)
-readout_noise = available_protocols.PrimitiveNoise(protocol=NoiseCategory.READOUT.INDEPENDENT, error_definition= 0.1, seed =0)
+analog_noise = PrimitiveNoise(protocol=NoiseCategory.ANALOG.DEPOLARIZING, error_definition= 0.1)
+digital_noise = PrimitiveNoise(protocol=NoiseCategory.DIGITAL.DEPOLARIZING, error_definition=0.1)
+readout_noise = PrimitiveNoise(protocol=NoiseCategory.READOUT.INDEPENDENT, error_definition= 0.1, seed =0)
 ```
 
 One can also combine noise instances via the `+` operator or `+=`:
@@ -44,8 +44,8 @@ Qadence offers to simulate readout errors to corrupt the output
 samples of a simulation, through execution via a `QuantumModel`:
 
 ```python exec="on" source="material-block" session="noise" result="json"
-from qadence import QuantumModel, QuantumCircuit, kron, H, Z
-from qadence import hamiltonian_factory
+from qadence import QuantumModel, QuantumCircuit, kron, H, Z, hamiltonian_factory
+from qadence.noise import PrimitiveNoise
 
 # Simple circuit and observable construction.
 block = kron(H(0), Z(1))
@@ -56,7 +56,7 @@ observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
 model = QuantumModel(circuit=circuit, observable=observable)
 
 # Define a noise model to use.
-noise = available_protocols.PrimitiveNoise(protocol=NoiseCategory.READOUT.INDEPENDENT, error_definition= 0.1)
+noise = PrimitiveNoise(protocol=NoiseCategory.READOUT.INDEPENDENT, error_definition= 0.1)
 
 # Run noiseless and noisy simulations.
 noiseless_samples = model.sample(n_shots=100)
@@ -89,7 +89,7 @@ Noisy simulations go hand-in-hand with measurement protocols discussed in the [m
 from qadence.measurements import Measurements
 
 # Define a noise model with options.
-noise = available_protocols.PrimitiveNoise(protocol=NoiseCategory.READOUT.INDEPENDENT, error_definition= 0.01)
+noise = PrimitiveNoise(protocol=NoiseCategory.READOUT.INDEPENDENT, error_definition= 0.01)
 
 # Define a tomographical measurement protocol with options.
 options = {"n_shots": 10000}
@@ -119,7 +119,7 @@ analog_block = chain(AnalogRX(PI / 2.0), AnalogRZ(PI))
 observable = Z(0) + Z(1)
 circuit = QuantumCircuit(2, analog_block)
 
-noise = available_protocols.PrimitiveNoise(protocol=NoiseCategory.ANALOG.DEPOLARIZING, error_definition=0.01)
+noise = PrimitiveNoise(protocol=NoiseCategory.ANALOG.DEPOLARIZING, error_definition=0.01)
 model_noisy = QuantumModel(
     circuit=circuit,
     observable=observable,
@@ -141,7 +141,7 @@ from qadence import RX, run
 from qadence.noise import NoiseCategory
 import torch
 
-noise = available_protocols.PrimitiveNoise(NoiseCategory.DIGITAL.BITFLIP, error_probability=0.2)
+noise = PrimitiveNoise(NoiseCategory.DIGITAL.BITFLIP, error_probability=0.2)
 op = RX(0, torch.pi, noise = noise)
 
 print(run(op))
@@ -156,7 +156,7 @@ n_qubits = 2
 
 block = chain(RX(i, f"theta_{i}") for i in range(n_qubits))
 
-noise = available_protocols.PrimitiveNoise(NoiseCategory.DIGITAL.BITFLIP, error_probability=0.2)
+noise = PrimitiveNoise(NoiseCategory.DIGITAL.BITFLIP, error_probability=0.2)
 
 # The function changes the block in place:
 set_noise(block, noise)

@@ -32,11 +32,11 @@ Detailed equations for these protocols are available from [PyQTorch](https://pas
 For digital noise simulation, you need to state `NoiseCategory` with `DIGITAL` and then specify the noise protocol. Also, you put the value of `error_definition` as in next example.
 
 ```python exec="on" source="material-block" session="output"
-from qadence.noise import NoiseCategory, available_protocols
+from qadence.noise import NoiseCategory, PrimitiveNoise
 
 protocol = NoiseCategory.DIGITAL.DEPOLARIZING
 options = {"error_definition": 0.1}
-noise = available_protocols.PrimitiveNoise(protocol=protocol, **options)
+noise = PrimitiveNoise(protocol=protocol, **options)
 ```
 
 ### Analog noise protocol
@@ -49,11 +49,11 @@ For `Pulser` noise implementation, you can refer to [Pulser](https://pulser.read
 - Dephasing: induces the loss of phase coherence without affecting the population of computational basis states
 
 ```python exec="on" source="material-block" session="output"
-from qadence.noise import NoiseCategory, available_protocols
+from qadence.noise import NoiseCategory, PrimitiveNoise
 
 protocol = NoiseCategory.ANALOG.DEPOLARIZING
 options = {"error_definition": 0.1}
-noise = available_protocols.PrimitiveNoise(protocol=protocol, **options)
+noise = PrimitiveNoise(protocol=protocol, **options)
 ```
 
 ### Readout error protocol
@@ -66,11 +66,11 @@ Currently, two readout protocols are available via [PyQTorch](https://pasqal-io.
 - Correlated: apply a `confusion_matrix` of corruption between each possible bitstrings
 
 ```python exec="on" source="material-block" session="output"
-from qadence.noise import NoiseCategory, available_protocols
+from qadence.noise import NoiseCategory, PrimitiveNoise
 
 protocol=NoiseProtocol.READOUT.INDEPENDENT
 options = {"error_definition": 0.01, "seed": 0}
-noise = available_protocols.PrimitiveNoise(protocol=protocol, **options)
+noise = PrimitiveNoise(protocol=protocol, **options)
 ```
 
 ### Preparing noise protocols for usage
@@ -78,11 +78,11 @@ noise = available_protocols.PrimitiveNoise(protocol=protocol, **options)
 In order to apply the noise to `Qadence` objects, we need a wrapper called the `AbstractNoise` type. It is a container of several noise instances that require a specific `protocol` and a dictionary of `options` (or lists). The `protocol` field is to be instantiated from `NoiseProtocol` and `options` includes error-related information such as `error_definition`, `noise_probs`, and `seed`.
 
 ```python exec="on" source="material-block" session="output"
-from qadence.noise import NoiseCategory, available_protocols
+from qadence.noise import NoiseCategory, PrimitiveNoise
 
-digital_noise = available_protocols.PrimitiveNoise(protocol=NoiseProtocol.DIGITAL.AMPLITUDE_DAMPING, **{"error_definition": 0.1})
-analog_noise = available_protocols.PrimitiveNoise(protocol=NoiseProtocol.ANALOG.DEPOLARIZING, **{"error_definition": 0.1})
-readout_noise = available_protocols.PrimitiveNoise(protocol=NoiseProtocol.READOUT.INDEPENDENT, **{"error_definition": 0.1, "seed": 0})
+digital_noise = PrimitiveNoise(protocol=NoiseProtocol.DIGITAL.AMPLITUDE_DAMPING, **{"error_definition": 0.1})
+analog_noise = PrimitiveNoise(protocol=NoiseProtocol.ANALOG.DEPOLARIZING, **{"error_definition": 0.1})
+readout_noise = PrimitiveNoise(protocol=NoiseProtocol.READOUT.INDEPENDENT, **{"error_definition": 0.1, "seed": 0})
 ```
 
 `PrimitiveNoise` can be combined:
@@ -102,11 +102,11 @@ Noisy simulation can be set by applying a `AbstractNoise` to the desired `gate`,
 
 ```python exec="on" source="material-block" session="noise" result="json"
 from qadence import RX, run
-from qadence.noise import NoiseCategory, available_protocols
+from qadence.noise import NoiseCategory, PrimitiveNoise
 
 import torch
 
-noise = available_protocols.PrimitiveNoise(protocol=NoiseCategory.DIGITAL.BITFLIP, error_definition=0.2)
+noise = PrimitiveNoise(protocol=NoiseCategory.DIGITAL.BITFLIP, error_definition=0.2)
 circuit = RX(0, torch.pi, noise = noise)
 
 # prints density matrix
@@ -122,14 +122,14 @@ from qadence.blocks import chain, kron
 from qadence.circuit import QuantumCircuit
 from qadence.operations import AnalogRX, AnalogRZ, Z
 from qadence.types import PI, BackendName
-from qadence.noise import NoiseCategory, available_protocols
+from qadence.noise import NoiseCategory, PrimitiveNoise
 from qadence import set_noise
 
 analog_block = chain(AnalogRX(PI / 2.0), AnalogRZ(PI))
 observable = Z(0) + Z(1)
 circuit = QuantumCircuit(2, analog_block)
 
-noise = available_protocols.PrimitiveNoise(protocol=NoiseCategory.ANALOG.DEPOLARIZING, error_definition=0.2)
+noise = PrimitiveNoise(protocol=NoiseCategory.ANALOG.DEPOLARIZING, error_definition=0.2)
 model = QuantumModel(
     circuit=circuit,
     observable=observable,
@@ -149,10 +149,10 @@ Let's say we want to apply noise only to specific type of gates, a `target_class
 
 ```python exec="on" source="material-block" session="noise" result="json"
 from qadence import X, chain, set_noise
-from qadence.noise import NoiseCategory, available_protocols
+from qadence.noise import NoiseCategory, PrimitiveNoise
 
 block = chain(RX(0, "theta"), X(0))
-noise = available_protocols.PrimitiveNoise(protocol=NoiseCategory.DIGITAL.AMPLITUDE_DAMPING, error_definition=0.1)
+noise = PrimitiveNoise(protocol=NoiseCategory.DIGITAL.AMPLITUDE_DAMPING, error_definition=0.1)
 
 # prints noise configuration for each gate
 set_noise(block, noise, target_class=X)
@@ -169,8 +169,8 @@ from qadence import QuantumCircuit, X, sample, kron
 import matplotlib.pyplot as plt
 
 n_qubits = 2
-noise_bitflip = available_protocols.PrimitiveNoise(protocol=NoiseCategory.DIGITAL.BITFLIP, error_definition=0.1)
-noise_amplitude_damping = available_protocols.PrimitiveNoise(NoiseProtocol.DIGITAL.AMPLITUDE_DAMPING, error_definition=0.3)
+noise_bitflip = PrimitiveNoise(protocol=NoiseCategory.DIGITAL.BITFLIP, error_definition=0.1)
+noise_amplitude_damping = PrimitiveNoise(NoiseProtocol.DIGITAL.AMPLITUDE_DAMPING, error_definition=0.3)
 block = kron(X(0, noise=noise_bitflip), X(1, noise=noise_amplitude_damping))
 circuit = QuantumCircuit(n_qubits, block)
 
@@ -208,7 +208,7 @@ observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
 model = QuantumModel(circuit=circuit, observable=observable)
 
 # Define a noise model to use.
-noise = available_protocols.PrimitiveNoise(protocol=NoiseProtocol.READOUT.INDEPENDENT, error_definition= 0.1)
+noise = PrimitiveNoise(protocol=NoiseProtocol.READOUT.INDEPENDENT, error_definition= 0.1)
 
 # Run noiseless and noisy simulations.
 noiseless_samples = model.sample(n_shots=100)
