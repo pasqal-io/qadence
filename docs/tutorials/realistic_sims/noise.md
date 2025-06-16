@@ -1,10 +1,10 @@
 Running programs on NISQ devices often leads to partially useful results due to the presence of noise.
-In order to perform realistic simulations, a number of noise models (for digital operations, analog operations and simulated readout errors) are supported in Qadence through their implementation in backends and
+In order to perform realistic simulations, a number of noise models (for digital operations, analog operations and simulated readout errors) are supported in Qermod through their implementation in backends and
 corresponding error mitigation techniques whenever possible.
 
 # AbstractNoise
 
-Noise models can be defined via the `AbstractNoise`. It is a container of several noise instances which require to specify a `protocols` and
+Noise models can be defined via the `Qermod` package, imported via `qadence.noise`. It is a container of several noise instances which require to specify a `protocols` and
 a dictionary of `options` (or lists). The `protocol` field is to be instantiated from `NoiseProtocol`.
 
 ```python exec="on" source="material-block" session="noise" result="json"

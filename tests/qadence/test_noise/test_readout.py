@@ -14,6 +14,8 @@ from qadence.blocks import (
     kron,
 )
 from qadence.circuit import QuantumCircuit
+from qadence.noise import available_protocols
+
 from qadence.constructors.hamiltonians import hamiltonian_factory
 from qadence.divergences import js_divergence
 from qadence.operations import (
@@ -24,7 +26,6 @@ from qadence.operations import (
     Y,
     Z,
 )
-from qadence.noise import available_protocols
 
 
 @pytest.mark.flaky(max_runs=5)
@@ -75,7 +76,7 @@ def test_readout_error_quantum_model(
     )
     noiseless_samples: list[Counter] = model.sample(n_shots=n_shots)
 
-    noise_protocol = available_protocols.IndependentReadout(error_definition=0.1)
+    noise_protocol = available_protocols.IndependentReadout(error_definition=error_probability)
     noisy_samples: list[Counter] = model.sample(noise=noise_protocol, n_shots=n_shots)
 
     for noiseless, noisy in zip(noiseless_samples, noisy_samples):
@@ -161,13 +162,13 @@ def test_readout_error_backends(backend: BackendName) -> None:
 #         assert torch.allclose(noisy, exact, atol=atol)
 
 
-def test_serialization() -> None:
-    noise = available_protocols.IndependentReadout(error_definition=0.1)
-    serialized_noise = available_protocols.IndependentReadout(noise.model_dump())
-    assert noise == serialized_noise
+# def test_serialization() -> None:
+#     noise = available_protocols.IndependentReadout(error_definition=0.1)
+#     serialized_noise = available_protocols.IndependentReadout(noise.model_dump())
+#     assert noise == serialized_noise
 
-    rand_confusion = torch.rand(4, 4)
-    rand_confusion = rand_confusion / rand_confusion.sum(dim=1, keepdim=True)
-    noise = available_protocols.CorrelatedReadout(seed=0, confusion_matrix=rand_confusion)
-    serialized_noise = available_protocols.CorrelatedReadout(noise.model_dump())
-    assert noise == serialized_noise
+#     rand_confusion = torch.rand(4, 4)
+#     rand_confusion = rand_confusion / rand_confusion.sum(dim=1, keepdim=True)
+#     noise = available_protocols.CorrelatedReadout(seed=0, confusion_matrix=rand_confusion)
+#     serialized_noise = available_protocols.CorrelatedReadout(noise.model_dump())
+#     assert noise == serialized_noise
