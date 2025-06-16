@@ -16,7 +16,6 @@ from qadence.blocks import (
 from qadence.circuit import QuantumCircuit
 from qadence.constructors.hamiltonians import hamiltonian_factory
 from qadence.divergences import js_divergence
-from qadence.noise import NoiseHandler
 from qadence.operations import (
     CNOT,
     RX,

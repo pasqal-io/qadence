@@ -67,7 +67,9 @@ def test_set_noise_restricted(protocol: str, circuit: QuantumCircuit) -> None:
 @pytest.mark.parametrize(
     "noisy_config",
     [
-        [NoiseCategory.DIGITAL.BITFLIP,],
+        [
+            NoiseCategory.DIGITAL.BITFLIP,
+        ],
         [NoiseCategory.DIGITAL.BITFLIP, NoiseCategory.DIGITAL.PHASEFLIP],
     ],
 )
@@ -75,7 +77,13 @@ def test_run_digital(noisy_config: list[NoiseCategory]) -> None:
     block = kron(H(0), Z(1))
     circuit = QuantumCircuit(2, block)
     observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
-    noise = reduce(add, [available_protocols.PrimitiveNoise(protocol=protocol, error_definition=0.1) for protocol in noisy_config])
+    noise = reduce(
+        add,
+        [
+            available_protocols.PrimitiveNoise(protocol=protocol, error_definition=0.1)
+            for protocol in noisy_config
+        ],
+    )
 
     # Construct a quantum model.
     model = QuantumModel(circuit=circuit, observable=observable)
@@ -96,7 +104,9 @@ def test_run_digital(noisy_config: list[NoiseCategory]) -> None:
 @pytest.mark.parametrize(
     "noisy_config",
     [
-        [NoiseCategory.DIGITAL.BITFLIP,],
+        [
+            NoiseCategory.DIGITAL.BITFLIP,
+        ],
         [NoiseCategory.DIGITAL.BITFLIP, NoiseCategory.DIGITAL.PHASEFLIP],
     ],
 )
@@ -104,7 +114,13 @@ def test_expectation_digital_noise(noisy_config: list[NoiseCategory]) -> None:
     block = kron(H(0), Z(1))
     circuit = QuantumCircuit(2, block)
     observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
-    noise = reduce(add, [available_protocols.PrimitiveNoise(protocol=protocol, error_definition=0.1) for protocol in noisy_config])
+    noise = reduce(
+        add,
+        [
+            available_protocols.PrimitiveNoise(protocol=protocol, error_definition=0.1)
+            for protocol in noisy_config
+        ],
+    )
     backend = backend_factory(backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD)
 
     # Construct a quantum model.
