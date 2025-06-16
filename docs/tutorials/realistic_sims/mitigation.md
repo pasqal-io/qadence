@@ -34,7 +34,8 @@ from qadence import QuantumModel, QuantumCircuit, kron, H, Z
 from qadence import hamiltonian_factory
 from qadence.noise import AbstractNoise
 from qadence.mitigations import Mitigations
-from qadence.types import ReadOutOptimization, NoiseProtocol
+from qadence.types import ReadOutOptimization
+from qadence.noise import available_protocols
 
 # Simple circuit and observable construction.
 block = kron(H(0), Z(1))
@@ -45,7 +46,7 @@ observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
 model = QuantumModel(circuit=circuit, observable=observable)
 
 # Define a noise model to use:
-noise = AbstractNoise(NoiseProtocol.READOUT.INDEPENDENT)
+noise = available_protocols.IndependentReadout(error_definition=0.1)
 # Define the mitigation method solving the minimization problem:
 options={"optimization_type": ReadOutOptimization.CONSTRAINED}  # ReadOutOptimization.MLE for the alternative method.
 mitigation = Mitigations(protocol=Mitigations.READOUT, options=options)

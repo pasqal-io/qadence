@@ -93,7 +93,7 @@ def mitigation_minimization(
     n_qubits = len(list(samples[0].keys())[0])
     readout_noise = convert_readout_noise(n_qubits, noise)
     if readout_noise is None:
-        raise ValueError("Specify a noise source of type NoiseProtocol.READOUT.")
+        raise ValueError("Specify a noise source of type NoiseCategory.READOUT.")
     n_shots = sum(samples[0].values())
     noise_matrices = readout_noise.confusion_matrix
     if noise_matrices.numel() == 0:
