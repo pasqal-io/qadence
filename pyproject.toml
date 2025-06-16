@@ -102,6 +102,7 @@ measurement = ["qadence-measurement"]
 model = ["qadence-model"]
 
 [tool.hatch.envs.default]
+installer = "uv"
 dependencies = [
     "flaky",
     "hypothesis",
@@ -145,6 +146,7 @@ filterwarnings = [
 
 
 [tool.hatch.envs.docs]
+installer = "uv"
 dependencies = [
     "mkdocs",
     "mkdocs_autorefs",

@@ -112,7 +112,7 @@ from qadence.blocks import chain, kron
 from qadence.circuit import QuantumCircuit
 from qadence.operations import AnalogRX, AnalogRZ, Z
 from qadence.types import PI, BackendName
-from qadence.noise import NoiseCategory
+from qadence.noise import NoiseCategory, PrimitiveNoise
 
 
 analog_block = chain(AnalogRX(PI / 2.0), AnalogRZ(PI))
@@ -138,10 +138,10 @@ When dealing with programs involving only digital operations, several options ar
 
 ```python exec="on" source="material-block" session="noise" result="json"
 from qadence import RX, run
-from qadence.noise import NoiseCategory
+from qadence.noise import NoiseCategory, PrimitiveNoise
 import torch
 
-noise = PrimitiveNoise(NoiseCategory.DIGITAL.BITFLIP, error_probability=0.2)
+noise = PrimitiveNoise(protocol=NoiseCategory.DIGITAL.BITFLIP, error_probability=0.2)
 op = RX(0, torch.pi, noise = noise)
 
 print(run(op))
@@ -151,12 +151,13 @@ It is also possible to set a noise configuration to all gates within a block or 
 
 ```python exec="on" source="material-block" session="noise" result="json"
 from qadence import set_noise, chain
+from qadence.noise import NoiseCategory, PrimitiveNoise
 
 n_qubits = 2
 
 block = chain(RX(i, f"theta_{i}") for i in range(n_qubits))
 
-noise = PrimitiveNoise(NoiseCategory.DIGITAL.BITFLIP, error_probability=0.2)
+noise = PrimitiveNoise(protocol=NoiseCategory.DIGITAL.BITFLIP, error_probability=0.2)
 
 # The function changes the block in place:
 set_noise(block, noise)
@@ -166,8 +167,11 @@ print(run(block))
 There is an extra optional argument to specify the type of block we want to apply a noise configuration to. E.g., let's say we want to apply noise only to `X` gates, a `target_class` argument can be passed with the corresponding block:
 
 ```python exec="on" source="material-block" session="noise" result="json"
-from qadence import X
+from qadence import X, set_noise
+from qadence.noise import NoiseCategory, PrimitiveNoise
+
 block = chain(RX(0, "theta"), X(0))
+noise = PrimitiveNoise(protocol=NoiseCategory.DIGITAL.BITFLIP, error_probability=0.2)
 set_noise(block, noise, target_class = X)
 
 for block in block.blocks:
