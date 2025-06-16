@@ -396,7 +396,7 @@ def convert_readout_noise(n_qubits: int, noise: AbstractNoise) -> pyq.noise.Read
         if readout_part.protocol == NoiseCategory.READOUT.INDEPENDENT:
             options = readout_part.model_dump(exclude={"protocol"})
             options["error_probability"] = options.pop("error_definition")
-            if options["noise_distribution"] is None:
+            if ("noise_distribution" in options) and (options["noise_distribution"] is None):
                 options.pop("noise_distribution")
 
             return pyq.noise.ReadoutNoise(n_qubits, **options)

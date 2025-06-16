@@ -4,14 +4,23 @@ corresponding error mitigation techniques whenever possible.
 
 # PrimitiveNoise
 
-Noise models can be defined via the `Qermod` package, imported via `qadence.noise`. Several noise instances are available via `qadence.noise.PrimitiveNoise` which require generally to specify a `protocol` and an `error_definition` arguments. The `protocol` field is to be instantiated from `NoiseCategory`.
+Noise models can be defined via the [`Qermod`](https://github.com/pasqal-io/qermod) package, imported via `qadence.noise`. Several noise instances are available via `qadence.noise.PrimitiveNoise` which require generally to specify a `protocol` and an `error_definition` arguments. The `protocol` field is to be instantiated from `NoiseCategory`.
 
 ```python exec="on" source="material-block" session="noise" result="json"
-from qadence.noise import NoiseCategory, PrimitiveNoise
+from qadence.noise import NoiseCategory, PrimitiveNoise, available_protocols
 
 analog_noise = PrimitiveNoise(protocol=NoiseCategory.ANALOG.DEPOLARIZING, error_definition= 0.1)
+# equivalent
+# noise = available_protocols.DigitalDepolarizing(error_definition=0.1)
+
 digital_noise = PrimitiveNoise(protocol=NoiseCategory.DIGITAL.DEPOLARIZING, error_definition=0.1)
-readout_noise = PrimitiveNoise(protocol=NoiseCategory.READOUT.INDEPENDENT, error_definition= 0.1, seed =0)
+# equivalent
+# noise = available_protocols.AnalogDepolarizing(error_definition=0.1)
+
+readout_noise = PrimitiveNoise(protocol=NoiseCategory.READOUT.INDEPENDENT, error_definition= 0.1)
+# equivalent
+# noise = available_protocols.IndependentReadout(error_definition= 0.1)
+
 ```
 
 One can also combine noise instances via the `+` operator or `+=`:
@@ -36,8 +45,8 @@ $$
 
 Two types of readout protocols are available:
 
-- `NoiseProtocol.READOUT.INDEPENDENT` where each bit can be corrupted independently of each other.
-- `NoiseProtocol.READOUT.CORRELATED` where we can define of confusion matrix of corruption between each
+- `NoiseCategory.READOUT.INDEPENDENT` where each bit can be corrupted independently of each other.
+- `NoiseCategory.READOUT.CORRELATED` where we can define of confusion matrix of corruption between each
 possible bitstrings.
 
 Qadence offers to simulate readout errors to corrupt the output
@@ -45,7 +54,7 @@ samples of a simulation, through execution via a `QuantumModel`:
 
 ```python exec="on" source="material-block" session="noise" result="json"
 from qadence import QuantumModel, QuantumCircuit, kron, H, Z, hamiltonian_factory
-from qadence.noise import PrimitiveNoise
+from qadence.noise import PrimitiveNoise, available_protocols
 
 # Simple circuit and observable construction.
 block = kron(H(0), Z(1))
@@ -56,7 +65,7 @@ observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
 model = QuantumModel(circuit=circuit, observable=observable)
 
 # Define a noise model to use.
-noise = PrimitiveNoise(protocol=NoiseCategory.READOUT.INDEPENDENT, error_definition= 0.1)
+noise = available_protocols.IndependentReadout(error_definition= 0.1)
 
 # Run noiseless and noisy simulations.
 noiseless_samples = model.sample(n_shots=100)
@@ -69,14 +78,14 @@ print(f"noisy = {noisy_samples}") # markdown-exec: hide
 It is possible to pass options to the noise model. In the previous example, a noise matrix is implicitly computed from a
 uniform distribution.
 
-For `NoiseProtocol.READOUT.INDEPENDENT`, the arguments accepted to instance a noise instance are:
+For `NoiseCategory.READOUT.INDEPENDENT`, the arguments accepted to instance a noise instance are:
 
 - `seed`: defaulted to `None`, for reproducibility purposes
 - `error_definition`: If float, the same probability is applied to every bit. By default, this is 0.1.
     If a 1D tensor with the number of elements equal to the number of qubits, a different probability can be set for each qubit. If a tensor of shape (n_qubits, 2, 2) is passed, that is a confusion matrix obtained from experiments is used.
 - `noise_distribution`: defaulted to `WhiteNoise.UNIFORM`, for non-uniform noise distributions.
 
-For `NoiseProtocol.READOUT.CORRELATED`, the `option` dictionary argument accepts the following options:
+For `NoiseCategory.READOUT.CORRELATED`, the `option` dictionary argument accepts the following options:
 
 - `confusion_matrix`: The square matrix representing $T(x|x')$ for each possible bitstring of length `n` qubits. Should be of size ($2^n, 2^n$).
 - `seed`: defaulted to `None`, for reproducibility purposes.
@@ -89,7 +98,7 @@ Noisy simulations go hand-in-hand with measurement protocols discussed in the [m
 from qadence.measurements import Measurements
 
 # Define a noise model with options.
-noise = PrimitiveNoise(protocol=NoiseCategory.READOUT.INDEPENDENT, error_definition= 0.01)
+noise = available_protocols.IndependentReadout(error_definition= 0.01)
 
 # Define a tomographical measurement protocol with options.
 options = {"n_shots": 10000}
