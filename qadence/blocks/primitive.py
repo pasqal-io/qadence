@@ -100,7 +100,9 @@ class PrimitiveBlock(AbstractBlock):
 
     @classmethod
     def _from_dict(cls, d: dict) -> PrimitiveBlock:
-        return cls(*d["qubit_support"], AbstractNoise._from_dict(d.get("noise")))  # type: ignore[call-arg]
+        return cls(*d["qubit_support"])  # type: ignore[call-arg]
+        # TODO reenable serialization
+        # return cls(*d["qubit_support"], AbstractNoise._from_dict(d.get("noise")))  # type: ignore[call-arg]
 
     def __hash__(self) -> int:
         return hash(self._to_json())
@@ -213,7 +215,9 @@ class ParametricBlock(PrimitiveBlock):
     def _from_dict(cls, d: dict) -> ParametricBlock:
         params = ParamMap._from_dict(d["parameters"])
         target = d["qubit_support"][0]
-        return cls(target, params, AbstractNoise._from_dict(d.get("noise")))  # type: ignore[call-arg, arg-type]
+        return cls(target, params)  # type: ignore[call-arg, arg-type]
+        # TODO reenable serialization
+        # return cls(target, params, AbstractNoise._from_dict(d.get("noise")))  # type: ignore[call-arg, arg-type]
 
     def dagger(self) -> ParametricBlock:
         exprs = self.parameters.expressions()
@@ -419,7 +423,9 @@ class ControlBlock(PrimitiveBlock):
     def _from_dict(cls, d: dict) -> ControlBlock:
         control = d["qubit_support"][0]
         target = d["qubit_support"][1]
-        return cls(control, target, AbstractNoise._from_dict(d.get("noise")))
+        # TODO reenable serialization
+        return cls(control, target)
+        # return cls(control, target, AbstractNoise._from_dict(d.get("noise")))
 
     def dagger(self) -> ControlBlock:
         blk = deepcopy(self)
@@ -484,7 +490,9 @@ class ParametricControlBlock(ParametricBlock):
         target = d["qubit_support"][1]
         targetblock = d["blocks"][0]
         expr = deserialize(targetblock["parameters"])
-        block = cls(control, target, AbstractNoise._from_dict(d.get("noise")), expr)  # type: ignore[call-arg]
+        block = cls(control, target)
+        # TODO reenable serialization
+        # block = cls(control, target, AbstractNoise._from_dict(d.get("noise")), expr)  # type: ignore[call-arg]
         return block
 
     @property

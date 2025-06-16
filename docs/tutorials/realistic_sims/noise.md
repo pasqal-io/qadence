@@ -2,59 +2,28 @@ Running programs on NISQ devices often leads to partially useful results due to 
 In order to perform realistic simulations, a number of noise models (for digital operations, analog operations and simulated readout errors) are supported in Qermod through their implementation in backends and
 corresponding error mitigation techniques whenever possible.
 
-# AbstractNoise
+# PrimitiveNoise
 
-Noise models can be defined via the `Qermod` package, imported via `qadence.noise`. It is a container of several noise instances which require to specify a `protocols` and
-a dictionary of `options` (or lists). The `protocol` field is to be instantiated from `NoiseProtocol`.
+Noise models can be defined via the `Qermod` package, imported via `qadence.noise`. Several noise instances are available via `qadence.noise.available_protocols` which require generally to specify a `protocol` and an `error_definition` arguments. The `protocol` field is to be instantiated from `NoiseCategory`.
 
 ```python exec="on" source="material-block" session="noise" result="json"
-from qadence import AbstractNoise
-from qadence.types import NoiseProtocol
+from qadence.noise import NoiseCategory, available_protocols
 
-analog_noise = AbstractNoise(protocol=NoiseProtocol.ANALOG.DEPOLARIZING, options={"noise_probs": 0.1})
-digital_noise = AbstractNoise(protocol=NoiseProtocol.DIGITAL.DEPOLARIZING, options={"error_probability": 0.1})
-readout_noise = AbstractNoise(protocol=NoiseProtocol.READOUT.INDEPENDENT, options={"error_probability": 0.1, "seed": 0})
+analog_noise = available_protocols.PrimitiveNoise(protocol=NoiseCategory.ANALOG.DEPOLARIZING, error_definition= 0.1)
+digital_noise = available_protocols.PrimitiveNoise(protocol=NoiseCategory.DIGITAL.DEPOLARIZING, error_definition=0.1)
+readout_noise = available_protocols.PrimitiveNoise(protocol=NoiseCategory.READOUT.INDEPENDENT, error_definition= 0.1, seed =0)
 ```
 
-One can also define a `AbstractNoise` passing a list of protocols and a list of options (careful with the order):
+One can also combine noise instances via the `+` operator or `+=`:
 
 ```python exec="on" source="material-block" session="noise" result="json"
-from qadence import AbstractNoise
-from qadence.types import NoiseProtocol
-
-protocols = [NoiseProtocol.DIGITAL.DEPOLARIZING, NoiseProtocol.READOUT]
-options = [{"error_probability": 0.1}, {"error_probability": 0.1, "seed": 0}]
-
-noise_combination = AbstractNoise(protocols, options)
+noise_combination = digital_noise + readout_noise
 print(noise_combination)
 ```
 
-One can also append to a `AbstractNoise` other `AbstractNoise` instances:
 
-```python exec="on" source="material-block" session="noise" result="json"
-from qadence import AbstractNoise
-from qadence.types import NoiseProtocol
-
-depo_noise = AbstractNoise(protocol=NoiseProtocol.DIGITAL.DEPOLARIZING, options={"error_probability": 0.1})
-readout_noise = AbstractNoise(protocol=NoiseProtocol.READOUT.INDEPENDENT, options={"error_probability": 0.1, "seed": 0})
-
-noise_combination = AbstractNoise(protocol=NoiseProtocol.DIGITAL.BITFLIP, options={"error_probability": 0.1})
-noise_combination.append([depo_noise, readout_noise])
-print(noise_combination)
-```
-
-Finally, one can add directly a few pre-defined types using several `AbstractNoise` methods:
-
-```python exec="on" source="material-block" session="noise" result="json"
-from qadence import AbstractNoise
-from qadence.types import NoiseProtocol
-noise_combination = AbstractNoise(protocol=NoiseProtocol.DIGITAL.BITFLIP, options={"error_probability": 0.1})
-noise_combination.digital_depolarizing({"error_probability": 0.1}).readout_independent({"error_probability": 0.1, "seed": 0})
-print(noise_combination)
-```
-
-!!! warning "AbstractNoise scope"
-    Note it is not possible to define a `AbstractNoise` instances with both digital and analog noises, both readout and analog noises, several analog noises, several readout noises, or a readout noise that is not the last defined protocol within `AbstractNoise`.
+!!! warning "Scope"
+    Note it is not possible to define noise instances with both digital and analog noises, both readout and analog noises, several analog noises, several readout noises, or a readout noise that is not the last defined protocol when combining noise instances.
 
 ## Readout errors
 
@@ -71,7 +40,7 @@ Two types of readout protocols are available:
 - `NoiseProtocol.READOUT.CORRELATED` where we can define of confusion matrix of corruption between each
 possible bitstrings.
 
-Qadence offers to simulate readout errors with the `AbstractNoise` to corrupt the output
+Qadence offers to simulate readout errors to corrupt the output
 samples of a simulation, through execution via a `QuantumModel`:
 
 ```python exec="on" source="material-block" session="noise" result="json"
@@ -87,7 +56,7 @@ observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
 model = QuantumModel(circuit=circuit, observable=observable)
 
 # Define a noise model to use.
-noise = AbstractNoise(protocol=NoiseProtocol.READOUT.INDEPENDENT)
+noise = available_protocols.PrimitiveNoise(protocol=NoiseCategory.READOUT.INDEPENDENT, error_definition= 0.1)
 
 # Run noiseless and noisy simulations.
 noiseless_samples = model.sample(n_shots=100)
@@ -100,18 +69,17 @@ print(f"noisy = {noisy_samples}") # markdown-exec: hide
 It is possible to pass options to the noise model. In the previous example, a noise matrix is implicitly computed from a
 uniform distribution.
 
-For `NoiseProtocol.READOUT.INDEPENDENT`, the `option` dictionary argument accepts the following options:
+For `NoiseProtocol.READOUT.INDEPENDENT`, the arguments accepted to instance a noise instance are:
 
 - `seed`: defaulted to `None`, for reproducibility purposes
-- `error_probability`: If float, the same probability is applied to every bit. By default, this is 0.1.
-    If a 1D tensor with the number of elements equal to the number of qubits, a different probability can be set for each qubit. If a tensor of shape (n_qubits, 2, 2) is passed, that is a confusion matrix obtained from experiments, we extract the error_probability.
-    and do not compute internally the confusion matrix as in the other cases.
-- `noise_distribution`: defaulted to `WhiteNoise.UNIFORM`, for non-uniform noise distributions
+- `error_definition`: If float, the same probability is applied to every bit. By default, this is 0.1.
+    If a 1D tensor with the number of elements equal to the number of qubits, a different probability can be set for each qubit. If a tensor of shape (n_qubits, 2, 2) is passed, that is a confusion matrix obtained from experiments is used.
+- `noise_distribution`: defaulted to `WhiteNoise.UNIFORM`, for non-uniform noise distributions.
 
 For `NoiseProtocol.READOUT.CORRELATED`, the `option` dictionary argument accepts the following options:
 
 - `confusion_matrix`: The square matrix representing $T(x|x')$ for each possible bitstring of length `n` qubits. Should be of size ($2^n, 2^n$).
-- `seed`: defaulted to `None`, for reproducibility purposes
+- `seed`: defaulted to `None`, for reproducibility purposes.
 
 
 Noisy simulations go hand-in-hand with measurement protocols discussed in the [measurements section](measurements.md), to assess the impact of noise on expectation values. In this case, both measurement and noise protocols have to be defined appropriately. Please note that a noise protocol without a measurement protocol will be ignored for expectation values computations.
@@ -121,8 +89,7 @@ Noisy simulations go hand-in-hand with measurement protocols discussed in the [m
 from qadence.measurements import Measurements
 
 # Define a noise model with options.
-options = {"error_probability": 0.01}
-noise = AbstractNoise(protocol=NoiseProtocol.READOUT.INDEPENDENT, options=options)
+noise = available_protocols.PrimitiveNoise(protocol=NoiseCategory.READOUT.INDEPENDENT, error_definition= 0.01)
 
 # Define a tomographical measurement protocol with options.
 options = {"n_shots": 10000}
@@ -144,15 +111,15 @@ from qadence import DiffMode, AbstractNoise, QuantumModel
 from qadence.blocks import chain, kron
 from qadence.circuit import QuantumCircuit
 from qadence.operations import AnalogRX, AnalogRZ, Z
-from qadence.types import PI, BackendName, NoiseProtocol
+from qadence.types import PI, BackendName
+from qadence.noise import NoiseCategory
 
 
 analog_block = chain(AnalogRX(PI / 2.0), AnalogRZ(PI))
 observable = Z(0) + Z(1)
 circuit = QuantumCircuit(2, analog_block)
 
-options = {"noise_probs": 0.1}
-noise = AbstractNoise(protocol=NoiseProtocol.ANALOG.DEPOLARIZING, options=options)
+noise = available_protocols.PrimitiveNoise(protocol=NoiseCategory.ANALOG.DEPOLARIZING, error_definition=0.01)
 model_noisy = QuantumModel(
     circuit=circuit,
     observable=observable,
@@ -167,13 +134,14 @@ print(f"noisy = {noisy_expectation}") # markdown-exec: hide
 
 ## Digital noisy simulation
 
-When dealing with programs involving only digital operations, several options are made available from [PyQTorch](https://pasqal-io.github.io/pyqtorch/latest/noise/) via the `NoiseProtocol.DIGITAL`. One can define noisy digital operations as follows:
+When dealing with programs involving only digital operations, several options are made available from [PyQTorch](https://pasqal-io.github.io/pyqtorch/latest/noise/) via the `NoiseCategory.DIGITAL`. One can define noisy digital operations as follows:
 
 ```python exec="on" source="material-block" session="noise" result="json"
-from qadence import NoiseProtocol, RX, run
+from qadence import RX, run
+from qadence.noise import NoiseCategory
 import torch
 
-noise = AbstractNoise(NoiseProtocol.DIGITAL.BITFLIP, {"error_probability": 0.2})
+noise = available_protocols.PrimitiveNoise(NoiseCategory.DIGITAL.BITFLIP, error_probability=0.2)
 op = RX(0, torch.pi, noise = noise)
 
 print(run(op))
@@ -188,7 +156,7 @@ n_qubits = 2
 
 block = chain(RX(i, f"theta_{i}") for i in range(n_qubits))
 
-noise = AbstractNoise(NoiseProtocol.DIGITAL.BITFLIP, {"error_probability": 0.1})
+noise = available_protocols.PrimitiveNoise(NoiseCategory.DIGITAL.BITFLIP, error_probability=0.2)
 
 # The function changes the block in place:
 set_noise(block, noise)
