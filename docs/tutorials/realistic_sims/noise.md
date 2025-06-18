@@ -9,9 +9,9 @@ Noise models can be defined via the [`Qermod`](https://github.com/pasqal-io/qerm
 ```python exec="on" source="material-block" session="noise" result="json"
 from qadence.noise import available_protocols
 
-analog_noise = available_protocols.DigitalDepolarizing(error_definition=0.1)
+digital_noise = available_protocols.DigitalDepolarizing(error_definition=0.1)
 
-digital_noise = available_protocols.AnalogDepolarizing(error_definition=0.1)
+analog_noise = available_protocols.AnalogDepolarizing(error_definition=0.1)
 
 readout_noise = available_protocols.IndependentReadout(error_definition= 0.1)
 
@@ -21,7 +21,6 @@ One can also combine noise instances via the `|` operator or `|=`:
 
 ```python exec="on" source="material-block" session="noise" result="json"
 noise_combination = digital_noise | readout_noise
-print(noise_combination)
 ```
 
 !!! warning "Scope"

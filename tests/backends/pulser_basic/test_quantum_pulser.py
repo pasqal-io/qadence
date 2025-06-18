@@ -96,7 +96,9 @@ def test_batched_noisy_simulations(
     )
     noiseless_expectation = model_noiseless.expectation()
 
-    noise = available_protocols.Dephasing(error_definition=[0.1, 0.2, 0.3, 0.4])
+    noise = available_protocols.Dephasing(
+        error_definition=torch.tensor([0.1, 0.2, 0.3, 0.4], dtype=torch.float64)
+    )
     model_noisy = QuantumModel(
         circuit=circuit,
         observable=observable,
