@@ -4,7 +4,7 @@ corresponding error mitigation techniques whenever possible.
 
 # PrimitiveNoise
 
-Noise models can be defined via the [`Qermod`](https://github.com/pasqal-io/qermod) package, imported via `qadence.noise`. Several noise protocols are available via `qadence.noise.available_protocols` which require generally to specify an `error_definition` argument.
+Noise models can be defined via the [`Qermod`](https://github.com/pasqal-io/qermod) package, imported in the `qadence.noise` namespace. Several noise protocols are available via `qadence.noise.available_protocols` which require generally to specify an `error_definition` argument.
 
 ```python exec="on" source="material-block" session="noise" result="json"
 from qadence.noise import available_protocols
