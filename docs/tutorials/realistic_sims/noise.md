@@ -142,7 +142,7 @@ from qadence.noise import available_protocols
 import torch
 
 noise = available_protocols.Bitflip(error_definition=0.2)
-op = RX(0, torch.pi, noise = noise)
+op = RX(0, torch.pi) << noise
 
 print(run(op))
 ```

@@ -12,6 +12,7 @@ import torch
 from rich.console import Console, RenderableType
 from rich.tree import Tree
 
+from qadence.noise import AbstractNoise
 from qadence.parameters import Parameter
 from qadence.types import TNumber
 
@@ -341,6 +342,14 @@ class AbstractBlock(ABC):
         elif isinstance(self, PrimitiveBlock):
             return self.name == "I"
         return False
+
+    def __lshift__(self, other: AbstractNoise) -> AbstractBlock:
+        from qadence.transpile import set_noise
+
+        if not isinstance(other, AbstractNoise):
+            raise TypeError(f"Can only add a block to another block. Got {type(other)}.")
+        set_noise(self, other)
+        return self
 
 
 TAbstractBlock = TypeVar("TAbstractBlock", bound=AbstractBlock)

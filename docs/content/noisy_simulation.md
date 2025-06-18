@@ -77,7 +77,7 @@ from qadence import RX, run
 import torch
 
 noise = available_protocols.Bitflip(error_definition=0.2)
-circuit = RX(0, torch.pi, noise = noise)
+circuit = RX(0, torch.pi) << noise
 
 # prints density matrix
 run(circuit)
