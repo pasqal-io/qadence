@@ -29,6 +29,7 @@ from qadence.blocks import (
     ScaleBlock,
     TimeEvolutionBlock,
 )
+from qadence.parameters import evaluate
 from qadence.blocks.primitive import ProjectorBlock
 from qadence.noise import AbstractNoise, NoiseCategory
 from qadence.operations import (
@@ -392,17 +393,15 @@ def convert_readout_noise(n_qubits: int, noise: AbstractNoise) -> pyq.noise.Read
             return None
 
     if readout_part.protocol in NoiseCategory.READOUT:
-
+        options = readout_part.model_dump(exclude={"protocol"})
         if readout_part.protocol == NoiseCategory.READOUT.INDEPENDENT:
-            options = readout_part.model_dump(exclude={"protocol"})
-            options["error_probability"] = options.pop("error_definition")
+            options["error_probability"] = evaluate(options.pop("error_definition"))
             if ("noise_distribution" in options) and (options["noise_distribution"] is None):
                 options.pop("noise_distribution")
 
             return pyq.noise.ReadoutNoise(n_qubits, **options)
         else:
-            options = readout_part.model_dump(exclude={"protocol"})
-            options["confusion_matrix"] = options.pop("error_definition")
+            options["confusion_matrix"] = evaluate(options.pop("error_definition"))
 
             return pyq.noise.CorrelatedReadoutNoise(**options)
     return None

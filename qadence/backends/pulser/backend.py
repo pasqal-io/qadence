@@ -25,10 +25,11 @@ from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.mitigations.protocols import apply_mitigation
 from qadence.noise import AbstractNoise
+from qadence.parameters import evaluate
 from qadence.overlap import overlap_exact
 from qadence.register import Register
 from qadence.transpile import transpile
-from qadence.types import BackendName, DeviceType, Endianness, Engine, ParamDictType
+from qadence.types import BackendName, DeviceType, Endianness, Engine, ParamDictType, TNumber
 from qadence.noise import NoiseCategory
 
 from .channels import GLOBAL_CHANNEL, LOCAL_CHANNEL
@@ -247,9 +248,9 @@ class Backend(BackendInterface):
                 noise = noise[-1]
             if not isinstance(noise.protocol, NoiseCategory.ANALOG):
                 raise TypeError("Noise must be of type `NoiseCategory.ANALOG`.")
-        noise_probs = noise.error_definition
+        noise_probs = evaluate(noise.error_definition)
 
-        def run_noisy_sim(noise_prob: float) -> Tensor:
+        def run_noisy_sim(noise_prob: TNumber | Tensor) -> Tensor:
             batched_dm = np.zeros(
                 (len(vals), 2**circuit.abstract.n_qubits, 2**circuit.abstract.n_qubits),
                 dtype=np.complex128,
