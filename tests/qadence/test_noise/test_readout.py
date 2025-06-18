@@ -160,15 +160,3 @@ def test_readout_error_backends(backend: BackendName) -> None:
 #         exact_value = torch.abs(exact).item()
 #         atol = exact_value / 3.0 if exact_value != 0.0 else 0.33
 #         assert torch.allclose(noisy, exact, atol=atol)
-
-
-# def test_serialization() -> None:
-#     noise = available_protocols.IndependentReadout(error_definition=0.1)
-#     serialized_noise = available_protocols.IndependentReadout(noise.model_dump())
-#     assert noise == serialized_noise
-
-#     rand_confusion = torch.rand(4, 4)
-#     rand_confusion = rand_confusion / rand_confusion.sum(dim=1, keepdim=True)
-#     noise = available_protocols.CorrelatedReadout(seed=0, confusion_matrix=rand_confusion)
-#     serialized_noise = available_protocols.CorrelatedReadout(noise.model_dump())
-#     assert noise == serialized_noise

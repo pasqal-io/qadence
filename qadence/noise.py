@@ -12,6 +12,8 @@ try:
     NoiseCategory = getattr(module, "NoiseCategory")
     available_protocols = getattr(module, "protocols")
     PrimitiveNoise = getattr(available_protocols, "PrimitiveNoise")
+    serialize_noise = getattr(module, "serialize")
+    deserialize_noise = getattr(module, "deserialize")
 except ModuleNotFoundError:
     raise ModuleNotFoundError(
         "The 'qermod' module is not present." " Please install the 'qermod' package."

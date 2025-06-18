@@ -25,12 +25,6 @@ from qadence.types import BackendName, DiffMode
 list_noises = [noise for noise in NoiseCategory.DIGITAL]
 
 
-# def test_serialization() -> None:
-#     noise = available_protocols.Bitflip(error_definition=0.2)
-#     serialized_noise = available_protocols.Bitflip(**noise.model_dump())
-#     assert noise == serialized_noise
-
-
 @pytest.mark.parametrize("protocol", list_noises)
 @given(st.digital_circuits())
 @settings(deadline=None)
