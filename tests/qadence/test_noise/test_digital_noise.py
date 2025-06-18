@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import random
 from functools import reduce
-from operator import add
 
 import pytest
 import strategies as st  # type: ignore
@@ -72,7 +71,7 @@ def test_run_digital(noisy_config: list[NoiseCategory]) -> None:
     circuit = QuantumCircuit(2, block)
     observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
     noise = reduce(
-        add,
+        lambda x, y: x | y,
         [PrimitiveNoise(protocol=protocol, error_definition=0.1) for protocol in noisy_config],
     )
 
@@ -106,7 +105,7 @@ def test_expectation_digital_noise(noisy_config: list[NoiseCategory]) -> None:
     circuit = QuantumCircuit(2, block)
     observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
     noise = reduce(
-        add,
+        lambda x, y: x | y,
         [PrimitiveNoise(protocol=protocol, error_definition=0.1) for protocol in noisy_config],
     )
     backend = backend_factory(backend=BackendName.PYQTORCH, diff_mode=DiffMode.AD)
