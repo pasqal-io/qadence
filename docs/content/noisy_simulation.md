@@ -140,7 +140,7 @@ import matplotlib.pyplot as plt
 n_qubits = 2
 noise_bitflip = available_protocols.Bitflip(error_definition=0.1)
 noise_amplitude_damping = available_protocols.AmplitudeDamping(error_definition=0.3)
-block = kron(X(0, noise=noise_bitflip), X(1, noise=noise_amplitude_damping))
+block = (X(0) << noise_bitflip) * (X(1) << noise_amplitude_damping)
 circuit = QuantumCircuit(n_qubits, block)
 
 n_shots=1000
