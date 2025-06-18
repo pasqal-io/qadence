@@ -347,7 +347,7 @@ class AbstractBlock(ABC):
         from qadence.transpile import set_noise
 
         if not isinstance(other, AbstractNoise):
-            raise TypeError(f"Can only add a block to another block. Got {type(other)}.")
+            raise TypeError(f"Can only compose a Qadence `AbstractBlock` block type with an `AbstractNoise` block type using this operator. Got {type(other)}.")
         set_noise(self, other)
         return self
 
