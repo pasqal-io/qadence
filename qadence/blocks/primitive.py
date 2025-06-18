@@ -87,7 +87,7 @@ class PrimitiveBlock(AbstractBlock):
         if not isinstance(other, AbstractBlock):
             raise TypeError(f"Cant compare {type(self)} to {type(other)}")
         if isinstance(other, type(self)):
-            return self.qubit_support == other.qubit_support
+            return self.qubit_support == other.qubit_support and self.noise == other.noise
         return False
 
     def _to_dict(self) -> dict:
@@ -189,8 +189,10 @@ class ParametricBlock(PrimitiveBlock):
         if not isinstance(other, AbstractBlock):
             raise TypeError(f"Cant compare {type(self)} to {type(other)}")
         if isinstance(other, type(self)):
-            return self.qubit_support == other.qubit_support and self.parameters.parameter.equals(
-                other.parameters.parameter
+            return (
+                self.qubit_support == other.qubit_support
+                and self.parameters.parameter.equals(other.parameters.parameter)
+                and self.noise == other.noise
             )
         return False
 
@@ -388,7 +390,7 @@ class ControlBlock(PrimitiveBlock):
 
         # using tuple expansion because some control operations could
         # have multiple targets, e.g. CSWAP
-        super().__init__((*control, *self.target), noise=noise)  # target_block.qubit_support[0]))
+        super().__init__((*control, *self.target), noise=noise)
 
     @property
     def n_controls(self) -> int:

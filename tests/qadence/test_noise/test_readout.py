@@ -25,7 +25,9 @@ from qadence.operations import (
     X,
     Y,
     Z,
+    H,
 )
+from qadence.measurements import Measurements
 
 
 @pytest.mark.flaky(max_runs=5)
@@ -129,34 +131,33 @@ def test_readout_error_backends(backend: BackendName) -> None:
 
 
 # # TODO: Use strategies to test against randomly generated circuits.
-# TODO: re-enable with a new release of pyqtorch after 1.7.0
-# @pytest.mark.parametrize(
-#     "measurement_proto, options",
-#     [
-#         (Measurements.TOMOGRAPHY, {"n_shots": 10000}),
-#         (Measurements.SHADOW, {"accuracy": 0.1, "confidence": 0.1}),
-#     ],
-# )
-# def test_readout_error_with_measurements(
-#     measurement_proto: Measurements,
-#     options: dict,
-# ) -> None:
-#     circuit = QuantumCircuit(2, kron(H(0), Z(1)))
-#     inputs: dict = dict()
-#     observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
+@pytest.mark.parametrize(
+    "measurement_proto, options",
+    [
+        (Measurements.TOMOGRAPHY, {"n_shots": 10000}),
+        (Measurements.SHADOW, {"accuracy": 0.1, "confidence": 0.1}),
+    ],
+)
+def test_readout_error_with_measurements(
+    measurement_proto: Measurements,
+    options: dict,
+) -> None:
+    circuit = QuantumCircuit(2, kron(H(0), Z(1)))
+    inputs: dict = dict()
+    observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
 
-#     model = QuantumModel(circuit=circuit, observable=observable, diff_mode=DiffMode.GPSR)
-#     noise = NoiseHandler(protocol=NoiseProtocol.READOUT.INDEPENDENT)
-#     measurement = Measurements(protocol=str(measurement_proto), options=options)
+    model = QuantumModel(circuit=circuit, observable=observable, diff_mode=DiffMode.GPSR)
+    noise = available_protocols.IndependentReadout(error_definition=0.1)
+    measurement = Measurements(protocol=str(measurement_proto), options=options)
 
-#     noisy = model.expectation(values=inputs, measurement=measurement, noise=noise)
-#     exact = model.expectation(values=inputs)
-#     if exact.numel() > 1:
-#         for noisy_value, exact_value in zip(noisy, exact):
-#             exact_val = torch.abs(exact_value).item()
-#             atol = exact_val / 3.0 if exact_val != 0.0 else 0.33
-#             assert torch.allclose(noisy_value, exact_value, atol=atol)
-#     else:
-#         exact_value = torch.abs(exact).item()
-#         atol = exact_value / 3.0 if exact_value != 0.0 else 0.33
-#         assert torch.allclose(noisy, exact, atol=atol)
+    noisy = model.expectation(values=inputs, measurement=measurement, noise=noise)
+    exact = model.expectation(values=inputs)
+    if exact.numel() > 1:
+        for noisy_value, exact_value in zip(noisy, exact):
+            exact_val = torch.abs(exact_value).item()
+            atol = exact_val / 3.0 if exact_val != 0.0 else 0.33
+            assert torch.allclose(noisy_value, exact_value, atol=atol)
+    else:
+        exact_value = torch.abs(exact).item()
+        atol = exact_value / 3.0 if exact_value != 0.0 else 0.33
+        assert torch.allclose(noisy, exact, atol=atol)
