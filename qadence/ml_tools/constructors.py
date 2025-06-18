@@ -24,7 +24,7 @@ from qadence.constructors.hamiltonians import ObservableConfig, TDetuning
 from qadence.constructors.hea import hea_digital, hea_sDAQC
 from qadence.constructors.iia import iia
 from qadence.measurements import Measurements
-from qadence.noise import NoiseHandler
+from qadence.noise import AbstractNoise
 from qadence.operations import CNOT, RX, RY, RZ, I
 from qadence.register import Register
 from qadence.types import (
@@ -750,7 +750,7 @@ def build_qnn_from_configs(
     backend: BackendName = BackendName.PYQTORCH,
     diff_mode: DiffMode = DiffMode.AD,
     measurement: Measurements | None = None,
-    noise: NoiseHandler | None = None,
+    noise: AbstractNoise | None = None,
     configuration: BackendConfiguration | dict | None = None,
     input_diff_mode: InputDiffMode | str = InputDiffMode.AD,
 ) -> QNN:

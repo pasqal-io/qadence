@@ -15,7 +15,7 @@ from qadence.blocks.analog import ConstantAnalogRotation, InteractionBlock
 from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
-from qadence.noise import NoiseHandler
+from qadence.noise import AbstractNoise
 from qadence.operations import AnalogRot
 from qadence.transpile import apply_fn_to_blocks
 from qadence.utils import Endianness
@@ -44,7 +44,7 @@ def pulse_experiment(
     circuit: QuantumCircuit,
     observable: list[AbstractBlock],
     param_values: dict[str, Tensor],
-    noise: NoiseHandler,
+    noise: AbstractNoise,
     stretches: Tensor,
     endianness: Endianness,
     state: Tensor | None = None,
@@ -118,7 +118,7 @@ def noise_level_experiment(
     circuit: QuantumCircuit,
     observable: list[AbstractBlock],
     param_values: dict[str, Tensor],
-    noise: NoiseHandler,
+    noise: AbstractNoise,
     endianness: Endianness,
     state: Tensor | None = None,
 ) -> Tensor:
@@ -157,7 +157,7 @@ def analog_zne(
     param_values: dict[str, Tensor] = {},
     state: Tensor | None = None,
     measurement: Measurements | None = None,
-    noise: NoiseHandler | None = None,
+    noise: AbstractNoise | None = None,
     mitigation: Mitigations | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
@@ -200,7 +200,7 @@ def mitigate(
     param_values: dict[str, Tensor] = {},
     state: Tensor | None = None,
     measurement: Measurements | None = None,
-    noise: NoiseHandler | None = None,
+    noise: AbstractNoise | None = None,
     mitigation: Mitigations | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:

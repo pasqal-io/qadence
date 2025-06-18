@@ -6,7 +6,7 @@ from typing import Callable
 
 from qadence.analog import add_background_hamiltonian
 from qadence.backend import BackendConfiguration
-from qadence.noise import NoiseHandler
+from qadence.noise import AbstractNoise
 from qadence.transpile import (
     blockfn_to_circfn,
     chain_single_qubit_ops,
@@ -63,8 +63,8 @@ class Configuration(BackendConfiguration):
     Loop over the batch of parameters to only allocate a single wavefunction at any given time.
     """
 
-    noise: NoiseHandler | None = None
-    """NoiseHandler containing readout noise applied in backend."""
+    noise: AbstractNoise | None = None
+    """AbstractNoise containing readout noise applied in backend."""
 
     dropout_probability: float = 0.0
     """Quantum dropout probability (0 means no dropout)."""

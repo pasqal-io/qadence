@@ -14,7 +14,7 @@ from qadence.blocks.utils import get_pauli_blocks, unroll_block_with_scaling
 from qadence.circuit import QuantumCircuit
 from qadence.engines.differentiable_backend import DifferentiableBackend
 from qadence.measurements.utils import get_qubit_indices_for_op
-from qadence.noise import NoiseHandler
+from qadence.noise import AbstractNoise
 from qadence.operations import H, I, SDagger, X, Y, Z
 from qadence.types import BackendName, Endianness
 
@@ -127,7 +127,7 @@ def classical_shadow(
     param_values: dict,
     state: Tensor | None = None,
     backend: Backend | DifferentiableBackend = PyQBackend(),
-    noise: NoiseHandler | None = None,
+    noise: AbstractNoise | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> tuple[np.ndarray, list[Tensor]]:
     unitary_ids = np.random.randint(0, 3, size=(shadow_size, circuit.n_qubits))
@@ -238,7 +238,7 @@ def estimations(
     confidence: float = 0.1,
     state: Tensor | None = None,
     backend: Backend | DifferentiableBackend = PyQBackend(),
-    noise: NoiseHandler | None = None,
+    noise: AbstractNoise | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
     """Compute expectation values for all local observables using median of means."""
@@ -290,7 +290,7 @@ def compute_expectation(
     options: dict,
     state: Tensor | None = None,
     backend: Backend | DifferentiableBackend = PyQBackend(),
-    noise: NoiseHandler | None = None,
+    noise: AbstractNoise | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
     """

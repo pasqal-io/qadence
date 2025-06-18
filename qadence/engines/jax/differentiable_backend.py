@@ -7,7 +7,7 @@ from qadence.engines.differentiable_backend import (
 from qadence.engines.jax.differentiable_expectation import DifferentiableExpectation
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
-from qadence.noise import NoiseHandler
+from qadence.noise import AbstractNoise
 from qadence.types import (
     ArrayLike,
     DiffMode,
@@ -42,7 +42,7 @@ class DifferentiableBackend(DifferentiableBackendInterface):
         param_values: ParamDictType = {},
         state: ArrayLike | None = None,
         measurement: Measurements | None = None,
-        noise: NoiseHandler | None = None,
+        noise: AbstractNoise | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> ArrayLike:

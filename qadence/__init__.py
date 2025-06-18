@@ -50,7 +50,6 @@ from .execution import *
 from .measurements import *
 from .ml_tools import *
 from .model import *
-from .noise import *
 from .operations import *
 from .overlap import *
 from .parameters import *
@@ -77,7 +76,6 @@ list_of_submodules = [
     ".blocks",
     ".circuit",
     ".constructors",
-    ".noise",
     ".exceptions",
     ".execution",
     ".measurements",
