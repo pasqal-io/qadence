@@ -473,17 +473,21 @@ class QNN(QuantumModel):
     @classmethod
     def _from_dict(cls, d: dict, as_torch: bool = False) -> QNN:
         from qadence.serialization import deserialize
+        from qadence.noise import deserialize_noise
 
         qnn: QNN
         try:
             qm_dict = d[cls.__name__]
+            noise = qm_dict.get("noise", None)
+            if noise:
+                noise = deserialize_noise(noise)
             qnn = cls(
                 circuit=QuantumCircuit._from_dict(qm_dict["circuit"]),
                 observable=[deserialize(q_obs) for q_obs in qm_dict["observable"]],  # type: ignore[misc]
                 backend=qm_dict["backend"],
                 diff_mode=qm_dict["diff_mode"],
                 measurement=Measurements._from_dict(qm_dict["measurement"]),
-                # noise=AbstractNoise._from_dict(qm_dict["noise"]), # TODO reenable serialization
+                noise=noise,  # TODO reenable serialization
                 configuration=config_factory(qm_dict["backend"], qm_dict["backend_configuration"]),
                 inputs=qm_dict["inputs"],
             )

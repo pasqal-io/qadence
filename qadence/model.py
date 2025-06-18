@@ -507,10 +507,14 @@ class QuantumModel(nn.Module):
             QuantumModel instance
         """
         from qadence.serialization import deserialize
+        from qadence.noise import deserialize_noise
 
         qm: QuantumModel
         try:
             qm_dict = d[cls.__name__]
+            noise = qm_dict.get("noise", None)
+            if noise:
+                noise = deserialize_noise(noise)
             qm = cls(
                 circuit=QuantumCircuit._from_dict(qm_dict["circuit"]),
                 observable=(
@@ -521,7 +525,7 @@ class QuantumModel(nn.Module):
                 backend=qm_dict["backend"],
                 diff_mode=qm_dict["diff_mode"],
                 measurement=Measurements._from_dict(qm_dict["measurement"]),
-                # noise=AbstractNoise._from_dict(qm_dict["noise"]), # TODO reenable serialization
+                noise=noise,
                 configuration=config_factory(qm_dict["backend"], qm_dict["backend_configuration"]),
             )
 

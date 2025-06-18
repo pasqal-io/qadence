@@ -101,8 +101,8 @@ class PrimitiveBlock(AbstractBlock):
     @classmethod
     def _from_dict(cls, d: dict) -> PrimitiveBlock:
         return cls(*d["qubit_support"])  # type: ignore[call-arg]
-        # TODO reenable serialization
-        # return cls(*d["qubit_support"], AbstractNoise._from_dict(d.get("noise")))  # type: ignore[call-arg]
+
+        return cls(*d["qubit_support"], AbstractNoise._from_dict(d.get("noise")))  # type: ignore[call-arg]
 
     def __hash__(self) -> int:
         return hash(self._to_json())
@@ -213,11 +213,14 @@ class ParametricBlock(PrimitiveBlock):
 
     @classmethod
     def _from_dict(cls, d: dict) -> ParametricBlock:
+        from qadence.noise import deserialize_noise
+
         params = ParamMap._from_dict(d["parameters"])
         target = d["qubit_support"][0]
-        return cls(target, params)  # type: ignore[call-arg, arg-type]
-        # TODO reenable serialization
-        # return cls(target, params, AbstractNoise._from_dict(d.get("noise")))  # type: ignore[call-arg, arg-type]
+        noise = d.get("noise", None)
+        if noise:
+            noise = deserialize_noise(noise)
+        return cls(target, params, noise)  # type: ignore[call-arg, arg-type]
 
     def dagger(self) -> ParametricBlock:
         exprs = self.parameters.expressions()
@@ -411,21 +414,26 @@ class ControlBlock(PrimitiveBlock):
         return False
 
     def _to_dict(self) -> dict:
+        from qadence.noise import serialize_noise
+
         return {
             "type": type(self).__name__,
             "qubit_support": self.qubit_support,
             "tag": self.tag,
             "blocks": [b._to_dict() for b in self.blocks],
-            "noise": self.noise._to_dict() if self.noise is not None else None,
+            "noise": serialize_noise(self.noise) if self.noise is not None else None,
         }
 
     @classmethod
     def _from_dict(cls, d: dict) -> ControlBlock:
+        from qadence.noise import deserialize_noise
+
         control = d["qubit_support"][0]
         target = d["qubit_support"][1]
-        # TODO reenable serialization
-        return cls(control, target)
-        # return cls(control, target, AbstractNoise._from_dict(d.get("noise")))
+        noise = d.get("noise", None)
+        if noise:
+            noise = deserialize_noise(noise)
+        return cls(control, target, noise)
 
     def dagger(self) -> ControlBlock:
         blk = deepcopy(self)
@@ -474,25 +482,29 @@ class ParametricControlBlock(ParametricBlock):
         return False
 
     def _to_dict(self) -> dict:
+        from qadence.noise import serialize_noise
+
         return {
             "type": type(self).__name__,
             "qubit_support": self.qubit_support,
             "tag": self.tag,
             "blocks": [b._to_dict() for b in self.blocks],
-            "noise": self.noise._to_dict() if self.noise is not None else None,
+            "noise": serialize_noise(self.noise) if self.noise is not None else None,
         }
 
     @classmethod
     def _from_dict(cls, d: dict) -> ParametricControlBlock:
         from qadence.serialization import deserialize
+        from qadence.noise import deserialize_noise
 
         control = d["qubit_support"][0]
         target = d["qubit_support"][1]
         targetblock = d["blocks"][0]
         expr = deserialize(targetblock["parameters"])
-        block = cls(control, target)
-        # TODO reenable serialization
-        # block = cls(control, target, AbstractNoise._from_dict(d.get("noise")), expr)  # type: ignore[call-arg]
+        noise = d.get("noise", None)
+        if noise:
+            noise = deserialize_noise(noise)
+        block = cls(control, target, noise, expr)  # type: ignore[call-arg]
         return block
 
     @property
