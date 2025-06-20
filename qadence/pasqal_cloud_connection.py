@@ -68,7 +68,7 @@ class WorkloadSpec:
             raise ValueError("All parameter values that are arrays, should have the same length")
 
 
-def get_workload_spec(
+def workload_spec(
     model: QuantumModel,
     result_types: list[ResultType],
     parameter_values: dict[str, Tensor] | None = None,
