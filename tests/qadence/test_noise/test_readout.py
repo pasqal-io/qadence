@@ -14,9 +14,10 @@ from qadence.blocks import (
     kron,
 )
 from qadence.circuit import QuantumCircuit
+from qadence.noise import available_protocols
+
 from qadence.constructors.hamiltonians import hamiltonian_factory
 from qadence.divergences import js_divergence
-from qadence.noise import NoiseHandler
 from qadence.operations import (
     CNOT,
     RX,
@@ -24,8 +25,9 @@ from qadence.operations import (
     X,
     Y,
     Z,
+    H,
 )
-from qadence.types import NoiseProtocol
+from qadence.measurements import Measurements
 
 
 @pytest.mark.flaky(max_runs=5)
@@ -76,10 +78,7 @@ def test_readout_error_quantum_model(
     )
     noiseless_samples: list[Counter] = model.sample(n_shots=n_shots)
 
-    noise_protocol: NoiseHandler = NoiseHandler(
-        protocol=NoiseProtocol.READOUT.INDEPENDENT,
-        options={"error_probability": error_probability},
-    )
+    noise_protocol = available_protocols.IndependentReadout(error_definition=error_probability)
     noisy_samples: list[Counter] = model.sample(noise=noise_protocol, n_shots=n_shots)
 
     for noiseless, noisy in zip(noiseless_samples, noisy_samples):
@@ -93,10 +92,7 @@ def test_readout_error_quantum_model(
 
     rand_confusion = torch.rand(2**block.n_qubits, 2**block.n_qubits)
     rand_confusion = rand_confusion / rand_confusion.sum(dim=1, keepdim=True)
-    corr_noise_protocol: NoiseHandler = NoiseHandler(
-        protocol=NoiseProtocol.READOUT.CORRELATED,
-        options={"confusion_matrix": rand_confusion},
-    )
+    corr_noise_protocol = available_protocols.CorrelatedReadout(error_definition=rand_confusion)
     # assert difference with noiseless samples
     corr_noisy_samples: list[Counter] = model.sample(noise=corr_noise_protocol, n_shots=n_shots)
     for noiseless, noisy in zip(noiseless_samples, corr_noisy_samples):
@@ -119,8 +115,7 @@ def test_readout_error_backends(backend: BackendName) -> None:
     # sample
     samples = qd.sample(feature_map, n_shots=1000, values=inputs, backend=backend, noise=None)
     # introduce noise
-    options = {"error_probability": error_probability}
-    noise = NoiseHandler(protocol=NoiseProtocol.READOUT.INDEPENDENT, options=options)
+    noise = available_protocols.IndependentReadout(error_definition=error_probability)
     noisy_samples = qd.sample(
         feature_map, n_shots=1000, values=inputs, backend=backend, noise=noise
     )
@@ -136,77 +131,33 @@ def test_readout_error_backends(backend: BackendName) -> None:
 
 
 # # TODO: Use strategies to test against randomly generated circuits.
-# TODO: re-enable with a new release of pyqtorch after 1.7.0
-# @pytest.mark.parametrize(
-#     "measurement_proto, options",
-#     [
-#         (Measurements.TOMOGRAPHY, {"n_shots": 10000}),
-#         (Measurements.SHADOW, {"accuracy": 0.1, "confidence": 0.1}),
-#     ],
-# )
-# def test_readout_error_with_measurements(
-#     measurement_proto: Measurements,
-#     options: dict,
-# ) -> None:
-#     circuit = QuantumCircuit(2, kron(H(0), Z(1)))
-#     inputs: dict = dict()
-#     observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
-
-#     model = QuantumModel(circuit=circuit, observable=observable, diff_mode=DiffMode.GPSR)
-#     noise = NoiseHandler(protocol=NoiseProtocol.READOUT.INDEPENDENT)
-#     measurement = Measurements(protocol=str(measurement_proto), options=options)
-
-#     noisy = model.expectation(values=inputs, measurement=measurement, noise=noise)
-#     exact = model.expectation(values=inputs)
-#     if exact.numel() > 1:
-#         for noisy_value, exact_value in zip(noisy, exact):
-#             exact_val = torch.abs(exact_value).item()
-#             atol = exact_val / 3.0 if exact_val != 0.0 else 0.33
-#             assert torch.allclose(noisy_value, exact_value, atol=atol)
-#     else:
-#         exact_value = torch.abs(exact).item()
-#         atol = exact_value / 3.0 if exact_value != 0.0 else 0.33
-#         assert torch.allclose(noisy, exact, atol=atol)
-
-
-def test_serialization() -> None:
-    noise = NoiseHandler(protocol=NoiseProtocol.READOUT.INDEPENDENT)
-    serialized_noise = NoiseHandler._from_dict(noise._to_dict())
-    assert noise == serialized_noise
-
-    rand_confusion = torch.rand(4, 4)
-    rand_confusion = rand_confusion / rand_confusion.sum(dim=1, keepdim=True)
-    noise = NoiseHandler(
-        protocol=NoiseProtocol.READOUT.CORRELATED,
-        options={"seed": 0, "confusion_matrix": rand_confusion},
-    )
-    serialized_noise = NoiseHandler._from_dict(noise._to_dict())
-    assert noise == serialized_noise
-
-
 @pytest.mark.parametrize(
-    "noise_config",
+    "measurement_proto, options",
     [
-        NoiseProtocol.READOUT,
-        NoiseProtocol.DIGITAL.BITFLIP,
-        [NoiseProtocol.DIGITAL.BITFLIP, NoiseProtocol.DIGITAL.PHASEFLIP],
+        (Measurements.TOMOGRAPHY, {"n_shots": 10000}),
+        (Measurements.SHADOW, {"accuracy": 0.1, "confidence": 0.1}),
     ],
 )
-@pytest.mark.parametrize(
-    "initial_noise",
-    [
-        NoiseHandler(protocol=NoiseProtocol.READOUT.INDEPENDENT),
-        NoiseHandler(protocol=NoiseProtocol.READOUT.CORRELATED, options=torch.rand((4, 4))),
-    ],
-)
-def test_append(
-    initial_noise: NoiseHandler, noise_config: NoiseProtocol | list[NoiseProtocol]
+def test_readout_error_with_measurements(
+    measurement_proto: Measurements,
+    options: dict,
 ) -> None:
-    options = {"error_probability": 0.1}
-    with pytest.raises(ValueError):
-        initial_noise.append(NoiseHandler(noise_config, options))
-    with pytest.raises(ValueError):
-        initial_noise.readout_independent(options)
+    circuit = QuantumCircuit(2, kron(H(0), Z(1)))
+    inputs: dict = dict()
+    observable = hamiltonian_factory(circuit.n_qubits, detuning=Z)
 
-    with pytest.raises(ValueError):
-        initial_noise.readout_correlated({"confusion_matrix": torch.rand(4, 4)})
+    model = QuantumModel(circuit=circuit, observable=observable, diff_mode=DiffMode.GPSR)
+    noise = available_protocols.IndependentReadout(error_definition=0.1)
+    measurement = Measurements(protocol=str(measurement_proto), options=options)
+
+    noisy = model.expectation(values=inputs, measurement=measurement, noise=noise)
+    exact = model.expectation(values=inputs)
+    if exact.numel() > 1:
+        for noisy_value, exact_value in zip(noisy, exact):
+            exact_val = torch.abs(exact_value).item()
+            atol = exact_val / 3.0 if exact_val != 0.0 else 0.33
+            assert torch.allclose(noisy_value, exact_value, atol=atol)
+    else:
+        exact_value = torch.abs(exact).item()
+        atol = exact_value / 3.0 if exact_value != 0.0 else 0.33
+        assert torch.allclose(noisy, exact, atol=atol)

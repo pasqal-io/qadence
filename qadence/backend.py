@@ -23,7 +23,7 @@ from qadence.blocks.analog import ConstantAnalogRotation, InteractionBlock
 from qadence.circuit import QuantumCircuit
 from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
-from qadence.noise import NoiseHandler
+from qadence.noise import AbstractNoise
 from qadence.parameters import stringify
 from qadence.types import (
     ArrayLike,
@@ -259,7 +259,7 @@ class Backend(ABC):
         param_values: dict[str, Tensor] = {},
         n_shots: int = 1000,
         state: ArrayLike | None = None,
-        noise: NoiseHandler | None = None,
+        noise: AbstractNoise | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
@@ -309,7 +309,7 @@ class Backend(ABC):
         param_values: ParamDictType = {},
         state: ArrayLike | None = None,
         measurement: Measurements | None = None,
-        noise: NoiseHandler | None = None,
+        noise: AbstractNoise | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> ArrayLike:

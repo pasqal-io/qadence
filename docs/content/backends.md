@@ -141,7 +141,7 @@ print(f"{output = }")
 ## Lower-level: the `Backend` representation
 
 If there is a requirement to work with a specific backend, it is possible to access _**directly the native circuit**_.
-For example, should one wish to use PyQtorch noise features directly instead of using the `NoiseHandler` interface from Qadence:
+For example, should one wish to use PyQTorch noise features directly instead of using the `Qermod` package:
 
 ```python exec="on" source="material-block" session="low-level-pyq"
 from pyqtorch.noise import Depolarizing
