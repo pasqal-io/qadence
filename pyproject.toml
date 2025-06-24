@@ -87,10 +87,9 @@ horqrux = [
     "sympy2jax",
 ]
 protocols = ["qadence-protocols"]
-libs = ["qadence-libs"]
 dlprof = ["nvidia-pyindex", "nvidia-dlprof[pytorch]"]
 mlflow = ["mlflow"]
-all = ["pulser", "visualization", "protocols", "libs", "mlflow"]
+all = ["pulser", "visualization", "protocols", "mlflow"]
 hub = [
     "qadence-mitigation",
     "qadence-measurement",
