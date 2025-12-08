@@ -1,3 +1,7 @@
+> [!CAUTION]
+> Qadence is currently not actively maintained!
+
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./docs/extras/assets/logo/QADENCE_Logo-RGB.svg" width="75%">
