@@ -29,8 +29,9 @@ from qadence.blocks import (
     ScaleBlock,
     TimeEvolutionBlock,
 )
+from qadence.parameters import evaluate
 from qadence.blocks.primitive import ProjectorBlock
-from qadence.noise import NoiseHandler
+from qadence.noise import AbstractNoise, NoiseCategory
 from qadence.operations import (
     U,
     multi_qubit_gateset,
@@ -39,7 +40,8 @@ from qadence.operations import (
     three_qubit_gateset,
     two_qubit_gateset,
 )
-from qadence.types import NoiseProtocol, OpName
+from qadence.types import OpName
+from qadence.noise import NoiseCategory
 
 from .config import Configuration
 
@@ -203,7 +205,7 @@ def convert_block(
     if config is None:
         config = Configuration()
 
-    noise: NoiseHandler | None = None
+    noise: AbstractNoise | None = None
     if hasattr(block, "noise") and block.noise:
         noise = convert_digital_noise(block.noise)
 
@@ -351,43 +353,55 @@ def convert_block(
         )
 
 
-def convert_digital_noise(noise: NoiseHandler) -> pyq.noise.DigitalNoiseProtocol | None:
+def convert_digital_noise(noise: AbstractNoise) -> pyq.noise.DigitalNoiseProtocol | None:
     """Convert the digital noise into pyqtorch NoiseProtocol.
 
     Args:
-        noise (NoiseHandler): Noise to convert.
+        noise (AbstractNoise): Noise to convert.
 
     Returns:
         pyq.noise.DigitalNoiseProtocol | None: Pyqtorch native noise protocol
             if there are any digital noise protocols.
     """
-    digital_part = noise.filter(NoiseProtocol.DIGITAL)
-    if digital_part is None:
+    digital_part = [n for n in noise.flatten() if n.protocol in NoiseCategory.DIGITAL]
+    if len(digital_part) == 0:
         return None
     return pyq.noise.DigitalNoiseProtocol(
         [
-            pyq.noise.DigitalNoiseProtocol(proto, option.get("error_probability"))
-            for proto, option in zip(digital_part.protocol, digital_part.options)
+            pyq.noise.DigitalNoiseProtocol(proto.protocol, proto.error_definition)
+            for proto in digital_part
         ]
     )
 
 
-def convert_readout_noise(n_qubits: int, noise: NoiseHandler) -> pyq.noise.ReadoutNoise | None:
+def convert_readout_noise(n_qubits: int, noise: AbstractNoise) -> pyq.noise.ReadoutNoise | None:
     """Convert the readout noise into pyqtorch ReadoutNoise.
 
     Args:
         n_qubits (int): Number of qubits
-        noise (NoiseHandler):  Noise to convert.
+        noise (AbstractNoise):  Noise to convert.
 
     Returns:
         pyq.noise.ReadoutNoise | None: Pyqtorch native ReadoutNoise instance
             if readout is is noise.
     """
-    readout_part = noise.filter(NoiseProtocol.READOUT)
-    if readout_part is None:
-        return None
+    readout_part = noise.flatten()
+    if isinstance(readout_part, list):
+        if len(readout_part) > 0:
+            readout_part = readout_part[-1]
+        else:
+            return None
 
-    if readout_part.protocol[0] == NoiseProtocol.READOUT.INDEPENDENT:
-        return pyq.noise.ReadoutNoise(n_qubits, **readout_part.options[0])
-    else:
-        return pyq.noise.CorrelatedReadoutNoise(**readout_part.options[0])
+    if readout_part.protocol in NoiseCategory.READOUT:
+        options = readout_part.model_dump(exclude={"protocol"})
+        if readout_part.protocol == NoiseCategory.READOUT.INDEPENDENT:
+            options["error_probability"] = evaluate(options.pop("error_definition"))
+            if ("noise_distribution" in options) and (options["noise_distribution"] is None):
+                options.pop("noise_distribution")
+
+            return pyq.noise.ReadoutNoise(n_qubits, **options)
+        else:
+            options["confusion_matrix"] = evaluate(options.pop("error_definition"))
+
+            return pyq.noise.CorrelatedReadoutNoise(**options)
+    return None

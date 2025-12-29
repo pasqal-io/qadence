@@ -3,14 +3,14 @@ from __future__ import annotations
 from qadence.backend import ConvertedCircuit
 from qadence.blocks.abstract import AbstractBlock
 from qadence.circuit import QuantumCircuit
-from qadence.noise.protocols import NoiseHandler
+from qadence.noise import AbstractNoise
 
 from .apply_fn import apply_fn_to_blocks
 
 
 def _set_noise(
     block: AbstractBlock,
-    noise: NoiseHandler | None,
+    noise: AbstractNoise | None,
     target_class: type[AbstractBlock] | None = None,
 ) -> AbstractBlock:
     """Changes the noise protocol of a given block in place."""
@@ -25,7 +25,7 @@ def _set_noise(
 
 def set_noise(
     circuit: QuantumCircuit | AbstractBlock | ConvertedCircuit,
-    noise: NoiseHandler | None,
+    noise: AbstractNoise | None,
     target_class: AbstractBlock | None = None,
 ) -> QuantumCircuit | AbstractBlock:
     """
@@ -37,7 +37,7 @@ def set_noise(
 
     Arguments:
         circuit: the circuit or block to parse.
-        noise: the NoiseHandler protocol to change to, or `None` to remove the noise.
+        noise: the AbstractNoise protocol to change to, or `None` to remove the noise.
         target_class: optional class to selectively add noise to.
     """
     input_block: AbstractBlock

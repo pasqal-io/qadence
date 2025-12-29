@@ -14,7 +14,7 @@ from qadence.backends.pyqtorch import Backend as PyQBackend
 from qadence.blocks import AbstractBlock, PrimitiveBlock, chain
 from qadence.circuit import QuantumCircuit
 from qadence.engines.differentiable_backend import DifferentiableBackend
-from qadence.noise import NoiseHandler
+from qadence.noise import AbstractNoise
 from qadence.operations import H, I, SDagger, X, Y
 from qadence.parameters import evaluate
 from qadence.utils import Endianness
@@ -128,7 +128,7 @@ def iterate_pauli_decomposition(
     n_shots: int,
     state: Tensor | None = None,
     backend: Backend | DifferentiableBackend = PyQBackend(),
-    noise: NoiseHandler | None = None,
+    noise: AbstractNoise | None = None,
     endianness: Endianness = Endianness.BIG,
 ) -> Tensor:
     """Estimate total expectation value by averaging all Pauli terms.

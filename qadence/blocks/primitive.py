@@ -11,7 +11,7 @@ from rich.panel import Panel
 from rich.tree import Tree
 
 from qadence.blocks.abstract import AbstractBlock
-from qadence.noise import NoiseHandler
+from qadence.noise import AbstractNoise
 from qadence.parameters import (
     Parameter,
     ParamMap,
@@ -37,7 +37,7 @@ class PrimitiveBlock(AbstractBlock):
     def __init__(
         self,
         qubit_support: tuple[int, ...],
-        noise: NoiseHandler | None = None,
+        noise: AbstractNoise | None = None,
     ):
         self._qubit_support = qubit_support
         self._noise = noise
@@ -47,7 +47,7 @@ class PrimitiveBlock(AbstractBlock):
         return self._qubit_support
 
     @property
-    def noise(self) -> NoiseHandler | None:
+    def noise(self) -> AbstractNoise | None:
         return self._noise
 
     def digital_decomposition(self) -> AbstractBlock:
@@ -87,7 +87,7 @@ class PrimitiveBlock(AbstractBlock):
         if not isinstance(other, AbstractBlock):
             raise TypeError(f"Cant compare {type(self)} to {type(other)}")
         if isinstance(other, type(self)):
-            return self.qubit_support == other.qubit_support
+            return self.qubit_support == other.qubit_support and self.noise == other.noise
         return False
 
     def _to_dict(self) -> dict:
@@ -100,7 +100,9 @@ class PrimitiveBlock(AbstractBlock):
 
     @classmethod
     def _from_dict(cls, d: dict) -> PrimitiveBlock:
-        return cls(*d["qubit_support"], NoiseHandler._from_dict(d.get("noise")))  # type: ignore[call-arg]
+        return cls(*d["qubit_support"])  # type: ignore[call-arg]
+
+        return cls(*d["qubit_support"], AbstractNoise._from_dict(d.get("noise")))  # type: ignore[call-arg]
 
     def __hash__(self) -> int:
         return hash(self._to_json())
@@ -187,8 +189,10 @@ class ParametricBlock(PrimitiveBlock):
         if not isinstance(other, AbstractBlock):
             raise TypeError(f"Cant compare {type(self)} to {type(other)}")
         if isinstance(other, type(self)):
-            return self.qubit_support == other.qubit_support and self.parameters.parameter.equals(
-                other.parameters.parameter
+            return (
+                self.qubit_support == other.qubit_support
+                and self.parameters.parameter.equals(other.parameters.parameter)
+                and self.noise == other.noise
             )
         return False
 
@@ -211,9 +215,14 @@ class ParametricBlock(PrimitiveBlock):
 
     @classmethod
     def _from_dict(cls, d: dict) -> ParametricBlock:
+        from qadence.noise import deserialize_noise
+
         params = ParamMap._from_dict(d["parameters"])
         target = d["qubit_support"][0]
-        return cls(target, params, NoiseHandler._from_dict(d.get("noise")))  # type: ignore[call-arg, arg-type]
+        noise = d.get("noise", None)
+        if noise:
+            noise = deserialize_noise(noise)
+        return cls(target, params, noise)  # type: ignore[call-arg, arg-type]
 
     def dagger(self) -> ParametricBlock:
         exprs = self.parameters.expressions()
@@ -373,7 +382,7 @@ class ControlBlock(PrimitiveBlock):
         self,
         control: tuple[int, ...],
         target_block: PrimitiveBlock,
-        noise: NoiseHandler | None = None,
+        noise: AbstractNoise | None = None,
     ) -> None:
         self.control = control
         self.blocks = (target_block,)
@@ -381,7 +390,7 @@ class ControlBlock(PrimitiveBlock):
 
         # using tuple expansion because some control operations could
         # have multiple targets, e.g. CSWAP
-        super().__init__((*control, *self.target), noise=noise)  # target_block.qubit_support[0]))
+        super().__init__((*control, *self.target), noise=noise)
 
     @property
     def n_controls(self) -> int:
@@ -407,19 +416,26 @@ class ControlBlock(PrimitiveBlock):
         return False
 
     def _to_dict(self) -> dict:
+        from qadence.noise import serialize_noise
+
         return {
             "type": type(self).__name__,
             "qubit_support": self.qubit_support,
             "tag": self.tag,
             "blocks": [b._to_dict() for b in self.blocks],
-            "noise": self.noise._to_dict() if self.noise is not None else None,
+            "noise": serialize_noise(self.noise) if self.noise is not None else None,
         }
 
     @classmethod
     def _from_dict(cls, d: dict) -> ControlBlock:
+        from qadence.noise import deserialize_noise
+
         control = d["qubit_support"][0]
         target = d["qubit_support"][1]
-        return cls(control, target, NoiseHandler._from_dict(d.get("noise")))
+        noise = d.get("noise", None)
+        if noise:
+            noise = deserialize_noise(noise)
+        return cls(control, target, noise)
 
     def dagger(self) -> ControlBlock:
         blk = deepcopy(self)
@@ -438,7 +454,7 @@ class ParametricControlBlock(ParametricBlock):
         self,
         control: tuple[int, ...],
         target_block: ParametricBlock,
-        noise: NoiseHandler | None = None,
+        noise: AbstractNoise | None = None,
     ) -> None:
         self.blocks = (target_block,)
         self.control = control
@@ -468,23 +484,29 @@ class ParametricControlBlock(ParametricBlock):
         return False
 
     def _to_dict(self) -> dict:
+        from qadence.noise import serialize_noise
+
         return {
             "type": type(self).__name__,
             "qubit_support": self.qubit_support,
             "tag": self.tag,
             "blocks": [b._to_dict() for b in self.blocks],
-            "noise": self.noise._to_dict() if self.noise is not None else None,
+            "noise": serialize_noise(self.noise) if self.noise is not None else None,
         }
 
     @classmethod
     def _from_dict(cls, d: dict) -> ParametricControlBlock:
         from qadence.serialization import deserialize
+        from qadence.noise import deserialize_noise
 
         control = d["qubit_support"][0]
         target = d["qubit_support"][1]
         targetblock = d["blocks"][0]
         expr = deserialize(targetblock["parameters"])
-        block = cls(control, target, NoiseHandler._from_dict(d.get("noise")), expr)  # type: ignore[call-arg]
+        noise = d.get("noise", None)
+        if noise:
+            noise = deserialize_noise(noise)
+        block = cls(control, target, noise, expr)  # type: ignore[call-arg]
         return block
 
     @property
@@ -521,7 +543,7 @@ class ProjectorBlock(PrimitiveBlock):
         ket: str,
         bra: str,
         qubit_support: int | tuple[int, ...],
-        noise: NoiseHandler | None = None,
+        noise: AbstractNoise | None = None,
     ) -> None:
         """
         Arguments:

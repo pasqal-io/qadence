@@ -16,7 +16,7 @@ from qadence.measurements import Measurements
 from qadence.mitigations import Mitigations
 from qadence.ml_tools.config import AnsatzConfig, FeatureMapConfig
 from qadence.model import QuantumModel
-from qadence.noise import NoiseHandler
+from qadence.noise import AbstractNoise
 from qadence.register import Register
 from qadence.types import BackendName, DiffMode, Endianness, InputDiffMode, ParamDictType
 from qadence.utils import block_to_mathematical_expression
@@ -140,7 +140,7 @@ class QNN(QuantumModel):
         backend: BackendName = BackendName.PYQTORCH,
         diff_mode: DiffMode = DiffMode.AD,
         measurement: Measurements | None = None,
-        noise: NoiseHandler | None = None,
+        noise: AbstractNoise | None = None,
         configuration: BackendConfiguration | dict | None = None,
         inputs: list[sympy.Basic | str] | None = None,
         input_diff_mode: InputDiffMode | str = InputDiffMode.AD,
@@ -221,7 +221,7 @@ class QNN(QuantumModel):
         backend: BackendName = BackendName.PYQTORCH,
         diff_mode: DiffMode = DiffMode.AD,
         measurement: Measurements | None = None,
-        noise: NoiseHandler | None = None,
+        noise: AbstractNoise | None = None,
         configuration: BackendConfiguration | dict | None = None,
         input_diff_mode: InputDiffMode | str = InputDiffMode.AD,
     ) -> QNN:
@@ -371,7 +371,7 @@ class QNN(QuantumModel):
         values: dict[str, Tensor] | Tensor = None,
         state: Tensor | None = None,
         measurement: Measurements | None = None,
-        noise: NoiseHandler | None = None,
+        noise: AbstractNoise | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
         """Forward pass of the model.
@@ -420,7 +420,7 @@ class QNN(QuantumModel):
         values: Tensor | dict[str, Tensor] = {},
         n_shots: int = 1000,
         state: Tensor | None = None,
-        noise: NoiseHandler | None = None,
+        noise: AbstractNoise | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> list[Counter]:
@@ -439,7 +439,7 @@ class QNN(QuantumModel):
         observable: list[ConvertedObservable] | ConvertedObservable | None = None,
         state: Tensor | None = None,
         measurement: Measurements | None = None,
-        noise: NoiseHandler | None = None,
+        noise: AbstractNoise | None = None,
         mitigation: Mitigations | None = None,
         endianness: Endianness = Endianness.BIG,
     ) -> Tensor:
@@ -473,17 +473,21 @@ class QNN(QuantumModel):
     @classmethod
     def _from_dict(cls, d: dict, as_torch: bool = False) -> QNN:
         from qadence.serialization import deserialize
+        from qadence.noise import deserialize_noise
 
         qnn: QNN
         try:
             qm_dict = d[cls.__name__]
+            noise = qm_dict.get("noise", None)
+            if noise:
+                noise = deserialize_noise(noise)
             qnn = cls(
                 circuit=QuantumCircuit._from_dict(qm_dict["circuit"]),
                 observable=[deserialize(q_obs) for q_obs in qm_dict["observable"]],  # type: ignore[misc]
                 backend=qm_dict["backend"],
                 diff_mode=qm_dict["diff_mode"],
                 measurement=Measurements._from_dict(qm_dict["measurement"]),
-                noise=NoiseHandler._from_dict(qm_dict["noise"]),
+                noise=noise,  # TODO reenable serialization
                 configuration=config_factory(qm_dict["backend"], qm_dict["backend_configuration"]),
                 inputs=qm_dict["inputs"],
             )
